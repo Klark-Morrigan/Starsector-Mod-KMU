@@ -40,7 +40,20 @@ import java.util.Map;
  */
 public final class ClaimStatsAggregator {
 
-    private ClaimStatsAggregator() {
+    // One walk's worth of running state, held as fields rather than threaded through each step.
+    // Both metrics and the claimed-system index accumulate over every system in the sector, so
+    // passing them along made each step's parameter list longer than the step itself and put the
+    // pass and the reader - what every step reads through - last among them.
+    private final BlocPresenceIndexBuilder claimedSystems = new BlocPresenceIndexBuilder();
+    private final ClaimReader claimReader;
+    private final HolderPass pass;
+    private final Map<String, ClaimStats> statsByBlocId = new LinkedHashMap<>();
+
+    // Single-use and private, so the entry point below stays the only way in: a caller can neither
+    // hold a half-filled aggregation nor run a second sector through one that is already full.
+    private ClaimStatsAggregator(HolderPass pass, ClaimReader claimReader) {
+        this.claimReader = claimReader;
+        this.pass = pass;
     }
 
     /**
@@ -64,16 +77,19 @@ public final class ClaimStatsAggregator {
             HolderPass pass,
             ClaimReader claimReader) {
 
-        var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
-        var claimedSystems = new BlocPresenceIndexBuilder();
+        return new ClaimStatsAggregator(pass, claimReader).aggregateWholeSector();
+    }
 
-        // Neither fold is guarded on the sector having an economy up yet (mid-load, it may not).
-        // Claims are read from the port and so stand on their own, and the colony walk beneath the
-        // habitation read answers an empty set without one - so the sizes come to nought where the
-        // dominance aggregation's own guard makes it report nothing at all.
+    // Walks every system the pass offers, folding each into the running state, and seals the result.
+    //
+    // Neither fold is guarded on the sector having an economy up yet (mid-load, it may not). Claims
+    // are read from the port and so stand on their own, and the colony walk beneath the habitation
+    // read answers an empty set without one - so the sizes come to nought where the dominance
+    // aggregation's own guard makes it report nothing at all.
+    private ClaimStatsRead aggregateWholeSector() {
         for (var system : pass.readSystems()) {
-            accumulateSystemClaim(statsByBlocId, claimedSystems, system, pass, claimReader);
-            accumulateSystemHabitation(statsByBlocId, system, pass);
+            accumulateSystemClaim(system);
+            accumulateSystemHabitation(system);
         }
         return new ClaimStatsRead(statsByBlocId, claimedSystems.buildIndex());
     }
@@ -82,13 +98,7 @@ public final class ClaimStatsAggregator {
     // has exactly one claimant, so this adds at most one claim; an unclaimed system contributes
     // nothing. The claimant faction is folded to its bloc first, so an alliance grouping counts its
     // members' claims as the alliance's and indexes their systems under the alliance too.
-    private static void accumulateSystemClaim(
-            Map<String, ClaimStats> statsByBlocId,
-            BlocPresenceIndexBuilder claimedSystems,
-            StarSystemAPI system,
-            HolderPass pass,
-            ClaimReader claimReader) {
-
+    private void accumulateSystemClaim(StarSystemAPI system) {
         var claimantId = claimReader.readClaimingFactionId(system);
         if (claimantId == null) {
             return;
@@ -108,11 +118,7 @@ public final class ClaimStatsAggregator {
     // Habitation and not the wider listing, which is the difference between a colony and a hulk
     // somebody has seen. A picker answers "what can I spotlight", and a spotlight lights territory,
     // so a bloc whose only holding is a derelict is offered nothing to light and is left out.
-    private static void accumulateSystemHabitation(
-            Map<String, ClaimStats> statsByBlocId,
-            StarSystemAPI system,
-            HolderPass pass) {
-
+    private void accumulateSystemHabitation(StarSystemAPI system) {
         for (var entry : pass.readHabitationIn(system).colonySizeByBlocId().entrySet()) {
             var blocId = entry.getKey();
             statsByBlocId.put(

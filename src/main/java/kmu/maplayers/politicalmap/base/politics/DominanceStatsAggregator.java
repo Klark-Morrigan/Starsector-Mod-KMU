@@ -26,7 +26,18 @@ import java.util.Map;
  */
 public final class DominanceStatsAggregator {
 
-    private DominanceStatsAggregator() {
+    // One walk's worth of running state, held as fields rather than threaded through each step.
+    // The four metrics and the system index accumulate over every system in the sector, so passing
+    // them along made each step's parameter list longer than the step itself and put the pass - the
+    // one thing every step reads - last among them.
+    private final BlocPresenceIndexBuilder inhabitedSystems = new BlocPresenceIndexBuilder();
+    private final DominancePass pass;
+    private final Map<String, DominanceStats> statsByBlocId = new LinkedHashMap<>();
+
+    // Single-use and private, so the entry point below stays the only way in: a caller can neither
+    // hold a half-filled aggregation nor run a second sector through one that is already full.
+    private DominanceStatsAggregator(DominancePass pass) {
+        this.pass = pass;
     }
 
     /**
@@ -51,11 +62,13 @@ public final class DominanceStatsAggregator {
         if (!pass.canReadEconomy()) {
             return DominanceStatsRead.EMPTY;
         }
-        var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
-        var inhabitedSystems = new BlocPresenceIndexBuilder();
+        return new DominanceStatsAggregator(pass).aggregateWholeSector();
+    }
 
+    // Walks every system the pass offers, folding each into the running state, and seals the result.
+    private DominanceStatsRead aggregateWholeSector() {
         for (var system : pass.readSystems()) {
-            accumulateSystemStats(statsByBlocId, inhabitedSystems, system, pass);
+            accumulateSystemStats(system);
         }
         return new DominanceStatsRead(statsByBlocId, inhabitedSystems.buildIndex());
     }
@@ -65,11 +78,7 @@ public final class DominanceStatsAggregator {
     // the dominant one also taking a domination count. A bloc living in several systems accumulates
     // rather than overwrites, and under an alliance grouping the members fold into the alliance's
     // one bloc.
-    private static void accumulateSystemStats(
-            Map<String, DominanceStats> statsByBlocId,
-            BlocPresenceIndexBuilder inhabitedSystems,
-            StarSystemAPI system,
-            DominancePass pass) {
+    private void accumulateSystemStats(StarSystemAPI system) {
 
         // The weighed read, and the only thing the winner is settled from. Ties resolve by market
         // proximity, the same as the render pass, so a picker's domination count matches the
