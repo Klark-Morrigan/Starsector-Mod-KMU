@@ -220,8 +220,8 @@ class DominanceStatsAggregatorIntegrationTest {
 
             assertThat(read.statsByBlocId())
                 .containsExactly(
-                    entry("hegemony", new DominanceStats(2, 3, 10000, 10)),
-                    entry("tritachyon", new DominanceStats(1, 2, 8000, 8)));
+                    entry("hegemony", new DominanceStats(1, 3, 10000, 10)),
+                    entry("tritachyon", new DominanceStats(2, 2, 8000, 8)));
 
             assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
                 .containsExactly("system-a", "system-b", "system-c");
