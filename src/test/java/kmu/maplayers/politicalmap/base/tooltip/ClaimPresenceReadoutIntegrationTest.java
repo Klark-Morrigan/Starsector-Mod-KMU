@@ -171,7 +171,8 @@ final class ClaimPresenceReadoutIntegrationTest {
                     new RibbonSegment(HEGEMONY_DARK, PARTING_RUN),
                     new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(inputs.pass(), claimBreakdownReader))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(inputs.pass(), claimBreakdownReader)
+                    .statsByBlocId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
     }

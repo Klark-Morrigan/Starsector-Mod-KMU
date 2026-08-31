@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.settings.KmuLunaSettings;
 
@@ -81,15 +82,17 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                // The heal matches on the id alone, so the stats half of the option and the
-                // vocabulary bundled beside the list both stand in. Stubbed through doReturn
-                // because the seam answers a wildcarded picker, whose captured item type a when()
-                // stub would have to name.
-                doReturn(new ListPicker<>(
-                        List.of(new RankedBloc<>(
-                            new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                            DominanceStats.EMPTY)),
-                        DominanceSortMode.MODES))
+                // The heal matches on the id alone, so the stats half of the option, the vocabulary
+                // bundled beside the list, and the presence beside the rows all stand in. Stubbed
+                // through doReturn because the seam answers a wildcarded read, whose captured item
+                // type a when() stub would have to name.
+                doReturn(new BlocPickerRead<>(
+                        new ListPicker<>(
+                            List.of(new RankedBloc<>(
+                                new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
+                                DominanceStats.EMPTY)),
+                            DominanceSortMode.MODES),
+                        BlocPresenceIndex.EMPTY))
                     .when(viewMock)
                     .resolveBlocPicker(sectorMock);
 
@@ -125,7 +128,9 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                doReturn(new ListPicker<>(List.of(), DominanceSortMode.MODES))
+                doReturn(new BlocPickerRead<>(
+                        new ListPicker<>(List.of(), DominanceSortMode.MODES),
+                        BlocPresenceIndex.EMPTY))
                     .when(viewMock)
                     .resolveBlocPicker(sectorMock);
 

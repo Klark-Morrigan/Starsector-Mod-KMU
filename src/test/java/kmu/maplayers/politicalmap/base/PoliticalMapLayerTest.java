@@ -13,6 +13,7 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
+import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
@@ -347,13 +348,16 @@ final class PoliticalMapLayerTest {
         when(view.getViewBodyControls())
             .thenReturn(List.of());
 
-        // Stubbed through doReturn because the seam answers a wildcarded picker, whose captured item
-        // type a when() stub would have to name.
-        doReturn(new ListPicker<>(
-                List.of(new RankedBloc<>(
-                    new SelectableBloc("hegemony", "Hegemony", null),
-                    DominanceStats.EMPTY)),
-                DominanceSortMode.MODES))
+        // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item
+        // type a when() stub would have to name. The presence beside the rows stands in: what these
+        // assertions are about is where the picker sits in the body, which lights nothing.
+        doReturn(new BlocPickerRead<>(
+                new ListPicker<>(
+                    List.of(new RankedBloc<>(
+                        new SelectableBloc("hegemony", "Hegemony", null),
+                        DominanceStats.EMPTY)),
+                    DominanceSortMode.MODES),
+                BlocPresenceIndex.EMPTY))
             .when(view)
             .resolveBlocPicker(any());
 
@@ -421,7 +425,7 @@ final class PoliticalMapLayerTest {
         when(view.getContentRevision())
             .thenReturn(0);
 
-        doReturn(ListPicker.empty())
+        doReturn(BlocPickerRead.empty())
             .when(view)
             .resolveBlocPicker(any());
 

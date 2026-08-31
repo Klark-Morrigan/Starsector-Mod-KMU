@@ -64,11 +64,11 @@ public final class FilterSelectionHeal {
 
     // Whether the view still lists one bloc. Asked through the picker seam rather than the bloc
     // identity: the match is on the id alone, so it needs nothing a view's own metrics carry and
-    // stays valid for any of them. That is also why the view's sort vocabulary is passed over - a
-    // heal ranks nothing.
+    // stays valid for any of them. That is also why the view's sort vocabulary is passed over, and
+    // the presence beside the rows with it - a heal ranks nothing and lights nothing.
     private static boolean isBlocOfferedBy(PoliticalMapView view, String blocId) {
 
-        for (var bloc : view.resolveBlocPicker(Global.getSector()).items()) {
+        for (var bloc : view.resolveBlocPicker(Global.getSector()).picker().items()) {
             if (bloc.itemId().equals(blocId)) {
                 return true;
             }

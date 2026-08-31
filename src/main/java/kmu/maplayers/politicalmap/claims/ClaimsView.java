@@ -11,6 +11,7 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
+import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -183,14 +184,19 @@ public final class ClaimsView implements PoliticalMapView {
      * lives in are spared the recede, so the pick still shows where the faction is while showing
      * that it claims none of it. Re-picking the lit row clears it as any other pick does.
      *
+     * <p>The presence beside the rows is claim-bound, the claim arm of the walk alone having filled
+     * it: this layer draws a bloc nothing in a system it merely lives in, so naming those systems
+     * would offer to light territory the layer does not paint.
+     *
      * @param sector           the sector whose systems and colonies the claim stats are read from;
-     *                         null yields an empty picker
+     *                         null yields an empty read
      * @param colonyVisibility what the player may be shown of a colony, so a bloc's market size
      *                         counts the very colonies the map paints it for
-     * @return this view's picker, its blocs in the order the sector walk surfaces them
+     * @return this view's picker, its blocs in the order the sector walk surfaces them, beside the
+     *         systems that walk found each bloc claiming
      */
     @Override
-    public ListPicker<RankedBloc<ClaimStats>> resolveBlocPicker(
+    public BlocPickerRead<RankedBloc<ClaimStats>> resolveBlocPicker(
             SectorAPI sector,
             ColonyVisibility colonyVisibility) {
 
@@ -206,15 +212,18 @@ public final class ClaimsView implements PoliticalMapView {
         // traversal of each system between them rather than one apiece - and are answered off the
         // same reading of the sector, which is what keeps a claim count and a colony size from
         // describing a system at two different moments.
-        return new ListPicker<>(
-            buildSelectableBlocs(
-                sector,
-                grouping,
-                ClaimStatsAggregator.aggregateClaimStats(
-                        pass,
-                        pass.openClaimReaderThrough(claimReaderSource))
-                    .statsByBlocId(),
-                blocId -> true),
-            ClaimSortMode.MODES);
+        var statsRead = ClaimStatsAggregator.aggregateClaimStats(
+            pass,
+            pass.openClaimReaderThrough(claimReaderSource));
+
+        return new BlocPickerRead<>(
+            new ListPicker<>(
+                buildSelectableBlocs(
+                    sector,
+                    grouping,
+                    statsRead.statsByBlocId(),
+                    blocId -> true),
+                ClaimSortMode.MODES),
+            statsRead.claimedSystemIndex());
     }
 }

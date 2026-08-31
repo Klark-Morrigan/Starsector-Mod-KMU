@@ -156,7 +156,20 @@ final class PoliticalMapViewTest {
             // test is the seam's default and not that view's choice to keep it.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), BASE_FOG).items())
+            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), BASE_FOG).picker().items())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveBlocPickerDefaultsToNoPresenceSoALookupAnswersRatherThanFaults() {
+            // The other half of the default read. A view offering no rows can still be asked where a
+            // bloc is - the ask reaches the seam before any row does - so the default has to answer
+            // an empty set rather than leave a null for the lookup to fall over on.
+            var viewFake = new PoliticalMapViewFake(Map.of());
+
+            assertThat(viewFake.resolveBlocPicker(mock(SectorAPI.class), BASE_FOG)
+                    .presenceIndex()
+                    .readPresentSystemIds("hegemony"))
                 .isEmpty();
         }
     }

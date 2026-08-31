@@ -2,13 +2,14 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
+import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * What invalidates the political map's memoised picker. The memo itself is KMLib's
@@ -17,6 +18,10 @@ import java.util.Objects;
  * is not. Each list is a full grouped dominance pass over the sector, and the picker resolves its
  * options twice a frame the map is open, so getting that judgement right is what keeps the sidebar
  * from rescanning the whole economy several times a frame.
+ *
+ * <p>The presence behind the rows rides the same memo, since it is the same walk's answer under the
+ * same invalidation - a surface lighting a bloc's systems reads it here rather than re-walking, and
+ * cannot end up holding presence from one reading beside rows from another.
  *
  * <p>The economy can drift between rebuild triggers (a colony resized without changing holder leaves
  * the settings and grouping revisions untouched), so a metric can lag until the next settings, view,
@@ -29,7 +34,7 @@ public final class SelectableBlocCache {
     // switch is a miss on the view id and the switched-in view's picker replaces the previous one.
     // Held wildcarded because each view's blocs carry that view's own metrics, which is knowledge
     // the memo has no use for - it caches whatever the view answered.
-    private static final RevisionMemo<ListPicker<?>> blocCache = new RevisionMemo<>();
+    private static final RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
 
     private SelectableBlocCache() {
     }
@@ -41,9 +46,10 @@ public final class SelectableBlocCache {
      * @param view   the selected political-map view whose blocs the picker draws
      * @param sector the sector whose economy the list is read from; a null sector resolves to the
      *               view's empty list
-     * @return the memoised picker; the same instance while nothing it depends on moves
+     * @return the memoised read - the picker and the presence behind it; the same instance while
+     *         nothing it depends on moves
      */
-    public static ListPicker<?> resolveBlocPicker(
+    public static BlocPickerRead<?> resolveBlocPicker(
             PoliticalMapView view,
             SectorAPI sector) {
 
@@ -52,6 +58,30 @@ public final class SelectableBlocCache {
             view.getId(),
             computeRevision(view),
             () -> view.resolveBlocPicker(sector));
+    }
+
+    /**
+     * The systems one bloc was found in under the selected view, off the same memoised read the
+     * picker rows come from.
+     *
+     * <p>A per-bloc lookup rather than the whole index, so a surface asking about the one bloc under
+     * the pointer never holds every bloc's set to get at it. It shares the memo with the rows on
+     * purpose: the index has the same lifetime and the same invalidation as the options beside it, so
+     * a store of its own could only go stale against them.
+     *
+     * @param view   the selected political-map view, which decides what being found there means -
+     *               living in a system under the dominance views, claiming it under the claims one
+     * @param sector the sector whose economy the read is taken from; a null sector resolves to the
+     *               view's empty read
+     * @param blocId the bloc to look up; an id this view never surfaced answers empty
+     * @return that bloc's system ids in walk order, never null
+     */
+    public static Set<String> readPresentSystemIds(
+            PoliticalMapView view,
+            SectorAPI sector,
+            String blocId) {
+
+        return resolveBlocPicker(view, sector).presenceIndex().readPresentSystemIds(blocId);
     }
 
     // The revision the memoised list is valid for: the economy-weighting settings (the dominance

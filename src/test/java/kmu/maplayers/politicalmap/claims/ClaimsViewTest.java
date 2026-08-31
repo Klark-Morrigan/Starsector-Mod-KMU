@@ -335,6 +335,7 @@ final class ClaimsViewTest {
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_CLAIMANT_STATS)));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
@@ -360,6 +361,7 @@ final class ClaimsViewTest {
                     .thenReturn(buildReadOf(Map.of("luddic_path", new ClaimStats(1, 0))));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("luddic_path");
@@ -385,6 +387,7 @@ final class ClaimsViewTest {
                         "tritachyon", new ClaimStats(0, 40))));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactlyInAnyOrder("hegemony", "tritachyon");
@@ -412,6 +415,7 @@ final class ClaimsViewTest {
                     .thenReturn(buildReadOf(statsByBlocId));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
                     .containsExactly(
@@ -444,6 +448,7 @@ final class ClaimsViewTest {
                     .thenReturn(buildReadOf(statsByBlocId));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
                     .containsExactly("hegemony", "tritachyon", "persean");
@@ -463,6 +468,7 @@ final class ClaimsViewTest {
                     .thenReturn(buildReadOf(Map.of()));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .items())
                     .isEmpty();
             }
@@ -526,6 +532,7 @@ final class ClaimsViewTest {
                     .thenReturn(buildReadOf(Map.of()));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .picker()
                         .sortModes())
                     .isEqualTo(ClaimSortMode.MODES);
             }
@@ -552,15 +559,38 @@ final class ClaimsViewTest {
                     .when(MapVisibilityRules::readFromLunaSettings)
                     .thenReturn(MapVisibilityRules.BASE);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock).items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock).picker().items())
                     .isEmpty();
+            }
+        }
+
+        @Test
+        void resolveBlocPickerCarriesTheClaimBoundIndexBesideTheRows() {
+            // The claim arm's index, which is the whole point of this layer having one of its own: a
+            // bloc's colonies are summed from wherever they are, so the systems named beside its row
+            // are the ones it claims - the only ones this layer paints it anything in.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+
+            try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
+                    .thenReturn(new ClaimStatsRead(
+                        Map.of("hegemony", ANY_CLAIMANT_STATS),
+                        new BlocPresenceIndex(Map.of("hegemony", Set.of("corvus")))));
+
+                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                        .presenceIndex()
+                        .readPresentSystemIds("hegemony"))
+                    .containsExactly("corvus");
             }
         }
     }
 
-    // A stubbed aggregation posing blocs and nowhere in particular. The picker is assembled from
-    // the stats half alone, so the claimed-system index beside them is left empty rather than
-    // stubbed to systems no case here asks about.
+    // A stubbed aggregation posing blocs and nowhere in particular, for the cases about the rows
+    // alone: the claimed-system index beside them is left empty rather than stubbed to systems those
+    // cases never ask about.
     private static ClaimStatsRead buildReadOf(Map<String, ClaimStats> statsByBlocId) {
         return new ClaimStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
     }

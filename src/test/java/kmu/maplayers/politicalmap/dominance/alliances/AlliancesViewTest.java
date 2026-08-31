@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
@@ -401,7 +402,7 @@ final class AlliancesViewTest {
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
                         BlocPresenceIndex.EMPTY));
 
-                assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG).items())
+                assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG).picker().items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "rebel_pact",
@@ -430,8 +431,46 @@ final class AlliancesViewTest {
                     .thenReturn(DominanceStatsRead.EMPTY);
 
                 assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
+                        .picker()
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
+            }
+        }
+
+        @Test
+        void resolveBlocPickerCarriesThePresenceOfBlocsItsGateDropped() {
+            // The index is the whole walk's, not the offered rows'. This is the view where the two
+            // differ - a lone faction is present but never listed - and trimming it to match would
+            // cost a pass to remove entries no lookup can reach, only a listed bloc being hoverable.
+            var view = spy(AlliancesView.INSTANCE);
+
+            doReturn(ALLIANCE_GROUPING)
+                .when(view)
+                .resolveGrouping();
+
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getFaction("rebels"))
+                .thenReturn(mock(FactionAPI.class));
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock
+                    .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(new DominanceStatsRead(
+                        Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
+                        new BlocPresenceIndex(Map.of(
+                            "rebel_pact", Set.of("corvus"),
+                            "hegemony", Set.of("askonia")))));
+
+                var read = view.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG);
+
+                assertThat(read.picker().items())
+                    .extracting(RankedBloc::itemId)
+                    .containsExactly("rebel_pact");
+
+                assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
+                    .containsExactly("askonia");
             }
         }
     }

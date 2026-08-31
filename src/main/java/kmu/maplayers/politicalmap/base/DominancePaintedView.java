@@ -58,13 +58,13 @@ public interface DominancePaintedView extends PoliticalMapView {
      * itself does not carry.
      *
      * @param sector           the sector whose colonies decide who is listed; null yields an empty
-     *                         picker
+     *                         read
      * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
      *                         the strength of the very colonies the map paints it for
-     * @return this view's picker under the live weighting rule
+     * @return this view's picker and presence under the live weighting rule
      */
     @Override
-    default ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
+    default BlocPickerRead<RankedBloc<DominanceStats>> resolveBlocPicker(
             SectorAPI sector,
             ColonyVisibility colonyVisibility) {
 
@@ -86,15 +86,16 @@ public interface DominancePaintedView extends PoliticalMapView {
      * the views it paints have an entry taking it.
      *
      * @param sector           the sector whose colonies decide who is listed; null yields an empty
-     *                         picker
+     *                         read
      * @param rules            the dominance-weighting rules for this read, so a listed bloc's
      *                         score and dominations are the numbers the map paints by; who is
      *                         listed at all is decided by the colonies, not by this
      * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
      *                         the strength of the very colonies the map paints it for
-     * @return this view's picker, its blocs in the order the sector walk surfaces them
+     * @return this view's picker, its blocs in the order the sector walk surfaces them, beside the
+     *         systems that walk found each bloc living in
      */
-    default ListPicker<RankedBloc<DominanceStats>> resolveBlocPicker(
+    default BlocPickerRead<RankedBloc<DominanceStats>> resolveBlocPicker(
             SectorAPI sector,
             DominanceRules rules,
             ColonyVisibility colonyVisibility) {
@@ -105,13 +106,20 @@ public interface DominancePaintedView extends PoliticalMapView {
         var grouping = resolveGrouping();
         var pass = DominancePass.over(sector, rules, colonyVisibility, grouping);
 
-        return new ListPicker<>(
-            buildSelectableBlocs(
-                sector,
-                grouping,
-                DominanceStatsAggregator.aggregateDominanceStats(pass).statsByBlocId(),
-                resolveSelectableBlocGate(grouping)),
-            DominanceSortMode.MODES);
+        // One aggregation feeds both halves: the rows come off the totals and the presence off the
+        // very entries that were counted into them, so a row's presence number and the systems
+        // behind it are the same reading of the sector rather than two walks that could disagree.
+        var statsRead = DominanceStatsAggregator.aggregateDominanceStats(pass);
+
+        return new BlocPickerRead<>(
+            new ListPicker<>(
+                buildSelectableBlocs(
+                    sector,
+                    grouping,
+                    statsRead.statsByBlocId(),
+                    resolveSelectableBlocGate(grouping)),
+                DominanceSortMode.MODES),
+            statsRead.presenceIndex());
     }
 
     /**

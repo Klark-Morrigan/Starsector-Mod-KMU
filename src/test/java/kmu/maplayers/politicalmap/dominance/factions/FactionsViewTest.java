@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
@@ -309,6 +310,7 @@ final class FactionsViewTest {
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_STATS)));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
@@ -334,6 +336,7 @@ final class FactionsViewTest {
                     .thenReturn(buildReadOf(Map.of("luddic_path", ANY_STATS)));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc("luddic_path", "Path", null),
@@ -362,6 +365,7 @@ final class FactionsViewTest {
                     .thenReturn(buildReadOf(statsByBlocId));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .picker()
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
                     .containsExactly(
@@ -382,6 +386,7 @@ final class FactionsViewTest {
                     .thenReturn(DominanceStatsRead.EMPTY);
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .picker()
                         .items())
                     .isEmpty();
             }
@@ -400,15 +405,40 @@ final class FactionsViewTest {
                     .thenReturn(DominanceStatsRead.EMPTY);
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .picker()
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
             }
         }
+
+        @Test
+        void resolveBlocPickerCarriesTheDominanceWalksPresenceBesideTheRows() {
+            // Where a bloc lives comes off the very walk that totalled its row, handed on rather
+            // than derived a second time here. Anything else would be a second answer to "where is
+            // this bloc" beside rows already carrying the count of it.
+            var sectorMock = mock(SectorAPI.class);
+
+            stubNamedFaction(sectorMock, "hegemony", "Hegemony");
+
+            try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
+
+                aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
+                    .thenReturn(new DominanceStatsRead(
+                        Map.of("hegemony", ANY_STATS),
+                        new BlocPresenceIndex(Map.of(
+                            "hegemony", Set.of("corvus", "askonia")))));
+
+                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                        .presenceIndex()
+                        .readPresentSystemIds("hegemony"))
+                    .containsExactly("corvus", "askonia");
+            }
+        }
     }
 
-    // A stubbed aggregation posing blocs and nowhere in particular. The picker is assembled from
-    // the stats half alone, so the presence index beside them is left empty rather than stubbed to
-    // systems no case here asks about.
+    // A stubbed aggregation posing blocs and nowhere in particular, for the cases about the rows
+    // alone: the presence index beside them is left empty rather than stubbed to systems those
+    // cases never ask about.
     private static DominanceStatsRead buildReadOf(Map<String, DominanceStats> statsByBlocId) {
         return new DominanceStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
     }

@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
-import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -183,6 +182,11 @@ public interface PoliticalMapView {
      * {@link kmu.maplayers.base.sidebar.FilterSelection} heals a stale saved selection against, so a
      * bloc that is no longer here is no longer spotlightable.
      *
+     * <p>Answered as a {@link BlocPickerRead}, so the same walk hands back where each bloc was found
+     * beside the rows it was found for. A view resolves that index from the aggregation it already
+     * runs for the numbers, which is what lets a surface light a bloc's systems without a second read
+     * of the sector - and without the two readings being able to disagree.
+     *
      * <p>The list and the vocabulary are answered together because a view owns its picker end to
      * end: which blocs it offers, what numbers those blocs carry, and which metrics rank them are
      * one decision, and a view painted by one mechanic must never be handed a vocabulary reading
@@ -203,22 +207,22 @@ public interface PoliticalMapView {
      * {@link kmu.maplayers.politicalmap.base.politics.holders.HolderProvider} leaves the same rule
      * off the holder seam.
      *
-     * <p>The spotlight is optional: the default offers an empty picker, so a view with no list to
+     * <p>The spotlight is optional: the default offers an empty read, so a view with no list to
      * spotlight inherits one rather than overriding with two arguments it would ignore. A view
      * opts into the spotlight by overriding this, the same way it opts into its own body controls.
      *
      * @param sector           the sector whose colonies decide who is listed; null yields an empty
-     *                         picker
+     *                         read
      * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
      *                         the strength of the very colonies the map paints it for
      * @return this view's picker - its blocs in the order the source walk surfaces them, and the
-     *         vocabulary ranking them; empty when no bloc qualifies, and empty by default for a view
-     *         with no spotlight
+     *         vocabulary ranking them - beside where that walk found each bloc; empty when no bloc
+     *         qualifies, and empty by default for a view with no spotlight
      */
-    default ListPicker<?> resolveBlocPicker(
+    default BlocPickerRead<?> resolveBlocPicker(
             SectorAPI sector,
             ColonyVisibility colonyVisibility) {
-        return ListPicker.empty();
+        return BlocPickerRead.empty();
     }
 
     /**
@@ -226,10 +230,11 @@ public interface PoliticalMapView {
      * sidebar and the stale-selection heal call, so neither has to read the toggles a running pass
      * would already hold.
      *
-     * @param sector the sector whose colonies decide who is listed; null yields an empty picker
-     * @return this view's picker under the player's live settings; empty when no bloc qualifies
+     * @param sector the sector whose colonies decide who is listed; null yields an empty read
+     * @return this view's picker and presence under the player's live settings; empty when no bloc
+     *         qualifies
      */
-    default ListPicker<?> resolveBlocPicker(SectorAPI sector) {
+    default BlocPickerRead<?> resolveBlocPicker(SectorAPI sector) {
         return resolveBlocPicker(
             sector,
             MapVisibilityRules.readFromLunaSettings().colonyVisibility());
