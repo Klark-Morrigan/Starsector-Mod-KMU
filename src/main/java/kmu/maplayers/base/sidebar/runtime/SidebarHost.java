@@ -42,6 +42,21 @@ public interface SidebarHost {
     boolean isOverlayShowing();
 
     /**
+     * How strongly the panel should paint on this host's screen this frame - the draw's counterpart to
+     * the crisp gate above, which stays what input and hit-testing answer to.
+     *
+     * <p>The two part company only while something is claiming the screen with a fade of its own. Input
+     * has to stand down the moment such a claimant appears, or the panel goes on taking clicks meant for
+     * it; the paint has to follow it down, or the panel cuts out against a backdrop that is still
+     * darkening. Everything else moves them together - a screen that is not up paints nothing and routes
+     * nothing, and a claimant that snaps takes both at once.
+     *
+     * @return the panel's alpha this frame, 0..1: 0 leaves the screen untouched, and anything above it
+     *         draws, whether or not the gate above still admits input
+     */
+    float resolveOverlayFade();
+
+    /**
      * @return the placement to draw and hit-test this frame, or {@code null} when there is nothing to draw
      *         (the tab font cannot load, or the anchor is gone); the caller then draws and consumes nothing
      */

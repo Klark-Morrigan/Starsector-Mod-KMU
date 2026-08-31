@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
+import kmlib.starsector.ui.coreui.ModalDialogState;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
 import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
@@ -12,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static kmlib.testfixtures.starsector.settings.StubbedModIds.CONSOLE_COMMANDS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins that either claimant alone stands the panel down, and that neither is asked to speak for the other.
@@ -26,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the sort of cost that only ever shows up as a frame rate.
  */
 class ScreenClaimTest {
+
+    private static final float TOLERANCE = 0.0001f;
 
     @Nested
     class IsScreenClaimed {
@@ -60,6 +64,15 @@ class ScreenClaimTest {
         }
 
         @Test
+        void isScreenClaimedIsTrueForAModalStillFadingIn() {
+            // The half that must not follow the fade: a modal takes every event outside its box from
+            // the frame it is raised, when its brightness is still nothing. Read off the strength
+            // below, the panel would go on routing clicks into a dialog already eating them.
+            assertThat(ScreenClaims.createScreenClaimedByAModalAt(0f).isScreenClaimed())
+                .isTrue();
+        }
+
+        @Test
         void isScreenClaimedLeavesTheModalReadUntakenWhileAConsoleIsUp() {
             // The modal read walks the core UI's children; the console read is a field. Asked in the other
             // order the walk is paid for on every frame, whatever else is on screen.
@@ -69,7 +82,7 @@ class ScreenClaimTest {
                 new ConsoleCommandsOverlay(consolePresenceFake),
                 () -> {
                     modalReadCount.incrementAndGet();
-                    return false;
+                    return ModalDialogState.NONE;
                 });
 
             consolePresenceFake.openConsole();
@@ -78,6 +91,40 @@ class ScreenClaimTest {
 
             assertThat(modalReadCount)
                 .hasValue(0);
+        }
+    }
+
+    @Nested
+    class ResolveClaimStrength {
+
+        @Test
+        void resolveClaimStrengthFollowsAModalThroughItsOwnFade() {
+            // The whole reason this sits beside the crisp read: the modal darkens the screen by this
+            // same curve, so a panel painted at what is left of it thins as the backdrop deepens.
+            assertThat(ScreenClaims.createScreenClaimedByAModalAt(0.4f).resolveClaimStrength())
+                .isCloseTo(0.4f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveClaimStrengthIsNothingOnAnUnclaimedScreen() {
+
+            assertThat(ScreenClaims.createUnclaimedScreen().resolveClaimStrength())
+                .isCloseTo(0f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveClaimStrengthIsFullForAConsoleThatReportsNoFade() {
+            // A claimant that snaps is one the panel should snap with. Inventing a fade for the
+            // console would leave the panel half dissolved against something that never moved.
+            var consolePresenceFake = new ConsoleOverlayPresenceFake();
+            var claim = ScreenClaims
+                .createClaimOverConsole(new ConsoleCommandsOverlay(consolePresenceFake));
+
+            consolePresenceFake.openConsole();
+
+            ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
+                assertThat(claim.resolveClaimStrength())
+                    .isCloseTo(1f, within(TOLERANCE)));
         }
     }
 }

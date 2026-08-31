@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
+import kmlib.starsector.ui.coreui.ModalDialogState;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
 
 /**
@@ -13,6 +14,9 @@ import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
  */
 final class ScreenClaims {
 
+    // A modal wholly in place, which is where one rests once its fade has run.
+    private static final float FULLY_RAISED = 1f;
+
     private ScreenClaims() {
     }
 
@@ -21,9 +25,22 @@ final class ScreenClaims {
         return createClaimOverConsole(createClosedConsole());
     }
 
-    /** A screen claimed by a modal a core screen has raised in front of itself. */
+    /** A screen claimed by a modal a core screen has raised in front of itself, fully in place. */
     static ScreenClaim createScreenClaimedByAModal() {
-        return new ScreenClaim(createClosedConsole(), () -> true);
+        return createScreenClaimedByAModalAt(FULLY_RAISED);
+    }
+
+    /**
+     * A screen claimed by a modal part way through its own fade, which is the state the panel has to
+     * follow rather than snap through.
+     *
+     * @param brightness how far through that fade the modal stands, 0..1
+     * @return a claim reporting it as showing at that brightness
+     */
+    static ScreenClaim createScreenClaimedByAModalAt(float brightness) {
+        return new ScreenClaim(
+            createClosedConsole(),
+            () -> new ModalDialogState(true, brightness));
     }
 
     /**
@@ -34,7 +51,7 @@ final class ScreenClaims {
      * @return a claim over it alone
      */
     static ScreenClaim createClaimOverConsole(ConsoleCommandsOverlay consoleOverlay) {
-        return new ScreenClaim(consoleOverlay, () -> false);
+        return new ScreenClaim(consoleOverlay, () -> ModalDialogState.NONE);
     }
 
     // A console read that answers shut, for the claims whose console half is not what they are about. Its

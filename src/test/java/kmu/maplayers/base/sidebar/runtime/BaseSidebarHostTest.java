@@ -272,12 +272,88 @@ final class BaseSidebarHostTest {
         }
 
         @Test
+        void isOverlayShowingIsFalseFromTheFirstFrameOfAClaimStillFadingIn() {
+            // Where the gate and the fade below deliberately part: input has to go the instant a
+            // claimant appears, so the crisp read cannot wait for the fade to climb. A gate derived
+            // from the fade would leave the panel routing for every frame the modal was arriving.
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModalAt(0f));
+
+            assertThat(host.isOverlayShowing())
+                .isFalse();
+        }
+
+        @Test
         void isOverlayShowingLeavesTheScreenUnreadWhileItIsClaimed() {
             // A screen read walks live widgets, so the claim is asked first and the walk skipped while the
             // panel is standing down anyway.
             var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
 
             host.isOverlayShowing();
+
+            assertThat(host.screenReadCount)
+                .isZero();
+        }
+    }
+
+    @Nested
+    class ResolveOverlayFade {
+
+        @Test
+        void resolveOverlayFadeIsFullOnAShowingScreenNothingHasClaimed() {
+
+            var host = createHostOnAShowingScreen(ScreenClaims.createUnclaimedScreen());
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(1f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeLeavesWhatAClaimHasNotTakenYet() {
+            // The point of the pair: a modal four tenths of the way in leaves the panel painting at
+            // six, so it thins against a backdrop deepening at the same rate rather than cutting out.
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModalAt(0.4f));
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(0.6f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeStillPaintsFullyOnTheFirstFrameOfAClaim() {
+            // The same frame the gate above already refuses. The panel is whole here and the modal
+            // has drawn nothing yet, which is what makes the two answers differ rather than one of
+            // them being wrong.
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModalAt(0f));
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(1f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeIsNothingUnderAClaimFullyInPlace() {
+
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(0f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeIsNothingOffTheHostsScreen() {
+            // No screen, no panel, and no fade to run: a host whose screen is down paints nothing at
+            // once rather than dissolving out of a frame it was never in.
+            var host = createHost(mock(ActiveLayerSelection.class));
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(0f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeLeavesTheScreenUnreadUnderAFullClaim() {
+            // The gate's short-circuit, kept: a fully claimed screen paints nothing whichever screen
+            // it is, so the widget walk is skipped here exactly as it is there.
+            var host = createHostOnAShowingScreen(ScreenClaims.createScreenClaimedByAModal());
+
+            host.resolveOverlayFade();
 
             assertThat(host.screenReadCount)
                 .isZero();

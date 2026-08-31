@@ -15,6 +15,7 @@ import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.render.gl.tabs.TabPanelRenderer;
 import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
+import kmlib.starsector.ui.widgets.PanelAlpha;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.settings.KmuMapLayerSettings;
@@ -58,6 +59,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     // The collapse fraction a fully docked body reports; the eased curve lands exactly on it at the end,
     // so an equality-or-above test reads "settled at the docked rail" rather than "still folding".
     private static final float FULLY_DOCKED_FRACTION = 1f;
+
+    // The alpha at which the panel is no longer on screen at all, so the frame is given up rather than
+    // spent drawing nothing.
+    private static final float HIDDEN = 0f;
 
     // The screen this renderer draws the sidebar on: its gate, placement, controller, and view-state text.
     private final SidebarHost host;
@@ -113,9 +118,15 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
 
+        // The paint's own gate rather than the input one: a claimant that fades in over the screen leaves
+        // the panel drawing, thinning with it, for the frames its own fade is running - so the panel
+        // dissolves against the deepening backdrop instead of cutting out ahead of it. Input has already
+        // gone by then, on the crisp gate the input listener reads.
+        var fade = host.resolveOverlayFade();
+
         // The only pass composited after the entire core screen (and its tooltips), so it is the sole layer
         // the opaque core-UI screen cannot occlude - the panel has to draw here.
-        if (!host.isOverlayShowing()) {
+        if (fade <= HIDDEN) {
 
             // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
             // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
@@ -163,7 +174,11 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             elapsedSeconds,
             HoverFade.DEFAULT_DURATIONS);
 
-        var opacity = KmuMapLayerSettings.getMapSidebarBackgroundOpacity();
+        // The panel's look and its presence, kept apart: the first is the player's translucency setting,
+        // worn for as long as the panel is up, the second how much of the panel is there at all this
+        // frame. The tab row honours the second alone, which is what stops a row standing solid over a
+        // body dissolving beneath it.
+        var alpha = new PanelAlpha(KmuMapLayerSettings.getMapSidebarBackgroundOpacity(), fade);
 
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
         // never seen is diagnosed from the numbers rather than another run.
@@ -176,7 +191,9 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             + " box="
             + formatRect(placement.body().box())
             + " opacity="
-            + opacity);
+            + alpha.bodyOpacity()
+            + " fade="
+            + alpha.panelFade());
 
         // The live notch state: the collapse fraction the layout above was resolved at, and how far the
         // handle's hover has faded against that same placement, so the drawn fold and the lit handle match
@@ -206,7 +223,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // the pointer is.
             host.getController().getInteractionSources(),
             notchState,
-            opacity);
+            alpha);
 
         // After the panel's own paint, and only after it: the repaint's whole purpose is to land above
         // the pixels the call above just wrote.

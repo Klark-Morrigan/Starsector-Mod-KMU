@@ -44,6 +44,11 @@ import java.util.List;
  */
 public abstract class BaseSidebarHost implements SidebarHost {
 
+    // A screen wholly claimed, and the panel's alpha on one: the two ends of the same scale, named
+    // apart because one is what a claim reports and the other what the panel is left painting at.
+    private static final float FULLY_CLAIMED = 1f;
+    private static final float HIDDEN = 0f;
+
     // Where this host's panel fold is read from and recorded to. Supplied by the concrete host, so the
     // frozen memory key and the fold the screen opens at stay with the screen that owns them.
     private final SidebarFoldSelection foldSelection;
@@ -137,6 +142,28 @@ public abstract class BaseSidebarHost implements SidebarHost {
         // likelier order would be the reverse - the panel's screens are off far more often than anything
         // claims them - but it would spend a walk to save a read.
         return !screenClaim.isScreenClaimed() && isHostScreenShowing();
+    }
+
+    /**
+     * The paint's half of the same pair, so a claimant that fades takes the panel with it rather than
+     * cutting it away. Composed here for the reason the gate is: one answer, and only
+     * {@link #isHostScreenShowing()} differs per screen.
+     *
+     * @return the panel's alpha this frame
+     */
+    @Override
+    public final float resolveOverlayFade() {
+
+        // Asked in the gate's own order, and short-circuited at the same place: a fully claimed screen
+        // paints nothing whatever screen it is, so the widget walk is skipped exactly as it is there.
+        var claimStrength = screenClaim.resolveClaimStrength();
+        if (claimStrength >= FULLY_CLAIMED) {
+            return HIDDEN;
+        }
+
+        return isHostScreenShowing()
+            ? FULLY_CLAIMED - claimStrength
+            : HIDDEN;
     }
 
     /**

@@ -2,8 +2,9 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
+import kmlib.starsector.ui.coreui.ModalDialogState;
 
-import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * Whether something other than the sidebar has claimed the screen this frame - the half of the panel's
@@ -43,27 +44,69 @@ public final class ScreenClaim {
      */
     public static final ScreenClaim INSTANCE = new ScreenClaim(
         ConsoleCommandsOverlay.INSTANCE,
-        CoreUiDialogView::isModalDialogShowing);
+        CoreUiDialogView::resolveModalDialogState);
+
+    // A claimant wholly in place, which is what anything that cannot report a fade of its own counts as.
+    private static final float FULLY_CLAIMED = 1f;
+
+    // Nothing claiming the screen, so nothing of a claimant is on it.
+    private static final float UNCLAIMED = 0f;
 
     // Whether a console has taken the keyboard. Held as the class rather than behind a role of its own,
     // which is that class's own stated stance: there is one console, so a role here would have exactly
     // one implementation. What varies underneath it is the console state, which it takes standing in.
     private final ConsoleCommandsOverlay consoleOverlay;
 
-    // Whether a core screen has raised a modal in front of itself. A supplier rather than a named type,
-    // the live read being one static method and a suite wanting nothing more than the two answers.
-    private final BooleanSupplier isModalDialogShowing;
+    // What a modal a core screen has raised in front of itself is doing - whether it is there, and how
+    // far through its fade. One read rather than two, so the presence a claim stands input down on and
+    // the fade it hands the draw cannot come off two walks taken either side of a modal being raised.
+    private final Supplier<ModalDialogState> modalDialogState;
 
-    ScreenClaim(ConsoleCommandsOverlay consoleOverlay, BooleanSupplier isModalDialogShowing) {
+    ScreenClaim(ConsoleCommandsOverlay consoleOverlay, Supplier<ModalDialogState> modalDialogState) {
         this.consoleOverlay = consoleOverlay;
-        this.isModalDialogShowing = isModalDialogShowing;
+        this.modalDialogState = modalDialogState;
     }
 
     /**
-     * @return whether anything has claimed the screen this frame, on which the panel neither draws nor
-     *         routes input; false when nothing has, and false whenever a claim cannot be established
+     * Whether anything has claimed the screen this frame - the crisp answer, taken the moment a claimant
+     * appears rather than as it settles in, which is what the panel's input and hit-testing stand down on.
+     * A modal takes every event outside its own box from the frame it is raised, so waiting for its fade
+     * would leave the panel routing over a dialog already eating the player's clicks.
+     *
+     * @return whether anything has claimed the screen, and false whenever a claim cannot be established
      */
     public boolean isScreenClaimed() {
-        return consoleOverlay.isOpen() || isModalDialogShowing.getAsBoolean();
+        return consoleOverlay.isOpen() || modalDialogState.get().isShowing();
+    }
+
+    /**
+     * How far in whatever claimed the screen stands, for the panel's <em>paint</em> alone - 0 with the
+     * screen unclaimed, 1 with a claimant wholly in place, and the values between while one is arriving
+     * or leaving.
+     *
+     * <p>Separate from the crisp answer above because the two are owed different things. Input has to go
+     * the instant a claimant appears; the panel dissolving in step with it is what stops the eye seeing a
+     * cut. A modal reports its own fade and the panel rides it exactly, that same curve being what the
+     * modal darkens the screen by - so the panel thins as the backdrop deepens instead of vanishing
+     * ahead of it.
+     *
+     * <p>A console reports no fade of its own, so it counts as wholly in place from the moment it opens
+     * and the panel goes at once. That is not a shortcoming to correct here: a claimant that snaps is one
+     * the panel should snap with, and inventing a fade for it would put the panel halfway through a
+     * dissolve the thing above it never performed.
+     *
+     * @return how far the claim stands, 0..1, and 0 whenever none can be established
+     */
+    public float resolveClaimStrength() {
+
+        if (consoleOverlay.isOpen()) {
+            return FULLY_CLAIMED;
+        }
+
+        var modal = modalDialogState.get();
+
+        return modal.isShowing()
+            ? modal.brightness()
+            : UNCLAIMED;
     }
 }
