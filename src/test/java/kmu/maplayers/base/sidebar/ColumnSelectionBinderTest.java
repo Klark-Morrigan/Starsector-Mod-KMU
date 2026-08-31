@@ -4,7 +4,6 @@ import kmlib.starsector.ui.widgets.lists.ListColumns;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
@@ -22,7 +21,8 @@ final class ColumnSelectionBinderTest {
 
         @Test
         void resolveStoredColumnsPassesTheStoredKeyToTheChoice() {
-            try (MockedStatic<ColumnSelection> selectionMock = mockStatic(ColumnSelection.class)) {
+
+            try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
                 selectionMock
                     .when(ColumnSelection::getColumnCountKey)
@@ -39,7 +39,8 @@ final class ColumnSelectionBinderTest {
 
         @Test
         void storeColumnsWritesThePickedChoicesKey() {
-            try (MockedStatic<ColumnSelection> selectionMock = mockStatic(ColumnSelection.class)) {
+
+            try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
                 ColumnSelectionBinder.storeColumns(ListColumns.TWO);
 

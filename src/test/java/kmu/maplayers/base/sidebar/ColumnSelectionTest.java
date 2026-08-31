@@ -6,7 +6,6 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -22,6 +21,7 @@ import static org.mockito.Mockito.when;
  * shipping.
  */
 final class ColumnSelectionTest {
+
     // The save-serialised key, pinned as a literal: renaming it resets every existing save's column
     // choice, so a change must break this test first.
     private static final String COLUMN_COUNT_KEY = "$kmu_map_list_columns";
@@ -33,14 +33,22 @@ final class ColumnSelectionTest {
 
         @Test
         void getColumnCountKeyReturnsTheStoredKey() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
-                when(memoryMock.contains(COLUMN_COUNT_KEY)).thenReturn(true);
-                when(memoryMock.getString(COLUMN_COUNT_KEY)).thenReturn(CHOICE_KEY);
 
-                assertThat(ColumnSelection.getColumnCountKey()).isEqualTo(CHOICE_KEY);
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(COLUMN_COUNT_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(COLUMN_COUNT_KEY))
+                    .thenReturn(CHOICE_KEY);
+
+                assertThat(ColumnSelection.getColumnCountKey())
+                    .isEqualTo(CHOICE_KEY);
             }
         }
 
@@ -48,23 +56,30 @@ final class ColumnSelectionTest {
         void getColumnCountKeyIsNullWhenNoCountIsStored() {
             // A save that never picked a count holds no key, which the column choice resolves to its
             // single-column default.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                assertThat(ColumnSelection.getColumnCountKey()).isNull();
+                var memoryMock = mock(MemoryAPI.class);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                assertThat(ColumnSelection.getColumnCountKey())
+                    .isNull();
             }
         }
 
         @Test
         void getColumnCountKeyIsNullBeforeTheSectorExists() {
             // No sector means no save to read, so nothing can have been picked yet.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                assertThat(ColumnSelection.getColumnCountKey()).isNull();
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(null);
+
+                assertThat(ColumnSelection.getColumnCountKey())
+                    .isNull();
             }
         }
     }
@@ -74,14 +89,19 @@ final class ColumnSelectionTest {
 
         @Test
         void selectColumnCountPersistsTheKey() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
 
                 ColumnSelection.selectColumnCount(CHOICE_KEY);
 
-                verify(memoryMock).set(COLUMN_COUNT_KEY, CHOICE_KEY);
+                verify(memoryMock)
+                    .set(COLUMN_COUNT_KEY, CHOICE_KEY);
             }
         }
 
@@ -89,9 +109,11 @@ final class ColumnSelectionTest {
         void selectColumnCountNoOpsBeforeTheSectorExists() {
             // No sector means no save to write into, so the pick is silently dropped rather than
             // dereferencing a null sector.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
-                memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(null);
 
                 ColumnSelection.selectColumnCount(CHOICE_KEY);
 

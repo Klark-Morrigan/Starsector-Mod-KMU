@@ -38,8 +38,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
@@ -426,7 +427,8 @@ final class FactionsViewTest {
                     .thenReturn(new DominanceStatsRead(
                         Map.of("hegemony", ANY_STATS),
                         new BlocPresenceIndex(Map.of(
-                            "hegemony", Set.of("corvus", "askonia")))));
+                            "hegemony",
+                            new LinkedHashSet<>(List.of("corvus", "askonia"))))));
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .presenceIndex()

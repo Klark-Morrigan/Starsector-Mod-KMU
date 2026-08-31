@@ -309,34 +309,6 @@ public interface PoliticalMapView {
         return blocId -> true;
     }
 
-    // The row half of the assembly: each gated bloc paired with its metrics, in walk order. Private
-    // because the pairing is only ever half an answer - a list of rows with no vocabulary cannot be
-    // ranked and no presence beside it cannot be lit - so the whole read is the only thing worth
-    // offering a view.
-    private <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
-            SectorAPI sector,
-            HolderGrouping grouping,
-            Map<String, S> statsByBlocId) {
-
-        var isSelectable = resolveSelectableBlocGate(grouping);
-        var selectableBlocs = new ArrayList<RankedBloc<S>>();
-
-        for (var entry : statsByBlocId.entrySet()) {
-            var blocId = entry.getKey();
-            if (!isSelectable.test(blocId)) {
-                continue;
-            }
-            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
-            var identity = new SelectableBloc(
-                blocId,
-                resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT),
-                FactionCrests.resolveCrestPath(colourFaction));
-
-            selectableBlocs.add(new RankedBloc<>(identity, entry.getValue()));
-        }
-        return selectableBlocs;
-    }
-
     /**
      * The body controls this view contributes to the political-map tab, appended beneath the shared
      * sub-options and the view selector while this view is the selected one. A view that adds no
@@ -367,5 +339,33 @@ public interface PoliticalMapView {
      */
     default Optional<MapHoverTooltip> resolveHoverTooltip() {
         return Optional.empty();
+    }
+
+    // The row half of the assembly: each gated bloc paired with its metrics, in walk order. Private
+    // because the pairing is only ever half an answer - a list of rows with no vocabulary cannot be
+    // ranked and no presence beside it cannot be lit - so the whole read is the only thing worth
+    // offering a view.
+    private <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            Map<String, S> statsByBlocId) {
+
+        var isSelectable = resolveSelectableBlocGate(grouping);
+        var selectableBlocs = new ArrayList<RankedBloc<S>>();
+
+        for (var entry : statsByBlocId.entrySet()) {
+            var blocId = entry.getKey();
+            if (!isSelectable.test(blocId)) {
+                continue;
+            }
+            var colourFaction = sector.getFaction(grouping.resolveColourFactionId(blocId));
+            var identity = new SelectableBloc(
+                blocId,
+                resolveName(blocId, grouping, sector, FactionNameFormatChoice.SHORT),
+                FactionCrests.resolveCrestPath(colourFaction));
+
+            selectableBlocs.add(new RankedBloc<>(identity, entry.getValue()));
+        }
+        return selectableBlocs;
     }
 }

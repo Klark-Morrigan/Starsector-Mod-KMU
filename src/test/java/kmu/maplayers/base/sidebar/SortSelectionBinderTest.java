@@ -6,7 +6,6 @@ import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 
@@ -35,7 +34,8 @@ final class SortSelectionBinderTest {
 
         @Test
         void resolveStoredSortPassesTheScopesStoredKeysToTheModel() {
-            try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
+
+            try (var selectionMock = mockStatic(SortSelection.class)) {
 
                 selectionMock
                     .when(() -> SortSelection.getSortModeKeyOf(SCOPE_ID))
@@ -58,7 +58,7 @@ final class SortSelectionBinderTest {
             // Both halves are written whichever one a click moved, so the save never holds this
             // pick's direction beside an earlier pick's mode, and both land in the one scope so a
             // pick made under one picker never reorders another's list.
-            try (MockedStatic<SortSelection> selectionMock = mockStatic(SortSelection.class)) {
+            try (var selectionMock = mockStatic(SortSelection.class)) {
 
                 SortSelectionBinder.storeSort(
                     SCOPE_ID,

@@ -9,7 +9,6 @@ import kmu.maplayers.base.refresh.MapLayerRefresh;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -48,10 +47,11 @@ final class FilterSelectionTest {
 
         @Test
         void getSelectedIdOfReturnsTheStoredId() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -69,10 +69,10 @@ final class FilterSelectionTest {
         @Test
         void getSelectedIdOfIsNullWhenNoIdIsStored() {
             // A scope that never picked an id holds no key, which is the un-filtered state.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -86,10 +86,10 @@ final class FilterSelectionTest {
         void getSelectedIdOfDoesNotCrossReadAnotherScopesSelection() {
             // Per-scope isolation: a selection stored under one scope is invisible to another, so
             // switching scopes never inherits the previous scope's choice.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -107,8 +107,7 @@ final class FilterSelectionTest {
         @Test
         void getSelectedIdOfIsNullBeforeTheSectorExists() {
             // No sector means no save to read, so nothing can have been picked yet.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
@@ -125,15 +124,17 @@ final class FilterSelectionTest {
 
         @Test
         void selectIdPersistsTheChoiceAndRequestsARefresh() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
                 var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
+
                 FilterSelection.selectId(SCOPE_ID, SELECTED_ID);
 
                 verify(memoryMock)
@@ -150,14 +151,14 @@ final class FilterSelectionTest {
         void selectIdNoOpsBeforeTheSectorExists() {
             // No sector means no save to write into and nothing painting, so the write and the
             // refresh are both skipped rather than bumping a revision no layer would read.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
                 var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
+
                 FilterSelection.selectId(SCOPE_ID, SELECTED_ID);
 
                 assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
@@ -171,10 +172,11 @@ final class FilterSelectionTest {
 
         @Test
         void clearSelectionDropsTheStoredIdAndRequestsARefresh() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -183,10 +185,12 @@ final class FilterSelectionTest {
                     .thenReturn(true);
 
                 var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
+
                 FilterSelection.clearSelection(SCOPE_ID);
 
                 verify(memoryMock)
                     .unset(SELECTED_ID_KEY);
+
                 assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
                     .isNotEqualTo(revisionBefore);
             }
@@ -196,19 +200,21 @@ final class FilterSelectionTest {
         void clearSelectionNoOpsWhenNoIdIsStored() {
             // Nothing to unset and nothing to repaint when the filter was already off, so a clear on
             // an un-filtered scope neither touches memory nor bumps the revision.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
                 var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
+
                 FilterSelection.clearSelection(SCOPE_ID);
 
                 verify(memoryMock, never())
                     .unset(anyString());
+
                 assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
                     .isEqualTo(revisionBefore);
             }
@@ -219,10 +225,10 @@ final class FilterSelectionTest {
             // Per-scope isolation on the write side: clearing a scope with no selection of its own
             // unsets no key - in particular not the other scope's slot - and bumps no revision, even
             // while that other scope holds an id.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -231,10 +237,12 @@ final class FilterSelectionTest {
                     .thenReturn(true);
 
                 var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
+
                 FilterSelection.clearSelection(OTHER_SCOPE_ID);
 
                 verify(memoryMock, never())
                     .unset(anyString());
+
                 assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
                     .isEqualTo(revisionBefore);
             }
@@ -242,14 +250,15 @@ final class FilterSelectionTest {
 
         @Test
         void clearSelectionNoOpsBeforeTheSectorExists() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
                 var revisionBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER);
+
                 FilterSelection.clearSelection(SCOPE_ID);
 
                 assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER))
@@ -265,10 +274,10 @@ final class FilterSelectionTest {
         void healStaleSelectionClearsAnIdThatIsNoLongerSelectable() {
             // A scope whose stored selection stopped being on offer between sessions holds a dangling
             // id; the heal drops it so the filter falls back to none.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -289,10 +298,10 @@ final class FilterSelectionTest {
         void healStaleSelectionKeepsAnIdThatIsStillSelectable() {
             // A still-valid pick survives untouched, so the scope keeps filtering to the id the
             // player last chose.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -313,10 +322,10 @@ final class FilterSelectionTest {
         void healStaleSelectionNoOpsWhenNoIdIsStored() {
             // Nothing to validate when the filter was off, so the selectable check is never consulted
             // and memory is left as it is.
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
+
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
@@ -335,8 +344,8 @@ final class FilterSelectionTest {
 
         @Test
         void healStaleSelectionNoOpsBeforeTheSectorExists() {
-            try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class)) {
+
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 memoryAccessMock
                     .when(SectorMemoryAccess::readSectorMemory)
@@ -353,5 +362,4 @@ final class FilterSelectionTest {
             }
         }
     }
-
 }

@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * each panel stands its row in is its host's, and pinned there.
  */
 final class LiveSidebarPlacementTest {
+
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
@@ -27,29 +28,37 @@ final class LiveSidebarPlacementTest {
             // distance from the screen top is (1200 - 650) + 40 = 590.
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
-            assertThat(padding.top()).isEqualTo(590);
+            assertThat(padding.top())
+                .isEqualTo(590);
         }
 
         @Test
         void computeIntelPaddingHangsTheBoxAtTheVisorTopWhenTheTopPaddingIsZero() {
+
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 0);
 
-            assertThat(padding.top()).isEqualTo(550);
+            assertThat(padding.top())
+                .isEqualTo(550);
         }
 
         @Test
         void computeIntelPaddingSitsFlushAgainstTheVisorLeftEdgeAndGrowsRightward() {
+
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
-            assertThat(padding.left()).isEqualTo(100);
-            assertThat(padding.right()).isZero();
+            assertThat(padding.left())
+                .isEqualTo(100);
+            assertThat(padding.right())
+                .isZero();
         }
 
         @Test
         void computeIntelPaddingCapsTheBodyToTheVisorBottom() {
+
             var padding = LiveSidebarPlacement.computeIntelPadding(MAP_VISOR, 1200f, 40);
 
-            assertThat(padding.bottom()).isEqualTo(50);
+            assertThat(padding.bottom())
+                .isEqualTo(50);
         }
     }
 }

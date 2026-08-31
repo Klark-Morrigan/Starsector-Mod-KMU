@@ -20,16 +20,19 @@ import java.util.Comparator;
  * exercises the same path the political modes take.
  */
 enum HazardSortMode implements ListSortMode<Hazard> {
+
     ALPHA(
         "alpha",
         "hazard_sort_alpha",
         SortDirection.ASCENDING,
         Comparator.comparing(Hazard::displayName, String.CASE_INSENSITIVE_ORDER)),
+
     SEVERITY(
         "severity",
         "hazard_sort_severity",
         SortDirection.DESCENDING,
         Comparator.comparingInt(Hazard::severity)),
+
     RADIUS(
         "radius",
         "hazard_sort_radius",

@@ -39,6 +39,7 @@ final class SortSelectionTest {
 
         @Test
         void getSortModeKeyOfReturnsTheScopesStoredKey() {
+
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -115,6 +116,7 @@ final class SortSelectionTest {
 
         @Test
         void selectSortModePersistsTheKeyUnderTheScope() {
+
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -152,6 +154,7 @@ final class SortSelectionTest {
 
         @Test
         void getSortDirectionKeyOfReturnsTheScopesStoredKey() {
+
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -215,6 +218,7 @@ final class SortSelectionTest {
 
         @Test
         void selectSortDirectionPersistsTheKeyUnderTheScope() {
+
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
