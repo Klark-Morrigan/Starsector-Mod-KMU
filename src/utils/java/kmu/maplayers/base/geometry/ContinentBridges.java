@@ -242,7 +242,7 @@ public final class ContinentBridges {
             return (from, to) -> isSharingALake(lakesOf, from, to);
         }
 
-        var continentOf = mapCellsToContinents(traced);
+        var continentOf = Coastlines.mapCellsToContinents(traced);
 
         return (from, to) -> isOneContinent(continentOf, from, to);
     }
@@ -315,32 +315,6 @@ public final class ContinentBridges {
             }
         }
         return false;
-    }
-
-    /**
-     * Which continent each cell belongs to.
-     *
-     * <p>Read off the silhouettes rather than worked out again: the coast walk already
-     * separated the cells into runs of touching neighbours - one run per continent - and that
-     * separation is precisely what a continent IS here. Grouping them a second way would be a
-     * second answer, and the two constructions on screen would stop describing one map.
-     *
-     * @param traced the coast
-     * @return the continent each cell sits on, by cell. A cell the outer walk never touched is
-     *         absent rather than present under some sentinel - which includes every cell that
-     *         faces only a lake, and is why the interior shore never asks this question
-     */
-    private static Map<Integer, Integer> mapCellsToContinents(Coastlines.TracedCoasts traced) {
-
-        var continentOf = new LinkedHashMap<Integer, Integer>();
-
-        for (var continent = 0; continent < traced.silhouettes().size(); continent++) {
-            for (var mark : traced.silhouettes().get(continent)) {
-
-                continentOf.put(mark.circle(), continent);
-            }
-        }
-        return continentOf;
     }
 
     // Whether two cells belong to the same continent, and so to the same outline.

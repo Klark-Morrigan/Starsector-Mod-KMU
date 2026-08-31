@@ -180,18 +180,48 @@ public final class VoidBridgePockets {
             SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
+        var outlines = new ArrayList<List<double[]>>();
+
+        for (var hole : findBridgeWalledHoles(sites, bridges, parameters, shaping)) {
+            outlines.add(hole.boundary());
+        }
+        return outlines;
+    }
+
+    /**
+     * The same water as {@link #findBridgeWalledPockets}, as the walk found it rather than as
+     * an outline to fill.
+     *
+     * <p>What a caller wants when the question is not what to draw: which cells the water runs
+     * against and which bridges closed it are the walk's own record, and both are gone by the
+     * time a pocket is an outline. Recovered from the outline afterwards they would be a
+     * second opinion arrived at by testing points against lines - which is the finding that
+     * strays, and the reason the walk records them in the first place.
+     *
+     * @param sites      the sites
+     * @param bridges    the bridges, as {@link VoidBridges} found them
+     * @param parameters the knobs the cells are built under
+     * @param shaping    how much of the channel each pocket gives up against the cells
+     * @return one hole per pocket a bridge helped close
+     */
+    public static List<VoidHole> findBridgeWalledHoles(
+            List<double[]> sites,
+            List<CellGap> bridges,
+            SectorGeometryParameters parameters,
+            VoidPockets.PocketShaping shaping) {
+
         // The same chord instances the walk was handed, so a hole's walls are asked about by
         // the walls themselves rather than by a set built to look like them.
         var walls = buildBridgeWalls(bridges, parameters);
-        var outlines = new ArrayList<List<double[]>>();
+        var walled = new ArrayList<VoidHole>();
 
         for (var hole : WalledVoid.traceVoidAcrossWalls(sites, walls, parameters, shaping)) {
 
             if (!WalledVoid.findClosingWalls(hole, walls.chords()).isEmpty()) {
-                outlines.add(hole.boundary());
+                walled.add(hole);
             }
         }
-        return outlines;
+        return walled;
     }
 
     /**

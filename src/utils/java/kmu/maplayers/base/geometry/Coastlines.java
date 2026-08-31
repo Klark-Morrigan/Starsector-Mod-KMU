@@ -8,8 +8,10 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.PolygonSmoothing;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -315,6 +317,37 @@ public final class Coastlines {
             runs.add(sampleMarkArc(traced.union(), mark, arcSegments));
         }
         return List.copyOf(runs);
+    }
+
+    /**
+     * Which continent each cell belongs to.
+     *
+     * <p>Read off the silhouettes rather than worked out again: the coast walk already
+     * separated the cells into runs of touching neighbours - one run per continent - and that
+     * separation is precisely what a continent IS here. Grouping them a second way would be a
+     * second answer, and everything drawn from the two would stop describing one map.
+     *
+     * <p>Keyed off the SILHOUETTES rather than off the finished coasts, which is what makes a
+     * continent's number mean the same thing to every asker. A silhouette too small to smooth
+     * into a line leaves no coast behind it, so the two lists part company from there on, and a
+     * number read off the coasts would name a different continent either side of the drop.
+     *
+     * @param traced the coast
+     * @return the continent each cell sits on, by cell. A cell the outer walk never touched is
+     *         absent rather than present under some sentinel - which includes every cell that
+     *         faces only a lake, and is why nothing asks this about an interior shore
+     */
+    public static Map<Integer, Integer> mapCellsToContinents(TracedCoasts traced) {
+
+        var continentOf = new LinkedHashMap<Integer, Integer>();
+
+        for (var continent = 0; continent < traced.silhouettes().size(); continent++) {
+            for (var mark : traced.silhouettes().get(continent)) {
+
+                continentOf.put(mark.circle(), continent);
+            }
+        }
+        return continentOf;
     }
 
     // One mark's stretch of border as points along its arc, at the density asked for. The one
