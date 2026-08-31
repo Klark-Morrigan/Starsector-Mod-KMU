@@ -55,16 +55,24 @@ binds to the same key. On the intel screen that matters: item action buttons bin
 and the tag filter uses `Q` and `Ctrl+S`. The defaults (`N`, `P`) avoid all of them, and the
 LunaLib Keycode fields are the way out of any clash a mod's intel item introduces.
 
-Only the *screen* half of that gate is per-host. `BaseSidebarHost.isOverlayShowing()` is final and
-composed - `!screenClaim.isScreenClaimed() && isHostScreenShowing()` - because the one answer gates
-the draw, the input routing and the hit-test alike, and ANDing the claim at each of the three would
-be three chances to forget it. The claim is asked first, so a screen read that walks live widgets is
-skipped while the panel is standing down anyway.
+Only the *screen* half of that answer is per-host, and there are two answers rather than one.
+`BaseSidebarHost.isOverlayShowing()` is the crisp gate - `!screenClaim.isScreenClaimed() &&
+isHostScreenShowing()` - and it is what input routing and hit-testing read, so a claimant that takes
+the pointer takes it from the panel on the frame it appears. `resolveOverlayFade()` is what the
+*draw* reads, and it is what the claim has not taken yet.
+
+They part company only while a claimant is fading. A modal takes every event outside its box from the
+frame it is raised, so input cannot wait for its fade; but the modal darkens the screen over that
+same fade, and a panel cut away at the first frame of it reads as a snap against a backdrop still
+deepening. So the panel keeps painting, thinner each frame, until the modal is fully in. A claimant
+that reports no fade - the console - takes both at once, which is right: a panel should snap with
+whatever snapped over it. Both compositions ask the claim first, so the screen read that walks live
+widgets is skipped while the panel is standing down anyway.
 
 What can claim the screen, and why any of it stands the panel down rather than being ordered above
 it, is [`ScreenClaim`](runtime/ScreenClaim.java)'s to state. What belongs here is the rest of the
-frame that goes with it: because the whole gate goes false, the renderer's early return zeroes the
-frame clock and drops the input motions, and the input listener cancels a dangling drag - so a claim
+frame that goes with it: once the fade reaches nothing, the renderer's early return zeroes the frame
+clock and drops the input motions, and the input listener cancels a dangling drag - so a claim
 arriving mid-drag leaves nothing stale behind.
 
 The claim is injected rather than reached for statically, so what a host does under one is settleable

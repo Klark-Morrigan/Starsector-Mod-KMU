@@ -34,7 +34,9 @@ import java.util.List;
  *
  * <p>Whether the sidebar is live at all is settled here too, since only half of that answer differs between
  * screens: a host says whether its own screen is up, and standing down for whatever else has claimed the
- * screen is the same rule wherever the panel draws.
+ * screen is the same rule wherever the panel draws. It is settled twice over - once crisply for input, and
+ * once as an alpha for the draw - because a claimant that fades is owed the pointer at once and the pixels
+ * only as it arrives. Both compose the same two readings, so a host still answers for its screen alone.
  *
  * <p>The controller is replaced on each load rather than mutated, because the two folds a panel can open at
  * are exactly the two constructors the widget already offers, so no reach into the collapse animation is
@@ -44,9 +46,9 @@ import java.util.List;
  */
 public abstract class BaseSidebarHost implements SidebarHost {
 
-    // A screen wholly claimed, and the panel's alpha on one: the two ends of the same scale, named
-    // apart because one is what a claim reports and the other what the panel is left painting at.
-    private static final float FULLY_CLAIMED = 1f;
+    // The two ends of the panel's own alpha: wholly painted, and gone. A claim's strength is subtracted
+    // from the first, so what a claim reports is named where claims are and never mirrored here.
+    private static final float FULLY_PAINTED = 1f;
     private static final float HIDDEN = 0f;
 
     // Where this host's panel fold is read from and recorded to. Supplied by the concrete host, so the
@@ -154,16 +156,14 @@ public abstract class BaseSidebarHost implements SidebarHost {
     @Override
     public final float resolveOverlayFade() {
 
-        // Asked in the gate's own order, and short-circuited at the same place: a fully claimed screen
-        // paints nothing whatever screen it is, so the widget walk is skipped exactly as it is there.
-        var claimStrength = screenClaim.resolveClaimStrength();
-        if (claimStrength >= FULLY_CLAIMED) {
-            return HIDDEN;
-        }
+        // What the claim has not taken. Asked in the gate's own order and short-circuited at the same
+        // place: a panel already faded out paints nothing whichever screen it is on, so the widget walk
+        // is skipped exactly as it is there.
+        var fade = FULLY_PAINTED - screenClaim.resolveClaimStrength();
 
-        return isHostScreenShowing()
-            ? FULLY_CLAIMED - claimStrength
-            : HIDDEN;
+        return fade <= HIDDEN || !isHostScreenShowing()
+            ? HIDDEN
+            : fade;
     }
 
     /**

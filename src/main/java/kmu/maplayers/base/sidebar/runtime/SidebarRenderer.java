@@ -23,14 +23,21 @@ import kmu.settings.KmuMapLayerSettings;
 import org.apache.log4j.Logger;
 
 /**
- * Draws the map-layer sidebar for one {@link SidebarHost} as a campaign UI listener: it gates on the
- * host, advances the host's collapse handle off a wall clock, resolves the host's placement, and hands it
+ * Draws the map-layer sidebar for one {@link SidebarHost} as a campaign UI listener: it reads the host's
+ * fade, advances the host's collapse handle off a wall clock, resolves the host's placement, and hands it
  * to the reusable KMLib {@link TabPanelRenderer} to paint. The panel's actual paint - the bordered frame,
  * the vanilla-styled tab header, the body controls, the scrollbar, and the collapse handle - is the
- * renderer's; this class owns only the wiring KMLib cannot: when to draw (the host's gate), advancing the
- * panel's animations off real time (the campaign is paused while these screens are open, so a game-time
- * delta would freeze the fold and every input motion alike), and the view-state log. One instance per
- * host, so the sector map and the intel screen each get their own frame clock and log dedupe.
+ * renderer's; this class owns only the wiring KMLib cannot: how strongly to draw (the host's fade),
+ * advancing the panel's animations off real time (the campaign is paused while these screens are open, so
+ * a game-time delta would freeze the fold and every input motion alike), and the view-state log. One
+ * instance per host, so the sector map and the intel screen each get their own frame clock and log dedupe.
+ *
+ * <p>The fade rather than the host's gate, and the difference is the whole of what this pass reads
+ * differently from the input listener beside it: a claimant taking the screen takes the pointer at once
+ * but darkens the screen over its own fade, so the panel goes on painting - thinner each frame - while
+ * that runs. Frames where the panel is drawn and yet routes nothing are therefore ordinary here, and a
+ * draw gated on {@link SidebarHost#isOverlayShowing()} would cut the panel away against a backdrop still
+ * deepening behind it.
  *
  * <p>Which colours and fonts to draw in is the host's: it hands over a {@link WidgetStyle} resolved from
  * the live player colours and settings, and this pass carries it through untouched. That is what lets two
