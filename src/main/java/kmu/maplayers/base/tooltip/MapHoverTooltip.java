@@ -20,14 +20,20 @@ import java.util.Optional;
 public interface MapHoverTooltip {
 
     /**
-     * Draws this layer's hover box for the hovered {@code system}. Called from the above-tooltips UI
-     * pass with a current GL context, only after the shared gates pass, so it renders its box straight
-     * away or returns without drawing when its own precondition does not hold.
+     * Draws this layer's hover box for the hovered {@code system}, read to {@code detailLevel}. Called
+     * from the above-tooltips UI pass with a current GL context, only after the shared gates pass, so
+     * it renders its box straight away or returns without drawing when its own precondition does not
+     * hold.
      *
-     * @param sector the live sector, whose economy the content may read
-     * @param system the star system under the cursor, already resolved by the dispatcher
+     * <p>The level is handed in rather than read here, so every box drawn on one frame states the same
+     * depth: it is one shared choice about how much the player wants told, not a fact about any one
+     * layer's subject matter.
+     *
+     * @param sector      the live sector, whose economy the content may read
+     * @param system      the star system under the cursor, already resolved by the dispatcher
+     * @param detailLevel how deep the player has asked the box to read
      */
-    void renderFor(SectorAPI sector, StarSystemAPI system);
+    void renderFor(SectorAPI sector, StarSystemAPI system, HoverTooltipDetailLevel detailLevel);
 
     /**
      * This box's richer counterpart - the one drawn in its place while the shared detail level sits

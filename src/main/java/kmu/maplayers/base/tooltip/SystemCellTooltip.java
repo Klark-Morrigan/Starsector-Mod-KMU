@@ -78,14 +78,18 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static final int TIER_3_LEVEL = 3;
 
     @Override
-    public final void renderFor(SectorAPI sector, StarSystemAPI system) {
+    public final void renderFor(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
         // Bodies read the live economy for what a layer holds in the system, so a sector without one
         // (never on the open campaign map, but guarded since the reads assume it) has nothing to show.
         if (sector.getEconomy() == null) {
             return;
         }
         var titleRows = buildTitleRows(sector, system);
-        var bodySections = buildBodySections(sector, system);
+        var bodySections = buildBodySections(sector, system, detailLevel);
         // Nothing to say about the system - drawing the name alone would only echo the cursor.
         if (titleRows.isEmpty() && bodySections.isEmpty()) {
             return;
@@ -140,11 +144,19 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * from how it is grouped: a layer says which of its lines belong together, and every parting in the
      * box - including the one under the heading above - is then the same one decision.
      *
-     * @param sector the live sector, whose economy the content may read
-     * @param system the star system under the cursor
+     * <p>The level travels with the sector rather than being read here, because it reaches further than
+     * the layout: a body composes the one tree it always composes and hands it to the blocks to be cut
+     * ({@link CellTooltipSections}), and reads nothing the level has already ruled out of the box.
+     *
+     * @param sector      the live sector, whose economy the content may read
+     * @param system      the star system under the cursor
+     * @param detailLevel how deep the player has asked the box to read
      * @return the body blocks, or an empty list when the layer has nothing to show for this system
      */
-    protected abstract List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system);
+    protected abstract List<TooltipSection> buildBodySections(
+        SectorAPI sector,
+        StarSystemAPI system,
+        HoverTooltipDetailLevel detailLevel);
 
     /**
      * Names what this box's {@linkplain #resolveExpandedVariant richer counterpart} states beyond it, in

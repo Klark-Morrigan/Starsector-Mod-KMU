@@ -50,6 +50,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
@@ -193,7 +194,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelText(sections, CLAIM_HEADING_ROW))
                 .isEqualTo("Claim:");
@@ -227,7 +228,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -255,7 +256,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
@@ -276,7 +277,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildPresenceOnlyStanding(PIRATES, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "The Hegemony", "Non-territorial:", "Pirates");
@@ -298,7 +299,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_NON_TERRITORIAL),
                     buildPresenceOnlyStanding(PIRATES, IS_NON_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -327,7 +328,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -357,7 +358,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -366,7 +367,7 @@ final class SystemClaimTooltipTest {
 
             holderGrouping = HolderGrouping.identity();
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -390,7 +391,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -416,7 +417,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "The Hegemony", "Non-territorial:", "Pirates");
@@ -441,7 +442,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -468,7 +469,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -493,7 +494,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -517,7 +518,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -554,7 +555,7 @@ final class SystemClaimTooltipTest {
                         OUTSIDER_SCORE,
                         IS_NON_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -585,7 +586,7 @@ final class SystemClaimTooltipTest {
                         OUTSIDER_SCORE,
                         IS_NON_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -611,7 +612,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "None",
@@ -635,7 +636,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "Pirates",
@@ -657,7 +658,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
@@ -679,7 +680,7 @@ final class SystemClaimTooltipTest {
                         IS_TERRITORIAL,
                         IS_UNDISCOVERED_BY_PLAYER))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
         }
 
@@ -699,7 +700,7 @@ final class SystemClaimTooltipTest {
                     IS_TERRITORIAL,
                     IS_UNDISCOVERED_BY_PLAYER))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
@@ -723,7 +724,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
         }
 
@@ -737,7 +738,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildPresenceOnlyStanding(HEGEMONY, IS_TERRITORIAL))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
@@ -756,7 +757,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(sections)
                 .hasSize(2);
@@ -779,7 +780,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, true))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -805,7 +806,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelRun(readTableRow(sections, contestedHeadingRow), LABEL_RUN))
                 .isEqualTo(new TextSpan("Contested by:", HIGHLIGHT));
@@ -829,7 +830,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
@@ -843,7 +844,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
@@ -865,7 +866,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -889,7 +890,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS), CLAIM_ROW);
 
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
@@ -904,7 +905,7 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -929,7 +930,7 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildStandingOnOneMarket(HEGEMONY, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "None", "Non-territorial:", "The Hegemony");
@@ -946,7 +947,7 @@ final class SystemClaimTooltipTest {
             // and the only line that states it - so the block stands whether or not anything scored.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Claim:", "None");
         }
 
@@ -957,7 +958,7 @@ final class SystemClaimTooltipTest {
             stubSystemHoldingNobody();
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Unpopulated");
         }
 
@@ -968,7 +969,7 @@ final class SystemClaimTooltipTest {
             stubSystemHoldingNobody();
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Unpopulated", "Claim:", "The Hegemony");
@@ -985,7 +986,7 @@ final class SystemClaimTooltipTest {
 
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
             var statusSection = 0;
             var claimSectionUnderTheStatus = 1;
 
@@ -1004,7 +1005,7 @@ final class SystemClaimTooltipTest {
             // the missing line itself the tell that something is hiding in the system.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            tooltip.buildBodySections(sectorMock, systemMock);
+            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             // Matched on the rule the knowledge carries: the box pairs it with the sector's own
             // register where it draws, so the value handed over is never one a case could state.
@@ -1024,7 +1025,7 @@ final class SystemClaimTooltipTest {
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            tooltip.buildBodySections(sectorMock, systemMock);
+            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             statusRowMock.verify(
                 () -> SystemStatusRow.resolveStatusRow(
@@ -1039,7 +1040,7 @@ final class SystemClaimTooltipTest {
                 "ghost_faction",
                 List.of(buildStandingOnOneMarket("ghost_faction", TOP_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS), CLAIM_ROW);
 
             assertThat(readLabelTextRun(claimRow, LABEL_RUN).text())
                 .isEqualTo("ghost_faction");

@@ -178,7 +178,7 @@ final class MapLayerCellTooltipTest {
                         .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
                     verify(tooltipMock)
-                        .renderFor(sectorMock, systemMock);
+                        .renderFor(sectorMock, systemMock, HoverTooltipDetailLevel.FACTIONS);
                 }
             });
         }
@@ -217,13 +217,18 @@ final class MapLayerCellTooltipTest {
                             MapHoverPermissionFixture.buildPermissionOnAVanillaHost())
                         .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
+                    // Handed the very level it was selected by, so the box drawn cannot be picked at
+                    // one depth and then read to another.
                     verify(expandedTooltipMock)
-                        .renderFor(sectorMock, systemMock);
+                        .renderFor(
+                            sectorMock,
+                            systemMock,
+                            HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
                     // Drawn instead of the injected box, not alongside it: two boxes over one cell
                     // is the failure the swap exists to avoid.
                     verify(tooltipMock, never())
-                        .renderFor(sectorMock, systemMock);
+                        .renderFor(any(), any(), any());
                 }
             });
         }

@@ -80,6 +80,22 @@ record CellTooltipEntryLevel(
     }
 
     /**
+     * Whether a line standing here is shallow enough for the box to show at {@code detailLevel} - the
+     * question the detail cut asks of every tier the walk reaches.
+     *
+     * <p>Asked of the subordination alone. A line set in without being demoted - the member factions
+     * inside an alliance - is the same kind of statement the line above it is, so it survives the
+     * shallowest cut; read off the indent instead, those factions would be dropped at the very level
+     * that exists to state who holds the system.
+     *
+     * @param detailLevel how deep the box has been asked to read
+     * @return true where the line is to be shown
+     */
+    boolean isAdmittedBy(HoverTooltipDetailLevel detailLevel) {
+        return subordinationLevel <= detailLevel.getMaximumSubordination();
+    }
+
+    /**
      * Whether the line at this level is one the block lists in its own right, rather than something
      * found beneath one of those. What tells the two line shapes apart, since only the flush ones read
      * as being listed.

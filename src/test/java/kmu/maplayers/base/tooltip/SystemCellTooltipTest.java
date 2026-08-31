@@ -32,6 +32,7 @@ import java.util.Optional;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.BUTTON_SHORTCUT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput.CYCLE_KEY_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -574,7 +575,7 @@ final class SystemCellTooltipTest {
 
             try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-                tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem());
+                tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem(), PATROL_DETAILS);
                 rendererMock.verifyNoInteractions();
             }
         }
@@ -587,7 +588,7 @@ final class SystemCellTooltipTest {
 
             try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-                tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem());
+                tooltipFake.renderFor(buildSectorWithEconomy(), buildNamedSystem(), PATROL_DETAILS);
                 rendererMock.verifyNoInteractions();
             }
         }
@@ -600,7 +601,7 @@ final class SystemCellTooltipTest {
 
             try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-                tooltipFake.renderFor(mock(SectorAPI.class), buildNamedSystem());
+                tooltipFake.renderFor(mock(SectorAPI.class), buildNamedSystem(), PATROL_DETAILS);
                 rendererMock.verifyNoInteractions();
 
                 assertThat(tooltipFake.hasBuiltBodySections)
@@ -618,7 +619,7 @@ final class SystemCellTooltipTest {
 
         try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-            tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem());
+            tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem(), PATROL_DETAILS);
 
             rendererMock.verify(
                 () -> CursorTooltipRenderer.render(
@@ -737,7 +738,11 @@ final class SystemCellTooltipTest {
         }
 
         @Override
-        protected List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
+        protected List<TooltipSection> buildBodySections(
+                SectorAPI sector,
+                StarSystemAPI system,
+                HoverTooltipDetailLevel detailLevel) {
+
             hasBuiltBodySections = true;
             return bodySections;
         }

@@ -10,6 +10,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * step, and only the account of that line stands a step further under the box's voice. Asserted here
  * rather than only through a laid-out block, since it is the rule that keeps an allied holder's markets
  * reading as loudly as a lone holder's.
+ *
+ * <p>And the second thing that distinction buys: which lines a detail level shows. The cut reads the
+ * subordination alone, so it keeps what an alliance gathers and drops what a faction breaks down into,
+ * at one and the same indent.
  */
 final class CellTooltipEntryLevelTest {
 
@@ -107,6 +111,76 @@ final class CellTooltipEntryLevelTest {
                 .isEqualTo(2);
             assertThat(underLoneFaction.indentDepth())
                 .isEqualTo(1);
+        }
+    }
+
+    @Nested
+    class IsAdmittedBy {
+
+        @Test
+        void isAdmittedByHoldsForABlocksOwnLineAtEveryLevel() {
+            // A block's own lines speak in the box's voice, so the shallowest level shows them - which
+            // is what leaves a block that lists anything drawn however little detail is asked for.
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .isAdmittedBy(HoverTooltipDetailLevel.FACTIONS))
+                .isTrue();
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .isAdmittedBy(HoverTooltipDetailLevel.PATROL_DETAILS))
+                .isTrue();
+        }
+
+        @Test
+        void isAdmittedByKeepsAGatheredPeerAtTheShallowestLevel() {
+            // The case the cut is asked of the subordination for: an alliance's member factions are set
+            // in beneath the line naming the alliance, and they are exactly the content the shallowest
+            // level exists to state. A cut on the indent would drop them.
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .groupedUnder()
+                    .isAdmittedBy(HoverTooltipDetailLevel.FACTIONS))
+                .isTrue();
+        }
+
+        @Test
+        void isAdmittedByDropsAnAccountAtTheShallowestLevel() {
+            // The other relation, at the same indent: a market beneath the faction holding it is the
+            // account of that faction's line, which is the tier the next level up buys.
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .subordinatedUnder()
+                    .isAdmittedBy(HoverTooltipDetailLevel.FACTIONS))
+                .isFalse();
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .subordinatedUnder()
+                    .isAdmittedBy(HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
+                .isTrue();
+        }
+
+        @Test
+        void isAdmittedByDropsAStepDeeperThanTheLevelAdmits() {
+            // The bound itself, one step past where each level stops: the level names the deepest tier
+            // it shows rather than a tier it shows from.
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .subordinatedUnder()
+                    .subordinatedUnder()
+                    .isAdmittedBy(HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
+                .isFalse();
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .subordinatedUnder()
+                    .subordinatedUnder()
+                    .subordinatedUnder()
+                    .isAdmittedBy(HoverTooltipDetailLevel.MARKET_STATS))
+                .isFalse();
+        }
+
+        @Test
+        void isAdmittedByKeepsEveryTierABoxReachesAtTheDeepestLevel() {
+            // The deepest level hides nothing the boxes list: three steps under the box's own voice is
+            // as far as a listing goes, and the level that names that tier admits it.
+            assertThat(CellTooltipEntryLevel.LISTED_LEVEL
+                    .subordinatedUnder()
+                    .subordinatedUnder()
+                    .subordinatedUnder()
+                    .isAdmittedBy(HoverTooltipDetailLevel.PATROL_DETAILS))
+                .isTrue();
         }
     }
 

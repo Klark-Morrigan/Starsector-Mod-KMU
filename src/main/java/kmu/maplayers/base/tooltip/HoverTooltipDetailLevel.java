@@ -14,7 +14,7 @@ package kmu.maplayers.base.tooltip;
  */
 public enum HoverTooltipDetailLevel {
 
-    /** Who holds the system: blocs and the member factions inside them. */
+    /** Who holds the system: the groups holding it, and the factions gathered inside one. */
     FACTIONS(0),
 
     /** Adds the markets each faction holds the system with. */

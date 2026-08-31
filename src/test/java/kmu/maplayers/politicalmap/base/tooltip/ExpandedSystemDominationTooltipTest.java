@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
@@ -373,7 +374,7 @@ final class ExpandedSystemDominationTooltipTest {
             StandingsTooltipSeamsFake.stubGroupEntries();
             stubBreakdowns(Map.of());
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(sections)
                 .hasSize(1);

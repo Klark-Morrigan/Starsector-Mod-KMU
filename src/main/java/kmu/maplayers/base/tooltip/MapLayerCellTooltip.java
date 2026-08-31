@@ -30,10 +30,9 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  * precondition.
  *
  * <p>How much detail the drawn box states is settled here too, and by one shared fact rather than
- * per layer: the dispatcher reads {@link HoverTooltipDetailLevelState} and draws the counterpart the
- * injected tooltip offers past the shallowest level, or the tooltip itself when it offers none. So
- * the choice holds across hovers and layer switches, and a tooltip that states one amount of detail
- * needs no case of its own.
+ * per layer: the dispatcher reads {@link HoverTooltipDetailLevelState} and hands the level to the box
+ * it draws, which reads its own content only as deep as the level admits. So the choice holds across
+ * hovers and layer switches, and no layer holds a level of its own to be told about.
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
@@ -99,15 +98,20 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         if (hoveredBox.isEmpty()) {
             return;
         }
-        // Which of an injected tooltip's boxes to draw is the shared detail level's call rather than
-        // the layer's: one level selects for whatever is hovered, so it holds across hovers and layer
-        // switches instead of each layer having to remember a choice made over another one's cell.
-        selectVariantFor(
-                hoveredBox.get().tooltip(),
-                HoverTooltipDetailLevelState.getInstance().getLevel())
+        // How much detail the box states is the shared level's call rather than the layer's: one level
+        // answers for whatever is hovered, so it holds across hovers and layer switches instead of each
+        // layer having to remember a choice made over another one's cell.
+        //
+        // Read once and used for both halves of that - which of an injected tooltip's boxes is drawn,
+        // and how deep the box drawn reads its own content - since two reads of a level the player can
+        // move between frames could select one box and then draw it to another box's depth.
+        var detailLevel = HoverTooltipDetailLevelState.getInstance().getLevel();
+
+        selectVariantFor(hoveredBox.get().tooltip(), detailLevel)
             .renderFor(
                 hoveredBox.get().sector(),
-                hoveredBox.get().system());
+                hoveredBox.get().system(),
+                detailLevel);
     }
 
     // The box the current detail level calls for: the tooltip's richer counterpart at any level past

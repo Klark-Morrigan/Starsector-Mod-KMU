@@ -39,6 +39,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
@@ -211,7 +212,7 @@ final class SystemDominationTooltipTest {
                     new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
                 List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -245,7 +246,7 @@ final class SystemDominationTooltipTest {
                     createNamedGroupEntry("Persean League"),
                     createPlaceholderGroupEntry()));
 
-            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -314,14 +315,14 @@ final class SystemDominationTooltipTest {
 
             var expandedVariant = (SystemStandingsTooltip) tooltip.resolveExpandedVariant().get();
 
-            assertThat(readLabelTexts(expandedVariant.buildBodySections(sectorMock, systemMock)))
+            assertThat(readLabelTexts(expandedVariant.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .contains("Allied with the system holder:");
         }
     }
 
     // The body read top to bottom as the lines a player sees, which is the shape these cases are about.
     private List<TooltipRow> readBodyRows() {
-        return TooltipSection.readRowsInOrder(tooltip.buildBodySections(sectorMock, systemMock));
+        return TooltipSection.readRowsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS));
     }
 
     // One group as the resolver hands it over: a bloc carrying its crest and summed score, gathering

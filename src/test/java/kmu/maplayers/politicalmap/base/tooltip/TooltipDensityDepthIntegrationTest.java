@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
@@ -177,7 +178,7 @@ final class TooltipDensityDepthIntegrationTest {
 
         var sections = new ArrayList<TooltipSection>();
 
-        CellTooltipSections.appendSection(sections, "Dominated by:", entries);
+        CellTooltipSections.appendSection(sections, "Dominated by:", entries, PATROL_DETAILS);
 
         return TooltipSection.readRowsInOrder(sections);
     }

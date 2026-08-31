@@ -47,6 +47,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.ListedClaimContestFixture.buildUnroutedContest;
@@ -309,7 +310,7 @@ final class ExpandedSystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -335,7 +336,7 @@ final class ExpandedSystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -361,7 +362,7 @@ final class ExpandedSystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -389,7 +390,7 @@ final class ExpandedSystemClaimTooltipTest {
                         IS_TERRITORIAL,
                         List.of(buildConcealedMarket("Kanta's Den", FIRST_LISTED))))));
 
-            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -410,7 +411,7 @@ final class ExpandedSystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS), CLAIM_ROW);
 
             assertThat(readLabelTextRun(claimRow, MARKED_LABEL_RUN).text())
                 .isEqualTo("The Hegemony");
@@ -424,7 +425,7 @@ final class ExpandedSystemClaimTooltipTest {
             // it rather than with a heading over an account it never earned.
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
-            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock)))
+            assertThat(readOpeningWordsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
@@ -451,7 +452,7 @@ final class ExpandedSystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            tooltip.buildBodySections(sectorMock, systemMock);
+            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             verify(systemMock, times(1)).getAllEntities();
         }
@@ -476,7 +477,7 @@ final class ExpandedSystemClaimTooltipTest {
                     SystemColonyReading.class,
                     Mockito.CALLS_REAL_METHODS)) {
 
-                tooltip.buildBodySections(sectorMock, systemMock);
+                tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
                 statusRowMock.verify(() -> SystemStatusRow.resolveStatusRow(
                     statusRowColonies.capture(),
@@ -502,7 +503,7 @@ final class ExpandedSystemClaimTooltipTest {
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(sections)
                 .hasSize(1);

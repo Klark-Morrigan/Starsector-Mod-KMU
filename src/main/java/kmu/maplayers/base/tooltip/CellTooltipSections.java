@@ -23,6 +23,12 @@ import java.util.Optional;
  * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
  * tells the player something untrue.
  *
+ * <p>How far into what it lists a block is read is neither the block's nor the layer's, but the
+ * player's, arriving as the {@linkplain HoverTooltipDetailLevel detail level} the walk is given. A
+ * layer hands over the one tree it composes whatever level is asked for, and the walk lays out as much
+ * of it as that level admits - so the same tree reads at four depths without any layer holding four
+ * accounts of a system that could come to disagree with each other.
+ *
  * <p>Nothing here is answered about a block's marks. A mark rides inside the label of the line carrying
  * it ({@link CellTooltipRows}), so the walk states only what is part of what and how deep it went - what
  * a block lists has no bearing on where another block's lines open.
@@ -45,18 +51,24 @@ public final class CellTooltipSections {
      * @param headingText the heading naming the block
      * @param entries     what the block lists, in the order they are read; empty leaves the body
      *                    untouched
+     * @param detailLevel how deep into those entries the box may be read; the block's own lines
+     *                    always survive it, so a block that lists anything is drawn at every level
      */
     public static void appendSection(
             List<TooltipSection> sections,
             String headingText,
-            List<CellTooltipEntry> entries) {
+            List<CellTooltipEntry> entries,
+            HoverTooltipDetailLevel detailLevel) {
 
         if (entries.isEmpty()) {
             return;
         }
         sections.add(TooltipSection
             .createSection(List.of(CellTooltipRows.buildSectionHeadingRow(headingText)))
-            .nesting(resolveEntrySections(entries, CellTooltipEntryLevel.LISTED_LEVEL)));
+            .nesting(resolveEntrySections(
+                entries,
+                CellTooltipEntryLevel.LISTED_LEVEL,
+                detailLevel)));
     }
 
     /**
@@ -96,16 +108,27 @@ public final class CellTooltipSections {
     // whole of it rather than of its last line. The walk states only what is part of what; how far that
     // sets two of them apart - and that a nested parting never piles onto the one above it - is the
     // widget's.
+    //
+    // The detail cut is one question per tier rather than one per line: neither relation ever lifts a
+    // line back towards the box's own voice, so nothing beneath a tier the level has declined could be
+    // admitted either, and the walk stops there rather than descending to reject each line in turn.
     private static List<TooltipSection> resolveEntrySections(
             List<CellTooltipEntry> entries,
-            CellTooltipEntryLevel level) {
+            CellTooltipEntryLevel level,
+            HoverTooltipDetailLevel detailLevel) {
 
+        if (!level.isAdmittedBy(detailLevel)) {
+            return List.of();
+        }
         var entrySections = new ArrayList<TooltipSection>();
         for (var entry : entries) {
 
             entrySections.add(TooltipSection
                 .createSection(List.of(CellTooltipRows.buildListedRow(entry.line(), level)))
-                .nesting(resolveEntrySections(entry.children(), resolveChildLevel(entry, level))));
+                .nesting(resolveEntrySections(
+                    entry.children(),
+                    resolveChildLevel(entry, level),
+                    detailLevel)));
         }
         return entrySections;
     }

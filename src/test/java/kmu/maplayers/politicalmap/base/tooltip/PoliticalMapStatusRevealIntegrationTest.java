@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -144,9 +145,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
             // The leak that started this: the claims layer counted the unknown base and drew no
             // status, so its absence told the player a base was hiding there.
-            assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock)))
+            assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock, PATROL_DETAILS)))
                 .isEqualTo("Unpopulated");
-            assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock)))
+            assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock, PATROL_DETAILS)))
                 .isEqualTo("Unpopulated");
         }
 
@@ -157,9 +158,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
             // Raiding the base never un-hides it, so a filter reading hiddenness would still call
             // this system empty. Both layers must agree it is not.
-            assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock)))
+            assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock, PATROL_DETAILS)))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock)))
+            assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock, PATROL_DETAILS)))
                 .isNull();
         }
 
@@ -172,9 +173,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
             // One toggle, two boxes: the faction layer reaches it through its pass and the claims
             // layer reads it directly, and the same unknown base has to satisfy both.
-            assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock)))
+            assertThat(readStatus(claimTooltip.buildBodySections(sector, systemMock, PATROL_DETAILS)))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock)))
+            assertThat(readStatus(dominationTooltip.buildBodySections(sector, systemMock, PATROL_DETAILS)))
                 .isNull();
         }
     }

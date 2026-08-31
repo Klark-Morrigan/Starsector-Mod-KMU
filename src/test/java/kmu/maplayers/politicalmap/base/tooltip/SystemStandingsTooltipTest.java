@@ -37,6 +37,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
@@ -193,7 +194,7 @@ final class SystemStandingsTooltipTest {
             // The one thing a box adds to the shared resolution has to reach it: asked for and then
             // dropped, every box would draw the glance and the detail mode would show nothing new.
             new AccountingStandingsTooltip(claimBreakdownReaderFake)
-                .buildBodySections(sectorMock, systemMock);
+                .buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
                 AccountingStandingsTooltip.FACTION_ACCOUNTS);
@@ -206,7 +207,7 @@ final class SystemStandingsTooltipTest {
             // system name the cursor already sits on.
             StandingsTooltipSeamsFake.stubNoActiveView();
 
-            assertThat(tooltip.buildBodySections(sectorMock, systemMock))
+            assertThat(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS))
                 .isEmpty();
         }
 
@@ -216,7 +217,7 @@ final class SystemStandingsTooltipTest {
             // so the two can never disagree about who holds the system. The pass is built from that
             // grouping and the groups named through the pass's own, so the one the view answered with
             // is the one that reaches both.
-            tooltip.buildBodySections(sectorMock, systemMock);
+            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             StandingsTooltipSeamsFake
                 .verifyPassReadUnderTheViewsGrouping();
@@ -372,7 +373,7 @@ final class SystemStandingsTooltipTest {
                 createLeadingGroupEntry(),
                 createRivalGroupEntry());
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(sections)
                 .hasSize(2);
@@ -422,7 +423,7 @@ final class SystemStandingsTooltipTest {
             // the hover reads as landing on a real but uninhabited system. It is a block of its own,
             // since what the system is answers a different question from who contests it.
             var statusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
-            var sections = tooltip.buildBodySections(sectorMock, systemMock);
+            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             assertThat(sections)
                 .hasSize(1);
@@ -445,7 +446,7 @@ final class SystemStandingsTooltipTest {
                     UNDER_THE_REVEAL,
                     new SystemColoniesIndex(null))));
 
-            tooltip.buildBodySections(sectorMock, systemMock);
+            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
 
             StandingsTooltipSeamsFake
                 .verifyStatusJudgedUnderVisibility(UNDER_THE_REVEAL);
@@ -455,7 +456,7 @@ final class SystemStandingsTooltipTest {
         void buildBodySectionsShowsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
             // Nothing ranked and nothing to say about the system, so the body stays empty and no box is
             // drawn - the one case where a hover over a real system shows nothing at all.
-            assertThat(tooltip.buildBodySections(sectorMock, systemMock))
+            assertThat(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS))
                 .isEmpty();
         }
     }
@@ -512,7 +513,7 @@ final class SystemStandingsTooltipTest {
     }
 
     private List<TooltipRow> readBodyRows() {
-        return TooltipSection.readRowsInOrder(tooltip.buildBodySections(sectorMock, systemMock));
+        return TooltipSection.readRowsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS));
     }
 
     /**

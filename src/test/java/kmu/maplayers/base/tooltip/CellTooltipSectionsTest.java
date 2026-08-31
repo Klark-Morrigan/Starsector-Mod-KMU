@@ -29,6 +29,10 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_SUBORDINATION;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.ONE_LEVEL_SUBORDINATED;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.MARKET_STATS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -42,6 +46,10 @@ import static org.assertj.core.api.Assertions.within;
  *
  * <p>How far apart the blocks then stand is the widget's and pinned there; what is fixed here is that a
  * heading and the entries it names are one block, which is what that spacing follows from.
+ *
+ * <p>And how far into a block the detail level reads, which is the same layout over one tree read to
+ * four depths: each level admits one more tier, a line gathered as a peer survives the shallowest, and
+ * a block never loses the entries it lists however little detail is asked for.
  */
 final class CellTooltipSectionsTest {
 
@@ -74,7 +82,8 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
+                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")),
+                PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Contested by:", "The Hegemony", "Tri-Tachyon");
@@ -90,7 +99,8 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
+                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")),
+                PATROL_DETAILS);
 
             assertThat(sections)
                 .hasSize(1);
@@ -104,8 +114,8 @@ final class CellTooltipSectionsTest {
             // failed to fill, when in truth there was nothing to put in it.
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")));
-            CellTooltipSections.appendSection(sections, "Contested by:", List.of());
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")), PATROL_DETAILS);
+            CellTooltipSections.appendSection(sections, "Contested by:", List.of(), PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "Pirates");
@@ -117,11 +127,12 @@ final class CellTooltipSectionsTest {
             // stated by its own calls rather than by a rule inside this one.
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")), PATROL_DETAILS);
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntry("The Hegemony")));
+                List.of(createEntry("The Hegemony")),
+                PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "Pirates", "Contested by:", "The Hegemony");
@@ -136,7 +147,8 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntry("The Hegemony")));
+                List.of(createEntry("The Hegemony")),
+                PATROL_DETAILS);
 
             var heading = (TooltipRow.TableRow) readRow(sections, HEADING_ROW);
 
@@ -161,7 +173,8 @@ final class CellTooltipSectionsTest {
                 sections,
                 "Claim:",
                 List.of(CellTooltipEntry.createEntry(
-                    CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"))));
+                    CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200"))),
+                PATROL_DETAILS);
 
             var entry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);
 
@@ -191,7 +204,8 @@ final class CellTooltipSectionsTest {
                 List.of(CellTooltipEntry
                     .createEntry(CellTooltipEntryLine.createLine(null, "Rebel Pact", "1,200"))
                     .nesting(List.of(CellTooltipEntry.createEntry(
-                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"))))));
+                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"))))),
+                PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Dominated by:", "Rebel Pact", "The Hegemony");
@@ -220,7 +234,8 @@ final class CellTooltipSectionsTest {
                     createEntry("Chicomoztoc")
                         .nesting(List.of(createEntry("Size"), createEntry("Patrols"))),
                     createEntry("Kazeron")
-                        .nesting(List.of(createEntry("Station")))));
+                        .nesting(List.of(createEntry("Station")))),
+                PATROL_DETAILS);
 
             // The first market's factors read in the order it lists them and are done before the next
             // market opens, so the run under a line never spills past the thing it belongs to.
@@ -247,7 +262,8 @@ final class CellTooltipSectionsTest {
                 "Dominated by:",
                 List.of(createEntry("Chicomoztoc")
                     .nesting(List.of(createEntry("Patrols")
-                        .nesting(List.of(createEntry("Light patrol")))))));
+                        .nesting(List.of(createEntry("Light patrol")))))),
+                PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly("Dominated by:", "Chicomoztoc", "Patrols", "Light patrol");
@@ -271,7 +287,8 @@ final class CellTooltipSectionsTest {
                 sections,
                 "Dominated by:",
                 List.of(createEntry("Rebel Pact")
-                    .grouping(List.of(createEntry("The Hegemony")))));
+                    .grouping(List.of(createEntry("The Hegemony")))),
+                PATROL_DETAILS);
 
             var member = (TooltipRow.TableRow) readRow(sections, memberRow);
 
@@ -292,7 +309,8 @@ final class CellTooltipSectionsTest {
                 sections,
                 "Dominated by:",
                 List.of(createEntry("The Hegemony")
-                    .nesting(List.of(createEntry("Chicomoztoc")))));
+                    .nesting(List.of(createEntry("Chicomoztoc")))),
+                PATROL_DETAILS);
 
             assertThat(((TooltipRow.TableRow) readRow(sections, marketRow)).subordinationLevel())
                 .isEqualTo(ONE_LEVEL_SUBORDINATED);
@@ -315,7 +333,8 @@ final class CellTooltipSectionsTest {
                         .grouping(List.of(createEntry("The Hegemony")
                             .nesting(List.of(createEntry("Chicomoztoc"))))),
                     createEntry("Tri-Tachyon")
-                        .nesting(List.of(createEntry("Culann")))));
+                        .nesting(List.of(createEntry("Culann")))),
+                PATROL_DETAILS);
 
             assertThat(readLabelTexts(sections))
                 .containsExactly(
@@ -349,7 +368,7 @@ final class CellTooltipSectionsTest {
             // for one whatever a block happens to list.
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")), PATROL_DETAILS);
 
             assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW))
                     .labelledRow()
@@ -367,7 +386,8 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Claim:",
-                List.of(createEntry("None").nesting(List.of(createEntry("Uncontested")))));
+                List.of(createEntry("None").nesting(List.of(createEntry("Uncontested")))),
+                PATROL_DETAILS);
 
             assertThat(readLabelPlacements(sections))
                 .containsOnly(TooltipLabelPlacement.AT_CONTENT_EDGE);
@@ -384,7 +404,8 @@ final class CellTooltipSectionsTest {
                 "Dominated by:",
                 List.of(createEntry("Rebel Pact")
                     .nesting(List.of(CellTooltipEntry.createEntry(
-                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"))))));
+                        CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "900"))))),
+                PATROL_DETAILS);
 
             assertThat(readLabelPlacements(sections))
                 .containsOnly(TooltipLabelPlacement.AT_CONTENT_EDGE);
@@ -404,7 +425,8 @@ final class CellTooltipSectionsTest {
                 List.of(
                     CellTooltipEntry.createEntry(
                         CellTooltipEntryLine.createLine(CREST_MARK, "The Hegemony", "1,200")),
-                    createEntry("Independent")));
+                    createEntry("Independent")),
+                PATROL_DETAILS);
 
             var markedEntry = (TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW);
             var marklessEntry = (TooltipRow.TableRow) readRow(sections, marklessEntryRow);
@@ -421,7 +443,7 @@ final class CellTooltipSectionsTest {
             // column collapses for it rather than the line claiming a width it cannot use.
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("None")), PATROL_DETAILS);
 
             assertThat(((TooltipRow.TableRow) readRow(sections, FIRST_ENTRY_ROW))
                     .labelledRow()
@@ -439,7 +461,8 @@ final class CellTooltipSectionsTest {
             CellTooltipSections.appendSection(
                 sections,
                 "Contested by:",
-                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
+                List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")),
+                PATROL_DETAILS);
 
             assertThat(sections.get(0).openingRows())
                 .hasSize(1);
@@ -467,7 +490,8 @@ final class CellTooltipSectionsTest {
                             null,
                             "Jangala",
                             CellTooltipRows.NO_SCORE))
-                        .nesting(List.of(createEntry("Size")))))));
+                        .nesting(List.of(createEntry("Size")))))),
+                PATROL_DETAILS);
 
             var factionSection = sections.get(0).members().get(0);
             var marketSection = factionSection.members().get(0);
@@ -478,6 +502,78 @@ final class CellTooltipSectionsTest {
                 .isEqualTo(2);
         }
 
+        @Test
+        void appendSectionKeepsAGatheredPeerAtTheShallowestLevel() {
+            // The cut the whole level reads for: an alliance and the factions inside it are one answer
+            // at two granularities, so the shallowest level - the one that exists to state who holds the
+            // system - shows both. Dropping them would leave the alliances view stating nothing.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(createEntry("Rebel Pact")
+                    .grouping(List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")))),
+                FACTIONS);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Dominated by:", "Rebel Pact", "The Hegemony", "Tri-Tachyon");
+        }
+
+        @Test
+        void appendSectionDropsWhatAnEntryBreaksDownIntoAtTheShallowestLevel() {
+            // The other relation at the same indent, cut the other way: the markets a faction holds the
+            // system with are the account of its line, which is what the next level up buys.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Dominated by:",
+                List.of(createEntry("The Hegemony")
+                    .nesting(List.of(createEntry("Chicomoztoc")))),
+                FACTIONS);
+
+            assertThat(readLabelTexts(sections))
+                .containsExactly("Dominated by:", "The Hegemony");
+        }
+
+        @Test
+        void appendSectionAdmitsOneMoreTierPerLevel() {
+            // What the levels are: one tree read to four depths, each level adding the tier beneath the
+            // one before it. Asserted over the one listing, so a level that admitted the wrong tier
+            // fails here rather than agreeing with a listing shaped to suit it.
+            assertThat(readLabelTexts(drawAccountedFaction(FACTIONS)))
+                .containsExactly("Dominated by:", "The Hegemony");
+            assertThat(readLabelTexts(drawAccountedFaction(SYSTEM_COMPOSITION)))
+                .containsExactly("Dominated by:", "The Hegemony", "Chicomoztoc");
+            assertThat(readLabelTexts(drawAccountedFaction(MARKET_STATS)))
+                .containsExactly("Dominated by:", "The Hegemony", "Chicomoztoc", "Patrols");
+            assertThat(readLabelTexts(drawAccountedFaction(PATROL_DETAILS)))
+                .containsExactly(
+                    "Dominated by:",
+                    "The Hegemony",
+                    "Chicomoztoc",
+                    "Patrols",
+                    "Small");
+        }
+
+        @Test
+        void appendSectionKeepsABlockWhoseEntriesAreAllTheLevelAdmits() {
+            // A cut reaches only what an entry carries, never the entries themselves - so a block still
+            // opens with its heading at every level rather than being emptied into nothing by a shallow
+            // one, which is what would leave the box silent about a system it does hold findings on.
+            var sections = new ArrayList<TooltipSection>();
+
+            CellTooltipSections.appendSection(
+                sections,
+                "Contested by:",
+                List.of(createEntry("The Hegemony")
+                    .nesting(List.of(createEntry("Chicomoztoc")))),
+                FACTIONS);
+
+            assertThat(sections)
+                .hasSize(1);
+        }
     }
 
     @Nested
@@ -515,7 +611,7 @@ final class CellTooltipSectionsTest {
 
             var sections = new ArrayList<TooltipSection>();
 
-            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")));
+            CellTooltipSections.appendSection(sections, "Claim:", List.of(createEntry("Pirates")), PATROL_DETAILS);
             CellTooltipSections.appendBannerSection(
                 sections,
                 Optional.of(CellTooltipRows.buildBannerRow(null, "Decivilised")));
@@ -523,6 +619,25 @@ final class CellTooltipSectionsTest {
             assertThat(readLabelTexts(sections))
                 .containsExactly("Claim:", "Pirates", "Decivilised");
         }
+    }
+
+    // One block of a faction accounted for as deep as the boxes go - the markets it holds the system
+    // with, a term of one of those, and a tier of that term - laid out at the level asked for. One
+    // listing behind every level, since what the levels are is four readings of a single tree.
+    private static List<TooltipSection> drawAccountedFaction(HoverTooltipDetailLevel detailLevel) {
+
+        var sections = new ArrayList<TooltipSection>();
+
+        CellTooltipSections.appendSection(
+            sections,
+            "Dominated by:",
+            List.of(createEntry("The Hegemony")
+                .nesting(List.of(createEntry("Chicomoztoc")
+                    .nesting(List.of(createEntry("Patrols")
+                        .nesting(List.of(createEntry("Small")))))))),
+            detailLevel);
+
+        return sections;
     }
 
     // One thing a block lists, told apart from its siblings by its name alone - what it carries beyond

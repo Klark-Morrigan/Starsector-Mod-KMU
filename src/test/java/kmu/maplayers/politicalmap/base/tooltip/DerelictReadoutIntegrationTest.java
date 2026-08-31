@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -226,7 +227,7 @@ final class DerelictReadoutIntegrationTest {
 
         return readLabelTexts(
             new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-                .buildBodySections(sector, buildOnlySystem(sector)));
+                .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS));
     }
 
     // What the key at the foot of the dominance box offers over the sector's one system, or nothing
@@ -310,7 +311,7 @@ final class DerelictReadoutIntegrationTest {
         return new ExpandedSystemDominationTooltip(
                 new ClaimBreakdownReaderFake(),
                 HolderGrouping::identity)
-            .buildBodySections(sector, buildOnlySystem(sector));
+            .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS);
     }
 
     // The expanded claims box over the same system, read through the real mechanic: a stubbed
@@ -323,7 +324,7 @@ final class DerelictReadoutIntegrationTest {
         return new ExpandedSystemClaimTooltip(
                 new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()),
                 HolderGrouping::identity)
-            .buildBodySections(sector, buildOnlySystem(sector));
+            .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS);
     }
 
     // Every word the box says anywhere in it, in draw order. Read as a flat bag rather than by run

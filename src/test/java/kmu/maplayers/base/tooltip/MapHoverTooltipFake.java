@@ -17,7 +17,11 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 class MapHoverTooltipFake implements MapHoverTooltip {
 
     @Override
-    public void renderFor(SectorAPI sector, StarSystemAPI system) {
+    public void renderFor(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
         // Drawing needs a GL context, and says nothing about which box the level picked.
     }
 }
