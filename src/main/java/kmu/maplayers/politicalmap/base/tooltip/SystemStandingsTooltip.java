@@ -7,7 +7,7 @@ import kmlib.starsector.relation.StarsectorFactionRelations;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
-import kmu.maplayers.base.tooltip.CellTooltipSections;
+import kmu.maplayers.base.tooltip.CellTooltipBody;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
@@ -20,7 +20,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.util.KmuStrings;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -205,7 +204,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             HoverTooltipDetailLevel detailLevel) {
 
         var pass = ranking.pass();
-        var sections = new ArrayList<TooltipSection>();
+        var body = CellTooltipBody.openBody(detailLevel);
 
         // What the system is comes before who holds it, so the standings below read as a contest over
         // a known system. The status resolves under this pass's rule, the same filter the standings
@@ -217,23 +216,20 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // derelict - which is what both surfaces are for, rather than a disagreement between them.
         // Off the pass's own walk of the system - the very one the standings were ranked from - so
         // the line and the list beneath it are two readings of one traversal rather than two.
-        CellTooltipSections.appendBannerSection(
-            sections,
-            SystemStatusRow.resolveStatusRow(
-                pass.readColoniesIn(system),
-                pass.colonyKnowledge()));
+        body.appendBannerSection(SystemStatusRow.resolveStatusRow(
+            pass.readColoniesIn(system),
+            pass.colonyKnowledge()));
 
         // The account is settled once for the whole box, before any group is named, so a box reading
         // the economy to build one reads it once however many groups hold the system - and every
         // faction listed is explained from that one read rather than from a read of its own.
         appendStandingSections(
-            sections,
+            body,
             sector,
             ranking,
-            createFactionAccountResolver(system, pass),
-            detailLevel);
+            createFactionAccountResolver(system, pass));
 
-        return sections;
+        return body.readSections();
     }
 
     // The standings as the blocks they are read in, laid down in the order those blocks are declared
@@ -247,24 +243,21 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     // block a group falls in is the only thing that varies between them: a group reads the same way
     // whichever heading it ends up beneath.
     private static void appendStandingSections(
-            List<TooltipSection> sections,
+            CellTooltipBody body,
             SectorAPI sector,
             RankedStandings ranking,
-            FactionAccountResolver accountResolver,
-            HoverTooltipDetailLevel detailLevel) {
+            FactionAccountResolver accountResolver) {
 
         var grouping = ranking.pass().grouping();
 
         for (var block : StandingBlock.values()) {
-            CellTooltipSections.appendSection(
-                sections,
+            body.appendSection(
                 KmuStrings.get(block.resolveHeadingKey()),
                 StandingRowResolver.resolveRows(
                     sector,
                     ranking.routing().selectStandingsIn(block),
                     grouping,
-                    accountResolver),
-                detailLevel);
+                    accountResolver));
         }
     }
 

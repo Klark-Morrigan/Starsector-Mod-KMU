@@ -10,9 +10,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the bloc-level reading of a faction-level disposition: unanimous across both memberships or
- * not friendly at all, and how much of a membership falls short where it is not. The faction-level
- * answer is a hand-built pair list, so what is fixed here is how the pairs are composed rather than
- * where the game's own threshold falls.
+ * not friendly at all, how much of a membership falls short where it is not, and how much of the far
+ * bloc one faction falls short of. The faction-level answer is a hand-built pair list, so what is
+ * fixed here is how the pairs are composed rather than where the game's own threshold falls.
+ *
+ * <p>That list is read one way round on purpose. Every answer here takes its pairs from the faction
+ * named first, which is what stops a faction being sorted by one reading and counted by another, so
+ * the cases state a warm pair in one direction and leave the other cold.
  */
 class BlocFriendlinessTest {
 
@@ -129,6 +133,47 @@ class BlocFriendlinessTest {
             var friendliness = buildFriendlinessAboveNeutralOn(List.of("hegemony:tritachyon"));
 
             assertThat(friendliness.countMembersAtOddsWith(Set.of("hegemony"), Set.of()))
+                .isOne();
+        }
+    }
+
+    @Nested
+    class CountFactionsAtOddsWith {
+
+        @Test
+        void countsEveryOneOfTheOtherBlocOneFactionFallsShortOf() {
+            // The far side of the same walk: a faction's own row states how much of the holder it
+            // quarrels with, where a bloc's states how much of itself falls short of the whole.
+            var friendliness = buildFriendlinessAboveNeutralOn(List.of("hegemony:tritachyon"));
+
+            assertThat(friendliness.countFactionsAtOddsWith(
+                    "hegemony",
+                    Set.of("tritachyon", "persean", "luddic_church")))
+                .isEqualTo(2);
+        }
+
+        @Test
+        void countsNoneWhereTheFactionIsFriendlyWithAllOfThem() {
+
+            var friendliness = buildFriendlinessAboveNeutralOn(
+                List.of("hegemony:tritachyon", "hegemony:persean"));
+
+            assertThat(friendliness.countFactionsAtOddsWith(
+                    "hegemony",
+                    Set.of("tritachyon", "persean")))
+                .isZero();
+        }
+
+        @Test
+        void readsThePairFromTheFactionItIsCountingFor() {
+            // The direction every rule here shares. A table warm one way only leaves this counting
+            // the faction's own view, so a faction sorted friendly cannot then be counted at odds -
+            // which asking the pair from the other bloc's end would allow.
+            var friendliness = buildFriendlinessAboveNeutralOn(List.of("hegemony:tritachyon"));
+
+            assertThat(friendliness.countFactionsAtOddsWith("hegemony", Set.of("tritachyon")))
+                .isZero();
+            assertThat(friendliness.countFactionsAtOddsWith("tritachyon", Set.of("hegemony")))
                 .isOne();
         }
     }

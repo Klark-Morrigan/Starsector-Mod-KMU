@@ -33,6 +33,27 @@ public record GroupStanding(
     }
 
     /**
+     * Builds a group over the members it lists, summing their scores into its aggregate.
+     *
+     * <p>The one place that sum is worked out, since it is the whole of what the aggregate means: a
+     * caller adding the scores up itself states the same rule a second time, and two statements of it
+     * are two chances for a group's ranking key to stop being the total of what it lists.
+     *
+     * @param blocId  the group's bloc id
+     * @param members the member factions the group is listed over, in the order they are listed
+     * @return the group, weighed at what its members come to between them
+     */
+    public static GroupStanding sumOverMembers(String blocId, List<FactionStanding> members) {
+
+        var aggregateScore = 0;
+
+        for (var member : members) {
+            aggregateScore += member.score();
+        }
+        return new GroupStanding(blocId, aggregateScore, members);
+    }
+
+    /**
      * Whether the pass weighed anything at all for this group - one member with a footprint is
      * enough, the aggregate then being a sum somebody worked out.
      *

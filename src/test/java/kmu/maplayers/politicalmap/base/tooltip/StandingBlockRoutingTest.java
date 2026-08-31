@@ -83,9 +83,10 @@ class StandingBlockRoutingTest {
         @Test
         void routeRankedStandingsLeavesEveryOtherBlocInTheRunningContestingTheSystem() {
 
-            assertThat(routeWithoutAlliances(HOLDER_BLOC, RIVAL_BLOC)
-                    .selectStandingsIn(StandingBlock.CONTESTED))
-                .containsExactly(routeQualified(RIVAL_BLOC, 1, 1));
+            assertThat(readListedBlocs(
+                    routeWithoutAlliances(HOLDER_BLOC, RIVAL_BLOC),
+                    StandingBlock.CONTESTED))
+                .containsExactly(RIVAL_BLOC);
         }
 
         @Test
@@ -102,8 +103,8 @@ class StandingBlockRoutingTest {
             assertThat(routing.selectStandingsIn(StandingBlock.ALLIED))
                 .containsExactly(routeWhole(ALLY_BLOC));
 
-            assertThat(routing.selectStandingsIn(StandingBlock.CONTESTED))
-                .containsExactly(routeQualified(RIVAL_BLOC, 1, 1));
+            assertThat(readListedBlocs(routing, StandingBlock.CONTESTED))
+                .containsExactly(RIVAL_BLOC);
         }
 
         @Test
@@ -159,10 +160,12 @@ class StandingBlockRoutingTest {
 
         @Test
         void routeRankedStandingsPlacesEveryRankedGroupInExactlyOneBlock() {
-            // The invariant the axes have to leave intact between them: the blocks partition the
-            // ranking. A group taken by two of them is listed twice under two headings that
-            // contradict each other, and one taken by none disappears from a box that ranked it -
-            // neither of which the block set being closed says anything about.
+            // The invariant the axes have to leave intact between them: every ranked group is
+            // placed, and only a bloc its members disagree about is placed twice. A group taken by
+            // no block disappears from a box that ranked it, and one taken by two that nothing
+            // split is listed under two headings contradicting each other - neither of which the
+            // block set being closed says anything about. Posed with nothing to split, so what is
+            // read here is the partition the other axes leave.
             var routing = StandingBlockRouting.routeRankedStandings(
                 createRankedStandings(HOLDER_BLOC, ALLY_BLOC, RIVAL_BLOC, PLACEHOLDER_BLOC),
                 buildRules(
@@ -174,11 +177,7 @@ class StandingBlockRoutingTest {
                     .stream(StandingBlock.values())
                     .flatMap(block -> routing.selectStandingsIn(block).stream())
                     .toList())
-                .containsExactlyInAnyOrder(
-                    routeWhole(HOLDER_BLOC),
-                    routeWhole(ALLY_BLOC),
-                    routeQualified(RIVAL_BLOC, 1, 1),
-                    routeWhole(PLACEHOLDER_BLOC));
+                .containsExactlyInAnyOrder(HOLDER_BLOC, ALLY_BLOC, RIVAL_BLOC, PLACEHOLDER_BLOC);
         }
 
         @Test
@@ -205,8 +204,8 @@ class StandingBlockRoutingTest {
                 HOLDER_BLOC,
                 RIVAL_BLOC);
 
-            assertThat(routing.selectStandingsIn(StandingBlock.FRIENDLY))
-                .containsExactly(routeQualified(RIVAL_BLOC, 1, 1));
+            assertThat(readListedBlocs(routing, StandingBlock.FRIENDLY))
+                .containsExactly(RIVAL_BLOC);
 
             assertThat(routing.selectStandingsIn(StandingBlock.CONTESTED))
                 .isEmpty();
@@ -216,9 +215,10 @@ class StandingBlockRoutingTest {
         void routeRankedStandingsLeavesAnIndifferentBlocContestingTheSystem() {
             // The scale's own zero is the cut: indifference is not goodwill, so a bloc at or below
             // neutral stays exactly where it was before the block existed.
-            assertThat(routeUnderDispositions(List.of(), HOLDER_BLOC, RIVAL_BLOC)
-                    .selectStandingsIn(StandingBlock.CONTESTED))
-                .containsExactly(routeQualified(RIVAL_BLOC, 1, 1));
+            assertThat(readListedBlocs(
+                    routeUnderDispositions(List.of(), HOLDER_BLOC, RIVAL_BLOC),
+                    StandingBlock.CONTESTED))
+                .containsExactly(RIVAL_BLOC);
         }
 
         @Test
@@ -258,8 +258,8 @@ class StandingBlockRoutingTest {
                         RIVAL_BLOC + ":" + WARM_MEMBER,
                         RIVAL_BLOC + ":" + ABSENT_MEMBER)));
 
-            assertThat(routing.selectStandingsIn(StandingBlock.FRIENDLY))
-                .containsExactly(routeQualified(RIVAL_BLOC, 1, 1));
+            assertThat(readListedBlocs(routing, StandingBlock.FRIENDLY))
+                .containsExactly(RIVAL_BLOC);
 
             assertThat(routing.selectStandingsIn(StandingBlock.CONTESTED))
                 .isEmpty();
@@ -395,6 +395,75 @@ class StandingBlockRoutingTest {
             assertThat(readListedMembers(routing, StandingBlock.CONTESTED))
                 .containsExactly(RIVAL_MEMBER_E, RIVAL_MEMBER_F);
         }
+
+        @Test
+        void routeRankedStandingsCountsTheHoldersMembersOnALoneFactionStandingAgainstABloc() {
+            // The reading a faction's row states rather than a bloc's: how much of the holder it
+            // quarrels with. It is the only fraction a lone faction has to state, its own bloc being
+            // one member that could count nothing but nought or the whole.
+            var routing = StandingBlockRouting.routeRankedStandings(
+                List.of(
+                    new GroupStanding(
+                        HOLDER_ALLIANCE_BLOC,
+                        ANY_SCORE,
+                        List.of(new WeighedFactionStanding(HOLDER_MEMBER_A, ANY_SCORE))),
+                    new GroupStanding(
+                        RIVAL_BLOC,
+                        ANY_SCORE,
+                        List.of(new WeighedFactionStanding(RIVAL_BLOC, ANY_SCORE)))),
+                buildRules(
+                    buildTwoAlliances(),
+                    buildTwoAlliances(),
+                    List.of(
+                        RIVAL_BLOC + ":" + HOLDER_MEMBER_B,
+                        RIVAL_BLOC + ":" + HOLDER_MEMBER_C)));
+
+            assertThat(readMemberFraction(routing, StandingBlock.CONTESTED, RIVAL_BLOC))
+                .isEqualTo(new StandingFraction(1, 3));
+
+            assertThat(readBlocFraction(routing, StandingBlock.CONTESTED))
+                .isEqualTo(new StandingFraction(1, 1));
+        }
+
+        @Test
+        void routeRankedStandingsCountsEachMemberOfAnUnsplitBlocAgainstTheHolderSeparately() {
+            // A bloc none of whose members is friendly is listed whole, and its row states nothing -
+            // the heading took all of it. Its members still state their own counts, each quarrelling
+            // with a different one of the holder's three, which is what shows a member's number is
+            // not a part of the bloc's.
+            var alliances = buildTwoAlliances();
+
+            var routing = StandingBlockRouting.routeRankedStandings(
+                List.of(
+                    new GroupStanding(
+                        HOLDER_ALLIANCE_BLOC,
+                        ANY_SCORE,
+                        List.of(new WeighedFactionStanding(HOLDER_MEMBER_A, ANY_SCORE))),
+                    new GroupStanding(
+                        RIVAL_ALLIANCE_BLOC,
+                        ANY_SCORE,
+                        List.of(
+                            new WeighedFactionStanding(RIVAL_MEMBER_D, ANY_SCORE),
+                            new WeighedFactionStanding(RIVAL_MEMBER_E, ANY_SCORE)))),
+                buildRules(
+                    alliances,
+                    alliances,
+                    List.of(
+                        RIVAL_MEMBER_D + ":" + HOLDER_MEMBER_B,
+                        RIVAL_MEMBER_D + ":" + HOLDER_MEMBER_C,
+                        RIVAL_MEMBER_E + ":" + HOLDER_MEMBER_A,
+                        RIVAL_MEMBER_E + ":" + HOLDER_MEMBER_C,
+                        RIVAL_MEMBER_F + ":" + HOLDER_MEMBER_A)));
+
+            assertThat(readBlocFraction(routing, StandingBlock.CONTESTED))
+                .isEqualTo(new StandingFraction(3, 3));
+
+            assertThat(readMemberFraction(routing, StandingBlock.CONTESTED, RIVAL_MEMBER_D))
+                .isEqualTo(new StandingFraction(1, 3));
+
+            assertThat(readMemberFraction(routing, StandingBlock.CONTESTED, RIVAL_MEMBER_E))
+                .isEqualTo(new StandingFraction(1, 3));
+        }
     }
 
     @Nested
@@ -415,6 +484,18 @@ class StandingBlockRoutingTest {
             assertThat(routeWithoutAlliances().hasAnyStanding())
                 .isFalse();
         }
+    }
+
+    // The blocs one block lists, in the order it placed them. What most cases read, since which block
+    // a bloc lands in is what the axes decide and what it counts is a separate question - asserted on
+    // whole routed values, a placement case would break on any change to either.
+    private static List<String> readListedBlocs(StandingBlockRouting routing, StandingBlock block) {
+
+        return routing
+            .selectStandingsIn(block)
+            .stream()
+            .map(routed -> routed.standing().blocId())
+            .toList();
     }
 
     // The factions one block lists beneath the bloc it placed there, in the order it placed them.
@@ -559,14 +640,11 @@ class StandingBlockRoutingTest {
         return new StandingBlockRules(
             IS_POLITICAL_BLOC,
             new BlocAffiliation(allianceSet),
-            // Read either way round, as the game's own dispositions are: one number both factions
-            // see. It matters here because the two fractions a row can state are taken from opposite
-            // ends of the same pair - a bloc's counts its members against the holder, a faction's
-            // counts the holder's members against it - so a table read one way only would answer the
-            // two out of different sectors.
+            // Read one way round, every rule here asking its pairs from the faction being sorted -
+            // so a table stating what a rival thinks of the holder settles which side that rival
+            // takes and both the counts stated on its row alike.
             new BlocFriendliness((factionId, otherFactionId) ->
-                aboveNeutralPairs.contains(factionId + ":" + otherFactionId)
-                    || aboveNeutralPairs.contains(otherFactionId + ":" + factionId)),
+                aboveNeutralPairs.contains(factionId + ":" + otherFactionId)),
             membershipFold::resolveMemberFactionIds);
     }
 
@@ -590,13 +668,4 @@ class StandingBlockRoutingTest {
         return RoutedStanding.routeWhole(createGroupStanding(blocId));
     }
 
-    // And as a block placed by disposition lists it, where the whole of the bloc landed under the one
-    // heading: the same group, over how much of its membership that heading took.
-    private static RoutedStanding routeQualified(String blocId, int count, int total) {
-
-        return RoutedStanding.routeQualified(
-            createGroupStanding(blocId),
-            new StandingFraction(count, total),
-            Map.of());
-    }
 }

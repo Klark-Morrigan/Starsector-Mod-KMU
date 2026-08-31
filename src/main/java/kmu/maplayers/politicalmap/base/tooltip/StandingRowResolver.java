@@ -107,28 +107,29 @@ public final class StandingRowResolver {
             FactionAccountResolver accountResolver) {
 
         var standing = routedStanding.standing();
-        var memberEntries = resolveMemberEntries(sector, routedStanding, accountResolver);
         var blocId = standing.blocId();
 
         if (!grouping.isAlliance(blocId)) {
-            // A lone-faction group has one member, so the group is exactly that member: reuse both the
-            // resolved line and the account already hung beneath it rather than reading either a second
-            // time. The member's own line is dropped instead of being listed under the group's, since
-            // repeating it would say nothing the line above did not - so the account it carries moves up
-            // to hang directly off the group, which is the same faction under another name.
-            var groupMemberEntry = memberEntries.get(0);
-
+            // A lone-faction group has one member, so the group is exactly that member: it takes that
+            // member's own name, crest and account rather than reading any of them a second time. The
+            // member's line is never listed beneath the group's, since repeating it would say nothing
+            // the line above did not - so the account it would have carried hangs directly off the
+            // group, which is the same faction under another name.
+            //
             // And the fraction it states is that faction's, for the same reason: how much of the
             // holder this faction is at odds with. The bloc-of-one reading beside it could only ever
             // count one member out of one, which states nothing at either end of its range.
+            var groupMember = standing.members().get(0);
+            var groupMemberLine = buildMemberLine(sector, groupMember);
+
             return CellTooltipEntry
                 .createEntry(stateFraction(
                     buildGroupLine(
-                        groupMemberEntry.line().mark(),
-                        groupMemberEntry.line().labelText(),
+                        groupMemberLine.mark(),
+                        groupMemberLine.labelText(),
                         standing),
-                    routedStanding.readFractionFor(standing.members().get(0).factionId())))
-                .nesting(groupMemberEntry.children());
+                    routedStanding.readFractionFor(groupMember.factionId())))
+                .nesting(accountResolver.resolveAccountEntries(groupMember));
         }
         // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
         // name and crest the alliances view paints the bloc's cluster by - over the factions in it,
@@ -147,7 +148,7 @@ public final class StandingRowResolver {
         // whether the faction it hangs under is allied or standing alone.
         return CellTooltipEntry
             .createEntry(allianceLine)
-            .grouping(memberEntries);
+            .grouping(resolveMemberEntries(sector, routedStanding, accountResolver));
     }
 
     // How far the heading over a row reaches, stated after the row's name where it reaches over only
@@ -170,8 +171,8 @@ public final class StandingRowResolver {
     }
 
     // The crest a bloc shows: its colour (lead) faction's, which is the crest the alliances view
-    // paints that bloc's cluster by. Read here for both the line naming a bloc and the status
-    // attributing a row to one, so a bloc cannot end up crested two ways inside one box.
+    // paints that bloc's cluster by, so the line naming a bloc and the cluster it names are marked
+    // alike.
     private static CellTooltipMark resolveAllianceCrest(
             SectorAPI sector,
             HolderGrouping grouping,

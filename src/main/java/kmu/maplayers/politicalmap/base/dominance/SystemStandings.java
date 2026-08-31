@@ -169,14 +169,10 @@ public final class SystemStandings {
         }
     }
 
-    // Ranks one group's members and sums their scores into the group's aggregate, so a group's own
-    // ranking key is exactly the total of the members it lists.
+    // Ranks one group's members, the group itself then being weighed at what they come to between
+    // them - which is the group's own rule rather than this ranking's, so it is asked for.
     private static GroupStanding rankGroup(String blocId, List<FactionStanding> members) {
         members.sort(MEMBER_ORDER);
-        var aggregateScore = 0;
-        for (var member : members) {
-            aggregateScore += member.score();
-        }
-        return new GroupStanding(blocId, aggregateScore, members);
+        return GroupStanding.sumOverMembers(blocId, members);
     }
 }

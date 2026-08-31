@@ -13,11 +13,11 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
+import kmu.maplayers.base.tooltip.CellTooltipBody;
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -114,7 +114,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
-        var sections = new ArrayList<TooltipSection>();
+        var body = CellTooltipBody.openBody(detailLevel);
 
         // One read for the whole box: the claimant, the override behind it, the colony rule and
         // every standing the projection leaves it free to name are all taken from a single pass, so
@@ -151,57 +151,62 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             colonies,
             colonyKnowledge);
 
-        CellTooltipSections.appendBannerSection(sections, statusRow);
+        body.appendBannerSection(statusRow);
 
         // The status is what the claim block is judged against, so the two are read from the one
         // resolve: a banner that appeared and a claim that says nobody would otherwise be settled by
         // two reads of the economy, one of which could call the system populated after the other had
         // already told the player it was not.
-        CellTooltipSections.appendSection(
-            sections,
+        //
+        // Appended here rather than beside the blocks below for that reason alone: it is the one
+        // block whose contents turn on what the banner answered, and every other is placed by how a
+        // faction stands to the claimant this one names.
+        body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()),
-            detailLevel);
+            buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()));
 
-        // Between the claim and its rivals, so the box reads as the holder, who stands with it by
-        // alliance, who stands with it in disposition, who stands against it, and who was never in it
-        // at all. The allied block is empty wherever the claimant has no ally present - which is every
-        // system on an install with nothing grouping factions - and the friendly one wherever nobody
-        // present is above neutral with the holder; either is dropped by the same rule that drops any
-        // other block standing over no entries.
-        CellTooltipSections.appendSection(
-            sections,
+        appendStandingSections(body, sector, contest, colonyReading);
+
+        return body.readSections();
+    }
+
+    // Everyone present other than the claimant, in the blocks their standing to it puts them in: who
+    // stands with it by alliance, who stands with it in disposition, who stands against it, and who was
+    // never in the running at all. So the box reads as the holder and then the contest around it.
+    //
+    // Every block is appended unconditionally - the allied one is empty wherever the claimant has no
+    // ally present, which is every system on an install with nothing grouping factions, and the
+    // friendly one wherever nobody present is above neutral with the holder - since a block standing
+    // over no entries is dropped by the same rule that drops any other.
+    private void appendStandingSections(
+            CellTooltipBody body,
+            SectorAPI sector,
+            ListedClaimContest contest,
+            SystemColonyReading colonyReading) {
+
+        body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()),
-            detailLevel);
+            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()));
 
-        CellTooltipSections.appendSection(
-            sections,
+        body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()),
-            detailLevel);
+            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()));
 
-        CellTooltipSections.appendSection(
-            sections,
+        body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
             buildEligibilityEntries(
                 sector,
                 contest,
                 colonyReading,
-                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)),
-            detailLevel);
+                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));
 
-        CellTooltipSections.appendSection(
-            sections,
+        body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
             buildEligibilityEntries(
                 sector,
                 contest,
                 colonyReading,
-                contest.selectRivalStandings(standing -> !standing.isTerritorial())),
-            detailLevel);
-
-        return sections;
+                contest.selectRivalStandings(standing -> !standing.isTerritorial())));
     }
 
     @Override

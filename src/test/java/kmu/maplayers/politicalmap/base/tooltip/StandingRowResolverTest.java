@@ -226,7 +226,7 @@ final class StandingRowResolverTest {
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.routeQualified(
+                List.of(new RoutedStanding(
                     new GroupStanding("alliance-1", 11, List.of(
                         new WeighedFactionStanding("hegemony", 8),
                         new WeighedFactionStanding("astral_armada", 3))),
@@ -253,7 +253,7 @@ final class StandingRowResolverTest {
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.routeQualified(
+                List.of(new RoutedStanding(
                     new GroupStanding("alliance-1", 11, List.of(
                         new WeighedFactionStanding("hegemony", 8),
                         new WeighedFactionStanding("astral_armada", 3))),
@@ -282,7 +282,7 @@ final class StandingRowResolverTest {
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.routeQualified(
+                List.of(new RoutedStanding(
                     new GroupStanding("hegemony", 7, List.of(
                         new WeighedFactionStanding("hegemony", 7))),
                     new StandingFraction(1, 1),
@@ -306,7 +306,7 @@ final class StandingRowResolverTest {
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.routeQualified(
+                List.of(new RoutedStanding(
                     new GroupStanding("alliance-1", 11, List.of(
                         new WeighedFactionStanding("hegemony", 8),
                         new WeighedFactionStanding("astral_armada", 3))),
@@ -332,7 +332,7 @@ final class StandingRowResolverTest {
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.routeQualified(
+                List.of(new RoutedStanding(
                     new GroupStanding("astral_armada", 0, List.of(
                         new PresenceOnlyFactionStanding("astral_armada"))),
                     new StandingFraction(1, 1),

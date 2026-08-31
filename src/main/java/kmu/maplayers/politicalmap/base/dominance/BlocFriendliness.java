@@ -24,10 +24,15 @@ import java.util.function.BiPredicate;
  * this answers no for is not thereby hostile: it is a bloc no single statement is true of, and what
  * a caller does with that is its own.
  *
- * <p>How much of a membership is at odds is answered here too, off the same walk over the same pairs
- * as the yes-or-no. A caller filing a bloc under one heading and stating a number worked out
- * elsewhere could draw a count contradicting the heading it sits under - a bloc listed as friendly
- * saying none of it is.
+ * <p>How much of a membership is at odds is answered here too, at both tiers and off the same walk
+ * over the same pairs as the yes-or-no. A caller filing a bloc under one heading and stating a number
+ * worked out elsewhere could draw a count contradicting the heading it sits under - a bloc listed as
+ * friendly saying none of it is.
+ *
+ * <p>Every answer reads its pairs from the faction named first, which is what keeps the two counts
+ * and the yes-or-no one question. A disposition is a fact one faction holds about another, so a rule
+ * asking the same pair from either end is a rule that can sort a faction one way and count it the
+ * other wherever a supplied disposition is not returned alike both ways round.
  *
  * <p>Pure rule with no Starsector types: the memberships arrive as plain ids and the faction-level
  * disposition as a predicate over a pair of them, so the rule is exercised on hand-built inputs and
@@ -95,23 +100,44 @@ public final class BlocFriendliness {
         return atOddsCount;
     }
 
-    // Whether one faction is above neutral with every one of a bloc's members - the pair walk both
-    // public answers are composed from, so neither can be worked out of a reading the other rejects.
-    //
-    // A bloc made of nobody is nobody to be friendly with, on the same reasoning the whole rule is
-    // a positive claim: there is no pair to make the claim of.
-    private boolean isFactionFriendlyWithAll(String factionId, Set<String> otherBlocFactionIds) {
+    /**
+     * How many of a bloc's members one faction is not friendly with - the number a row about that
+     * faction rather than about a bloc is built from.
+     *
+     * <p>The other reading of the same walk: this counts the far side a faction falls short of, where
+     * {@link #countMembersAtOddsWith} counts the near side falling short of a whole bloc. Both are
+     * taken from the faction named first, so a faction sorted one way by
+     * {@link #areBlocsFriendly} cannot be counted the other way here - which asking the pair from the
+     * bloc's end would let happen wherever a disposition is not returned alike both ways round.
+     *
+     * @param factionId           the faction being counted for
+     * @param otherBlocFactionIds the bloc it is measured against
+     * @return how many of that bloc it falls short of friendly with
+     */
+    public int countFactionsAtOddsWith(String factionId, Set<String> otherBlocFactionIds) {
 
-        if (otherBlocFactionIds.isEmpty()) {
-            return false;
-        }
+        var atOddsCount = 0;
 
         for (var otherFactionId : otherBlocFactionIds) {
 
             if (!factionFriendliness.test(factionId, otherFactionId)) {
-                return false;
+                atOddsCount++;
             }
         }
-        return true;
+        return atOddsCount;
+    }
+
+    // Whether one faction is above neutral with every one of a bloc's members - the reading every
+    // public answer here is composed from, so no two of them can be worked out of pairs read in
+    // opposite directions.
+    //
+    // A bloc made of nobody is nobody to be friendly with, on the same reasoning the whole rule is
+    // a positive claim: there is no pair to make the claim of. Which is why this is not simply the
+    // count above reaching nought - a faction is at odds with none of an empty bloc and friendly with
+    // none of it either.
+    private boolean isFactionFriendlyWithAll(String factionId, Set<String> otherBlocFactionIds) {
+
+        return !otherBlocFactionIds.isEmpty()
+            && countFactionsAtOddsWith(factionId, otherBlocFactionIds) == 0;
     }
 }

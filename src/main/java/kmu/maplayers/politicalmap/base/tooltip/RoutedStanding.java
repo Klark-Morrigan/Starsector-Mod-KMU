@@ -41,29 +41,15 @@ public record RoutedStanding(
      * Lists a group under a heading true of the whole of it, which is what every block placed by
      * membership does: a row there states no fraction and neither does anything under it.
      *
+     * <p>Named where the qualified case is not, because this is the one that fills absences in - a
+     * block placed by disposition works both fractions out and states them outright.
+     *
      * @param standing the group
      * @return the group listed with nothing qualifying it
      */
     public static RoutedStanding routeWhole(GroupStanding standing) {
 
         return new RoutedStanding(standing, StandingFraction.NOTHING_TO_STATE, Map.of());
-    }
-
-    /**
-     * Lists a group under a heading that may reach over only part of it - what the two blocks placed
-     * by disposition do, whether the bloc landed in one of them or in both.
-     *
-     * @param standing        the group as this block lists it, holding the members on its side
-     * @param fraction        how far the heading reaches over the bloc
-     * @param memberFractions how far it reaches over each member, keyed by faction id
-     * @return the group listed under a qualified heading
-     */
-    public static RoutedStanding routeQualified(
-            GroupStanding standing,
-            StandingFraction fraction,
-            Map<String, StandingFraction> memberFractions) {
-
-        return new RoutedStanding(standing, fraction, memberFractions);
     }
 
     /**
