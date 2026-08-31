@@ -295,10 +295,9 @@ about what the overlay means.
   `SidebarHosts`), and `VanillaChromeMapCover` (the map's own tab strip and control bar, stated as
   "outside the map surface" since the chrome widgets are a fact about one game build).
 
-  The modal one sits ahead of the sidebar's deliberately. A modal stands the sidebar down, so on the
-  frames it covers the map the panel is not drawn and its cover can no longer answer for it - which
-  is both why the modal needs a cover of its own and why paying for the sidebar's placement resolve
-  behind it would buy a false it could not stop reaching.
+  The modal one sits ahead of the sidebar's deliberately: a modal stands the sidebar down, so the
+  panel's own cover cannot answer for one. `ModalDialogMapCover` states what follows for its
+  existence and `MapCoverReader` what follows for the order.
 
   Two more belong to optional mods, live with those mods' own integrations, and join the set only
   where the mod is installed - presence being the one condition that cannot move within a run, so

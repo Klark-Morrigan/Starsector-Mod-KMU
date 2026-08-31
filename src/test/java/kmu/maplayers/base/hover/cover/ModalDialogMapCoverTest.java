@@ -18,9 +18,7 @@ final class ModalDialogMapCoverTest {
         @Test
         void isCoveringCursorAnswersCoveredWhileAModalIsUp() {
             // Asserted with no cursor arranged at all, which is the point: this cover reads no
-            // geometry, so the modal covers the map wherever the pointer happens to be. It is also
-            // the case the map had no answer for - the sidebar stands down under the same modal, so
-            // its cover cannot be the one that reports this.
+            // geometry, so the modal covers the map wherever the pointer happens to be.
             assertThat(new ModalDialogMapCover(() -> true).isCoveringCursor())
                 .isTrue();
         }

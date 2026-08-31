@@ -73,6 +73,35 @@ final class MapCoverReaderTest {
     class ComposeLiveCovers {
 
         @Test
+        void asksAModalBeforeTheSidebarItStandsDown() {
+            // Load-bearing rather than incidental, and the one ordering a later cover could break by
+            // being inserted between them: a modal stands the sidebar down, so behind it the
+            // sidebar's cover resolves placements for a panel that is not drawn, to reach a false it
+            // can no longer avoid. Pinned on its own because the full-list assertion below would
+            // report a break in it as a mismatch about optional mods.
+            // Presence stubbed for the same reason the case below stubs it: both are always-present
+            // covers, so what the optional mods would add says nothing about the order between them.
+            try (var consoleMock = mockStatic(ConsoleCommandsPresence.class);
+                    var minimapModMock = mockStatic(RandomAssortmentOfThingsPresence.class)) {
+
+                consoleMock
+                    .when(ConsoleCommandsPresence::isModEnabled)
+                    .thenReturn(false);
+                minimapModMock
+                    .when(RandomAssortmentOfThingsPresence::isModEnabled)
+                    .thenReturn(false);
+
+                var coverTypes = MapCoverReader.composeLiveCovers()
+                    .stream()
+                    .map(Object::getClass)
+                    .toList();
+
+                assertThat(coverTypes.indexOf(ModalDialogMapCover.class))
+                    .isLessThan(coverTypes.indexOf(SidebarMapCover.class));
+            }
+        }
+
+        @Test
         void leavesAnOptionalModsCoverOutWhereThatModIsNotInstalled() {
             // Presence cannot move within a run, so it is settled here rather than asked per frame
             // by a cover that could only ever answer no. Without the gate the two would be composed
