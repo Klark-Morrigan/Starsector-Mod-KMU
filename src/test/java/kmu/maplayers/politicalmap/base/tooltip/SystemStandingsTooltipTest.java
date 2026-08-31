@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
@@ -188,6 +189,34 @@ final class SystemStandingsTooltipTest {
 
             StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
                 AccountingStandingsTooltip.FACTION_ACCOUNTS);
+        }
+
+        @Test
+        void composeBodyAsksTheBoxForNoAccountAtAllWhereTheLevelAdmitsNoLineOfOne() {
+            // The cut alone would draw the same box, and that is the fault: an account is everything a
+            // listed faction is subordinated over, so the shallowest level draws not one of its lines
+            // - while the read behind it is the most expensive thing a hover makes. Asked for and then
+            // cut, the level that shows the least would cost the most.
+            var accountingTooltip = new AccountingStandingsTooltip(claimBreakdownReaderFake);
+
+            accountingTooltip.composeBody(sectorMock, systemMock, FACTIONS);
+
+            assertThat(accountingTooltip.readRequestedLevels())
+                .isEmpty();
+        }
+
+        @Test
+        void composeBodyAsksTheBoxForTheAccountAtTheLevelItWillBeReadTo() {
+            // The level travels to the box rather than only gating the call, so an account carrying
+            // tiers of its own stops where the cut would. Handed a fixed depth instead, the box would
+            // work its deepest tiers out over every level that admits any account at all.
+            var accountingTooltip = new AccountingStandingsTooltip(claimBreakdownReaderFake);
+
+            accountingTooltip.composeBody(sectorMock, systemMock, SYSTEM_COMPOSITION);
+            accountingTooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS);
+
+            assertThat(accountingTooltip.readRequestedLevels())
+                .containsExactly(SYSTEM_COMPOSITION, PATROL_DETAILS);
         }
 
         @Test
@@ -560,9 +589,10 @@ final class SystemStandingsTooltipTest {
     }
 
     /**
-     * A box that does have something to hang beneath the factions it lists - the shared shape's other
-     * side, and the only way to tell a box's own account reaching the resolution apart from an empty
-     * one reaching it. What the account says is never read; that it is this box's is the point.
+     * A box that does have something to hang beneath the factions it lists, and that records every
+     * level it was asked to build one at - the shared shape's other side, and the only way to tell a
+     * box's own account reaching the resolution apart from an empty one reaching it. What the account
+     * says is never read; that it is this box's, and that it was asked for at all, are the points.
      */
     private static final class AccountingStandingsTooltip extends SystemStandingsTooltip {
 
@@ -571,6 +601,12 @@ final class SystemStandingsTooltipTest {
         private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of(
             CellTooltipEntry.createEntry(
                 CellTooltipEntryLine.createLine(null, standing.factionId(), "1")));
+
+        // The levels the shape asked this box for an account at, in the order it asked. Recorded
+        // rather than inferred from what the box went on to draw: an account built and then cut
+        // leaves a body identical to one never asked for, which is the whole distinction the cases
+        // reading this are about.
+        private final List<HoverTooltipDetailLevel> requestedLevels = new ArrayList<>();
 
         private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
             super(claimBreakdownReader, HolderGrouping::identity);
@@ -582,7 +618,12 @@ final class SystemStandingsTooltipTest {
                 DominancePass pass,
                 HoverTooltipDetailLevel detailLevel) {
 
+            requestedLevels.add(detailLevel);
             return FACTION_ACCOUNTS;
+        }
+
+        private List<HoverTooltipDetailLevel> readRequestedLevels() {
+            return List.copyOf(requestedLevels);
         }
     }
 }

@@ -35,6 +35,7 @@ import static kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture.na
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.NO_NAME_STATED;
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
@@ -990,6 +991,37 @@ final class ClaimScoreRowResolverTest {
                 .containsExactly("Size");
             assertThat(rows.get(0).children().get(0).line().valueText())
                 .isEqualTo("7");
+        }
+
+        @Test
+        void resolveMarketRowsWorksOutNoTermWhereTheLevelStopsAtTheMarkets() {
+            // The market is listed and its terms are not worked out at all. Left to the cut, every
+            // market of every faction present would have its arithmetic worded and then dropped over
+            // a hover that asked only which colonies a faction claims the system with.
+            //
+            // A market with a garrison, so the level is what leaves the account bare rather than a
+            // market whose only term is the size it opens on.
+            var standing = buildStanding(
+                ClaimMarketFixture
+                    .startMarket(STRONGEST_MARKET)
+                    .setNameplate(UNMARKED_MARKET)
+                    .setListingPosition(FIRST_LISTED)
+                    .setMarketSize(STRONGEST_MARKET_SIZE)
+                    .setMilitaryBonus(MILITARY_BONUS)
+                    .buildMarket(),
+                List.of());
+
+            var rows = ClaimScoreRowResolver.resolveMarketRows(
+                buildBreakdownClaimedBy(HEGEMONY, standing),
+                standing,
+                NOTHING_BEYOND_THE_SCORE,
+                WITHHOLDING_UNDISCOVERED_MARKETS,
+                SYSTEM_COMPOSITION);
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly(STRONGEST_MARKET);
+            assertThat(rows.get(0).children())
+                .isEmpty();
         }
 
         @Test

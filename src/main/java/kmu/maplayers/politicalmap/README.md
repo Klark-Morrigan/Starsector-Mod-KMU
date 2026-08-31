@@ -251,17 +251,27 @@ the heading by claiming there is no decree.
 
 `SystemDominationTooltip` lists every faction holding the system over the colonies its score was
 summed from, and each colony over the factors behind its weight, down to a colony's patrol tiers. It
-composes that account whole at every detail level and the blocks cut it: who holds the system at the
-shallowest, the colonies a tier down, their factors a tier below again. One tree read to four depths
-rather than four bodies, so no two depths can describe one system differently.
+composes one account, read to whatever depth was asked for, and the blocks cut it: who holds the
+system at the shallowest, the colonies a tier down, their factors a tier below again. One tree read
+to four depths rather than four bodies, so no two depths can describe one system differently.
+
+Composition stops where the cut would, this layer's deeper tiers being the expensive ones. The
+account resolver is built only from the composition level down (`SystemStandingsTooltip`), so the
+shallowest level makes no `readWeightBreakdownsByFaction`, no unweighed-colony read and no
+`SystemColonyReading` walk at all - the walk behind those being the most expensive thing a hover
+does, and not one line off it drawn at that level. Below it the same rule runs on inside
+`MarketWeightRowResolver`: a colony's factors are worked out only from `MARKET_STATS`, its patrol
+tiers only at `PATROL_DETAILS`. What is *drawn* stays the cut's alone, so the box a level shows is
+identical either way.
 
 It sits on `SystemStandingsTooltip`, which settles everything but that nesting - one pass read from
 the active view, the ranking, the status line, the headings and which of them a group falls under,
 the lines naming the blocs and the member factions inside them. What the box adds is one answer:
 what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked for
 once per paint and applied by `StandingRowResolver` where the standing and the line named from it
-are both in hand, so no faction's colonies can be listed under another's name. Hanging nothing is
-the shared default, which is what a box with nothing further to say answers.
+are both in hand, so no faction's colonies can be listed under another's name. Every box on the
+shape answers it rather than inheriting an empty one: a box that hung nothing would draw the same
+thing at all four levels while `F1` went on offering to open it up.
 
 Where each ranked group is listed is `StandingBlockRouting`'s one answer, taken per hover over the
 closed set of blocks `StandingBlock` names - which carries each block's heading too, so the order
@@ -477,11 +487,14 @@ answers with the account's own concealment fact), no row of either box carrying 
 ### The claims box
 
 `SystemClaimTooltip` opens every faction the contest names into the markets it holds the system with
-and each market into the terms its claim score is built from - composed whole at every level and cut
-by the blocks, on the same terms as the domination box. It sits on `SystemClaimContestTooltip`,
-which settles the one read behind it, the claimant, the decree marker, and the five blocks, and
-leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
-default). That account is handed the whole `ListedClaimContest` rather than the scored read alone,
+and each market into the terms its claim score is built from - one account, read to whatever depth
+was asked for and cut by the blocks, on the same terms as the domination box. It sits on
+`SystemClaimContestTooltip`, which settles the one read behind it, the claimant, the decree marker,
+and the five blocks, and leaves open only what hangs beneath a faction (`resolveAccountEntries`,
+answered by every box on the shape). It is asked at all only from the composition level down, so the
+shallowest level selects, ranks and words no faction's markets; below it `ClaimScoreRowResolver`
+works out a market's terms only from `MARKET_STATS`. That account is handed the whole
+`ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to
 answer two factions of one box under two different rules. Both relations to the claim holder travel

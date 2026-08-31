@@ -1126,6 +1126,28 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
+        void composeBodyResolvesNoFactionsMarketsWhereTheLevelNamesTheFactionsAlone() {
+            // The other half of the cut, and the half the drawn box cannot show: an account is
+            // everything a listed faction is subordinated over, so the shallowest level draws not one
+            // of its lines - and it is therefore never worked out. Cut after the fact, every faction
+            // in every block would have its markets selected, ranked and worded first, over a hover
+            // that asked only who claims the system.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            try (var rowResolverMock = Mockito.mockStatic(ClaimScoreRowResolver.class)) {
+
+                tooltip.composeBody(sectorMock, systemMock, FACTIONS);
+
+                rowResolverMock.verifyNoInteractions();
+            }
+        }
+
+        @Test
         void composeBodyHangsEachFactionsColoniesBeneathItsOwnLine() {
             // Every block the box has takes the account, claimant and rival alike - and a colony reads
             // under the faction that holds it rather than under whichever line came before it.
@@ -1344,6 +1366,22 @@ final class SystemClaimTooltipTest {
 
             assertThat(readLabelTexts(entries.get(0).children()))
                 .containsExactly("Size");
+        }
+
+        @Test
+        void resolveAccountEntriesBreaksAMarketIntoNothingWhereTheLevelStopsAtTheMarkets() {
+            // The level reaches the account rather than only deciding whether to ask for one, so the
+            // composition level names the markets and works out none of the arithmetic beneath them.
+            var entries = tooltip.resolveAccountEntries(
+                CONTESTED_CONTEST,
+                buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                SystemColonyReading.NONE,
+                SYSTEM_COMPOSITION);
+
+            assertThat(readLabelTexts(entries))
+                .containsExactly("Standing Colony");
+            assertThat(entries.get(0).children())
+                .isEmpty();
         }
 
         @Test

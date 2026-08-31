@@ -62,7 +62,9 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
@@ -402,6 +404,19 @@ final class SystemDominationTooltipTest {
             assertThat(sections.get(0).readRowsInOrder())
                 .containsExactly(statusRow);
         }
+
+        @Test
+        void composeBodyWalksNoColonyOfTheSystemWhereTheLevelNamesItsHoldersAlone() {
+            // The whole point of gating the account rather than cutting it afterwards. Every read
+            // behind a colony line goes through the one walk, and it is the most expensive thing a
+            // hover does - so the level that draws none of those lines has to pay for none of it.
+            // Read and then cut, a player leaving the box shut would be charged what opening it costs.
+            StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
+
+            tooltip.composeBody(sectorMock, systemMock, FACTIONS);
+
+            footprintsMock.verifyNoInteractions();
+        }
     }
 
     @Nested
@@ -437,6 +452,24 @@ final class SystemDominationTooltipTest {
 
             assertThat(readLabelTexts(colonyEntries.get(0).children()))
                 .containsExactly("Size");
+        }
+
+        @Test
+        void createFactionAccountResolverBreaksAColonyIntoNothingWhereTheLevelStopsAtTheColonies() {
+            // The level travels on into the account rather than stopping at the decision to build one:
+            // the composition level names the colonies and works out none of the arithmetic beneath
+            // them. Left to the cut, the box would have worded every factor of every colony first and
+            // then dropped the lot.
+            stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
+
+            var colonyEntries = tooltip
+                .createFactionAccountResolver(systemMock, ANY_PASS, SYSTEM_COMPOSITION)
+                .resolveAccountEntries(LEAD_MEMBER);
+
+            assertThat(readLabelTexts(colonyEntries))
+                .containsExactly("Jangala");
+            assertThat(colonyEntries.get(0).children())
+                .isEmpty();
         }
 
         @Test

@@ -31,7 +31,9 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.MARKET_STATS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
@@ -492,6 +494,44 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
+        void resolveMarketRowsWorksOutNoFactorWhereTheLevelStopsAtTheColonies() {
+            // The colony is listed and its arithmetic is not worked out at all. Left to the cut, four
+            // factor lines per colony would be worded and then dropped, which is a system's worth of
+            // numbers formatted for a reader who asked only which colonies a faction holds here.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildPatrollingBreakdown(2, 1, 0)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules(),
+                SystemColonyReading.NONE,
+                SYSTEM_COMPOSITION);
+
+            assertThat(readLabelTexts(rows))
+                .containsExactly("Jangala");
+            assertThat(rows.get(0).children())
+                .isEmpty();
+        }
+
+        @Test
+        void resolveMarketRowsWorksOutNoPatrolTierWhereTheLevelStopsAtTheStats() {
+            // One tier further down, and the same rule: the patrol total is a stat the level admits,
+            // while the split behind it is the tier below and is never worked out. So the level that
+            // states what a colony fields costs nothing of the one that says what it fields it with.
+            var rows = MarketWeightRowResolver.resolveMarketRows(
+                List.of(buildPatrollingBreakdown(2, 1, 0)),
+                NO_UNWEIGHED_COLONIES,
+                buildRules(),
+                SystemColonyReading.NONE,
+                MARKET_STATS);
+
+            var patrolEntry = rows.get(0).children().get(2);
+
+            assertThat(patrolEntry.line().labelText())
+                .isEqualTo("Patrols");
+            assertThat(patrolEntry.children())
+                .isEmpty();
+        }
+
+        @Test
         void resolveMarketRowsStatesATiersRateApartFromWhatItCameTo() {
             // The two halves reach the box separately so it can draw the rate quieter than the total
             // it explains; run together they would read as one number with a stray separator in it.
@@ -785,6 +825,9 @@ final class MarketWeightRowResolverTest {
     // The rows of an account where nobody is remarked on: every colony is being looked at as the
     // box is drawn, so no line says when it was last seen. The ordinary case, and the one every
     // case below bar the ones about the remark itself poses.
+    //
+    // Read to the deepest level, since a case about what a line says wants the whole tree under it.
+    // The cases about how far the resolver goes name their own level instead.
     private static List<CellTooltipEntry> resolveUnremarkedRows(
             List<MarketWeightBreakdown> breakdowns,
             List<UnweighedColony> unweighedColonies,
