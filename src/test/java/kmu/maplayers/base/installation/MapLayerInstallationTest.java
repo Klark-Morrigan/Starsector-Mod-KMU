@@ -8,6 +8,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
@@ -22,6 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Built here rather than resolved through {@link MapLayerInstallations}, since the claim is
  * about the holder itself and not about the index that hands one out.
+ *
+ * <p>One case runs on several threads, because one of these claims is only true under contention:
+ * an installation is written from the campaign thread and read from the render thread, so a
+ * make-if-absent has to be one step rather than a read and a write that read like one.
  */
 class MapLayerInstallationTest {
 
@@ -29,6 +38,18 @@ class MapLayerInstallationTest {
     // system under one id, and it is the case a shared holder gets wrong rather than merely
     // draws twice.
     private static final String SHARED_SYSTEM_ID = "a";
+
+    // How many asks meet inside one resolution. Several threads rather than two, so the window a
+    // read-then-write make-if-absent leaves open is entered from more than one side at once.
+    private static final int CONTENDING_ASKS = 8;
+
+    // Long enough that a loaded build machine is not what fails the case, short enough that a
+    // resolution that deadlocked reports it rather than hanging the suite.
+    private static final int ASK_TIMEOUT_SECONDS = 10;
+
+    // How long one make is held open, so every asker is inside the resolution while it runs. Paid
+    // once per case, since only a make waits.
+    private static final int MAKE_PAUSE_MILLIS = 50;
 
     private final MapLayerInstallation installation = new MapLayerInstallation();
     private final MapLayerInstallation otherInstallation = new MapLayerInstallation();
@@ -80,6 +101,35 @@ class MapLayerInstallationTest {
             // overwrite them.
             assertThat(resolveCountingMachineryIn(installation))
                 .isNotSameAs(resolveCountingMachineryIn(otherInstallation));
+        }
+
+        @Test
+        void makesOneOfAKindHoweverManyAsksArriveAtOnce()
+                throws InterruptedException {
+            // The map surfaces resolve what they are about to draw on the render thread while the
+            // campaign thread installs, so several asks can reach a kind this installation has none
+            // of yet. Making one each would hand one sector two renderers, and release only the one
+            // the map went on to keep - leaking the other's GL buffers with nothing left holding it.
+            //
+            // Contended rather than sequential because a make-if-absent written as a read followed
+            // by a write passes every sequential case and fails this one.
+            var creationCount = new AtomicInteger();
+            var resolved = ConcurrentHashMap.<CountingMachineryFake>newKeySet();
+
+            runContendedAsks(() -> resolved.add(installation.resolveMachinery(
+                CountingMachineryFake.class,
+                () -> {
+                    creationCount.incrementAndGet();
+                    pauseInsideTheMake();
+                    return new CountingMachineryFake();
+                })));
+
+            // Two statements of the one claim, because either alone can hold while the other
+            // breaks: one make, and every asker holding what that make produced.
+            assertThat(creationCount)
+                .hasValue(1);
+            assertThat(resolved)
+                .hasSize(1);
         }
     }
 
@@ -202,6 +252,54 @@ class MapLayerInstallationTest {
 
             assertThat(installation.isDisposed())
                 .isTrue();
+        }
+    }
+
+    // Holds the make open for a moment, which is what a real one does: a renderer builds a cover
+    // reader and an empty cache before it can be handed back. Without it the first asker usually
+    // finishes making before the rest are even scheduled, and a make-if-absent written as a read
+    // then a write slips through this case about half the time - so the pause is what gives the
+    // window the width it has in play rather than the width a stand-in happens to leave.
+    private static void pauseInsideTheMake() {
+
+        try {
+            Thread.sleep(MAKE_PAUSE_MILLIS);
+        } catch (InterruptedException interruption) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    // Runs one ask on several threads released together, so they meet inside the resolution rather
+    // than queue behind each other, and returns once every one of them is done. Failing the wait
+    // rather than reading the counters early, since a case that asserted over asks still running
+    // could report one make where the second had simply not happened yet.
+    private static void runContendedAsks(Runnable ask)
+            throws InterruptedException {
+
+        var executor = Executors.newFixedThreadPool(CONTENDING_ASKS);
+        var startSignal = new CountDownLatch(1);
+        var finishedAsks = new CountDownLatch(CONTENDING_ASKS);
+
+        try {
+            for (var askIndex = 0; askIndex < CONTENDING_ASKS; askIndex++) {
+                executor.execute(() -> {
+                    try {
+                        startSignal.await();
+                        ask.run();
+                    } catch (InterruptedException interruption) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        finishedAsks.countDown();
+                    }
+                });
+            }
+            startSignal.countDown();
+
+            assertThat(finishedAsks.await(ASK_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+                .isTrue();
+
+        } finally {
+            executor.shutdownNow();
         }
     }
 

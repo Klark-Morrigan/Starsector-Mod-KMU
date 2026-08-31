@@ -135,7 +135,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             renderInstalledDispatcher(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
 
             verify(tooltipMock)
-                .renderFor(sectorMock, systemMock);
+                .renderFor(eq(sectorMock), eq(systemMock), any());
         }
 
         @Test
@@ -145,7 +145,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             renderInstalledDispatcher(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);
 
             verify(tooltipMock)
-                .renderFor(sectorMock, systemMock);
+                .renderFor(eq(sectorMock), eq(systemMock), any());
         }
 
         @Test
@@ -167,7 +167,7 @@ class MapLayerCellTooltipGateIntegrationTest {
                 installedDispatcher().renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class))));
 
             verify(tooltipMock)
-                .renderFor(sectorMock, systemMock);
+                .renderFor(eq(sectorMock), eq(systemMock), any());
         }
 
         @Test

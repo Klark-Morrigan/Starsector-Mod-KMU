@@ -3,6 +3,9 @@ package kmu.maplayers.base.refresh;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -20,6 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * sees.
  */
 class MapLayerRefreshBoardTest {
+
+    // Enough marks that a drain running beside them lands inside the window between a snapshot and
+    // its removal many times over, rather than by luck once. A drop is silent, so a case that only
+    // sometimes opens the window would report the defect only sometimes too.
+    private static final int MARKED_SYSTEM_COUNT = 20_000;
 
     private final MapLayerRefreshBoard board = new MapLayerRefreshBoard();
 
@@ -134,6 +142,48 @@ class MapLayerRefreshBoardTest {
 
             assertThat(board.drainStaleGroupingSystemIds())
                 .isEmpty();
+        }
+
+        @Test
+        void drainStaleGroupingSystemIdsLosesNoSystemMarkedWhileItIsDraining()
+                throws InterruptedException {
+
+            // The reason the drain snapshots and then removes exactly what it snapshotted, rather
+            // than clearing: the marks arrive on the campaign thread while the drain runs on the
+            // render thread, so a clear would drop every id marked between the copy and the clear.
+            // Those are silent losses - the system stays stale, and nothing rebuilds it until some
+            // unrelated change forces a full rebuild.
+            //
+            // Every id is marked exactly once, so the drains between them must hand back exactly
+            // MARKED_SYSTEM_COUNT ids: fewer means one was dropped, more means one was handed over
+            // twice and would be re-shaped twice.
+            var drained = new ArrayList<String>();
+            var marking = new Thread(() -> {
+                for (var index = 0; index < MARKED_SYSTEM_COUNT; index++) {
+                    board.markSystemGroupingStale("system_" + index);
+                }
+            });
+
+            marking.start();
+            drainUntilMarkingStops(marking, drained);
+            marking.join();
+
+            // A last drain after the marking thread is done, for whatever it left behind.
+            drained.addAll(board.drainStaleGroupingSystemIds());
+
+            assertThat(drained)
+                .hasSize(MARKED_SYSTEM_COUNT)
+                .doesNotHaveDuplicates();
+        }
+    }
+
+    // Drains repeatedly while the marks are still arriving, which is what puts a drain inside the
+    // window a mark can land in. Stops with the marking thread rather than at a count, so the case
+    // it poses is drains racing marks rather than drains waiting for them.
+    private void drainUntilMarkingStops(Thread marking, List<String> drained) {
+
+        while (marking.isAlive()) {
+            drained.addAll(board.drainStaleGroupingSystemIds());
         }
     }
 
