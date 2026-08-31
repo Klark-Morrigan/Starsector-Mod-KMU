@@ -34,7 +34,7 @@ import java.util.Optional;
  *
  * <p>The box opens with one block of its own - the system name and whatever {@linkplain #buildTitleRows
  * title lines} the layer heads it with, read together as the heading - and the layer's own
- * {@linkplain #buildBodySections blocks} follow beneath it. A layer that has nothing to head its box
+ * {@linkplain #composeBody blocks} follow beneath it. A layer that has nothing to head its box
  * with supplies only the body and gets the plain title-over-body box, which is the ordinary case.
  *
  * <p>Composing the title as a block rather than parting it by hand is what makes the gap under the
@@ -89,28 +89,35 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             return;
         }
         var titleRows = buildTitleRows(sector, system);
-        var bodySections = buildBodySections(sector, system, detailLevel);
+        var body = composeBody(sector, system, detailLevel);
         // Nothing to say about the system - drawing the name alone would only echo the cursor.
-        if (titleRows.isEmpty() && bodySections.isEmpty()) {
+        if (titleRows.isEmpty() && body.sections().isEmpty()) {
             return;
         }
         var sections = new ArrayList<TooltipSection>();
         sections.add(buildTitleSection(system, titleRows));
-        sections.addAll(bodySections);
+        sections.addAll(body.sections());
         // Added after the emptiness check above rather than counted by it: the hint is about the box
         // rather than about the system, so a box with nothing to say about the system stays undrawn
         // instead of appearing as a lone line offering to expand into nothing.
-        buildFooterSection(sector, system, detailLevel).ifPresent(sections::add);
+        //
+        // Drawn from what the composition above already found rather than from a read of its own: the
+        // hint answers a fact about the body beside it, and a second read would charge the whole
+        // layer's economy walk to a line of fine print - once per frame the cursor rests on the cell.
+        buildFooterSection(body.deeperDetailName(), detailLevel).ifPresent(sections::add);
 
         CursorTooltipRenderer.render(sections, buildStyle());
     }
 
     @Override
     public final boolean isOfferingExpansionFor(SectorAPI sector, StarSystemAPI system) {
-        // The same answer the hint at the foot is drawn from, so the key acts exactly where the box
-        // says it would. Two reads of "is there more to show" could drift, and the shape that would
-        // take is the cruellest one: a box advertising a key that does nothing, or doing something
-        // where it advertised nothing.
+        // The press-time entry to the same question the paint answers off its own composition, and
+        // the one place a read is unavoidable: a key press composes nothing, so there is no body to
+        // take the answer from. Asked through the one seam either way, so the key acts exactly where
+        // the box says it would rather than under a second rule that could drift from it.
+        //
+        // Once per press rather than once per frame, so the read it costs is one the player asked
+        // for.
         return resolveExpandedDetailName(sector, system).isPresent();
     }
 
@@ -135,25 +142,32 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     }
 
     /**
-     * Builds this layer's content blocks, drawn top to bottom under the heading. Called once per paint
-     * with the live sector, after the economy precondition holds. The seam the whole class exists
-     * around: the box is framed here and its content is the layer's, so this shape can be shared by
-     * layers it names none of.
+     * Composes this layer's contribution to one paint: the content blocks drawn top to bottom under
+     * the heading, and what the deeper detail levels would add beyond the one asked for. Called once
+     * per paint with the live sector, after the economy precondition holds. The seam the whole class
+     * exists around: the box is framed here and its content is the layer's, so this shape can be
+     * shared by layers it names none of.
      *
      * <p>Stated as blocks rather than as lines because how far apart the box's content stands follows
      * from how it is grouped: a layer says which of its lines belong together, and every parting in the
      * box - including the one under the heading above - is then the same one decision.
      *
+     * <p>The offer comes back beside them rather than being asked for separately, because a layer
+     * reads its system once to build the body and already holds the answer
+     * ({@link ComposedCellBody}). Asked apart, the box would pay for that read twice a frame and the
+     * hint could describe a reading the body no longer agrees with.
+     *
      * <p>The level travels with the sector rather than being read here, because it reaches further than
-     * the layout: a body composes the one tree it always composes and hands it to the blocks to be cut
-     * ({@link CellTooltipBody}), and reads nothing the level has already ruled out of the box.
+     * the layout: a body composes down to the depth asked for and hands what it built to the blocks to
+     * be cut ({@link CellTooltipBody}), reading nothing the level has already ruled out of the box.
      *
      * @param sector      the live sector, whose economy the content may read
      * @param system      the star system under the cursor
      * @param detailLevel how deep the player has asked the box to read
-     * @return the body blocks, or an empty list when the layer has nothing to show for this system
+     * @return the body and its offer, or {@link ComposedCellBody#NOTHING} when the layer has nothing
+     *         to show for this system
      */
-    protected abstract List<TooltipSection> buildBodySections(
+    protected abstract ComposedCellBody composeBody(
         SectorAPI sector,
         StarSystemAPI system,
         HoverTooltipDetailLevel detailLevel);
@@ -172,6 +186,11 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * pressing the key at any depth is being told about the one richer account. Which direction the
      * hint reads is not asked of a box at all - see {@link #buildFooterSection}.
      *
+     * <p>This is the <em>press-time</em> entry to that question, reached when the key is struck and
+     * nothing has been composed to take the answer from. A paint gets the same answer out of
+     * {@link #composeBody} instead, off the read the body was built from, so the box never pays for
+     * this twice in a frame. A layer answering both states one rule and reaches it two ways.
+     *
      * <p>Asked per hovered system rather than once per box, because whether there is anything to expand
      * into is a fact about the system: a box whose deeper tiers would state nothing more for this one
      * answers empty, and the hint is dropped rather than offering a key press that changes nothing.
@@ -189,16 +208,18 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // set off - a hint about the box reading as the last line of a list would be read as part of that
     // list.
     //
-    // Which way the hint reads follows from where the drawn level sits in the cycle rather than from
+    // Takes the offer the body came back with rather than asking for one, so the line is drawn from
+    // the very reading it describes.
+    //
+    // Which way it reads follows from where the drawn level sits in the cycle rather than from
     // anything the box holds: every press but the last opens the account further, and the last wraps
     // back to the shallowest, which collapses it. Read off the level this paint was handed, so the
     // hint and the press it describes cannot come from two different reads of it.
-    private Optional<TooltipSection> buildFooterSection(
-            SectorAPI sector,
-            StarSystemAPI system,
+    private static Optional<TooltipSection> buildFooterSection(
+            Optional<String> deeperDetailName,
             HoverTooltipDetailLevel detailLevel) {
 
-        return resolveExpandedDetailName(sector, system).map(detailName -> TooltipSection.createSection(
+        return deeperDetailName.map(detailName -> TooltipSection.createSection(
             List.of(buildFooterRow(KmuStrings.format(
                 isCollapsingOnNextPress(detailLevel)
                     ? KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE

@@ -392,13 +392,17 @@ about what the overlay means.
   box taking part in the detail cycle ends on one more block: the key and what pressing it would do,
   drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights
   a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What
-  the deeper levels add is named by the layer (`resolveExpandedDetailName`), since only the layer knows
-  what is down there; which way the offer reads is asked of nobody and follows from where the drawn
-  level sits in the cycle - every press but the last opens the account further, and the last wraps
-  back to the shallowest, which collapses it. Read off the level this paint was handed, the hint and
-  the press it describes cannot come from two different reads of it. It is not content: a box with
-  nothing to say about the system stays undrawn rather than appearing as a lone offer to expand into
-  nothing. How
+  the deeper levels add is named by the layer, since only the layer knows what is down there, and it
+  comes back beside the blocks rather than being asked for (`ComposedCellBody`): whether anything
+  deeper is there turns on what the body found, so a layer that read its system to compose the blocks
+  already holds the answer. Asked separately, the box would pay for that read a second time every
+  frame the cursor rests on the cell - and the hint could describe a reading the body beside it no
+  longer agrees with. The key handler asks through `resolveExpandedDetailName` instead, that being the
+  one caller with nothing composed to take the answer from, and it asks once per press. Which way the
+  offer reads is asked of nobody and follows from where the drawn level sits in the cycle - every
+  press but the last opens the account further, and the last wraps back to the shallowest, which
+  collapses it. The hint is not content: a box with nothing to say about the system stays undrawn
+  rather than appearing as a lone offer to expand into nothing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, and a listing nested inside a block by a narrower one, so what sets two things
   apart is what they are rather than which line happens to open them. A layer states

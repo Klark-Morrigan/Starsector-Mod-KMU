@@ -197,10 +197,11 @@ final class SystemCellTooltipTest {
     class IsOfferingExpansionFor {
 
         @Test
-        void isOfferingExpansionForAnswersFromTheSameReadTheHintIsDrawnFrom() {
-            // The key acts exactly where the box says it will. Two reads of "is there more to show"
-            // could drift, and the drift would be the cruel kind - a box advertising a key that does
-            // nothing - so the offer and the line offering it are asserted off one paint.
+        void isOfferingExpansionForAgreesWithTheHintTheBoxDraws() {
+            // The key acts exactly where the box says it will. The two reach the answer by different
+            // routes - the press asks the box, the paint takes what the composition found - so what
+            // has to hold is that they agree, and the drift would be the cruel kind: a box
+            // advertising a key that does nothing. Asserted over one box, both ways at once.
             var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
                 .offering(DETAIL_NAME);
 
@@ -218,7 +219,7 @@ final class SystemCellTooltipTest {
 
         @Test
         void isOfferingExpansionForIsFalseForABoxThatNamesNothingToExpandInto() {
-            // The same read answering the other way: no hint is drawn, and the key must not act.
+            // The same agreement the other way: no hint is drawn, and the key must not act.
             var tooltipFake = buildTooltipSayingSomething();
 
             assertThat(tooltipFake.isOfferingExpansionFor(
@@ -495,6 +496,23 @@ final class SystemCellTooltipTest {
                 .containsExactly(
                     new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
                     new TextSpan("show the full breakdown", GRAY));
+        }
+
+        @Test
+        void renderForDrawsTheHintFromTheCompositionRatherThanAskingTheBoxAgain() {
+            // The whole reason the offer travels back beside the blocks. A layer reads its system to
+            // build the body and already holds the answer, so asking again would charge that read to a
+            // line of fine print - once per frame for as long as the cursor rests on the cell. The
+            // hint is drawn all the same, which is what parts this from simply dropping the question.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME);
+
+            var sections = captureDrawnBox(tooltipFake).sections();
+
+            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW))
+                .isNotNull();
+            assertThat(tooltipFake.detailNameAskCount)
+                .isZero();
         }
 
         @Test
@@ -784,6 +802,10 @@ final class SystemCellTooltipTest {
         // its foot is written from. Null for a box taking no part in the detail cycle.
         private String detailName;
 
+        // How many times the box was asked for that offer through the press-time seam. Counted rather
+        // than flagged, since what a paint must not do is ask it even once.
+        private int detailNameAskCount;
+
         // A layer heading its box with nothing, which is the ordinary case and the one most cases here
         // are about - so only a case actually about the heading block names one.
         private SystemCellTooltipFake(List<TooltipSection> bodySections) {
@@ -804,7 +826,7 @@ final class SystemCellTooltipTest {
         }
 
         @Override
-        protected List<TooltipSection> buildBodySections(
+        protected ComposedCellBody composeBody(
                 SectorAPI sector,
                 StarSystemAPI system,
                 HoverTooltipDetailLevel detailLevel) {
@@ -812,13 +834,18 @@ final class SystemCellTooltipTest {
             hasBuiltBodySections = true;
             bodyDetailLevel = detailLevel;
 
-            return bodySections;
+            // The offer is stated beside the blocks the way a real box states it, off the same
+            // stand-in answer - so a case reading the hint reads it from this box's composition
+            // rather than from a second seam only the stand-in has.
+            return new ComposedCellBody(bodySections, Optional.ofNullable(detailName));
         }
 
         @Override
         protected Optional<String> resolveExpandedDetailName(
                 SectorAPI sector,
                 StarSystemAPI system) {
+
+            detailNameAskCount++;
 
             return Optional.ofNullable(detailName);
         }

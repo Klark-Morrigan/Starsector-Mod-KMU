@@ -76,14 +76,30 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
             SectorAPI sector,
             StarSystemAPI system) {
 
-        // What the deeper levels add is the same subject for every box of this layer - the account
-        // behind the numbers on screen - so the layer names it once rather than each body naming it.
-        // Two bodies answering separately could offer the player different words for one account, and
-        // the hint would then describe the key rather than what pressing it shows.
-        //
-        // Whether there is anything to expand into stays each body's own question, that being a fact
-        // about what this box drew for this system rather than about the layer.
-        return hasExpandableAccountFor(sector, system)
+        // The press-time path, where nothing has been composed, so the question costs a read of its
+        // own. A paint answers it through the wording below off the reading its body already made.
+        return nameAccountDetail(hasExpandableAccountFor(sector, system));
+    }
+
+    /**
+     * Puts the layer's words to an answer a body has already worked out - what the deeper levels add,
+     * or nothing at all.
+     *
+     * <p>What they add is the same subject for every box of this layer - the account behind the
+     * numbers on screen - so the layer names it once rather than each body naming it. Two bodies
+     * wording it separately could offer the player different names for one account, and the hint
+     * would then describe the key rather than what pressing it shows.
+     *
+     * <p>Held apart from {@link #hasExpandableAccountFor} so a body composing its blocks can word its
+     * own offer without reading the system a second time to be asked whether it has one. Whether
+     * there is anything to expand into stays each body's question either way, that being a fact about
+     * what this box drew for this system rather than about the layer.
+     *
+     * @param hasExpandableAccount whether a deeper level would state anything more about the system
+     * @return the words for what it would add, or empty where it would add nothing
+     */
+    protected static Optional<String> nameAccountDetail(boolean hasExpandableAccount) {
+        return hasExpandableAccount
             ? Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS))
             : Optional.empty();
     }

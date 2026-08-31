@@ -9,7 +9,6 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
-import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
@@ -18,6 +17,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.ComposedCellBody;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -109,7 +109,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     @Override
-    protected final List<TooltipSection> buildBodySections(
+    protected final ComposedCellBody composeBody(
             SectorAPI sector,
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
@@ -173,7 +173,12 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         appendStandingSections(body, reading);
 
-        return body.readSections();
+        // The offer goes back beside the blocks, judged on the very contest they were drawn from: a
+        // box listing nobody has nothing for a deeper level to account for, and asking again would
+        // read the system a second time to settle what this one already knows.
+        return new ComposedCellBody(
+            body.readSections(),
+            nameAccountDetail(contest.hasListedStanding()));
     }
 
     @Override

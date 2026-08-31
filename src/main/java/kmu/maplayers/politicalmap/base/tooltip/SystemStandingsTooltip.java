@@ -8,6 +8,7 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipBody;
+import kmu.maplayers.base.tooltip.ComposedCellBody;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
@@ -87,29 +88,27 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     @Override
-    protected final List<TooltipSection> buildBodySections(
+    protected final ComposedCellBody composeBody(
             SectorAPI sector,
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
+        // One reading answers both halves: the blocks the box draws, and whether the key at its foot
+        // has anything to offer over this system. Asked apart they would be two rankings of one
+        // system per frame, and the hint could describe a contest the body no longer draws.
         return readRankedStandings(sector, system)
-            .map(ranking -> buildSectionsFrom(sector, system, ranking, detailLevel))
-            .orElseGet(List::of);
+            .map(ranking -> new ComposedCellBody(
+                buildSectionsFrom(sector, system, ranking, detailLevel),
+                nameAccountDetail(hasAnyStanding(ranking))))
+            .orElse(ComposedCellBody.NOTHING);
     }
 
     @Override
     protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
-        // The deeper tiers account for the colonies behind the standings, so a system ranking none
-        // has nothing for them to account for: every level would state the same banner and the key
-        // would do nothing the player could see.
-        //
-        // Judged on the ranking rather than on the status line the body heads itself with, which
-        // answers a different question of the same pass: the line says whether anybody runs the
-        // place, while the standings name everyone the player may be told about. A system whose
-        // colonies are all collapsed or derelict is headed Decivilised or Unpopulated and still
-        // ranks whoever holds them - and those colonies are exactly what a deeper level opens up.
+        // The press-time path, which composes nothing and so has to rank the system for itself. A
+        // paint reaches the same judgement above, off the ranking it already holds.
         return readRankedStandings(sector, system)
-            .filter(ranking -> ranking.routing().hasAnyStanding())
+            .filter(SystemStandingsTooltip::hasAnyStanding)
             .isPresent();
     }
 
@@ -174,6 +173,19 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     // of one hover. The alliance set is read as an affiliation at the point it is sampled, which is
     // where a grouping stops being a fold and becomes the one question the blocks ask.
     //
+    // Whether the ranking found anybody the box may name - the one judgement behind both the hint at
+    // the foot and the press that acts on it. Named once so the two entries cannot come to ask
+    // different questions of one reading.
+    //
+    // Judged on the ranking rather than on the status line the body heads itself with, which answers
+    // a different question of the same pass: the line says whether anybody runs the place, while the
+    // standings name everyone the player may be told about. A system whose colonies are all collapsed
+    // or derelict is headed Decivilised or Unpopulated and still ranks whoever holds them - and those
+    // colonies are exactly what a deeper level opens up.
+    private static boolean hasAnyStanding(RankedStandings ranking) {
+        return ranking.routing().hasAnyStanding();
+    }
+
     // Empty where no view is painting: there is then no grouping to rank under, and no body being
     // drawn for a hint to sit beneath.
     private Optional<RankedStandings> readRankedStandings(
