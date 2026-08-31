@@ -306,7 +306,7 @@ final class ClaimsViewTest {
     }
 
     @Nested
-    class ResolveBlocPicker {
+    class ResolveBlocPickerRead {
 
         // A claimant's stats: the view forwards them onto its option verbatim, so these arbitrary
         // numbers are only asserted to survive the pass unchanged. Non-zero claims, so the row they
@@ -321,7 +321,7 @@ final class ClaimsViewTest {
             Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
         @Test
-        void resolveBlocPickerCarriesEachClaimantsCrestShortNameAndStats() {
+        void resolveBlocPickerReadCarriesEachClaimantsCrestShortNameAndStats() {
             // A claiming bloc becomes an option carrying its crest, short name, and the claim stats the
             // fold computed for it, so the option reads exactly as the picker row will draw and sort it.
             var sectorMock = mock(SectorAPI.class);
@@ -334,7 +334,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_CLAIMANT_STATS)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
@@ -347,7 +347,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerOffersAClaimantHoldingNoColonyAnywhere() {
+        void resolveBlocPickerReadOffersAClaimantHoldingNoColonyAnywhere() {
             // The gate is claim presence, not market presence: a faction claiming territory while
             // holding nothing paints on this layer, so it must be spotlightable even at a market size
             // of zero.
@@ -360,7 +360,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of("luddic_path", new ClaimStats(1, 0))));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
@@ -369,7 +369,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerOffersABlocThatHoldsColoniesButClaimsNothing() {
+        void resolveBlocPickerReadOffersABlocThatHoldsColoniesButClaimsNothing() {
             // A faction the player can plainly see going unlisted reads as the map having forgotten
             // it, so a colony holder that claims nowhere is offered rather than dropped. What says
             // it paints nothing here is the row itself: it carries a claim count of zero, which is
@@ -386,7 +386,7 @@ final class ClaimsViewTest {
                         "hegemony", new ClaimStats(1, 0),
                         "tritachyon", new ClaimStats(0, 40))));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
@@ -395,7 +395,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerRecedesTheRowOfABlocThatClaimsNothing() {
+        void resolveBlocPickerReadRecedesTheRowOfABlocThatClaimsNothing() {
             // Listing the claimless is only legible because the row says which it is, so the option
             // the view builds must carry that state through to the picker rather than reading as an
             // ordinary claimant with a zero on it.
@@ -414,7 +414,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(statsByBlocId));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
@@ -425,7 +425,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerKeepsTheBlocsInTheFoldsWalkOrder() {
+        void resolveBlocPickerReadKeepsTheBlocsInTheFoldsWalkOrder() {
             // The options come back in the order the sector walk surfaced them, which is the order
             // the sort then arranges from. An ordered stub with a claimless bloc in the middle is
             // what makes a reordering visible - the list must neither drop it nor sink it here, since
@@ -447,7 +447,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(statsByBlocId));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
@@ -456,7 +456,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerOffersNoItemsWhenTheFoldSurfacesNothing() {
+        void resolveBlocPickerReadOffersNoItemsWhenTheFoldSurfacesNothing() {
             // A bloc that neither claims nor holds anything never reaches the fold, so a sector with
             // none of either offers no options - the picker draws no controls at all - and a stale
             // saved selection heals to none.
@@ -467,7 +467,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .items())
                     .isEmpty();
@@ -475,7 +475,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerOpensItsClaimReaderOverThePassItAggregatesThrough() {
+        void resolveBlocPickerReadOpensItsClaimReaderOverThePassItAggregatesThrough() {
             // The claim half of the picker reads through the same pass the market half does, so the
             // two metrics cost one walk of each system between them and describe the sector at one
             // moment. Opening the reader under a rule of its own would also let a bloc's claim count
@@ -501,7 +501,7 @@ final class ClaimsViewTest {
                         return buildReadOf(Map.of());
                     });
 
-                view.resolveBlocPicker(sectorMock, GATED_VISIBILITY);
+                view.resolveBlocPickerRead(sectorMock, GATED_VISIBILITY);
 
                 // The port is the pass's own knowledge, so what it was opened under is read back
                 // off the rule that knowledge carries - stated against the literal the view was
@@ -520,7 +520,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerRanksItsBlocsByTheClaimVocabulary() {
+        void resolveBlocPickerReadRanksItsBlocsByTheClaimVocabulary() {
             // The view answers the list and the modes together, so the numbers its blocs carry and the
             // metrics the sort selector offers can never drift apart - this layer is painted by the
             // claim mechanic, so claims is what the picker ranks by rather than domination.
@@ -531,7 +531,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .sortModes())
                     .isEqualTo(ClaimSortMode.MODES);
@@ -539,7 +539,7 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReachesNoWeightingRuleOnItsLiveEntry() {
+        void resolveBlocPickerReadReachesNoWeightingRuleOnItsLiveEntry() {
             // The live entry the sidebar and the stale-selection heal call, driven whole rather than
             // under stated knobs - which is the only way this can be asked at all. A weighting rule
             // is read from LunaLib, a class the test JVM cannot load, so a seam handing this layer
@@ -559,16 +559,17 @@ final class ClaimsViewTest {
                     .when(MapVisibilityRules::readFromLunaSettings)
                     .thenReturn(MapVisibilityRules.BASE);
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock).picker().items())
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock).picker().items())
                     .isEmpty();
             }
         }
 
         @Test
-        void resolveBlocPickerCarriesTheClaimBoundIndexBesideTheRows() {
-            // The claim arm's index, which is the whole point of this layer having one of its own: a
-            // bloc's colonies are summed from wherever they are, so the systems named beside its row
-            // are the ones it claims - the only ones this layer paints it anything in.
+        void resolveBlocPickerReadCarriesTheClaimWalksPresenceBesideTheRows() {
+            // The presence comes off the same walk the rows do, handed on rather than derived here.
+            // That the walk's index is the claim arm's alone - a bloc's colonies being summed from
+            // wherever they are, so a system it merely lives in is never named - is the aggregator's
+            // guarantee and is pinned there; what this pins is that the view does not lose it.
             var sectorMock = mock(SectorAPI.class);
 
             stubNamedFaction(sectorMock, "hegemony", "Hegemony");
@@ -580,7 +581,7 @@ final class ClaimsViewTest {
                         Map.of("hegemony", ANY_CLAIMANT_STATS),
                         new BlocPresenceIndex(Map.of("hegemony", Set.of("corvus")))));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .presenceIndex()
                         .readPresentSystemIds("hegemony"))
                     .containsExactly("corvus");

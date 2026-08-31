@@ -93,7 +93,7 @@ public final class PoliticalMapLayer implements MapLayer {
             // filter recede set rather than the non-allied one.
             controls.addAll(FilterSelectionBinder.buildPicker(
                 viewId,
-                SelectableBlocCache.resolveBlocPicker(selectedView, Global.getSector()).picker(),
+                SelectableBlocCache.resolveBlocPickerRead(selectedView, Global.getSector()).picker(),
                 columns,
                 RecedeControl.buildControls(
                     RecedePreferences.FILTER,

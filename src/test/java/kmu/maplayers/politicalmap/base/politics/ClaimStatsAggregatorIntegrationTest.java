@@ -276,7 +276,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         claimReaderFake)
-                    .claimedSystemIndex()
+                    .presenceIndex()
                     .readPresentSystemIds("hegemony"))
                 .containsExactly("claimed-a", "claimed-b");
         }
@@ -310,10 +310,10 @@ final class ClaimStatsAggregatorIntegrationTest {
                     entry("hegemony", new ClaimStats(2, 0)),
                     entry("tritachyon", new ClaimStats(1, 0)));
 
-            assertThat(read.claimedSystemIndex().readPresentSystemIds("hegemony"))
+            assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
                 .containsExactly("system-a", "system-c");
 
-            assertThat(read.claimedSystemIndex().readPresentSystemIds("tritachyon"))
+            assertThat(read.presenceIndex().readPresentSystemIds("tritachyon"))
                 .containsExactly("system-b");
         }
 
@@ -330,7 +330,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         claimReaderFake)
-                    .claimedSystemIndex()
+                    .presenceIndex()
                     .readPresentSystemIds("hegemony"))
                 .containsExactly("claimed-system");
         }
@@ -359,7 +359,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         HolderPass.over(sectorMock, BASE_FOG, grouping),
                         claimReaderFake)
-                    .claimedSystemIndex()
+                    .presenceIndex()
                     .readPresentSystemIds("alliance-1"))
                 .containsExactly("hegemony-claim", "tritachyon-claim");
         }
@@ -377,7 +377,7 @@ final class ClaimStatsAggregatorIntegrationTest {
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
-                    .claimedSystemIndex()
+                    .presenceIndex()
                     .readPresentSystemIds("hegemony"))
                 .isEmpty();
         }

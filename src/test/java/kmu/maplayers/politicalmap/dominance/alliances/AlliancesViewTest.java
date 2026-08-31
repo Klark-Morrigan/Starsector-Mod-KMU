@@ -354,7 +354,7 @@ final class AlliancesViewTest {
     }
 
     @Nested
-    class ResolveBlocPicker {
+    class ResolveBlocPickerRead {
 
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
@@ -369,7 +369,7 @@ final class AlliancesViewTest {
         private static final DominanceStats ANY_STATS = new DominanceStats(4, 3, 8000, 12);
 
         @Test
-        void resolveBlocPickerOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
+        void resolveBlocPickerReadOffersOnlyAllianceBlocsCrestedFromTheLeadMemberWithStats() {
             // Under the alliances view only an alliance is a filter target: a present lone faction is
             // dropped, and the alliance option reads its name off the grouping, carries its lead
             // (colour) member's crest, and forwards the stats the shared read computed for it.
@@ -402,7 +402,7 @@ final class AlliancesViewTest {
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
                         BlocPresenceIndex.EMPTY));
 
-                assertThat(view.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG).picker().items())
+                assertThat(view.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG).picker().items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "rebel_pact",
@@ -413,7 +413,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocPickerRanksItsBlocsByTheDominanceVocabulary() {
+        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabulary() {
             // This view's blocs are folded sets of factions, but they carry the same metrics a lone
             // faction's do, so it ranks by the same vocabulary the factions view offers. Asserted
             // per view rather than once on the shared assembly, since which vocabulary a view's rows
@@ -430,7 +430,7 @@ final class AlliancesViewTest {
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 
-                assertThat(view.resolveBlocPicker(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
+                assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
                         .picker()
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
@@ -438,7 +438,7 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocPickerCarriesThePresenceOfBlocsItsGateDropped() {
+        void resolveBlocPickerReadCarriesThePresenceOfBlocsItsGateDropped() {
             // The index is the whole walk's, not the offered rows'. This is the view where the two
             // differ - a lone faction is present but never listed - and trimming it to match would
             // cost a pass to remove entries no lookup can reach, only a listed bloc being hoverable.
@@ -463,7 +463,7 @@ final class AlliancesViewTest {
                             "rebel_pact", Set.of("corvus"),
                             "hegemony", Set.of("askonia")))));
 
-                var read = view.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG);
+                var read = view.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG);
 
                 assertThat(read.picker().items())
                     .extracting(RankedBloc::itemId)

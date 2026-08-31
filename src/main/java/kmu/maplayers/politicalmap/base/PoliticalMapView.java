@@ -4,12 +4,15 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.widgets.lists.ListPicker;
+import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.BlocStatsRead;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
@@ -193,11 +196,11 @@ public interface PoliticalMapView {
      * numbers its blocs do not carry. That is why the return type is wildcarded - the metrics a
      * view's blocs carry are its own, so the layer above passes the picker on without naming them.
      *
-     * <p>There is no new per-bloc seam behind the list: a view decides which of its blocs are
-     * targets (every faction, or only the alliance blocs) by handing that one test to
-     * {@link #buildSelectableBlocs}, which assembles the options the same way for every view. The
-     * convenience overload reads the player's live visibility settings so a caller with no pass of
-     * its own need not thread them.
+     * <p>There is no new per-bloc seam behind the list: a view says which of its blocs are targets
+     * (every faction, or only the alliance blocs) through {@link #resolveSelectableBlocGate}, and
+     * {@link #buildBlocPickerRead} assembles the read the same way for every view. The convenience
+     * overload reads the player's live visibility settings so a caller with no pass of its own need
+     * not thread them.
      *
      * <p>What it does <em>not</em> take is the rule any one mechanic weighs by. Who a picker lists
      * is settled by the sector's colonies, and how a listed bloc's numbers are arrived at is the
@@ -219,7 +222,7 @@ public interface PoliticalMapView {
      *         vocabulary ranking them - beside where that walk found each bloc; empty when no bloc
      *         qualifies, and empty by default for a view with no spotlight
      */
-    default BlocPickerRead<?> resolveBlocPicker(
+    default BlocPickerRead<?> resolveBlocPickerRead(
             SectorAPI sector,
             ColonyVisibility colonyVisibility) {
         return BlocPickerRead.empty();
@@ -234,16 +237,22 @@ public interface PoliticalMapView {
      * @return this view's picker and presence under the player's live settings; empty when no bloc
      *         qualifies
      */
-    default BlocPickerRead<?> resolveBlocPicker(SectorAPI sector) {
-        return resolveBlocPicker(
+    default BlocPickerRead<?> resolveBlocPickerRead(SectorAPI sector) {
+        return resolveBlocPickerRead(
             sector,
             MapVisibilityRules.readFromLunaSettings().colonyVisibility());
     }
 
     /**
-     * Turns a bloc-keyed stats read into the picker options a view offers, so an overriding view
-     * declares only what distinguishes it - which of the present blocs are targets - rather than
-     * repeating the crest, name, and option assembly every view resolves identically.
+     * Turns one bloc walk's read into the picker read a view offers, so an overriding view declares
+     * only what distinguishes it - which of the present blocs are targets, and which vocabulary
+     * ranks them - rather than repeating the crest, name, and option assembly every view resolves
+     * identically.
+     *
+     * <p>It takes the walk's read whole rather than its totals and its presence apart. The two are
+     * one reading of the sector ({@link BlocStatsRead}), so passing them separately would let a view
+     * hand over a map from one walk and an index from another, which is precisely the disagreement
+     * the paired read exists to make impossible.
      *
      * <p>The crest comes from the bloc's colour faction, which is an alliance's lead member and, for
      * a faction bloc, the faction itself, so one lookup serves a grouped and an ungrouped view alike.
@@ -252,33 +261,66 @@ public interface PoliticalMapView {
      * short name regardless of the map's name-format setting, so a long-form map label never widens
      * the sidebar's option rows.
      *
-     * <p>It is parameterised on the stats rather than fixed to {@link DominanceStats} because a view
-     * ranks by whatever metrics its own layer is painted from: the identity half of an option is
+     * <p>It is parameterised on the metrics rather than fixed to {@link DominanceStats} because a
+     * view ranks by whatever its own layer is painted from: the identity half of an option is
      * assembled the same way for every view, while the payload half is the calling view's alone. That
      * also keeps this a default method rather than a static - the label is <em>this</em> view's
      * {@link #resolveName}, so no view has to reach into a sibling for a name.
      *
-     * @param <S>            the calling view's own metrics type, ranked by that view's vocabulary;
-     *                       bounded only by what every option must answer of its metrics, never by
-     *                       one layer's numbers
-     * @param sector         the sector a bloc's colour faction is read from
-     * @param grouping       the grouping the stats were folded under, so the colour faction and the
-     *                       name resolve against the same snapshot the numbers came from
-     * @param statsByBlocId  each present bloc's metrics, in the order the source walk surfaced them,
-     *                       which the returned options preserve
-     * @param isSelectable   which of the present blocs this view offers as spotlight targets; the
-     *                       one thing that differs between views, so a view that offers every
-     *                       present bloc passes an always-true test
-     * @return the selectable blocs in stats order, each pairing a bloc's identity with the metrics
-     *         this view's picker sorts by
+     * @param <S>       the calling view's own metrics type, ranked by that view's vocabulary;
+     *                  bounded only by what every option must answer of its metrics, never by one
+     *                  layer's numbers
+     * @param sector    the sector a bloc's colour faction is read from
+     * @param grouping  the grouping the walk folded under, so the colour faction, the name, and the
+     *                  gate all resolve against the same snapshot the numbers came from
+     * @param statsRead the walk's totals and the systems behind them, in the order it surfaced them,
+     *                  which the returned rows preserve
+     * @param sortModes the vocabulary ranking this view's rows, bundled with them so a row can only
+     *                  ever be sorted by numbers it carries
+     * @return the rows this view offers paired with that vocabulary, beside the whole walk's presence
      */
-    default <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
+    default <S extends BlocMetrics> BlocPickerRead<RankedBloc<S>> buildBlocPickerRead(
             SectorAPI sector,
             HolderGrouping grouping,
-            Map<String, S> statsByBlocId,
-            Predicate<String> isSelectable) {
+            BlocStatsRead<S> statsRead,
+            ListSortModes<RankedBloc<S>> sortModes) {
 
+        return new BlocPickerRead<>(
+            new ListPicker<>(
+                buildSelectableBlocs(sector, grouping, statsRead.statsByBlocId()),
+                sortModes),
+            statsRead.presenceIndex());
+    }
+
+    /**
+     * Which of the present blocs this view offers as spotlight targets. A bloc reaches the test only
+     * when the walk already found it, so this decides what is offered among those, never who is
+     * present.
+     *
+     * <p>Defaults to offering every one of them, which is the answer for a view whose blocs are all
+     * of a kind. A view whose walk surfaces blocs it does not paint - the alliances view, where a
+     * lone faction is present but is not an alliance - narrows it here.
+     *
+     * @param grouping the grouping the blocs were folded under, so a gate that asks what a bloc is
+     *                 (an alliance, a lone faction) reads the same snapshot the numbers came from
+     * @return the test a present bloc's id passes to be listed
+     */
+    default Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
+        return blocId -> true;
+    }
+
+    // The row half of the assembly: each gated bloc paired with its metrics, in walk order. Private
+    // because the pairing is only ever half an answer - a list of rows with no vocabulary cannot be
+    // ranked and no presence beside it cannot be lit - so the whole read is the only thing worth
+    // offering a view.
+    private <S extends BlocMetrics> List<RankedBloc<S>> buildSelectableBlocs(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            Map<String, S> statsByBlocId) {
+
+        var isSelectable = resolveSelectableBlocGate(grouping);
         var selectableBlocs = new ArrayList<RankedBloc<S>>();
+
         for (var entry : statsByBlocId.entrySet()) {
             var blocId = entry.getKey();
             if (!isSelectable.test(blocId)) {
@@ -318,7 +360,7 @@ public interface PoliticalMapView {
      * holders that breakdown does not describe - injects the claim breakdown instead, so each view's
      * box explains the same mechanic its fills were painted by.
      * Defaulting to empty makes "no tooltip" the base case, the same shape as
-     * {@link #resolveBlocPicker} defaulting to no spotlight, so a new view opts in only when it
+     * {@link #resolveBlocPickerRead} defaulting to no spotlight, so a new view opts in only when it
      * has a tooltip to show.
      *
      * @return this view's hover tooltip, or empty for a view that shows none

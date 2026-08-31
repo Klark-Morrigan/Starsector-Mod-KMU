@@ -94,7 +94,7 @@ final class FilterSelectionHealTest {
                             DominanceSortMode.MODES),
                         BlocPresenceIndex.EMPTY))
                     .when(viewMock)
-                    .resolveBlocPicker(sectorMock);
+                    .resolveBlocPickerRead(sectorMock);
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 
@@ -132,17 +132,17 @@ final class FilterSelectionHealTest {
                         new ListPicker<>(List.of(), DominanceSortMode.MODES),
                         BlocPresenceIndex.EMPTY))
                     .when(viewMock)
-                    .resolveBlocPicker(sectorMock);
+                    .resolveBlocPickerRead(sectorMock);
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 
-                verify(viewMock, never()).resolveBlocPicker(sectorMock);
+                verify(viewMock, never()).resolveBlocPickerRead(sectorMock);
 
                 // And it is that same predicate that pays the cost once there is an id to judge, so
                 // the work is deferred rather than dropped.
                 capturePredicate(selectionMock).test("hegemony");
 
-                verify(viewMock).resolveBlocPicker(sectorMock);
+                verify(viewMock).resolveBlocPickerRead(sectorMock);
             }
         }
     }

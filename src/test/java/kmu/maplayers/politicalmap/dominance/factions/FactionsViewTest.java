@@ -280,7 +280,7 @@ final class FactionsViewTest {
     }
 
     @Nested
-    class ResolveBlocPicker {
+    class ResolveBlocPickerRead {
 
         // The rules are forwarded to the (mocked) stats read, so their value never reaches assertion
         // here - any rules stand in where the seam demands them.
@@ -295,7 +295,7 @@ final class FactionsViewTest {
         private static final DominanceStats ANY_STATS = new DominanceStats(3, 2, 5000, 7);
 
         @Test
-        void resolveBlocPickerCarriesEachPresentFactionsCrestShortNameAndStats() {
+        void resolveBlocPickerReadCarriesEachPresentFactionsCrestShortNameAndStats() {
             // Every present faction becomes an option carrying its crest, short name, and the stats the
             // shared read computed for it, so the option reads exactly as the picker row will draw and
             // sort it. The presence gate is the shared stats read's job, stubbed here to one faction.
@@ -309,7 +309,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_STATS)));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
@@ -322,7 +322,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerKeepsAFactionWithNoCrestAsANullCrestOption() {
+        void resolveBlocPickerReadKeepsAFactionWithNoCrestAsANullCrestOption() {
             // A faction with no authored crest is still selectable - its option just carries a null
             // crest path and the row draws its name alone, rather than being dropped.
             var sectorMock = mock(SectorAPI.class);
@@ -335,7 +335,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(buildReadOf(Map.of("luddic_path", ANY_STATS)));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
@@ -345,7 +345,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerRecedesTheRowOfAFactionOfNoWeight() {
+        void resolveBlocPickerReadRecedesTheRowOfAFactionOfNoWeight() {
             // The layers the contest paints grey a bloc by the same rule the claims layer does, on
             // their own metric: a faction present only through colonies the contest never weighed
             // paints no cell anywhere, so its row reads back - and stays listed and pickable, since
@@ -364,7 +364,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(buildReadOf(statsByBlocId));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
@@ -375,7 +375,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerOffersNoItemsWhenNoBlocIsPresent() {
+        void resolveBlocPickerReadOffersNoItemsWhenNoBlocIsPresent() {
             // With no present bloc the picker offers no options and a stale saved selection heals to
             // none.
             var sectorMock = mock(SectorAPI.class);
@@ -385,7 +385,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
                         .items())
                     .isEmpty();
@@ -393,7 +393,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerRanksItsBlocsByTheDominanceVocabulary() {
+        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabulary() {
             // The view answers the list and the modes together, so the numbers its blocs carry and
             // the metrics the sort selector offers can never drift apart - this layer is painted by
             // domination, so domination is what the picker ranks by.
@@ -404,7 +404,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
                         .sortModes())
                     .isEqualTo(DominanceSortMode.MODES);
@@ -412,7 +412,7 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerCarriesTheDominanceWalksPresenceBesideTheRows() {
+        void resolveBlocPickerReadCarriesTheDominanceWalksPresenceBesideTheRows() {
             // Where a bloc lives comes off the very walk that totalled its row, handed on rather
             // than derived a second time here. Anything else would be a second answer to "where is
             // this bloc" beside rows already carrying the count of it.
@@ -428,7 +428,7 @@ final class FactionsViewTest {
                         new BlocPresenceIndex(Map.of(
                             "hegemony", Set.of("corvus", "askonia")))));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPicker(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .presenceIndex()
                         .readPresentSystemIds("hegemony"))
                     .containsExactly("corvus", "askonia");

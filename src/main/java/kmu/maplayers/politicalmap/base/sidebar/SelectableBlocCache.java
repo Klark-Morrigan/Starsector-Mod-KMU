@@ -32,6 +32,8 @@ public final class SelectableBlocCache {
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
     // switch is a miss on the view id and the switched-in view's picker replaces the previous one.
+    // Which is also the constraint on every entry below - one held entry, so callers that do not
+    // agree on the view thrash it rather than share it.
     // Held wildcarded because each view's blocs carry that view's own metrics, which is knowledge
     // the memo has no use for - it caches whatever the view answered.
     private static final RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
@@ -49,7 +51,7 @@ public final class SelectableBlocCache {
      * @return the memoised read - the picker and the presence behind it; the same instance while
      *         nothing it depends on moves
      */
-    public static BlocPickerRead<?> resolveBlocPicker(
+    public static BlocPickerRead<?> resolveBlocPickerRead(
             PoliticalMapView view,
             SectorAPI sector) {
 
@@ -57,7 +59,7 @@ public final class SelectableBlocCache {
             sector,
             view.getId(),
             computeRevision(view),
-            () -> view.resolveBlocPicker(sector));
+            () -> view.resolveBlocPickerRead(sector));
     }
 
     /**
@@ -65,12 +67,13 @@ public final class SelectableBlocCache {
      * picker rows come from.
      *
      * <p>A per-bloc lookup rather than the whole index, so a surface asking about the one bloc under
-     * the pointer never holds every bloc's set to get at it. It shares the memo with the rows on
-     * purpose: the index has the same lifetime and the same invalidation as the options beside it, so
-     * a store of its own could only go stale against them.
+     * the pointer never holds every bloc's set to get at it.
      *
-     * @param view   the selected political-map view, which decides what being found there means -
-     *               living in a system under the dominance views, claiming it under the claims one
+     * @param view   the <em>selected</em> view, the same one the sidebar body asks under - two
+     *               callers alternating under different views evict each other from the one memo
+     *               entry below and re-walk the economy every call. It also decides what being found
+     *               somewhere means: living in a system under the dominance views, claiming it under
+     *               the claims one
      * @param sector the sector whose economy the read is taken from; a null sector resolves to the
      *               view's empty read
      * @param blocId the bloc to look up; an id this view never surfaced answers empty
@@ -81,7 +84,7 @@ public final class SelectableBlocCache {
             SectorAPI sector,
             String blocId) {
 
-        return resolveBlocPicker(view, sector).presenceIndex().readPresentSystemIds(blocId);
+        return resolveBlocPickerRead(view, sector).presenceIndex().readPresentSystemIds(blocId);
     }
 
     // The revision the memoised list is valid for: the economy-weighting settings (the dominance

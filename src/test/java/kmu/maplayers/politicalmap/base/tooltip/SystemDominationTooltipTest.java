@@ -19,7 +19,6 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
@@ -61,6 +60,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MEMBER_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.NO_INDENT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
@@ -304,7 +304,7 @@ final class SystemDominationTooltipTest {
                     new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
                 List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
 
-            assertThat(readRowLabelTexts(
+            assertThat(readSectionOpeningWords(
                     tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Dominated by:",
@@ -339,7 +339,7 @@ final class SystemDominationTooltipTest {
                     createNamedGroupEntry("Persean League"),
                     createPlaceholderGroupEntry()));
 
-            assertThat(readRowLabelTexts(
+            assertThat(readSectionOpeningWords(
                     tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Dominated by:",
@@ -375,7 +375,7 @@ final class SystemDominationTooltipTest {
                     createNamedGroupEntry("The Luddic Church"),
                     createNamedGroupEntry("Persean League")));
 
-            assertThat(readRowLabelTexts(
+            assertThat(readSectionOpeningWords(
                     tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
                 .containsExactly(
                     "Dominated by:",
@@ -682,17 +682,6 @@ final class SystemDominationTooltipTest {
     private static CellTooltipEntry createPlaceholderGroupEntry() {
         return CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(MEMBER_MARK, "Neutral", PLACEHOLDER_SCORE));
-    }
-
-    // The box read top to bottom as the words a player sees, headings and entries alike. Named apart
-    // from the entry read the account cases use, which answers the same question of a listing that has
-    // not been laid out into rows yet.
-    private static List<String> readRowLabelTexts(List<TooltipSection> sections) {
-        return TooltipSection
-            .readRowsInOrder(sections)
-            .stream()
-            .map(CellTooltipRowReads::readOpeningWords)
-            .toList();
     }
 
     // One member faction beneath a bloc, told apart from its siblings by its score alone.

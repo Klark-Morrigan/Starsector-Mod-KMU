@@ -10,7 +10,7 @@ import kmu.settings.KmuLunaSettings;
  * {@link FilterSelection#healStaleSelection}'s pure "clear if not selectable" rule to a concrete
  * source of which blocs are selectable now. {@link FilterSelection} stays ignorant of views (it takes
  * only a predicate); this supplies that predicate from the active view's {@link
- * PoliticalMapView#resolveBlocPicker}, so a bloc that lapsed since the spotlight was set - a faction
+ * PoliticalMapView#resolveBlocPickerRead}, so a bloc that lapsed since the spotlight was set - a faction
  * removed, an alliance dissolved, a settings knob hiding the last colonies it was listed for - clears
  * the dangling filter instead of spotlighting a bloc no longer on the map.
  *
@@ -68,7 +68,7 @@ public final class FilterSelectionHeal {
     // the presence beside the rows with it - a heal ranks nothing and lights nothing.
     private static boolean isBlocOfferedBy(PoliticalMapView view, String blocId) {
 
-        for (var bloc : view.resolveBlocPicker(Global.getSector()).picker().items()) {
+        for (var bloc : view.resolveBlocPickerRead(Global.getSector()).picker().items()) {
             if (bloc.itemId().equals(blocId)) {
                 return true;
             }

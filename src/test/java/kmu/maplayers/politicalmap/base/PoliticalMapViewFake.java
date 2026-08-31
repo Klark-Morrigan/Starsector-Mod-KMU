@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Test fixture: the smallest view the shared pipeline can run against. Answers the seam's
@@ -17,21 +18,48 @@ import java.util.Map;
  * default exercises that default alone rather than whichever concrete view it borrowed to reach
  * it.
  *
- * <p>The holding source is supplied where a case is about what the pipeline hands a provider;
- * the default inherits the seam's own, which is what a case about anything else wants.
+ * <p>The holding source and the picker gate are supplied where a case is about what the pipeline
+ * hands a provider, or about which blocs survive the gate; each defaults to the seam's own, which is
+ * what a case about anything else wants.
  */
 public final class PoliticalMapViewFake implements PoliticalMapView {
 
     private final Map<String, String> nameByBlocId;
     private final HolderProvider holderProvider;
+    private final Predicate<String> selectableBlocGate;
 
     PoliticalMapViewFake(Map<String, String> nameByBlocId) {
-        this(nameByBlocId, null);
+        this(nameByBlocId, null, null);
     }
 
     public PoliticalMapViewFake(Map<String, String> nameByBlocId, HolderProvider holderProvider) {
+        this(nameByBlocId, holderProvider, null);
+    }
+
+    private PoliticalMapViewFake(
+            Map<String, String> nameByBlocId,
+            HolderProvider holderProvider,
+            Predicate<String> selectableBlocGate) {
+
         this.nameByBlocId = nameByBlocId;
         this.holderProvider = holderProvider;
+        this.selectableBlocGate = selectableBlocGate;
+    }
+
+    /**
+     * A fake offering only the blocs a stated gate accepts, for a case about the gate rather than
+     * about what surrounds it. A named factory rather than a second two-argument constructor, whose
+     * lambda a reader could not tell from a holder source at the call site.
+     *
+     * @param nameByBlocId       the canned labels this fake names its blocs from
+     * @param selectableBlocGate which of the walked blocs the fake's picker offers
+     * @return the fake, gated
+     */
+    public static PoliticalMapViewFake createGatedFake(
+            Map<String, String> nameByBlocId,
+            Predicate<String> selectableBlocGate) {
+
+        return new PoliticalMapViewFake(nameByBlocId, null, selectableBlocGate);
     }
 
     // The supplied source, or the seam's own default when a case did not name one.
@@ -40,6 +68,14 @@ public final class PoliticalMapViewFake implements PoliticalMapView {
         return holderProvider == null
             ? PoliticalMapView.super.resolveHolderProvider()
             : holderProvider;
+    }
+
+    // The supplied gate, or the seam's own default (offer everything) when a case did not name one.
+    @Override
+    public Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
+        return selectableBlocGate == null
+            ? PoliticalMapView.super.resolveSelectableBlocGate(grouping)
+            : selectableBlocGate;
     }
 
     @Override

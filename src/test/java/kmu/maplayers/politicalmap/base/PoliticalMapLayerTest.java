@@ -359,7 +359,7 @@ final class PoliticalMapLayerTest {
                     DominanceSortMode.MODES),
                 BlocPresenceIndex.EMPTY))
             .when(view)
-            .resolveBlocPicker(any());
+            .resolveBlocPickerRead(any());
 
         var hostTabMock = mock(MapLayer.class);
 
@@ -427,7 +427,7 @@ final class PoliticalMapLayerTest {
 
         doReturn(BlocPickerRead.empty())
             .when(view)
-            .resolveBlocPicker(any());
+            .resolveBlocPickerRead(any());
 
         var hostTabMock = mock(MapLayer.class);
 

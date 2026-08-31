@@ -7,20 +7,17 @@ import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 
 /**
  * What one resolve of a view's spotlight picker yields: the rows the sidebar draws, and the systems
- * each listed bloc was found in.
+ * behind them. The drawn half of
+ * {@link kmu.maplayers.politicalmap.base.politics.BlocStatsRead}, which is where the reason the pair
+ * travels together is stated.
  *
- * <p>The two travel together because one sector walk produces both - the walk that totals a row's
- * numbers is the walk that records where those numbers came from. Answering them through two seams
- * would walk the economy twice and let a surface hold rows from one reading beside presence sets from
- * another, so a row and the cells lit for it could disagree about where a bloc is.
+ * <p>It carries the index rather than the picker doing so, because a picker is a general widget
+ * model that ranks and draws items; where a bloc lives is this map's own knowledge and no part of
+ * what a row is drawn from.
  *
- * <p>It carries the index rather than the picker doing so, because a picker is a general widget model
- * that ranks and draws items; where a bloc lives is this map's own knowledge and no part of what a row
- * is drawn from.
- *
- * <p>The index is the whole walk's, not the listed rows'. A view's gate decides which present blocs it
- * offers, and trimming the index to match would cost a filtering pass to remove entries no lookup can
- * ask for - only a listed bloc is ever hovered.
+ * <p>The index is the whole walk's, not the listed rows'. A view's gate decides which present blocs
+ * it offers, and trimming the index to match would cost a filtering pass to remove entries no lookup
+ * can ask for - only a listed bloc is ever hovered.
  *
  * @param <T>           the calling view's own row type, ranked by the vocabulary its picker carries
  * @param picker        the blocs this view offers and the vocabulary that ranks them

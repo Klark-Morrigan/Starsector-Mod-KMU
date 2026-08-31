@@ -50,28 +50,17 @@ final class SelectableBlocCacheTest {
             new BlocPresenceIndex(Map.of("hegemony", Set.of("corvus", "askonia"))));
 
     @Nested
-    class ResolveBlocPicker {
+    class ResolveBlocPickerRead {
 
         @Test
-        void resolveBlocPickerWalksTheViewOnceWhileItsRevisionHolds() {
+        void resolveBlocPickerReadWalksTheViewOnceWhileItsRevisionHolds() {
             // Nothing the picker depends on moved between the two calls, so the revision this layer
             // computes must come out the same and the second call read the memo.
             var sectorMock = mock(SectorAPI.class);
-            var viewMock = mock(PoliticalMapView.class);
+            var viewMock = stubViewAnswering(sectorMock, "factions");
 
-            when(viewMock.getId())
-                .thenReturn("factions");
-            when(viewMock.getContentRevision())
-                .thenReturn(7);
-
-            // Stubbed through doReturn because the seam answers a wildcarded read: a when() stub
-            // would have to name the captured item type, which is exactly what the wildcard hides.
-            doReturn(READ)
-                .when(viewMock)
-                .resolveBlocPicker(sectorMock);
-
-            var first = SelectableBlocCache.resolveBlocPicker(viewMock, sectorMock);
-            var second = SelectableBlocCache.resolveBlocPicker(viewMock, sectorMock);
+            var first = SelectableBlocCache.resolveBlocPickerRead(viewMock, sectorMock);
+            var second = SelectableBlocCache.resolveBlocPickerRead(viewMock, sectorMock);
 
             assertThat(first)
                 .isEqualTo(READ);
@@ -79,32 +68,24 @@ final class SelectableBlocCacheTest {
                 .isEqualTo(READ);
 
             verify(viewMock, times(1))
-                .resolveBlocPicker(sectorMock);
+                .resolveBlocPickerRead(sectorMock);
         }
 
         @Test
-        void resolveBlocPickerRecomputesWhenTheViewsContentRevisionMoves() {
-
+        void resolveBlocPickerReadRecomputesWhenTheViewsContentRevisionMoves() {
             var sectorMock = mock(SectorAPI.class);
-            var viewMock = mock(PoliticalMapView.class);
-
-            when(viewMock.getId())
-                .thenReturn("alliances");
+            var viewMock = stubViewAnswering(sectorMock, "alliances");
 
             // A membership change bumps the alliances view's content revision between the two calls,
-            // so the memo is stale and must re-resolve.
+            // so the memo is stale and must re-resolve. The one case that states a revision at all.
             when(viewMock.getContentRevision())
                 .thenReturn(0, 1);
 
-            doReturn(READ)
-                .when(viewMock)
-                .resolveBlocPicker(sectorMock);
-
-            SelectableBlocCache.resolveBlocPicker(viewMock, sectorMock);
-            SelectableBlocCache.resolveBlocPicker(viewMock, sectorMock);
+            SelectableBlocCache.resolveBlocPickerRead(viewMock, sectorMock);
+            SelectableBlocCache.resolveBlocPickerRead(viewMock, sectorMock);
 
             verify(viewMock, times(2))
-                .resolveBlocPicker(sectorMock);
+                .resolveBlocPickerRead(sectorMock);
         }
     }
 
@@ -117,16 +98,7 @@ final class SelectableBlocCacheTest {
             // beside its rows rather than a second walk's - which is what stops a lit set and a row
             // count from describing the sector at two different moments.
             var sectorMock = mock(SectorAPI.class);
-            var viewMock = mock(PoliticalMapView.class);
-
-            when(viewMock.getId())
-                .thenReturn("factions");
-            when(viewMock.getContentRevision())
-                .thenReturn(3);
-
-            doReturn(READ)
-                .when(viewMock)
-                .resolveBlocPicker(sectorMock);
+            var viewMock = stubViewAnswering(sectorMock, "factions");
 
             assertThat(SelectableBlocCache.readPresentSystemIds(viewMock, sectorMock, "hegemony"))
                 .containsExactly("corvus", "askonia");
@@ -137,22 +109,13 @@ final class SelectableBlocCacheTest {
             // The reason the two share a memo rather than a store apiece: asking for the rows and
             // then for a bloc's systems is one resolve, so a hover costs no economy walk of its own.
             var sectorMock = mock(SectorAPI.class);
-            var viewMock = mock(PoliticalMapView.class);
+            var viewMock = stubViewAnswering(sectorMock, "factions");
 
-            when(viewMock.getId())
-                .thenReturn("factions");
-            when(viewMock.getContentRevision())
-                .thenReturn(4);
-
-            doReturn(READ)
-                .when(viewMock)
-                .resolveBlocPicker(sectorMock);
-
-            SelectableBlocCache.resolveBlocPicker(viewMock, sectorMock);
+            SelectableBlocCache.resolveBlocPickerRead(viewMock, sectorMock);
             SelectableBlocCache.readPresentSystemIds(viewMock, sectorMock, "hegemony");
 
             verify(viewMock, times(1))
-                .resolveBlocPicker(sectorMock);
+                .resolveBlocPickerRead(sectorMock);
         }
 
         @Test
@@ -161,19 +124,29 @@ final class SelectableBlocCacheTest {
             // so an unknown id has to answer an empty set rather than a null the render side would
             // fall over on.
             var sectorMock = mock(SectorAPI.class);
-            var viewMock = mock(PoliticalMapView.class);
-
-            when(viewMock.getId())
-                .thenReturn("factions");
-            when(viewMock.getContentRevision())
-                .thenReturn(5);
-
-            doReturn(READ)
-                .when(viewMock)
-                .resolveBlocPicker(sectorMock);
+            var viewMock = stubViewAnswering(sectorMock, "factions");
 
             assertThat(SelectableBlocCache.readPresentSystemIds(viewMock, sectorMock, "vanished"))
                 .isEmpty();
         }
+    }
+
+    // A view answering READ under a stated id, which every case needs standing before it can ask the
+    // cache anything. Its content revision is left unstubbed and so holds constant, which is what
+    // every case but the staleness one wants; that case states its own moving pair.
+    //
+    // The read is stubbed through doReturn because the seam answers a wildcarded read: a when() stub
+    // would have to name the captured item type, which is exactly what the wildcard hides.
+    private static PoliticalMapView stubViewAnswering(SectorAPI sectorMock, String viewId) {
+        var viewMock = mock(PoliticalMapView.class);
+
+        when(viewMock.getId())
+            .thenReturn(viewId);
+
+        doReturn(READ)
+            .when(viewMock)
+            .resolveBlocPickerRead(sectorMock);
+
+        return viewMock;
     }
 }
