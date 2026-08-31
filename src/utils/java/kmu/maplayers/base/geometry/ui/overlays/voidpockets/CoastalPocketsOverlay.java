@@ -5,7 +5,6 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
-import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
@@ -123,7 +122,7 @@ public final class CoastalPocketsOverlay {
      */
     public void paintPocketFills(Graphics2D g2, Color fill, Color edge) {
 
-        MapPainting.paintPocketFills(g2, pockets, resolveWaterLook(fill, edge));
+        MapPainting.paintPocketFills(g2, pockets, settings.resolveWaterLook(fill, edge));
     }
 
     /**
@@ -225,12 +224,5 @@ public final class CoastalPocketsOverlay {
             g2,
             Coastlines.collectDroppedRuns(traced, settings.parameters.measureArcSegments()),
             settings.droppedStretchColour);
-    }
-
-    // A construction's own colours at the map's own fill opacity. The colours are per
-    // construction and the opacity is one slider over every fill there is, so the pair is only
-    // assembled where both are known - which is here, and not in either construction.
-    private FillLook resolveWaterLook(Color fill, Color edge) {
-        return new FillLook(fill, settings.voidFillOpacity, edge);
     }
 }

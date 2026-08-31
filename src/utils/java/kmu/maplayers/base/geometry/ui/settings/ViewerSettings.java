@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
@@ -348,6 +349,24 @@ public final class ViewerSettings {
             ? MapPainting.jitterBrightness(
                 ownedCellColour, ownerId.hashCode(), jitterStrength)
             : ownedCellColour;
+    }
+
+    /**
+     * How one of the map's fills is painted: a construction's own colours at the map's own
+     * fill opacity.
+     *
+     * <p>Assembled here because the two halves are chosen in different places. The colours
+     * belong to whichever construction is drawing - that is what tells two of them apart on
+     * screen - while the opacity is one slider over every fill there is. An overlay pairing
+     * them itself is a second answer to how solid a fill is, and the fills then stop moving
+     * together when the slider does.
+     *
+     * @param fill what to fill with
+     * @param edge what to outline it in
+     * @return the pair, at whatever the opacity slider is set to
+     */
+    public FillLook resolveWaterLook(Color fill, Color edge) {
+        return new FillLook(fill, voidFillOpacity, edge);
     }
 
     // Which map of the void the overlays are asking for. Asked of the settings rather than
