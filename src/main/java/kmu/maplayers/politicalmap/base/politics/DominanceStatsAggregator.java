@@ -7,9 +7,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Aggregates the whole-sector totals the filter picker sorts and labels its options by, and the
@@ -54,12 +52,12 @@ public final class DominanceStatsAggregator {
             return DominanceStatsRead.EMPTY;
         }
         var statsByBlocId = new LinkedHashMap<String, DominanceStats>();
-        var systemIdsByBlocId = new LinkedHashMap<String, Set<String>>();
+        var inhabitedSystems = new BlocPresenceIndexBuilder();
 
         for (var system : pass.readSystems()) {
-            accumulateSystemStats(statsByBlocId, systemIdsByBlocId, system, pass);
+            accumulateSystemStats(statsByBlocId, inhabitedSystems, system, pass);
         }
-        return new DominanceStatsRead(statsByBlocId, new BlocPresenceIndex(systemIdsByBlocId));
+        return new DominanceStatsRead(statsByBlocId, inhabitedSystems.buildIndex());
     }
 
     // Folds one system into the running per-bloc stats and presence sets: resolves the one dominant
@@ -69,7 +67,7 @@ public final class DominanceStatsAggregator {
     // one bloc.
     private static void accumulateSystemStats(
             Map<String, DominanceStats> statsByBlocId,
-            Map<String, Set<String>> systemIdsByBlocId,
+            BlocPresenceIndexBuilder inhabitedSystems,
             StarSystemAPI system,
             DominancePass pass) {
 
@@ -102,11 +100,7 @@ public final class DominanceStatsAggregator {
                         footprint.totalWeight(),
                         entry.getValue()));
 
-            // The system behind the presence just counted, named in the step that counts it, which
-            // is what holds the set and the count to one answer (see BlocPresenceIndex).
-            systemIdsByBlocId
-                .computeIfAbsent(blocId, presentBlocId -> new LinkedHashSet<>())
-                .add(system.getId());
+            inhabitedSystems.recordPresence(blocId, system.getId());
         }
     }
 }

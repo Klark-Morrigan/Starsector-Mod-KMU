@@ -7,9 +7,7 @@ import kmlib.starsector.systems.claims.ClaimReader;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Aggregates the whole-sector {@link ClaimStats} the claims picker sorts and labels its options by,
@@ -67,17 +65,17 @@ public final class ClaimStatsAggregator {
             ClaimReader claimReader) {
 
         var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
-        var systemIdsByBlocId = new LinkedHashMap<String, Set<String>>();
+        var claimedSystems = new BlocPresenceIndexBuilder();
 
         // Neither fold is guarded on the sector having an economy up yet (mid-load, it may not).
         // Claims are read from the port and so stand on their own, and the colony walk beneath the
         // habitation read answers an empty set without one - so the sizes come to nought where the
         // dominance aggregation's own guard makes it report nothing at all.
         for (var system : pass.readSystems()) {
-            accumulateSystemClaim(statsByBlocId, systemIdsByBlocId, system, pass, claimReader);
+            accumulateSystemClaim(statsByBlocId, claimedSystems, system, pass, claimReader);
             accumulateSystemHabitation(statsByBlocId, system, pass);
         }
-        return new ClaimStatsRead(statsByBlocId, new BlocPresenceIndex(systemIdsByBlocId));
+        return new ClaimStatsRead(statsByBlocId, claimedSystems.buildIndex());
     }
 
     // Folds one system's claimant into the running per-bloc stats and claimed-system sets. A system
@@ -86,7 +84,7 @@ public final class ClaimStatsAggregator {
     // members' claims as the alliance's and indexes their systems under the alliance too.
     private static void accumulateSystemClaim(
             Map<String, ClaimStats> statsByBlocId,
-            Map<String, Set<String>> systemIdsByBlocId,
+            BlocPresenceIndexBuilder claimedSystems,
             StarSystemAPI system,
             HolderPass pass,
             ClaimReader claimReader) {
@@ -100,11 +98,7 @@ public final class ClaimStatsAggregator {
             blocId,
             statsByBlocId.getOrDefault(blocId, ClaimStats.EMPTY).addClaim());
 
-        // The system behind the claim just counted, named in the step that counts it, which is what
-        // holds the set and the count to one answer (see BlocPresenceIndex).
-        systemIdsByBlocId
-            .computeIfAbsent(blocId, claimingBlocId -> new LinkedHashSet<>())
-            .add(system.getId());
+        claimedSystems.recordPresence(blocId, system.getId());
     }
 
     // Folds one system's habitation into the running per-bloc stats: the same read the dominance
