@@ -18,6 +18,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
 import kmu.maplayers.base.tooltip.CellTooltipSections;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -108,7 +109,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     @Override
-    protected final List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
+    protected final List<TooltipSection> buildBodySections(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
         var sections = new ArrayList<TooltipSection>();
 
         // One read for the whole box: the claimant, the override behind it, the colony rule and
@@ -155,7 +160,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()));
+            buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()),
+            detailLevel);
 
         // Between the claim and its rivals, so the box reads as the holder, who stands with it by
         // alliance, who stands with it in disposition, who stands against it, and who was never in it
@@ -166,12 +172,14 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()));
+            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()),
+            detailLevel);
 
         CellTooltipSections.appendSection(
             sections,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()));
+            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()),
+            detailLevel);
 
         CellTooltipSections.appendSection(
             sections,
@@ -180,7 +188,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 sector,
                 contest,
                 colonyReading,
-                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));
+                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)),
+            detailLevel);
 
         CellTooltipSections.appendSection(
             sections,
@@ -189,7 +198,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 sector,
                 contest,
                 colonyReading,
-                contest.selectRivalStandings(standing -> !standing.isTerritorial())));
+                contest.selectRivalStandings(standing -> !standing.isTerritorial())),
+            detailLevel);
 
         return sections;
     }

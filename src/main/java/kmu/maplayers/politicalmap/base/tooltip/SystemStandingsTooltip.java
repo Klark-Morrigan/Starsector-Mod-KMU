@@ -8,6 +8,7 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipSections;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
@@ -88,9 +89,13 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     @Override
-    protected final List<TooltipSection> buildBodySections(SectorAPI sector, StarSystemAPI system) {
+    protected final List<TooltipSection> buildBodySections(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
         return readRankedStandings(sector, system)
-            .map(ranking -> buildSectionsFrom(sector, system, ranking))
+            .map(ranking -> buildSectionsFrom(sector, system, ranking, detailLevel))
             .orElseGet(List::of);
     }
 
@@ -196,7 +201,8 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     private List<TooltipSection> buildSectionsFrom(
             SectorAPI sector,
             StarSystemAPI system,
-            RankedStandings ranking) {
+            RankedStandings ranking,
+            HoverTooltipDetailLevel detailLevel) {
 
         var pass = ranking.pass();
         var sections = new ArrayList<TooltipSection>();
@@ -224,7 +230,8 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             sections,
             sector,
             ranking,
-            createFactionAccountResolver(system, pass));
+            createFactionAccountResolver(system, pass),
+            detailLevel);
 
         return sections;
     }
@@ -243,7 +250,8 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             List<TooltipSection> sections,
             SectorAPI sector,
             RankedStandings ranking,
-            FactionAccountResolver accountResolver) {
+            FactionAccountResolver accountResolver,
+            HoverTooltipDetailLevel detailLevel) {
 
         var grouping = ranking.pass().grouping();
 
@@ -255,7 +263,8 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
                     sector,
                     ranking.routing().selectStandingsIn(block),
                     grouping,
-                    accountResolver));
+                    accountResolver),
+                detailLevel);
         }
     }
 

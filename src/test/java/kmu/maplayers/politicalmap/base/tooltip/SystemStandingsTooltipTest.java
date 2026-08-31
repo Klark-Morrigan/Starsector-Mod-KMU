@@ -18,6 +18,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -37,7 +38,9 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
@@ -198,6 +201,20 @@ final class SystemStandingsTooltipTest {
 
             StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
                 AccountingStandingsTooltip.FACTION_ACCOUNTS);
+        }
+
+        @Test
+        void buildBodySectionsReadsItsBlocksOnlyAsDeepAsTheLevelAsksFor() {
+            // The level has to reach the blocks rather than stopping at the box, which is the whole of
+            // what a cut is: one listing, drawn as the group alone where the player asked who holds the
+            // system and with the account beneath it where they asked what on. A body that named a
+            // level of its own would draw the same thing at both and pass every other case here.
+            StandingsTooltipSeamsFake.stubGroupEntries(createAccountedLeadingGroupEntry());
+
+            assertThat(readBodyLabelTextsAt(FACTIONS))
+                .containsExactly("Dominated by:", "Rebel Pact");
+            assertThat(readBodyLabelTextsAt(SYSTEM_COMPOSITION))
+                .containsExactly("Dominated by:", "Rebel Pact", "Chicomoztoc");
         }
 
         @Test
@@ -467,6 +484,15 @@ final class SystemStandingsTooltipTest {
             CellTooltipEntryLine.createLine(BLOC_MARK, "Rebel Pact", BLOC_SCORE));
     }
 
+    // The leading group with an account hanging beneath it - the shape a box that has something to say
+    // about a group hands over. The one entry a cut can be read off: what it carries is subordinated,
+    // so the shallowest level lists the group alone and the next one down opens it.
+    private static CellTooltipEntry createAccountedLeadingGroupEntry() {
+        return createLeadingGroupEntry()
+            .nesting(List.of(CellTooltipEntry.createEntry(
+                CellTooltipEntryLine.createLine(null, "Chicomoztoc", BLOC_SCORE))));
+    }
+
     // A second, lower-ranked group, named and scored apart from the leader so a case about which block
     // a group lands in cannot pass by reading the leader's line twice.
     private static CellTooltipEntry createRivalGroupEntry() {
@@ -509,11 +535,20 @@ final class SystemStandingsTooltipTest {
     }
 
     private List<String> readBodyLabelTexts() {
-        return readLabelTexts(readBodyRows());
+        return readBodyLabelTextsAt(PATROL_DETAILS);
+    }
+
+    // The body as its lines read, at the depth asked for. Every case but the one about the cut wants
+    // the whole tree, so they go through the reading above rather than each naming a level it has no
+    // opinion about.
+    private List<String> readBodyLabelTextsAt(HoverTooltipDetailLevel detailLevel) {
+        return readLabelTexts(TooltipSection.readRowsInOrder(
+            tooltip.buildBodySections(sectorMock, systemMock, detailLevel)));
     }
 
     private List<TooltipRow> readBodyRows() {
-        return TooltipSection.readRowsInOrder(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS));
+        return TooltipSection.readRowsInOrder(
+            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS));
     }
 
     /**

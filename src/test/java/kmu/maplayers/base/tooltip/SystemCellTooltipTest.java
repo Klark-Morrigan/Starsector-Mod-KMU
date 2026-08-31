@@ -581,6 +581,25 @@ final class SystemCellTooltipTest {
         }
 
         @Test
+        void renderForAsksTheBodyForTheDepthItWasDrawnAt() {
+            // The shared shape carries the level rather than reading one: it is what the dispatcher was
+            // handed for this frame, and a shape that resolved its own would leave every layer drawing
+            // a depth the player never chose - invisibly, since one box at the wrong depth still draws.
+            var tooltipFake = buildTooltipSayingSomething();
+
+            try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
+
+                tooltipFake.renderFor(
+                    buildSectorWithEconomy(),
+                    buildNamedSystem(),
+                    HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
+
+                assertThat(tooltipFake.bodyDetailLevel)
+                    .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
+            }
+        }
+
+        @Test
         void renderForDrawsNothingForABodyWithNothingToSay() {
             // A lone system name only repeats what the cursor already sits on, so an empty body is no
             // box rather than a titled empty one.
@@ -712,6 +731,11 @@ final class SystemCellTooltipTest {
         private final List<TooltipSection> bodySections;
         private boolean hasBuiltBodySections;
 
+        // The depth the body was asked for, held rather than acted on: a stand-in body hands back the
+        // blocks it was built with whatever it is asked, so what it can say about the level is that it
+        // arrived. Null until the box has drawn once.
+        private HoverTooltipDetailLevel bodyDetailLevel;
+
         // What this box offers the player beyond itself, if anything: the words for it, and the
         // counterpart holding it - which a box that IS the counterpart names without holding one, since
         // that is precisely the state the shape under test reads the direction of the offer from.
@@ -744,6 +768,8 @@ final class SystemCellTooltipTest {
                 HoverTooltipDetailLevel detailLevel) {
 
             hasBuiltBodySections = true;
+            bodyDetailLevel = detailLevel;
+
             return bodySections;
         }
 

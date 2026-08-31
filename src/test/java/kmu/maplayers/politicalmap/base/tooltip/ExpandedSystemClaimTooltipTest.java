@@ -47,7 +47,9 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_QUALIFIER_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.ListedClaimContestFixture.buildUnroutedContest;
@@ -320,6 +322,36 @@ final class ExpandedSystemClaimTooltipTest {
                     "Tri-Tachyon",
                     "Standing Colony",
                     "Size");
+        }
+
+        @Test
+        void buildBodySectionsReadsEveryBlockOnlyAsDeepAsTheLevelAsksFor() {
+            // The level has to reach all five of this body's blocks rather than stopping at the box.
+            // One read, drawn as the factions alone where the player asked who claims the system, and
+            // with the colonies behind them where they asked on what - so a body that named a level of
+            // its own would draw the same thing at both and pass every other case here.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            assertThat(readOpeningWordsInOrder(
+                    tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+                .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
+
+            // One tier down the colonies appear and the terms behind them do not, which is what makes
+            // this a cut over one tree rather than two bodies drawn from two reads.
+            assertThat(readOpeningWordsInOrder(
+                    tooltip.buildBodySections(sectorMock, systemMock, SYSTEM_COMPOSITION)))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Standing Colony",
+                    "Contested by:",
+                    "Tri-Tachyon",
+                    "Standing Colony");
         }
 
         @Test
