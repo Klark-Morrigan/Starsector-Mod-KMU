@@ -259,6 +259,37 @@ final class SystemDominationTooltipTest {
                     "Non-political:",
                     "Neutral");
         }
+
+        @Test
+        void buildBodySectionsListsEachGroupOnceWhereNoBlocCanBeOfTwoMinds() {
+            // Under a grouping that makes every bloc a singleton there is nothing for a bloc's members
+            // to disagree about, so none folds into two headings and none is stood up anew: the box
+            // names exactly the groups the ranking handed it, once each. What a fold looks like when
+            // one does happen is the routing's to pin.
+            allianceSet = HolderGrouping.identity();
+
+            stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
+            stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
+
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(FRIENDLY_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of())),
+                List.of(
+                    createLoneGroupEntry(),
+                    createNamedGroupEntry("The Luddic Church"),
+                    createNamedGroupEntry("Persean League")));
+
+            assertThat(readLabelTexts(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Friendly with the system holder:",
+                    "The Luddic Church",
+                    "Contested by:",
+                    "Persean League");
+        }
     }
 
     @Nested

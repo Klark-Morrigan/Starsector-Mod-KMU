@@ -10,8 +10,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the bloc-level reading of a faction-level disposition: unanimous across both memberships or
- * not friendly at all. The faction-level answer is a hand-built pair list, so what is fixed here is
- * how the pairs are composed rather than where the game's own threshold falls.
+ * not friendly at all, and how much of a membership falls short where it is not. The faction-level
+ * answer is a hand-built pair list, so what is fixed here is how the pairs are composed rather than
+ * where the game's own threshold falls.
  */
 class BlocFriendlinessTest {
 
@@ -78,6 +79,57 @@ class BlocFriendlinessTest {
                 .isFalse();
             assertThat(friendliness.areBlocsFriendly(Set.of("hegemony"), Set.of()))
                 .isFalse();
+        }
+    }
+
+    @Nested
+    class CountMembersAtOddsWith {
+
+        @Test
+        void countsNoneWhereEveryMemberIsFriendlyWithTheWholeOtherBloc() {
+
+            var friendliness = buildFriendlinessAboveNeutralOn(
+                List.of("hegemony:tritachyon", "luddic_church:tritachyon"));
+
+            assertThat(friendliness.countMembersAtOddsWith(
+                    Set.of("hegemony", "luddic_church"),
+                    Set.of("tritachyon")))
+                .isZero();
+        }
+
+        @Test
+        void countsAMemberOnceHoweverManyOfTheOtherBlocItQuarrelsWith() {
+            // Counted per member and not per pair: what a row states is how much of its membership
+            // the heading is false of, so one faction at odds with both of the other bloc is still
+            // one member of two.
+            var friendliness = buildFriendlinessAboveNeutralOn(
+                List.of("hegemony:tritachyon", "hegemony:persean"));
+
+            assertThat(friendliness.countMembersAtOddsWith(
+                    Set.of("hegemony", "luddic_church"),
+                    Set.of("tritachyon", "persean")))
+                .isOne();
+        }
+
+        @Test
+        void countsEveryMemberWhereNoneIsFriendly() {
+
+            var friendliness = buildFriendlinessAboveNeutralOn(List.of());
+
+            assertThat(friendliness.countMembersAtOddsWith(
+                    Set.of("hegemony", "luddic_church"),
+                    Set.of("tritachyon")))
+                .isEqualTo(2);
+        }
+
+        @Test
+        void countsEveryMemberWhereTheOtherBlocIsMadeOfNobody() {
+            // The same positive claim the yes-or-no is: nobody is friendly with nobody, which is what
+            // leaves that answer needing no guard of its own for this side.
+            var friendliness = buildFriendlinessAboveNeutralOn(List.of("hegemony:tritachyon"));
+
+            assertThat(friendliness.countMembersAtOddsWith(Set.of("hegemony"), Set.of()))
+                .isOne();
         }
     }
 

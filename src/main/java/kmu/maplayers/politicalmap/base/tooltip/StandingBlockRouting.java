@@ -4,9 +4,11 @@ import kmu.maplayers.politicalmap.base.dominance.ContestSide;
 import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
+import kmu.maplayers.politicalmap.base.dominance.StandingFraction;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,12 +29,21 @@ import java.util.Set;
  * against it and from nowhere else: an ally who is merely favourable is still an ally, and one gone
  * sour is still an ally too.
  *
- * <p>A bloc is sorted whole where its members agree and broken up where they do not. Every member
- * present is then listed on its own, in whichever block its own disposition puts it, still stating
- * the bloc it belongs to - the alternative being a heading asserting a friendliness half the bloc
- * does not have, which is the fault the block exists to fix one level in. The two blocks placed by
- * membership never break up: who holds a system and who is allied to it are facts about the bloc
- * rather than about how its members feel.
+ * <p>A bloc its members agree about is listed under one heading, and a bloc they do not is listed
+ * under both, each listing holding the members on its own side and stating how much of the bloc that
+ * side is. Neither heading overreaches, because the fraction on the row says exactly how far it
+ * applies; the bloc stays one named thing under both; and nothing is left orphaned from it, which
+ * breaking it up into loose factions would do to the one grouping the map paints that territory by.
+ * The two blocks placed by membership never split: who holds a system and who is allied to it are
+ * facts about the bloc rather than about how its members feel.
+ *
+ * <p>What splits a bloc is a disagreement among the members standing in the hovered system, since a
+ * side with nobody in it would draw a heading over a row with nothing beneath it - and the box has
+ * never listed anyone who is not present. What decides where an unsplit bloc goes is the bloc-level
+ * answer over both whole memberships, so a bloc whose sour member holds nothing here still contests
+ * the system. The fractions are read whole either way: a row states how much of the bloc's own
+ * roster its heading took, not how much of what happens to stand here, so an alliance reads the same
+ * over every system it holds.
  *
  * <p>Answered in one pass and held, because a box lays its blocks down one after another and asking
  * per block would re-derive the whole split each time, off inputs that could be sampled apart.
@@ -174,13 +185,13 @@ public final class StandingBlockRouting {
         return sortedRivals;
     }
 
-    // One bloc standing against the holder, listed whole or broken up.
+    // One bloc standing against the holder, listed under one heading or folded into both.
     //
     // The members present are sorted first, because it is their disagreement that decides which of
-    // the two happens: a bloc none of them disagrees about is listed whole and a bloc they split
-    // over cannot be. Where it is listed whole, the side it takes is the bloc-level answer over both
-    // whole memberships and not the present members' - so a bloc whose sour member holds nothing
-    // here still contests the system, which is the whole point of reading a membership rather than a
+    // the two happens: a side with none of them in it would head a row with nothing beneath it.
+    // Where the bloc goes to one heading, the side it takes is the bloc-level answer over both whole
+    // memberships and not the present members' - so a bloc whose sour member holds nothing here
+    // still contests the system, which is the whole point of reading a membership rather than a
     // system.
     private static void appendRival(
             RivalsByDisposition sortedRivals,
@@ -199,41 +210,127 @@ public final class StandingBlockRouting {
 
             members.add(member);
         }
+        var blocMemberFactionIds = rules.readMemberFactionIds(rival.blocId());
 
         if (friendlyMembers.isEmpty() || sourMembers.isEmpty()) {
 
             var isBlocFriendly = rules.friendliness().areBlocsFriendly(
-                rules.readMemberFactionIds(rival.blocId()),
+                blocMemberFactionIds,
                 holderMemberFactionIds);
 
             sortedRivals
                 .selectSideFor(isBlocFriendly)
-                .add(RoutedStanding.routeWhole(rival));
+                .add(routeRivalSide(
+                    rival,
+                    rival.members(),
+                    isBlocFriendly,
+                    blocMemberFactionIds,
+                    holderMemberFactionIds,
+                    rules));
 
             return;
         }
-        appendDissolvedMembers(sortedRivals.friendly(), friendlyMembers, rival.blocId());
-        appendDissolvedMembers(sortedRivals.contested(), sourMembers, rival.blocId());
+        sortedRivals.friendly().add(routeRivalSide(
+            rival,
+            friendlyMembers,
+            true,
+            blocMemberFactionIds,
+            holderMemberFactionIds,
+            rules));
+
+        sortedRivals.contested().add(routeRivalSide(
+            rival,
+            sourMembers,
+            false,
+            blocMemberFactionIds,
+            holderMemberFactionIds,
+            rules));
     }
 
-    // The members of a broken-up bloc that landed on one side, each listed as the lone faction it
-    // now stands as and each stating the bloc it came out of. They arrive in the order they ranked
-    // beneath that bloc and are added in it, so a block reads strongest first whichever bloc its
-    // rows came from.
-    private static void appendDissolvedMembers(
-            List<RoutedStanding> side,
-            List<FactionStanding> members,
-            String allianceBlocId) {
+    // One bloc as a single heading lists it: the bloc under its own id, holding only the members on
+    // that side, over the fractions the row and its members state.
+    //
+    // The score is summed over the members listed rather than carried down from the bloc, so a bloc
+    // folded into both headings does not state its whole weight twice - each row is worth what the
+    // factions beneath it are.
+    private static RoutedStanding routeRivalSide(
+            GroupStanding rival,
+            List<FactionStanding> sideMembers,
+            boolean isFriendlySide,
+            Set<String> blocMemberFactionIds,
+            Set<String> holderMemberFactionIds,
+            StandingBlockRules rules) {
+
+        var sideStanding = sideMembers == rival.members()
+            ? rival
+            : new GroupStanding(rival.blocId(), sumScores(sideMembers), sideMembers);
+
+        return RoutedStanding.routeQualified(
+            sideStanding,
+            resolveBlocFraction(
+                isFriendlySide,
+                blocMemberFactionIds,
+                holderMemberFactionIds,
+                rules),
+            resolveMemberFractions(sideMembers, holderMemberFactionIds, rules));
+    }
+
+    // How much of a bloc's own roster the heading over its row took. Counted over the whole
+    // membership rather than over who stands here, which is what makes one alliance read the same
+    // over every system it holds.
+    private static StandingFraction resolveBlocFraction(
+            boolean isFriendlySide,
+            Set<String> blocMemberFactionIds,
+            Set<String> holderMemberFactionIds,
+            StandingBlockRules rules) {
+
+        var atOddsCount = rules.friendliness().countMembersAtOddsWith(
+            blocMemberFactionIds,
+            holderMemberFactionIds);
+
+        return new StandingFraction(
+            isFriendlySide ? blocMemberFactionIds.size() - atOddsCount : atOddsCount,
+            blocMemberFactionIds.size());
+    }
+
+    // How much of the holder each listed member is at odds with - a different question from the
+    // bloc's own, and the reason the two are carried apart. Worked out for every member rather than
+    // only for those standing against the holder, a member with no quarrel simply counting nought
+    // and stating nothing.
+    private static Map<String, StandingFraction> resolveMemberFractions(
+            List<FactionStanding> sideMembers,
+            Set<String> holderMemberFactionIds,
+            StandingBlockRules rules) {
+
+        var fractionsByFactionId = new HashMap<String, StandingFraction>();
+
+        for (var member : sideMembers) {
+
+            fractionsByFactionId.put(member.factionId(), new StandingFraction(
+                rules.friendliness().countMembersAtOddsWith(
+                    holderMemberFactionIds,
+                    Set.of(member.factionId())),
+                holderMemberFactionIds.size()));
+        }
+        return fractionsByFactionId;
+    }
+
+    // What the factions listed under one row are weighed at between them, which is what that row
+    // shows.
+    private static int sumScores(List<FactionStanding> members) {
+
+        var totalScore = 0;
 
         for (var member : members) {
-            side.add(RoutedStanding.dissolveFrom(member, allianceBlocId));
+            totalScore += member.score();
         }
+        return totalScore;
     }
 
-    // Whether one member of a bloc is on good terms with the holder, asked as the bloc of one it is
-    // being listed as. Through the same rule the whole bloc is judged by rather than by reaching for
-    // the faction-level answer underneath it, so a member listed apart is sorted by exactly the test
-    // its bloc would have been.
+    // Whether one member of a bloc is on good terms with the holder, asked as the bloc of one it
+    // would be listed as. Through the same rule the whole bloc is judged by rather than by reaching
+    // for the faction-level answer underneath it, so a member deciding a split is measured by
+    // exactly the test its bloc is.
     private static boolean isMemberFriendly(
             FactionStanding member,
             Set<String> holderMemberFactionIds,

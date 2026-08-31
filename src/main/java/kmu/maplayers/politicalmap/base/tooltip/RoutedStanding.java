@@ -1,79 +1,83 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
+import kmu.maplayers.politicalmap.base.dominance.StandingFraction;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * One group as a block lists it: the standing itself, and the bloc it was taken out of where the
- * routing broke one up.
+ * One group as a block lists it: the group itself - holding the members on that block's side of it -
+ * and how far the heading over it reaches, at both tiers.
  *
- * <p>A bloc whose members do not all stand the same way toward the holder cannot be listed whole
- * under any one heading, so each of its present members is listed on its own - and the bloc it came
- * out of has to travel with it, or the listing loses the very grouping the map paints that territory
- * by. Carried as the bloc's id rather than as its name and crest, so whatever names a bloc reads
- * them off the one grouping the ranking was taken under instead of being handed a second copy free
- * to disagree with it.
+ * <p>A bloc its members do not agree about is listed under both headings rather than under either
+ * one, each listing holding the members on its own side. What keeps neither heading overreaching is
+ * the fraction stated on the row, so the bloc stays one named thing under both and nothing is
+ * orphaned from it.
  *
- * @param standing       the group the block lists - a bloc as it ranked, or the single faction a
- *                       broken-up bloc left standing alone
- * @param allianceBlocId the bloc this standing was taken out of, or null where the group ranked and
- *                       routed whole, which is every group on every block but the two disposition
- *                       sorts
+ * <p>The two tiers count different things - a bloc's row counts its own membership, a faction's the
+ * holder's - so a member's fraction cannot be read off the group's. They are held apart and keyed by
+ * the faction each is about rather than laid out beside the members in order, so nothing can pair one
+ * faction's row with another's count.
+ *
+ * @param standing        the group the block lists, holding the members on this block's side of it
+ * @param fraction        how far this block's heading reaches over the group, or
+ *                        {@link StandingFraction#NOTHING_TO_STATE} where nothing qualifies it
+ * @param memberFractions how far it reaches over each member, keyed by faction id; a member missing
+ *                        from it states nothing
  */
 public record RoutedStanding(
     GroupStanding standing,
-    String allianceBlocId) {
-
-    // What a group that was never broken up carries where the bloc it came out of would be. Named
-    // rather than passed as a bare null, so the factory below says the group ranked as itself
-    // instead of handing the constructor an unexplained absence.
-    private static final String NO_ALLIANCE = null;
+    StandingFraction fraction,
+    Map<String, StandingFraction> memberFractions) {
 
     public RoutedStanding {
         Objects.requireNonNull(standing, "standing");
+        Objects.requireNonNull(fraction, "fraction");
+        memberFractions = Map.copyOf(memberFractions);
     }
 
     /**
-     * Lists a group as it ranked, which is what every block but the two placed by disposition does
-     * and what those two do with a bloc its members agree about.
+     * Lists a group under a heading true of the whole of it, which is what every block placed by
+     * membership does: a row there states no fraction and neither does anything under it.
      *
      * @param standing the group
-     * @return the group listed as itself
+     * @return the group listed with nothing qualifying it
      */
     public static RoutedStanding routeWhole(GroupStanding standing) {
-        return new RoutedStanding(standing, NO_ALLIANCE);
+
+        return new RoutedStanding(standing, StandingFraction.NOTHING_TO_STATE, Map.of());
     }
 
     /**
-     * Lists one member of a bloc the routing broke up, as the lone faction it now stands as, still
-     * stating the bloc it belongs to.
+     * Lists a group under a heading that may reach over only part of it - what the two blocks placed
+     * by disposition do, whether the bloc landed in one of them or in both.
      *
-     * <p>The member's own standing is carried through rather than restated, so the faction is listed
-     * at exactly what the pass weighed it - and a member it weighed nothing for keeps that reading,
-     * which is what draws its nought quietly wherever the row is finally laid.
-     *
-     * @param member         the member being listed on its own
-     * @param allianceBlocId the bloc it was taken out of
-     * @return that member as a group of one
+     * @param standing        the group as this block lists it, holding the members on its side
+     * @param fraction        how far the heading reaches over the bloc
+     * @param memberFractions how far it reaches over each member, keyed by faction id
+     * @return the group listed under a qualified heading
      */
-    public static RoutedStanding dissolveFrom(FactionStanding member, String allianceBlocId) {
+    public static RoutedStanding routeQualified(
+            GroupStanding standing,
+            StandingFraction fraction,
+            Map<String, StandingFraction> memberFractions) {
 
-        return new RoutedStanding(
-            new GroupStanding(member.factionId(), member.score(), List.of(member)),
-            allianceBlocId);
+        return new RoutedStanding(standing, fraction, memberFractions);
     }
 
     /**
-     * Whether this standing is one member of a bloc the routing broke up rather than a group that
-     * ranked whole. The one place that reading is judged, so nothing goes looking for the name of a
-     * bloc a group was never taken out of.
+     * How far this block's heading reaches over one of the group's members.
      *
-     * @return true where the standing states the bloc it came from
+     * <p>Answered for every faction rather than only for those a fraction was worked out for, so a
+     * row under a heading true of all of it asks the same question as any other and gets an answer
+     * stating nothing.
+     *
+     * @param factionId the member being listed
+     * @return its fraction, or {@link StandingFraction#NOTHING_TO_STATE} where it states none
      */
-    public boolean isDissolvedFromAlliance() {
-        return allianceBlocId != null;
+    public StandingFraction readFractionFor(String factionId) {
+
+        return memberFractions.getOrDefault(factionId, StandingFraction.NOTHING_TO_STATE);
     }
 }

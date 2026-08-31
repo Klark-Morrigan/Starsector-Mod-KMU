@@ -111,9 +111,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN, "hidden");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED, "unlisted");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL, "non-territorial");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_ALLIANCE, "of");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_THE_ALLIANCE, "of the");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_ALLIANCE, "alliance");
+        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION, "(%d/%d)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY, "Military");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS, "+%s");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM, "Claim:");

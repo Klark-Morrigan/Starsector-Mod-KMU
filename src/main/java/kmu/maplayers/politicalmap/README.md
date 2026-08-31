@@ -297,18 +297,24 @@ else in the scale is one the player is never shown. What the four rules are is `
 bundled because a friendliness read over one grouping beside an affiliation off another would place
 blocs under an alliance set no fill was resolved with.
 
-A bloc its members do not agree about is not listed whole under either heading. It is broken up
-instead: each member present takes a row of its own in the block its own disposition puts it in,
-carrying the bloc it came out of (`RoutedStanding`), which `StandingRowResolver` states after the
-faction's name as `of <crest> <alliance name>` - or, where the alliance is named after the faction on
-that very row, as `of the <crest> C.O.G.R. alliance`, the initials standing in for a name the line
-has already said and the closing word saying what they name (`KmlibStrings.abbreviateToInitials`; a
-one-word name is left whole, an initial being a poorer name than the word it replaced). The alliance
-is therefore named on every row it lost,
-where a majority or a lead-member reading would put a heading over factions it is false of - the
-fault the block exists to fix, one level in. `HOLDER` and `ALLIED` never break up, being placed by
+A bloc its members do not agree about is not listed whole under either heading. It folds into both
+instead, each of its rows holding only the members on that side (`RoutedStanding`) and stating a
+`StandingFraction` saying how far its heading reaches - so the bloc stays one named thing under both
+and nothing is orphaned from the grouping the map paints that territory by, where a majority or a
+lead-member reading would put a heading over factions it is false of. Which members split a bloc is
+read off those standing in the hovered system, a side with nobody in it heading a row with nothing
+beneath it; where they agree, the whole-membership answer places the bloc, so a bloc whose sour member
+holds nothing here still contests the system. `HOLDER` and `ALLIED` never split, being placed by
 membership rather than by relation, and under the identity grouping every bloc is a singleton, so
-nothing breaks up there at all.
+nothing splits there at all.
+
+One rule covers every fraction: an alliance row counts its own members, a faction row counts the
+holder's, and both are counted over whole rosters so an alliance reads the same over every system it
+holds. Which of the two a row states is `StandingRowResolver`'s call, that being the one side knowing
+a group's kind - a lone-faction group is that faction under another name and states the faction's
+reading. Both ends of the range are omitted, `0/total` and `total/total` saying exactly what the
+heading above already did, which is why a faction against a lone holder never draws one and the whole
+device belongs to the alliances view.
 
 What that pair offers the player is named there too, once for both: "score contributions", which the
 framework puts at the foot of whichever of the two is drawn, beside the key that switches between
@@ -496,9 +502,9 @@ them: the claim line names the decreed holder and marks the hold, so these are t
 state the decree themselves.
 
 Two blocks the domination box has do not appear here, and both absences are the claims layer pinning
-the identity grouping. A standing is always a lone faction, so no bloc can be of two minds and
-nothing dissolves into its members. And the placeholder owner is never admitted to the claim
-mechanic, so it arrives ineligible and `Non-territorial:` is already the true statement about it -
+the identity grouping. A standing is always a lone faction, so no bloc can be of two minds, nothing
+folds into two headings, and no row states a fraction. And the placeholder owner is never admitted
+to the claim mechanic, so it arrives ineligible and `Non-territorial:` is already the true statement about it -
 where the fills, resolved per bloc and per candidate, needed `Non-political:` to say as much.
 
 `ClaimScoreRowResolver` decides those lines: the faction's markets in the order the mechanic itself

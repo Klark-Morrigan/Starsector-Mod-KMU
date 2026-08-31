@@ -7,6 +7,7 @@ import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.PresenceOnlyFactionStanding;
+import kmu.maplayers.politicalmap.base.dominance.StandingFraction;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.starsector.StarsectorSettingsFake;
 
@@ -41,6 +42,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * faction the pass weighed nothing for carries its nought in the quiet shade, and so does a bloc no
  * member of which was weighed.
  *
+ * <p>And which of the two fraction readings a row states, this being the one side that knows a group's
+ * kind: a bloc's row counts its own membership, a faction's counts the holder's, and a lone-faction
+ * group takes the faction's. What either number is worked out from is the routing's business.
+ *
  * <p>And that a bloc's members are gathered as its peers rather than subordinated as its account, which
  * is the one relation this resolver is in a position to state - membership - and what keeps a faction's
  * own breakdown reading alike whether the faction is allied or standing alone. The account itself is
@@ -55,9 +60,8 @@ final class StandingRowResolverTest {
         CellTooltipEntry.createEntry(
             CellTooltipEntryLine.createLine(null, standing.factionId() + " colony", "1")));
 
-    // The player's own wording, which the one line stating the bloc a faction was listed apart from
-    // reads through. Every other case names nothing the player reads, so the install is inert for
-    // them.
+    // The player's own wording, which the lines stating a fraction read their template through. Every
+    // other case names nothing the player reads, so the install is inert for them.
     @BeforeEach
     void installWording() {
         StarsectorSettingsFake.installSettings();
@@ -211,11 +215,10 @@ final class StandingRowResolverTest {
         }
 
         @Test
-        void resolveRowsNamesTheBlocAMemberListedApartFromItCameOutOf() {
-            // A bloc its members disagree about is listed a member at a time, so the member reads as
-            // the lone faction it now stands as - and the alliance is stated after its name, so the
-            // grouping the map paints that territory by is never left to be inferred from a row that
-            // simply went missing.
+        void resolveRowsStatesABlocsOwnFractionOnItsRow() {
+            // A bloc listed under a heading true of part of it says how much of itself that is,
+            // counted over its own membership - so neither of the two headings it may appear under
+            // overreaches.
             var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
@@ -223,123 +226,122 @@ final class StandingRowResolverTest {
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.dissolveFrom(
-                    new WeighedFactionStanding("astral_armada", 3),
-                    "alliance-1")),
+                List.of(RoutedStanding.routeQualified(
+                    new GroupStanding("alliance-1", 11, List.of(
+                        new WeighedFactionStanding("hegemony", 8),
+                        new WeighedFactionStanding("astral_armada", 3))),
+                    new StandingFraction(2, 3),
+                    Map.of())),
                 buildAllianceGrouping(),
                 NO_ACCOUNT);
 
-            // The name is what the box worked out about the row and reads as a finding; the word
-            // before it and the bloc's own crest are the sentence around it.
-            assertThat(entries)
-                .containsExactly(CellTooltipEntry.createEntry(CellTooltipEntryLine
-                    .createLine(
-                        CellTooltipMark.resolveMarkAsAuthored("graphics/aa.png"),
-                        "Astral Armada",
-                        "3")
-                    .callsOut(CellTooltipQualifier.introduceFinding(
-                        "of",
-                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
-                        "Allied Powers"))));
+            // The count is what the box worked out about the row and reads as a finding with nothing
+            // around it - what it counts is said by the heading the row sits under.
+            assertThat(entries.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("(2/3)"));
         }
 
         @Test
-        void resolveRowsStandsInForABlocNameTheRowHasAlreadySaid() {
-            // The shape an alliance called after the faction leading it takes - which also carries
-            // that faction's crest, so the line would otherwise say one name twice under one picture
-            // twice. The initials stand in for the name, and the closing word says what they are.
+        void resolveRowsStatesAMembersOwnFractionOnItsNestedRow() {
+            // The two readings meet in one tree: the bloc's row counts its own membership while a
+            // member's counts how much of the holder that faction is at odds with, so the numbers
+            // beneath a row are not parts of the one above it.
             var sectorMock = buildEmptySector();
 
-            stubFaction(sectorMock, "luddic_church", "Church of Galactic Redemption", "graphics/lc.png");
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.dissolveFrom(
-                    new WeighedFactionStanding("luddic_church", 1200),
-                    "alliance-1")),
-                buildNamesakeAllianceGrouping(),
+                List.of(RoutedStanding.routeQualified(
+                    new GroupStanding("alliance-1", 11, List.of(
+                        new WeighedFactionStanding("hegemony", 8),
+                        new WeighedFactionStanding("astral_armada", 3))),
+                    new StandingFraction(2, 3),
+                    Map.of(
+                        "hegemony", new StandingFraction(1, 4),
+                        "astral_armada", new StandingFraction(3, 4)))),
+                buildAllianceGrouping(),
                 NO_ACCOUNT);
 
-            assertThat(entries)
-                .containsExactly(CellTooltipEntry.createEntry(CellTooltipEntryLine
-                    .createLine(
-                        CellTooltipMark.resolveMarkAsAuthored("graphics/lc.png"),
-                        "Church of Galactic Redemption",
-                        "1,200")
-                    .callsOut(CellTooltipQualifier.encloseFinding(
-                        "of the",
-                        CellTooltipMark.resolveMarkAsAuthored("graphics/lc.png"),
-                        "C.O.G.R.",
-                        "alliance"))));
+            assertThat(entries.get(0).children())
+                .extracting(member -> member.line().qualifier())
+                .containsExactly(
+                    CellTooltipQualifier.stateFinding("(1/4)"),
+                    CellTooltipQualifier.stateFinding("(3/4)"));
         }
 
         @Test
-        void resolveRowsStandsInForABlocNameTheRowSaidInAnotherCase() {
-            // What is being asked is whether a reader would meet one name twice, and two spellings
-            // parted only by case are one name to a reader.
+        void resolveRowsStatesTheFactionsOwnFractionOnALoneFactionGroupsRow() {
+            // A lone-faction group is that faction under another name, so its row states the
+            // faction's reading rather than the bloc-of-one's - which could only ever count the one
+            // member out of one and state nothing whichever way it fell.
             var sectorMock = buildEmptySector();
 
-            stubFaction(sectorMock, "luddic_church", "CHURCH OF GALACTIC REDEMPTION", "graphics/lc.png");
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.dissolveFrom(
-                    new WeighedFactionStanding("luddic_church", 1200),
-                    "alliance-1")),
-                buildNamesakeAllianceGrouping(),
+                List.of(RoutedStanding.routeQualified(
+                    new GroupStanding("hegemony", 7, List.of(
+                        new WeighedFactionStanding("hegemony", 7))),
+                    new StandingFraction(1, 1),
+                    Map.of("hegemony", new StandingFraction(1, 3)))),
+                HolderGrouping.identity(),
                 NO_ACCOUNT);
 
-            assertThat(entries.get(0).line().qualifier().findingText())
-                .isEqualTo("C.O.G.R.");
+            assertThat(entries.get(0).line().qualifier())
+                .isEqualTo(CellTooltipQualifier.stateFinding("(1/3)"));
         }
 
         @Test
-        void resolveRowsKeepsAnUnweighedMembersNoughtQuietOnceItIsListedApart() {
-            // A member listed out of its bloc is the standing the pass produced and not a new one,
-            // so a faction the pass weighed nothing for still carries the box's nought rather than
-            // one it looks to have competed with.
+        void resolveRowsStatesNoFractionAtEitherEndOfItsRange() {
+            // Both ends say exactly what the heading above already said, so a row states a count only
+            // where it is genuinely split - a bloc all of which the heading took draws nothing, and
+            // neither does a member at odds with nobody.
+            var sectorMock = buildEmptySector();
+
+            stubFaction(sectorMock, "hegemony", "The Hegemony", "graphics/heg.png");
+            stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
+
+            var entries = StandingRowResolver.resolveRows(
+                sectorMock,
+                List.of(RoutedStanding.routeQualified(
+                    new GroupStanding("alliance-1", 11, List.of(
+                        new WeighedFactionStanding("hegemony", 8),
+                        new WeighedFactionStanding("astral_armada", 3))),
+                    new StandingFraction(2, 2),
+                    Map.of("hegemony", new StandingFraction(0, 3)))),
+                buildAllianceGrouping(),
+                NO_ACCOUNT);
+
+            assertThat(entries.get(0).line().qualifier())
+                .isNull();
+            assertThat(entries.get(0).children().get(0).line().qualifier())
+                .isNull();
+        }
+
+        @Test
+        void resolveRowsKeepsAnUnweighedFactionsNoughtQuietOnAQualifiedRow() {
+            // A group a block qualified is the standing the pass produced and not a new one, so a
+            // faction the pass weighed nothing for still carries the box's nought rather than one it
+            // looks to have competed with.
             var sectorMock = buildEmptySector();
 
             stubFaction(sectorMock, "astral_armada", "Astral Armada", "graphics/aa.png");
 
             var entries = StandingRowResolver.resolveRows(
                 sectorMock,
-                List.of(RoutedStanding.dissolveFrom(
-                    new PresenceOnlyFactionStanding("astral_armada"),
-                    "alliance-1")),
-                buildAllianceGrouping(),
+                List.of(RoutedStanding.routeQualified(
+                    new GroupStanding("astral_armada", 0, List.of(
+                        new PresenceOnlyFactionStanding("astral_armada"))),
+                    new StandingFraction(1, 1),
+                    Map.of("astral_armada", new StandingFraction(1, 3)))),
+                HolderGrouping.identity(),
                 NO_ACCOUNT);
 
             assertThat(entries.get(0).line().isValueUncounted())
                 .isTrue();
-        }
-
-        @Test
-        void resolveRowsLeavesAOneWordBlocNameWholeWhereTheRowHasAlreadySaidIt() {
-            // Standing a one-word name in for its initial says less than the word it replaced, so
-            // the name is left whole - and the closing word makes the repetition read as the
-            // sentence it is rather than as the name stuttered.
-            var sectorMock = buildEmptySector();
-
-            stubFaction(sectorMock, "hegemony", "Hegemony", "graphics/heg.png");
-
-            var entries = StandingRowResolver.resolveRows(
-                sectorMock,
-                List.of(RoutedStanding.dissolveFrom(
-                    new WeighedFactionStanding("hegemony", 8),
-                    "alliance-1")),
-                new HolderGrouping(
-                    Map.of("hegemony", "alliance-1"),
-                    Map.of("alliance-1", "hegemony"),
-                    Map.of("alliance-1", "Hegemony")),
-                NO_ACCOUNT);
-
-            assertThat(entries.get(0).line().qualifier())
-                .isEqualTo(CellTooltipQualifier.encloseFinding(
-                    "of the",
-                    CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
-                    "Hegemony",
-                    "alliance"));
         }
 
         @Test
@@ -646,20 +648,8 @@ final class StandingRowResolverTest {
         return buildAllianceOf("hegemony", "astral_armada");
     }
 
-    // An alliance called exactly what its lead member is called, which is the shape a bloc named
-    // after the faction leading it takes - and the one case a row would otherwise say one name twice.
-    // Built here rather than through the shared fixture, whose alliance is deliberately named after
-    // nobody.
-    private static HolderGrouping buildNamesakeAllianceGrouping() {
-        return new HolderGrouping(
-            Map.of("luddic_church", "alliance-1"),
-            Map.of("alliance-1", "luddic_church"),
-            Map.of("alliance-1", "Church of Galactic Redemption"));
-    }
-
-    // The groups as a block that listed every one of them whole hands them over - what every block
-    // placed by membership does, and what the two placed by disposition do with a bloc its members
-    // agree about. The state every case but the one about a bloc listed apart is posed in.
+    // The groups as a block placed by membership hands them over: nothing qualifies the heading over
+    // them, so no row states a fraction. The state every case but those about one is posed in.
     private static List<RoutedStanding> routeWhole(GroupStanding... standings) {
         return Arrays
             .stream(standings)

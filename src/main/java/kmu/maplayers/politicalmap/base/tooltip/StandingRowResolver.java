@@ -4,15 +4,14 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.text.KmlibNumbers;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.dominance.StandingFraction;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 import kmu.util.KmuStrings;
 
@@ -48,11 +47,12 @@ import java.util.List;
  * crest resolves to a null path the render layer draws around, so a group or member with no authored
  * crest still shows its name and score.
  *
- * <p>A faction a block listed apart from the bloc it belongs to is one of those lone factions and presents
- * as one, with the bloc stated after its name instead: the alliance is still named on every row it lost, so
- * a reader is never left inferring a grouping from what is missing. Which factions those are is the
- * routing's answer; naming and cresting the bloc they came out of is this resolver's, off the same grouping
- * that names a bloc listed whole, and in a shorter form where the bloc's name is the row's own.
+ * <p>How far the heading over a row reaches is stated on the row, as the fraction the routing worked out
+ * for it. Which of the two readings a row states is settled here, this being the one side that knows a
+ * group's kind: a bloc's row states how much of its own membership the heading took, while a faction's
+ * states how much of the holder it is at odds with - and a lone-faction group, being that faction under
+ * another name, states the faction's rather than the bloc-of-one's. A heading true of the whole of a row
+ * qualifies it with nothing, which is every row of every block placed by membership.
  *
  * <p>How loudly a score is drawn is settled here too, on the standing's own kind: a faction or a bloc
  * the pass weighed nothing for carries its nought in the quiet shade. The distinction is the
@@ -66,10 +66,6 @@ import java.util.List;
  * same index and risk listing one faction's colonies under another's name.
  */
 public final class StandingRowResolver {
-
-    // How many words a name has to run to before its initials stand in for it. One word abbreviates
-    // to one letter, which is a poorer name than the word it replaced.
-    private static final int SHORTEST_ABBREVIATED_NAME_WORDS = 2;
 
     private StandingRowResolver() {
     }
@@ -111,7 +107,7 @@ public final class StandingRowResolver {
             FactionAccountResolver accountResolver) {
 
         var standing = routedStanding.standing();
-        var memberEntries = resolveMemberEntries(sector, standing.members(), accountResolver);
+        var memberEntries = resolveMemberEntries(sector, routedStanding, accountResolver);
         var blocId = standing.blocId();
 
         if (!grouping.isAlliance(blocId)) {
@@ -122,23 +118,27 @@ public final class StandingRowResolver {
             // to hang directly off the group, which is the same faction under another name.
             var groupMemberEntry = memberEntries.get(0);
 
+            // And the fraction it states is that faction's, for the same reason: how much of the
+            // holder this faction is at odds with. The bloc-of-one reading beside it could only ever
+            // count one member out of one, which states nothing at either end of its range.
             return CellTooltipEntry
-                .createEntry(attributeToAlliance(
-                    sector,
+                .createEntry(stateFraction(
                     buildGroupLine(
                         groupMemberEntry.line().mark(),
                         groupMemberEntry.line().labelText(),
                         standing),
-                    routedStanding,
-                    grouping))
+                    routedStanding.readFractionFor(standing.members().get(0).factionId())))
                 .nesting(groupMemberEntry.children());
         }
         // An alliance carries the alliance's own name and its lead (colour) member's crest - the same
-        // name and crest the alliances view paints the bloc's cluster by - over the factions in it.
-        var allianceLine = buildGroupLine(
-            resolveAllianceCrest(sector, grouping, blocId),
-            grouping.resolveAllianceName(blocId),
-            standing);
+        // name and crest the alliances view paints the bloc's cluster by - over the factions in it,
+        // and states how much of its own membership the heading above it took.
+        var allianceLine = stateFraction(
+            buildGroupLine(
+                resolveAllianceCrest(sector, grouping, blocId),
+                grouping.resolveAllianceName(blocId),
+                standing),
+            routedStanding.fraction());
 
         // Gathered rather than subordinated: a bloc's line and the factions inside it are one answer to
         // who holds the system, stated at two granularities, so the members read inset beneath the bloc
@@ -150,44 +150,23 @@ public final class StandingRowResolver {
             .grouping(memberEntries);
     }
 
-    // The bloc a line's faction belongs to, stated after its name where the routing listed that
-    // faction apart from it - and left alone on every line that ranked whole, which is every line
-    // the identity grouping ever produces.
+    // How far the heading over a row reaches, stated after the row's name where it reaches over only
+    // part of it. A count out of a total is what the box worked out about the row and reads as a
+    // finding, with nothing around it - what it counts is said by the heading the row sits under.
     //
-    // Read off the grouping here rather than carried along from the routing, so the alliance is
-    // named and crested by the very fold the ranking was taken under. The name is what the box has
-    // worked out about the row and reads as a finding; the words around it and the crest are the
-    // sentence it sits in and stay quiet.
-    private static CellTooltipEntryLine attributeToAlliance(
-            SectorAPI sector,
+    // Which rows state one and which state nothing is StandingFraction's own rule, so a row under a
+    // heading true of all of it asks the same question every other row does.
+    private static CellTooltipEntryLine stateFraction(
             CellTooltipEntryLine line,
-            RoutedStanding routedStanding,
-            HolderGrouping grouping) {
+            StandingFraction fraction) {
 
-        if (!routedStanding.isDissolvedFromAlliance()) {
+        if (!fraction.isStated()) {
             return line;
         }
-        var allianceBlocId = routedStanding.allianceBlocId();
-        var allianceName = grouping.resolveAllianceName(allianceBlocId);
-        var allianceMark = resolveAllianceCrest(sector, grouping, allianceBlocId);
-
-        // An alliance named after the faction on the row says the name a second time in the space of
-        // one line - which is where an alliance is commonly named after the faction leading it, and
-        // where it carries that faction's crest besides. There the name is stood in for by its
-        // initials and closed with what kind of thing they name, so the line states the bloc without
-        // repeating itself and the reader can still tell the two apart.
-        if (isNamedAfter(line, allianceName)) {
-
-            return line.callsOut(CellTooltipQualifier.encloseFinding(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_THE_ALLIANCE),
-                allianceMark,
-                abbreviateAllianceName(allianceName),
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_ALLIANCE)));
-        }
-        return line.callsOut(CellTooltipQualifier.introduceFinding(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_OF_ALLIANCE),
-            allianceMark,
-            allianceName));
+        return line.qualifiedWith(KmuStrings.format(
+            KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
+            fraction.count(),
+            fraction.total()));
     }
 
     // The crest a bloc shows: its colour (lead) faction's, which is the crest the alliances view
@@ -201,29 +180,6 @@ public final class StandingRowResolver {
         return CellTooltipMark.resolveMarkAsAuthored(FactionPresentation
             .resolvePresentation(sector, grouping.resolveColourFactionId(blocId))
             .crestSpritePath());
-    }
-
-    // Whether the alliance is called what the line is already called. Ignoring case, because what is
-    // being asked is whether a reader would meet the same name twice, and two spellings differing
-    // only in case read as one name.
-    //
-    // A line withholding its name is named nothing a bloc could repeat, so it takes the ordinary
-    // form - the shape of a name says nothing about which name it stands for.
-    private static boolean isNamedAfter(CellTooltipEntryLine line, String allianceName) {
-
-        return line.labelText() != null
-            && line.labelText().equalsIgnoreCase(allianceName);
-    }
-
-    // The alliance's name stood in for by its initials, and left whole where standing it in would
-    // gain nothing: a one-word name abbreviates to a single letter, which says less than the word it
-    // replaced and is no shorter than a reader would call worth the trade. That case still takes the
-    // closing word, so "of the Hegemony alliance" reads as the sentence it is.
-    private static String abbreviateAllianceName(String allianceName) {
-
-        return KmlibStrings.splitIntoWords(allianceName).size() >= SHORTEST_ABBREVIATED_NAME_WORDS
-            ? KmlibStrings.abbreviateToInitials(allianceName)
-            : allianceName;
     }
 
     // One group's line, whichever kind of group it is: whatever names it, over the score its members
@@ -254,14 +210,17 @@ public final class StandingRowResolver {
     // line it hangs under rather than restating it more finely.
     private static List<CellTooltipEntry> resolveMemberEntries(
             SectorAPI sector,
-            List<FactionStanding> members,
+            RoutedStanding routedStanding,
             FactionAccountResolver accountResolver) {
 
+        var members = routedStanding.standing().members();
         var entries = new ArrayList<CellTooltipEntry>(members.size());
 
         for (var member : members) {
             entries.add(CellTooltipEntry
-                .createEntry(buildMemberLine(sector, member))
+                .createEntry(stateFraction(
+                    buildMemberLine(sector, member),
+                    routedStanding.readFractionFor(member.factionId())))
                 .nesting(accountResolver.resolveAccountEntries(member)));
         }
         return entries;
