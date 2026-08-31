@@ -33,10 +33,10 @@ import java.util.List;
 public final class MapCoverReader {
 
     // In ascending cost, since the first cover to answer ends the read: a polled mouse flag, then a
-    // published one-call read, then the console's settled flag, then arithmetic over a box this mod
-    // laid out, then the two that walk the live widget tree - the map tab's own layout, and finally
-    // the surfaces another mod put on screen, which is the dearest because its walk is rooted above
-    // every tab.
+    // published one-call read, then the console's settled flag, then a walk of the core UI's own
+    // children, then arithmetic over a box this mod laid out, then the two that walk further into
+    // the live widget tree - the map tab's own layout, and finally the surfaces another mod put on
+    // screen, which is the dearest because its walk is rooted above every tab.
     //
     // How many there are is the composition's, not this field's: the two that belong to optional
     // mods are absent on an install without them, and the order of whatever remains is unchanged.
@@ -89,6 +89,11 @@ public final class MapCoverReader {
         if (ConsoleCommandsPresence.isModEnabled()) {
             covers.add(ConsoleMapCover.createForLiveScreen());
         }
+
+        // Ahead of the sidebar's cover for a reason beyond its own cost: a modal stands the sidebar
+        // down, so on every frame this one answers, the cover below it is resolving placements for a
+        // panel that is not drawn - work spent to reach a false it can no longer reach anything but.
+        covers.add(new ModalDialogMapCover());
         covers.add(new SidebarMapCover());
         covers.add(new VanillaChromeMapCover());
 

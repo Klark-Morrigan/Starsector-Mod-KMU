@@ -286,13 +286,19 @@ about what the overlay means.
   whatever is covering them. `MapCover` is the role - one thing that can be over the cursor - and
   `MapCoverReader` holds the set and stops at the first that answers.
 
-  Four are always in the set and live here: `HeldPointerMapCover` (a held left button, on which the
+  Five are always in the set and live here: `HeldPointerMapCover` (a held left button, on which the
   pointer is pressing rather than pointing - it stands in for vanilla's own marker menu, which no
   geometry here can see; the class states why), `PauseMenuMapCover` (the campaign's pause menu,
   raised over the screen without taking it down, so the map keeps drawing behind it),
-  `SidebarMapCover` (any host's panel, through `SidebarHosts`), and `VanillaChromeMapCover` (the
-  map's own tab strip and control bar, stated as "outside the map surface" since the chrome widgets
-  are a fact about one game build).
+  `ModalDialogMapCover` (a confirmation prompt or picker a core screen raises in front of itself,
+  which nothing the campaign publishes reports), `SidebarMapCover` (any host's panel, through
+  `SidebarHosts`), and `VanillaChromeMapCover` (the map's own tab strip and control bar, stated as
+  "outside the map surface" since the chrome widgets are a fact about one game build).
+
+  The modal one sits ahead of the sidebar's deliberately. A modal stands the sidebar down, so on the
+  frames it covers the map the panel is not drawn and its cover can no longer answer for it - which
+  is both why the modal needs a cover of its own and why paying for the sidebar's placement resolve
+  behind it would buy a false it could not stop reaching.
 
   Two more belong to optional mods, live with those mods' own integrations, and join the set only
   where the mod is installed - presence being the one condition that cannot move within a run, so

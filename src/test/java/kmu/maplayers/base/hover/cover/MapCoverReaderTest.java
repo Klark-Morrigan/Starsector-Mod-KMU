@@ -91,6 +91,7 @@ final class MapCoverReaderTest {
                     .hasExactlyElementsOfTypes(
                         HeldPointerMapCover.class,
                         PauseMenuMapCover.class,
+                        ModalDialogMapCover.class,
                         SidebarMapCover.class,
                         VanillaChromeMapCover.class);
             }

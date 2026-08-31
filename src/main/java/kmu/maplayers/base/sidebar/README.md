@@ -71,11 +71,13 @@ The claim is injected rather than reached for statically, so what a host does un
 without a game running: each host's `INSTANCE` names the live `ScreenClaim.INSTANCE`, and a suite
 hands in a claim it states.
 
-Hiding the panel is only half of what a console owes the map, and the other half is not this
-package's: with the sidebar down, its cover over the map goes down with it, so the map's own hover
-would read straight through to the cells under the console. The console is therefore a cover in its
-own right - see [map layers](../../README.md) on `base/hover/cover`, which the sidebar's cover sits
-beside.
+Hiding the panel is only half of what a claimant owes the map, and the other half is not this
+package's. Standing the sidebar down takes its cover over the map down with it, so the map's own
+hover would read straight through to the cells under whatever claimed the screen - and it is the act
+of hiding that does this, so a claimant that hides the panel *cannot* be reported by the panel's own
+cover. Each claimant is therefore a cover in its own right too: the console as `ConsoleMapCover`, a
+modal as `ModalDialogMapCover` - see [map layers](../../README.md) on `base/hover/cover`, where both
+sit beside the sidebar's.
 
 Both screen gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
 visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)
