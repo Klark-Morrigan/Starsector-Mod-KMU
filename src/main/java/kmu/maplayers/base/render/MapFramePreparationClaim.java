@@ -30,16 +30,14 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
  * would leave the overlay frozen on the single frame that was ever prepared, nothing else bringing
  * the draw lists up to date.
  *
- * <p>One per installation, shared by that sector's surfaces because they are separate objects the
- * engine builds per terrain entity - restored from a save at that - with no way to reach each other.
- * Per installation rather than per process because a frame is a sector's: two sectors drawing in one
- * frame each owe their own draw lists a preparation, and a shared claim would give the second
- * sector's surfaces nothing to prepare with. Read and written on the game thread alone - both the UI
- * render pass and the terrain pass run there - so the flags need no publication guarantee of their
- * own.
+ * <p>One per installation, since a frame is a sector's: two sectors drawing in one frame each owe
+ * their own draw lists a preparation, and a shared claim would give the second sector's surfaces
+ * nothing to prepare with. That also means nothing has to clear it per load - an installation is
+ * made fresh when the layers are installed, so a claim left mid-frame by the session before goes
+ * with the installation that held it.
  *
- * <p>Nothing clears it per load: an installation is made fresh when the layers are installed on a
- * sector, so a claim left mid-frame by the session before goes with the installation that held it.
+ * <p>Read and written on the game thread alone - both the UI render pass and the terrain pass run
+ * there - so the state needs no publication guarantee of its own.
  */
 public final class MapFramePreparationClaim implements CampaignUIRenderingListener,
         InstalledMachinery {
@@ -75,12 +73,13 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     }
 
     /**
-     * Forgets that frame boundaries were ever seen, so a claim released with its installation
-     * cannot be one a surface goes on being refused by.
+     * Forgets that frame boundaries were ever seen.
      *
-     * <p>The state left behind is the fail-open one for the reason every other reset here chooses
-     * it: a claim standing at "preparation taken" with nothing left to open another frame refuses
-     * every asker, and the overlay freezes on whatever the last prepared frame built.
+     * <p>Defensive rather than needed: a surface resolves its installation and this claim afresh
+     * every frame, so a released claim is one nothing asks again. What it guards is the registration
+     * the sector's listener manager may still be holding - which goes on being handed frame
+     * boundaries until the install after it re-registers - and it leaves that stray in the fail-open
+     * state, where an extra preparation costs work rather than the overlay.
      */
     @Override
     public void disposeMachinery() {

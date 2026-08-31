@@ -36,19 +36,29 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
 
+    private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
+
     // The surface reads the compatibility constraint before it draws, and that read reaches LunaLib,
     // which no test has. Stubbed for the class rather than per case because every case here is about
     // the bands and the stand-aside; Mockito's own default answers the constraint off, which is both
     // the shipped default and the state these cases mean to describe.
     private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
 
+    // Stood in for the class, but left unstubbed until a case asks: the stand-aside case asserts that
+    // the registry was never reached at all, which a stubbing set up for every case would spend.
+    private MockedStatic<MapLayerRegistry> layerRegistryMock;
+
     @BeforeEach
-    void stubTheCompatibilityConstraint() {
+    void standInForTheLayerRegistryAndSettings() {
+
         mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        layerRegistryMock = mockStatic(MapLayerRegistry.class);
     }
 
     @AfterEach
-    void releaseTheCompatibilityConstraint() {
+    void releaseTheLayerRegistryAndSettings() {
+
+        layerRegistryMock.close();
         mapLayerSettingsMock.close();
     }
 
@@ -60,73 +70,58 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
         MapLayerInstallations.disposeEveryInstallation();
     }
 
+    // Puts a renderer behind the active pick, for the cases about what this surface draws through it.
+    private void stubTheActiveLayersRenderer() {
+        layerRegistryMock
+            .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
+            .thenReturn(layerRendererMock);
+    }
+
     @Nested
     class RenderOnMap {
 
         @Test
         void renderOnMapPaintsTheLowerBandWhileAStarscapeMapIsShowing() {
 
-            var layerRendererMock = mock(MapLayerRenderer.class);
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRenderer();
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
-                layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
-                    .thenReturn(layerRendererMock);
-
-                plugin.renderOnMap(FACTOR, ALPHA_MULT);
-
-                verify(layerRendererMock)
-                    .renderOnMap(FACTOR, ALPHA_MULT, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-            }
+            verify(layerRendererMock)
+                .renderOnMap(FACTOR, ALPHA_MULT, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
         @Test
         void renderOnMapLeavesTheUpperBandToTheSurfaceAboveTheNebulae() {
             // Painting it here as well would put the names back under the fog: this surface's icon
             // sits beneath the nebulae, so anything it emits is drawn beneath them whatever it is.
-            var layerRendererMock = mock(MapLayerRenderer.class);
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRenderer();
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
-                layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
-                    .thenReturn(layerRendererMock);
-
-                plugin.renderOnMap(FACTOR, ALPHA_MULT);
-
-                verify(layerRendererMock, never())
-                    .renderOnMap(anyFloat(), anyFloat(),
-                        eq(MapOverlayBand.ABOVE_STARSCAPE_NEBULAE));
-            }
+            verify(layerRendererMock, never())
+                .renderOnMap(anyFloat(), anyFloat(), eq(MapOverlayBand.ABOVE_STARSCAPE_NEBULAE));
         }
 
         @Test
         void renderOnMapPreparesTheFrameForTheSurfaceAboveItAsWell() {
             // The upper surface prepares nothing, so this is the frame's only preparation whenever
             // Starscape is the look on screen.
-            var layerRendererMock = mock(MapLayerRenderer.class);
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRenderer();
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
-                layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
-                    .thenReturn(layerRendererMock);
-
-                plugin.renderOnMap(FACTOR, ALPHA_MULT);
-
-                verify(layerRendererMock)
-                    .prepareFrame(FACTOR);
-            }
+            verify(layerRendererMock)
+                .prepareFrame(FACTOR);
         }
 
         @Test
@@ -134,22 +129,15 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
             // Both Starscape surfaces read, this one included: the read inverts the transform its
             // own pass bound, so a surface skipping it would leave the frame's answer to whichever
             // other pass drew - the fault this arrangement exists to close.
-            var layerRendererMock = mock(MapLayerRenderer.class);
             var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRenderer();
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
-                layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
-                    .thenReturn(layerRendererMock);
-
-                plugin.renderOnMap(FACTOR, ALPHA_MULT);
-
-                verify(layerRendererMock)
-                    .publishHoverForPass(FACTOR);
-            }
+            verify(layerRendererMock)
+                .publishHoverForPass(FACTOR);
         }
 
         @Test
@@ -160,13 +148,10 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
-                plugin.renderOnMap(FACTOR, ALPHA_MULT);
-
-                layerRegistryMock
-                    .verifyNoInteractions();
-            }
+            layerRegistryMock
+                .verifyNoInteractions();
         }
     }
 }

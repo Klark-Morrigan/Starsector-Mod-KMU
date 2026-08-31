@@ -1,17 +1,9 @@
 package kmu.maplayers.base.render;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.SectorEntityToken;
-
-import kmlib.starsector.ui.map.icons.MapIconReseater;
-import kmlib.starsector.ui.map.presence.MapPresence;
-import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.starsector.listeners.SectorListeners;
-
-import java.util.function.Supplier;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -108,52 +100,21 @@ public final class MapSurfaceInstaller {
             "Failed to remove KMU map layer frame preparation claim");
     }
 
+    // Takes off the lift this sector had running, reached through that sector's own installation so
+    // the slot asked is the one the script went into. What the lift is and why it is worth making is
+    // StarscapeTerrainReseat's; this only says when it stops.
     static void removeStarscapeTerrainReseater(SectorAPI sector) {
-        MapSurfaceScripts
-            .resolveScriptsIn(MapLayerInstallations.resolveInstallationFor(sector))
-            .removeReseaterFrom(sector);
+        StarscapeTerrainReseat
+            .resolveReseatIn(MapLayerInstallations.resolveInstallationFor(sector))
+            .removeReseatFrom(sector);
     }
 
-    // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
-    // icons whenever the widget has seeded it underneath them. Moving an icon to the end of the
-    // widget's draw order is KMLib's, and it is told only which map matters and which entity to move;
-    // that the entity is a terrain, and that the fog above it is what makes the move worth making,
-    // are KMU's side of it. Where the icon currently sits is KMLib's too - it reads that itself
-    // rather than being told, the widget's ordering being its own subject.
-    //
-    // Only the above-nebulae entity is moved. The surface beneath it is meant to be fogged - a fill
-    // still reads as owned through the nebula sprite, where a name stops being legible - so lifting
-    // both would undo the split the two entities exist for and leave the overlay laid flat beneath
-    // the fog again.
-    //
-    // The map read is the Starscape one and its sibling on MapPresence is the wrong one, which is
-    // worth stating because nothing catches the swap: both compile, both are on the same object,
-    // and the entity moved here is one of the halves that stand aside entirely while a schematic map
-    // is up. It scopes the move rather than triggering it - moving on a schematic map would shift an
-    // entity that is not drawing, for a look with nothing of ours under the fog to rescue.
-    //
-    // Both ports are read afresh per call rather than resolved here, since a save load replaces the
-    // entity and the script outlives no load anyway. Transient: pure runtime logic that must not
-    // enter a save, so it is re-added fresh each load and never duplicates across reloads.
+    // Puts the per-frame lift of the upper Starscape terrain onto this sector, through that sector's
+    // own installation for the reason the removal above goes through it.
     static void installStarscapeTerrainReseater(SectorAPI sector) {
-
-        // Named once and used twice: the placement read has to be asked about the same entity the
-        // move is aimed at, and two copies of the lookup would be two chances for one of them to be
-        // repointed at the other surface.
-        Supplier<SectorEntityToken> findAboveNebulaeTerrain =
-            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector());
-
-        // Held by this sector's installation, so the slot a later removal reaches for is the one
-        // this script went into. A fresh script per load besides, so the previous save's spent lift
-        // attempts cannot carry into this one and stand the move down over a sector it never tried.
-        MapSurfaceScripts
-            .resolveScriptsIn(MapLayerInstallations.resolveInstallationFor(sector))
-            .installReseaterOn(
-                sector,
-                () -> new MapIconReseater(
-                    new MapPresence()::isStarscapeMapShowing,
-                    findAboveNebulaeTerrain,
-                    () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
+        StarscapeTerrainReseat
+            .resolveReseatIn(MapLayerInstallations.resolveInstallationFor(sector))
+            .installReseatOn(sector);
     }
 
     // Registers the render listener the map surfaces read their frame boundary from. Transient,

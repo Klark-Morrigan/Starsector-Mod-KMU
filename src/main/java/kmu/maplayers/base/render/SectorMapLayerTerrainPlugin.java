@@ -34,12 +34,8 @@ import java.util.List;
  *
  * <p>This plugin is serialised into the save with its terrain entity, so it deliberately holds no
  * state: everything a frame needs lives behind the layer's renderer, which is reached through a
- * registered layer and never enters a save.
- *
- * <p>That is also what decides how it finds the sector it is drawing. The hook names none, and there
- * is no seam to hand one in through - the engine reconstructs this plugin from the save - so the
- * entity it rides on is the handle it has, and the installation is resolved from that entity's
- * containing location per frame rather than held in a field a save would carry.
+ * registered layer and never enters a save. That constraint is also what decides how it finds the
+ * sector it draws, which {@link #resolveInstallationBeingDrawn} sets out.
  *
  * <p><b>Renaming or moving this class breaks every existing save.</b> XStream writes the concrete
  * class name into the file, and a save naming a class that no longer exists fails to load outright -
@@ -121,10 +117,9 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
                 && !MAP_PRESENCE.isAnyMapShowing()) {
             return;
         }
-        // Which sector this frame is for, resolved rather than passed: the hook is handed a fade
-        // factor and nothing else. Null while the terrain sits somewhere nothing is installed in,
-        // which is a surface belonging to a sector nothing draws - so it stands down rather than
-        // painting through a holder shared with every other sector-less caller.
+        // Null while this surface's terrain sits somewhere nothing is installed in, which is a
+        // surface belonging to a sector nothing draws - so it stands down rather than painting
+        // through a holder shared with every other sector-less caller.
         var installation = resolveInstallationBeingDrawn();
 
         if (installation == null) {
@@ -177,13 +172,18 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         return BOTH_BANDS;
     }
 
-    // The machinery of the sector this surface is drawing, found through the only handle a
-    // serialised plugin has: the terrain entity it rides on, whose containing location is that
-    // sector's hyperspace. Resolved per frame and never held, an installation being a live object
-    // that must not enter the save this plugin is written into.
-    //
-    // A plugin the engine has not yet handed an entity to has nothing to resolve through, which is
-    // the same answer as terrain in an uninstalled location: nothing to draw.
+    /**
+     * The machinery of the sector this surface is drawing.
+     *
+     * <p>The render hook names no sector and there is no seam to hand one in through, the engine
+     * rebuilding this plugin from the save - so the terrain entity it rides on is the handle it has,
+     * and that entity's containing location is its sector's hyperspace. Resolved per frame and never
+     * held: an installation is a live object, and a field on this plugin is a field in the save.
+     *
+     * @return that sector's installation, or null where the engine has not yet seated this plugin's
+     *         entity or where nothing is installed in the location it sits in - both of which mean
+     *         nothing to draw
+     */
     private MapLayerInstallation resolveInstallationBeingDrawn() {
 
         var terrainEntity = getEntity();

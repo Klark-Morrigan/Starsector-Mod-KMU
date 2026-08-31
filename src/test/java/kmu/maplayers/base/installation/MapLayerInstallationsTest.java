@@ -26,9 +26,9 @@ import static org.mockito.Mockito.when;
  * released sector's state to the installation after it, and that a sector with nothing installed
  * resolves to something rather than to null.
  *
- * <p>The second key is pinned beside the first: a render surface is terrain and reaches only its
- * containing location, so an installation has to be findable by the hyperspace its sector's surfaces
- * sit in - and has to stop being findable there the moment it is released.
+ * <p>The location resolution is pinned beside the sector one: a render surface is terrain and reaches
+ * only its containing location, so an installation has to be findable by the hyperspace its sector's
+ * surfaces sit in - and has to stop being findable there the moment it is released.
  *
  * <p>The index is process-wide, so every case starts from a cleared one.
  */
@@ -310,6 +310,24 @@ class MapLayerInstallationsTest {
 
             assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
                 .isSameAs(installation);
+        }
+
+        @Test
+        void yieldsTheReplacementRatherThanTheInstallationAReinstallReleased() {
+            // The hazard a location index of its own would carry. A second key has to be written
+            // after the sector one, so between the two a surface resolving by location would be
+            // handed the installation the reinstall had just released - and would build a renderer,
+            // and the GL buffers behind it, onto a holder nothing will ever release again.
+            var hyperspaceMock = mock(LocationAPI.class);
+            var sector = buildSectorInHyperspace(hyperspaceMock);
+
+            var releasedInstallation = MapLayerInstallations.installMachineryOn(sector);
+            var installation = MapLayerInstallations.installMachineryOn(sector);
+
+            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
+                .isSameAs(installation);
+            assertThat(releasedInstallation.isDisposed())
+                .isTrue();
         }
 
         @Test

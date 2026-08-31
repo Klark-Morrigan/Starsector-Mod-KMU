@@ -16,9 +16,11 @@ import java.util.function.Supplier;
  * state - would hand it back on a widget this mod never touched. Holding the instance is what keeps
  * a removal to what this installer actually put there.
  *
- * <p>Per process rather than per sector. A reference to a script from a sector since left is inert,
- * because removing it from a different sector does nothing, and the next install replaces it - so
- * the field costs one reference and needs no per-load clearing of its own.
+ * <p>A slot belongs to whoever owns the sector its script was installed on, and holding one for the
+ * whole process is only safe while there is one such sector. Removing against a sector other than
+ * the one the held script went onto takes nothing off either of them: the sector asked does not
+ * carry that script, and the sector that does goes on running it. So a second sector installed
+ * through a shared slot silently strands the first sector's script.
  *
  * <p>Not for a script this mod owns outright. Those are safely removed by class, no sibling mod
  * having one, and a slot for them would be ceremony over a one-line call.

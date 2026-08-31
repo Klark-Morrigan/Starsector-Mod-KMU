@@ -249,15 +249,16 @@ What KMU supplies is the two ports. The map read is the Starscape one - the enti
 one of the surfaces that stand aside while a schematic map is up - and the entity read is
 `MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain`, which resolves it afresh per call
 through the same plugin-class guard the install uses, so the entity a load brought back is the one
-moved. Both are wired in `MapSurfaceInstaller`: that the entity is a terrain, and that the fog above
-it is what makes the move worth making, is the whole of KMU's side.
+moved. That the entity is a terrain, and that the fog above it is what makes the move worth making,
+is the whole of KMU's side.
 
-The script itself is held by the installation of the sector it was added to, through
-`MapSurfaceScripts`, so a removal aimed at one sector takes off the script that sector is actually
-running. One slot for the whole process could not: a second sector installed on would take the slot
-over, and the first sector's removal would then reach for a script it never had while the one still
-running went untouched. It is taken off by instance rather than by class besides, `MapIconReseater`
-being KMLib's and another mod free to run its own over the same sector.
+`StarscapeTerrainReseat` is where both ports are wired and where the script is held - by the
+installation of the sector it was added to, so a removal aimed at one sector takes off the script
+that sector is actually running. One slot for the whole process could not: a second sector installed
+on would take the slot over, and the first sector's removal would then reach for a script it never
+had while the one still running went untouched. It is taken off by instance rather than by class
+besides, `MapIconReseater` being KMLib's and another mod free to run its own over the same sector.
+`MapSurfaceInstaller` only says when the reseat goes on and comes off, and behind which guard.
 
 Only the above-nebulae surface is moved. The one beneath it is meant to be fogged, so lifting both
 would flatten the split back into a single pass beneath the fog.

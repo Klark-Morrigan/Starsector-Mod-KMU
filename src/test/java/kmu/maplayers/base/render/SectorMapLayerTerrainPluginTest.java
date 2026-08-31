@@ -61,6 +61,34 @@ final class SectorMapLayerTerrainPluginTest {
     // default and what all but the constraint's own cases mean to describe.
     private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
 
+    // The running game, held for the class because every case wants the same one: no sector, so the
+    // registry resolves to the registered default pick and the presence read behind the compatibility
+    // constraint fails closed to no map showing. Which sector is drawn is settled by where the
+    // surface's terrain sits, not by this.
+    private MockedStatic<Global> globalMock;
+
+    @BeforeEach
+    void standInForTheRunningGame() {
+
+        // Loaded before the stand-in opens, and not optional: both hold a logger taken from Global in
+        // a static field, and a class first loaded inside a mocked scope keeps a null one for the
+        // rest of the JVM and faults every later case that logs. Forced here rather than left to
+        // whichever order JUnit happens to run the other setups in.
+        MapLayerInstallations.disposeEveryInstallation();
+        new SectorMapLayerTerrainPlugin();
+
+        globalMock = mockStatic(Global.class);
+
+        globalMock
+            .when(Global::getSector)
+            .thenReturn(null);
+    }
+
+    @AfterEach
+    void releaseTheRunningGame() {
+        globalMock.close();
+    }
+
     @BeforeEach
     void stubTheCompatibilityConstraint() {
         mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
@@ -95,12 +123,7 @@ final class SectorMapLayerTerrainPluginTest {
 
     // The index is process-wide, so a sector installed on by one case would otherwise still be
     // answering for the next - including with the frame it left half prepared, the claim being the
-    // installation's. Cleared at both ends so neither the order within this class nor the order
-    // between classes can decide what a surface resolves.
-    //
-    // Outside any Global stand-in on purpose: this index holds a logger taken from Global at class
-    // load, so a first load inside a mocked scope would leave it null for the rest of the JVM.
-    @BeforeEach
+    // installation's.
     @AfterEach
     void clearEveryInstallation() {
         MapLayerInstallations.disposeEveryInstallation();
@@ -133,17 +156,10 @@ final class SectorMapLayerTerrainPluginTest {
             var plugin = new SectorMapLayerTerrainPlugin();
             var installation = seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                verify(drawingLayerMock)
-                    .resolveRenderer(installation);
-            }
+            verify(drawingLayerMock)
+                .resolveRenderer(installation);
         }
 
         @Test
@@ -156,16 +172,9 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfaceIn(plugin, mock(LocationAPI.class));
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                verifyNoInteractions(layerRendererMock);
-            }
+            verifyNoInteractions(layerRendererMock);
         }
 
         @Test
@@ -175,17 +184,10 @@ final class SectorMapLayerTerrainPluginTest {
             // rather than skip one frame.
             var plugin = new SectorMapLayerTerrainPlugin();
 
-            try (var globalMock = mockStatic(Global.class)) {
+            assertThatCode(() -> plugin.renderOnMap(1.5f, 0.25f))
+                .doesNotThrowAnyException();
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThatCode(() -> plugin.renderOnMap(1.5f, 0.25f))
-                    .doesNotThrowAnyException();
-
-                verifyNoInteractions(layerRendererMock);
-            }
+            verifyNoInteractions(layerRendererMock);
         }
 
         @Test
@@ -195,27 +197,19 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                // No sector means no stored pick, so the registry resolves to the registered default.
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            // Outside Starscape nothing of the map's is drawn between the bands, so this one surface
+            // owes both of them - a band left unpainted here would be a sub-layer that simply never
+            // appears on a schematic map.
+            var bandOrder = inOrder(layerRendererMock);
 
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                // Outside Starscape nothing of the map's is drawn between the bands, so this one
-                // surface owes both of them - a band left unpainted here would be a sub-layer that
-                // simply never appears on a schematic map.
-                var bandOrder = inOrder(layerRendererMock);
-
-                bandOrder
-                    .verify(layerRendererMock)
-                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-                bandOrder
-                    .verify(layerRendererMock)
-                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
-            }
+            bandOrder
+                .verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+            bandOrder
+                .verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
         }
 
         @Test
@@ -227,26 +221,19 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            var preparationOrder = inOrder(layerRendererMock);
 
-                plugin.renderOnMap(1.5f, 0.25f);
+            preparationOrder
+                .verify(layerRendererMock)
+                .prepareFrame(1.5f);
+            preparationOrder
+                .verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
-                var preparationOrder = inOrder(layerRendererMock);
-
-                preparationOrder
-                    .verify(layerRendererMock)
-                    .prepareFrame(1.5f);
-                preparationOrder
-                    .verify(layerRendererMock)
-                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-
-                verify(layerRendererMock, times(1))
-                    .prepareFrame(anyFloat());
-            }
+            verify(layerRendererMock, times(1))
+                .prepareFrame(anyFloat());
         }
 
         @Test
@@ -260,22 +247,15 @@ final class SectorMapLayerTerrainPluginTest {
 
             var installation = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            plugin.renderOnMap(1.5f, 0.25f);
+            secondPlugin.renderOnMap(1.5f, 0.25f);
 
-                MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-                secondPlugin.renderOnMap(1.5f, 0.25f);
-
-                verify(layerRendererMock, times(1))
-                    .prepareFrame(anyFloat());
-                verify(layerRendererMock, times(2))
-                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-            }
+            verify(layerRendererMock, times(1))
+                .prepareFrame(anyFloat());
+            verify(layerRendererMock, times(2))
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
         @Test
@@ -290,22 +270,14 @@ final class SectorMapLayerTerrainPluginTest {
             var installation = seatSurfacesInAnInstalledSector(plugin);
             var otherInstallation = seatSurfacesInAnInstalledSector(otherSectorsPlugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim.resolveClaimIn(otherInstallation).renderInUICoordsBelowUI(null);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            plugin.renderOnMap(1.5f, 0.25f);
+            otherSectorsPlugin.renderOnMap(1.5f, 0.25f);
 
-                MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
-                MapFramePreparationClaim.resolveClaimIn(otherInstallation)
-                    .renderInUICoordsBelowUI(null);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-                otherSectorsPlugin.renderOnMap(1.5f, 0.25f);
-
-                verify(layerRendererMock, times(2))
-                    .prepareFrame(anyFloat());
-            }
+            verify(layerRendererMock, times(2))
+                .prepareFrame(anyFloat());
         }
 
         @Test
@@ -321,22 +293,15 @@ final class SectorMapLayerTerrainPluginTest {
 
             var installation = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            plugin.renderOnMap(1.5f, 0.25f);
+            secondPlugin.renderOnMap(1.5f, 0.25f);
 
-                MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-                secondPlugin.renderOnMap(1.5f, 0.25f);
-
-                verify(layerRendererMock, times(2))
-                    .publishHoverForPass(1.5f);
-                verify(layerRendererMock, times(1))
-                    .prepareFrame(anyFloat());
-            }
+            verify(layerRendererMock, times(2))
+                .publishHoverForPass(1.5f);
+            verify(layerRendererMock, times(1))
+                .prepareFrame(anyFloat());
         }
 
         @Test
@@ -347,23 +312,16 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            var hoverOrder = inOrder(layerRendererMock);
 
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                var hoverOrder = inOrder(layerRendererMock);
-
-                hoverOrder
-                    .verify(layerRendererMock)
-                    .publishHoverForPass(1.5f);
-                hoverOrder
-                    .verify(layerRendererMock)
-                    .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
-            }
+            hoverOrder
+                .verify(layerRendererMock)
+                .publishHoverForPass(1.5f);
+            hoverOrder
+                .verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.25f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
         }
 
         @Test
@@ -372,24 +330,16 @@ final class SectorMapLayerTerrainPluginTest {
             // happened to prepare first, which is the opposite fault and the worse one.
             var plugin = new SectorMapLayerTerrainPlugin();
             var installation = seatSurfacesInAnInstalledSector(plugin);
+            var claim = MapFramePreparationClaim.resolveClaimIn(installation);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            claim.renderInUICoordsBelowUI(null);
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
+            claim.renderInUICoordsBelowUI(null);
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                var claim = MapFramePreparationClaim.resolveClaimIn(installation);
-
-                claim.renderInUICoordsBelowUI(null);
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                claim.renderInUICoordsBelowUI(null);
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                verify(layerRendererMock, times(2))
-                    .prepareFrame(1.5f);
-            }
+            verify(layerRendererMock, times(2))
+                .prepareFrame(1.5f);
         }
 
         @Test
@@ -406,18 +356,9 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1.5f, 0.25f);
 
-                // No sector, so the presence read behind the constraint fails closed to no map
-                // showing - which is the state a foreign pass runs in.
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                plugin.renderOnMap(1.5f, 0.25f);
-
-                verifyNoInteractions(layerRendererMock);
-            }
+            verifyNoInteractions(layerRendererMock);
         }
 
         @Test
@@ -435,39 +376,25 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            plugin.renderOnMap(1f, 1f);
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                plugin.renderOnMap(1f, 1f);
-
-                verifyNoInteractions(layerRendererMock);
-            }
+            verifyNoInteractions(layerRendererMock);
         }
 
         @Test
         void renderOnMapDrawsNothingWithoutAnActiveLayer() {
-            // The pre-registration frame: the terrain can be added before any composition root has run,
-            // so the surface must survive a null pick rather than dereference it.
+            // The pre-registration frame: the terrain can be added before any composition root has
+            // run, so the surface must survive a null pick rather than dereference it.
             MapLayerRegistry.registerLayers(List.of(), null);
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var globalMock = mockStatic(Global.class)) {
+            assertThatCode(() -> plugin.renderOnMap(1f, 1f))
+                .doesNotThrowAnyException();
 
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(null);
-
-                assertThatCode(() -> plugin.renderOnMap(1f, 1f))
-                    .doesNotThrowAnyException();
-
-                verifyNoInteractions(layerRendererMock);
-            }
+            verifyNoInteractions(layerRendererMock);
         }
     }
 }

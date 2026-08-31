@@ -154,7 +154,11 @@ about what the overlay means.
   save's can be stopped from outliving it, nothing else being told a sector went away. A seam
   vanilla hands no sector resolves the live sector's, which is where the global read standing in for
   a sector nobody passed down belongs. An uninstalled sector resolves to a detached installation
-  rather than to null, the overlay being behind a switch a player can leave off. What a *layer*
+  rather than to null, the overlay being behind a switch a player can leave off. Each installation
+  is indexed under its sector's hyperspace as well, since a render surface is terrain and reaches a
+  containing location rather than a sector; that resolution answers with nothing where the location
+  has none, a surface belonging to a sector nothing draws having no business painting through the
+  holder every sector-less caller shares. What a *layer*
   derives from the sector - its renderer and the caches behind it - is held through
   `InstalledMachinery` instead of named here, so an installation owns those lifetimes without this
   package pointing at the layers downstream of it; releasing one releases them, which is what frees
@@ -162,9 +166,12 @@ about what the overlay means.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
-  a layer that only switches (No Layer) supplies none, which is read as nothing to draw. More than
-  one terrain surface can paint one frame, so the per-frame work behind a layer is claimed rather
-  than assumed: `MapFramePreparationClaim` grants it to the first surface to reach each frame. The
+  a layer that only switches (No Layer) supplies none, which is read as nothing to draw. Which
+  sector it draws it finds through its own terrain entity, that being the one handle a plugin
+  rebuilt from the save has. More than one terrain surface can paint one frame, so the per-frame
+  work behind a layer is claimed rather than assumed: `MapFramePreparationClaim` grants it to the
+  first surface of that sector to reach each frame, one claim per installation so two maps drawing
+  in one frame each get their own. The
   cursor read is the exception, being taken per pass so the surface that drew last owns the answer.
   Where a second surface is a minimap its owner has parked off screen, the compatibility mode stops
   it rendering rather than arbitrating between the two passes it would otherwise contribute.
