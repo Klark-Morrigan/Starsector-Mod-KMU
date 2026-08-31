@@ -146,7 +146,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      *
      * <p>The level travels with the sector rather than being read here, because it reaches further than
      * the layout: a body composes the one tree it always composes and hands it to the blocks to be cut
-     * ({@link CellTooltipSections}), and reads nothing the level has already ruled out of the box.
+     * ({@link CellTooltipBody}), and reads nothing the level has already ruled out of the box.
      *
      * @param sector      the live sector, whose economy the content may read
      * @param system      the star system under the cursor

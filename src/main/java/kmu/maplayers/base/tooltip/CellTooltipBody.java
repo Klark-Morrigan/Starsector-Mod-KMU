@@ -8,8 +8,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * How a cell tooltip's body is divided into blocks, and how a block lays out what it lists: a heading
- * naming what follows it, over the entries it names and whatever those entries are made up of.
+ * A cell tooltip's body under construction: the blocks stated so far, in the order they will read, and
+ * the depth every one of them is laid out to. A block is a heading naming what follows it, over the
+ * entries it names and whatever those entries are made up of.
+ *
+ * <p>The two travel as one thing because every block needs both, and a body handing them over per
+ * block is a body free to state them differently: a layer that appended one block to the wrong list
+ * would drop it silently, and one that passed a level to four blocks and forgot the fifth would draw a
+ * box that is two depths at once. Opened once and appended to, neither can be restated at all.
  *
  * <p>A block takes {@linkplain CellTooltipEntry entries} rather than built lines, which is the whole
  * point of it. <em>What</em> a block lists, how far each of those things breaks down, and whether what it
@@ -19,12 +25,12 @@ import java.util.Optional;
  * content still list it alike, and neither can author a tier of its own by reaching past the entries it
  * hands over.
  *
- * <p>Whether a heading appears at all is likewise a rule about the block and not about the body holding
- * it: a heading left standing over no entries reads as a block whose contents failed to resolve, which
- * tells the player something untrue.
+ * <p>Whether a heading appears at all is likewise a rule about the block and not about the layer
+ * appending it: a heading left standing over no entries reads as a block whose contents failed to
+ * resolve, which tells the player something untrue.
  *
  * <p>How far into what it lists a block is read is neither the block's nor the layer's, but the
- * player's, arriving as the {@linkplain HoverTooltipDetailLevel detail level} the walk is given. A
+ * player's, arriving as the {@linkplain HoverTooltipDetailLevel detail level} the body was opened at. A
  * layer hands over the one tree it composes whatever level is asked for, and the walk lays out as much
  * of it as that level admits - so the same tree reads at four depths without any layer holding four
  * accounts of a system that could come to disagree with each other.
@@ -34,41 +40,49 @@ import java.util.Optional;
  * a block lists has no bearing on where another block's lines open.
  *
  * <p>Held apart from {@link CellTooltipRows} because the two answer different questions - that decides
- * how one line reads, this which lines a block is and which shape each takes - so a body states only
- * which blocks it has, in what order, and what each lists.
+ * how one line reads, this which lines a block is and which shape each takes - so a layer states only
+ * which blocks its body has, in what order, and what each lists.
  */
-public final class CellTooltipSections {
+public final class CellTooltipBody {
 
-    private CellTooltipSections() {
+    // The blocks stated so far, in reading order. Held rather than handed back and forth, because the
+    // order the box reads in is exactly the order of the calls that filled it.
+    private final List<TooltipSection> sections = new ArrayList<>();
+
+    // How deep every block of this body may be read. Fixed for the body's whole life: the level is one
+    // choice about the box rather than about any block in it, so a body drawn at two depths is a state
+    // the player has no way to ask for and no way to read.
+    private final HoverTooltipDetailLevel detailLevel;
+
+    private CellTooltipBody(HoverTooltipDetailLevel detailLevel) {
+        this.detailLevel = detailLevel;
     }
 
     /**
-     * Appends a block - its heading over its entries - to a body, and nothing at all when the block
-     * lists nothing. Adding every block through here is what leaves the order they read in stated by the
-     * order of the calls, rather than by a rule spread across the body making them.
+     * Opens an empty body to be read at {@code detailLevel}.
      *
-     * @param sections    the body being built, appended to in place
+     * @param detailLevel how deep the player has asked the box to read
+     * @return the body, ready for its first block
+     */
+    public static CellTooltipBody openBody(HoverTooltipDetailLevel detailLevel) {
+        return new CellTooltipBody(detailLevel);
+    }
+
+    /**
+     * Appends a block - its heading over its entries - and nothing at all when the block lists nothing.
+     *
      * @param headingText the heading naming the block
      * @param entries     what the block lists, in the order they are read; empty leaves the body
      *                    untouched
-     * @param detailLevel how deep into those entries the box may be read; the block's own lines
-     *                    always survive it, so a block that lists anything is drawn at every level
      */
-    public static void appendSection(
-            List<TooltipSection> sections,
-            String headingText,
-            List<CellTooltipEntry> entries,
-            HoverTooltipDetailLevel detailLevel) {
+    public void appendSection(String headingText, List<CellTooltipEntry> entries) {
 
         if (entries.isEmpty()) {
             return;
         }
         sections.add(TooltipSection
             .createSection(List.of(CellTooltipRows.buildSectionHeadingRow(headingText)))
-            .nesting(resolveEntrySections(
-                entries,
-                CellTooltipEntryLevel.LISTED_LEVEL,
-                detailLevel)));
+            .nesting(resolveEntrySections(entries, CellTooltipEntryLevel.LISTED_LEVEL)));
     }
 
     /**
@@ -87,14 +101,22 @@ public final class CellTooltipSections {
      * resolver answers with whichever kind of line it builds - a banner is a centred one - and a
      * block only ever reads what it is handed.
      *
-     * @param sections  the body being built, appended to in place
+     * <p>Untouched by the detail level: a banner speaks in the box's own voice, which every level
+     * admits, so a system that has something to state about itself states it at every depth.
+     *
      * @param bannerRow the line to state, or empty when the system has nothing to state
      */
-    public static void appendBannerSection(
-            List<TooltipSection> sections,
-            Optional<? extends TooltipRow> bannerRow) {
-
+    public void appendBannerSection(Optional<? extends TooltipRow> bannerRow) {
         bannerRow.ifPresent(row -> sections.add(TooltipSection.createSection(List.of(row))));
+    }
+
+    /**
+     * The blocks this body came to, in reading order - what the box draws.
+     *
+     * @return the blocks, empty where the layer had nothing to say about the system
+     */
+    public List<TooltipSection> readSections() {
+        return List.copyOf(sections);
     }
 
     // Lays a listing out in reading order: each entry as a nested block of its own line over everything
@@ -112,10 +134,9 @@ public final class CellTooltipSections {
     // The detail cut is one question per tier rather than one per line: neither relation ever lifts a
     // line back towards the box's own voice, so nothing beneath a tier the level has declined could be
     // admitted either, and the walk stops there rather than descending to reject each line in turn.
-    private static List<TooltipSection> resolveEntrySections(
+    private List<TooltipSection> resolveEntrySections(
             List<CellTooltipEntry> entries,
-            CellTooltipEntryLevel level,
-            HoverTooltipDetailLevel detailLevel) {
+            CellTooltipEntryLevel level) {
 
         if (!level.isAdmittedBy(detailLevel)) {
             return List.of();
@@ -125,10 +146,7 @@ public final class CellTooltipSections {
 
             entrySections.add(TooltipSection
                 .createSection(List.of(CellTooltipRows.buildListedRow(entry.line(), level)))
-                .nesting(resolveEntrySections(
-                    entry.children(),
-                    resolveChildLevel(entry, level),
-                    detailLevel)));
+                .nesting(resolveEntrySections(entry.children(), resolveChildLevel(entry, level))));
         }
         return entrySections;
     }

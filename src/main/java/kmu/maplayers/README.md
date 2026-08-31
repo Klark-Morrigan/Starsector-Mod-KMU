@@ -341,7 +341,11 @@ about what the overlay means.
   those being up on exactly the frames no tab is. How much detail the drawn box states is one shared fact rather
   than a per-layer one: `HoverTooltipDetailLevelState` carries the ordered `HoverTooltipDetailLevel` -
   four depths of the same account, from factions alone down to the patrol split - and the dispatcher
-  draws the richer counterpart the injected tooltip offers past the shallowest level
+  hands it to the box it draws (`MapHoverTooltip.renderFor`), which reads its own content only that
+  deep. A level is a cut rather than a choice of body: a layer composes the one tree it always
+  composes and the blocks lay out as much of it as the level admits, so four depths cost no layer a
+  second account of a system that could come to disagree with the first. The dispatcher also draws
+  the richer counterpart the injected tooltip offers past the shallowest level
   (`MapHoverTooltip.resolveExpandedVariant`) or that tooltip itself when it offers none - so the
   choice holds across hovers and layer switches, and a tooltip stating one amount of detail needs no
   case of its own. What writes that level is
@@ -392,12 +396,15 @@ about what the overlay means.
   gathers peers - a bloc and the factions in it are one answer at two granularities - while `nesting`
   carries the account of why the line above reads as it does. Both sit inset; only the second stands a
   step further under the box's voice, so an allied holder's markets read exactly as loudly as a lone
-  holder's instead of being demoted by a level the account had nothing to do with. What the demotion
-  buys is a size: `SystemCellTooltip` asks KMLib for a fixed step per level, so a listing several
+  holder's instead of being demoted by a level the account had nothing to do with. The demotion buys
+  two things. A size: `SystemCellTooltip` asks KMLib for a fixed step per level, so a listing several
   levels deep gives the eye a cue agreeing with its indent, down to a floor the widget stops at.
   Asked for on the shared box rather than on the one layer that first listed anything that deep,
   since two layers demoting a line by different amounts is a difference a reader has no way to
-  account for.
+  account for. And the detail cut: the level admits a line by its demotion alone
+  (`CellTooltipEntryLevel.isAdmittedBy`), so an alliance's member factions survive the shallowest
+  level - being the very content that level exists to show - while the markets beneath either of
+  them do not. Cut on the indent instead, a listing would lose exactly what it was asked for.
   A line's number may itself be two things - a finding and the working it came out of, such as the
   rate one of a counted thing is worth over what the count came to. The line states the halves apart
   (`derivesValueFrom`) and the vocabulary greys the working against whatever colour the line speaks
@@ -452,10 +459,14 @@ about what the overlay means.
   one line beat another. Text and outcome travel as one value because neither is separately true, and
   carried apart they could drift - an outcome left behind by a re-numbered place would mark the wrong
   line as having won.
-  `CellTooltipSections` walks that depth-first into a block, each entry becoming a nested block of its
+  `CellTooltipBody` walks that depth-first into a block, each entry becoming a nested block of its
   own line over its account - which is what lets KMLib set one entry's whole breakdown apart from the
   next entry at its tier rather than from its last line - carrying the indent and the demotion as
-  one `CellTooltipEntryLevel`, and drops a block that resolved empty; `CellTooltipRows` is the line
+  one `CellTooltipEntryLevel`, and drops a block that resolved empty. It is the body under
+  construction rather than a static over a list a layer holds, because every block needs both the
+  running order and the depth: a layer that stated them per block could append one to the wrong list
+  or hand four blocks a level and the fifth another, and a box that is two depths at once is a state
+  the player cannot ask for. `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a
   choice the block makes,
   plus the banner centred under the title. Everything a listed line *says* - its mark, its name picked

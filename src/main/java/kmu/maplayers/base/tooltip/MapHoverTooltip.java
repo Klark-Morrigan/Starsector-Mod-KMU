@@ -65,9 +65,9 @@ public interface MapHoverTooltip {
      * and holds across hovers - would leave the next system that <em>does</em> differ opening at a depth
      * they did not choose.
      *
-     * <p>Asked per system for the same reason the counterpart's own subject is
-     * ({@code SystemCellTooltip.resolveExpandedDetailName}): whether there is anything more to show is a
-     * fact about what the cursor is over, not about the box.
+     * <p>Asked per system rather than once per box because that is where the answer lives: whether
+     * there is anything more to show turns on what the cursor is over - a system a box lists nothing
+     * for has nothing to open up - and not on which box is drawing.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor

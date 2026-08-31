@@ -36,7 +36,7 @@ import java.util.List;
  * <p>The table shapes take a whole {@link CellTooltipEntryLine} rather than its parts, so the entirety of
  * how a listed thing reads - its tier, its colours, its label and its value - is settled between here
  * and the label vocabulary, and a caller destructures nothing. They are the block's alone
- * ({@link CellTooltipSections}), which is why they are not offered past this package: a body states what
+ * ({@link CellTooltipBody}), which is why they are not offered past this package: a body states what
  * its blocks list and the block lays those lines out. Which tier a line takes is read off the level it
  * sits at rather than chosen at the call site, so a heading and a listed line cannot drift into each
  * other and no body can list something at a tier it authored itself. What stays open is what a line is

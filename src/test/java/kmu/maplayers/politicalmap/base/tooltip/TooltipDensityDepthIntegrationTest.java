@@ -4,8 +4,8 @@ import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
+import kmu.maplayers.base.tooltip.CellTooltipBody;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.tooltip.CellTooltipSections;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The chain they are chosen against runs across three classes, none of which states a depth: the
  * colonies a faction is accounted for by ({@link MarketWeightRowResolver}), the entry tree those hang
  * in ({@link StandingRowResolver}), and the walk that turns nesting into subordination
- * ({@code CellTooltipSections}). A level added anywhere along it - a colony gathered under something,
+ * ({@code CellTooltipBody}). A level added anywhere along it - a colony gathered under something,
  * an account hung a step lower - moves every factor line to a depth no knob names, and the sliders then
  * tighten runs that are not there while the runs that make a box tall keep the box's own spacing. Every
  * unit test on either side goes on passing, because each states only its own step.
@@ -176,11 +175,11 @@ final class TooltipDensityDepthIntegrationTest {
                 WEIGHING_RULES,
                 SystemColonyReading.NONE));
 
-        var sections = new ArrayList<TooltipSection>();
+        var body = CellTooltipBody.openBody(PATROL_DETAILS);
 
-        CellTooltipSections.appendSection(sections, "Dominated by:", entries, PATROL_DETAILS);
+        body.appendSection("Dominated by:", entries);
 
-        return TooltipSection.readRowsInOrder(sections);
+        return TooltipSection.readRowsInOrder(body.readSections());
     }
 
     // One colony fielding a single small patrol: enough to reach every depth the box has, and no more,

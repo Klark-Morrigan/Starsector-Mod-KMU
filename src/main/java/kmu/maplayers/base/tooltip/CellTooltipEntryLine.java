@@ -10,7 +10,7 @@ import java.util.Objects;
  * listed - and nothing whatever about how it is laid.
  *
  * <p>Held as a value rather than as a built line because the two decisions belong on opposite sides of
- * the box. A layer knows what its block lists; the block ({@link CellTooltipSections}) knows the tier,
+ * the box. A layer knows what its block lists; the block ({@link CellTooltipBody}) knows the tier,
  * the colours, and the value column a listed thing is laid in. So two layers listing
  * unrelated content still list it alike, and a body cannot quietly author a third look by reaching for
  * the line vocabulary itself.

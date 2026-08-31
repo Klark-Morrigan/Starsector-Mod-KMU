@@ -13,7 +13,7 @@ import java.util.Objects;
  * subject matter and not by the model holding it. What a block lists is the only side that knows whether
  * the things in it break down, and how far - so a two-tier ranking and a three-tier breakdown are the
  * same construct listed to different depths, laid out by one walk that reads the tier off how deep it
- * has gone ({@link CellTooltipSections}).
+ * has gone ({@link CellTooltipBody}).
  *
  * <p>Depth alone does not say what a listed thing is, which is why the two ways are told apart. Members
  * {@linkplain #grouping gathered} under a line are peers of it - one answer stated at two granularities,

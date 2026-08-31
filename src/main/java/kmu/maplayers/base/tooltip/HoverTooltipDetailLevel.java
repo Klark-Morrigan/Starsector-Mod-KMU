@@ -35,12 +35,15 @@ public enum HoverTooltipDetailLevel {
     }
 
     /**
+     * Kept to this package: a level is passed around by whoever draws a box, and read for what it
+     * admits only where a listing is laid out.
+     *
      * @return the deepest {@code subordinationLevel} a line may carry and still be shown at this
      *         level. The cut is on subordination rather than indent, so a line set in without being
      *         demoted - an alliance's member factions under the line naming the alliance - survives
      *         the shallowest level, being the content that level exists to show.
      */
-    public int getMaximumSubordination() {
+    int getMaximumSubordination() {
         return maximumSubordination;
     }
 

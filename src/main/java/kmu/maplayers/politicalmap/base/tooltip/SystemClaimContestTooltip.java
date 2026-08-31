@@ -114,8 +114,6 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
-        var body = CellTooltipBody.openBody(detailLevel);
-
         // One read for the whole box: the claimant, the override behind it, the colony rule and
         // every standing the projection leaves it free to name are all taken from a single pass, so
         // no two lines can describe different states of the system.
@@ -150,6 +148,8 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             system,
             colonies,
             colonyKnowledge);
+
+        var body = CellTooltipBody.openBody(detailLevel);
 
         body.appendBannerSection(statusRow);
 
