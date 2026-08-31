@@ -273,18 +273,21 @@ public final class DiscUnionBoundary {
             // clockwise.
             if (isHole(cycle)) {
 
-                var shape = cycle.shape();
-
-                // Reversed so a hole reads the same way round as any other filled shape.
-                var boundary = new ArrayList<>(shape.boundary());
+                // Reversed so a hole reads the same way round as any other filled shape. The
+                // marks are left in walk order beside it, as the corners and the ringed cells
+                // are: they are the walk's own record of where the cycle ran, and reversing
+                // that to match a winding chosen for the fill would be answering a question
+                // about the drawing with the one form nothing draws.
+                var boundary = new ArrayList<>(cycle.boundary());
                 Collections.reverse(boundary);
 
                 holes.add(new VoidHole(
                     boundary,
-                    shape.corners(),
-                    shape.ringing(),
-                    shape.reach(),
-                    shape.walledBy()));
+                    cycle.corners(),
+                    cycle.marks(),
+                    cycle.ringing(),
+                    cycle.reach(),
+                    cycle.walledBy()));
             }
         }
         return holes;
@@ -328,17 +331,10 @@ public final class DiscUnionBoundary {
 
         for (var cycle : traceCycles(union, walls, boundSegments)) {
 
-            var marks = new ArrayList<CoastMark>(cycle.arcs().size());
-
-            for (var arc : cycle.arcs()) {
-
-                marks.add(new CoastMark(arc.circle(), arc.fromAngle(), arc.toAngle()));
-            }
-
             if (!isHole(cycle)) {
-                silhouettes.add(marks);
-            } else if (cycle.shape().walledBy().isEmpty()) {
-                lakes.add(marks);
+                silhouettes.add(cycle.marks());
+            } else if (cycle.walledBy().isEmpty()) {
+                lakes.add(cycle.marks());
             }
         }
         return new CoastRuns(silhouettes, lakes);
@@ -825,7 +821,7 @@ public final class DiscUnionBoundary {
     // The whole walk, in the order its four steps depend on each other: drop the walls that
     // cannot attach, cut every circle into the arcs nothing covers, join each arc to the one
     // it names, then follow the joins round until they close.
-    private static List<TracedCycle> traceCycles(
+    private static List<VoidHole> traceCycles(
             DiscUnion union,
             Walls walls,
             int boundSegments) {
@@ -833,7 +829,7 @@ public final class DiscUnionBoundary {
         var laid = new Walls(findAttachableChords(union, walls), walls.channel());
         var arcs = findUncoveredArcs(union, laid);
         var successors = linkArcsIntoCycles(arcs);
-        var cycles = new ArrayList<TracedCycle>();
+        var cycles = new ArrayList<VoidHole>();
         var walked = new boolean[arcs.size()];
 
         for (var start = 0; start < arcs.size(); start++) {
@@ -845,7 +841,7 @@ public final class DiscUnionBoundary {
 
             var built = buildHole(cycle, arcs, union, laid.chords(), boundSegments);
             if (built != null) {
-                cycles.add(new TracedCycle(collectArcs(cycle, arcs), built));
+                cycles.add(built);
             }
         }
         return cycles;
@@ -854,20 +850,8 @@ public final class DiscUnionBoundary {
     // Walked anticlockwise on every circle, which keeps the discs' interior to the left the
     // whole way round - so an outer cycle comes out anticlockwise and a hole clockwise, and
     // the sign of the area is the whole test.
-    private static boolean isHole(TracedCycle cycle) {
-        return PolygonRegions.computeSignedArea(cycle.shape().boundary()) < 0;
-    }
-
-    // A walked cycle as the arcs it ran along rather than as indices into every arc on the
-    // map, so nothing downstream has to keep the two lists side by side to read one of them.
-    private static List<Arc> collectArcs(List<Integer> cycle, List<Arc> arcs) {
-
-        var walked = new ArrayList<Arc>(cycle.size());
-
-        for (var index : cycle) {
-            walked.add(arcs.get(index));
-        }
-        return walked;
+    private static boolean isHole(VoidHole cycle) {
+        return PolygonRegions.computeSignedArea(cycle.boundary()) < 0;
     }
 
     // Every stretch of every circle that nothing covers, which is the whole boundary of the
@@ -1121,6 +1105,7 @@ public final class DiscUnionBoundary {
 
         var boundary = new ArrayList<double[]>();
         var corners = new ArrayList<double[]>(cycle.size());
+        var marks = new ArrayList<CoastMark>(cycle.size());
         var ringing = new LinkedHashSet<Integer>();
         var walledBy = new LinkedHashSet<Chord>();
 
@@ -1128,6 +1113,10 @@ public final class DiscUnionBoundary {
 
             var arc = arcs.get(index);
 
+            // The arc as the stretch of border it is, before it becomes samples. Every reading
+            // of the cycle that names cells comes off this one list: the ringed cells here, and
+            // whatever a caller later asks about which part of a cell the cycle took.
+            marks.add(new CoastMark(arc.circle(), arc.fromAngle(), arc.toAngle()));
             ringing.add(arc.circle());
 
             var points = sampleArc(
@@ -1158,7 +1147,12 @@ public final class DiscUnionBoundary {
             return null;
         }
         return new VoidHole(
-            boundary, corners, List.copyOf(ringing), union.reach(), List.copyOf(walledBy));
+            boundary,
+            corners,
+            List.copyOf(marks),
+            List.copyOf(ringing),
+            union.reach(),
+            List.copyOf(walledBy));
     }
 
     // Sampled at the angles the cells' own radius bound has its vertices at, and at no others,
@@ -1493,7 +1487,10 @@ public final class DiscUnionBoundary {
     }
 
     /**
-     * One stretch of a silhouette's coast, as the single point standing for it.
+     * One stretch of border a traced cycle runs along: the arc of one cell, as the angles it
+     * spans. What a coast is made of, and equally what the edge of a hole is made of - both
+     * come off the one walk, and a stretch of border is the same thing whichever side of it
+     * the cells lie on.
      *
      * <p>The whole stretch rather than a single point on it, because a smoothed coast wants
      * two different things from it: the middle, which is where the line would pass if nothing
@@ -1535,22 +1532,6 @@ public final class DiscUnionBoundary {
         double measureShareOfCircle() {
             return (toAngle - fromAngle) / Angles.FULL_TURN;
         }
-    }
-
-    /**
-     * One closed cycle of the boundary, kept both ways it is wanted.
-     *
-     * <p>As arcs for anything asking which cell each stretch belongs to and in what order, and
-     * as a sampled shape for anything asking which way it winds or wanting to draw it. Built
-     * together because both come out of one walk, and walking twice to get them separately is
-     * how two answers about the same cycle start to disagree.
-     *
-     * @param arcs  the arcs it runs along, in walk order
-     * @param shape the same cycle sampled into a closed outline
-     */
-    private record TracedCycle(
-        List<Arc> arcs,
-        VoidHole shape) {
     }
 
     /**
