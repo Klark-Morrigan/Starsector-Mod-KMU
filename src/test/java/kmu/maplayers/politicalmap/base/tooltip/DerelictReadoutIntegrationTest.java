@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
@@ -223,11 +224,15 @@ final class DerelictReadoutIntegrationTest {
     // The dominance box over the sector's one system, read top to bottom as the words a player
     // sees - the status line included, since what this suite is about is the pairing of that line
     // with the listing beneath it.
+    //
+    // Read at the shallowest level, which is that pairing and nothing else: the colonies behind the
+    // listing are a different case's subject, and drawn here they would bury the two lines these
+    // cases are actually about.
     private static List<String> readDominationLabels(SectorAPI sector) {
 
         return readLabelTexts(
             new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-                .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS));
+                .buildBodySections(sector, buildOnlySystem(sector), FACTIONS));
     }
 
     // What the key at the foot of the dominance box offers over the sector's one system, or nothing
@@ -304,24 +309,22 @@ final class DerelictReadoutIntegrationTest {
         return sector;
     }
 
-    // The expanded dominance box over the sector's one system: the same contest the ordinary box
-    // reads, opened down to the colonies each faction holds it with.
+    // The dominance box over the sector's one system read to its deepest level: the same contest the
+    // shallowest level states, opened down to the colonies each faction holds it with.
     private static List<TooltipSection> readExpandedDominationSections(SectorAPI sector) {
 
-        return new ExpandedSystemDominationTooltip(
-                new ClaimBreakdownReaderFake(),
-                HolderGrouping::identity)
+        return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
             .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS);
     }
 
-    // The expanded claims box over the same system, read through the real mechanic: a stubbed
-    // contest would hold whatever markets the stub was handed, and what the case turns on is the
-    // derelict reaching the list the way the game puts it there.
+    // The claims box over the same system at that same depth, read through the real mechanic: a
+    // stubbed contest would hold whatever markets the stub was handed, and what the case turns on is
+    // the derelict reaching the list the way the game puts it there.
     private static List<TooltipSection> readExpandedClaimSections(SectorAPI sector) {
 
         var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
 
-        return new ExpandedSystemClaimTooltip(
+        return new SystemClaimTooltip(
                 new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()),
                 HolderGrouping::identity)
             .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS);

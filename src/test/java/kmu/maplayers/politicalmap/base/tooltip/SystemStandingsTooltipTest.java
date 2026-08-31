@@ -55,14 +55,15 @@ import static org.mockito.Mockito.when;
  * ranked under the view that painted the fills, what the system is stated above the contest, and the
  * groups laid out under the blocks they route into.
  *
- * <p>Asserted over the shape rather than over either box, because the point is not that the glance and
- * the detail agree today but that agreeing is not either box's decision to make: a case here that
- * passed for one and failed for the other would be describing two contests over one system.
+ * <p>Asserted over the shape rather than over the box built on it, because the point is not that the
+ * shallow reading and the deep one agree today but that agreeing is not the box's decision to make: a
+ * case here that passed at one depth and failed at another would be describing two contests over one
+ * system.
  *
- * <p>Driven through a box that lists whatever it is handed, so no case depends on what either real box
- * goes on to say. What each of them does decide belongs to its own suite -
- * {@link SystemDominationTooltipTest} and {@link ExpandedSystemDominationTooltipTest} - and the decree
- * heading the box to {@link PoliticalMapCellTooltipTest}.
+ * <p>Driven through a box that lists whatever it is handed, so no case depends on what a real box goes
+ * on to say. What the real box does decide belongs to its own suite
+ * ({@link SystemDominationTooltipTest}), and the decree heading the box to
+ * {@link PoliticalMapCellTooltipTest}.
  */
 final class SystemStandingsTooltipTest {
 
@@ -133,8 +134,9 @@ final class SystemStandingsTooltipTest {
         @Test
         void resolveExpandedDetailNameOffersTheAccountBehindTheScoresRanked() {
             // What the key at the foot of the box offers the player, in their words. Answered for the
-            // pair at once because it is the one thing they agree on - the counterpart accounts for the
-            // very scores the ordinary box ranks by, so switching either way offers the same account.
+            // whole cycle at once because it is the one thing its levels agree on - the deeper tiers
+            // account for the very scores the shallowest ranks by, so every press offers the same
+            // account.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
@@ -145,7 +147,7 @@ final class SystemStandingsTooltipTest {
         void resolveExpandedDetailNameOffersTheAccountBehindAStandingOverACollapsedSystem() {
             // The status line and the standings answer different questions of the one pass: a system
             // whose colonies have all collapsed is headed Decivilised and still ranks whoever holds
-            // them, and those colonies are exactly what the counterpart opens up. Judged off the
+            // them, and those colonies are exactly what a deeper level opens up. Judged off the
             // line instead, such a system - the only kind whose whole account is the collapse - is
             // the one where the detail is withheld.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
@@ -157,9 +159,9 @@ final class SystemStandingsTooltipTest {
 
         @Test
         void resolveExpandedDetailNameOffersNothingForASystemRankingNobody() {
-            // Nobody ranks, so there is no score for the counterpart to account for and it would state
-            // the same banner the ordinary box already does - a key press the player could not see the
-            // result of. The hint goes with it rather than advertising one.
+            // Nobody ranks, so there is no score for a deeper tier to account for and every level
+            // would state the same banner - a key press the player could not see the result of. The
+            // hint goes with it rather than advertising one.
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
                 .isEmpty();
         }

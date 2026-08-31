@@ -76,7 +76,7 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
             SectorAPI sector,
             StarSystemAPI system) {
 
-        // What the counterpart adds is the same subject for every box of this layer - the account
+        // What the deeper levels add is the same subject for every box of this layer - the account
         // behind the numbers on screen - so the layer names it once rather than each body naming it.
         // Two bodies answering separately could offer the player different words for one account, and
         // the hint would then describe the key rather than what pressing it shows.
@@ -89,24 +89,23 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
     }
 
     /**
-     * Whether this box's richer counterpart would state anything more about the system than this box
+     * Whether the deeper detail levels would state anything more about the system than the shallowest
      * already does.
      *
-     * <p>Asked per hovered system rather than once per box: the counterpart accounts for the colonies
+     * <p>Asked per hovered system rather than once per box: the deeper tiers account for the colonies
      * behind what this box lists, so a system it lists nothing for has nothing to account for, and
-     * both boxes would draw the same thing. The hint is dropped there rather than offering a key that
+     * every level would draw the same thing. The hint is dropped there rather than offering a key that
      * changes nothing on screen.
      *
      * <p>Answered through the very read the body is built from, so a box cannot offer to expand a
      * listing it is about to draw as empty - which the fog alone can produce, a faction present only
      * through colonies the player has not found leaving nothing this box may state.
      *
-     * <p>Taking no part is the default, so a box whose subject has no richer counterpart overrides
-     * nothing.
+     * <p>Taking no part is the default, so a box whose subject has no deeper tiers overrides nothing.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
-     * @return true where the counterpart would show the player something this box does not
+     * @return true where a deeper level would show the player something the shallowest does not
      */
     protected boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
         return false;

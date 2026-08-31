@@ -31,8 +31,9 @@ import kmu.maplayers.base.hover.MapHoverPermission;
  *
  * <p>How much detail the drawn box states is settled here too, and by one shared fact rather than
  * per layer: the dispatcher reads {@link HoverTooltipDetailLevelState} and hands the level to the box
- * it draws, which reads its own content only as deep as the level admits. So the choice holds across
- * hovers and layer switches, and no layer holds a level of its own to be told about.
+ * the active layer injected, which reads its own content only as deep as the level admits. So the
+ * choice holds across hovers and layer switches, no layer holds a level of its own to be told about,
+ * and the level never decides <em>which</em> box draws - one box per layer, read to four depths.
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 
@@ -102,29 +103,14 @@ public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
         // answers for whatever is hovered, so it holds across hovers and layer switches instead of each
         // layer having to remember a choice made over another one's cell.
         //
-        // Read once and used for both halves of that - which of an injected tooltip's boxes is drawn,
-        // and how deep the box drawn reads its own content - since two reads of a level the player can
-        // move between frames could select one box and then draw it to another box's depth.
+        // Handed straight to the box rather than acted on here, because a level is a cut through the
+        // one tree a layer composes: which box draws never turns on it, only how deep that box reads
+        // itself.
         var detailLevel = HoverTooltipDetailLevelState.getInstance().getLevel();
 
-        selectVariantFor(hoveredBox.get().tooltip(), detailLevel)
-            .renderFor(
-                hoveredBox.get().sector(),
-                hoveredBox.get().system(),
-                detailLevel);
-    }
-
-    // The box the current detail level calls for: the tooltip's richer counterpart at any level past
-    // the shallowest, and the tooltip itself at the factions level or where no counterpart is
-    // defined - so a tooltip that defines no counterpart draws the same box at every level rather
-    // than nothing at all. The counterpart seam knows only two bodies, so all the deeper levels
-    // resolve to the one richer box. Descends exactly one step: a counterpart is never asked for a
-    // counterpart of its own, so the model cannot recurse however deeply a layer nests its variants.
-    static MapHoverTooltip selectVariantFor(MapHoverTooltip base, HoverTooltipDetailLevel level) {
-
-        if (level == HoverTooltipDetailLevel.FACTIONS) {
-            return base;
-        }
-        return base.resolveExpandedVariant().orElse(base);
+        hoveredBox.get().tooltip().renderFor(
+            hoveredBox.get().sector(),
+            hoveredBox.get().system(),
+            detailLevel);
     }
 }

@@ -316,7 +316,38 @@ public final class SectorPoliticsFixtures {
         when(market.getStabilityValue())
             .thenReturn(stability);
 
+        nameStagedColony(market);
+
         return market;
+    }
+
+    // Gives a staged colony a name, on the market and on the entity carrying it alike - the two
+    // readings a box takes a colony's name through, a listed colony being drawn off its market and
+    // an unlisted one off the entity it was found on.
+    //
+    // Every colony the game runs has a name and a box read past its shallowest level draws each of
+    // them by it, so a market left unnamed is a shape no sector produces - and one that fails inside
+    // a drawn line rather than in the fixture that staged it. A case that reads a name stubs its own
+    // afterwards, which wins over this.
+    //
+    // Named after the id identifying the market, so no two staged colonies of one system share a
+    // name: a station is told from the colony it stands over by name, and two of them alike would
+    // pose a system the fixture never meant to build.
+    private static void nameStagedColony(MarketAPI market) {
+
+        // Both reads are taken before either stubbing opens: a call on a mock made inside when(...)
+        // lands in the middle of an unfinished stubbing and fails the next interaction rather than
+        // this line.
+        var stagedName = market.getId();
+        var entityMock = market.getPrimaryEntity();
+
+        when(market.getName())
+            .thenReturn(stagedName);
+
+        if (entityMock != null) {
+            when(entityMock.getName())
+                .thenReturn(stagedName);
+        }
     }
 
     /**

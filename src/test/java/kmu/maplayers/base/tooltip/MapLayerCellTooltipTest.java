@@ -27,11 +27,9 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwitchOn;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -44,9 +42,9 @@ import static org.mockito.Mockito.when;
  * is the composition root's business and the dispatcher must not know - a layer with no renderer and
  * no registered pick at all resolve alike to nothing to draw.
  *
- * <p>Which of an injected tooltip's boxes the detail level calls for is pinned the same way, over
- * stand-in tooltips: the decision is a pure read of the level against what a tooltip offers, so it is
- * checkable without an engine even though drawing the chosen box is not.
+ * <p>That the shared detail level reaches the box is pinned here too, over the stand-in: the level is
+ * read from the holder the key writes and handed straight on, which is observable without an engine
+ * even though the box drawing at that depth is not.
  *
  * <p>The frame gate is pinned over permissions posed against fixed screen reads, open and closed,
  * which is the whole of what this level can say about it: what the live reads answer, and that the
@@ -184,24 +182,20 @@ final class MapLayerCellTooltipTest {
         }
 
         @Test
-        void drawsTheCounterpartTheDetailLevelCallsFor() {
-            // The dispatcher's one read of the shared level. Selection itself is pure and knows no
-            // holder, so nothing else pins that the box drawn is the box the last press selected -
-            // a dispatcher that resolved the level and then drew the base anyway would pass every
-            // other case here. The level is set on the shared holder rather than injected, since the
-            // holder is what the live key writes and the dispatcher reads it the same way it reads
-            // the hover.
+        void drawsTheInjectedBoxAtTheLevelTheLastPressLeftBehind() {
+            // The dispatcher's one read of the shared level, and the only case that can fail on it:
+            // every other here draws at the resting level, so a dispatcher that handed over a
+            // constant depth would pass all of them. The level is set on the shared holder rather
+            // than injected, since the holder is what the live key writes and the dispatcher reads
+            // it the same way it reads the hover.
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
             var sectorMock = mock(SectorAPI.class);
             var systemMock = mock(StarSystemAPI.class);
-            var expandedTooltipMock = mock(MapHoverTooltip.class);
 
             when(systemMock.getId())
                 .thenReturn("system");
             when(sectorMock.getStarSystems())
                 .thenReturn(List.of(systemMock));
-            when(tooltipMock.resolveExpandedVariant())
-                .thenReturn(Optional.of(expandedTooltipMock));
 
             HoverTooltipDetailLevelState.getInstance().advanceLevel();
 
@@ -217,85 +211,15 @@ final class MapLayerCellTooltipTest {
                             MapHoverPermissionFixture.buildPermissionOnAVanillaHost())
                         .renderInUICoordsAboveUIAndTooltips(mock(ViewportAPI.class));
 
-                    // Handed the very level it was selected by, so the box drawn cannot be picked at
-                    // one depth and then read to another.
-                    verify(expandedTooltipMock)
+                    // The injected box itself, drawn to the advanced depth: a level never selects a
+                    // box, so the one the layer supplied is the one that draws at every level.
+                    verify(tooltipMock)
                         .renderFor(
                             sectorMock,
                             systemMock,
                             HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
-
-                    // Drawn instead of the injected box, not alongside it: two boxes over one cell
-                    // is the failure the swap exists to avoid.
-                    verify(tooltipMock, never())
-                        .renderFor(any(), any(), any());
                 }
             });
-        }
-
-    }
-
-    @Nested
-    class SelectVariantFor {
-
-        @Test
-        void selectVariantForAnswersTheBaseAtTheFactionsLevel() {
-            // Over a tooltip that does define a richer box: the level is what decides, so defining a
-            // counterpart must not be enough to draw it.
-            var expandedVariantFake = new MapHoverTooltipFake();
-            var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
-
-            assertThat(MapLayerCellTooltip.selectVariantFor(
-                    baseFake, HoverTooltipDetailLevel.FACTIONS))
-                .isSameAs(baseFake);
-        }
-
-        @Test
-        void selectVariantForAnswersTheBaseAtTheFactionsLevelWithoutACounterpart() {
-            // The ordinary box at the shallowest level - the path every layer takes today, which the
-            // seam must leave exactly where it was.
-            var baseFake = new MapHoverTooltipFake();
-
-            assertThat(MapLayerCellTooltip.selectVariantFor(
-                    baseFake, HoverTooltipDetailLevel.FACTIONS))
-                .isSameAs(baseFake);
-        }
-
-        @Test
-        void selectVariantForAnswersTheCounterpartPastTheFactionsLevel() {
-            // The one case the cycle key exists for. Asserted on the instance rather than the type,
-            // since a tooltip may well offer a counterpart of the same shape as itself.
-            var expandedVariantFake = new MapHoverTooltipFake();
-            var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
-
-            assertThat(MapLayerCellTooltip.selectVariantFor(
-                    baseFake, HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
-                .isSameAs(expandedVariantFake);
-        }
-
-        @Test
-        void selectVariantForAnswersTheCounterpartAtTheDeepestLevel() {
-            // The counterpart seam knows only two bodies, so every level past the shallowest must
-            // resolve to the one richer box rather than only the level right after it.
-            var expandedVariantFake = new MapHoverTooltipFake();
-            var baseFake = new ExpandedVariantMapHoverTooltipFake(expandedVariantFake);
-
-            assertThat(MapLayerCellTooltip.selectVariantFor(
-                    baseFake, HoverTooltipDetailLevel.PATROL_DETAILS))
-                .isSameAs(expandedVariantFake);
-        }
-
-        @Test
-        void selectVariantForAnswersTheBasePastTheFactionsLevelWithoutACounterpart() {
-            // The graceful-undefined path: a deeper level is asked for, and this tooltip has nothing
-            // richer to say, so the player keeps the normal box rather than losing it. The stand-in
-            // inherits the interface's own empty answer, so this pins the default an implementation
-            // gets.
-            var baseFake = new MapHoverTooltipFake();
-
-            assertThat(MapLayerCellTooltip.selectVariantFor(
-                    baseFake, HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
-                .isSameAs(baseFake);
         }
     }
 }

@@ -173,9 +173,13 @@ class StandingBlockRoutingTest {
                     HolderGrouping.identity(),
                     List.of()));
 
+            // Read as the blocs listed rather than as the rows listing them: what a block qualifies
+            // its heading with is the routing's own answer and pinned by the cases about each block,
+            // while what this one is about is that no bloc is lost between them or listed twice.
             assertThat(Arrays
                     .stream(StandingBlock.values())
                     .flatMap(block -> routing.selectStandingsIn(block).stream())
+                    .map(routed -> routed.standing().blocId())
                     .toList())
                 .containsExactlyInAnyOrder(HOLDER_BLOC, ALLY_BLOC, RIVAL_BLOC, PLACEHOLDER_BLOC);
         }

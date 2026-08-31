@@ -27,7 +27,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -142,7 +142,7 @@ final class DominancePresenceReadoutIntegrationTest {
             var sections = new SystemDominationTooltip(
                     new ClaimBreakdownReaderFake(),
                     HolderGrouping::identity)
-                .buildBodySections(sector, system, PATROL_DETAILS);
+                .buildBodySections(sector, system, FACTIONS);
 
             assertThat(band.segments())
                 .containsExactly(

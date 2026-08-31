@@ -198,7 +198,7 @@ final class SystemCellTooltipTest {
             // could drift, and the drift would be the cruel kind - a box advertising a key that does
             // nothing - so the offer and the line offering it are asserted off one paint.
             var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
-                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+                .offering(DETAIL_NAME);
 
             assertThat(tooltipFake.isOfferingExpansionFor(
                     buildSectorWithEconomy(),
@@ -480,10 +480,12 @@ final class SystemCellTooltipTest {
         void renderForEndsABoxOfferingDetailWithTheKeyThatShowsIt() {
             // What the hint has to say to be worth a line: which key, and what the player would gain -
             // the key picked out and the words about it quiet, which is how the game states its own.
+            // Drawn short of the deepest level, where the next press opens the account further.
             var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
-                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+                .offering(DETAIL_NAME);
 
-            var sections = captureDrawnBox(tooltipFake).sections();
+            var sections = captureDrawnBoxAt(tooltipFake, HoverTooltipDetailLevel.FACTIONS)
+                .sections();
 
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
                 .containsExactly(
@@ -492,14 +494,15 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForEndsTheDetailedBoxWithTheKeyThatHidesItAgain() {
-            // The counterpart the framework draws in the plain box's place has no counterpart of its
-            // own, which is exactly what tells it it is the detailed one - so the offer reverses without
-            // either box being told which mode is in force.
+        void renderForEndsTheDeepestBoxWithTheKeyThatHidesItAgain() {
+            // The cycle wraps, so the deepest level is the one place the next press collapses the box
+            // rather than opening it - and the offer reverses off the level being drawn, without the
+            // box holding anything that says which way it reads.
             var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
-                .offering(DETAIL_NAME, null);
+                .offering(DETAIL_NAME);
 
-            var sections = captureDrawnBox(tooltipFake).sections();
+            var sections = captureDrawnBoxAt(tooltipFake, HoverTooltipDetailLevel.PATROL_DETAILS)
+                .sections();
 
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
                 .containsExactly(
@@ -513,7 +516,7 @@ final class SystemCellTooltipTest {
             // is not read as the last entry of the block above, and marked as the kind of line it is so
             // the typography can set it apart from the content.
             var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
-                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+                .offering(DETAIL_NAME);
 
             var sections = captureDrawnBox(tooltipFake).sections();
 
@@ -530,7 +533,7 @@ final class SystemCellTooltipTest {
             // behind a gutter it can never fill, reading as indented under the content it is not part
             // of. It is a line about the box, and starts where the box does.
             var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
-                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+                .offering(DETAIL_NAME);
 
             var footerRow = (TooltipRow.TableRow) readRow(
                 captureDrawnBox(tooltipFake).sections(),
@@ -571,7 +574,7 @@ final class SystemCellTooltipTest {
             // The hint is about the box rather than about the system, so it cannot be the thing that
             // makes a box worth drawing - a lone offer to expand into nothing says less than no box.
             var tooltipFake = new SystemCellTooltipFake(List.of())
-                .offering(DETAIL_NAME, new SystemCellTooltipFake(List.of()));
+                .offering(DETAIL_NAME);
 
             try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
@@ -632,13 +635,21 @@ final class SystemCellTooltipTest {
     // What one paint hands the tooltip widget. The box's placement and its GL pass run only in-engine, so
     // the pinned surface is the render call's own two arguments.
     private static DrawnBox captureDrawnBox(SystemCellTooltip tooltip) {
+        return captureDrawnBoxAt(tooltip, PATROL_DETAILS);
+    }
+
+    // The same, at a level a case names for itself - the deepest being the resting depth every case
+    // that is not about the depth is posed at.
+    private static DrawnBox captureDrawnBoxAt(
+            SystemCellTooltip tooltip,
+            HoverTooltipDetailLevel detailLevel) {
 
         ArgumentCaptor<List<TooltipSection>> sectionsCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<CursorTooltipStyle> styleCaptor = ArgumentCaptor.captor();
 
         try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
 
-            tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem(), PATROL_DETAILS);
+            tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem(), detailLevel);
 
             rendererMock.verify(
                 () -> CursorTooltipRenderer.render(
@@ -736,11 +747,9 @@ final class SystemCellTooltipTest {
         // arrived. Null until the box has drawn once.
         private HoverTooltipDetailLevel bodyDetailLevel;
 
-        // What this box offers the player beyond itself, if anything: the words for it, and the
-        // counterpart holding it - which a box that IS the counterpart names without holding one, since
-        // that is precisely the state the shape under test reads the direction of the offer from.
+        // What this box offers the player at its deeper levels, if anything, in the words the hint at
+        // its foot is written from. Null for a box taking no part in the detail cycle.
         private String detailName;
-        private MapHoverTooltip expandedVariant;
 
         // A layer heading its box with nothing, which is the ordinary case and the one most cases here
         // are about - so only a case actually about the heading block names one.
@@ -781,16 +790,9 @@ final class SystemCellTooltipTest {
             return Optional.ofNullable(detailName);
         }
 
-        @Override
-        public Optional<MapHoverTooltip> resolveExpandedVariant() {
-            return Optional.ofNullable(expandedVariant);
-        }
-
-        // Puts this box in the detail cycle: what it offers, and the counterpart holding it - null for
-        // the box that is itself the counterpart, which has nothing further to offer.
-        private SystemCellTooltipFake offering(String detailName, MapHoverTooltip expandedVariant) {
+        // Puts this box in the detail cycle, naming what its deeper levels would add.
+        private SystemCellTooltipFake offering(String detailName) {
             this.detailName = detailName;
-            this.expandedVariant = expandedVariant;
             return this;
         }
     }

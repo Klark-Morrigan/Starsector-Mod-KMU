@@ -57,7 +57,7 @@ import java.util.Optional;
  *
  * <p>A market line also says how old the box's news of it is, where nobody is looking at the colony
  * as the box is drawn. Why that reaches further on this list than on the dominance side is
- * {@link ExpandedSystemClaimTooltip}'s to say.
+ * {@link SystemClaimTooltip}'s to say.
  *
  * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
  * not. The term lines beneath a market carry no mark at all: a size or a garrison bonus has nothing on

@@ -24,7 +24,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -126,7 +126,7 @@ final class ClaimPresenceReadoutIntegrationTest {
                 .planSystemRibbon(system);
 
             var sections = new SystemClaimTooltip(claimBreakdownReader, HolderGrouping::identity)
-                .buildBodySections(sector, system, PATROL_DETAILS);
+                .buildBodySections(sector, system, FACTIONS);
 
             assertThat(band.segments())
                 .containsExactly(

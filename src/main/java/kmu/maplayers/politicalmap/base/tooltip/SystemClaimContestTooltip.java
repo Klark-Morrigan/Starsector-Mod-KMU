@@ -75,13 +75,13 @@ import java.util.List;
  * already said it, so it is absent under the blocks whose heading is that very fact - one thing said
  * once per hover, the rule {@link #isStatingCoreClaimInBody} follows for the decree.
  *
- * <p>All of that is settled here rather than per box because two boxes over one system have to be two
- * amounts of detail about the same contest, not two contests. The breakdown is read once, the status is
- * judged against that same read, and every faction present is placed into its block by the one rule - so
- * a box stating more detail cannot name a different claimant, judge the system populated where the other
- * called it empty, or sort a rival into a block the other put it elsewhere in. What that one read comes
- * to, and which block it puts each standing in, is {@link ListedClaimContest}'s; what is left open is
- * the one thing the detail is: what, if anything, a listed faction breaks down into.
+ * <p>All of that is settled here rather than per box, so a layer built on this contest states one
+ * contest however deep it is read. The breakdown is read once, the status is judged against that same
+ * read, and every faction present is placed into its block by the one rule - so no box on this shape
+ * can name a different claimant from another, judge the system populated where the other called it
+ * empty, or sort a rival into a block the other put it elsewhere in. What that one read comes to, and
+ * which block it puts each standing in, is {@link ListedClaimContest}'s; what is left open is the one
+ * thing the detail is: what, if anything, a listed faction breaks down into.
  *
  * <p>Stateless past the two seams it is built around, so one shared instance per box serves the layer.
  */
@@ -170,45 +170,6 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return body.readSections();
     }
 
-    // Everyone present other than the claimant, in the blocks their standing to it puts them in: who
-    // stands with it by alliance, who stands with it in disposition, who stands against it, and who was
-    // never in the running at all. So the box reads as the holder and then the contest around it.
-    //
-    // Every block is appended unconditionally - the allied one is empty wherever the claimant has no
-    // ally present, which is every system on an install with nothing grouping factions, and the
-    // friendly one wherever nobody present is above neutral with the holder - since a block standing
-    // over no entries is dropped by the same rule that drops any other.
-    private void appendStandingSections(
-            CellTooltipBody body,
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading) {
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()));
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()));
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            buildEligibilityEntries(
-                sector,
-                contest,
-                colonyReading,
-                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
-            buildEligibilityEntries(
-                sector,
-                contest,
-                colonyReading,
-                contest.selectRivalStandings(standing -> !standing.isTerritorial())));
-    }
-
     @Override
     protected final boolean isStatingCoreClaimInBody() {
         // The claim block names the claimant and marks a decreed hold on that very line, and the
@@ -219,9 +180,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
     @Override
     protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
-        // The counterpart accounts for the colonies behind the factions this box lists, so a box
-        // listing none has nothing for it to account for: both boxes would state the same claim line
-        // and the key would do nothing the player could see.
+        // The deeper tiers account for the colonies behind the factions this box lists, so a box
+        // listing none has nothing for them to account for: every level would state the same claim
+        // line and the key would do nothing the player could see.
         return readListedContest(sector, system).hasListedStanding();
     }
 
@@ -286,6 +247,45 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      */
     protected static ColonyVisibility readColonyVisibility() {
         return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
+    }
+
+    // Everyone present other than the claimant, in the blocks their standing to it puts them in: who
+    // stands with it by alliance, who stands with it in disposition, who stands against it, and who was
+    // never in the running at all. So the box reads as the holder and then the contest around it.
+    //
+    // Every block is appended unconditionally - the allied one is empty wherever the claimant has no
+    // ally present, which is every system on an install with nothing grouping factions, and the
+    // friendly one wherever nobody present is above neutral with the holder - since a block standing
+    // over no entries is dropped by the same rule that drops any other.
+    private void appendStandingSections(
+            CellTooltipBody body,
+            SectorAPI sector,
+            ListedClaimContest contest,
+            SystemColonyReading colonyReading) {
+
+        body.appendSection(
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
+            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()));
+
+        body.appendSection(
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
+            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()));
+
+        body.appendSection(
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
+            buildEligibilityEntries(
+                sector,
+                contest,
+                colonyReading,
+                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));
+
+        body.appendSection(
+            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
+            buildEligibilityEntries(
+                sector,
+                contest,
+                colonyReading,
+                contest.selectRivalStandings(standing -> !standing.isTerritorial())));
     }
 
     // The hovered system's contest as this box may state it: the whole scored read, the colony rule

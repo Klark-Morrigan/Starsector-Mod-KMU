@@ -35,6 +35,18 @@ public enum HoverTooltipDetailLevel {
     }
 
     /**
+     * @return the level one press moves to: the next deeper one, or the first again from the
+     *         deepest - wrapping rather than stopping, so a press always acts and the deepest box
+     *         can always be left
+     */
+    public HoverTooltipDetailLevel getNextLevel() {
+
+        var levels = values();
+
+        return levels[(ordinal() + 1) % levels.length];
+    }
+
+    /**
      * Kept to this package: a level is passed around by whoever draws a box, and read for what it
      * admits only where a listing is laid out.
      *
@@ -45,17 +57,5 @@ public enum HoverTooltipDetailLevel {
      */
     int getMaximumSubordination() {
         return maximumSubordination;
-    }
-
-    /**
-     * @return the level one press moves to: the next deeper one, or the first again from the
-     *         deepest - wrapping rather than stopping, so a press always acts and the deepest box
-     *         can always be left
-     */
-    public HoverTooltipDetailLevel getNextLevel() {
-
-        var levels = values();
-
-        return levels[(ordinal() + 1) % levels.length];
     }
 }

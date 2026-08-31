@@ -59,14 +59,13 @@ import java.util.Optional;
  * decree over the system is stated higher still, heading the box as it heads every one of this
  * layer's ({@link PoliticalMapCellTooltip}).
  *
- * <p>Everything above is settled here rather than per box because two boxes over one system have
- * to be two amounts of detail about the same contest, not two contests. The pass is read once,
- * from the view that painted the fills, the status is judged under that same pass's reveal, and
- * the groups are resolved into their lines by the one resolver - so a box stating more detail
- * cannot rank a system a shade differently, judge it populated where the other called it empty,
- * name a bloc by another crest, or answer a decree one way where the other answered it another.
- * What is left open is the one thing the detail is: what, if anything, a listed faction breaks down
- * into.
+ * <p>Everything above is settled here rather than per box, so a layer built on these standings states
+ * one contest however deep it is read. The pass is read once, from the view that painted the fills,
+ * the status is judged under that same pass's reveal, and the groups are resolved into their lines by
+ * the one resolver - so no box on this shape can rank a system a shade differently from another,
+ * judge it populated where the other called it empty, name a bloc by another crest, or answer a
+ * decree one way where the other answered it another. What is left open is the one thing the detail
+ * is: what, if anything, a listed faction breaks down into.
  *
  * <p>Stateless past the seams it is built around - the view, the live economy, the alliance set and
  * the settings are read afresh each paint - so one shared instance per box serves every view that
@@ -100,15 +99,15 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
     @Override
     protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
-        // The counterpart accounts for the colonies behind the standings, so a system ranking none
-        // has nothing for it to account for: both boxes would state the same banner and the key
+        // The deeper tiers account for the colonies behind the standings, so a system ranking none
+        // has nothing for them to account for: every level would state the same banner and the key
         // would do nothing the player could see.
         //
         // Judged on the ranking rather than on the status line the body heads itself with, which
         // answers a different question of the same pass: the line says whether anybody runs the
         // place, while the standings name everyone the player may be told about. A system whose
         // colonies are all collapsed or derelict is headed Decivilised or Unpopulated and still
-        // ranks whoever holds them - and those colonies are exactly what the counterpart opens up.
+        // ranks whoever holds them - and those colonies are exactly what a deeper level opens up.
         return readRankedStandings(sector, system)
             .filter(ranking -> ranking.routing().hasAnyStanding())
             .isPresent();

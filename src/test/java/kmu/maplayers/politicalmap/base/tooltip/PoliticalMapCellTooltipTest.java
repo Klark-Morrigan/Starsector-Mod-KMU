@@ -197,7 +197,8 @@ final class PoliticalMapCellTooltipTest {
 
     /**
      * The boxes whose subject is a faction's standing rather than the claim, so nothing in their bodies
-     * names a decree and the heading is the only place it can be said.
+     * names a decree and the heading is the only place it can be said. A provider rather than the one
+     * box it holds today, since what the cases behind it are about is the category.
      */
     static final class StandingsBoxProvider implements ArgumentsProvider {
 
@@ -211,18 +212,14 @@ final class PoliticalMapCellTooltipTest {
             return Stream.of(
                 describeBox(
                     "the faction and alliance views' box",
-                    reader -> new SystemDominationTooltip(reader, HolderGrouping::identity)),
-                describeBox(
-                    "the faction and alliance views' expanded counterpart",
-                    reader -> new ExpandedSystemDominationTooltip(
-                        reader,
-                        HolderGrouping::identity)));
+                    reader -> new SystemDominationTooltip(reader, HolderGrouping::identity)));
         }
     }
 
     /**
      * The boxes built on the claim contest, whose claim block states the decree itself - so what they
-     * are pinned on is heading with the system name alone.
+     * are pinned on is heading with the system name alone. A provider rather than the one box it holds
+     * today, since what the cases behind it are about is the category.
      */
     static final class ClaimBoxProvider implements ArgumentsProvider {
 
@@ -236,10 +233,7 @@ final class PoliticalMapCellTooltipTest {
             return Stream.of(
                 describeBox(
                     "the claims view's box",
-                    reader -> new SystemClaimTooltip(reader, HolderGrouping::identity)),
-                describeBox(
-                    "the claims view's expanded counterpart",
-                    reader -> new ExpandedSystemClaimTooltip(reader, HolderGrouping::identity)));
+                    reader -> new SystemClaimTooltip(reader, HolderGrouping::identity)));
         }
     }
 

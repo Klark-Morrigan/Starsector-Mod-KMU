@@ -4,15 +4,13 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 /**
- * A layer's hover box stood in for the real ones, stating one amount of detail and drawing nothing.
- * Which box a mode selects is decided entirely by what a tooltip offers, never by what one draws, so
- * a stand-in that draws nothing says everything a selection test needs - and a real box could not be
- * stood up here in any case, since drawing one needs a live GL context.
+ * A layer's hover box stood in for the real ones, drawing nothing. A real box could not be stood up
+ * here in any case, since drawing one needs a live GL context - so what a case reads of this is that
+ * it was reached and at which level, never what it painted.
  *
- * <p>It leaves {@link MapHoverTooltip#resolveExpandedVariant} and
- * {@link MapHoverTooltip#isOfferingExpansionFor} unoverridden on purpose: inheriting the interface's
- * own answers is what makes this the tooltip that takes no part in the detail cycle, so a test using
- * it pins the defaults every implementation gets rather than a stand-in's imitation of them.
+ * <p>It leaves {@link MapHoverTooltip#isOfferingExpansionFor} unoverridden on purpose: inheriting the
+ * interface's own answer is what makes this the tooltip that takes no part in the detail cycle, so a
+ * test using it pins the default every implementation gets rather than a stand-in's imitation of it.
  */
 class MapHoverTooltipFake implements MapHoverTooltip {
 
