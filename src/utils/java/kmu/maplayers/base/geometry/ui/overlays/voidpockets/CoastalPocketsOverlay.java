@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
 import kmu.maplayers.base.geometry.render.FillLook;
+import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
@@ -138,7 +139,7 @@ public final class CoastalPocketsOverlay {
     /**
      * Every puddle's whole water, as the ring that bounds it.
      *
-     * <p>The whole of it, where a lake gives up its own {@link #paintLakeFills margin}, because
+     * <p>The whole of it, where a lake gives up its own {@link #addLakeMargins margin}, because
      * the two say different things. A lake's open water is left to the backdrop the way the
      * sector's open void is - the margin marks what the drawn shore conceded against the cells'
      * true edge. A puddle has no shore to concede anything, and water drawn as backdrop reads
@@ -163,28 +164,26 @@ public final class CoastalPocketsOverlay {
     }
 
     /**
-     * Draws every lake's margin, beneath the cells: the water between the drawn shore and
-     * the cells' own arcs, with the open water inside the shore left to the backdrop.
+     * Adds every lake's margin to a sheet: the water between the drawn shore and the cells'
+     * own arcs, with the water inside the shore left out.
      *
      * <p>The margin rather than the whole lake, because that is what the coastal fill shows
      * of the outer shore - what the drawn line gave up against the cells' true edge - and a
-     * lake filled solid answers a different question in the same colour. Beneath the cells
-     * for the reason the pocket fills are: a fill that strayed should read as the mistake it
-     * is rather than paint over the shape it got wrong.
+     * lake filled solid answers a different question in the same colour.
      *
-     * @param g2   what to draw with
-     * @param fill what to fill the margins with
-     * @param edge what to outline them in
+     * <p>Into a sheet rather than painted here, because a margin is a claim about water some
+     * other layer may also be filling. Painted on its own it would lay a second translucent
+     * body over that layer's, and the concession band would come out darker than the water
+     * either side of it - the band reading as a third kind of thing rather than as the edge of
+     * one. In the sheet the two are one body, and a lake nothing else fills keeps the bare
+     * middle a margin has always meant.
+     *
+     * @param sheet the sheet to add them to
      */
-    public void paintLakeFills(Graphics2D g2, Color fill, Color edge) {
+    public void addLakeMargins(FillSheet sheet) {
 
         for (var lake : traced.lakes()) {
-
-            MapPainting.paintBetweenRings(
-                g2,
-                lake.waterEdge(),
-                lake.shore().drawnRing(),
-                resolveWaterLook(fill, edge));
+            sheet.addMargin(lake.waterEdge(), lake.shore().drawnRing());
         }
     }
 
@@ -216,13 +215,6 @@ public final class CoastalPocketsOverlay {
      *
      * @param g2 what to draw with
      */
-    // A construction's own colours at the map's own fill opacity. The colours are per
-    // construction and the opacity is one slider over every fill there is, so the pair is only
-    // assembled where both are known - which is here, and not in either construction.
-    private FillLook resolveWaterLook(Color fill, Color edge) {
-        return new FillLook(fill, settings.voidFillOpacity, edge);
-    }
-
     public void paintDroppedStretches(Graphics2D g2) {
 
         if (!settings.showDroppedStretches) {
@@ -233,5 +225,12 @@ public final class CoastalPocketsOverlay {
             g2,
             Coastlines.collectDroppedRuns(traced, settings.parameters.measureArcSegments()),
             settings.droppedStretchColour);
+    }
+
+    // A construction's own colours at the map's own fill opacity. The colours are per
+    // construction and the opacity is one slider over every fill there is, so the pair is only
+    // assembled where both are known - which is here, and not in either construction.
+    private FillLook resolveWaterLook(Color fill, Color edge) {
+        return new FillLook(fill, settings.voidFillOpacity, edge);
     }
 }

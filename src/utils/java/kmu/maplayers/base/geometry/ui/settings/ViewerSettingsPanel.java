@@ -79,6 +79,7 @@ public final class ViewerSettingsPanel {
     private static final String CONTINENT_BRIDGES = "showContinentBridges";
     private static final String INLET_FILL = "showContinentInletFill";
     private static final String LAKE_BRIDGES = "showContinentLakeBridges";
+    private static final String LAKE_POCKET_FILL = "showContinentLakePocketFill";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -763,7 +764,7 @@ public final class ViewerSettingsPanel {
             PUDDLE_BRIDGES, PUDDLE_FILL,
             LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
-            LAKE_BRIDGES,
+            LAKE_BRIDGES, LAKE_POCKET_FILL,
             CONTINENT_BRIDGES, INLET_FILL));
 
         rows.addAll(buildContinentBranchRows());
@@ -810,10 +811,13 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 CONTINENT_FRONTAGES, "Bridgeable frontage", false,
                 on -> settings.showContinentCoastFrontages = on)),
-            ToggleTree.Row.ofRollUp(1, "Lake bridges", LAKE_BRIDGES),
+            ToggleTree.Row.ofRollUp(1, "Lake bridges", LAKE_BRIDGES, LAKE_POCKET_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 LAKE_BRIDGES, "Bridges", false,
                 on -> settings.showContinentLakeBridges = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                LAKE_POCKET_FILL, "Fill", false,
+                on -> settings.showContinentLakePocketFill = on)),
             ToggleTree.Row.ofRollUp(
                 1, "Inlet bridges", CONTINENT_BRIDGES, INLET_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -841,7 +845,9 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 1, "Bridges", PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES),
             ToggleTree.Row.ofRollUp(
-                1, "Fill", LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, INLET_FILL));
+                1,
+                "Fill",
+                LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL));
     }
 
     // What the v3 coastlines are and how they are drawn, which is what everything below is

@@ -9,6 +9,7 @@ import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.render.FillLook;
+import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
@@ -78,14 +79,12 @@ public final class ContinentCoastOverlay {
 
     // The void the inlet spans close around, walked with the spans as the only walls - which
     // is what the settled construction does with its own bridges.
-    //
-    // The coast's reaches are deliberately NOT laid here, and the reason is the channel rather
-    // than the shape: a wall stands both its sides half a channel off its own line, so a reach
-    // laid as a wall holds the water on its seaward side back too. That strip is a whole
-    // channel wide along every reach and nothing draws it, so the fill's edge stands off at
-    // each reach and runs flush along the cell arcs between them - which reads as a notched
-    // coastline rather than a filled sea.
     private List<List<double[]>> inletPockets = List.of();
+
+    // The lake water the lake spans shut in: each crossed lake cut into the finer pockets its
+    // spans hold. Only what a span actually walled - a lake nothing crosses is the lake
+    // shore's own layer, and drawn from this list too it would be painted twice.
+    private List<List<double[]>> lakePockets = List.of();
 
     // The settled bridge search, shared with the construction that also asks it. Handed in
     // rather than made here: two overlays asking one question of one sector have to be one
@@ -121,6 +120,7 @@ public final class ContinentCoastOverlay {
         inletSpans = List.of();
         inletPockets = List.of();
         lakeSpans = List.of();
+        lakePockets = List.of();
         puddleBridges = List.of();
         frontages = List.of();
 
@@ -141,20 +141,27 @@ public final class ContinentCoastOverlay {
             settings.parameters,
             settings.resolveContinentCoastRules()));
 
-        findInletWater(fixture);
+        // One step asked of each shore in turn. Separate calls rather than one gathered set,
+        // because the two are laid independently: a formation is thinned among the spans it
+        // shares an anchor with, and a span across a lake shares no anchor with one across
+        // the void outside the continent.
+        var inletWater = findSpanWater(
+            fixture,
+            CoastFrontages.Shore.EXTERIOR,
+            settings.showContinentBridges,
+            settings.showContinentInletFill);
 
-        // The same search over the other shore. Its own call rather than a second set gathered
-        // by the one above, because the two are laid independently: a formation is thinned
-        // among the spans it shares an anchor with, and a span across a lake shares no anchor
-        // with one across the void outside the continent.
-        if (settings.showContinentLakeBridges) {
+        inletSpans = inletWater.spans();
+        inletPockets = inletWater.pockets();
 
-            lakeSpans = ContinentBridges.findAnchoredBridges(
-                coast.getTrace(),
-                CoastFrontages.Shore.INTERIOR,
-                settings.parameters,
-                settings.resolveContinentBridgeRules());
-        }
+        var lakeWater = findSpanWater(
+            fixture,
+            CoastFrontages.Shore.INTERIOR,
+            settings.showContinentLakeBridges,
+            settings.showContinentLakePocketFill);
+
+        lakeSpans = lakeWater.spans();
+        lakePockets = lakeWater.pockets();
 
         // The void behind the coast, worked out by the same construction the settled coast's
         // fill comes from. Not a second way of arriving at the same thing: a coast reach is a
@@ -195,39 +202,43 @@ public final class ContinentCoastOverlay {
             return;
         }
 
-        // One colour for all four, read once. Every one of them is water this construction
-        // shut in - behind the outer shore, ringed by land, under a span, or too small for a
-        // shore at all - and four readings of the pair is how they come to be drawn as four
-        // kinds of thing when they are one.
+        // One colour for all of them, read once. Every one is water this construction shut
+        // in - behind the outer shore, ringed by land, under a span on either shore, or too
+        // small for a shore at all - and separate readings of the pair is how they would come
+        // to be drawn as several kinds of thing when they are one.
         var water = settings.continentCoastalVoidColour;
         var edge = settings.continentCoastalVoidEdge;
 
-        // The solid fills as ONE sheet rather than one layer over another. The coast and the
-        // spans both hold the bays where a reach runs into water a span closed, and a wall
-        // cannot be laid flush to keep them apart - it stands both its sides half a channel off
-        // its own line, which would leave a strip along every reach that nothing draws. So the
-        // overlap is kept and made free: filled once over the union, water two of them hold
-        // reads exactly as water one of them holds.
-        var sheet = new ArrayList<List<double[]>>();
+        // Every one of them as ONE sheet rather than one layer over another. Each pair of them
+        // overlaps by construction and no wall can be laid to keep a pair apart: a wall stands
+        // both its sides half a channel off its own line, so dividing them would leave a strip
+        // that nothing draws. The spans hold the bays a coast reach runs into, and they hold
+        // the lake water a shore conceded its margin out of. So the overlaps are kept and made
+        // free: filled once over the union, water two layers hold reads exactly as water one
+        // of them holds.
+        var sheet = new FillSheet();
 
         if (settings.showContinentCoastFill) {
-            sheet.addAll(coast.collectPocketRings());
+            sheet.addRings(coast.collectPocketRings());
         }
         if (settings.showContinentInletFill) {
-            sheet.addAll(inletPockets);
+            sheet.addRings(inletPockets);
+        }
+        if (settings.showContinentLakePocketFill) {
+            sheet.addRings(lakePockets);
         }
         if (settings.showContinentPuddleFill) {
-            sheet.addAll(coast.collectPuddleRings());
+            sheet.addRings(coast.collectPuddleRings());
         }
-        MapPainting.paintMergedRingFills(
-            g2, sheet, new FillLook(water, settings.voidFillOpacity, edge));
 
-        // The lake margins stay their own pass: a margin is an even-odd shape - the water
-        // between the drawn shore and the cells' arcs, with the shore's inside left bare - and
-        // that ring cannot join a sheet wound to make overlaps count.
+        // The margins into that same sheet, as the one layer that takes water back OUT of it:
+        // a lake's open middle stays bare unless the spans' pockets fill it, which is what the
+        // two layers each mean with the other switched off.
         if (settings.showContinentLakeFill) {
-            coast.paintLakeFills(g2, water, edge);
+            coast.addLakeMargins(sheet);
         }
+
+        sheet.paint(g2, new FillLook(water, settings.voidFillOpacity, edge));
     }
 
     /**
@@ -309,11 +320,15 @@ public final class ContinentCoastOverlay {
         }
     }
 
-    // The spans this construction lays over the water its coasts leave, and what they close
-    // around.
+    // The spans this construction lays over one shore's water, and what they close around.
+    // One method for both shores, because after the shore has named its lines the two are one
+    // construction: the same search, the same walk over what its spans walled.
     //
-    // Filtered against the coasts they were offered to, so which spans survive is a question
-    // about THIS trace rather than about the cells alone.
+    // The spans are filtered against the coasts they were offered to, so which survive is a
+    // question about THIS trace rather than about the cells alone. Found while either half of
+    // them is wanted, because the spans and the water they hold are one construction seen
+    // twice - a span is a line saying "this much is held between these cells", and the fill
+    // is what a run of them closes around.
     //
     // What they close around comes from the construction the settled bridges' fill comes from,
     // with the spans as the only walls - so what comes back is the water a run of them holds,
@@ -321,27 +336,38 @@ public final class ContinentCoastOverlay {
     // closed unaided as well, and here that water is a lake or a puddle with a layer of its
     // own, which drawn from this list too would be painted twice and go on being painted with
     // its own switch off.
-    private void findInletWater(SectorFixture fixture) {
+    //
+    // The coast's reaches are deliberately NOT laid as walls beside the spans, and the reason
+    // is the channel rather than the shape: a wall stands both its sides half a channel off
+    // its own line, so a reach laid as a wall holds the water on its seaward side back too.
+    // That strip is a whole channel wide along every reach and nothing draws it, so the fill's
+    // edge stands off at each reach and runs flush along the cell arcs between them - which
+    // reads as a notched coastline rather than a filled sea.
+    private SpanWater findSpanWater(
+            SectorFixture fixture,
+            CoastFrontages.Shore shore,
+            boolean isSpanLayerShown,
+            boolean isFillLayerShown) {
 
-        if (!settings.showContinentBridges && !settings.showContinentInletFill) {
-            return;
+        if (!isSpanLayerShown && !isFillLayerShown) {
+            return SpanWater.NONE;
         }
 
-        inletSpans = ContinentBridges.findAnchoredBridges(
+        var spans = ContinentBridges.findAnchoredBridges(
             coast.getTrace(),
-            CoastFrontages.Shore.EXTERIOR,
+            shore,
             settings.parameters,
             settings.resolveContinentBridgeRules());
 
-        if (!settings.showContinentInletFill || inletSpans.isEmpty()) {
-            return;
+        if (!isFillLayerShown || spans.isEmpty()) {
+            return new SpanWater(spans, List.of());
         }
 
-        inletPockets = VoidBridgePockets.findBridgeWalledPockets(
+        return new SpanWater(spans, VoidBridgePockets.findBridgeWalledPockets(
             fixture.getSites(),
-            inletSpans,
+            spans,
             settings.parameters,
-            settings.resolvePocketShaping());
+            settings.resolvePocketShaping()));
     }
 
     // The stretches a span was allowed to anchor on, read off the same trace the spans are
@@ -423,5 +449,14 @@ public final class ContinentCoastOverlay {
         for (var span : spans) {
             g2.draw(MapPainting.buildSpanLine(span));
         }
+    }
+
+    // One shore's spans and the water they shut in, handed back together because they are
+    // found together - the fill is walked with exactly the spans that came out of the search,
+    // and a pair carried as two loose lists could be reassembled across shores.
+    private record SpanWater(List<CellGap> spans, List<List<double[]>> pockets) {
+
+        // What a shore neither switch asks for comes back as, so an idle shore costs nothing.
+        private static final SpanWater NONE = new SpanWater(List.of(), List.of());
     }
 }

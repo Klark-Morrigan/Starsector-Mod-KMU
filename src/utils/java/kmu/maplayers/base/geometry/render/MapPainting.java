@@ -111,61 +111,6 @@ public final class MapPainting {
     }
 
     /**
-     * The same rings drawn as one sheet: one translucent body over all of them together, with
-     * every ring's edge still on top.
-     *
-     * <p>For a construction whose fills are the same water in the same colour. Filled ring by
-     * ring, two that overlap lay one translucent body over another and the shared part comes
-     * out darker - so water two constructions both hold reads as a third kind of thing, and the
-     * darker patch moves whenever either is switched off. Filled once over the union, the
-     * overlap costs nothing and the switches become what they claim to be.
-     *
-     * <p>Wound non-zero, which is what makes the union a union: the rings all wind the same way,
-     * so a point inside two of them counts twice and is inside either way. Even-odd would punch
-     * the overlap back out - the rule {@link #paintBetweenRings} wants and this one must not
-     * have.
-     *
-     * <p>The edges stay per ring. They say where each piece of void begins and ends, which is
-     * what a reader judging the construction is looking at; only the bodies had to merge.
-     *
-     * @param g2    what to draw with
-     * @param rings the closed outlines to fill as one
-     * @param look  how to paint the sheet, whose edge colour outlines every ring
-     */
-    public static void paintMergedRingFills(
-            Graphics2D g2,
-            List<List<double[]>> rings,
-            FillLook look) {
-
-        if (rings.isEmpty()) {
-            return;
-        }
-
-        // Each ring built once and used twice - appended to the sheet, then stroked. Built
-        // again for the outlines, the two passes would flatten the same points a second time
-        // for a path that has to be identical to the first or the edge misses the body.
-        var paths = new ArrayList<Path2D>(rings.size());
-        var sheet = new Path2D.Double(Path2D.WIND_NON_ZERO);
-
-        for (var ring : rings) {
-
-            var path = buildPath(ring);
-
-            paths.add(path);
-            sheet.append(path, false);
-        }
-
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-        g2.setColor(applyAlpha(look.fill(), look.alpha()));
-        g2.fill(sheet);
-        g2.setColor(applyAlpha(look.edge(), MapLook.OPAQUE_ALPHA));
-
-        for (var path : paths) {
-            g2.draw(path);
-        }
-    }
-
-    /**
      * The same fill for pockets, which carry their outlines rather than being one.
      *
      * @param g2      what to draw with
@@ -198,37 +143,6 @@ public final class MapPainting {
             outlines.addAll(walled.pocket().outlines());
         }
         return outlines;
-    }
-
-    /**
-     * The fill between two closed rings, one inside the other - a margin, with the space
-     * inside the inner ring left unpainted.
-     *
-     * <p>Even-odd rather than a subtraction worked out in geometry: the two rings share
-     * stretches wherever the inner one runs along the outer - a drawn shore's fillets run on
-     * the water's own edge - and a boolean subtraction of two nearly-coincident outlines is
-     * exactly where geometry libraries produce slivers and self-intersections. The winding
-     * rule gets the same answer by counting crossings, which two coincident edges cannot
-     * upset.
-     *
-     * @param g2    what to draw with
-     * @param outer the ring the fill runs out to
-     * @param inner the ring the fill stops at, its inside left bare
-     * @param look  how to paint the margin
-     */
-    public static void paintBetweenRings(
-            Graphics2D g2,
-            List<double[]> outer,
-            List<double[]> inner,
-            FillLook look) {
-
-        var margin = new Path2D.Double(Path2D.WIND_EVEN_ODD);
-
-        margin.append(buildPath(outer), false);
-        margin.append(buildPath(inner), false);
-
-        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
-        paintFilledShape(g2, margin, look);
     }
 
     // The one way a proposed line is drawn here: closed rings stroked at span weight in one

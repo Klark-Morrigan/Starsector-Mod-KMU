@@ -239,6 +239,12 @@ public final class ViewerSettings {
     // to take its water back into the continent is another.
     public boolean showContinentLakeBridges;
 
+    // The water those spans shut in: each crossed lake cut into the finer pockets its spans
+    // hold, the way the inlet fill is the water the exterior spans hold. Found with the spans
+    // as the only walls, and only what a span actually walled is drawn - a lake nothing
+    // crosses stays the lake shore's own layer, under its own switch above.
+    public boolean showContinentLakePocketFill;
+
     // Every stretch of frontage the smoothing chose not to pass through, on whichever coasts
     // are being drawn. One switch rather than one per coast: it shows a DECISION rather than a
     // layer, and the answer it gives - what the rules left out - is the same question of both.
@@ -380,7 +386,8 @@ public final class ViewerSettings {
                 || showContinentCoastFrontages
                 || showContinentBridges
                 || showContinentInletFill
-                || showContinentLakeBridges);
+                || showContinentLakeBridges
+                || showContinentLakePocketFill);
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with
