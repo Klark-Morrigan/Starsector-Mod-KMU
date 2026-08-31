@@ -35,8 +35,17 @@ same answer the surface gives when no layer is active at all. `base.tooltip`'s d
 its box the same way, off the same two reads, so neither pass names a layer.
 
 Which sector that is has to be resolved rather than passed: this hook is handed a fade factor and
-nothing else. The surface resolves the live sector's installation for it, which is the one place a
-global read stands in for a sector nobody passed down.
+nothing else, and the plugin cannot be handed one either - the engine rebuilds it from the save,
+with no seam to inject through. So it resolves through the one handle it does have, the terrain
+entity it rides on: that entity's containing location is its sector's hyperspace, and
+`MapLayerInstallations` indexes each installation by that location beside the sector itself. Per
+frame, never held - an installation is a live object and this plugin is written into the save.
+
+A surface whose location has nothing installed stands down instead of drawing. It belongs to a
+sector nothing is drawing - a save carrying the terrain with the overlay switched off, or a sector
+the layers were taken off mid-session - and the detached installation an uninstalled *sector*
+resolves to would be the wrong answer here: it is the holder every sector-less caller shares, so
+painting through it draws no sector at all.
 
 `renderOnMap` is the sector map's hook by contract, and everything downstream rests on that - the
 cursor read inverts whichever transform the running pass bound and divides by the `factor` it
@@ -93,9 +102,17 @@ two can paint the lower band of one frame and there is nothing on that side to c
 as the frame boundary the surfaces cannot see from where they stand, and granting the preparation to
 the first to ask after it. It fails open - until that pass has been seen, every claim is granted -
 because a duplicated preparation costs work while a denied one costs the overlay, nothing else
-bringing the draw lists up to date. `MapSurfaceInstaller` clears it per load before re-registering
-it, so a load that never re-registers falls back to that open state rather than to a claim armed by
-a session whose boundary pass is gone.
+bringing the draw lists up to date.
+
+One claim per installation, not one per process. The counting is only right within a map: two
+sectors drawing in one frame each owe their own draw lists a preparation, and a shared claim would
+leave the second sector's overlay painting lists nothing brought up to date. Nothing clears it per
+load either - an installation is made fresh when the layers are installed on a sector, so a claim
+left mid-frame by the session before goes with the installation that held it, and a load that
+registers nothing falls back to the open state rather than to an armed claim whose boundary pass is
+gone. `MapSurfaceInstaller` registers the installation's own claim rather than one built beside it:
+a listener opening frames on a claim the surfaces never ask would leave every one of them preparing
+per pass.
 
 The cursor read is the one piece of per-frame work that cannot ride that claim, because it depends
 on *which* pass is running: it inverts the transform that pass bound and divides by the `factor` it
@@ -181,8 +198,8 @@ the panel, which is the next location change or the next load.
 A renderer belongs to one sector's installed map machinery, made on the first frame that asks for it
 and released with that machinery: nothing it holds enters a save, so it needs no `transient`
 marking, no lazy re-creation, and no save-restore path. The terrain plugin, which *is* serialised
-with its terrain entity, holds none of it - it resolves the installation each frame rather than
-carrying one.
+with its terrain entity, holds none of it - it resolves the installation from that entity each
+frame rather than carrying one.
 
 `SectorMapLayerStarscapeTerrainPlugin` and `SectorMapLayerAboveStarscapeNebulaeTerrainPlugin` reach
 the same draw while the map's Starscape filter is on - that filter hard-suppresses custom terrain,
@@ -234,6 +251,13 @@ one of the surfaces that stand aside while a schematic map is up - and the entit
 through the same plugin-class guard the install uses, so the entity a load brought back is the one
 moved. Both are wired in `MapSurfaceInstaller`: that the entity is a terrain, and that the fog above
 it is what makes the move worth making, is the whole of KMU's side.
+
+The script itself is held by the installation of the sector it was added to, through
+`MapSurfaceScripts`, so a removal aimed at one sector takes off the script that sector is actually
+running. One slot for the whole process could not: a second sector installed on would take the slot
+over, and the first sector's removal would then reach for a script it never had while the one still
+running went untouched. It is taken off by instance rather than by class besides, `MapIconReseater`
+being KMLib's and another mod free to run its own over the same sector.
 
 Only the above-nebulae surface is moved. The one beneath it is meant to be fogged, so lifting both
 would flatten the split back into a single pass beneath the fog.

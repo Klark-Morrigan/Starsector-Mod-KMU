@@ -3,6 +3,9 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
+import kmu.maplayers.base.installation.InstalledMachinery;
+import kmu.maplayers.base.installation.MapLayerInstallation;
+
 /**
  * Grants one map-layer frame preparation per drawn frame, so the per-frame work behind a layer runs
  * once however many surfaces reach it.
@@ -27,32 +30,27 @@ import com.fs.starfarer.api.combat.ViewportAPI;
  * would leave the overlay frozen on the single frame that was ever prepared, nothing else bringing
  * the draw lists up to date.
  *
- * <p>Reached as one shared instance because the surfaces that ask are separate objects the engine
- * builds per terrain entity, and are restored from a save at that. Read and written on the game
- * thread alone - both the UI render pass and the terrain pass run there - so the flags need no
- * publication guarantee of their own.
+ * <p>One per installation, shared by that sector's surfaces because they are separate objects the
+ * engine builds per terrain entity - restored from a save at that - with no way to reach each other.
+ * Per installation rather than per process because a frame is a sector's: two sectors drawing in one
+ * frame each owe their own draw lists a preparation, and a shared claim would give the second
+ * sector's surfaces nothing to prepare with. Read and written on the game thread alone - both the UI
+ * render pass and the terrain pass run there - so the flags need no publication guarantee of their
+ * own.
+ *
+ * <p>Nothing clears it per load: an installation is made fresh when the layers are installed on a
+ * sector, so a claim left mid-frame by the session before goes with the installation that held it.
  */
-public final class MapFramePreparationClaim implements CampaignUIRenderingListener {
-
-    // The one shared claim the render surfaces ask and the frame boundary resets.
-    private static final MapFramePreparationClaim INSTANCE = new MapFramePreparationClaim();
+public final class MapFramePreparationClaim implements CampaignUIRenderingListener,
+        InstalledMachinery {
 
     // Where this claim stands. One field rather than a pair of flags, because the three states are
     // exactly three: a fourth combination of "boundary not seen" with "preparation taken" has no
     // meaning here, and holding two flags is what would let one be written.
     private FramePreparationState state = FramePreparationState.BOUNDARY_UNKNOWN;
 
-    // Reached through getInstance(); the claim stands on its own instance, so the constructor is
-    // package-visible rather than sealed to the singleton.
+    // Reached through resolveClaimIn, so the only claims that exist are ones an installation holds.
     MapFramePreparationClaim() {
-    }
-
-    /**
-     * @return the one shared claim, since the surfaces that ask it are separate objects with no way
-     *         to reach each other
-     */
-    public static MapFramePreparationClaim getInstance() {
-        return INSTANCE;
     }
 
     /**
@@ -77,14 +75,15 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     }
 
     /**
-     * Forgets that frame boundaries were ever seen, so a session that never re-registers this
-     * listener falls back to preparing per pass instead of freezing on one frame.
+     * Forgets that frame boundaries were ever seen, so a claim released with its installation
+     * cannot be one a surface goes on being refused by.
      *
-     * <p>Called per load, before the registration: this is a process-lifetime instance and the
-     * registration is remade per save, so a load that fails to remake it would otherwise leave a
-     * claim armed by the previous session with nothing left to reset it.
+     * <p>The state left behind is the fail-open one for the reason every other reset here chooses
+     * it: a claim standing at "preparation taken" with nothing left to open another frame refuses
+     * every asker, and the overlay freezes on whatever the last prepared frame built.
      */
-    public void discardFrameTrackingFromPreviousSave() {
+    @Override
+    public void disposeMachinery() {
         state = FramePreparationState.BOUNDARY_UNKNOWN;
     }
 
@@ -109,6 +108,23 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
         // Later still, for the same reason.
+    }
+
+    /**
+     * The claim {@code installation}'s surfaces share, made on the first frame one of them asks for
+     * it and released with the installation holding it.
+     *
+     * <p>The one way to a claim, so a surface and the registration that opens its frames cannot end
+     * up on two different ones - a claim nothing opens frames on grants every asker, which is the
+     * duplicated preparation the type exists to stop.
+     *
+     * @param installation the machinery installed on the sector being drawn
+     * @return that sector's claim
+     */
+    static MapFramePreparationClaim resolveClaimIn(MapLayerInstallation installation) {
+        return installation.resolveMachinery(
+            MapFramePreparationClaim.class,
+            MapFramePreparationClaim::new);
     }
 
     // Where a claim stands, as the three states it can actually be in. An enum rather than flags so

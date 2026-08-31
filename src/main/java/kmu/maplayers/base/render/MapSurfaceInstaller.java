@@ -8,7 +8,7 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
-import kmu.starsector.listeners.InstalledTransientScript;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.starsector.listeners.SectorListeners;
 
 import java.util.function.Supplier;
@@ -35,12 +35,6 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * <p>Final class with a private constructor: pure-function utility, no instance state.
  */
 public final class MapSurfaceInstaller {
-
-    // The reseat this installs, held so it can be taken off again by instance rather than by class:
-    // MapIconReseater is KMLib's and another mod may be running its own in the same sector. The slot
-    // states why that matters; this only says which script is in it.
-    private static final InstalledTransientScript<MapIconReseater> installedReseater =
-        new InstalledTransientScript<>();
 
     private MapSurfaceInstaller() {
         // utility class, no instances.
@@ -115,7 +109,9 @@ public final class MapSurfaceInstaller {
     }
 
     static void removeStarscapeTerrainReseater(SectorAPI sector) {
-        installedReseater.removeFrom(sector);
+        MapSurfaceScripts
+            .resolveScriptsIn(MapLayerInstallations.resolveInstallationFor(sector))
+            .removeReseaterFrom(sector);
     }
 
     // Registers the per-frame script that lifts the upper Starscape terrain over the map's nebula
@@ -147,34 +143,36 @@ public final class MapSurfaceInstaller {
         Supplier<SectorEntityToken> findAboveNebulaeTerrain =
             () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector());
 
-        // A fresh script per load, so the previous save's spent lift attempts cannot carry into this
-        // one and stand the move down over a sector it never tried.
-        installedReseater.installOn(
-            sector,
-            () -> new MapIconReseater(
-                new MapPresence()::isStarscapeMapShowing,
-                findAboveNebulaeTerrain,
-                () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
+        // Held by this sector's installation, so the slot a later removal reaches for is the one
+        // this script went into. A fresh script per load besides, so the previous save's spent lift
+        // attempts cannot carry into this one and stand the move down over a sector it never tried.
+        MapSurfaceScripts
+            .resolveScriptsIn(MapLayerInstallations.resolveInstallationFor(sector))
+            .installReseaterOn(
+                sector,
+                () -> new MapIconReseater(
+                    new MapPresence()::isStarscapeMapShowing,
+                    findAboveNebulaeTerrain,
+                    () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
     }
 
-    // Registers the render listener the map surfaces read their frame boundary from, and clears what
-    // the previous session left on it first. Transient, remove-then-add, for the dispatcher's
-    // reasons: it holds live view state and none of it belongs in a save.
+    // Registers the render listener the map surfaces read their frame boundary from. Transient,
+    // remove-then-add, for the dispatcher's reasons: it holds live view state and none of it belongs
+    // in a save.
     //
-    // The clear comes first and is not conditional on the registration going ahead, because the two
-    // failures it covers are the ones where no registration happens at all: a sector without a
-    // listener manager, and a guarded step that throws. Either would otherwise leave the claim armed
-    // by a session whose boundary pass is gone, which denies every preparation and freezes the
-    // overlay - where an unarmed claim merely prepares once per pass.
+    // The installation's own claim rather than a fresh one, because that is the claim the surfaces
+    // over this sector ask: a listener built beside it would open frames on a claim nothing consults,
+    // and every surface would go on preparing per pass. It arrives unarmed without being cleared
+    // here, an installation being made fresh when the layers are installed - so a claim left mid-frame
+    // by the session before went with the installation that held it, and a load that fails to
+    // register anything falls back to preparing per pass rather than to a frozen overlay.
     static void installMapFramePreparationClaim(SectorAPI sector) {
 
-        MapFramePreparationClaim.getInstance().discardFrameTrackingFromPreviousSave();
+        var installation = MapLayerInstallations.resolveInstallationFor(sector);
 
-        // The shared instance rather than a fresh one: the surfaces that ask reach it through the
-        // singleton, so a listener built beside it would be a second claim nothing consults.
         SectorListeners.installListener(
             sector,
             MapFramePreparationClaim.class,
-            MapFramePreparationClaim::getInstance);
+            () -> MapFramePreparationClaim.resolveClaimIn(installation));
     }
 }

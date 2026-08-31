@@ -1,6 +1,7 @@
 package kmu.maplayers.base.installation;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import org.apache.log4j.Logger;
@@ -18,10 +19,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * anything having to notice that a sector went away - the index holds each sector by reference, and
  * nobody is in a position to tell it that one is gone.
  *
- * <p>Resolution takes two forms because the seams do. A caller already holding a sector asks for
+ * <p>Resolution takes three forms because the seams do. A caller already holding a sector asks for
  * that sector's; a seam vanilla hands no sector at all - its map render hook is passed a fade factor
  * and nothing else - asks for the live sector's, which is the single place a global read stands in
- * for a sector nobody passed down.
+ * for a sector nobody passed down; and a render surface, which is terrain and so reaches a
+ * {@link LocationAPI} rather than a sector, asks by the location it sits in.
  *
  * <p>A sector with nothing installed resolves to a detached installation rather than to null. The
  * map layers sit behind a switch a player can leave off, so an uninstalled sector is an ordinary
@@ -47,6 +49,20 @@ public final class MapLayerInstallations {
     // sector is the thing being installed on, and two sectors are two objects whether or not
     // anything about their contents differs.
     private static final Map<SectorAPI, MapLayerInstallation> installationsBySector =
+        new ConcurrentHashMap<>();
+
+    // The same installations under the hyperspace their sector's render surfaces sit in. A second
+    // key rather than a second index: a surface is a terrain plugin, and the only handle it has is
+    // the entity it rides on, which reaches a containing location and never a sector. Hyperspace
+    // because that is where the surfaces' terrain is installed, so a sector contributes exactly one
+    // location key.
+    //
+    // The key written here is sector.getHyperspace() and the key looked up is the terrain entity's
+    // containing location, so the resolution rests on those being the same object. They are because
+    // the terrain is added to sector.getHyperspace() and the engine seats an added entity in the
+    // location it was added to - a lookup that missed would take the whole overlay off screen
+    // rather than degrade, which is why the identity is stated here rather than left implied.
+    private static final Map<LocationAPI, MapLayerInstallation> installationsByHyperspace =
         new ConcurrentHashMap<>();
 
     private MapLayerInstallations() {
@@ -82,6 +98,16 @@ public final class MapLayerInstallations {
             return new MapLayerInstallation();
         });
 
+        // The location key beside the sector one, so the render surfaces can find this installation
+        // from the terrain they ride on. Overwrites rather than accumulates, a sector's hyperspace
+        // being the same object across a replacement; a sector without one contributes no key, and
+        // its surfaces - which would have nowhere to be installed either - stand down.
+        var hyperspace = sector.getHyperspace();
+
+        if (hyperspace != null) {
+            installationsByHyperspace.put(hyperspace, installation);
+        }
+
         LOG.debug("Map layer machinery installed; installations=" + installationsBySector.size());
         return installation;
     }
@@ -104,6 +130,11 @@ public final class MapLayerInstallations {
         if (removed == null) {
             return;
         }
+        // Dropped by the installation held rather than by re-reading the sector's hyperspace, so a
+        // sector that has since stopped answering with the location it was indexed under cannot
+        // leave a key behind for its surfaces to go on drawing through.
+        installationsByHyperspace.values().removeIf(indexed -> indexed == removed);
+
         removed.disposeMachinery();
 
         LOG.debug("Map layer machinery uninstalled; installations=" + installationsBySector.size());
@@ -121,6 +152,7 @@ public final class MapLayerInstallations {
 
         installationsBySector.values().forEach(MapLayerInstallation::disposeMachinery);
         installationsBySector.clear();
+        installationsByHyperspace.clear();
 
         LOG.debug("Map layer machinery discarded for every installed sector");
     }
@@ -135,6 +167,29 @@ public final class MapLayerInstallations {
             return DETACHED_INSTALLATION;
         }
         return installationsBySector.getOrDefault(sector, DETACHED_INSTALLATION);
+    }
+
+    /**
+     * The installation whose sector holds {@code location}, for a caller that has a location and no
+     * sector - which is every render surface, terrain reaching a containing location and nothing
+     * above it.
+     *
+     * <p>Answers null where nothing is installed in that location, and this is the one resolution
+     * that does. A surface exists because an installation put its terrain there, so a location with
+     * no installation is a surface belonging to a sector nothing is drawing; handing back the
+     * detached installation would have it paint through the holder every sector-less caller shares,
+     * which is a drawing of no sector at all rather than a fallback.
+     *
+     * @param location the location being asked about, typically a surface's containing one; null is
+     *                 a surface not in any location yet
+     * @return that location's installation, or null where it has none
+     */
+    public static MapLayerInstallation resolveInstallationIn(LocationAPI location) {
+
+        if (location == null) {
+            return null;
+        }
+        return installationsByHyperspace.get(location);
     }
 
     /**

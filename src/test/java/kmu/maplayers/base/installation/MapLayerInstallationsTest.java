@@ -1,6 +1,7 @@
 package kmu.maplayers.base.installation;
 
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.hover.MapHover;
@@ -17,12 +18,17 @@ import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the lifetime: that two sectors get two installations, that installing again on one replaces
  * rather than accumulates, that removal and a load release what they drop and leave none of a
  * released sector's state to the installation after it, and that a sector with nothing installed
  * resolves to something rather than to null.
+ *
+ * <p>The second key is pinned beside the first: a render surface is terrain and reaches only its
+ * containing location, so an installation has to be findable by the hyperspace its sector's surfaces
+ * sit in - and has to stop being findable there the moment it is released.
  *
  * <p>The index is process-wide, so every case starts from a cleared one.
  */
@@ -131,6 +137,20 @@ class MapLayerInstallationsTest {
         }
 
         @Test
+        void stopsAnsweringForTheReleasedSectorsHyperspace() {
+            // The render surfaces are terrain in that hyperspace and ask by location, so a key left
+            // behind would have them go on painting a sector the layers were taken off.
+            var hyperspaceMock = mock(LocationAPI.class);
+            var sector = buildSectorInHyperspace(hyperspaceMock);
+
+            MapLayerInstallations.installMachineryOn(sector);
+            MapLayerInstallations.uninstallMachineryFrom(sector);
+
+            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
+                .isNull();
+        }
+
+        @Test
         void standsDownForNoSector() {
             // The switch can be flipped with no game loaded, so the entry point reaches here
             // holding null.
@@ -224,6 +244,19 @@ class MapLayerInstallationsTest {
         }
 
         @Test
+        void stopsAnsweringForEveryDiscardedSectorsHyperspace() {
+            // A load replaces the sector, so a location key left standing would answer a surface
+            // rebuilt from the loaded save with the machinery of the save before it.
+            var hyperspaceMock = mock(LocationAPI.class);
+
+            MapLayerInstallations.installMachineryOn(buildSectorInHyperspace(hyperspaceMock));
+            MapLayerInstallations.disposeEveryInstallation();
+
+            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
+                .isNull();
+        }
+
+        @Test
         void leavesTheDetachedInstallationStandingForAnUninstalledSector() {
             // The detached one is nobody's sector, so a load has nothing to discard of it - and a
             // caller reaching it after a load must not find a released installation.
@@ -254,6 +287,46 @@ class MapLayerInstallationsTest {
                 .isNotNull();
             assertThat(installation)
                 .isSameAs(MapLayerInstallations.resolveInstallationFor(otherSectorMock));
+        }
+    }
+
+    @Nested
+    class ResolveInstallationIn {
+
+        @Test
+        void yieldsTheInstallationOfTheSectorWhoseHyperspaceItIs() {
+            // How a render surface finds what it is drawing. It is terrain, so the handle it has is
+            // its own entity's containing location - and that location has to reach the same
+            // installation the sector does, or the surface paints through a sector's machinery
+            // nobody installed.
+            var hyperspaceMock = mock(LocationAPI.class);
+            var otherHyperspaceMock = mock(LocationAPI.class);
+
+            var installation = MapLayerInstallations.installMachineryOn(
+                buildSectorInHyperspace(hyperspaceMock));
+
+            MapLayerInstallations.installMachineryOn(
+                buildSectorInHyperspace(otherHyperspaceMock));
+
+            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
+                .isSameAs(installation);
+        }
+
+        @Test
+        void yieldsNothingForALocationWithNothingInstalled() {
+            // The one resolution that answers null rather than with the detached installation. A
+            // surface in such a location belongs to a sector nothing is drawing - a save carrying
+            // the terrain with the overlay switched off - and painting it through the holder every
+            // sector-less caller shares would be drawing no sector at all.
+            assertThat(MapLayerInstallations.resolveInstallationIn(mock(LocationAPI.class)))
+                .isNull();
+        }
+
+        @Test
+        void yieldsNothingForNoLocation() {
+            // A surface the engine has built but not yet seated has no location to be asked about.
+            assertThat(MapLayerInstallations.resolveInstallationIn(null))
+                .isNull();
         }
     }
 
@@ -297,5 +370,17 @@ class MapLayerInstallationsTest {
                     .isSameAs(MapLayerInstallations.resolveInstallationFor(sectorMock));
             }
         }
+    }
+
+    // A sector answering only for the hyperspace its render surfaces would be installed in, which
+    // is the second key an installation is indexed under.
+    private static SectorAPI buildSectorInHyperspace(LocationAPI hyperspace) {
+
+        var sectorMock = mock(SectorAPI.class);
+
+        when(sectorMock.getHyperspace())
+            .thenReturn(hyperspace);
+
+        return sectorMock;
     }
 }

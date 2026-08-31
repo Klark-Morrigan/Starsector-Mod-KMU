@@ -1,5 +1,7 @@
 package kmu.maplayers.base.render;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -97,22 +99,55 @@ final class MapFramePreparationClaimTest {
     }
 
     @Nested
-    class DiscardFrameTrackingFromPreviousSave {
+    class DisposeMachinery {
 
         @Test
-        void discardFrameTrackingFromPreviousSaveGrantsEveryClaimAgain() {
-            // A load whose registration never happens leaves nothing to open another frame, so the
-            // claim has to forget that boundaries were ever seen - otherwise the frame it was left
-            // mid-way through denies every preparation for the rest of the session.
+        void disposeMachineryGrantsEveryClaimAgain() {
+            // A released installation leaves nothing to open another frame, so the claim has to
+            // forget that boundaries were ever seen - otherwise a surface still holding it would be
+            // refused every preparation from the frame it was released mid-way through onwards.
             var claim = new MapFramePreparationClaim();
 
             claim.renderInUICoordsBelowUI(null);
             claim.claimPreparation();
-            claim.discardFrameTrackingFromPreviousSave();
+            claim.disposeMachinery();
 
             assertThat(claim.claimPreparation())
                 .isTrue();
             assertThat(claim.claimPreparation())
+                .isTrue();
+        }
+    }
+
+    @Nested
+    class ResolveClaimIn {
+
+        @Test
+        void resolveClaimInGivesOneSectorsSurfacesOneClaimBetweenThem() {
+            // The counting only works if every surface over a map asks the same claim: two claims
+            // over one sector would each grant its own first asker, which is the duplicated
+            // preparation the type exists to stop.
+            var installation = new MapLayerInstallation();
+
+            assertThat(MapFramePreparationClaim.resolveClaimIn(installation))
+                .isSameAs(MapFramePreparationClaim.resolveClaimIn(installation));
+        }
+
+        @Test
+        void resolveClaimInGivesEachSectorAClaimOfItsOwn() {
+            // Two sectors drawing in one frame each owe their own draw lists a preparation, so one
+            // sector taking its frame's must leave the other's standing.
+            var installation = new MapLayerInstallation();
+            var otherInstallation = new MapLayerInstallation();
+
+            var claim = MapFramePreparationClaim.resolveClaimIn(installation);
+            var otherClaim = MapFramePreparationClaim.resolveClaimIn(otherInstallation);
+
+            claim.renderInUICoordsBelowUI(null);
+            otherClaim.renderInUICoordsBelowUI(null);
+            claim.claimPreparation();
+
+            assertThat(otherClaim.claimPreparation())
                 .isTrue();
         }
     }

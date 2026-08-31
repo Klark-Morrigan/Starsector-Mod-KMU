@@ -8,8 +8,11 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.starsector.listeners.RecordingListenerManager;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,13 +30,24 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins how the render surfaces are stood up: the per-frame scripts as transient ones built fresh
- * per load, and the frame preparation claim cleared before anything can take it again.
+ * per load and held by the sector they were installed on, and the frame boundary registered on that
+ * sector's own claim.
  */
 class MapSurfaceInstallerTest {
 
     // Advancing an EveryFrameScript from a test says nothing about elapsed time - the reseat reads
     // no clock - so the value only has to be one the engine could plausibly pass.
     private static final float ONE_FRAME = 0.016f;
+
+    // The index is process-wide, so a sector installed on by one case would go on holding that
+    // case's script for the next. Outside any Global stand-in on purpose: this index holds a logger
+    // taken from Global at class load, so a first load inside a mocked scope would leave it null for
+    // the rest of the JVM.
+    @BeforeEach
+    @AfterEach
+    void clearEveryInstallation() {
+        MapLayerInstallations.disposeEveryInstallation();
+    }
 
     @Nested
     class InstallStarscapeTerrainReseater {
@@ -46,6 +60,7 @@ class MapSurfaceInstallerTest {
             // bake a library class's name into the file.
             var sectorMock = mock(SectorAPI.class);
 
+            MapLayerInstallations.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
             verify(sectorMock)
@@ -62,7 +77,10 @@ class MapSurfaceInstallerTest {
             var firstLoadSectorMock = mock(SectorAPI.class);
             var secondLoadSectorMock = mock(SectorAPI.class);
 
+            MapLayerInstallations.installMachineryOn(firstLoadSectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(firstLoadSectorMock);
+
+            MapLayerInstallations.installMachineryOn(secondLoadSectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(secondLoadSectorMock);
 
             var firstReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -78,6 +96,34 @@ class MapSurfaceInstallerTest {
         }
 
         @Test
+        void holdsEachSectorsReseaterUnderThatSectorsOwnInstallation() {
+            // What one slot for the whole process could not do. A second sector installed on would
+            // take the slot over, and the first sector's removal would then reach for the second
+            // sector's script - taking nothing off the sector still running one, and asking the
+            // wrong sector to drop a script it never had.
+            var sectorMock = mock(SectorAPI.class);
+            var otherSectorMock = mock(SectorAPI.class);
+
+            MapLayerInstallations.installMachineryOn(sectorMock);
+            MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
+
+            MapLayerInstallations.installMachineryOn(otherSectorMock);
+            MapSurfaceInstaller.installStarscapeTerrainReseater(otherSectorMock);
+
+            var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
+
+            verify(sectorMock)
+                .addTransientScript(installedReseater.capture());
+
+            MapSurfaceInstaller.removeStarscapeTerrainReseater(sectorMock);
+
+            verify(sectorMock)
+                .removeTransientScript(installedReseater.getValue());
+            verify(otherSectorMock, never())
+                .removeTransientScript(any());
+        }
+
+        @Test
         void wiresTheReseatersPlacementReadToTheLiveWidgetProbe() {
             // The reseat decides from where the icon actually sits, and this is the only place that
             // read is bound to something that can answer it. Nothing downstream would notice a
@@ -90,6 +136,8 @@ class MapSurfaceInstallerTest {
             // mockStatic scope keeps a null logger for the rest of the JVM and faults every later
             // test that logs. Answering null for a null sector is its own contract, covered next door.
             MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
+
+            MapLayerInstallations.installMachineryOn(sectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
                     var globalMock = mockStatic(Global.class);
@@ -134,7 +182,7 @@ class MapSurfaceInstallerTest {
     class UninstallAll {
 
         @Test
-        void clearsTheFramePreparationClaimAndStopsTheReseat() {
+        void takesTheFramePreparationClaimOffTheSectorAndStopsTheReseat() {
             // Within the session that registered them both are still running: the claim still
             // arbitrating a frame nothing prepares, and the reseat still moving an entity that has
             // just been removed. The terrain removal beside them is pinned on the terrain installer.
@@ -144,6 +192,7 @@ class MapSurfaceInstallerTest {
             when(sectorMock.getListenerManager())
                 .thenReturn(listenerManager);
 
+            MapLayerInstallations.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
             var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -180,6 +229,7 @@ class MapSurfaceInstallerTest {
             // sector, and a removal by class would take that one with it.
             var sectorMock = mock(SectorAPI.class);
 
+            MapLayerInstallations.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
             var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -200,37 +250,60 @@ class MapSurfaceInstallerTest {
     class InstallMapFramePreparationClaim {
 
         @Test
-        void reinstallsTheFramePreparationClaimFreshAsTransient() {
-            // Remove-then-add, transient: it holds where the current frame stands, which is live view
-            // state that enters no save, and two registered would open the frame twice - releasing a
-            // second preparation into the frame the first already handed out.
+        void registersTheSectorsOwnClaimFreshAsTransient() {
+            // The claim the surfaces over this sector ask, not one built beside it: a listener
+            // opening frames on a claim nothing consults would leave every surface preparing per
+            // pass. Remove-then-add and transient besides - it holds where the current frame stands,
+            // which is live view state that enters no save, and two registered would open the frame
+            // twice, releasing a second preparation into the frame the first already handed out.
             var listenerManager = new RecordingListenerManager();
+            var sectorMock = mock(SectorAPI.class);
 
-            MapSurfaceInstaller.installMapFramePreparationClaim(buildSector(listenerManager));
+            when(sectorMock.getListenerManager())
+                .thenReturn(listenerManager);
+
+            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
+
+            MapSurfaceInstaller.installMapFramePreparationClaim(sectorMock);
 
             assertThat(listenerManager.getRemovedListenerClasses())
                 .containsExactly(MapFramePreparationClaim.class);
 
             assertThat(listenerManager.getAddedListeners())
                 .singleElement()
-                .isSameAs(MapFramePreparationClaim.getInstance());
+                .isSameAs(MapFramePreparationClaim.resolveClaimIn(installation));
 
             assertThat(listenerManager.getAddedTransientFlags())
                 .containsExactly(true);
         }
 
         @Test
-        void clearsTheClaimEvenWhenNoListenerCanBeRegistered() {
-            // The failure this ordering is for. With no listener manager nothing will ever open
-            // another frame, so a claim left taken by the previous session would refuse every
-            // preparation for the rest of this one and freeze the overlay on stale draw lists.
-            // Clearing first is what turns that into preparing per pass instead.
-            MapFramePreparationClaim.getInstance().renderInUICoordsBelowUI(null);
-            MapFramePreparationClaim.getInstance().claimPreparation();
+        void registersAClaimNoPreviousSessionLeftArmed() {
+            // What clearing the claim by hand used to be for. A claim standing at "preparation
+            // taken" with the frame that took it long gone refuses every asker, and the overlay
+            // freezes on whatever the last prepared frame built - so the claim a load registers has
+            // to be one no earlier session reached. Installing the machinery is what makes it so.
+            var listenerManager = new RecordingListenerManager();
+            var sectorMock = mock(SectorAPI.class);
 
-            MapSurfaceInstaller.installMapFramePreparationClaim(buildSector(null));
+            when(sectorMock.getListenerManager())
+                .thenReturn(listenerManager);
 
-            assertThat(MapFramePreparationClaim.getInstance().claimPreparation())
+            var previousInstallation = MapLayerInstallations.installMachineryOn(sectorMock);
+            var previousClaim = MapFramePreparationClaim.resolveClaimIn(previousInstallation);
+
+            previousClaim.renderInUICoordsBelowUI(null);
+            previousClaim.claimPreparation();
+
+            MapLayerInstallations.installMachineryOn(sectorMock);
+            MapSurfaceInstaller.installMapFramePreparationClaim(sectorMock);
+
+            assertThat(listenerManager.getAddedListeners())
+                .singleElement()
+                .isNotSameAs(previousClaim);
+
+            assertThat(((MapFramePreparationClaim) listenerManager.getAddedListeners().get(0))
+                    .claimPreparation())
                 .isTrue();
         }
 
