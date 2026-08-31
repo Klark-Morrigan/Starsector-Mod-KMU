@@ -74,8 +74,11 @@ import static org.mockito.Mockito.when;
  * {@code getAllEntities} - what the unregistered-market half of a colony selection reaches for,
  * and so what a second reading shows up as.
  *
- * <p>What is stubbed is what no test JVM answers: the sector lookup, the logger, and the live
- * LunaLib reads the rebuild's stages are configured by. Nothing standing in for a collaborator.
+ * <p>What is stubbed is what no test JVM answers: the logger and the live LunaLib reads the
+ * rebuild's stages are configured by, plus the sector lookup - which the rebuild itself no longer
+ * makes, taking its sector off the installation it belongs to, and which is staged only for the
+ * incremental path a frame with nothing stale falls through to. Nothing standing in for a
+ * collaborator.
  */
 final class PoliticalMapRebuildWalkIntegrationTest {
 
@@ -416,9 +419,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 stageColony.stageColony(tritachyon, RIVAL_COLONY_SIZE)),
             listSystemMarkets(BETA_ID));
 
-        for (var system : sector.getStarSystems()) {
-            SectorPoliticsFixtures.placeSystemInHyperspace(system);
-        }
+        SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
         installation = new MapLayerInstallation(sector);
 
         globalMock
@@ -441,9 +442,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 GAMMA_ID,
                 SectorPoliticsFixtures.buildVisibleMarket(tritachyon, HOLDING_COLONY_SIZE)));
 
-        for (var system : runningSector.getStarSystems()) {
-            SectorPoliticsFixtures.placeSystemInHyperspace(system);
-        }
+        SectorPoliticsFixtures.placeEverySystemInHyperspace(runningSector);
         globalMock
             .when(Global::getSector)
             .thenReturn(runningSector);

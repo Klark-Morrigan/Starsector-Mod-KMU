@@ -263,9 +263,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             List.of(hegemony),
             systems.toArray(new SectorPoliticsFixtures.SystemMarkets[0]));
 
-        for (var system : sector.getStarSystems()) {
-            SectorPoliticsFixtures.placeSystemInHyperspace(system);
-        }
+        SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
         return sector;
     }
 
@@ -292,9 +290,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             alpha,
             SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
 
-        for (var system : sector.getStarSystems()) {
-            SectorPoliticsFixtures.placeSystemInHyperspace(system);
-        }
+        SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
         return sector;
     }
 

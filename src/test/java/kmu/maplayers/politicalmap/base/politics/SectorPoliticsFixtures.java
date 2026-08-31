@@ -697,6 +697,21 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
+     * Places every one of a sector's systems, which is what a suite driving a real cut or a real
+     * motion walk wants: either skips an unplaced system before the drawn-set rule is asked about
+     * it, so a sector staged with one system left out reads as a rule decision rather than as a
+     * fixture gap.
+     *
+     * @param sector the sector whose systems to place
+     */
+    public static void placeEverySystemInHyperspace(SectorAPI sector) {
+
+        for (var system : sector.getStarSystems()) {
+            placeSystemInHyperspace(system);
+        }
+    }
+
+    /**
      * Wires a sector whose systems are walkable but whose economy is absent - the shape mid-load,
      * before the economy stands up - so a read can be pinned on what it does without one. The
      * system is there deliberately: it makes the sector one a walk <em>could</em> enter, so a read

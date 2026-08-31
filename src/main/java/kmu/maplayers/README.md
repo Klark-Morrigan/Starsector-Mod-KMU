@@ -146,30 +146,20 @@ about what the overlay means.
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own.
 - **`base/installation`** - one sector's map machinery as a thing a caller can hold, since
-  everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder - its
-  `MapLayerRefreshBoard` is what went stale in that sector, and nothing another sector rebuilds
-  for, its `MovingSystems` is where that sector's systems were last seen, and its `MapHoverState` is
-  what the cursor is over on that sector's map. It carries the sector itself beside them, for the
-  stages that read the sector rather than a holder over it - the rebuild that cuts cells from its
-  systems, the poll that walks them - since vanilla's map hook names no sector and a terrain surface
-  reaches a location rather than one. Taking it from the installation rather than beside it is what
-  stops a stage cutting cells from one sector while reading holders out of another.
+  everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder: the
+  refresh board, the motion tracker and the hover holder, plus the sector itself, for the stages
+  that read the sector rather than a holder over it. What a *layer* derives from the sector - its
+  renderer and the caches behind it - goes in through `InstalledMachinery` rather than being named
+  here, so an installation owns those lifetimes without this package pointing at the layers
+  downstream of it, and releasing one frees the GL buffers a cached label holds.
   `MapLayerInstallations` indexes one per sector, replaces a sector's on a second install, releases
-  it on removal, and discards every one on load - the load being the only point at which a previous
-  save's can be stopped from outliving it, nothing else being told a sector went away. A seam
-  vanilla hands no sector resolves the live sector's, which is where the global read standing in for
-  a sector nobody passed down belongs. An uninstalled sector resolves to a detached installation
-  rather than to null, the overlay being behind a switch a player can leave off - and that one is
-  over no sector, so a stage reaching it finds nothing to read rather than falling through to the
-  running game's. Each installation
-  is indexed under its sector's hyperspace as well, since a render surface is terrain and reaches a
-  containing location rather than a sector; that resolution answers with nothing where the location
-  has none, a surface belonging to a sector nothing draws having no business painting through the
-  holder every sector-less caller shares. What a *layer*
-  derives from the sector - its renderer and the caches behind it - is held through
-  `InstalledMachinery` instead of named here, so an installation owns those lifetimes without this
-  package pointing at the layers downstream of it; releasing one releases them, which is what frees
-  the GL buffers a cached label holds.
+  it on removal, and discards every one on load - the only point at which a previous save's can be
+  stopped from outliving it. It answers three ways, because the seams do: by sector, by the
+  hyperspace a render surface's terrain sits in, and - for a seam vanilla hands no sector - by the
+  live sector, which is where the global read standing in for a sector nobody passed down belongs.
+  Only the location resolution answers null; an uninstalled sector gets a detached installation over
+  no sector at all, the overlay being behind a switch a player can leave off. Each class's Javadoc
+  carries the reasoning.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;

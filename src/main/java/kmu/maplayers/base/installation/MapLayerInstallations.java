@@ -43,10 +43,8 @@ public final class MapLayerInstallations {
     // installation that nothing indexes and nothing releases. Shared, so every caller that reaches
     // it meets one holder rather than one each - which is the arrangement a sector-less caller has
     // always had, back when each holder was a static of its own.
-    //
-    // Made over no sector, which is the honest answer: a caller that reached it named none. A stage
-    // that reads the sector therefore finds nothing to read rather than falling through to the
-    // running game's, which would have it draw a sector nobody asked it about.
+    // Made over no sector, a caller that reached it having named none - so a stage reading the
+    // sector finds nothing rather than falling through to whichever sector is loaded.
     private static final MapLayerInstallation DETACHED_INSTALLATION =
         new MapLayerInstallation(null);
 

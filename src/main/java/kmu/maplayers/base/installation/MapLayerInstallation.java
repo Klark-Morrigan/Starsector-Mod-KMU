@@ -29,12 +29,11 @@ import java.util.function.Supplier;
  * through {@link #resolveMachinery} instead, which is what lets an installation own the lifetime of
  * a renderer and its caches without this package naming the layers those live in.
  *
- * <p>It carries the sector itself for the seams that have to read one. Vanilla's map hook names no
- * sector and a terrain surface reaches a location rather than a sector, so a rebuild or a poll below
- * either seam would otherwise have to ask the running game which sector it is looking at - and would
- * then read the loaded sector's colonies while drawing another sector's cells. Reached from the
- * installation rather than passed alongside it, so the sector a stage reads and the holders it reads
- * beside them cannot name two different sectors.
+ * <p>It carries the sector itself beside them. Vanilla's map hook names no sector and a terrain
+ * surface reaches a location rather than one, so a stage below either seam would otherwise ask the
+ * running game which sector it is looking at - and would read the loaded sector's colonies while
+ * drawing another sector's cells. Taken from the installation rather than passed alongside it, so
+ * the sector a stage reads and the holders it reads beside it cannot name two different sectors.
  */
 public final class MapLayerInstallation {
 
@@ -157,16 +156,10 @@ public final class MapLayerInstallation {
     }
 
     /**
-     * The sector this machinery was installed on, for the stages that read the sector itself rather
-     * than a holder over it - the rebuild that cuts its cells from the sector's systems, and the
-     * poll that walks them.
-     *
-     * <p>Asking for it here is what keeps such a stage off the running game: a cut taken from the
-     * loaded sector while its cells are kept for another would draw one sector's borders around the
-     * other's colonies, and nothing on screen would report which half was which.
-     *
-     * @return that sector, or null for the detached installation, which is nobody's sector - a
-     *         stage reaching it has no sector to read and draws nothing
+     * @return the sector this machinery was installed on, which the stages reading the sector itself
+     *         rather than a holder over it answer from - the rebuild that cuts cells from its
+     *         systems, and the poll that walks them. Null for the detached installation, which is
+     *         nobody's sector, so a stage reaching it has none to read and draws nothing
      */
     public SectorAPI resolveSector() {
         return sector;
