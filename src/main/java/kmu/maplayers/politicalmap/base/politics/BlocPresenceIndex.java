@@ -20,7 +20,9 @@ import java.util.Set;
  * the walk counts that bloc a presence, so a bloc's set size is the {@code presence} beside it.
  *
  * <p>Insertion-ordered at both levels, following the sector walk like the stats beside it, so two
- * reads of one sector answer in one order.
+ * reads of one sector answer in one order. Sealed on the way in, because a rebuild hands over the
+ * sets it accumulated into and the index outlives that walk - it is read back per hover until the
+ * next rebuild replaces it.
  *
  * <p>Plain data with no Starsector types, so it is built and asserted on hand-built inputs.
  *
@@ -49,10 +51,8 @@ public record BlocPresenceIndex(Map<String, Set<String>> systemIdsByBlocId) {
         return systemIdsByBlocId.getOrDefault(blocId, Set.of());
     }
 
-    // Unmodifiable copies of both levels, taken in order. The walk accumulates into mutable sets
-    // and hands them over when it is done, so copying here is what stops a sealed index being
-    // written through afterwards. Map.copyOf and Set.copyOf would each do half of this and lose the
-    // walk order doing it, which is the one property a caller reading the index back relies on.
+    // Map.copyOf and Set.copyOf would each seal one level and lose the walk order doing it, which
+    // is the one property a caller reading the index back relies on.
     private static Map<String, Set<String>> copyPreservingOrder(
             Map<String, Set<String>> systemIdsByBlocId) {
 

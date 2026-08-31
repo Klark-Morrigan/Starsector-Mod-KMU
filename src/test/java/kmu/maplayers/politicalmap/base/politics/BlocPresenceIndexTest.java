@@ -78,11 +78,8 @@ final class BlocPresenceIndexTest {
             hegemonySystemIds.add("system-b");
             systemIdsByBlocId.put("tritachyon", new LinkedHashSet<>(Set.of("system-c")));
 
-            assertThat(index.readPresentSystemIds("hegemony"))
-                .containsExactly("system-a");
-
-            assertThat(index.readPresentSystemIds("tritachyon"))
-                .isEmpty();
+            assertThat(index.systemIdsByBlocId())
+                .containsExactly(Map.entry("hegemony", Set.of("system-a")));
         }
     }
 }

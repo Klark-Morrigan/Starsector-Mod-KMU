@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Aggregates the whole-sector {@link DominanceStatsRead} the filter picker sorts and labels its
- * options by, from one grouped per-system dominance pass.
+ * Aggregates the whole-sector totals the filter picker sorts and labels its options by, and the
+ * systems behind them, from one grouped per-system dominance pass.
  *
  * <p>The picker half of the holder pipeline, kept apart from {@link SectorPolitics}'s per-system
  * holder resolution: where that produces one render holder per system, this walks the same sector to
@@ -25,11 +25,6 @@ import java.util.Set;
  * the band both take, so a bloc the player can see living somewhere is offered to be spotlighted
  * there. Reading presence off the weights instead would drop every bloc whose colonies the economy
  * does not list, leaving the picker denying what the map beneath it is drawing.
- *
- * <p>The same habitation read also names the systems behind each presence count, which the walk
- * records into a {@link BlocPresenceIndex} as it goes. Counting and naming in one place is what lets
- * a surface light the systems a picker row stands for without a second reading of the sector to work
- * out which ones those were.
  */
 public final class DominanceStatsAggregator {
 
@@ -46,10 +41,6 @@ public final class DominanceStatsAggregator {
      * takes a present-system entry carrying its weight and its colony size - the dominant one also a
      * domination count. The order follows the sector walk, which each view then maps into its own
      * picker options.
-     *
-     * <p>That entry also names the system it was taken in, which is the {@link BlocPresenceIndex}
-     * beside the stats: the same walk, so the systems a row stands for cost nothing beyond the count
-     * already being kept.
      *
      * @param pass the sector walk, weighting rule, colony rule, and grouping this read resolves
      *             under, sampled once by the caller so the whole read resolves under one set of
@@ -111,9 +102,8 @@ public final class DominanceStatsAggregator {
                         footprint.totalWeight(),
                         entry.getValue()));
 
-            // The system behind the presence just counted, named in the same step that counts it -
-            // so the set and the count cannot disagree about where a bloc lives, whatever later
-            // decides how a spotlight keys or clusters those cells.
+            // The system behind the presence just counted, named in the step that counts it, which
+            // is what holds the set and the count to one answer (see BlocPresenceIndex).
             systemIdsByBlocId
                 .computeIfAbsent(blocId, presentBlocId -> new LinkedHashSet<>())
                 .add(system.getId());
