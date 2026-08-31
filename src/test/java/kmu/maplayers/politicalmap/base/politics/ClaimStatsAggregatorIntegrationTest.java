@@ -318,6 +318,24 @@ final class ClaimStatsAggregatorIntegrationTest {
         }
 
         @Test
+        void aggregateClaimStatsIndexesAClaimWhenTheSectorHasNoEconomy() {
+            // The index inherits what makes the claim count stand alone: the claimant comes from the
+            // port, so a sector caught mid-load still names the system. The dominance walk answers
+            // nothing at all here, which is exactly why this index cannot be taken off that one.
+            var sectorMock = buildEconomylessSectorWithSystem("claimed-system");
+            var claimReaderFake = new ClaimReaderFake();
+
+            claimReaderFake.setClaim("claimed-system", "hegemony");
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                        buildHolderPassOver(sectorMock),
+                        claimReaderFake)
+                    .claimedSystemIndex()
+                    .readPresentSystemIds("hegemony"))
+                .containsExactly("claimed-system");
+        }
+
+        @Test
         void aggregateClaimStatsIndexesAnAlliancesMembersClaimsUnderTheAlliance() {
             // The index folds through the pass's grouping exactly as the count does, so an alliance
             // row lights both members' claimed systems rather than the one member the id names.

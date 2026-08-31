@@ -17,8 +17,8 @@ import java.util.Map;
  *
  * @param statsByBlocId       each claiming or living bloc's whole-sector totals, keyed by bloc id in
  *                            walk order
- * @param claimedSystemIndex  the systems each bloc claims - which is a narrower key set than the
- *                            stats beside it, a bloc listed for its colonies alone claiming nowhere
+ * @param claimedSystemIndex  the systems each bloc claims - never a wider key set than the stats
+ *                            beside it, a bloc listed for its colonies alone claiming nowhere
  */
 public record ClaimStatsRead(
     Map<String, ClaimStats> statsByBlocId,

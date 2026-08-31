@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public record BlocPresenceIndex(Map<String, Set<String>> systemIdsByBlocId) {
 
-    /** A walk that found nobody living anywhere; the identity an accumulation begins from. */
+    /** A walk that found no bloc present anywhere; the identity an accumulation begins from. */
     public static final BlocPresenceIndex EMPTY = new BlocPresenceIndex(Map.of());
 
     public BlocPresenceIndex {
