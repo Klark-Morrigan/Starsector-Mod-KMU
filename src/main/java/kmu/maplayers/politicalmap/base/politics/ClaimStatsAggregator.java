@@ -7,11 +7,13 @@ import kmlib.starsector.systems.claims.ClaimReader;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Aggregates the whole-sector {@link ClaimStats} the claims picker sorts and labels its options by,
- * from one walk of the sector's star systems.
+ * and the systems behind the claim half of them, from one walk of the sector's star systems.
  *
  * <p>The claims counterpart to {@link DominanceStatsAggregator}, and deliberately a separate walk
  * producing a separate output type: the two aggregators share the per-system habitation
@@ -32,6 +34,11 @@ import java.util.Map;
  * <p>Both are folded to blocs through the pass's grouping, so an alliance grouping totals its
  * members' claims and colonies into the alliance's one entry - the same fold the dominance
  * aggregation applies.
+ *
+ * <p>The system index beside the totals is filled by the claim arm alone. That is what makes it
+ * claim-bound and equal to what this layer paints: a bloc's colonies are summed from wherever they
+ * are, so letting the habitation arm contribute would name systems the claims layer draws the bloc
+ * nothing in.
  */
 public final class ClaimStatsAggregator {
 
@@ -50,33 +57,36 @@ public final class ClaimStatsAggregator {
      *
      * @param pass        the sector walk, colony rule, and grouping this read resolves under,
      *                    sampled once by the caller so the whole read resolves under one set of
-     *                    knobs; a pass over no sector yields an empty map
+     *                    knobs; a pass over no sector yields an empty read
      * @param claimReader the claim source, read once per system
-     * @return each claiming or living bloc's stats, keyed by bloc id in star-system walk order;
-     *         empty when the sector holds neither
+     * @return each claiming or living bloc's stats and the systems each claiming bloc claims, keyed
+     *         by bloc id in star-system walk order; empty when the sector holds neither
      */
-    public static Map<String, ClaimStats> aggregateClaimStats(
+    public static ClaimStatsRead aggregateClaimStats(
             HolderPass pass,
             ClaimReader claimReader) {
 
         var statsByBlocId = new LinkedHashMap<String, ClaimStats>();
+        var systemIdsByBlocId = new LinkedHashMap<String, Set<String>>();
 
         // Neither fold is guarded on the sector having an economy up yet (mid-load, it may not).
         // Claims are read from the port and so stand on their own, and the colony walk beneath the
         // habitation read answers an empty set without one - so the sizes come to nought where the
         // dominance aggregation's own guard makes it report nothing at all.
         for (var system : pass.readSystems()) {
-            accumulateSystemClaim(statsByBlocId, system, pass, claimReader);
+            accumulateSystemClaim(statsByBlocId, systemIdsByBlocId, system, pass, claimReader);
             accumulateSystemHabitation(statsByBlocId, system, pass);
         }
-        return statsByBlocId;
+        return new ClaimStatsRead(statsByBlocId, new BlocPresenceIndex(systemIdsByBlocId));
     }
 
-    // Folds one system's claimant into the running per-bloc stats. A system has exactly one claimant,
-    // so this adds at most one claim; an unclaimed system contributes nothing. The claimant faction is
-    // folded to its bloc first, so an alliance grouping counts its members' claims as the alliance's.
+    // Folds one system's claimant into the running per-bloc stats and claimed-system sets. A system
+    // has exactly one claimant, so this adds at most one claim; an unclaimed system contributes
+    // nothing. The claimant faction is folded to its bloc first, so an alliance grouping counts its
+    // members' claims as the alliance's and indexes their systems under the alliance too.
     private static void accumulateSystemClaim(
             Map<String, ClaimStats> statsByBlocId,
+            Map<String, Set<String>> systemIdsByBlocId,
             StarSystemAPI system,
             HolderPass pass,
             ClaimReader claimReader) {
@@ -89,6 +99,12 @@ public final class ClaimStatsAggregator {
         statsByBlocId.put(
             blocId,
             statsByBlocId.getOrDefault(blocId, ClaimStats.EMPTY).addClaim());
+
+        // The system behind the claim just counted, named in the step that counts it, which is what
+        // holds the set and the count to one answer (see BlocPresenceIndex).
+        systemIdsByBlocId
+            .computeIfAbsent(blocId, claimingBlocId -> new LinkedHashSet<>())
+            .add(system.getId());
     }
 
     // Folds one system's habitation into the running per-bloc stats: the same read the dominance

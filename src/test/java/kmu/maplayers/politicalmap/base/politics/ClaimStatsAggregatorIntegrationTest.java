@@ -34,10 +34,15 @@ import static org.assertj.core.api.Assertions.entry;
  * wiring - two differently scoped metrics off two different sources landing in one per-bloc entry -
  * which mocking either source would hide.
  *
- * <p>The last cases ask what makes an entry at all, which is the sector's habitation rather than its
- * economy: a bloc living somewhere is offered to be spotlighted there whether or not the economy
+ * <p>The middle cases ask what makes an entry at all, which is the sector's habitation rather than
+ * its economy: a bloc living somewhere is offered to be spotlighted there whether or not the economy
  * lists what it lives on, and a bloc whose only holding is a hulk nobody lives on is offered
  * nothing.
+ *
+ * <p>The index cases ask the same walk where, rather than how much, and are here beside the totals
+ * because the fact worth pinning is that the two came off one entry. They lean on the fold's two
+ * arms disagreeing - a bloc claiming one set of systems and living in another - since that is what
+ * would catch the index taking its systems from the habitation arm the claim count never reads.
  */
 final class ClaimStatsAggregatorIntegrationTest {
 
@@ -59,7 +64,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             claimReaderFake.setClaim("system-a", "hegemony");
             claimReaderFake.setClaim("system-b", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
+                    .statsByBlocId())
                 .containsExactly(entry("hegemony", new ClaimStats(2, 0)));
         }
 
@@ -78,7 +84,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
+                    .statsByBlocId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 8)));
         }
 
@@ -95,7 +102,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
+                    .statsByBlocId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
@@ -113,7 +121,8 @@ final class ClaimStatsAggregatorIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("shared-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
+                    .statsByBlocId())
                 .containsExactly(
                     entry("hegemony", new ClaimStats(1, 0)),
                     entry("tritachyon", new ClaimStats(0, 4)));
@@ -139,8 +148,9 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    HolderPass.over(sectorMock, BASE_FOG, grouping),
-                    claimReaderFake))
+                        HolderPass.over(sectorMock, BASE_FOG, grouping),
+                        claimReaderFake)
+                    .statsByBlocId())
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
         }
 
@@ -150,7 +160,10 @@ final class ClaimStatsAggregatorIntegrationTest {
             // so a bloc absent from the map is absent from the picker rather than listed at nothing.
             var sectorMock = buildSectorWithSystems(List.of(), listSystemMarkets("empty-system"));
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), new ClaimReaderFake()))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                        buildHolderPassOver(sectorMock),
+                        new ClaimReaderFake())
+                    .statsByBlocId())
                 .isEmpty();
         }
 
@@ -163,13 +176,17 @@ final class ClaimStatsAggregatorIntegrationTest {
 
             claimReaderFake.setClaim("claimed-system", "hegemony");
 
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(sectorMock), claimReaderFake)
+                    .statsByBlocId())
                 .containsExactly(entry("hegemony", new ClaimStats(1, 0)));
         }
 
         @Test
         void aggregateClaimStatsIsEmptyForNullSector() {
-            assertThat(ClaimStatsAggregator.aggregateClaimStats(buildHolderPassOver(null), new ClaimReaderFake()))
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                        buildHolderPassOver(null),
+                        new ClaimReaderFake())
+                    .statsByBlocId())
                 .isEmpty();
         }
 
@@ -188,8 +205,9 @@ final class ClaimStatsAggregatorIntegrationTest {
                 buildVisibleMarket(hegemony, 4));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    buildHolderPassOver(sectorMock),
-                    new ClaimReaderFake()))
+                        buildHolderPassOver(sectorMock),
+                        new ClaimReaderFake())
+                    .statsByBlocId())
                 .containsExactly(entry("hegemony", new ClaimStats(0, 4)));
         }
 
@@ -210,8 +228,9 @@ final class ClaimStatsAggregatorIntegrationTest {
                 buildVisibleMarket(hegemony, 4));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    buildHolderPassOver(sectorMock),
-                    new ClaimReaderFake()))
+                        buildHolderPassOver(sectorMock),
+                        new ClaimReaderFake())
+                    .statsByBlocId())
                 .containsExactly(entry("hegemony", new ClaimStats(0, 9)));
         }
 
@@ -229,8 +248,119 @@ final class ClaimStatsAggregatorIntegrationTest {
                 buildAbandonedStationMarket(4));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                    buildHolderPassOver(sectorMock),
-                    new ClaimReaderFake()))
+                        buildHolderPassOver(sectorMock),
+                        new ClaimReaderFake())
+                    .statsByBlocId())
+                .isEmpty();
+        }
+
+        @Test
+        void aggregateClaimStatsIndexesOnlyTheSystemsABlocClaims() {
+            // The claim-bound rule, posed where the two arms disagree: a bloc claiming two systems
+            // and living in three others names the two alone. Letting habitation contribute would
+            // name systems this layer draws the bloc nothing in, and light them under the pointer.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sectorMock = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("claimed-a"),
+                listSystemMarkets("home-a", buildVisibleMarket(hegemony, 5)),
+                listSystemMarkets("claimed-b"),
+                listSystemMarkets("home-b", buildVisibleMarket(hegemony, 3)),
+                listSystemMarkets("home-c", buildVisibleMarket(hegemony, 1)));
+
+            var claimReaderFake = new ClaimReaderFake();
+
+            claimReaderFake.setClaim("claimed-a", "hegemony");
+            claimReaderFake.setClaim("claimed-b", "hegemony");
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                        buildHolderPassOver(sectorMock),
+                        claimReaderFake)
+                    .claimedSystemIndex()
+                    .readPresentSystemIds("hegemony"))
+                .containsExactly("claimed-a", "claimed-b");
+        }
+
+        @Test
+        void aggregateClaimStatsIndexesAsManySystemsAsItCountsClaims() {
+            // The invariant the index is built for, over a sector where the two blocs differ: two
+            // claims against two named systems, one against one. Counting and naming come off the
+            // one claimant read, so a reading where they disagree is a reading where the lit cells
+            // and the number on the row beneath the pointer stopped meaning the same thing.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sectorMock = buildSectorWithSystems(
+                List.of(hegemony, tritachyon),
+                listSystemMarkets("system-a"),
+                listSystemMarkets("system-b"),
+                listSystemMarkets("system-c"));
+
+            var claimReaderFake = new ClaimReaderFake();
+
+            claimReaderFake.setClaim("system-a", "hegemony");
+            claimReaderFake.setClaim("system-b", "tritachyon");
+            claimReaderFake.setClaim("system-c", "hegemony");
+
+            var read = ClaimStatsAggregator.aggregateClaimStats(
+                buildHolderPassOver(sectorMock),
+                claimReaderFake);
+
+            assertThat(read.statsByBlocId())
+                .containsExactly(
+                    entry("hegemony", new ClaimStats(2, 0)),
+                    entry("tritachyon", new ClaimStats(1, 0)));
+
+            assertThat(read.claimedSystemIndex().readPresentSystemIds("hegemony"))
+                .containsExactly("system-a", "system-c");
+
+            assertThat(read.claimedSystemIndex().readPresentSystemIds("tritachyon"))
+                .containsExactly("system-b");
+        }
+
+        @Test
+        void aggregateClaimStatsIndexesAnAlliancesMembersClaimsUnderTheAlliance() {
+            // The index folds through the pass's grouping exactly as the count does, so an alliance
+            // row lights both members' claimed systems rather than the one member the id names.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
+            var sectorMock = buildSectorWithSystems(
+                List.of(hegemony, tritachyon),
+                listSystemMarkets("hegemony-claim"),
+                listSystemMarkets("tritachyon-claim"));
+
+            var claimReaderFake = new ClaimReaderFake();
+
+            claimReaderFake.setClaim("hegemony-claim", "hegemony");
+            claimReaderFake.setClaim("tritachyon-claim", "tritachyon");
+
+            var grouping = new HolderGrouping(
+                Map.of("hegemony", "alliance-1", "tritachyon", "alliance-1"),
+                Map.of("alliance-1", "hegemony"),
+                Map.of("alliance-1", "Allied Powers"));
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                        HolderPass.over(sectorMock, BASE_FOG, grouping),
+                        claimReaderFake)
+                    .claimedSystemIndex()
+                    .readPresentSystemIds("alliance-1"))
+                .containsExactly("hegemony-claim", "tritachyon-claim");
+        }
+
+        @Test
+        void aggregateClaimStatsIndexesNothingForAColonyHolderThatClaimsNothing() {
+            // The mirror of the claim-bound rule at its edge: a bloc listed for its colonies alone
+            // is a row the picker offers with nothing for a preview to light, so it must answer
+            // empty rather than the systems it lives in.
+            var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
+            var sectorMock = buildSectorWithSystems(
+                List.of(hegemony),
+                listSystemMarkets("home-system", buildVisibleMarket(hegemony, 5)));
+
+            assertThat(ClaimStatsAggregator.aggregateClaimStats(
+                        buildHolderPassOver(sectorMock),
+                        new ClaimReaderFake())
+                    .claimedSystemIndex()
+                    .readPresentSystemIds("hegemony"))
                 .isEmpty();
         }
     }

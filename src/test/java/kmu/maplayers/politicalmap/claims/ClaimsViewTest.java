@@ -22,8 +22,10 @@ import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
+import kmu.maplayers.politicalmap.base.politics.ClaimStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
@@ -330,7 +332,7 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(Map.of("hegemony", ANY_CLAIMANT_STATS));
+                    .thenReturn(buildReadOf(Map.of("hegemony", ANY_CLAIMANT_STATS)));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
@@ -355,7 +357,7 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(Map.of("luddic_path", new ClaimStats(1, 0)));
+                    .thenReturn(buildReadOf(Map.of("luddic_path", new ClaimStats(1, 0))));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
@@ -378,9 +380,9 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(Map.of(
+                    .thenReturn(buildReadOf(Map.of(
                         "hegemony", new ClaimStats(1, 0),
-                        "tritachyon", new ClaimStats(0, 40)));
+                        "tritachyon", new ClaimStats(0, 40))));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
@@ -407,7 +409,7 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(statsByBlocId);
+                    .thenReturn(buildReadOf(statsByBlocId));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
@@ -439,7 +441,7 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(statsByBlocId);
+                    .thenReturn(buildReadOf(statsByBlocId));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
@@ -458,7 +460,7 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(Map.of());
+                    .thenReturn(buildReadOf(Map.of()));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .items())
@@ -490,7 +492,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenAnswer(invocation -> {
                         aggregatedPasses.add(invocation.getArgument(0));
-                        return Map.of();
+                        return buildReadOf(Map.of());
                     });
 
                 view.resolveBlocPicker(sectorMock, GATED_VISIBILITY);
@@ -521,7 +523,7 @@ final class ClaimsViewTest {
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(Map.of());
+                    .thenReturn(buildReadOf(Map.of()));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPicker(sectorMock, BASE_FOG)
                         .sortModes())
@@ -543,7 +545,7 @@ final class ClaimsViewTest {
                     var visibilityRulesMock = mockStatic(MapVisibilityRules.class)) {
 
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
-                    .thenReturn(Map.of());
+                    .thenReturn(buildReadOf(Map.of()));
 
                 // The one live read this entry is meant to make, stood in as the plain fog.
                 visibilityRulesMock
@@ -554,5 +556,12 @@ final class ClaimsViewTest {
                     .isEmpty();
             }
         }
+    }
+
+    // A stubbed aggregation posing blocs and nowhere in particular. The picker is assembled from
+    // the stats half alone, so the claimed-system index beside them is left empty rather than
+    // stubbed to systems no case here asks about.
+    private static ClaimStatsRead buildReadOf(Map<String, ClaimStats> statsByBlocId) {
+        return new ClaimStatsRead(statsByBlocId, BlocPresenceIndex.EMPTY);
     }
 }
