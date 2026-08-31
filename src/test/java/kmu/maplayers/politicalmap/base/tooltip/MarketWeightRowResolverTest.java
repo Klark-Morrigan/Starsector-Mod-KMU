@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
@@ -270,7 +271,8 @@ final class MarketWeightRowResolverTest {
                 List.of(buildConcealedBreakdown()),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildReadingWithOpenlyKnown(nameColonyId("Selkie Station")));
+                buildReadingWithOpenlyKnown(nameColonyId("Selkie Station")),
+                PATROL_DETAILS);
 
             assertThat(rows.get(0).line().qualifier())
                 .isNull();
@@ -284,7 +286,8 @@ final class MarketWeightRowResolverTest {
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildReadingWithUndiscovered("jangala"));
+                buildReadingWithUndiscovered("jangala"),
+                PATROL_DETAILS);
 
             assertThat(rows.get(0).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
@@ -718,7 +721,8 @@ final class MarketWeightRowResolverTest {
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildReadingRemarkingOn("jangala"));
+                buildReadingRemarkingOn("jangala"),
+                PATROL_DETAILS);
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -732,7 +736,8 @@ final class MarketWeightRowResolverTest {
                 List.of(),
                 List.of(buildUnweighedColony("Galatia Academy")),
                 buildRules(),
-                buildReadingRemarkingOn("galatia_academy"));
+                buildReadingRemarkingOn("galatia_academy"),
+                PATROL_DETAILS);
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -746,7 +751,8 @@ final class MarketWeightRowResolverTest {
                 List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
                 buildRules(),
-                buildReadingRemarkingOn("jangala"));
+                buildReadingRemarkingOn("jangala"),
+                PATROL_DETAILS);
 
             assertThat(rows.get(0).children())
                 .allSatisfy(factor -> assertThat(factor.line().noteText()).isNull());
@@ -788,7 +794,8 @@ final class MarketWeightRowResolverTest {
             breakdowns,
             unweighedColonies,
             rules,
-            SystemColonyReading.NONE);
+            SystemColonyReading.NONE,
+            PATROL_DETAILS);
     }
 
     // A colony the economy does not list, under the name a case needs and marked with nothing. A

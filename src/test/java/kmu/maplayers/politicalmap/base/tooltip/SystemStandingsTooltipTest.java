@@ -177,21 +177,21 @@ final class SystemStandingsTooltipTest {
     }
 
     @Nested
-    class BuildBodySections {
+    class ComposeBody {
 
         @Test
-        void buildBodySectionsResolvesTheFactionsWithTheAccountTheBoxAsksFor() {
+        void composeBodyResolvesTheFactionsWithTheAccountTheBoxAsksFor() {
             // The one thing a box adds to the shared resolution has to reach it: asked for and then
             // dropped, every box would draw the glance and the detail mode would show nothing new.
             new AccountingStandingsTooltip(claimBreakdownReaderFake)
-                .buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+                .composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
                 AccountingStandingsTooltip.FACTION_ACCOUNTS);
         }
 
         @Test
-        void buildBodySectionsReadsItsBlocksOnlyAsDeepAsTheLevelAsksFor() {
+        void composeBodyReadsItsBlocksOnlyAsDeepAsTheLevelAsksFor() {
             // The level has to reach the blocks rather than stopping at the box, which is the whole of
             // what a cut is: one listing, drawn as the group alone where the player asked who holds the
             // system and with the account beneath it where they asked what on. A body that named a
@@ -205,23 +205,23 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsShowsNothingWhenNoViewIsPainting() {
+        void composeBodyShowsNothingWhenNoViewIsPainting() {
             // The tab is switched away from the political map, so there is no grouping to rank under.
             // An empty body is what stops the box being drawn at all, rather than one echoing the
             // system name the cursor already sits on.
             StandingsTooltipSeamsFake.stubNoActiveView();
 
-            assertThat(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS))
+            assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections())
                 .isEmpty();
         }
 
         @Test
-        void buildBodySectionsRanksTheSystemUnderTheActiveViewsOwnGrouping() {
+        void composeBodyRanksTheSystemUnderTheActiveViewsOwnGrouping() {
             // What keeps a box honest: it ranks through the same grouping the map painted its fills by,
             // so the two can never disagree about who holds the system. The pass is built from that
             // grouping and the groups named through the pass's own, so the one the view answered with
             // is the one that reaches both.
-            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             StandingsTooltipSeamsFake
                 .verifyPassReadUnderTheViewsGrouping();
@@ -230,7 +230,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsNamesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
+        void composeBodyNamesTheStrongestGroupAsHoldingTheSystemAndTheRestAsContestingIt() {
             // The headings are what turn a ranked list into an answer: the map fills the system in
             // the leader's colour, so the box says outright that the leader holds it and the others are
             // merely present, rather than leaving that to be read off the row order.
@@ -247,7 +247,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsAGroupStandingWithTheLeaderUnderItsOwnHeading() {
+        void composeBodyListsAGroupStandingWithTheLeaderUnderItsOwnHeading() {
             // The block the whole axis exists for: an ally holding markets beside the leader is not
             // fighting it for the system, and filed under the contested heading the box would say
             // two allies were at war over a system they jointly hold.
@@ -266,7 +266,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsKeepsAGroupAlliedWithARivalUnderTheContestedHeading() {
+        void composeBodyKeepsAGroupAlliedWithARivalUnderTheContestedHeading() {
             // Only the leader's own allies are lifted out. Two rivals standing together and not with
             // the leader are both fighting it for the system, which is the relation the box states.
             allianceSet = buildAllianceOf(RIVAL_BLOC, ALLY_BLOC);
@@ -283,7 +283,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsOmitsTheAlliedHeadingWithNothingGroupingFactions() {
+        void composeBodyOmitsTheAlliedHeadingWithNothingGroupingFactions() {
             // The install without the mod that supplies alliances, where no two groups ever stand
             // together: every group below the leader contests the system exactly as it did before
             // the block existed, and the heading is dropped rather than left standing over nothing.
@@ -299,7 +299,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsTheLeaderOnceWhereItStandsInAnAlliance() {
+        void composeBodyListsTheLeaderOnceWhereItStandsInAnAlliance() {
             // A leader in an alliance is not its own ally: routed on the bloc alone it would be
             // lifted into the allied block as well and read as two holders of one system.
             allianceSet = buildAllianceOf(LEADER_BLOC, ALLY_BLOC);
@@ -313,7 +313,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
+        void composeBodyRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
             // Why the box holds the means of sampling a grouping rather than a grouping: it lives for
             // the whole session while alliances form and dissolve inside it, so one taken at
             // construction would go on filing a group under the alliance it left an hour ago. Posed
@@ -338,7 +338,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsKeepsAContestingGroupsOwnCrestAndScore() {
+        void composeBodyKeepsAContestingGroupsOwnCrestAndScore() {
             // A contesting group is a full standing, not a footnote to the leader's: it keeps the crest
             // and the number the map ranked it by, so the player can see how close the contest is.
             var rivalHeaderRow = 3;
@@ -356,7 +356,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsOmitsContestedWhenOneGroupHoldsTheSystemAlone() {
+        void composeBodyOmitsContestedWhenOneGroupHoldsTheSystemAlone() {
             // An uncontested system has to read as uncontested, and a heading standing over no groups
             // would read as a contest whose challengers failed to resolve.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
@@ -366,7 +366,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsHoldsEachHeadingWithTheGroupsItNames() {
+        void composeBodyHoldsEachHeadingWithTheGroupsItNames() {
             // Each heading is a block with its own groups, so the box parts one block from the next and
             // nothing inside a block - a heading parted from its own entries would read as belonging to
             // the block above it.
@@ -377,7 +377,7 @@ final class SystemStandingsTooltipTest {
                 createLeadingGroupEntry(),
                 createRivalGroupEntry());
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             assertThat(sections)
                 .hasSize(2);
@@ -388,7 +388,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsDrawsHeadingsAtTheContentEdgeInGold() {
+        void composeBodyDrawsHeadingsAtTheContentEdgeInGold() {
             // What the review found here: a heading laid inside the crest gutter starts where the group
             // labels below it start and so reads as indented under nothing, and drawn in their own
             // bright it is told apart from them only by lacking a crest.
@@ -408,7 +408,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsNamesWhatTheSystemIsBeforeWhoHoldsIt() {
+        void composeBodyNamesWhatTheSystemIsBeforeWhoHoldsIt() {
             // What the system is first, then the contest over it, so the standings read as a contest
             // over a known system rather than as the whole of what the box has to say.
             StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
@@ -422,12 +422,12 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsFallsBackToTheSystemStatusWhenNothingRanks() {
+        void composeBodyFallsBackToTheSystemStatusWhenNothingRanks() {
             // A system nobody holds is not nothing: the status line says why it holds no standing, so
             // the hover reads as landing on a real but uninhabited system. It is a block of its own,
             // since what the system is answers a different question from who contests it.
             var statusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             assertThat(sections)
                 .hasSize(1);
@@ -436,7 +436,7 @@ final class SystemStandingsTooltipTest {
         }
 
         @Test
-        void buildBodySectionsJudgesTheSystemEmptyUnderTheRankingsOwnReveal() {
+        void composeBodyJudgesTheSystemEmptyUnderTheRankingsOwnReveal() {
             // The status has to admit exactly the colonies the standings were ranked through: judged
             // under the narrower filter, a system revealed only by the dev knob would be called
             // unpopulated directly above the rows scoring the faction holding it.
@@ -450,17 +450,17 @@ final class SystemStandingsTooltipTest {
                     UNDER_THE_REVEAL,
                     new SystemColoniesIndex(null))));
 
-            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             StandingsTooltipSeamsFake
                 .verifyStatusJudgedUnderVisibility(UNDER_THE_REVEAL);
         }
 
         @Test
-        void buildBodySectionsShowsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
+        void composeBodyShowsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
             // Nothing ranked and nothing to say about the system, so the body stays empty and no box is
             // drawn - the one case where a hover over a real system shows nothing at all.
-            assertThat(tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS))
+            assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections())
                 .isEmpty();
         }
     }
@@ -523,12 +523,12 @@ final class SystemStandingsTooltipTest {
     // opinion about.
     private List<String> readBodyLabelTextsAt(HoverTooltipDetailLevel detailLevel) {
         return readRowOpeningWords(TooltipSection.readRowsInOrder(
-            tooltip.buildBodySections(sectorMock, systemMock, detailLevel)));
+            tooltip.composeBody(sectorMock, systemMock, detailLevel).sections()));
     }
 
     private List<TooltipRow> readBodyRows() {
         return TooltipSection.readRowsInOrder(
-            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS));
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections());
     }
 
     /**

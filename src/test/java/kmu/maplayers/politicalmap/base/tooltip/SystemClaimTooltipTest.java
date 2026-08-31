@@ -232,17 +232,17 @@ final class SystemClaimTooltipTest {
     }
 
     @Nested
-    class BuildBodySections {
+    class ComposeBody {
 
         @Test
-        void buildBodySectionsNamesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
+        void composeBodyNamesTheClaimantWithItsCrestAndScoreUnderTheClaimHeading() {
 
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readLabelText(sections, CLAIM_HEADING_ROW))
                 .isEqualTo("Claim:");
@@ -260,7 +260,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsSortsTheRivalsIntoContestedAndNonTerritorialBlocks() {
+        void composeBodySortsTheRivalsIntoContestedAndNonTerritorialBlocks() {
             // The two kinds of presence answer different questions - who nearly took the system, and
             // who is merely there - so they are told apart by the heading they sit under rather than
             // by a note on a line.
@@ -276,7 +276,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -289,7 +289,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsATerritorialFactionTheContestNeverWeighedUnderContestedAtNought() {
+        void composeBodyListsATerritorialFactionTheContestNeverWeighedUnderContestedAtNought() {
             // A presence-only standing is a faction the mechanic reached nothing of - a concealed
             // base, or a station the economy does not list. Territorial, it is in the running by the
             // mechanic's own gate and scored nothing here, which is what the contested heading plus a
@@ -304,7 +304,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
@@ -313,7 +313,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsANonTerritorialFactionTheContestNeverWeighedUnderNonTerritorial() {
+        void composeBodyListsANonTerritorialFactionTheContestNeverWeighedUnderNonTerritorial() {
             // The other half of the same routing: a faction barred from claiming is barred whether or
             // not the mechanic weighed anything for it, and that block is where the box says so.
             var presenceRow = 3;
@@ -325,7 +325,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildPresenceOnlyStanding(PIRATES, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly("Claim:", "The Hegemony", "Non-territorial:", "Pirates");
@@ -334,7 +334,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsSortsBothKindsOfStandingByEligibilityRatherThanByKind() {
+        void composeBodySortsBothKindsOfStandingByEligibilityRatherThanByKind() {
             // The block says how a faction stands to the claim, not what kind of record the contest
             // gave it - so two factions sharing an eligibility share a heading however differently
             // they were reached. Sorting by kind instead would file a pirate base's owner beside a
@@ -347,7 +347,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_NON_TERRITORIAL),
                     buildPresenceOnlyStanding(PIRATES, IS_NON_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -357,7 +357,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsRoutesTheClaimHoldersAllyOutOfTheContestedBlock() {
+        void composeBodyRoutesTheClaimHoldersAllyOutOfTheContestedBlock() {
             // The whole point of the third block. Vanilla scores each faction alone and knows nothing
             // of an alliance, so an ally competes for the system and loses it - left under
             // `Contested by:`, the box would show a faction fighting its own ally for a system the two
@@ -376,7 +376,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -391,7 +391,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
+        void composeBodyRoutesEachHoverAgainstTheAllianceSetAsItStandsThen() {
             // Why the box holds the means of sampling a grouping rather than a grouping: it lives for
             // the whole session while alliances form and dissolve inside it, so one taken at
             // construction would go on filing a faction under the alliance it left an hour ago. Posed
@@ -406,7 +406,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -415,7 +415,7 @@ final class SystemClaimTooltipTest {
 
             holderGrouping = HolderGrouping.identity();
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -424,7 +424,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsQualifiesAnAllyThatCouldNeverHaveTakenTheSystem() {
+        void composeBodyQualifiesAnAllyThatCouldNeverHaveTakenTheSystem() {
             // The relation places a faction before its eligibility does, so an ineligible ally sits in
             // the allied block beside one that nearly took the system. That heading names neither
             // kind, so the line is where this one says which it is.
@@ -439,7 +439,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -452,7 +452,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLeavesTheQualifierOffTheBlockWhoseHeadingAlreadyStatesIt() {
+        void composeBodyLeavesTheQualifierOffTheBlockWhoseHeadingAlreadyStatesIt() {
             // The same faction unallied falls to `Non-territorial:`, whose heading is that very fact -
             // so its line is its name and nothing after it, one thing met once in a hover rather than
             // twice in the space of two rows.
@@ -465,7 +465,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly("Claim:", "The Hegemony", "Non-territorial:", "Pirates");
@@ -474,7 +474,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsRoutesAFactionOnGoodTermsWithTheClaimHolderOutOfTheContestedBlock() {
+        void composeBodyRoutesAFactionOnGoodTermsWithTheClaimHolderOutOfTheContestedBlock() {
             // The fault the fourth block fixes, a step down the scale from the third: a faction the
             // sector puts on good terms with the claim holder has no quarrel with it over the system,
             // and `Contested by:` says it has. The score it lost by is untouched - the heading was the
@@ -490,7 +490,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -503,7 +503,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLeavesAFactionIndifferentTowardTheClaimHolderContesting() {
+        void composeBodyLeavesAFactionIndifferentTowardTheClaimHolderContesting() {
             // Where the block stops. `NEUTRAL` is the base game's own word for indifference and the
             // last level it declines to call goodwill, so a faction sitting exactly on it is a rival
             // like any other - which is what makes the threshold one the player can read off a
@@ -517,7 +517,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -526,7 +526,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsKeepsTheClaimHoldersAllyAlliedHoweverWarmlyItIsDisposed() {
+        void composeBodyKeepsTheClaimHoldersAllyAlliedHoweverWarmlyItIsDisposed() {
             // Alliance is the outer axis and disposition never re-sorts what it took, so an ally on
             // excellent terms with the holder gains nothing by it - the two blocks would otherwise
             // both be true of one faction, and which of them it drew in would be down to the order
@@ -542,7 +542,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -551,7 +551,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsQualifiesAFriendlyFactionThatCouldNeverHaveTakenTheSystem() {
+        void composeBodyQualifiesAFriendlyFactionThatCouldNeverHaveTakenTheSystem() {
             // The friendly heading names an eligibility no more than the allied one does, so the rule
             // that puts the word on an ineligible ally's line puts it on an ineligible friend's -
             // stated once over the pair rather than per block.
@@ -566,7 +566,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_NON_TERRITORIAL))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -579,7 +579,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLaysTheFiveBlocksDownFromTheClaimOutward() {
+        void composeBodyLaysTheFiveBlocksDownFromTheClaimOutward() {
             // The whole chain in one system, in the order a reader meets it: who holds the place, who
             // stands with it by alliance, who stands with it in disposition, who stands against it,
             // and who could never have taken it. Every other case here poses one block at a time, so
@@ -603,7 +603,7 @@ final class SystemClaimTooltipTest {
                         OUTSIDER_SCORE,
                         IS_NON_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -618,7 +618,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLeavesThePlaceholderOwnerUnderNonTerritorial() {
+        void composeBodyLeavesThePlaceholderOwnerUnderNonTerritorial() {
             // Why this box needs no block of its own for the placeholder owner every abandoned station
             // is handed to, where the standings box grew one. The claim mechanic never admits it, so
             // it arrives ineligible and the heading that says so is already the true statement about
@@ -634,7 +634,7 @@ final class SystemClaimTooltipTest {
                         OUTSIDER_SCORE,
                         IS_NON_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -643,7 +643,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsCallsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
+        void composeBodyCallsEveryTerritorialFactionARivalWhereNobodyHoldsTheSystem() {
             // There is nobody to be allied or friendly with, so neither block whose heading names a
             // holder draws over a system without one - even where the two factions present are allied
             // to each other and on excellent terms besides, which is the pair either comparison would
@@ -660,7 +660,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "None",
@@ -670,7 +670,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsRoutesADecreedHoldersAllyIntoTheAlliedBlock() {
+        void composeBodyRoutesADecreedHoldersAllyIntoTheAlliedBlock() {
             // A decree settles who the holder is and nothing about how the blocks are routed, so the
             // decreed faction's ally sorts exactly as a winner's would - and the faction that would
             // have claimed by score is neither, so it goes on contesting.
@@ -684,7 +684,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly(
                     "Claim:",
                     "Pirates",
@@ -695,7 +695,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLeavesOutAFactionThePlayerHasFoundNoColonyOf() {
+        void composeBodyLeavesOutAFactionThePlayerHasFoundNoColonyOf() {
             // The known projection over the listing: a faction present only through colonies nobody
             // has found is named nowhere, since naming it would tell the player exactly what the fog
             // is keeping back - and the account beneath it would have nothing in it to boot.
@@ -706,12 +706,12 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
         @Test
-        void buildBodySectionsListsARivalWeighedOnAColonyThePlayerHasNotFound() {
+        void composeBodyListsARivalWeighedOnAColonyThePlayerHasNotFound() {
             // The scored kind survives the projection. The mechanic weighs colonies nobody has
             // reached and can hand one of them the system, so a rival dropped for the fog would
             // leave the contest reported as something other than what decided it - the account
@@ -728,12 +728,12 @@ final class SystemClaimTooltipTest {
                         IS_TERRITORIAL,
                         IS_UNDISCOVERED_BY_PLAYER))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
         }
 
         @Test
-        void buildBodySectionsStatesTheScoreOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
+        void composeBodyStatesTheScoreOfAHolderWeighedOnAColonyThePlayerHasNotFound() {
             // The claim line carries the number its standing reports, the standing now being listed.
             // What the blank value column means is the point: it says the claimant holds nothing the
             // contest weighed, which is the shape of a decree over a colony-less faction - so a
@@ -748,7 +748,7 @@ final class SystemClaimTooltipTest {
                     IS_TERRITORIAL,
                     IS_UNDISCOVERED_BY_PLAYER))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections(), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
@@ -757,7 +757,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsAFactionThePlayerHasNotFoundUnderTheDevReveal() {
+        void composeBodyListsAFactionThePlayerHasNotFoundUnderTheDevReveal() {
             // The reveal is the state a player has asked to be shown everything in, so the same
             // faction is listed in full - the withholding is about what they have found rather than
             // about the box.
@@ -772,12 +772,12 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
         }
 
         @Test
-        void buildBodySectionsShowsAQuietNoughtForADecreedClaimantTheContestNeverWeighed() {
+        void composeBodyShowsAQuietNoughtForADecreedClaimantTheContestNeverWeighed() {
             // A decree over a system its holder is present in through a concealed base alone: the
             // faction has a standing, so the claim line states the nought that standing reports
             // rather than the blank value column of a claimant holding nothing there at all.
@@ -786,7 +786,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildPresenceOnlyStanding(HEGEMONY, IS_TERRITORIAL))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections(), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
@@ -795,7 +795,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsHoldsEachHeadingWithTheLinesItNames() {
+        void composeBodyHoldsEachHeadingWithTheLinesItNames() {
             // Each block is a heading and its own entries, so the box parts one block from the next
             // and nothing inside a block - the shape the whole reading of the box rests on.
             stubBreakdown(new SystemClaimBreakdown(
@@ -805,7 +805,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(sections)
                 .hasSize(2);
@@ -816,7 +816,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsKeepsRivalsInTheOrderTheContestRankedThem() {
+        void composeBodyKeepsRivalsInTheOrderTheContestRankedThem() {
             // The breakdown hands its standings over strongest first, which is the order a contest is
             // read in - a section that re-ordered or reversed them would put the nearest challenger
             // last while every other assertion in this suite still passed.
@@ -828,7 +828,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, true))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -840,7 +840,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsSetsHeadingsApartFromTheEntriesBeneathThem() {
+        void composeBodySetsHeadingsApartFromTheEntriesBeneathThem() {
             // The two faults the review found on this box: a heading laid inside the crest gutter reads
             // as indented under nothing, and claim lines drawn as nested rows encode a second tier this
             // box does not have - claims resolve per faction, so every line here is an entry.
@@ -854,7 +854,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readLabelRun(readTableRow(sections, contestedHeadingRow), LABEL_RUN))
                 .isEqualTo(new TextSpan("Contested by:", HIGHLIGHT));
@@ -870,7 +870,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsOmitsContestedWhenTheClaimantIsTheOnlyTerritorialFaction() {
+        void composeBodyOmitsContestedWhenTheClaimantIsTheOnlyTerritorialFaction() {
             // An uncontested claim has to read as uncontested, and a heading standing over no lines
             // would read as a contest whose rivals failed to resolve.
             stubBreakdown(new SystemClaimBreakdown(
@@ -878,12 +878,12 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
         @Test
-        void buildBodySectionsMarksACoreClaimAndKeepsItsMarketScore() {
+        void composeBodyMarksACoreClaimAndKeepsItsMarketScore() {
             // The decree is what took the system, so it is called out in the highlight colour on the
             // claim line itself - while the number beside it stays the faction's market standing,
             // which the decree does not erase.
@@ -892,7 +892,7 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections(), CLAIM_ROW);
 
             assertThat(readLabelRun(claimRow, MARKED_LABEL_RUN))
                 .isEqualTo(new TextSpan("The Hegemony", PLAYER_BRIGHT));
@@ -903,7 +903,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsDropsTheDisplacedTopScorerIntoContested() {
+        void composeBodyDropsTheDisplacedTopScorerIntoContested() {
             // The regression this guards: a decree must not collapse the box to one line. The faction
             // that would have claimed by score is simply not the claimant, so it reads as contesting -
             // which is what shows the player a core imposed over a stronger presence.
@@ -914,7 +914,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true),
                     buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -930,7 +930,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsShowsNoScoreForACoreFactionHoldingNoMarketThere() {
+        void composeBodyShowsNoScoreForACoreFactionHoldingNoMarketThere() {
             // A decree needs no colony behind it, so the claimant is named with the value column left
             // blank rather than with a nought it never scored.
             stubBreakdown(new SystemClaimBreakdown(
@@ -938,14 +938,14 @@ final class SystemClaimTooltipTest {
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections(), CLAIM_ROW);
 
             assertThat(claimRow.labelledRow().trailingRowSlot())
                 .isEqualTo(new RowSlot.Text(TextSpan.createBlank(HIGHLIGHT)));
         }
 
         @Test
-        void buildBodySectionsStatesTheClaimAsNoneWhenNobodyCanTakeTheSystem() {
+        void composeBodyStatesTheClaimAsNoneWhenNobodyCanTakeTheSystem() {
             // A faction present but barred from claiming leaves the system unclaimed, which the box has
             // to say outright - the claim heading over nothing would read as a failure to resolve one.
             stubBreakdown(new SystemClaimBreakdown(
@@ -953,7 +953,7 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
@@ -967,7 +967,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsOpensEveryClaimLineAtTheContentEdge() {
+        void composeBodyOpensEveryClaimLineAtTheContentEdge() {
             // A crest rides in the label of the line carrying it, so the claim block listing only the
             // word for nobody opens flush under its own heading - level with the crested line in the
             // block below rather than a gutter's width apart from it.
@@ -978,7 +978,7 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildStandingOnOneMarket(HEGEMONY, OUTSIDER_SCORE, false))));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly("Claim:", "None", "Non-territorial:", "The Hegemony");
@@ -990,34 +990,34 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsStatesTheClaimAsNoneForAPopulatedSystemNobodyHasTaken() {
+        void composeBodyStatesTheClaimAsNoneForAPopulatedSystemNobodyHasTaken() {
             // Nobody holding a system that is nonetheless lived in is a finding rather than an absence,
             // and the only line that states it - so the block stands whether or not anything scored.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Claim:", "None");
         }
 
         @Test
-        void buildBodySectionsDropsTheClaimBlockForAnUnclaimedSystemHoldingNobody() {
+        void composeBodyDropsTheClaimBlockForAnUnclaimedSystemHoldingNobody() {
             // "None" beneath a banner already saying the system holds nobody answers the same absence
             // twice, so the block is dropped and the banner is left to say it once.
             stubSystemHoldingNobody();
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            assertThat(readSectionOpeningWords(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Unpopulated");
         }
 
         @Test
-        void buildBodySectionsNamesTheDecreeHoldingASystemThatHoldsNobody() {
+        void composeBodyNamesTheDecreeHoldingASystemThatHoldsNobody() {
             // The half the banner does not answer: a decree over a system with nothing in it is a hold
             // the player can read nowhere else in the box, so it survives the drop above.
             stubSystemHoldingNobody();
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             assertThat(readSectionOpeningWords(sections))
                 .containsExactly("Unpopulated", "Claim:", "The Hegemony");
@@ -1026,7 +1026,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsNamesTheSystemsStatusBeforeItsClaimAndInABlockOfItsOwn() {
+        void composeBodyNamesTheSystemsStatusBeforeItsClaimAndInABlockOfItsOwn() {
             // A dead system names its state first, so the claim below reads as a hold over an empty
             // system rather than over a colony - and parted from it, since the two answer different
             // questions.
@@ -1034,7 +1034,7 @@ final class SystemClaimTooltipTest {
 
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
             var statusSection = 0;
             var claimSectionUnderTheStatus = 1;
 
@@ -1048,12 +1048,12 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsJudgesTheSystemEmptyUnderTheNormalRevealWhileItIsOff() {
+        void composeBodyJudgesTheSystemEmptyUnderTheNormalRevealWhileItIsOff() {
             // An undiscovered colony must not count: suppressing the status line for one would make
             // the missing line itself the tell that something is hiding in the system.
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             // Matched on the rule the knowledge carries: the box pairs it with the sector's own
             // register where it draws, so the value handed over is never one a case could state.
@@ -1064,7 +1064,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsJudgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
+        void composeBodyJudgesTheSystemEmptyUnderTheDevRevealWhileItIsOn() {
             // The reveal is read live off the same toggle the faction layer samples, so a player who
             // has turned it on is not told two different things by two layers about one system.
             visibilityRulesMock
@@ -1073,7 +1073,7 @@ final class SystemClaimTooltipTest {
 
             stubBreakdown(SystemClaimBreakdown.NONE);
 
-            tooltip.buildBodySections(sectorMock, systemMock, FACTIONS);
+            tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections();
 
             statusRowMock.verify(
                 () -> SystemStatusRow.resolveStatusRow(
@@ -1082,20 +1082,20 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsFallsBackToTheIdForAFactionTheSectorCannotResolve() {
+        void composeBodyFallsBackToTheIdForAFactionTheSectorCannotResolve() {
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 "ghost_faction",
                 List.of(buildStandingOnOneMarket("ghost_faction", TOP_SCORE, true))));
 
-            var claimRow = readTableRow(tooltip.buildBodySections(sectorMock, systemMock, FACTIONS), CLAIM_ROW);
+            var claimRow = readTableRow(tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections(), CLAIM_ROW);
 
             assertThat(readLabelTextRun(claimRow, LABEL_RUN).text())
                 .isEqualTo("ghost_faction");
         }
 
         @Test
-        void buildBodySectionsReadsEveryBlockOnlyAsDeepAsTheLevelAsksFor() {
+        void composeBodyReadsEveryBlockOnlyAsDeepAsTheLevelAsksFor() {
             // The level has to reach all five of this body's blocks rather than stopping at the box.
             // One composition, drawn as the factions alone where the player asked who claims the
             // system, and with the colonies behind them where they asked on what - so a body that
@@ -1109,13 +1109,13 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, FACTIONS)))
+                    tooltip.composeBody(sectorMock, systemMock, FACTIONS).sections()))
                 .containsExactly("Claim:", "The Hegemony", "Contested by:", "Tri-Tachyon");
 
             // One tier down the colonies appear and the terms behind them do not, which is what makes
             // this a cut over one tree rather than two bodies drawn from two reads.
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, SYSTEM_COMPOSITION)))
+                    tooltip.composeBody(sectorMock, systemMock, SYSTEM_COMPOSITION).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -1126,7 +1126,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsHangsEachFactionsColoniesBeneathItsOwnLine() {
+        void composeBodyHangsEachFactionsColoniesBeneathItsOwnLine() {
             // Every block the box has takes the account, claimant and rival alike - and a colony reads
             // under the faction that holds it rather than under whichever line came before it.
             stubBreakdown(new SystemClaimBreakdown(
@@ -1137,7 +1137,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -1150,7 +1150,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsHangsAnAlliedFactionsColoniesBeneathItsLineInTheAlliedBlock() {
+        void composeBodyHangsAnAlliedFactionsColoniesBeneathItsLineInTheAlliedBlock() {
             // The routing is the shared shape's and pinned there; what this case is about is that the
             // detail follows a faction into the block the relation put it in. An ally accounted for
             // only under `Contested by:` would be an account of a line the box no longer draws.
@@ -1164,7 +1164,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -1177,7 +1177,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsHangsAFriendlyFactionsColoniesBeneathItsLineInTheFriendlyBlock() {
+        void composeBodyHangsAFriendlyFactionsColoniesBeneathItsLineInTheFriendlyBlock() {
             // The other relation block on the same terms: the detail follows a faction wherever the
             // relation put it, so a faction merely on good terms with the claim holder is accounted
             // for under the block it was drawn in rather than under `Contested by:`.
@@ -1191,7 +1191,7 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -1204,7 +1204,7 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsHangsTheColoniesOfAFactionTheContestNeverWeighedBeneathItsOwnLine() {
+        void composeBodyHangsTheColoniesOfAFactionTheContestNeverWeighedBeneathItsOwnLine() {
             // The whole point of the widening, read as the box draws it: the faction's line states a
             // nought and its colonies hang under that line rather than under the claimant's above.
             // They break down no further, nothing having been computed for them - which is what
@@ -1220,7 +1220,7 @@ final class SystemClaimTooltipTest {
                         List.of(buildConcealedMarket("Kanta's Den", FIRST_LISTED))))));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Claim:",
                     "The Hegemony",
@@ -1232,18 +1232,18 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void buildBodySectionsAccountsForNothingWhereADecreedClaimantHoldsNoColonyHere() {
+        void composeBodyAccountsForNothingWhereADecreedClaimantHoldsNoColonyHere() {
             // A decree needs no colony behind it, so the claimant is named with nothing hung beneath
             // it rather than with a heading over an account it never earned.
             stubBreakdown(new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of()));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly("Claim:", "The Hegemony");
         }
 
         @Test
-        void buildBodySectionsReadsTheSystemOnceHoweverManyFactionsTheContestHolds() {
+        void composeBodyReadsTheSystemOnceHoweverManyFactionsTheContestHolds() {
             // The kinds and the last-seen remarks a listing carries are read from one walk of the
             // system, made for the box rather than for a line. Resolved where an account is built,
             // they would walk the system once for every faction listed - and the walk is the most
@@ -1265,13 +1265,13 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             verify(systemMock, times(1)).getAllEntities();
         }
 
         @Test
-        void buildBodySectionsReadsTheColoniesOffTheWalkTheStatusRowWasJudgedFrom() {
+        void composeBodyReadsTheColoniesOffTheWalkTheStatusRowWasJudgedFrom() {
             // The one walk the box makes has to answer everything below it. Opened again for the
             // account, the kinds and the dates would come off a second reading of the system - so
             // the banner could call a system empty while the lines beneath it named a colony that
@@ -1290,7 +1290,7 @@ final class SystemClaimTooltipTest {
                     SystemColonyReading.class,
                     Mockito.CALLS_REAL_METHODS)) {
 
-                tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+                tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
                 statusRowMock.verify(() -> SystemStatusRow.resolveStatusRow(
                     statusRowColonies.capture(),

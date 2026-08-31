@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -23,8 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import java.util.List;
 
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
@@ -123,7 +120,7 @@ final class DominancePresenceReadoutIntegrationTest {
     }
 
     @Nested
-    class BuildBodySections {
+    class ComposeBody {
 
         @Test
         void namesEveryFactionTheBandBeneathTheCellDrawsARunFor() {
@@ -142,7 +139,7 @@ final class DominancePresenceReadoutIntegrationTest {
             var sections = new SystemDominationTooltip(
                     new ClaimBreakdownReaderFake(),
                     HolderGrouping::identity)
-                .buildBodySections(sector, system, FACTIONS);
+                .composeBody(sector, system, FACTIONS).sections();
 
             assertThat(band.segments())
                 .containsExactly(

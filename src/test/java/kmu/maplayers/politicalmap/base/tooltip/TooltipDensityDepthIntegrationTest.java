@@ -173,7 +173,8 @@ final class TooltipDensityDepthIntegrationTest {
                 List.of(buildPatrolledColony()),
                 List.of(),
                 WEIGHING_RULES,
-                SystemColonyReading.NONE));
+                SystemColonyReading.NONE,
+                PATROL_DETAILS));
 
         var body = CellTooltipBody.openBody(PATROL_DETAILS);
 

@@ -116,7 +116,7 @@ final class DerelictReadoutIntegrationTest {
     }
 
     @Nested
-    class BuildBodySections {
+    class ComposeBody {
 
         @Test
         void namesADerelictOverASystemItCallsUnpopulated() {
@@ -232,7 +232,7 @@ final class DerelictReadoutIntegrationTest {
 
         return readSectionOpeningWords(
             new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-                .buildBodySections(sector, buildOnlySystem(sector), FACTIONS));
+                .composeBody(sector, buildOnlySystem(sector), FACTIONS).sections());
     }
 
     // What the key at the foot of the dominance box offers over the sector's one system, or nothing
@@ -314,7 +314,7 @@ final class DerelictReadoutIntegrationTest {
     private static List<TooltipSection> readExpandedDominationSections(SectorAPI sector) {
 
         return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-            .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS);
+            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).sections();
     }
 
     // The claims box over the same system at that same depth, read through the real mechanic: a
@@ -327,7 +327,7 @@ final class DerelictReadoutIntegrationTest {
         return new SystemClaimTooltip(
                 new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()),
                 HolderGrouping::identity)
-            .buildBodySections(sector, buildOnlySystem(sector), PATROL_DETAILS);
+            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).sections();
     }
 
     // Every word the box says anywhere in it, in draw order. Read as a flat bag rather than by run

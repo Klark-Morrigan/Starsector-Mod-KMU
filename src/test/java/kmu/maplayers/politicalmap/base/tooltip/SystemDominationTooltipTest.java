@@ -229,10 +229,10 @@ final class SystemDominationTooltipTest {
     }
 
     @Nested
-    class BuildBodySections {
+    class ComposeBody {
 
         @Test
-        void buildBodySectionsDrawsAGroupMadeUpOfNothingAsOneFlatLine() {
+        void composeBodyDrawsAGroupMadeUpOfNothingAsOneFlatLine() {
             // The faction view's shape: a lone faction resolves to a group made up of nothing, so the
             // box lists it and nothing beneath it - and its number reads called-out like every value.
             StandingsTooltipSeamsFake.stubGroupEntries(createLoneGroupEntry());
@@ -261,7 +261,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsDrawsAnAllianceAboveItsIndentedMembers() {
+        void composeBodyDrawsAnAllianceAboveItsIndentedMembers() {
             // The alliances view's shape: the bloc is listed and its members read as belonging to it, by
             // the indent and the plainer colour rather than by any label saying so.
             StandingsTooltipSeamsFake.stubGroupEntries(createGroupEntry(
@@ -293,7 +293,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsThePlaceholderOwnerApartFromWhoHoldsTheSystem() {
+        void composeBodyListsThePlaceholderOwnerApartFromWhoHoldsTheSystem() {
             // Vanilla hands every abandoned station and collapsed colony to the neutral placeholder,
             // which takes a footprint like anybody else. Left among the contenders it would head the
             // box over a system a real faction runs, so it is set aside before a holder is picked -
@@ -305,7 +305,7 @@ final class SystemDominationTooltipTest {
                 List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -314,7 +314,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsLaysTheFiveBlocksDownFromTheHolderOutward() {
+        void composeBodyLaysTheFiveBlocksDownFromTheHolderOutward() {
             // The whole chain in one system, in the order a reader meets it: who holds the place,
             // who stands with it by alliance, who stands with it in disposition, who stands against
             // it, and who was never in the running. Posed here rather than with the shared shape
@@ -340,7 +340,7 @@ final class SystemDominationTooltipTest {
                     createPlaceholderGroupEntry()));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -355,7 +355,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsListsEachGroupOnceWhereNoBlocCanBeOfTwoMinds() {
+        void composeBodyListsEachGroupOnceWhereNoBlocCanBeOfTwoMinds() {
             // Under a grouping that makes every bloc a singleton there is nothing for a bloc's members
             // to disagree about, so none folds into two headings and none is stood up anew: the box
             // names exactly the groups the ranking handed it, once each. What a fold looks like when
@@ -376,7 +376,7 @@ final class SystemDominationTooltipTest {
                     createNamedGroupEntry("Persean League")));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS)))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -387,7 +387,7 @@ final class SystemDominationTooltipTest {
         }
 
         @Test
-        void buildBodySectionsFallsBackToTheSystemStatusWhenNothingRanks() {
+        void composeBodyFallsBackToTheSystemStatusWhenNothingRanks() {
             // An empty system says the same thing at every depth: there is no more detail to be had
             // about a system nobody holds.
             var statusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
@@ -395,7 +395,7 @@ final class SystemDominationTooltipTest {
             StandingsTooltipSeamsFake.stubGroupEntries();
             stubBreakdowns(Map.of());
 
-            var sections = tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS);
+            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
 
             assertThat(sections)
                 .hasSize(1);
@@ -618,7 +618,7 @@ final class SystemDominationTooltipTest {
     // The body read top to bottom as the lines a player sees, which is the shape these cases are about.
     private List<TooltipRow> readBodyRows() {
         return TooltipSection.readRowsInOrder(
-            tooltip.buildBodySections(sectorMock, systemMock, PATROL_DETAILS));
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections());
     }
 
     // Stands the economy read in as the colonies each faction holds in the system, so no case needs a

@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
-import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -102,7 +101,7 @@ final class ClaimPresenceReadoutIntegrationTest {
     }
 
     @Nested
-    class BuildBodySections {
+    class ComposeBody {
 
         @Test
         void namesEveryFactionTheBandBeneathTheCellDrawsARunFor() {
@@ -126,7 +125,7 @@ final class ClaimPresenceReadoutIntegrationTest {
                 .planSystemRibbon(system);
 
             var sections = new SystemClaimTooltip(claimBreakdownReader, HolderGrouping::identity)
-                .buildBodySections(sector, system, FACTIONS);
+                .composeBody(sector, system, FACTIONS).sections();
 
             assertThat(band.segments())
                 .containsExactly(
