@@ -128,7 +128,7 @@ public final class HoverTooltipDetailLevelInput implements CampaignInputListener
     // Whether the box under the cursor would show the player anything more at another level.
     // Asked of the same chain the drawing pass resolves its box through, so the key is claimed on
     // exactly the frames a box would answer it - and of the box itself, since only the layer knows
-    // whether its counterpart has anything to add for the system being hovered.
+    // whether its own tree runs any deeper for the system being hovered.
     private static boolean isAnyBoxOfferingExpansion() {
         return HoveredBox
             .resolveHoveredBox()

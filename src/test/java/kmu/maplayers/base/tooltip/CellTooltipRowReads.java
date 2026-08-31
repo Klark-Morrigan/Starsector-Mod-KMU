@@ -3,6 +3,7 @@ package kmu.maplayers.base.tooltip;
 import kmlib.starsector.ui.text.LabelRun;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
+import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import java.util.List;
 
@@ -127,6 +128,35 @@ public final class CellTooltipRowReads {
             hasOpened = true;
         }
         return openingWords.toString();
+    }
+
+    /**
+     * Reads a whole body as the words a player sees, top to bottom - headings, entries and whatever
+     * hangs beneath them alike. What most cases about a box assert on, since one expected list states
+     * both what the box says and the order it says it in, which asserting block by block would bury.
+     *
+     * @param sections the body's blocks, in reading order
+     * @return each line's opening words, in draw order
+     */
+    public static List<String> readSectionOpeningWords(List<TooltipSection> sections) {
+        return readRowOpeningWords(TooltipSection.readRowsInOrder(sections));
+    }
+
+    /**
+     * The same over lines already flattened out of their blocks, for a case holding the rows rather
+     * than the body.
+     *
+     * <p>Named apart from {@link #readSectionOpeningWords} rather than overloading it: both take a
+     * list, and two lists erase to the one signature.
+     *
+     * @param rows the lines of a body, in draw order
+     * @return each line's opening words, in that order
+     */
+    public static List<String> readRowOpeningWords(List<TooltipRow> rows) {
+        return rows
+            .stream()
+            .map(CellTooltipRowReads::readOpeningWords)
+            .toList();
     }
 
     /**

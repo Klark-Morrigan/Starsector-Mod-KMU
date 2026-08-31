@@ -21,9 +21,9 @@ Part of [map layers](../README.md); see the
   - [Refresh](#refresh-baserefresh)
   - [Render orchestration](#render-orchestration-baserender-baserenderhover)
   - [Hover tooltips](#hover-tooltips-basetooltip)
-  - [The domination boxes](#the-domination-boxes)
+  - [The domination box](#the-domination-box)
   - [The status line and the colony vocabulary](#the-status-line-and-the-colony-vocabulary)
-  - [The claims boxes](#the-claims-boxes)
+  - [The claims box](#the-claims-box)
   - [The presence ribbon](#the-presence-ribbon-baseribbon-and-its-counting-rules)
   - [Sidebar controls](#sidebar-controls-basesidebar)
 - [When the map is rebuilt](#when-the-map-is-rebuilt)
@@ -247,20 +247,21 @@ twice in a single hover. Both reasons a box goes unheaded - no decree at all, an
 states itself - are settled inside `CoreTerritoryHeading` and answer alike, so no call site can drop
 the heading by claiming there is no decree.
 
-### The domination boxes
+### The domination box
 
-The domination box has a second, fuller version - `ExpandedSystemDominationTooltip`, the counterpart
-it offers the framework's detail mode - which lists every faction holding the system over the
-colonies its score was summed from and each colony over the factors behind its weight, down to a
-colony's patrol tiers. Both sit on `SystemStandingsTooltip`, which settles everything but that
-nesting - one pass read from the active view, the ranking, the status line, the headings and which
-of them a group falls under, the lines naming the blocs and the member factions inside them -
-because two boxes over one system have to be two amounts of detail about the same contest rather
-than two contests. What a box adds is one
-answer: what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked
-for once per paint and applied by `StandingRowResolver` where the standing and the line named from
-it are both in hand, so no box can list one faction's colonies under another's name. Hanging nothing
-is the shared default, so the ordinary box overrides nothing at all.
+`SystemDominationTooltip` lists every faction holding the system over the colonies its score was
+summed from, and each colony over the factors behind its weight, down to a colony's patrol tiers. It
+composes that account whole at every detail level and the blocks cut it: who holds the system at the
+shallowest, the colonies a tier down, their factors a tier below again. One tree read to four depths
+rather than four bodies, so no two depths can describe one system differently.
+
+It sits on `SystemStandingsTooltip`, which settles everything but that nesting - one pass read from
+the active view, the ranking, the status line, the headings and which of them a group falls under,
+the lines naming the blocs and the member factions inside them. What the box adds is one answer:
+what to hang beneath a faction as the account of its score (`FactionAccountResolver`), asked for
+once per paint and applied by `StandingRowResolver` where the standing and the line named from it
+are both in hand, so no faction's colonies can be listed under another's name. Hanging nothing is
+the shared default, which is what a box with nothing further to say answers.
 
 Where each ranked group is listed is `StandingBlockRouting`'s one answer, taken per hover over the
 closed set of blocks `StandingBlock` names - which carries each block's heading too, so the order
@@ -316,18 +317,18 @@ reading. Both ends of the range are omitted, `0/total` and `total/total` saying 
 heading above already did, which is why a faction against a lone holder never draws one and the whole
 device belongs to the alliances view.
 
-What that pair offers the player is named there too, once for both: "score contributions", which the
-framework puts at the foot of whichever of the two is drawn, beside the key that switches between
-them. Named here rather than by the framework because only this layer knows what its counterpart
-holds, and once rather than per box because the account is the same thing whichever way the player
-is switching. It is offered only where the system ranks somebody, since the counterpart accounts for
-the colonies behind the standings and a system ranking none gives it nothing to account for. That is
-asked of the ranking and not of the status line above it, both boxes reading the system through one
-`readRankedStandings`: the line and the listing answer different questions of the same pass -
-whether anybody *runs* the place, against everybody the player may be *told* about - so a system
-whose colonies have all collapsed is headed `Decivilised` and still ranks whoever holds them, and
-those colonies are exactly what the counterpart opens up. Judged off the line, that system - the one
-whose whole account is the collapse - is the one the detail is withheld on.
+What the deeper levels offer the player is named there too, once for the whole cycle: "score
+contributions", which the framework puts at the foot of the box beside the key that advances it.
+Named here rather than by the framework because only this layer knows what is down there, and once
+rather than per level because the account is the same thing at every press. It is offered only where
+the system ranks somebody, since the deeper tiers account for the colonies behind the standings and
+a system ranking none gives them nothing to account for. That is asked of the ranking and not of the
+status line above it, the box reading the system through one `readRankedStandings`: the line and the
+listing answer different questions of the same pass - whether anybody *runs* the place, against
+everybody the player may be *told* about - so a system whose colonies have all collapsed is headed
+`Decivilised` and still ranks whoever holds them, and those colonies are exactly what a deeper level
+opens up. Judged off the line, that system - the one whose whole account is the collapse - is the
+one the detail is withheld on.
 
 The parts come from the very arithmetic the scores were summed over
 (`KnownMarketFootprints.readBreakdownByFaction`, which folds what `MarketWeights` works out per
@@ -473,12 +474,12 @@ the `UnweighedColony` - and the kind, the discovery answer and the landmark answ
 box's own walk of the system (`SystemColonyReading`, whose `readConcealmentOf` gathers its two
 answers with the account's own concealment fact), no row of either box carrying any of them.
 
-### The claims boxes
+### The claims box
 
-The claims box has a counterpart of its own on the same terms - `ExpandedSystemClaimTooltip`, which
-opens every faction the contest names into the markets it holds the system with and each market
-into the terms its claim score is built from. Both claim boxes sit on `SystemClaimContestTooltip`,
-which settles the one read behind them, the claimant, the decree marker, and the five blocks, and
+`SystemClaimTooltip` opens every faction the contest names into the markets it holds the system with
+and each market into the terms its claim score is built from - composed whole at every level and cut
+by the blocks, on the same terms as the domination box. It sits on `SystemClaimContestTooltip`,
+which settles the one read behind it, the claimant, the decree marker, and the five blocks, and
 leaves open only what hangs beneath a faction (`resolveAccountEntries`, hanging nothing by
 default). That account is handed the whole `ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
@@ -561,7 +562,7 @@ place instead of statements about what the contest made of it.
 
 Every market line carries the same last-seen remark the domination box's colony lines take, on the
 same terms and matched to its line by the same kind of identity (`MarketClaimBreakdown.marketId`).
-It reaches further on this list than on that one, for the reason `ExpandedSystemClaimTooltip` gives.
+It reaches further on this list than on that one, for the reason `SystemClaimTooltip` gives.
 The remark, the kind and the discovery answer travel together as one value (`SystemColonyReading`),
 folded once for the whole box off the very walk of the system the status line comes from: all three
 are read per row and none can be answered from a claim score or a dominance weight, so resolved

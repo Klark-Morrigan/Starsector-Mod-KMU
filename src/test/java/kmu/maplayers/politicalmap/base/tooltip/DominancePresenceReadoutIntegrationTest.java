@@ -6,7 +6,6 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
@@ -27,6 +26,7 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
@@ -150,7 +150,7 @@ final class DominancePresenceReadoutIntegrationTest {
                     new RibbonSegment(HEGEMONY_DARK, PARTING_RUN),
                     new RibbonSegment(TRITACHYON_BRIGHT, COLONY_RUN));
 
-            assertThat(readLabelTexts(sections))
+            assertThat(readSectionOpeningWords(sections))
                 .containsExactly(
                     "Dominated by:",
                     "The Hegemony",
@@ -224,14 +224,4 @@ final class DominancePresenceReadoutIntegrationTest {
         return sector;
     }
 
-    // The box read top to bottom as the words a player sees, headings and entries alike - which is
-    // what "the box names a faction" means to the reader this case is about.
-    private static List<String> readLabelTexts(List<TooltipSection> sections) {
-
-        return TooltipSection
-            .readRowsInOrder(sections)
-            .stream()
-            .map(CellTooltipRowReads::readOpeningWords)
-            .toList();
-    }
 }

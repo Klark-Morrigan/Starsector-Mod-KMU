@@ -417,7 +417,7 @@ final class SystemDominationTooltipTest {
                 "tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
                 .containsExactly("Culann");
@@ -432,7 +432,7 @@ final class SystemDominationTooltipTest {
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
             var colonyEntries = tooltip
-                .createFactionAccountResolver(systemMock, ANY_PASS)
+                .createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS)
                 .resolveAccountEntries(LEAD_MEMBER);
 
             assertThat(readLabelTexts(colonyEntries.get(0).children()))
@@ -446,7 +446,7 @@ final class SystemDominationTooltipTest {
             stubBreakdowns(Map.of("tritachyon", List.of(buildBreakdown("Eventide", 5.0))));
 
             assertThat(tooltip
-                    .createFactionAccountResolver(systemMock, ANY_PASS)
+                    .createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS)
                     .resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
         }
@@ -462,7 +462,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(LEAD_MEMBER)))
                 .containsExactly("Culann", "Galatia Academy");
@@ -478,7 +478,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(accountResolver.resolveAccountEntries(LEAD_MEMBER))
                 .isEmpty();
@@ -497,7 +497,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             assertThat(readLabelTexts(accountResolver.resolveAccountEntries(
                     new PresenceOnlyFactionStanding("tritachyon"))))
@@ -510,7 +510,7 @@ final class SystemDominationTooltipTest {
             // through, or the box would explain a number with arithmetic that did not produce it.
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
-            tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+            tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readBreakdownByFaction(
@@ -527,7 +527,7 @@ final class SystemDominationTooltipTest {
             stubBreakdowns(Map.of("hegemony", List.of(buildBreakdown("Jangala", 6.0))));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
@@ -550,7 +550,7 @@ final class SystemDominationTooltipTest {
             stubBreakdowns(Map.of());
             stubUnweighedColonies(Map.of());
 
-            tooltip.createFactionAccountResolver(systemMock, REVEALED_PASS);
+            tooltip.createFactionAccountResolver(systemMock, REVEALED_PASS, PATROL_DETAILS);
 
             footprintsMock.verify(
                 () -> KnownMarketFootprints.readUnweighedColoniesByFaction(
@@ -569,7 +569,7 @@ final class SystemDominationTooltipTest {
                 List.of(UNLISTED_COLONY)));
 
             var accountResolver =
-                tooltip.createFactionAccountResolver(systemMock, ANY_PASS);
+                tooltip.createFactionAccountResolver(systemMock, ANY_PASS, PATROL_DETAILS);
 
             accountResolver.resolveAccountEntries(LEAD_MEMBER);
             accountResolver.resolveAccountEntries(OTHER_MEMBER);
@@ -602,7 +602,7 @@ final class SystemDominationTooltipTest {
 
             try (var notesMock = Mockito.mockStatic(ColonyObservationNotes.class)) {
 
-                tooltip.createFactionAccountResolver(systemMock, OBSERVED_PASS);
+                tooltip.createFactionAccountResolver(systemMock, OBSERVED_PASS, PATROL_DETAILS);
 
                 notesMock.verify(() -> ColonyObservationNotes.readNotesFor(
                     any(),

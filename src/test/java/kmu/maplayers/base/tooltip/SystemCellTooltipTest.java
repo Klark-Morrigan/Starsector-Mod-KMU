@@ -136,6 +136,10 @@ final class SystemCellTooltipTest {
     private static final int FOOTER_ROW = 0;
     private static final int LONE_FOOTER_ROW_COUNT = 1;
 
+    // The hint is drawn in two runs - the key picked out, then the words about it - so a case about
+    // what the offer says reads the second and leaves the shortcut to the case about the look.
+    private static final int FOOTER_PHRASE_RUN = 1;
+
     // What a box with one body block and no hint comes to: its heading and that block.
     private static final int BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT = 2;
 
@@ -494,6 +498,21 @@ final class SystemCellTooltipTest {
         }
 
         @Test
+        void renderForGoesOnOfferingToShowAtEveryLevelShortOfTheDeepest() {
+            // The rule is about where the level sits in the cycle, not about it being the first one:
+            // every press but the last opens the account further, so the middle levels read the same
+            // way the shallowest does. Read off the shallowest alone, a box two presses in would
+            // offer to hide detail the next press is about to add.
+            var tooltipFake = new SystemCellTooltipFake(List.of(buildSection("The Hegemony")))
+                .offering(DETAIL_NAME);
+
+            assertThat(readFooterWords(tooltipFake, HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
+                .isEqualTo("show the full breakdown");
+            assertThat(readFooterWords(tooltipFake, HoverTooltipDetailLevel.MARKET_STATS))
+                .isEqualTo("show the full breakdown");
+        }
+
+        @Test
         void renderForEndsTheDeepestBoxWithTheKeyThatHidesItAgain() {
             // The cycle wraps, so the deepest level is the one place the next press collapses the box
             // rather than opening it - and the offer reverses off the level being drawn, without the
@@ -636,6 +655,20 @@ final class SystemCellTooltipTest {
     // the pinned surface is the render call's own two arguments.
     private static DrawnBox captureDrawnBox(SystemCellTooltip tooltip) {
         return captureDrawnBoxAt(tooltip, PATROL_DETAILS);
+    }
+
+    // What the hint at the foot of the box says when it is drawn at the given level, which is the one
+    // thing the cases about the offer's direction read.
+    private static String readFooterWords(SystemCellTooltip tooltip, HoverTooltipDetailLevel level) {
+
+        var footerRow = readRow(
+            captureDrawnBoxAt(tooltip, level).sections(),
+            FOOTER_SECTION,
+            FOOTER_ROW);
+
+        // The words about the key rather than the key itself: the shortcut is its own run and is
+        // asserted where the hint's two runs are.
+        return CellTooltipRowReads.readLabelTextRun(footerRow, FOOTER_PHRASE_RUN).text();
     }
 
     // The same, at a level a case names for itself - the deepest being the resting depth every case

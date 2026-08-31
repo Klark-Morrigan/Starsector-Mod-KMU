@@ -101,15 +101,15 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * listing it is about to draw as empty - which the fog alone can produce, a faction present only
      * through colonies the player has not found leaving nothing this box may state.
      *
-     * <p>Taking no part is the default, so a box whose subject has no deeper tiers overrides nothing.
+     * <p>Asked of every box of this layer rather than defaulted, because there is no honest default:
+     * a box that answered false out of inheritance would silently withhold the hint over a system it
+     * has plenty more to say about, and nothing on screen would say the key was worth pressing.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
      * @return true where a deeper level would show the player something the shallowest does not
      */
-    protected boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
-        return false;
-    }
+    protected abstract boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system);
 
     /**
      * Whether this box's own body names the faction holding the system by decree. A box that does goes

@@ -120,23 +120,44 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
      * is left to answer is only whether a listed faction breaks down further and into what.
      *
      * <p>Asked once per paint rather than once per faction, so a box that has to read the economy to
-     * account for a score reads it once for the whole box.
+     * account for a score reads it once for the whole box - and asked at all only where the level
+     * admits an account, so the shallowest level costs that read nothing.
      *
-     * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box
-     * with nothing further to say overrides nothing.
+     * <p>Answered by every box on this shape rather than defaulted: a box inheriting
+     * {@link FactionAccountResolver#NO_ACCOUNT} would draw the same thing at all four detail levels
+     * while the key went on offering to open it up, which is the one failure the level cycle cannot
+     * show the player.
      *
-     * @param system the star system under the cursor
-     * @param pass   the weighting rule, colony rule, grouping and colony walk the ranking resolved
-     *               under, so a box reading further into the system reads it under the same knobs
-     *               and off the same walk rather than repeating it
+     * @param system      the star system under the cursor
+     * @param pass        the weighting rule, colony rule, grouping and colony walk the ranking
+     *                    resolved under, so a box reading further into the system reads it under the
+     *                    same knobs and off the same walk rather than repeating it
+     * @param detailLevel how deep the box has been asked to read, so an account carrying tiers of
+     *                    its own works out only the ones that will be drawn
      * @return what to hang beneath each listed faction; {@link FactionAccountResolver#NO_ACCOUNT}
      *         leaves every one of them listed as its line alone
      */
-    protected FactionAccountResolver createFactionAccountResolver(
-            StarSystemAPI system,
-            DominancePass pass) {
+    protected abstract FactionAccountResolver createFactionAccountResolver(
+        StarSystemAPI system,
+        DominancePass pass,
+        HoverTooltipDetailLevel detailLevel);
 
-        return FactionAccountResolver.NO_ACCOUNT;
+    // The account this paint is to hang beneath its factions, and nothing at all where the level
+    // admits no line of one.
+    //
+    // The gate is here rather than inside each box because it is a fact about the cut rather than
+    // about any one subject matter: the account is everything a listed faction is subordinated over,
+    // so the shallowest level draws not one of its lines however the box would have composed them.
+    // And the read behind it is the most expensive thing a hover makes - resolved and then cut, the
+    // level that shows the least would cost the most.
+    private FactionAccountResolver createAdmittedAccountResolver(
+            StarSystemAPI system,
+            DominancePass pass,
+            HoverTooltipDetailLevel detailLevel) {
+
+        return detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.SYSTEM_COMPOSITION)
+            ? createFactionAccountResolver(system, pass, detailLevel)
+            : FactionAccountResolver.NO_ACCOUNT;
     }
 
     // The hovered system as this layer reads it: the pass the active view paints under, the groups
@@ -226,7 +247,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             body,
             sector,
             ranking,
-            createFactionAccountResolver(system, pass));
+            createAdmittedAccountResolver(system, pass, detailLevel));
 
         return body.readSections();
     }

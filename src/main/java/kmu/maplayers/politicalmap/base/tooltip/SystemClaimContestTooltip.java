@@ -149,6 +149,12 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             colonies,
             colonyKnowledge);
 
+        // The four things every line below is drawn from, gathered once. They are settled together
+        // and true of the whole paint, so carrying them one by one down the blocks is what would let
+        // a later block be handed one of them from somewhere else - or read at a depth another was
+        // not.
+        var reading = new HoveredClaimReading(sector, contest, colonyReading, detailLevel);
+
         var body = CellTooltipBody.openBody(detailLevel);
 
         body.appendBannerSection(statusRow);
@@ -163,9 +169,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // faction stands to the claimant this one names.
         body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
-            buildClaimEntries(sector, contest, colonyReading, statusRow.isPresent()));
+            buildClaimEntries(reading, statusRow.isPresent()));
 
-        appendStandingSections(body, sector, contest, colonyReading);
+        appendStandingSections(body, reading);
 
         return body.readSections();
     }
@@ -193,7 +199,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * what is left to answer is only whether a listed faction breaks down further and into what.
      *
      * <p>Asked per faction rather than once per paint, since a standing already carries the markets
-     * behind it - there is no second read of the economy for a box to save by asking earlier.
+     * behind it - there is no second read of the economy for a box to save by asking earlier. Asked
+     * at all only where the level admits an account, so the shallowest level does none of the
+     * selecting, ranking and wording an account of every faction present comes to.
      *
      * <p>The whole contest is handed over beside the standing, rather than the scored read alone,
      * because an account needs two things of it that no standing carries: how the system was settled,
@@ -207,8 +215,9 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * through colonies the mechanic never reached is accounted for like any other: it holds the very
      * colonies the map is drawing, which is what an account is of.
      *
-     * <p>Listing a faction as the line naming it is the ordinary answer and the default, so a box with
-     * nothing further to say overrides nothing.
+     * <p>Answered by every box on this shape rather than defaulted: a box inheriting an empty account
+     * would draw the same thing at all four detail levels while the key went on offering to open it
+     * up, which is the one failure the level cycle cannot show the player.
      *
      * @param contest       the whole contest the box is being built from - the scored read, the
      *                      colony rule it was projected under, and the standings that projection
@@ -219,16 +228,16 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      *                      was weighed from and nothing of the place behind it, so this is where
      *                      an account tells an unowned collapse from an unowned hulk, and where it
      *                      learns how old its news of either is
+     * @param detailLevel   how deep the box has been asked to read, so an account carrying tiers of
+     *                      its own works out only the ones that will be drawn
      * @return the entries listed beneath its line, in the order they are read; empty leaves the faction
      *         listed as its line alone
      */
-    protected List<CellTooltipEntry> resolveAccountEntries(
-            ListedClaimContest contest,
-            FactionClaimStanding standing,
-            SystemColonyReading colonyReading) {
-
-        return List.of();
-    }
+    protected abstract List<CellTooltipEntry> resolveAccountEntries(
+        ListedClaimContest contest,
+        FactionClaimStanding standing,
+        SystemColonyReading colonyReading,
+        HoverTooltipDetailLevel detailLevel);
 
     /**
      * What this family may show of a colony - read live off the same settings the faction layer's
@@ -257,34 +266,28 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // ally present, which is every system on an install with nothing grouping factions, and the
     // friendly one wherever nobody present is above neutral with the holder - since a block standing
     // over no entries is dropped by the same rule that drops any other.
-    private void appendStandingSections(
-            CellTooltipBody body,
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading) {
+    private void appendStandingSections(CellTooltipBody body, HoveredClaimReading reading) {
+
+        var contest = reading.contest();
 
         body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectAlliedStandings()));
+            buildRelationEntries(reading, contest.selectAlliedStandings()));
 
         body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
-            buildRelationEntries(sector, contest, colonyReading, contest.selectFriendlyStandings()));
+            buildRelationEntries(reading, contest.selectFriendlyStandings()));
 
         body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
             buildEligibilityEntries(
-                sector,
-                contest,
-                colonyReading,
+                reading,
                 contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));
 
         body.appendSection(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
             buildEligibilityEntries(
-                sector,
-                contest,
-                colonyReading,
+                reading,
                 contest.selectRivalStandings(standing -> !standing.isTerritorial())));
     }
 
@@ -319,26 +322,23 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // empty listing rather than by skipping the call, so the block is dropped through the same rule that
     // drops every other empty one and the box cannot grow a heading standing over nothing.
     private List<CellTooltipEntry> buildClaimEntries(
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading,
+            HoveredClaimReading reading,
             boolean isSystemHoldingNobody) {
 
         if (isSystemHoldingNobody
-                && !KmlibStrings.hasText(contest.breakdown().claimantFactionId())) {
+                && !KmlibStrings.hasText(reading.contest().breakdown().claimantFactionId())) {
 
             return List.of();
         }
-        return List.of(buildClaimantEntry(sector, contest, colonyReading));
+        return List.of(buildClaimantEntry(reading));
     }
 
     // The one entry the claim section lists where it has one: whoever holds the system, or the plain
     // word for nobody when no eligible faction scored and no decree imposed one.
-    private CellTooltipEntry buildClaimantEntry(
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading) {
+    private CellTooltipEntry buildClaimantEntry(HoveredClaimReading reading) {
 
+        var sector = reading.sector();
+        var contest = reading.contest();
         var breakdown = contest.breakdown();
         var claimantFactionId = breakdown.claimantFactionId();
 
@@ -376,7 +376,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return CellTooltipEntry
             .createEntry(claimantLine)
             .nesting(standing
-                .map(found -> resolveAccountEntries(contest, found, colonyReading))
+                .map(found -> resolveAdmittedAccountEntries(reading, found))
                 .orElseGet(List::of));
     }
 
@@ -418,33 +418,19 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // rule being about what their headings leave unsaid rather than about which of the two a line
     // landed in - written per block, one of them could later be left silently dropping the word.
     private List<CellTooltipEntry> buildRelationEntries(
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading,
+            HoveredClaimReading reading,
             List<FactionClaimStanding> standings) {
 
-        return buildListedEntries(
-            sector,
-            contest,
-            colonyReading,
-            standings,
-            IS_STATING_ELIGIBILITY_ON_LINE);
+        return buildListedEntries(reading, standings, IS_STATING_ELIGIBILITY_ON_LINE);
     }
 
     // One eligibility block's lines: everyone the two relation blocks left, narrowed to the
     // eligibility that block is about. That eligibility is the heading, so no line beneath restates it.
     private List<CellTooltipEntry> buildEligibilityEntries(
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading,
+            HoveredClaimReading reading,
             List<FactionClaimStanding> standings) {
 
-        return buildListedEntries(
-            sector,
-            contest,
-            colonyReading,
-            standings,
-            IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
+        return buildListedEntries(reading, standings, IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
     }
 
     // One block's entries over the standings routed into it, in the order the breakdown handed them
@@ -452,9 +438,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // itself settles it in. Each carries whatever this box accounts for it with, subordinated: an
     // account explains the line it hangs under rather than restating it more finely.
     private List<CellTooltipEntry> buildListedEntries(
-            SectorAPI sector,
-            ListedClaimContest contest,
-            SystemColonyReading colonyReading,
+            HoveredClaimReading reading,
             List<FactionClaimStanding> standings,
             boolean isStatingEligibilityOnLine) {
 
@@ -462,13 +446,35 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         for (var standing : standings) {
             entries.add(CellTooltipEntry
-                .createEntry(buildListedLine(sector, standing, isStatingEligibilityOnLine))
-                .nesting(resolveAccountEntries(
-                    contest,
+                .createEntry(buildListedLine(
+                    reading.sector(),
                     standing,
-                    colonyReading)));
+                    isStatingEligibilityOnLine))
+                .nesting(resolveAdmittedAccountEntries(reading, standing)));
         }
         return entries;
+    }
+
+    // The account this paint hangs beneath one faction, and nothing at all where the level admits no
+    // line of one.
+    //
+    // The gate is here rather than inside each box because it is a fact about the cut rather than
+    // about any one subject matter: the account is everything a listed faction is subordinated over,
+    // so the shallowest level draws not one of its lines however the box would have composed them.
+    // Left to the cut alone, every faction the box names would still be selected, ranked and worded
+    // down to its colonies over a system the player only asked who claims.
+    private List<CellTooltipEntry> resolveAdmittedAccountEntries(
+            HoveredClaimReading reading,
+            FactionClaimStanding standing) {
+
+        if (!reading.detailLevel().isReadingAtLeast(HoverTooltipDetailLevel.SYSTEM_COMPOSITION)) {
+            return List.of();
+        }
+        return resolveAccountEntries(
+            reading.contest(),
+            standing,
+            reading.colonyReading(),
+            reading.detailLevel());
     }
 
     // One faction's line as the block listing it needs it: its standing, plus the word for a faction
@@ -489,5 +495,34 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
         }
         return standingLine;
+    }
+
+    /**
+     * One reading of a hovered system's claim contest: the sector it was read against, what that read
+     * came to, and what the box may say about the colonies behind it.
+     *
+     * <p>The four travel as one value because every block is drawn from all four and they are
+     * settled together, once, before any block is appended. Threaded one by one instead, a block
+     * added later could be handed a contest read here beside a colony reading taken somewhere else,
+     * and the box would explain one reading of the system under another's.
+     *
+     * <p>The sector rides along rather than being reached for, so a box drawn over a second sector
+     * names that sector's factions - and so the crest on a line and the standing beside it come from
+     * the one sector between them.
+     *
+     * @param sector        the sector the hovered system stands in, whose factions the lines are named
+     *                      from
+     * @param contest       the whole scored read, the colony rule it was projected under, and the
+     *                      standings that projection leaves the box free to name
+     * @param colonyReading what the box may say about the system's colonies beyond their scores,
+     *                      folded once off the same walk the status line was judged from
+     * @param detailLevel   how deep the player asked this box to read, which is what decides whether
+     *                      an account is worked out at all and how far into one it goes
+     */
+    private record HoveredClaimReading(
+        SectorAPI sector,
+        ListedClaimContest contest,
+        SystemColonyReading colonyReading,
+        HoverTooltipDetailLevel detailLevel) {
     }
 }

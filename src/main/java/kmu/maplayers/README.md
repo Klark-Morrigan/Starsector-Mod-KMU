@@ -351,11 +351,9 @@ about what the overlay means.
   hands it to the box it draws (`MapHoverTooltip.renderFor`), which reads its own content only that
   deep. A level is a cut rather than a choice of body: a layer composes the one tree it always
   composes and the blocks lay out as much of it as the level admits, so four depths cost no layer a
-  second account of a system that could come to disagree with the first. The dispatcher also draws
-  the richer counterpart the injected tooltip offers past the shallowest level
-  (`MapHoverTooltip.resolveExpandedVariant`) or that tooltip itself when it offers none - so the
-  choice holds across hovers and layer switches, and a tooltip stating one amount of detail needs no
-  case of its own. What writes that level is
+  second account of a system that could come to disagree with the first. The level never decides
+  *which* box draws either - one box per layer, read to four depths - so the choice holds across
+  hovers and layer switches without any layer holding a second body. What writes that level is
   `HoverTooltipDetailLevelInput`, a campaign input listener claiming F1 pre-core: each press advances
   one level, wrapping from the deepest back to the first, so the key that leads into detail also
   leads out of it. A render pass is
@@ -366,7 +364,7 @@ about what the overlay means.
   Behind that seam the press is claimed only where it would do something the player can see: the box
   under the cursor answers `MapHoverTooltip.isOfferingExpansionFor` for the hovered system, and a
   system with nothing more to state leaves the key alone. Asked per system rather than per box
-  because that is where the answer lives - an unpopulated system has no colonies for a counterpart
+  because that is where the answer lives - an unpopulated system has no colonies for a deeper tier
   to account for. Left unclaimed rather than advanced invisibly because the level is one shared fact:
   a press swallowed over a system with nothing to expand would silently decide how the next system
   that *does* differ opens. What the cursor is over is resolved once, by `HoveredBox`, and read by
@@ -387,13 +385,13 @@ about what the overlay means.
   box taking part in the detail cycle ends on one more block: the key and what pressing it would do,
   drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights
   a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What
-  the counterpart adds is named by the layer (`resolveExpandedDetailName`), since only the layer knows
-  what is in it; which way the offer reads is asked of nobody and follows from whether the box being
-  drawn still has a counterpart to switch to - the plain box has one and offers to show it, the
-  counterpart the dispatcher selected has none and so offers to hide itself again. Read that way the
-  hint cannot contradict the box it sits under, which reading the shared level a second time would
-  allow. It is not content: a box with nothing to say about the system stays undrawn rather than
-  appearing as a lone offer to expand into nothing. How
+  the deeper levels add is named by the layer (`resolveExpandedDetailName`), since only the layer knows
+  what is down there; which way the offer reads is asked of nobody and follows from where the drawn
+  level sits in the cycle - every press but the last opens the account further, and the last wraps
+  back to the shallowest, which collapses it. Read off the level this paint was handed, the hint and
+  the press it describes cannot come from two different reads of it. It is not content: a box with
+  nothing to say about the system stays undrawn rather than appearing as a lone offer to expand into
+  nothing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, and a listing nested inside a block by a narrower one, so what sets two things
   apart is what they are rather than which line happens to open them. A layer states

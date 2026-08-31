@@ -47,6 +47,27 @@ public enum HoverTooltipDetailLevel {
     }
 
     /**
+     * Whether the box has been asked to read at least as deep as {@code level} - the question the
+     * composition side asks before working a tier out at all.
+     *
+     * <p>The cut alone would draw the same box, but it is taken once the tree is built: a tier
+     * composed and then dropped has already cost whatever it took to read and word it, and on this
+     * layer the deepest tiers are the expensive ones. So the tiers a level does not admit are never
+     * composed, and the cut stays as the one thing that decides what is drawn.
+     *
+     * <p>Asked of a level rather than of a depth, because what a composer knows is which tier of its
+     * own subject matter it is about to build and each constant here names one. Counted against a
+     * number instead, every layer would be counting its own tiers, and two of them would eventually
+     * count differently over one box.
+     *
+     * @param level the level whose content is in question
+     * @return true where this level admits everything that one admits
+     */
+    public boolean isReadingAtLeast(HoverTooltipDetailLevel level) {
+        return maximumSubordination >= level.maximumSubordination;
+    }
+
+    /**
      * Kept to this package: a level is passed around by whoever draws a box, and read for what it
      * admits only where a listing is laid out.
      *

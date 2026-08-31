@@ -79,10 +79,10 @@ record HoveredBox(
     }
 
     /**
-     * Whether the box under the cursor has a richer counterpart to switch to for this system - the one
-     * question the key that switches them has to answer before acting.
+     * Whether the box under the cursor would read any deeper for this system - the one question the
+     * key that cycles the detail level has to answer before acting.
      *
-     * @return true when switching would show the player something the drawn box does not
+     * @return true when advancing the level would show the player something the drawn box does not
      */
     boolean isOfferingExpansion() {
         return tooltip.isOfferingExpansionFor(sector, system);

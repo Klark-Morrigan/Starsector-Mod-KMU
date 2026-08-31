@@ -620,14 +620,9 @@ final class CellTooltipBodyTest {
             .toList();
     }
 
-    // What each line of a body says, in draw order. Read as the line's opening words rather than as its
-    // first run, since a line led by a mark opens on an image - so one expected list covers a block
-    // mixing marked lines with markless ones.
+    // What each line of a body says, in draw order, taken off the body rather than off the blocks it
+    // came to - which is what every case here holds.
     private static List<String> readLabelTexts(CellTooltipBody body) {
-        return TooltipSection
-            .readRowsInOrder(body.readSections())
-            .stream()
-            .map(CellTooltipRowReads::readOpeningWords)
-            .toList();
+        return CellTooltipRowReads.readSectionOpeningWords(body.readSections());
     }
 }

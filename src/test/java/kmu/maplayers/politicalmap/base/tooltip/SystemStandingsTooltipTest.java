@@ -17,14 +17,12 @@ import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +35,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.HIGHLIGHT;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.LABEL_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readRowOpeningWords;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
@@ -173,20 +172,6 @@ final class SystemStandingsTooltipTest {
             StandingsTooltipSeamsFake.stubNoActiveView();
 
             assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .isEmpty();
-        }
-    }
-
-    @Nested
-    class CreateFactionAccountResolver {
-
-        @Test
-        void createFactionAccountResolverListsAFactionAsItsLineAlone() {
-            // The shared default, and what the glance box relies on: a box with nothing further to say
-            // overrides nothing and every faction it lists reads as its line alone.
-            assertThat(tooltip
-                    .createFactionAccountResolver(systemMock, ANY_PASS)
-                    .resolveAccountEntries(new WeighedFactionStanding("hegemony", 900)))
                 .isEmpty();
         }
     }
@@ -396,9 +381,9 @@ final class SystemStandingsTooltipTest {
 
             assertThat(sections)
                 .hasSize(2);
-            assertThat(readLabelTexts(sections.get(dominatedSection).readRowsInOrder()))
+            assertThat(readRowOpeningWords(sections.get(dominatedSection).readRowsInOrder()))
                 .containsExactly("Dominated by:", "Rebel Pact");
-            assertThat(readLabelTexts(sections.get(contestedSection).readRowsInOrder()))
+            assertThat(readRowOpeningWords(sections.get(contestedSection).readRowsInOrder()))
                 .containsExactly("Contested by:", "Persean League");
         }
 
@@ -529,13 +514,6 @@ final class SystemStandingsTooltipTest {
                 createRivalGroupEntry()));
     }
 
-    private static List<String> readLabelTexts(List<TooltipRow> rows) {
-        return rows
-            .stream()
-            .map(CellTooltipRowReads::readOpeningWords)
-            .toList();
-    }
-
     private List<String> readBodyLabelTexts() {
         return readBodyLabelTextsAt(PATROL_DETAILS);
     }
@@ -544,7 +522,7 @@ final class SystemStandingsTooltipTest {
     // the whole tree, so they go through the reading above rather than each naming a level it has no
     // opinion about.
     private List<String> readBodyLabelTextsAt(HoverTooltipDetailLevel detailLevel) {
-        return readLabelTexts(TooltipSection.readRowsInOrder(
+        return readRowOpeningWords(TooltipSection.readRowsInOrder(
             tooltip.buildBodySections(sectorMock, systemMock, detailLevel)));
     }
 
@@ -555,9 +533,12 @@ final class SystemStandingsTooltipTest {
 
     /**
      * A box that lists each group as the line naming it and nothing beneath - the shared shape with
-     * whatever a real box goes on to say stripped out, which is exactly the shared default. So a case
-     * above is about the shape and never about one box's answer, and a box that quietly stopped
-     * honouring the default would fail here rather than in its own suite.
+     * whatever a real box goes on to say stripped out. So a case above is about the shape and never
+     * about one box's answer.
+     *
+     * <p>It answers {@link FactionAccountResolver#NO_ACCOUNT} outright rather than inheriting it: the
+     * shape leaves the account to the box, so hanging nothing is a stand-in's own answer here and not
+     * a default any real box could fall back on.
      */
     private static final class ListingStandingsTooltip extends SystemStandingsTooltip {
 
@@ -567,17 +548,26 @@ final class SystemStandingsTooltipTest {
 
             super(claimBreakdownReader, holderGroupingSource);
         }
+
+        @Override
+        protected FactionAccountResolver createFactionAccountResolver(
+                StarSystemAPI system,
+                DominancePass pass,
+                HoverTooltipDetailLevel detailLevel) {
+
+            return FactionAccountResolver.NO_ACCOUNT;
+        }
     }
 
     /**
      * A box that does have something to hang beneath the factions it lists - the shared shape's other
-     * side, and the only way to tell a box's own account reaching the resolution apart from the
-     * default reaching it. What the account says is never read; that it is this box's is the point.
+     * side, and the only way to tell a box's own account reaching the resolution apart from an empty
+     * one reaching it. What the account says is never read; that it is this box's is the point.
      */
     private static final class AccountingStandingsTooltip extends SystemStandingsTooltip {
 
-        // Answers something rather than nothing, so this box's account cannot be mistaken for the
-        // default reaching the resolution by another route. What it says is never read.
+        // Answers something rather than nothing, so this box's account cannot be mistaken for an empty
+        // one reaching the resolution by another route. What it says is never read.
         private static final FactionAccountResolver FACTION_ACCOUNTS = standing -> List.of(
             CellTooltipEntry.createEntry(
                 CellTooltipEntryLine.createLine(null, standing.factionId(), "1")));
@@ -589,7 +579,8 @@ final class SystemStandingsTooltipTest {
         @Override
         protected FactionAccountResolver createFactionAccountResolver(
                 StarSystemAPI system,
-                DominancePass pass) {
+                DominancePass pass,
+                HoverTooltipDetailLevel detailLevel) {
 
             return FACTION_ACCOUNTS;
         }

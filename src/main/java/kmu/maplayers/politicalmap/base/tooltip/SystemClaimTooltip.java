@@ -4,6 +4,7 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -18,11 +19,13 @@ import java.util.List;
  * claims view injects.
  *
  * <p>What this box decides is the account beneath those lines - how far into a faction the box goes -
- * and it composes that account whole, at every detail level. How much of it the player is shown is a
- * cut taken as the listing is laid out ({@link kmu.maplayers.base.tooltip.CellTooltipBody}): who claims
- * the system at the shallowest level, the colonies behind that a tier down, their terms a tier below
- * again. One tree read to four depths rather than four bodies, so no two depths can describe one
- * system differently.
+ * and it composes one account, read to whatever depth was asked for: who claims the system at the
+ * shallowest level, the colonies behind that a tier down, their terms a tier below again. One tree
+ * read to four depths rather than four bodies, so no two depths can describe one system differently.
+ *
+ * <p>What is drawn is settled by the cut the listing is laid out under
+ * ({@link kmu.maplayers.base.tooltip.CellTooltipBody}); what is composed stops at the same place, so a
+ * hover asking only who claims the system selects, ranks and words no faction's colonies at all.
  *
  * <p>Every faction the box names takes an account, including one the mechanic weighed nothing for: its
  * colonies are exactly what the player can read nowhere else, the line above them stating a nought that
@@ -72,7 +75,8 @@ public final class SystemClaimTooltip extends SystemClaimContestTooltip {
     protected List<CellTooltipEntry> resolveAccountEntries(
             ListedClaimContest contest,
             FactionClaimStanding standing,
-            SystemColonyReading colonyReading) {
+            SystemColonyReading colonyReading,
+            HoverTooltipDetailLevel detailLevel) {
 
         // The mechanic settles a claim over colonies nobody has found, and the box declines to
         // repeat what it learned there. The rule saying so is taken off the contest rather than
@@ -86,6 +90,7 @@ public final class SystemClaimTooltip extends SystemClaimContestTooltip {
             contest.breakdown(),
             standing,
             colonyReading,
-            contest.colonyVisibility().shouldIncludeUndiscoveredMarkets());
+            contest.colonyVisibility().shouldIncludeUndiscoveredMarkets(),
+            detailLevel);
     }
 }

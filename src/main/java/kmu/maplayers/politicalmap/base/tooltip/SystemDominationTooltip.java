@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
@@ -24,12 +25,15 @@ import java.util.List;
  * entry made up of nothing and reads as one flat line, while an alliance bloc resolves to one carrying
  * its member factions and reads as a line over them, however few it holds.
  *
- * <p>What this box decides is the account beneath those lines - how far into a group the box goes - and
- * it composes that account whole, at every detail level. How much of it the player is shown is a cut
- * taken as the listing is laid out ({@link kmu.maplayers.base.tooltip.CellTooltipBody}): who holds the
- * system at the shallowest level, the colonies behind that a tier down, their factors a tier below
- * again. One tree read to four depths rather than four bodies, so no two depths can describe one system
- * differently.
+ * <p>What this box decides is the account beneath those lines - how far into a group the box goes -
+ * and it composes one account, read to whatever depth was asked for: who holds the system at the
+ * shallowest level, the colonies behind that a tier down, their factors a tier below again. One tree
+ * read to four depths rather than four bodies, so no two depths can describe one system differently.
+ *
+ * <p>What is drawn is settled by the cut the listing is laid out under
+ * ({@link kmu.maplayers.base.tooltip.CellTooltipBody}); what is composed stops at the same place, the
+ * tiers here being the expensive ones. So the shallowest level pays for no colony read at all, and the
+ * level that ranks the groups costs no more than the ranking it draws.
  *
  * <p>The colonies hang under the faction flying them rather than under the bloc, because a colony
  * belongs to a faction and a bloc's score is the sum over its members' - so a reader following the
@@ -85,7 +89,8 @@ public final class SystemDominationTooltip extends SystemStandingsTooltip {
     @Override
     protected FactionAccountResolver createFactionAccountResolver(
             StarSystemAPI system,
-            DominancePass pass) {
+            DominancePass pass,
+            HoverTooltipDetailLevel detailLevel) {
 
         // Read once for the whole box rather than per faction: read per faction, two of them could
         // be explained from different selections over the system, and the walk behind them is the
@@ -119,6 +124,7 @@ public final class SystemDominationTooltip extends SystemStandingsTooltip {
             breakdownsByFactionId.getOrDefault(standing.factionId(), List.of()),
             unweighedColoniesByFactionId.getOrDefault(standing.factionId(), List.of()),
             pass.rules(),
-            colonyReading);
+            colonyReading,
+            detailLevel);
     }
 }

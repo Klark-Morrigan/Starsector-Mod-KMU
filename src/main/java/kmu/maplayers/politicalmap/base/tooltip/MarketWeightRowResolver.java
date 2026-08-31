@@ -6,6 +6,7 @@ import kmlib.text.KmlibNumbers;
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
@@ -32,6 +33,11 @@ import java.util.List;
  * <p>Depth is the subject matter's here rather than the entry model's, which is the point of the
  * model nesting at all: the walk that lays these out reads the tier off how deep it went, so this
  * resolver states only what breaks down into what.
+ *
+ * <p>How far down it goes is the player's, though, and it stops there rather than composing tiers the
+ * cut would drop: a colony runs to four factor lines and a patrol factor to three more beneath them,
+ * every one of them a number worded for a reader who has not asked to see it. The colonies themselves
+ * are never in question - a caller reaches this resolver at all only where they are listed.
  *
  * <p>Every colony line leads with the glyph the sector map marks that colony's entity with, weighed or
  * not. The station line takes one on the same terms, being the one line beneath a colony named for a
@@ -119,6 +125,10 @@ public final class MarketWeightRowResolver {
      * @param colonyReading     what the box may say about the system's colonies beyond their
      *                          weights, folded once for the whole box - what kind of place each is,
      *                          whether the player has found it, and how old the news of it is
+     * @param detailLevel       how deep the box was asked to read, which the arithmetic beneath a
+     *                          colony is worked out only as far as: the colonies themselves are
+     *                          always listed, this resolver being consulted at all only where they
+     *                          are
      * @return one entry per colony, the weighed ones ranked ahead of the unweighed; empty when the
      *         faction holds no colony at all in the system
      */
@@ -126,7 +136,8 @@ public final class MarketWeightRowResolver {
             List<MarketWeightBreakdown> breakdowns,
             List<UnweighedColony> unweighedColonies,
             DominanceRules rules,
-            SystemColonyReading colonyReading) {
+            SystemColonyReading colonyReading,
+            HoverTooltipDetailLevel detailLevel) {
 
         var entries = new ArrayList<CellTooltipEntry>();
 
@@ -134,7 +145,7 @@ public final class MarketWeightRowResolver {
             .stream()
             .sorted(MARKET_ORDER)
             .forEach(breakdown -> entries.add(
-                resolveMarketEntry(breakdown, rules, colonyReading)));
+                resolveMarketEntry(breakdown, rules, colonyReading, detailLevel)));
 
         // Last whatever they would rank at, because they never ranked: sorted in among the weighed
         // colonies by a nought they were never given, they would sit above a colony that was
@@ -156,7 +167,8 @@ public final class MarketWeightRowResolver {
     private static CellTooltipEntry resolveMarketEntry(
             MarketWeightBreakdown breakdown,
             DominanceRules rules,
-            SystemColonyReading colonyReading) {
+            SystemColonyReading colonyReading,
+            HoverTooltipDetailLevel detailLevel) {
 
         var line = createMapEntityLine(
             breakdown.marketNameplate(),
@@ -174,7 +186,7 @@ public final class MarketWeightRowResolver {
                         breakdown.marketId(),
                         breakdown.isHiddenMarket()),
                     IS_LISTED_BY_ECONOMY)))
-            .nesting(resolveFactorEntries(breakdown, rules));
+            .nesting(resolveFactorEntries(breakdown, rules, detailLevel));
     }
 
     // A colony the pass never weighed, as the entry it is listed as: named as loudly as the colonies
@@ -235,10 +247,19 @@ public final class MarketWeightRowResolver {
     // The factors of one colony, in the order the weight read applied them - the stability that
     // decides every cut first, so the deductions below it read as consequences of a stated cause
     // rather than as three unexplained subtractions.
+    //
+    // Nothing at all where the level stops at the colonies. Every line here is a number worded for
+    // the reader, and a colony's factors run to four of them, so a system's worth of them composed
+    // and then cut is the whole of what the composition level would have paid the deepest level's
+    // price for.
     private static List<CellTooltipEntry> resolveFactorEntries(
             MarketWeightBreakdown breakdown,
-            DominanceRules rules) {
+            DominanceRules rules,
+            HoverTooltipDetailLevel detailLevel) {
 
+        if (!detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.MARKET_STATS)) {
+            return List.of();
+        }
         var entries = new ArrayList<CellTooltipEntry>();
 
         // Stability is stated only where it can cost the colony something: with the master
@@ -261,7 +282,9 @@ public final class MarketWeightRowResolver {
                 resolveStationName(breakdown, station),
                 MarketFactorText.formatStation(station)))));
 
-        breakdown.patrols().ifPresent(patrols -> entries.add(resolvePatrolEntry(patrols)));
+        breakdown.patrols().ifPresent(patrols ->
+            entries.add(resolvePatrolEntry(patrols, detailLevel)));
+
         return entries;
     }
 
@@ -319,19 +342,30 @@ public final class MarketWeightRowResolver {
 
     // The patrol factor as a line over the tiers making it up: one heading number the reader can
     // check against the map, then what each kind of patrol in it counted for.
-    private static CellTooltipEntry resolvePatrolEntry(PatrolFactor patrols) {
+    private static CellTooltipEntry resolvePatrolEntry(
+            PatrolFactor patrols,
+            HoverTooltipDetailLevel detailLevel) {
+
         return CellTooltipEntry
             .createEntry(CellTooltipEntryLine.createLine(
                 CellTooltipMark.NO_MARK,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
                 MarketFactorText.formatPatrols(patrols)))
-            .nesting(resolveTierEntries(patrols));
+            .nesting(resolveTierEntries(patrols, detailLevel));
     }
 
     // The patrol tiers heaviest last, as the settings list them, so a reader comparing two
     // colonies' patrols reads them in one order.
-    private static List<CellTooltipEntry> resolveTierEntries(PatrolFactor patrols) {
+    //
+    // Nothing at all short of the deepest level: the split is the one tier below the factors, so
+    // the level that shows a colony's stats is the last one that has no use for it.
+    private static List<CellTooltipEntry> resolveTierEntries(
+            PatrolFactor patrols,
+            HoverTooltipDetailLevel detailLevel) {
 
+        if (!detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.PATROL_DETAILS)) {
+            return List.of();
+        }
         var entries = new ArrayList<CellTooltipEntry>();
 
         appendTierEntry(entries, KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_SMALL, patrols.small());

@@ -11,6 +11,7 @@ import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -112,6 +113,10 @@ import java.util.Optional;
  * market that is no garrison is not one whose garrison came to nothing - it is one where the term never
  * arose.
  *
+ * <p>Nor has a market any terms at all where the box was asked only for the colonies behind a faction.
+ * The cut would drop them, so they are not worked out - while the markets themselves are never in
+ * question, this resolver being reached at all only where they are listed.
+ *
  * <p>No rating-to-weight grammar reaches these lines, unlike the dominance side's
  * ({@link MarketFactorText}): a claim score is a small whole number of points with no grid behind it, so
  * a term states the points it added and nothing about a unit change that never happens.
@@ -183,13 +188,18 @@ public final class ClaimScoreRowResolver {
      *                                     though the contest never weighed it. False is the
      *                                     ordinary state and leaves those markets off; true is the
      *                                     dev reveal, under which the account is stated in full
+     * @param detailLevel                  how deep the box was asked to read, which the terms
+     *                                     beneath a market are worked out only as far as: the
+     *                                     markets themselves are always listed, this resolver being
+     *                                     consulted at all only where they are
      * @return the entries in the order they are read
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
             SystemColonyReading colonyReading,
-            boolean isListingUndiscoveredMarkets) {
+            boolean isListingUndiscoveredMarkets,
+            HoverTooltipDetailLevel detailLevel) {
 
         var listedMarkets = selectListedMarkets(standing, isListingUndiscoveredMarkets);
 
@@ -198,9 +208,14 @@ public final class ClaimScoreRowResolver {
         // weighed one. The other arm is the presence-only kind, the standing being sealed over the
         // two.
         if (standing instanceof WeighedClaimStanding weighedStanding) {
-            return resolveWeighedRows(breakdown, weighedStanding, colonyReading, listedMarkets);
+            return resolveWeighedRows(
+                breakdown,
+                weighedStanding,
+                colonyReading,
+                listedMarkets,
+                detailLevel);
         }
-        return resolvePresenceOnlyRows(colonyReading, listedMarkets);
+        return resolvePresenceOnlyRows(colonyReading, listedMarkets, detailLevel);
     }
 
     // The account of a faction the contest weighed: its markets strongest first, the one that took
@@ -210,7 +225,8 @@ public final class ClaimScoreRowResolver {
             SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
             SystemColonyReading colonyReading,
-            List<MarketClaimBreakdown> listedMarkets) {
+            List<MarketClaimBreakdown> listedMarkets,
+            HoverTooltipDetailLevel detailLevel) {
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
@@ -234,7 +250,8 @@ public final class ClaimScoreRowResolver {
                     isCarryingTheStanding),
                 market,
                 colonyReading,
-                isHoldingTheClaim && isCarryingTheStanding));
+                isHoldingTheClaim && isCarryingTheStanding,
+                detailLevel));
         }
 
         // Stated unless the list carries a market the count never included, which is the one way the
@@ -258,7 +275,8 @@ public final class ClaimScoreRowResolver {
     // none of them won or lost a tie against anything.
     private static List<CellTooltipEntry> resolvePresenceOnlyRows(
             SystemColonyReading colonyReading,
-            List<MarketClaimBreakdown> listedMarkets) {
+            List<MarketClaimBreakdown> listedMarkets,
+            HoverTooltipDetailLevel detailLevel) {
 
         var entries = new ArrayList<CellTooltipEntry>(listedMarkets.size());
 
@@ -270,7 +288,8 @@ public final class ClaimScoreRowResolver {
                     NO_MARKET_CARRIES_THE_STANDING),
                 market,
                 colonyReading,
-                NOTHING_TOOK_THE_SYSTEM));
+                NOTHING_TOOK_THE_SYSTEM,
+                detailLevel));
         }
         return List.copyOf(entries);
     }
@@ -310,7 +329,8 @@ public final class ClaimScoreRowResolver {
             CellTooltipEntryLine line,
             MarketClaimBreakdown market,
             SystemColonyReading colonyReading,
-            boolean isHoldingTheClaim) {
+            boolean isHoldingTheClaim,
+            HoverTooltipDetailLevel detailLevel) {
 
         // Nothing chooses between the claim and what sort of place the colony is: the two are
         // findings about different things, and which of them leads is the shared resolver's to say
@@ -333,7 +353,7 @@ public final class ClaimScoreRowResolver {
             .createEntry(colonyReading.describeColony(line, market.marketId(), facts))
             .nesting(RedactedMarketLines.isRedactedMarket(market)
                 ? List.of()
-                : resolveTermEntries(market));
+                : resolveTermEntries(market, detailLevel));
     }
 
     // The shape every market's own line takes, whether or not the box may say what the market is
@@ -448,9 +468,18 @@ public final class ClaimScoreRowResolver {
     // add up to a number the line above deliberately does not carry. It is not the only line that
     // breaks into nothing - a market the box may not name withholds terms that were computed, which is
     // a separate reading and is taken where that line is composed.
-    private static List<CellTooltipEntry> resolveTermEntries(MarketClaimBreakdown market) {
+    //
+    // A third reading joins them at the shallower levels, and it is about the box rather than about
+    // the market: the player asked for the colonies and not the arithmetic under them, so the terms
+    // are never worked out. Told apart from the two above by the cut alone - nothing here says which
+    // of the three left a market bare, and nothing on screen has to.
+    private static List<CellTooltipEntry> resolveTermEntries(
+            MarketClaimBreakdown market,
+            HoverTooltipDetailLevel detailLevel) {
 
-        if (!market.isScoredOnItsOwnAccount()) {
+        if (!detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.MARKET_STATS)
+                || !market.isScoredOnItsOwnAccount()) {
+
             return List.of();
         }
         var entries = new ArrayList<CellTooltipEntry>();
