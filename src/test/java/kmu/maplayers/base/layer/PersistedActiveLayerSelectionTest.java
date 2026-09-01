@@ -27,21 +27,27 @@ import static org.mockito.Mockito.when;
  * so a switch on one screen leaves the other's pick where it was.
  */
 final class PersistedActiveLayerSelectionTest {
+
     private static final String KEY = "$kmu_test_layer";
     private static final String OTHER_KEY = "$kmu_test_layer_other";
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
     private final PersistedActiveLayerSelection selection = new PersistedActiveLayerSelection(KEY);
-    private final PersistedActiveLayerSelection otherSelection = new PersistedActiveLayerSelection(OTHER_KEY);
 
     @BeforeEach
     void registerTwoFakeLayers() {
-        when(firstLayerMock.getId()).thenReturn("first");
-        when(secondLayerMock.getId()).thenReturn("second");
+
+        when(firstLayerMock.getId())
+            .thenReturn("first");
+        when(secondLayerMock.getId())
+            .thenReturn("second");
+
         // Second is the default, so an untouched save resolves to it - a non-leading default, the shape the
         // real composition root uses.
-        MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), secondLayerMock);
+        MapLayerRegistry.registerLayers(
+            List.of(firstLayerMock, secondLayerMock),
+            secondLayerMock);
     }
 
     @Nested
@@ -49,34 +55,53 @@ final class PersistedActiveLayerSelectionTest {
 
         @Test
         void getActiveLayerDefaultsToTheRegisteredDefaultWithoutASavedPick() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(selection.getActiveLayer()).isSameAs(secondLayerMock);
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThat(selection.getActiveLayer())
+                    .isSameAs(secondLayerMock);
             }
         }
 
         @Test
         void getActiveLayerResolvesTheStoredIdUnderItsOwnKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(KEY)).thenReturn(true);
-                when(memoryMock.getString(KEY)).thenReturn("first");
 
-                assertThat(selection.getActiveLayer()).isSameAs(firstLayerMock);
+            try (var globalMock = mockStatic(Global.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                linkSectorMemoryTo(globalMock, memoryMock);
+
+                when(memoryMock.contains(KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(KEY))
+                    .thenReturn("first");
+
+                assertThat(selection.getActiveLayer())
+                    .isSameAs(firstLayerMock);
             }
         }
 
         @Test
         void getActiveLayerFallsBackToTheDefaultForAStaleStoredId() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                var memoryMock = mock(MemoryAPI.class);
-                linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(KEY)).thenReturn(true);
-                when(memoryMock.getString(KEY)).thenReturn("removed_long_ago");
 
-                assertThat(selection.getActiveLayer()).isSameAs(secondLayerMock);
+            try (var globalMock = mockStatic(Global.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                linkSectorMemoryTo(globalMock, memoryMock);
+
+                when(memoryMock.contains(KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(KEY))
+                    .thenReturn("removed_long_ago");
+
+                assertThat(selection.getActiveLayer())
+                    .isSameAs(secondLayerMock);
             }
         }
     }
@@ -86,13 +111,17 @@ final class PersistedActiveLayerSelectionTest {
 
         @Test
         void selectLayerWritesThePickedIdUnderItsOwnKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
 
                 selection.selectLayer(firstLayerMock);
 
-                verify(memoryMock).set(KEY, "first");
+                verify(memoryMock)
+                    .set(KEY, "first");
             }
         }
 
@@ -100,14 +129,18 @@ final class PersistedActiveLayerSelectionTest {
         void selectLayerUnderOneKeyLeavesAnotherKeysPickUntouched() {
             // The independence the per-screen split needs: writing this selection's key must never touch a
             // second screen's key, so a switch on one screen cannot move the other's tab.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
 
                 selection.selectLayer(firstLayerMock);
 
-                verify(memoryMock).set(KEY, "first");
-                verify(memoryMock, never()).set(eq(OTHER_KEY), any());
+                verify(memoryMock)
+                    .set(KEY, "first");
+                verify(memoryMock, never())
+                    .set(eq(OTHER_KEY), any());
             }
         }
     }
@@ -115,8 +148,14 @@ final class PersistedActiveLayerSelectionTest {
     // Stubs a fresh sector whose memory is {@code memoryMock}, so a test drives the selection's reads and
     // writes through one mocked memory without repeating the two-hop wiring.
     private static void linkSectorMemoryTo(MockedStatic<Global> globalMock, MemoryAPI memoryMock) {
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
-        globalMock.when(Global::getSector).thenReturn(sectorMock);
+
+        when(sectorMock.getMemoryWithoutUpdate())
+            .thenReturn(memoryMock);
+
+        globalMock
+            .when(Global::getSector)
+            .thenReturn(sectorMock);
     }
 }

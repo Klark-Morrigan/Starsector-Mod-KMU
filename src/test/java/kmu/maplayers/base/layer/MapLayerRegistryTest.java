@@ -26,17 +26,23 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the framework registry's contract with fake layers: the tab order it hands back, the pick an
  * untouched save resolves to, and the frozen keys each screen's selection reads and writes. The generic
- * persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s; this pins only what the registry
- * adds - the frozen map and intel keys, and how {@link MapLayerRegistry#isActive} resolves which
+ * persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s, and the show-or-hide pick's is
+ * {@link PersistedMapLayerVisibilityTest}'s; this pins only what the registry adds - the four frozen
+ * per-screen keys, and how {@link MapLayerRegistry#isActive} resolves which
  * screen's pick is the live one. The screens themselves are stand-in gates here: which concrete screens
  * exist is the composition root's business, and this pins only that the showing one wins.
  */
 final class MapLayerRegistryTest {
+
     // The frozen sector-memory keys, pinned as literals so a rename - which would silently reset every
     // existing save - fails this test rather than shipping. One per screen, so the two picks stay
     // independent.
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
+
+    // The same for each screen's show-or-hide pick, pinned for the same reason.
+    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
+    private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
     // The machinery of the sector being drawn, which the registry passes through rather than
     // resolves. One for the class, so a case asserting it reached the layer is comparing against
@@ -45,15 +51,21 @@ final class MapLayerRegistryTest {
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
+
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
 
     @BeforeEach
     void registerTwoFakeLayers() {
-        when(firstLayerMock.getId()).thenReturn("first");
-        when(secondLayerMock.getId()).thenReturn("second");
+
+        when(firstLayerMock.getId())
+            .thenReturn("first");
+        when(secondLayerMock.getId())
+            .thenReturn("second");
+
         // Second layer is the default, so an untouched save resolves to it - the same shape the real
         // composition root uses (a non-leading default pick).
         MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), secondLayerMock);
+
         // The registry is static, so a screen left wired would outlive its test. Handing it a fresh
         // fake per test starts each from the intel screen closed rather than wherever a neighbour left
         // it - and keeps the live binding, which reaches into a running game, out of the suite.
@@ -70,8 +82,9 @@ final class MapLayerRegistryTest {
 
         @Test
         void getLayersReturnsTheRegisteredLayersInOrder() {
+
             assertThat(MapLayerRegistry.getLayers())
-                    .containsExactly(firstLayerMock, secondLayerMock);
+                .containsExactly(firstLayerMock, secondLayerMock);
         }
     }
 
@@ -80,13 +93,19 @@ final class MapLayerRegistryTest {
 
         @Test
         void getMapSelectionReadsAndWritesTheFrozenMapKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
 
-                MapLayerRegistry.getMapSelection().selectLayer(firstLayerMock);
+                MapLayerRegistry
+                    .getMapSelection()
+                    .selectLayer(firstLayerMock);
 
-                verify(memoryMock).set(MAP_ACTIVE_LAYER_KEY, "first");
+                verify(memoryMock)
+                    .set(MAP_ACTIVE_LAYER_KEY, "first");
             }
         }
     }
@@ -96,13 +115,63 @@ final class MapLayerRegistryTest {
 
         @Test
         void getIntelSelectionReadsAndWritesTheFrozenIntelKey() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
 
-                MapLayerRegistry.getIntelSelection().selectLayer(firstLayerMock);
+                MapLayerRegistry
+                    .getIntelSelection()
+                    .selectLayer(firstLayerMock);
 
-                verify(memoryMock).set(INTEL_ACTIVE_LAYER_KEY, "first");
+                verify(memoryMock)
+                    .set(INTEL_ACTIVE_LAYER_KEY, "first");
+            }
+        }
+    }
+
+    @Nested
+    class GetMapVisibility {
+
+        @Test
+        void getMapVisibilityReadsAndWritesTheFrozenMapKey() {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                linkSectorMemoryTo(globalMock, memoryMock);
+
+                MapLayerRegistry
+                    .getMapVisibility()
+                    .showLayers(false);
+
+                verify(memoryMock)
+                    .set(MAP_LAYERS_SHOWN_KEY, false);
+            }
+        }
+    }
+
+    @Nested
+    class GetIntelVisibility {
+
+        @Test
+        void getIntelVisibilityReadsAndWritesTheFrozenIntelKey() {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                linkSectorMemoryTo(globalMock, memoryMock);
+
+                MapLayerRegistry
+                    .getIntelVisibility()
+                    .showLayers(false);
+
+                verify(memoryMock)
+                    .set(INTEL_LAYERS_SHOWN_KEY, false);
             }
         }
     }
@@ -112,16 +181,26 @@ final class MapLayerRegistryTest {
 
         @Test
         void getActiveLayerAnswersFromTheShowingScreensPick() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY)).thenReturn("second");
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY)).thenReturn("first");
+
+                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY))
+                    .thenReturn("second");
+                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY))
+                    .thenReturn("first");
+
                 intelScreenFake.setIntelTabOpen(true);
 
-                assertThat(MapLayerRegistry.getActiveLayer()).isSameAs(firstLayerMock);
+                assertThat(MapLayerRegistry.getActiveLayer())
+                    .isSameAs(firstLayerMock);
             }
         }
 
@@ -130,10 +209,15 @@ final class MapLayerRegistryTest {
             // The map surface can be asked for a frame before the composition root has run, so the
             // registry has to answer "no pick" rather than leave a caller to find out by throwing.
             MapLayerRegistry.registerLayers(List.of(), null);
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(MapLayerRegistry.getActiveLayer()).isNull();
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThat(MapLayerRegistry.getActiveLayer())
+                    .isNull();
             }
         }
     }
@@ -153,8 +237,11 @@ final class MapLayerRegistryTest {
             when(secondLayerMock.resolveRenderer(installation))
                 .thenReturn(layerRendererMock);
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
 
                 assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
                     .isSameAs(layerRendererMock);
@@ -170,8 +257,11 @@ final class MapLayerRegistryTest {
             when(secondLayerMock.resolveRenderer(installation))
                 .thenReturn(null);
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
 
                 assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
                     .isNull();
@@ -180,10 +270,14 @@ final class MapLayerRegistryTest {
 
         @Test
         void resolveActiveMapRendererIsNullBeforeAnyLayerIsRegistered() {
+
             MapLayerRegistry.registerLayers(List.of(), null);
 
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
 
                 assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
                     .isNull();
@@ -196,11 +290,17 @@ final class MapLayerRegistryTest {
 
         @Test
         void isActiveIsTrueOnlyForTheResolvedActivePick() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
-                globalMock.when(Global::getSector).thenReturn(null);
 
-                assertThat(MapLayerRegistry.isActive(secondLayerMock)).isTrue();
-                assertThat(MapLayerRegistry.isActive(firstLayerMock)).isFalse();
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(null);
+
+                assertThat(MapLayerRegistry.isActive(secondLayerMock))
+                    .isTrue();
+                assertThat(MapLayerRegistry.isActive(firstLayerMock))
+                    .isFalse();
             }
         }
 
@@ -209,35 +309,55 @@ final class MapLayerRegistryTest {
             // The bug this guards: each screen keeps its own tab, so an overlay reading one fixed
             // screen's pick painted the sector map's choice onto the intel screen - No Layer on the
             // intel tab could not turn it off there.
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
+
                 // The two screens sit on different tabs, so only a pick read from the right key can
                 // tell them apart.
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY)).thenReturn("second");
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY)).thenReturn("first");
+                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY))
+                    .thenReturn("second");
+                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY))
+                    .thenReturn("first");
+
                 intelScreenFake.setIntelTabOpen(true);
 
-                assertThat(MapLayerRegistry.isActive(firstLayerMock)).isTrue();
-                assertThat(MapLayerRegistry.isActive(secondLayerMock)).isFalse();
+                assertThat(MapLayerRegistry.isActive(firstLayerMock))
+                    .isTrue();
+                assertThat(MapLayerRegistry.isActive(secondLayerMock))
+                    .isFalse();
             }
         }
 
         @Test
         void isActiveAnswersFromTheMapPickWhileTheIntelScreenIsNotUp() {
-            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+
+            try (var globalMock = mockStatic(Global.class)) {
+
                 var memoryMock = mock(MemoryAPI.class);
+
                 linkSectorMemoryTo(globalMock, memoryMock);
-                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY)).thenReturn("second");
-                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY)).thenReturn(true);
-                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY)).thenReturn("first");
+
+                when(memoryMock.contains(MAP_ACTIVE_LAYER_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(MAP_ACTIVE_LAYER_KEY))
+                    .thenReturn("second");
+                when(memoryMock.contains(INTEL_ACTIVE_LAYER_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(INTEL_ACTIVE_LAYER_KEY))
+                    .thenReturn("first");
                 intelScreenFake.setIntelTabOpen(false);
 
-                assertThat(MapLayerRegistry.isActive(secondLayerMock)).isTrue();
-                assertThat(MapLayerRegistry.isActive(firstLayerMock)).isFalse();
+                assertThat(MapLayerRegistry.isActive(secondLayerMock))
+                    .isTrue();
+                assertThat(MapLayerRegistry.isActive(firstLayerMock))
+                    .isFalse();
             }
         }
     }
@@ -245,8 +365,14 @@ final class MapLayerRegistryTest {
     // Stubs a fresh sector whose memory is {@code memoryMock}, so a test drives the registry's reads and
     // writes through one mocked memory without repeating the two-hop wiring.
     private static void linkSectorMemoryTo(MockedStatic<Global> globalMock, MemoryAPI memoryMock) {
+
         var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getMemoryWithoutUpdate()).thenReturn(memoryMock);
-        globalMock.when(Global::getSector).thenReturn(sectorMock);
+
+        when(sectorMock.getMemoryWithoutUpdate())
+            .thenReturn(memoryMock);
+
+        globalMock
+            .when(Global::getSector)
+            .thenReturn(sectorMock);
     }
 }

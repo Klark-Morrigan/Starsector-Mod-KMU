@@ -19,7 +19,9 @@ final class NoLayerTest {
 
         @Test
         void getIdReturnsTheFrozenSavedId() {
-            assertThat(NoLayer.INSTANCE.getId()).isEqualTo("no_layer");
+
+            assertThat(NoLayer.INSTANCE.getId())
+                .isEqualTo("no_layer");
         }
     }
 
@@ -30,7 +32,8 @@ final class NoLayerTest {
         void resolveRendererIsNullBecauseThisLayerDrawsNothing() {
             // Whichever sector is asked about: there is nothing here for a sector to differ in, so
             // the installation goes unread and every sector gets the same answer.
-            assertThat(NoLayer.INSTANCE.resolveRenderer(new MapLayerInstallation(null))).isNull();
+            assertThat(NoLayer.INSTANCE.resolveRenderer(new MapLayerInstallation(null)))
+                .isNull();
         }
     }
 }

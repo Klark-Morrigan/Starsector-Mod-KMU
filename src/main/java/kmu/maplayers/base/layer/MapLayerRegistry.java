@@ -14,7 +14,9 @@ import java.util.List;
  * to decide whether it is the one to draw - so all agree on the live selection without sharing
  * state directly. Each screen's pick is its own {@link PersistedActiveLayerSelection} under its own
  * key, so a switch on one screen survives reload without moving the other's; the registry holds both
- * so their keys and the one-time legacy migration live in a single place.
+ * so their keys and the one-time legacy migration live in a single place. Each screen's show-or-hide
+ * pick ({@link #getMapVisibility()}, {@link #getIntelVisibility()}) is held the same way and for the
+ * same reason, which puts all four save keys of the per-screen state in one place.
  *
  * <p>Because the picks are per-screen, "which pick is live" is a per-frame question rather than a
  * fixed answer: the same map widget draws on the sector map and inside the intel screen's visor, so an
@@ -36,6 +38,10 @@ public final class MapLayerRegistry {
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
 
+    // The same for each screen's show-or-hide pick, and frozen for the same reason.
+    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
+    private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
+
     // Each screen's pick, persisted under its own frozen key. The map host draws through the map
     // selection and the overlay follows it; the intel host draws through the intel selection. Held here
     // so both keys sit in one place.
@@ -43,6 +49,12 @@ public final class MapLayerRegistry {
         new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY);
     private static final PersistedActiveLayerSelection INTEL_SELECTION =
         new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY);
+
+    // Each screen's show-or-hide pick, alongside the pick above it and per screen for the same reason.
+    private static final PersistedMapLayerVisibility MAP_VISIBILITY =
+        new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY);
+    private static final PersistedMapLayerVisibility INTEL_VISIBILITY =
+        new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY);
 
     // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
     // until a composition root registers them at startup, before any sector map can open.
@@ -106,6 +118,22 @@ public final class MapLayerRegistry {
      */
     public static ActiveLayerSelection getIntelSelection() {
         return INTEL_SELECTION;
+    }
+
+    /**
+     * @return the map screen's show-or-hide pick, for that screen's control to flip and for everything
+     *         drawing there to read, so the whole visible footprint of the layers stands down together
+     */
+    public static MapLayerVisibility getMapVisibility() {
+        return MAP_VISIBILITY;
+    }
+
+    /**
+     * @return the intel screen's show-or-hide pick, its own under its own key, so hiding the layers on
+     *         one screen leaves the other screen showing them
+     */
+    public static MapLayerVisibility getIntelVisibility() {
+        return INTEL_VISIBILITY;
     }
 
     /**

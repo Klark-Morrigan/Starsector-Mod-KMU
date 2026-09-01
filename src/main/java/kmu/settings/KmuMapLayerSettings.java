@@ -18,6 +18,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
  */
 public final class KmuMapLayerSettings {
 
+    private static final String MAP_LAYER_HIDE_FADE_SECONDS_FIELD =
+        "kmu_map_visuals_layers_hideFadeSeconds";
+
     private static final String SIDEBAR_PADDING_TOP_FIELD =
         "kmu_map_visuals_sidebar_paddingTop";
     private static final String SIDEBAR_PADDING_LEFT_FIELD =
@@ -216,6 +219,14 @@ public final class KmuMapLayerSettings {
     // restated as a literal like every fallback here so this class stays decoupled from the widget
     // library.
     private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
+
+    // The same 0.25 as the collapse pace above, so the two chrome movements on that screen agree out
+    // of the box and a player who wants instant chrome winds both to 0. Restated rather than read off
+    // the collapse knob: a LunaLib slider always holds a concrete value, so there is no unset state a
+    // dynamic default could fall back from, and a sentinel for "follow the other slider" would collide
+    // with 0 already meaning snap. The two are separate knobs because they animate different amounts of
+    // screen - one folds a panel that stays in view, the other dissolves the whole overlay off it.
+    private static final float DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS = 0.25f;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette
     // whatever faction the player flies, so a panel following the faction is the one thing on the
@@ -849,6 +860,18 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readFloat(
             SIDEBAR_COLLAPSE_SECONDS_FIELD,
             DEFAULT_SIDEBAR_COLLAPSE_SECONDS);
+    }
+
+    /**
+     * @return how long the map layers take to dissolve off a screen when they are hidden (and to
+     *         come back when they are shown), in seconds; 0.25 by default, 0 cutting between the two
+     *         with no fade. Multiplied into what the layers paint, so the whole overlay, its labels
+     *         and its sidebar thin together rather than one snapping out from under another
+     */
+    public static float getMapLayerHideFadeSeconds() {
+        return KmuLunaSettings.readFloat(
+            MAP_LAYER_HIDE_FADE_SECONDS_FIELD,
+            DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS);
     }
 
     /**
