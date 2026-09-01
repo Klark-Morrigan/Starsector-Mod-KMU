@@ -513,8 +513,9 @@ about what the overlay means.
   alone and asks a `MapLayerStalenessSource` what moved since it last asked, so which changes
   count, and which signal each one raises, stay the layer's answer - a signal being a
   `MapLayerRefreshSignal`, declared by the framework or by the layer that alone means anything by
-  it. `MapLayerRefreshBoard` is what a signal is raised on, one per sector held by that sector's
-  installation, since the stale set names systems by bare id; `MapLayerRefresh` resolves the running
+  it. `MapLayerRefreshBoard` is what a signal is raised on, one per sector held by [that sector's
+  installation](base/installation/README.md), since the stale set names systems by bare id;
+  `MapLayerRefresh` resolves the running
   sector's for the seams vanilla hands no sector. The signals themselves, who declares which, and
   the four rebuild paths they drive are
   [the caching notes](../../../../../docs/dev/caching.md).

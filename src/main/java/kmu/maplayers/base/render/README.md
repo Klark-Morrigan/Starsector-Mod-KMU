@@ -37,9 +37,11 @@ its box the same way, off the same two reads, so neither pass names a layer.
 Which sector that is has to be resolved rather than passed: this hook is handed a fade factor and
 nothing else, and the plugin cannot be handed one either - the engine rebuilds it from the save,
 with no seam to inject through. So it resolves through the one handle it does have, the terrain
-entity it rides on: that entity's containing location is its sector's hyperspace, and
-`MapLayerInstallations` indexes each installation by that location beside the sector itself. Per
-frame, never held - an installation is a live object and this plugin is written into the save.
+entity it rides on: that entity's containing location is its sector's hyperspace, which
+`MapLayerInstallations` answers by. Per frame, never held - an installation is a live object and
+this plugin is written into the save. What an installation is, what it holds and how its lifetime is
+settled are [the installed machinery](../installation/README.md); this file covers only how a
+surface finds the one it is drawing.
 
 A surface whose location has nothing installed stands down instead of drawing. It belongs to a
 sector nothing is drawing - a save carrying the terrain with the overlay switched off, or a sector

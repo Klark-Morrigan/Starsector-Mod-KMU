@@ -25,8 +25,9 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 Two sectors sharing one holder is not merely unsupported, it is wrong and quiet.
 
 Everything under the drawing is keyed by **bare system id**. The stale set names systems by id, the
-motion tracker keys observations by id, and `CellGeometryCache` reconciles cells by id. Nothing
-forbids two sectors from generating a system under the same one. So a shared holder means one
+motion tracker keys observations by id, and [the geometry cache](../geometry/README.md) reconciles
+cells by id. Nothing forbids two sectors from generating a system under the same one. So a shared
+holder means one
 sector's colony change marks the other's system stale; one sector's drift reads as the other's; and
 a system present in both at different positions is not seen to have moved, so each sector keeps the
 cells the other cut rather than overwriting them.
@@ -47,14 +48,18 @@ Every holder here once had a per-load discard; disposal replaced all of them.
 | `MovingSystems` | where this sector's systems were last seen, and so which are drifting rather than sitting still |
 | `MapHoverState` | what the cursor is over on this sector's map |
 
+Which signals can be raised on that board, who raises each, and which of the four rebuild paths it
+drives are [the caching notes](../../../../../../../docs/dev/caching.md); this package settles only
+whose board it is.
+
 The fourth is the **sector itself**, answered by `resolveSector()`. It is there because two seams
 below this package are handed no sector to pass down: vanilla's map render hook is given a fade
 factor and nothing else, and a render surface is terrain, which reaches a `LocationAPI` and never a
 `SectorAPI`. A stage under either would otherwise ask the running game which sector it is looking
 at - correct only while the sector it holds cells for and the sector that is loaded are the same
 one. Taking it off the installation rather than passing it alongside is what stops a rebuild cutting
-cells from one sector while reading holders out of another; the political map's cache and its
-staleness poll both do exactly that.
+cells from one sector while reading holders out of another; [the political
+map](../../politicalmap/README.md)'s draw cache and its staleness poll both do exactly that.
 
 ## How a layer's own machinery gets in
 
@@ -108,7 +113,7 @@ Three, because the seams below differ in what they hold.
 | Resolution | For | Answers when nothing is installed |
 | --- | --- | --- |
 | `resolveInstallationFor(sector)` | anything already holding a sector - an installer, a listener | the detached installation |
-| `resolveInstallationIn(location)` | a render surface, which is terrain and reaches only its containing location | **null** |
+| `resolveInstallationIn(location)` | [a render surface](../render/README.md), which is terrain and reaches only its containing location | **null** |
 | `resolveInstallationForLiveSector()` | a seam vanilla hands no sector at all | the detached installation |
 
 The location resolution walks the installed sectors comparing `sector.getHyperspace() == location`

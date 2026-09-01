@@ -175,7 +175,10 @@ and reaches the same board for them.
 One board per sector, held by that sector's
 [`MapLayerInstallation`](../../src/main/java/kmu/maplayers/base/installation/MapLayerInstallation.java):
 every signal on it is a fact about one sector, and the stale set names that sector's
-systems by bare id. A producer holding a sector raises on that sector's board; one
+systems by bare id. Why that has to be a sector's rather than the process's, and how the
+installation holding it is made and released, are
+[the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md).
+A producer holding a sector raises on that sector's board; one
 driven by a seam vanilla hands no sector - a settings change, the map render hook -
 goes through
 [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java),
@@ -487,7 +490,9 @@ change of sector: the geometry cache reconciles by diffing system *ids*, so a
 system present in both saves at a different position reads as unchanged. So a
 cache serves one sector and one only - it is made when the layers are installed on
 that sector and released when they are removed, which a load does for every
-standing installation before installing the loaded one. Every revision starts at a
+standing installation before installing the loaded one
+([the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md)
+sets out that lifetime). Every revision starts at a
 rebuild-forcing seed, so the first frame after an install rebuilds both halves from
 scratch, and there is nothing of a previous sector's for it to be told about.
 
