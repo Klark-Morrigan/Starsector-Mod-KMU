@@ -23,9 +23,9 @@ import java.util.Map;
  *
  * <p><b>Which is why the remedy here is to MOVE a span rather than to drop one.</b>
  * {@link SpanFormations} answers the same crowding by asking which spans hold no water back and
- * dropping them, which is right for a span that was buying nothing. This asks the other
- * question - can the ones that are staying be given feet of their own - and the two run in that
- * order: what is redundant goes first, and what remains is spread.
+ * dropping them. Moving is the lesser remedy of the two - a span given a foot of its own is
+ * still on the map, while a span dropped for sharing one is a piece of void nothing holds - so
+ * this runs FIRST, and the dropping is left with the crowds that could not be separated.
  *
  * <p><b>Along the frontage, and onto a point the coast already carries.</b> An anchor is only
  * worth anything if it sits ON the drawn line, and the line is sampled - so a place computed at
@@ -57,12 +57,18 @@ public final class CrowdedAnchors {
      * Steps each span's feet off anchors another span has already claimed, as far along their
      * own frontage as the separation asks and the room allows.
      *
-     * <p>Three answers, in the order the room runs out. A frontage with the separation to spare
-     * gives the first of its points past that distance, taken from whichever side of the anchor
-     * has more room left. A frontage without it gives its far end, which is as far from the
-     * crowded point as that stretch of coast goes. And a frontage whose two ends are both
-     * spoken for already gives its middle - the one part of it still open when both ways out
-     * are taken.
+     * <p>Answers in the order the room runs out. A frontage with the separation to spare gives
+     * the first of its points past that distance, in whichever direction is open - so a foot
+     * moves as little as the rule asks. A frontage without it gives an end, which is as far from
+     * the crowded point as that stretch of coast goes. A frontage that can offer neither - both
+     * ends taken, and no room to meet the separation between them - gives its middle, the
+     * furthest into what is left from either crowd.
+     *
+     * <p>And failing all three, whatever of the stretch remains, from the middle outward. A foot
+     * moved one sampling place along has stopped sharing its anchor, which is the whole point;
+     * refusing that because the separation asked for more would leave the fan standing for the
+     * sake of the number. So the separation is what a move REACHES FOR rather than a floor under
+     * it, and a stretch hemmed in on both sides still gives up what little it has.
      *
      * <p>The order the spans arrive in decides who keeps a contested point: what forces a span
      * to move is a foot something SETTLED is standing on, so the first to want a place holds
@@ -232,82 +238,82 @@ public final class CrowdedAnchors {
         return NO_POINT;
     }
 
-    // Which points of the run to try, best first.
+    // Which points of the run to try, best first: the separation, then the ends, then the
+    // middle.
     //
-    // Both ends taken means both ways out of the crowd lead to another one, so the middle is
-    // what is left - and the points are offered outward from it, nearest first, so a middle
-    // that is itself spoken for gives way to the next place along rather than to the far end.
+    // Everything past the separation, in either direction, nearest first. So a foot moves as
+    // little as the rule asks, and moves whichever way along the coast the room and the lines
+    // already down allow - the two directions are one ordered list rather than one side tried to
+    // exhaustion before the other is looked at. Which way a foot should go is not something this
+    // can know in advance: stepping TOWARD the span it is stepping away from swings its line
+    // across that span within a point or two, and stepping the other way does not.
     //
-    // Otherwise the run is walked outward from the crowded point: everything past the
-    // separation on the roomier side, nearest first, so the foot moves as little as the rule
-    // asks; then that side's far end, which is the answer when the side has less room than the
-    // separation wanted; then the other side, the same way.
+    // Then the two ends, which is the snap for a run with less room than the separation wanted;
+    // where the run had the room they are already among the points above and add nothing.
+    //
+    // Then the middle, and outward from it - the points nearer than the separation, which is
+    // what a stretch has left to offer when its ends are spoken for and it cannot meet the
+    // separation between them.
+    //
+    // A fallback rather than a branch of its own, which is the correction to a first attempt
+    // that asked up front whether both ends were taken and went straight to the middle if they
+    // were. The ends of a run are junctions the neighbouring cell's coast passes through too, so
+    // with a few hundred feet on the map some span is nearly always standing within tolerance of
+    // one - the test was nearly always true, and the separation was never consulted at all.
     private static List<Integer> orderCandidates(
             List<double[]> run,
             double[] along,
             int at,
             MoveContext context) {
 
-        if (isEndOccupied(run, 0, context.takenFeet())
-                && isEndOccupied(run, run.size() - 1, context.takenFeet())) {
-
-            return orderOutwardFromMiddle(run, along);
-        }
-
-        var backward = along[at];
-        var forward = along[run.size() - 1] - along[at];
         var candidates = new ArrayList<Integer>(run.size());
 
-        if (backward >= forward) {
+        for (var index = 0; index < run.size(); index++) {
 
-            addSide(candidates, along, at, -1, 0, context.separation());
-            addSide(candidates, along, at, 1, run.size() - 1, context.separation());
-        } else {
-            addSide(candidates, along, at, 1, run.size() - 1, context.separation());
-            addSide(candidates, along, at, -1, 0, context.separation());
-        }
-        return candidates;
-    }
-
-    // One side's offers: the points past the separation, nearest first, and then the side's own
-    // end - which is already among them where the side had the room, and is the snap the rule
-    // asks for where it did not.
-    private static void addSide(
-            List<Integer> candidates,
-            double[] along,
-            int at,
-            int step,
-            int last,
-            double separation) {
-
-        for (var index = at + step; index != last + step; index += step) {
-
-            if (Math.abs(along[index] - along[at]) >= separation
-                    && !candidates.contains(index)) {
-
+            if (index != at && Math.abs(along[index] - along[at]) >= context.separation()) {
                 candidates.add(index);
             }
         }
 
-        if (at != last && !candidates.contains(last)) {
-            candidates.add(last);
+        candidates.sort((one, other) -> Double.compare(
+            Math.abs(along[one] - along[at]), Math.abs(along[other] - along[at])));
+
+        addEnd(candidates, 0, at);
+        addEnd(candidates, run.size() - 1, at);
+        addOutwardFromMiddle(candidates, run, along, at);
+
+        return candidates;
+    }
+
+    private static void addEnd(List<Integer> candidates, int end, int at) {
+
+        if (end != at && !candidates.contains(end)) {
+            candidates.add(end);
         }
     }
 
-    // Every point of the run, offered outward from its middle.
-    private static List<Integer> orderOutwardFromMiddle(List<double[]> run, double[] along) {
+    // Whatever the run has left to offer, from its middle outward - and not the crowded point
+    // itself, which is the one place a foot standing on it cannot be moved to.
+    private static void addOutwardFromMiddle(
+            List<Integer> candidates,
+            List<double[]> run,
+            double[] along,
+            int at) {
 
         var middle = along[run.size() - 1] / 2;
-        var candidates = new ArrayList<Integer>(run.size());
+        var left = new ArrayList<Integer>(run.size());
 
         for (var index = 0; index < run.size(); index++) {
-            candidates.add(index);
+
+            if (index != at && !candidates.contains(index)) {
+                left.add(index);
+            }
         }
 
-        candidates.sort((one, other) -> Double.compare(
+        left.sort((one, other) -> Double.compare(
             Math.abs(along[one] - middle), Math.abs(along[other] - middle)));
 
-        return candidates;
+        candidates.addAll(left);
     }
 
     // How far along the run each of its points lies, so that "a distance along the frontage" is
@@ -357,10 +363,6 @@ public final class CrowdedAnchors {
             }
         }
         return NO_POINT;
-    }
-
-    private static boolean isEndOccupied(List<double[]> run, int end, List<double[]> occupied) {
-        return isOccupied(run.get(end), occupied);
     }
 
     // Whether a span already stands on a point. Read at the same tolerance two spans are called

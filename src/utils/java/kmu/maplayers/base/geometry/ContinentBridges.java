@@ -70,9 +70,9 @@ import java.util.function.BiPredicate;
  *
  * <p><b>And no two of them stand on one point.</b> A cell offers a stretch of coast to anchor
  * on, and where several spans settle on the same vertex of it the map shows a fan - which is
- * not a feature of the void but of where the search happened to look. What is redundant is
- * dropped, and what remains is stepped along its own frontage until each has a foot of its
- * own; see {@link SpanFormations} and {@link CrowdedAnchors}.
+ * not a feature of the void but of where the search happened to look. Each is stepped along its
+ * own frontage until it has a foot to itself, and only a crowd that cannot be separated that
+ * way is thinned instead; see {@link CrowdedAnchors} and {@link SpanFormations}.
  *
  * <p><b>No span crosses one already laid.</b> Taken shortest first, each is kept only if it
  * clears what is already down, so the tighter claim on a stretch of void stands and the
@@ -194,27 +194,28 @@ public final class ContinentBridges {
         var kept = AnchoredSpans.keepSpansWorthLaying(
             offered, coastWalls, NOTHING_ALREADY_LAID, rules.coastSlack());
 
-        // Thinned, then spread, so every reader of this method's answer sees the same resolved
+        // Spread, then thinned, so every reader of this method's answer sees the same resolved
         // set: a formation left for a consumer to tidy is a formation two consumers tidy
         // differently. Switched off, what comes back is the laying as it stands - which is the
-        // only way to see what the thinning is doing, since the spans it drops are gone rather
-        // than marked.
+        // only way to see what either pass is doing, since a span each of them touches is moved
+        // or gone rather than marked.
         //
-        // In that order because the two answer one crowded anchor differently and only one of
-        // them can go first sensibly. Thinning asks which spans were buying nothing and drops
-        // them; spreading asks whether the rest can be given feet of their own. Spread first,
-        // there would be no shared anchors left for the thinning to find, and a span that holds
-        // nothing back would keep its place on the map for having been moved.
-        var thinned = rules.shouldThinFormations()
-            ? SpanFormations.resolveSharedAnchors(kept, traced, parameters)
-            : kept;
-
-        return List.copyOf(CrowdedAnchors.spreadCrowdedAnchors(
-            thinned,
+        // In that order because the two answer one crowded anchor differently and moving is the
+        // lesser remedy: a span given a foot of its own is still on the map, while a span
+        // dropped for sharing one is a piece of void nothing holds. So the crowd is spread
+        // first, and the thinning is left with the formations that could not be separated - a
+        // frontage of one point, or one whose every place is taken or would put the line across
+        // another span. Thinned first, spans were being dropped that had somewhere to stand.
+        var spread = CrowdedAnchors.spreadCrowdedAnchors(
+            kept,
             NOTHING_ALREADY_LAID,
             shore.collectFrontages(traced),
             union,
-            rules.anchorSeparation()));
+            rules.anchorSeparation());
+
+        return List.copyOf(rules.shouldThinFormations()
+            ? SpanFormations.resolveSharedAnchors(spread, traced, parameters)
+            : spread);
     }
 
     // The shore's own answer to which pairs are worth offering a span, built once so the offer

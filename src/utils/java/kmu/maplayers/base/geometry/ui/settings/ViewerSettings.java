@@ -132,11 +132,15 @@ public final class ViewerSettings {
 
     // How far along its frontage a span's foot steps off an anchor another span already holds.
     //
-    // Twice the width a span is drawn at, so the two feet stand a full stroke clear of each
-    // other rather than merely not coincident: at one stroke they touch, and a fan drawn with
-    // its lines touching at the base still reads as a fan. Wider than that starts moving feet
-    // for the sake of the rule rather than for what can be seen.
-    public static final double SPAN_ANCHOR_SEPARATION_DEFAULT = 2 * MapLook.SPAN_STROKE;
+    // Read against the COAST'S OWN SAMPLING rather than against the width a span is drawn at.
+    // A foot lands on a vertex the traced line already carries, so the shortest move there is
+    // is one sampling step - and the step is a few hundred map units on a typical stretch. Any
+    // setting under that selects the same vertex as any other, which is a knob that reads as a
+    // switch: off, or one step along.
+    //
+    // Several steps, then, so that moving it moves feet. Wider still starts flinging a foot to
+    // the end of every stretch, which is the snap rule doing the work rather than this one.
+    public static final double SPAN_ANCHOR_SEPARATION_DEFAULT = 800;
 
     public static final float JITTER_DEFAULT = 35;
     public static final double JITTER_SCALE = 100.0;

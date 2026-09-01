@@ -179,12 +179,16 @@ public final class ViewerSettingsPanel {
 
     // How far along its frontage a span's foot steps off an anchor another span holds, in map
     // units. Zero switches the spreading off, which is what the pass reads a non-positive
-    // setting as. The ceiling is about a fifth of a cell's turn: past that the rule is asking
-    // for room that almost no frontage has, so every foot snaps to the end of its stretch and
-    // the knob stops distinguishing anything.
+    // setting as.
+    //
+    // The floor of the useful range is the coast's own sampling step, a few hundred units: a
+    // foot lands on one of the traced line's vertices, so anything under one step picks the
+    // same vertex as any other and the slider reads as a switch. The ceiling is most of a
+    // cell's turn - past that no frontage has the room, every foot snaps to the end of its
+    // stretch, and the knob stops distinguishing anything either.
     private static final double ANCHOR_SEPARATION_MINIMUM = 0;
 
-    private static final double ANCHOR_SEPARATION_MAXIMUM = 1200;
+    private static final double ANCHOR_SEPARATION_MAXIMUM = 3000;
 
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
