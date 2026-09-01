@@ -149,6 +149,35 @@ public final class PoliticalMapTerritoryFixtures {
     }
 
     /**
+     * A territories under a stated view and theme rather than the inert pair the builders above
+     * carry, for a suite whose subject is what the theme says about a bloc that view surfaced.
+     *
+     * <p>Those two are the only inputs the builders above leave unreachable: a caller can write
+     * holders, cells and a spotlight on top through the model's own accessors, but the view and
+     * the theme are read-only once built - and a theme left null answers a global-tier read with
+     * nothing at all rather than with a tier that paints nothing.
+     *
+     * @param view        the view the build painted, whose id names the scope a hover is read under
+     * @param renderStyle the theme the build styled against, its global tier included
+     * @return a live territories holding nobody, ready to have draw records written into it
+     */
+    public static PoliticalMapTerritories createTerritoriesThemedFor(
+            PoliticalMapView view,
+            RenderStyle renderStyle) {
+
+        return new PoliticalMapTerritories(
+            SystemOccupancy.createEmpty(),
+            new LinkedHashSet<>(),
+            new MapStyling(
+                renderStyle,
+                NEUTRAL_PALETTE, // Neutral palette.
+                NEUTRAL_PALETTE, // Desaturation palette.
+                NEUTRAL_PALETTE), // Presence palette.
+            new ViewGrouping(view, HolderGrouping.identity()),
+            FilterSnapshot.unfiltered());
+    }
+
+    /**
      * A theme painting every one of this map's categories in the same bundle, over the shared
      * inert global tier.
      *

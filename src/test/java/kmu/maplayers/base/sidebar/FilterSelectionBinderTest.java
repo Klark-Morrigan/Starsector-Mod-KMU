@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import com.fs.starfarer.api.util.Misc;
 
+import kmlib.starsector.ui.controls.ControlHoverReport;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
@@ -68,6 +69,12 @@ final class FilterSelectionBinderTest {
     // the block.
     private static final int COLUMNS_SELECTOR = 1;
     private static final int SORT_ROW = 2;
+
+    // The hover slot the picker reports its pointer into, standing in for the same sector's machinery
+    // the board does. Read back directly by the hover cases rather than stubbed, the slot being a
+    // plain holder with nothing behind it to stand in for - and one per case, so a hover left resting
+    // is never a hover the next case starts from.
+    private final FilterHoverSlot builtHoverSlot = new FilterHoverSlot();
 
     private MockedStatic<Misc> miscMock;
 
@@ -186,6 +193,44 @@ final class FilterSelectionBinderTest {
         }
 
         @Test
+        void buildPickerRecordsAHoveredRowInTheScopesHoverSlot() {
+            // The pointer's row reaches the sector's own slot, which is what a layer previews the
+            // spotlight from. Written into the scope the picks use, so a layer cannot end up
+            // previewing one scope's row while filtering by another's.
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                stubLabels(stringsMock);
+
+                var picker = buildPickerFor(buildPicker());
+                picker.hoverReport().reportHoveredCell(0);
+
+                assertThat(builtHoverSlot.getHoveredIdOf(SCOPE_ID))
+                    .isEqualTo("drift_1");
+            }
+        }
+
+        @Test
+        void buildPickerClearsTheScopesHoverSlotWhenThePointerLeavesTheList() {
+            // The leave is the one reading a stream never says out loud, so it arrives as a report
+            // of its own - swallowed here, a layer would go on previewing the last row the pointer
+            // crossed while the pointer is somewhere else entirely.
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                stubLabels(stringsMock);
+
+                var picker = buildPickerFor(buildPicker());
+
+                picker.hoverReport().reportHoveredCell(0);
+                picker.hoverReport().reportHoveredCell(ControlHoverReport.NO_CELL_HOVERED);
+
+                assertThat(builtHoverSlot.getHoveredIdOf(SCOPE_ID))
+                    .isNull();
+            }
+        }
+
+        @Test
         void buildPickerRoutesAColumnsPickToTheColumnBinder() {
             // The other two picks are handed to the binders that already own those slots. Asserted
             // at the binder rather than at the sector-memory key behind it: what this class decides
@@ -258,7 +303,8 @@ final class FilterSelectionBinderTest {
                         ListPicker.empty(),
                         ListColumns.ONE,
                         List.of(),
-                        BUILT_BOARD))
+                        BUILT_BOARD,
+                        builtHoverSlot))
                     .isEmpty();
 
                 sortBinderMock.verify(
@@ -276,13 +322,14 @@ final class FilterSelectionBinderTest {
     // The one call into the binder every test goes through: the two items with their own
     // vocabulary, a single column, and nothing paired beside the sort, since none of those is what
     // this suite varies.
-    private static List<ControlSpec> buildPicker() {
+    private List<ControlSpec> buildPicker() {
         return FilterSelectionBinder.buildPicker(
             SCOPE_ID,
             HAZARD_PICKER,
             ListColumns.ONE,
             List.of(),
-            BUILT_BOARD);
+            BUILT_BOARD,
+            builtHoverSlot);
     }
 
     // A mode in its own natural direction over the foreign vocabulary - what a save that has never

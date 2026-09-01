@@ -75,6 +75,28 @@ public final class ThemeFixtures {
     }
 
     /**
+     * The same inert tier with one live preview-highlight tier in it, for a suite whose subject is
+     * what a whole lit set of cells is drawn to. The cursor's tier stays off beside it, so a case
+     * cannot pass by reading whichever of the two it happened to reach.
+     *
+     * @param previewHighlight the tier a previewed set of cells is lit to
+     * @return a live global tier, inert but for its preview highlight
+     */
+    public static GlobalStyle createGlobalStylePreviewingWith(
+            HoverHighlightStyle previewHighlight) {
+
+        var inert = createInertGlobalStyle();
+
+        return new GlobalStyle(
+            inert.hatch(),
+            inert.borderSmoothing(),
+            NO_HIGHLIGHT,
+            previewHighlight,
+            inert.desaturationDarkening(),
+            inert.presenceLightening());
+    }
+
+    /**
      * A hatch laid out to the given pattern and stroked the way the shipped theme strokes it, for
      * a suite whose subject is the hatched geometry rather than how it reaches the screen.
      *

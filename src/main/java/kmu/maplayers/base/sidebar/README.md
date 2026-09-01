@@ -336,8 +336,11 @@ ever being reported, since neither is visible from here.
 at one point: it reads the scope's spotlighted id and the scope's stored sort on the way in,
 resolves the columns caption out of this mod's strings, and routes each of the picker's three
 reported picks to the slot that keeps it - the item pick to `FilterSelection` under that scope, the
-other two through the binders beside it, the sort under that same scope. One scope covers both
-answers, so a layer cannot bind its filter and its sort to different slots. A layer that composed
+other two through the binders beside it, the sort under that same scope. The row the pointer rests
+on routes the same way, into `FilterHoverSlot` under that scope, and it is the one report that
+raises nothing and persists nothing: a preview is drawn over paint already on the map. One scope
+covers every one of those answers, so a layer cannot bind its filter, its sort and its preview to
+different slots. A layer that composed
 the picker itself would have to name all three slots, which is exactly the knowledge these binders
 exist to hold, so a calling layer hands over its `ListPicker`, its column count, and whatever it
 pairs beside the sort selector, and names no store at all.

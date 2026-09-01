@@ -228,8 +228,8 @@ only place it is written down; `PoliticalMapBandLayout` is which side of the map
 of them paints on, read per pass from the player's four **Nebula draw order** settings. The order
 among the sub-layers is the layer's and the side of the nebulae is the player's, which is the whole
 division: what makes a sub-layer legible against the ones under it is fixed, and what a haze over it
-costs is taste. Three sub-layers ride with a chosen one rather than being chosen themselves - the
-contested hatch inside the fill it is half of, and the hover feedback and the debug overlays with
+costs is taste. Four sub-layers ride with a chosen one rather than being chosen themselves - the
+contested hatch inside the fill it is half of, and the two highlights and the debug overlays with
 the base view they brighten, annotate, or replace.
 
 In `render/hover`, `PoliticalMapHoverHighlightSource` is this layer's answers about the cell under
@@ -237,6 +237,24 @@ the cursor: the owner's border loops it might sit inside and the shade its fill 
 frame's painted shapes it hands the framework unchanged. `PoliticalMapHoverGates` is whether this
 layer answers the cursor at all, its own two switches ANDed with the framework's, plus whether
 either kind of feedback still needs the cursor read.
+
+`PoliticalMapPreviewHighlightRenderer` is the other highlight, answering a pointer on the sidebar
+rather than one on the map: hovering a row of the spotlight picker lights every system that bloc is
+present in, showing what picking it would spotlight without picking it. Nothing about the paint
+moves for it - no rebuild, no refilter, no re-clustering, no border re-trace - because it reads a
+set the picker's own walk already resolved (`SelectableBlocCache.readPresentSystemIds`) and traces
+it over the frame's own draw lists through the framework's `PreviewHighlightGeometry`. Its
+`PreviewHighlightPaint` is the decision the frame acts on: the shapes lit and the one shade they
+burn in, either half absent meaning nothing is drawn.
+
+The shade is the previewed bloc's own, keyed on the bloc rather than on any cell of it
+(`MapPalettes.pickBlocPaletteColour`), which is what separates it from the cursor's highlight: a
+previewed bloc lights cells rivals hold and cells a spotlight has sunk to grey, and a shade read
+off those cells would answer in someone else's colour. It has no gate of its own beside
+`PoliticalMapHoverGates` - those switch the map's answer to the *cursor* - so the preview's own
+style tier is where it is turned down, and it draws whether or not the cursor feedback is on. The
+two cannot collide: the sidebar parks the map hover while the pointer is over it, so the cursor's
+highlight is already dark on every frame a preview could show.
 ### Hover tooltips (`base/tooltip`)
 
 What this layer says about the hovered system, each view injecting the explanation of the mechanic

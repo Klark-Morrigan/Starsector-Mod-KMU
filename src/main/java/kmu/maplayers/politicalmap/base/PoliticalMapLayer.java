@@ -9,6 +9,7 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
+import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
@@ -144,6 +145,9 @@ public final class PoliticalMapLayer implements MapLayer {
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
                 board),
-            board);
+            board,
+            // The same installation's hover slot, so the row the pointer rests on is previewed
+            // against the map it was drawn over rather than against whichever sector is running.
+            FilterHoverSlot.resolveHoverSlotIn(installation));
     }
 }

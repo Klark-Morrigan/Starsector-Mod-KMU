@@ -10,6 +10,7 @@ import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
@@ -419,14 +420,18 @@ final class PoliticalMapLayerRendererTest {
     // The read's source records the holder it was handed instead of ignoring it, since what the
     // renderer passes down is the one thing about the wiring no other suite can see.
     private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
+
+        var installation = new MapLayerInstallation(null);
+
         return new PoliticalMapLayerRenderer(
-            new PoliticalMapCache(new MapLayerInstallation(null)),
+            new PoliticalMapCache(installation),
             new MapCoverReader(List.of(cover)),
             hoverState,
             handedHoverState -> {
                 hoverStateHandedToTheReadSource = handedHoverState;
                 return hoverPublisherMock;
-            });
+            },
+            new PoliticalMapPreviewHighlightRenderer(installation));
     }
 
     // A view the player has picked, so the frame work gated behind one is reached. Which view it is

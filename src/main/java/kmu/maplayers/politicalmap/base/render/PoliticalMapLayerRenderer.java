@@ -18,6 +18,7 @@ import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
 
 import org.apache.log4j.Logger;
 
@@ -123,13 +124,15 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             PoliticalMapCache cache,
             MapCoverReader mapCoverReader,
             MapHoverState hoverState,
-            Function<MapHoverState, MapHoverPublisher> hoverPublisherSource) {
+            Function<MapHoverState, MapHoverPublisher> hoverPublisherSource,
+            PoliticalMapPreviewHighlightRenderer previewHighlightRenderer) {
 
         this.cache = cache;
         this.mapCoverReader = mapCoverReader;
         this.hoverState = hoverState;
         this.hoverPublisherSource = hoverPublisherSource;
-        this.overlayRenderer = new PoliticalMapOverlayRenderer(hoverState);
+        this.overlayRenderer =
+            new PoliticalMapOverlayRenderer(hoverState, previewHighlightRenderer);
     }
 
     /**
@@ -138,8 +141,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      * settled here, the renderer itself naming only the reader and the source.
      *
      * @param installation the machinery this renderer is being made for, whose sector its cache cuts
-     *                     its cells from, whose movers that cut leaves out, and whose hover holder
-     *                     the cursor read publishes into
+     *                     its cells from, whose movers that cut leaves out, whose hover holder the
+     *                     cursor read publishes into, and whose picker the preview is read off
      * @return a renderer for that installation, its cache empty until the first frame builds it
      */
     public static PoliticalMapLayerRenderer createForLiveScreen(MapLayerInstallation installation) {
@@ -147,7 +150,8 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             new PoliticalMapCache(installation),
             MapCoverReader.createForLiveScreen(),
             installation.resolveHoverState(),
-            PoliticalMapLayerRenderer::buildLiveHoverPublisher);
+            PoliticalMapLayerRenderer::buildLiveHoverPublisher,
+            new PoliticalMapPreviewHighlightRenderer(installation));
     }
 
     /**

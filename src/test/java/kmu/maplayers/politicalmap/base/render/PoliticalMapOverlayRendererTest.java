@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
@@ -10,7 +11,9 @@ import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
@@ -65,8 +68,7 @@ final class PoliticalMapOverlayRendererTest {
     // compositor is built with the holder of its own installed machinery.
     private final MapHoverState hoverState = new MapHoverState();
 
-    private final PoliticalMapOverlayRenderer overlayRenderer =
-        new PoliticalMapOverlayRenderer(hoverState);
+    private final PoliticalMapOverlayRenderer overlayRenderer = buildOverlayRenderer();
 
     @Nested
     class RenderOnMap {
@@ -193,7 +195,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 // Built inside the construction mock, since the highlight renderer is a field this
                 // compositor creates for itself - there is no seam to inject one through.
-                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
+                buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -225,7 +227,7 @@ final class PoliticalMapOverlayRendererTest {
                 NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
+                buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -255,7 +257,7 @@ final class PoliticalMapOverlayRendererTest {
                 NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
+                buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -481,7 +483,7 @@ final class PoliticalMapOverlayRendererTest {
                     NebulaDrawOrderChoice.ABOVE);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
+                buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -550,7 +552,7 @@ final class PoliticalMapOverlayRendererTest {
                     NebulaDrawOrderChoice.ABOVE);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
+                buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -638,12 +640,28 @@ final class PoliticalMapOverlayRendererTest {
     // A cache holding a built, non-debug frame with nothing in it. The bands are decided on the band
     // alone, so an empty frame exercises the split without any geometry having to exist - the styled
     // cells are stubbed only because the compositor's one-shot debug line counts them.
+    // The compositor under test, over this case's own hover holder and a picker preview with no row
+    // hovered on it - so the preview contributes to no band here, and which band it would paint in
+    // stays this suite's to state through the fills it rides with. What it draws once a row is
+    // hovered is its own decision and is pinned where that lives.
+    private PoliticalMapOverlayRenderer buildOverlayRenderer() {
+        return new PoliticalMapOverlayRenderer(
+            hoverState,
+            new PoliticalMapPreviewHighlightRenderer(new MapLayerInstallation(null)));
+    }
+
     private static PoliticalMapCache buildCacheMock() {
 
         var territoriesMock = mock(PoliticalMapTerritories.class);
 
         when(territoriesMock.getStyledCellByCellId())
             .thenReturn(Map.of());
+
+        // The view the frame painted, which the picker preview reads its hover under. Answered
+        // rather than left to the mock's default for the reason the maps below are: it stands
+        // between a compositor that reaches the preview at all and one that does not.
+        when(territoriesMock.getView())
+            .thenReturn(mock(PoliticalMapView.class));
 
         // Stated rather than left to the default a mock would answer with, since the upper band is
         // asserted to have reached the band pass at all - and a stub that resolves by accident is

@@ -11,6 +11,7 @@ import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverHighlightSource;
+import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPathRenderer;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
@@ -20,9 +21,10 @@ import org.apache.log4j.Logger;
 /**
  * Composes the political map's map-overlay layers over the {@link PoliticalMapCache}'s current
  * draw lists, in one canonical order, bottom to top: the fills (or the debug border-tracing overlay
- * where it has replaced the base view), then the borders, then the hover highlight, then the
- * cluster-anchor debug overlay, then the per-cell presence bands, then the debug band-path overlay
- * across them, then the faction names. That order is fixed here and is not the player's - it is
+ * where it has replaced the base view), then the borders, then the picker preview, then the hover
+ * highlight, then the cluster-anchor debug overlay, then the per-cell presence bands, then the
+ * debug band-path overlay across them, then the faction names. That order is fixed here and is not
+ * the player's - it is
  * what makes each sub-layer legible against the ones under it - and each layer still draws only
  * under its own toggle, the debug facilities composing rather than one hiding the other.
  *
@@ -33,13 +35,13 @@ import org.apache.log4j.Logger;
  * per sub-layer; the surfaces above only say which band they are painting, and the geometry below
  * is emitted the same way whichever band asks for it.
  *
- * <p>Three sub-layers have no choice of their own and ride with one that does, because each is only
+ * <p>Four sub-layers have no choice of their own and ride with one that does, because each is only
  * a picture in the company of what it is drawn against. The contested hatch is half of a cluster's
- * fill and travels inside it. The hover halo and cell wash brighten the fill under the cursor, so
- * they follow the fills - left beneath while the fills went above, they would be painted over and
- * light nothing. The cluster anchors and the border-tracing overlay annotate or replace the base
- * view, so they follow it, the tracing overlay having no split of its own to honour: it replaces
- * fills and borders together in one pass.
+ * fill and travels inside it. The hover halo and cell wash brighten the fill under the cursor, and
+ * the picker preview brightens the fills of a whole bloc, so both follow the fills - left beneath
+ * while the fills went above, they would be painted over and light nothing. The cluster anchors and
+ * the border-tracing overlay annotate or replace the base view, so they follow it, the tracing
+ * overlay having no split of its own to honour: it replaces fills and borders together in one pass.
  */
 final class PoliticalMapOverlayRenderer {
     private static final Logger LOG = Global.getLogger(PoliticalMapOverlayRenderer.class);
@@ -54,15 +56,25 @@ final class PoliticalMapOverlayRenderer {
     // would wash a cell this frame never cut.
     private final MapHoverState hoverState;
 
+    // The sidebar picker's preview over this compositor's own sector, handed over for the reason
+    // the hover holder is: it lights systems the cache's draw lists named, off a row hovered on the
+    // sidebar this map is drawn under.
+    private final PoliticalMapPreviewHighlightRenderer previewHighlightRenderer;
+
     // Diagnostic: ensures the first map render logs exactly once, for the no-draw investigation.
     private boolean hasLoggedFirstRender;
 
     /**
-     * @param hoverState the hover holder of the sector whose draw lists this compositor paints,
-     *                   from that sector's installed machinery
+     * @param hoverState               the hover holder of the sector whose draw lists this
+     *                                 compositor paints, from that sector's installed machinery
+     * @param previewHighlightRenderer the picker preview over that same sector's machinery
      */
-    PoliticalMapOverlayRenderer(MapHoverState hoverState) {
+    PoliticalMapOverlayRenderer(
+            MapHoverState hoverState,
+            PoliticalMapPreviewHighlightRenderer previewHighlightRenderer) {
+
         this.hoverState = hoverState;
+        this.previewHighlightRenderer = previewHighlightRenderer;
     }
 
     /**
@@ -108,6 +120,17 @@ final class PoliticalMapOverlayRenderer {
             // be lifted clear of a fogged fill, but never sunk under their own fill.
             if (isPaintingBorders) {
                 ClusterRenderer.renderBordersOnMap(
+                    cache.getTerritories(),
+                    factor,
+                    alphaMult);
+            }
+
+            // The sidebar picker's preview, first of the two highlights and gated by neither hover
+            // switch: it answers a pointer on the sidebar rather than one on the map, so a player
+            // who has switched the map's own cursor feedback off still sees what a row would
+            // spotlight. Its own style tier is where it is turned down to nothing.
+            if (isPaintingFills) {
+                previewHighlightRenderer.renderPreviewOnMap(
                     cache.getTerritories(),
                     factor,
                     alphaMult);

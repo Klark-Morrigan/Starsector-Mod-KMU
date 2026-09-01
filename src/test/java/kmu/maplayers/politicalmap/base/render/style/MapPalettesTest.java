@@ -9,12 +9,14 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -154,6 +156,83 @@ final class MapPalettesTest {
                     null,
                     NEUTRAL))
                 .isNull();
+        }
+    }
+
+    @Nested
+    class PickBlocPaletteColour {
+
+        // The bloc an alliance groups, and the member whose palette that alliance borrows - so a
+        // case can tell a shade read through the grouping from one read off the bloc id itself.
+        private static final String ALLIANCE_BLOC_ID = "persean_league_alliance";
+        private static final String LEAD_MEMBER_ID = "persean_league";
+
+        @Test
+        void pickBlocPaletteColourReturnsTheBlocsOwnShadeForTheChoice() {
+
+            var sectorMock = buildSectorColouring(LEAD_MEMBER_ID);
+
+            assertThat(MapPalettes.pickBlocPaletteColour(
+                    FactionPaletteSlot.PRIMARY,
+                    sectorMock,
+                    buildGroupingColouringByLeadMember(),
+                    ALLIANCE_BLOC_ID))
+                .isEqualTo(PRIMARY);
+
+            assertThat(MapPalettes.pickBlocPaletteColour(
+                    FactionPaletteSlot.SECONDARY,
+                    sectorMock,
+                    buildGroupingColouringByLeadMember(),
+                    ALLIANCE_BLOC_ID))
+                .isEqualTo(SECONDARY);
+        }
+
+        @Test
+        void pickBlocPaletteColourReadsAFactionBlocsShadeOffTheBlocIdItself() {
+            // A lone faction is its own colour faction, so the grouping falls through and the same
+            // one lookup serves a grouped and an ungrouped view alike.
+            assertThat(MapPalettes.pickBlocPaletteColour(
+                    FactionPaletteSlot.PRIMARY,
+                    buildSectorColouring("hegemony"),
+                    HolderGrouping.identity(),
+                    "hegemony"))
+                .isEqualTo(PRIMARY);
+        }
+
+        @Test
+        void pickBlocPaletteColourReturnsNullForNoColour() {
+
+            assertThat(MapPalettes.pickBlocPaletteColour(
+                    null,
+                    buildSectorColouring("hegemony"),
+                    HolderGrouping.identity(),
+                    "hegemony"))
+                .isNull();
+        }
+
+        // An alliance bloc painted in its lead member's shades, which is the one lookup this
+        // resolution makes through the grouping.
+        private static HolderGrouping buildGroupingColouringByLeadMember() {
+            return new HolderGrouping(
+                Map.of(LEAD_MEMBER_ID, ALLIANCE_BLOC_ID),
+                Map.of(ALLIANCE_BLOC_ID, LEAD_MEMBER_ID),
+                Map.of(ALLIANCE_BLOC_ID, "Persean League"));
+        }
+
+        // A sector whose one named faction carries the two shades every case here asserts on.
+        private static SectorAPI buildSectorColouring(String factionId) {
+
+            var factionMock = mock(FactionAPI.class);
+            when(factionMock.getBrightUIColor())
+                .thenReturn(PRIMARY);
+            when(factionMock.getDarkUIColor())
+                .thenReturn(SECONDARY);
+
+            var sectorMock = mock(SectorAPI.class);
+            when(sectorMock.getFaction(factionId))
+                .thenReturn(factionMock);
+
+            return sectorMock;
         }
     }
 
