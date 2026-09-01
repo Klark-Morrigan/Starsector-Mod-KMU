@@ -28,7 +28,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapTerritorySettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -243,7 +243,7 @@ final class AlliancesViewTest {
             // non-allied recede set resolves - the one adjustment every faction outside an alliance
             // takes, driven here through that set's mute and desaturate keys.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
 
@@ -261,7 +261,7 @@ final class AlliancesViewTest {
                     .thenReturn(true);
 
                 settingsMock
-                    .when(KmuPoliticalMapSettings::getPoliticalMapAllianceMutedOpacityModifier)
+                    .when(KmuPoliticalMapTerritorySettings::getPoliticalMapAllianceMutedOpacityModifier)
                     .thenReturn(MUTED_MODIFIER);
 
                 assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(

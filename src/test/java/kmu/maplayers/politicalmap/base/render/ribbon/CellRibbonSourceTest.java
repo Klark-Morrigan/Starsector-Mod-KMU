@@ -17,7 +17,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.AfterEach;
@@ -115,7 +115,7 @@ final class CellRibbonSourceTest {
 
     // The player's knobs stand in for the whole settings class here, so the switch under test is
     // read from a stub rather than from a LunaLib the test JVM has no game to load.
-    private MockedStatic<KmuPoliticalMapSettings> settingsMock;
+    private MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock;
 
     // The map-layer knobs stand in for the same reason, the bake opening a pass that samples the
     // dev reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
@@ -124,7 +124,7 @@ final class CellRibbonSourceTest {
     @BeforeEach
     void stubBandSettings() {
 
-        settingsMock = mockStatic(KmuPoliticalMapSettings.class);
+        settingsMock = mockStatic(KmuPoliticalMapRibbonSettings.class);
         mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
@@ -346,7 +346,7 @@ final class CellRibbonSourceTest {
             // off rather than on, which is not the shipped default, so an answer that ignored the
             // setting could not pass.
             settingsMock
-                .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
+                .when(KmuPoliticalMapRibbonSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
                 .thenReturn(false);
 
             assertThat(captureInputsJudgedAgainst(HolderGrouping::identity)
@@ -445,7 +445,7 @@ final class CellRibbonSourceTest {
 
     private void switchBandsOff() {
         settingsMock
-            .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapRibbons)
+            .when(KmuPoliticalMapRibbonSettings::shouldDrawPoliticalMapRibbons)
             .thenReturn(false);
     }
 

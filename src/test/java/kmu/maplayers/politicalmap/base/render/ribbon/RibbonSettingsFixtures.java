@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
 
 import org.mockito.MockedStatic;
@@ -62,34 +62,34 @@ public final class RibbonSettingsFixtures {
      *                     and closes; a suite wanting the bands off re-stubs the switch on top
      */
     public static void stubBandsOnAtSizesThatDraw(
-            MockedStatic<KmuPoliticalMapSettings> settingsMock) {
+            MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock) {
 
         settingsMock
-            .when(KmuPoliticalMapSettings::shouldDrawPoliticalMapRibbons)
+            .when(KmuPoliticalMapRibbonSettings::shouldDrawPoliticalMapRibbons)
             .thenReturn(true);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonWidth)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonWidth)
             .thenReturn(BAND_WIDTH_WORLD);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInsetPad)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonInsetPad)
             .thenReturn(BAND_INSET_PAD_WORLD);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonSegmentLength)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonSegmentLength)
             .thenReturn(SEGMENT_LENGTH_UNITS);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonInterjectionLength)
             .thenReturn(INTERJECTION_LENGTH_UNITS);
         settingsMock
-            .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
+            .when(KmuPoliticalMapRibbonSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
             .thenReturn(UNCONTESTED_RUNS_SHORTENED);
         settingsMock
-            .when(KmuPoliticalMapSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
+            .when(KmuPoliticalMapRibbonSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
             .thenReturn(BANDS_KEPT_CLEAR_OF_NAMES);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNameClearance)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonNameClearance)
             .thenReturn(NAME_CLEARANCE);
         settingsMock
-            .when(KmuPoliticalMapSettings::shouldAlwaysDrawPoliticalMapRibbons)
+            .when(KmuPoliticalMapRibbonSettings::shouldAlwaysDrawPoliticalMapRibbons)
             .thenReturn(BANDS_ALWAYS_DRAWN);
     }
 }

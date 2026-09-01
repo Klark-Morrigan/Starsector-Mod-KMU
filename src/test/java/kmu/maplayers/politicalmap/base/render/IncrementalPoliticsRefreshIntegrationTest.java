@@ -40,7 +40,9 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritorie
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapGeometrySettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -222,8 +224,11 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // either, so the seam's own answers stand for them. The cell seed inputs and the dev
             // overlays are seamed for the same reason, a rebuild reaching both on its way through.
             openSeam(KmuMapLayerSettings.class);
+            openSeam(KmuPoliticalMapGeometrySettings.class);
+            openSeam(KmuPoliticalMapDiagnosticsSettings.class);
 
-            var settingsMock = openSeam(KmuPoliticalMapSettings.class);
+            var settingsMock = openSeam(KmuPoliticalMapRibbonSettings.class);
+
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
             // The weighting rule the fills and the bands are both resolved under. Read live off

@@ -40,16 +40,19 @@ final class ChangedLineTraceTest {
     void setUp() {
 
         appenderFake = new LogAppenderFake();
+
         log = Logger.getLogger("kmu.test." + ChangedLineTraceTest.class.getSimpleName());
 
         log.setLevel(Level.DEBUG);
         log.addAppender(appenderFake);
+
         // Kept off the root appenders, so a run's console output carries none of what these plant.
         log.setAdditivity(false);
     }
 
     @AfterEach
     void tearDown() {
+
         log.removeAppender(appenderFake);
         log.setLevel(null);
         log.setAdditivity(true);

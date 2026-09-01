@@ -11,7 +11,9 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapGeometrySettings;
+import kmu.settings.KmuPoliticalMapHighlightSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -65,6 +67,14 @@ final class PoliticalMapLayerRendererTest {
     // it resolves is MapHoverPublisherTest's; what this test asks of it is which call reaches it.
     private final MapHoverPublisher hoverPublisherMock = mock(MapHoverPublisher.class);
 
+    // The hover holder of the sector this renderer draws, made per case rather than shared - a
+    // renderer is built with the holder of its own installed machinery.
+    private final MapHoverState hoverState = new MapHoverState();
+
+    // What the read's source was handed when the renderer first wanted one, recorded so the case
+    // about the wiring can read it back. Null until a pass has asked for a read.
+    private MapHoverState hoverStateHandedToTheReadSource;
+
     @Nested
     class PrepareFrame {
 
@@ -75,7 +85,7 @@ final class PoliticalMapLayerRendererTest {
             // hover toggle that gates the cheapest of the work below it.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
@@ -97,7 +107,9 @@ final class PoliticalMapLayerRendererTest {
             // answered once they are all in - which the next frame's single preparation is.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
 
                 stubASelectedView(viewRegistryMock);
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
@@ -106,6 +118,8 @@ final class PoliticalMapLayerRendererTest {
 
                 renderer.decideWhetherTheHoverIsWantedThisFrame();
                 renderer.publishHoverForPass(FACTOR);
+                // Reaches the cache refresh, which asks for the cell seed inputs and the dev
+                // overlays: neither turns this case, and both are LunaLib-backed.
                 renderer.prepareFrame(FACTOR);
 
                 verify(hoverPublisherMock)
@@ -119,11 +133,15 @@ final class PoliticalMapLayerRendererTest {
             // to answer for - and none to build one for either, the read needing a running map.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
 
                 stubASelectedView(viewRegistryMock);
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
+                // Reaches the cache refresh, so the sections it asks on the way through are open
+                // for the same reason the case above opens them.
                 buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
 
                 verifyNoInteractions(hoverPublisherMock);
@@ -143,7 +161,7 @@ final class PoliticalMapLayerRendererTest {
             // differently would paint on a frame the others left alone.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
@@ -174,7 +192,7 @@ final class PoliticalMapLayerRendererTest {
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
 
@@ -195,7 +213,7 @@ final class PoliticalMapLayerRendererTest {
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, false);
 
@@ -218,7 +236,7 @@ final class PoliticalMapLayerRendererTest {
             // hover to describe either.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
 
@@ -244,17 +262,17 @@ final class PoliticalMapLayerRendererTest {
             // Reached with the covers stubbed because the reads a running game answers - the
             // sidebar's laid-out box, the vanilla chrome's widget tree - are the reader's own, and
             // what this pins is that the renderer obeys whichever answer it gets.
-            MapHoverState.resolveLiveSectorHoverState().publishHover(HOVERED_CELL);
+            hoverState.publishHover(HOVERED_CELL);
 
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
                 buildRenderer(COVERING_THE_MAP)
                     .decideWhetherTheHoverIsWantedThisFrame();
 
-                assertThat(MapHoverState.resolveLiveSectorHoverState().getHover())
+                assertThat(hoverState.getHover())
                     .isEqualTo(MapHover.NONE);
             }
         }
@@ -264,10 +282,10 @@ final class PoliticalMapLayerRendererTest {
             // The other park, pinned beside it so the covered one cannot be read as the only way a
             // stale cell is dropped: with both kinds of feedback switched off there is nothing that
             // wants the answer, and the frame's passes read no cursor at all.
-            MapHoverState.resolveLiveSectorHoverState().publishHover(HOVERED_CELL);
+            hoverState.publishHover(HOVERED_CELL);
 
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 frameworkSettingsMock
                     .when(KmuMapLayerSettings::getMapHoveringEnabled)
@@ -276,7 +294,7 @@ final class PoliticalMapLayerRendererTest {
                 buildRenderer(NOT_COVERING_THE_MAP)
                     .decideWhetherTheHoverIsWantedThisFrame();
 
-                assertThat(MapHoverState.resolveLiveSectorHoverState().getHover())
+                assertThat(hoverState.getHover())
                     .isEqualTo(MapHover.NONE);
             }
         }
@@ -289,7 +307,7 @@ final class PoliticalMapLayerRendererTest {
             var coverReadCount = new int[1];
 
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 frameworkSettingsMock
                     .when(KmuMapLayerSettings::getMapHoveringEnabled)
@@ -315,7 +333,7 @@ final class PoliticalMapLayerRendererTest {
             // to the read. The lists are empty here, which is what a pass before the first build
             // sees and what the publisher parks on.
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
@@ -330,12 +348,33 @@ final class PoliticalMapLayerRendererTest {
         }
 
         @Test
+        void publishHoverForPassBuildsTheReadAgainstItsOwnHoverHolder() {
+            // The read publishes what it resolves, and where it publishes is decided here rather
+            // than by the read itself. Handed any other sector's holder, a cursor read taken over
+            // this sector's cells would light a cell on another sector's map - and this is the only
+            // place that pairing is made, so no suite below can observe it.
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
+
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                var renderer = buildRenderer(NOT_COVERING_THE_MAP);
+
+                renderer.decideWhetherTheHoverIsWantedThisFrame();
+                renderer.publishHoverForPass(FACTOR);
+
+                assertThat(hoverStateHandedToTheReadSource)
+                    .isSameAs(hoverState);
+            }
+        }
+
+        @Test
         void publishHoverForPassAnnouncesNoArrival() {
             // The moment belongs to the frame, not to a pass. A pass answering one would sound the
             // crossing between two transforms' answers every frame a foreign map draws beside the
             // real one.
             try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
-                    var layerSettingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
 
@@ -376,11 +415,18 @@ final class PoliticalMapLayerRendererTest {
     // Both are the seams a running game supplies, and stating them here is what lets a frame be
     // driven at all without a map on screen. The cache is made against an installation of its own,
     // which is how a renderer is reached in play - one sector's, and never shared.
+    //
+    // The read's source records the holder it was handed instead of ignoring it, since what the
+    // renderer passes down is the one thing about the wiring no other suite can see.
     private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
         return new PoliticalMapLayerRenderer(
             new PoliticalMapCache(new MapLayerInstallation(null)),
             new MapCoverReader(List.of(cover)),
-            () -> hoverPublisherMock);
+            hoverState,
+            handedHoverState -> {
+                hoverStateHandedToTheReadSource = handedHoverState;
+                return hoverPublisherMock;
+            });
     }
 
     // A view the player has picked, so the frame work gated behind one is reached. Which view it is
@@ -397,7 +443,7 @@ final class PoliticalMapLayerRendererTest {
     // PoliticalMapHoverGatesTest's; what is pinned here is which of them this renderer obeys.
     private static void stubTooltipSwitches(
             MockedStatic<KmuMapLayerSettings> frameworkSettingsMock,
-            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
+            MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock,
             boolean isPoliticalTooltipEnabled) {
 
         frameworkSettingsMock
@@ -409,7 +455,7 @@ final class PoliticalMapLayerRendererTest {
             .thenReturn(true);
 
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapHoverTooltipEnabled)
+            .when(KmuPoliticalMapHighlightSettings::getPoliticalMapHoverTooltipEnabled)
             .thenReturn(isPoliticalTooltipEnabled);
     }
 
@@ -418,7 +464,7 @@ final class PoliticalMapLayerRendererTest {
     // read, and the effects tier is the one the union asks first.
     private static void stubHoverSwitchesOn(
             MockedStatic<KmuMapLayerSettings> frameworkSettingsMock,
-            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock) {
+            MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock) {
 
         frameworkSettingsMock
             .when(KmuMapLayerSettings::getMapHoveringEnabled)
@@ -429,7 +475,7 @@ final class PoliticalMapLayerRendererTest {
             .thenReturn(true);
 
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapHoverEffectsEnabled)
+            .when(KmuPoliticalMapHighlightSettings::getPoliticalMapHoverEffectsEnabled)
             .thenReturn(true);
     }
 }

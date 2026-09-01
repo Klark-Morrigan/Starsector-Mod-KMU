@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 /**
  * Reads how the presence bands are laid out - the sizes, and the one answer that is not a size -
@@ -34,12 +34,12 @@ public final class RibbonStyleReader {
      */
     public static RibbonStyle readRibbonStyle() {
         return new RibbonStyle(
-            KmuPoliticalMapSettings.getPoliticalMapRibbonWidth(),
-            KmuPoliticalMapSettings.getPoliticalMapRibbonInsetPad(),
+            KmuPoliticalMapRibbonSettings.getPoliticalMapRibbonWidth(),
+            KmuPoliticalMapRibbonSettings.getPoliticalMapRibbonInsetPad(),
             MITER_SPIKE_LIMIT,
             new RibbonSegmentLengths(
-                KmuPoliticalMapSettings.getPoliticalMapRibbonSegmentLength(),
-                KmuPoliticalMapSettings.getPoliticalMapRibbonInterjectionLength()),
-            KmuPoliticalMapSettings.shouldAlwaysDrawPoliticalMapRibbons());
+                KmuPoliticalMapRibbonSettings.getPoliticalMapRibbonSegmentLength(),
+                KmuPoliticalMapRibbonSettings.getPoliticalMapRibbonInterjectionLength()),
+            KmuPoliticalMapRibbonSettings.shouldAlwaysDrawPoliticalMapRibbons());
     }
 }

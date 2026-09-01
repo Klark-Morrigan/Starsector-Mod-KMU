@@ -3,11 +3,11 @@ package kmu.maplayers.politicalmap.base.render;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapGeometrySettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -36,16 +36,19 @@ final class PoliticalMapCacheTest {
             // list rather than dereference a null one, and the next frame retries.
             var cache = new PoliticalMapCache(installation);
 
-            // Both settings classes the refresh reads are stubbed inert: the revision counter is the
-            // framework's, the seed inputs and the debug gate are this layer's.
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+            // Every settings class the refresh reads is stubbed inert: the revision counter is the
+            // framework's, the cell seed inputs and the debug gate this layer's.
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
+
                 cache.refresh(viewMock);
             }
 
-            assertThat(cache.getTerritories()).isNotNull();
-            assertThat(cache.getTerritories().getStyledCellByCellId()).isEmpty();
+            assertThat(cache.getTerritories())
+                .isNotNull();
+            assertThat(cache.getTerritories().getStyledCellByCellId())
+                .isEmpty();
         }
     }
 
@@ -58,19 +61,27 @@ final class PoliticalMapCacheTest {
             // each own a GL buffer, so the drop is what frees them rather than leaving them to
             // LazyLib's finalizer sweep.
             var cache = new PoliticalMapCache(installation);
-            try (MockedStatic<KmuLunaSettings> settingsMock = mockStatic(KmuLunaSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+
+            try (var settingsMock = mockStatic(KmuLunaSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
+
                 cache.refresh(viewMock);
             }
-            assertThat(cache.getTerritories()).isNotNull();
+
+            assertThat(cache.getTerritories())
+                .isNotNull();
 
             cache.disposeCachedState();
 
-            assertThat(cache.getTerritories()).isNull();
-            assertThat(cache.getBorderStageOverlay()).isNull();
-            assertThat(cache.getClusterAnchors()).isEmpty();
-            assertThat(cache.getFactionLabels()).isEmpty();
+            assertThat(cache.getTerritories())
+                .isNull();
+            assertThat(cache.getBorderStageOverlay())
+                .isNull();
+            assertThat(cache.getClusterAnchors())
+                .isEmpty();
+            assertThat(cache.getFactionLabels())
+                .isEmpty();
         }
 
         @Test
@@ -81,8 +92,10 @@ final class PoliticalMapCacheTest {
 
             cache.disposeCachedState();
 
-            assertThat(cache.getTerritories()).isNull();
-            assertThat(cache.getFactionLabels()).isEmpty();
+            assertThat(cache.getTerritories())
+                .isNull();
+            assertThat(cache.getFactionLabels())
+                .isEmpty();
         }
     }
 }

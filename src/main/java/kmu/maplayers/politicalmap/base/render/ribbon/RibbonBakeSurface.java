@@ -6,7 +6,7 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 import java.util.List;
 import java.util.Map;
@@ -90,12 +90,12 @@ public record RibbonBakeSurface(
     private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
 
         var isBandKeptClearOfNames = NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
-            && KmuPoliticalMapSettings.shouldKeepPoliticalMapRibbonsClearOfNames();
+            && KmuPoliticalMapRibbonSettings.shouldKeepPoliticalMapRibbonsClearOfNames();
 
         if (!isBandKeptClearOfNames) {
             return List.of();
         }
-        return switch (KmuPoliticalMapSettings.getPoliticalMapRibbonNameClearance()) {
+        return switch (KmuPoliticalMapRibbonSettings.getPoliticalMapRibbonNameClearance()) {
             case FITTED_BOX -> ClusterNameBoxes.listNameBoxes(clusterAnchors);
             case WORDS -> LabelLineBoxes.listLineBoxes(clusterAnchors);
         };

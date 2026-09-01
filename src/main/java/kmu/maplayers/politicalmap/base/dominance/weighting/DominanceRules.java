@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.dominance.weighting;
 
 import kmu.maplayers.politicalmap.base.dominance.KnownMarketFootprints;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDominanceSettings;
 
 /**
  * The dominance-weighting rules in force for one resolution pass: the master stability
@@ -51,22 +51,22 @@ public record DominanceRules(
      */
     public static DominanceRules readFromLunaSettings() {
         return new DominanceRules(
-            KmuPoliticalMapSettings.shouldWeighDominanceByStability(),
+            KmuPoliticalMapDominanceSettings.shouldWeighDominanceByStability(),
             new BaseSizeWeighting(
-                KmuPoliticalMapSettings.getColonySizeWeight(),
-                KmuPoliticalMapSettings.getHiddenMarketScaling(),
-                KmuPoliticalMapSettings.getHiddenMarketFixedWeight(),
-                KmuPoliticalMapSettings.getNormalLowStabilityPenalty()),
+                KmuPoliticalMapDominanceSettings.getColonySizeWeight(),
+                KmuPoliticalMapDominanceSettings.getHiddenMarketScaling(),
+                KmuPoliticalMapDominanceSettings.getHiddenMarketFixedWeight(),
+                KmuPoliticalMapDominanceSettings.getNormalLowStabilityPenalty()),
             new StationWeighting(
-                KmuPoliticalMapSettings.shouldWeighDominanceByStation(),
-                KmuPoliticalMapSettings.getStationWeight(),
-                KmuPoliticalMapSettings.getStationHiddenMarketRate(),
-                KmuPoliticalMapSettings.getStationLowStabilityPenalty()),
+                KmuPoliticalMapDominanceSettings.shouldWeighDominanceByStation(),
+                KmuPoliticalMapDominanceSettings.getStationWeight(),
+                KmuPoliticalMapDominanceSettings.getStationHiddenMarketRate(),
+                KmuPoliticalMapDominanceSettings.getStationLowStabilityPenalty()),
             new PatrolWeighting(
-                KmuPoliticalMapSettings.shouldWeighDominanceByPatrols(),
-                KmuPoliticalMapSettings.getPatrolSmallWeight(),
-                KmuPoliticalMapSettings.getPatrolMediumWeight(),
-                KmuPoliticalMapSettings.getPatrolLargeWeight(),
-                KmuPoliticalMapSettings.getPatrolLowStabilityPenalty()));
+                KmuPoliticalMapDominanceSettings.shouldWeighDominanceByPatrols(),
+                KmuPoliticalMapDominanceSettings.getPatrolSmallWeight(),
+                KmuPoliticalMapDominanceSettings.getPatrolMediumWeight(),
+                KmuPoliticalMapDominanceSettings.getPatrolLargeWeight(),
+                KmuPoliticalMapDominanceSettings.getPatrolLowStabilityPenalty()));
     }
 }

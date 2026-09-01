@@ -17,7 +17,9 @@ import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapGeometrySettings;
+import kmu.settings.KmuPoliticalMapHighlightSettings;
+import kmu.settings.KmuPoliticalMapTerritorySettings;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -71,17 +73,17 @@ public final class RenderStyleReader {
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
             new HatchStyle(
-                KmuPoliticalMapSettings.getPoliticalMapHatchSpacing(),
-                KmuPoliticalMapSettings.getPoliticalMapHatchAngleRadians(),
-                KmuPoliticalMapSettings.getPoliticalMapHatchJoinToleranceFraction(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapHatchSpacing(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapHatchAngleRadians(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapHatchJoinToleranceFraction(),
                 new GlLineHatchStroke(
-                    resolveHatchLineQualityOf(KmuPoliticalMapSettings.shouldSmoothHatchLines()),
-                    KmuPoliticalMapSettings.getPoliticalMapHatchWidth())),
+                    resolveHatchLineQualityOf(KmuPoliticalMapGeometrySettings.shouldSmoothHatchLines()),
+                    KmuPoliticalMapGeometrySettings.getPoliticalMapHatchWidth())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
             readPreviewHighlightStyle(),
-            KmuPoliticalMapSettings.getPoliticalMapDesaturationDarkening(),
-            KmuPoliticalMapSettings.getPoliticalMapPresenceLightening());
+            KmuPoliticalMapTerritorySettings.getPoliticalMapDesaturationDarkening(),
+            KmuPoliticalMapTerritorySettings.getPoliticalMapPresenceLightening());
     }
 
     /**
@@ -95,15 +97,15 @@ public final class RenderStyleReader {
     public static BorderSmoothingStyle readBorderSmoothingStyle() {
         return new BorderSmoothingStyle(
             new SpikeSandingStyle(
-                KmuPoliticalMapSettings.shouldSandBorderSpikes(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderSpikeHeight(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderSpikeAngleRadians()),
+                KmuPoliticalMapGeometrySettings.shouldSandBorderSpikes(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapBorderSpikeHeight(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapBorderSpikeAngleRadians()),
             new CornerRoundingStyle(
-                KmuPoliticalMapSettings.shouldRoundBorderCorners(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderCornerRadius(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderCornerSegments(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderChamferAngleRadians(),
-                KmuPoliticalMapSettings.getPoliticalMapBorderRoundBelowAngleRadians()));
+                KmuPoliticalMapGeometrySettings.shouldRoundBorderCorners(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapBorderCornerRadius(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapBorderCornerSegments(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapBorderChamferAngleRadians(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapBorderRoundBelowAngleRadians()));
     }
 
     // Reads the cursor's feedback into one style: the shared palette choice both its elements
@@ -112,17 +114,17 @@ public final class RenderStyleReader {
     // mid-hover repaints through the same rebuild every other style change does.
     public static HoverHighlightStyle readHoverHighlightStyle() {
         return new HoverHighlightStyle(
-            FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getPoliticalMapHoverHighlightColour()),
+            FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapHighlightSettings.getPoliticalMapHoverHighlightColour()),
             new HoverGlowStyle(
-                KmuPoliticalMapSettings.getPoliticalMapHoverGlowOpacity(),
-                KmuPoliticalMapSettings.getPoliticalMapHoverGlowWidth(),
-                KmuPoliticalMapSettings.getPoliticalMapHoverGlowLayers(),
-                KmuPoliticalMapSettings.getPoliticalMapHoverGlowPulseStrength(),
-                KmuPoliticalMapSettings.getPoliticalMapHoverGlowPulsePeriod()),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverGlowOpacity(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverGlowWidth(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverGlowLayers(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverGlowPulseStrength(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverGlowPulsePeriod()),
             new HoverWashStyle(
-                KmuPoliticalMapSettings.getPoliticalMapHoverWashOpacity(),
-                KmuPoliticalMapSettings.getPoliticalMapHoverWashOutlineOpacity(),
-                KmuPoliticalMapSettings.getPoliticalMapHoverWashOutlineWidth()));
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverWashOpacity(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverWashOutlineOpacity(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapHoverWashOutlineWidth()));
     }
 
     // Reads the second highlight tier - the one a whole set of cells lights up in - in the same
@@ -133,17 +135,17 @@ public final class RenderStyleReader {
     public static HoverHighlightStyle readPreviewHighlightStyle() {
         return new HoverHighlightStyle(
             FactionPaletteSlot.resolvePaintSelectionOf(
-                KmuPoliticalMapSettings.getPoliticalMapPreviewHighlightColour()),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewHighlightColour()),
             new HoverGlowStyle(
-                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowOpacity(),
-                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowWidth(),
-                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowLayers(),
-                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowPulseStrength(),
-                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowPulsePeriod()),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowOpacity(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowWidth(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowLayers(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowPulseStrength(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowPulsePeriod()),
             new HoverWashStyle(
-                KmuPoliticalMapSettings.getPoliticalMapPreviewWashOpacity(),
-                KmuPoliticalMapSettings.getPoliticalMapPreviewWashOutlineOpacity(),
-                KmuPoliticalMapSettings.getPoliticalMapPreviewWashOutlineWidth()));
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewWashOpacity(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewWashOutlineOpacity(),
+                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewWashOutlineWidth()));
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build
@@ -151,31 +153,31 @@ public final class RenderStyleReader {
     public static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionFillColour()),
-                KmuPoliticalMapSettings.getFactionFillOpacity()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionFillColour()),
+                KmuPoliticalMapTerritorySettings.getFactionFillOpacity()),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionOuterBorderColour()),
-                KmuPoliticalMapSettings.getFactionOuterBorderOpacity()),
-            KmuPoliticalMapSettings.getFactionOuterBorderWidth(),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionOuterBorderColour()),
+                KmuPoliticalMapTerritorySettings.getFactionOuterBorderOpacity()),
+            KmuPoliticalMapTerritorySettings.getFactionOuterBorderWidth(),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionInnerBorderColour()),
-                KmuPoliticalMapSettings.getFactionInnerBorderOpacity()),
-            KmuPoliticalMapSettings.getFactionInnerBorderWidth());
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionInnerBorderColour()),
+                KmuPoliticalMapTerritorySettings.getFactionInnerBorderOpacity()),
+            KmuPoliticalMapTerritorySettings.getFactionInnerBorderWidth());
     }
 
     public static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentFillColour()),
-                KmuPoliticalMapSettings.getIndependentFillOpacity()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentFillColour()),
+                KmuPoliticalMapTerritorySettings.getIndependentFillOpacity()),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentOuterBorderColour()),
-                KmuPoliticalMapSettings.getIndependentOuterBorderOpacity()),
-            KmuPoliticalMapSettings.getIndependentOuterBorderWidth(),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentOuterBorderColour()),
+                KmuPoliticalMapTerritorySettings.getIndependentOuterBorderOpacity()),
+            KmuPoliticalMapTerritorySettings.getIndependentOuterBorderWidth(),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentInnerBorderColour()),
-                KmuPoliticalMapSettings.getIndependentInnerBorderOpacity()),
-            KmuPoliticalMapSettings.getIndependentInnerBorderWidth());
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentInnerBorderColour()),
+                KmuPoliticalMapTerritorySettings.getIndependentInnerBorderOpacity()),
+            KmuPoliticalMapTerritorySettings.getIndependentInnerBorderWidth());
     }
 
     // Dead colonies keep both a neutral fill and a neutral outline: the system was settled
@@ -186,10 +188,10 @@ public final class RenderStyleReader {
         return neutralStyle(
             new ElementStyle(
                 FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY),
-                KmuPoliticalMapSettings.getDecivilisedFillOpacity()),
+                KmuPoliticalMapTerritorySettings.getDecivilisedFillOpacity()),
             true, // Outline is drawn.
-            KmuPoliticalMapSettings.getDecivilisedBorderOpacity(),
-            KmuPoliticalMapSettings.getDecivilisedBorderWidth());
+            KmuPoliticalMapTerritorySettings.getDecivilisedBorderOpacity(),
+            KmuPoliticalMapTerritorySettings.getDecivilisedBorderWidth());
     }
 
     // Never-settled space stays outline-only: filling it would wash the whole sector, since
@@ -201,8 +203,8 @@ public final class RenderStyleReader {
         return neutralStyle(
             ElementStyle.NOT_DRAWN,
             UninhabitedOutlinePreference.isOutlineDrawn(),
-            KmuPoliticalMapSettings.getUninhabitedBorderOpacity(),
-            KmuPoliticalMapSettings.getUninhabitedBorderWidth());
+            KmuPoliticalMapTerritorySettings.getUninhabitedBorderOpacity(),
+            KmuPoliticalMapTerritorySettings.getUninhabitedBorderWidth());
     }
 
     // Turns the player's smoothing switch into the quality the hatch pass strokes at. Named here

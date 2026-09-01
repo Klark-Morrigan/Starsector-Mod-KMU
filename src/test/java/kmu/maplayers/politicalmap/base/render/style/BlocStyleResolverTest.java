@@ -22,12 +22,17 @@ final class BlocStyleResolverTest {
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the decision consulted the view (off filter) or bypassed it (under filter).
-    private static PoliticalMapView buildViewMockDeciding(boolean usesIndependentStyle,
+    private static PoliticalMapView buildViewMockDeciding(
+            boolean usesIndependentStyle,
             ElementStyleAdjustment adjustment) {
+
         var viewMock = mock(PoliticalMapView.class);
+
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
-                .thenReturn(usesIndependentStyle);
-        when(viewMock.resolveBlocStyleAdjustment(any(), any())).thenReturn(adjustment);
+            .thenReturn(usesIndependentStyle);
+        when(viewMock.resolveBlocStyleAdjustment(any(), any()))
+            .thenReturn(adjustment);
+
         return viewMock;
     }
 
@@ -39,9 +44,11 @@ final class BlocStyleResolverTest {
             // The spotlighted bloc draws at full strength however the recede is set, so it stands
             // out against the muted background - neither the view's own adjustment nor the shared
             // recede touches it.
-            assertThat(BlocStyleResolver.resolveFilterAdjustment(true,
-                    new ElementStyleAdjustment(0.9, false), new ElementStyleAdjustment(0.3, true)))
-                    .isEqualTo(ElementStyleAdjustment.NONE);
+            assertThat(BlocStyleResolver.resolveFilterAdjustment(
+                    true,
+                    new ElementStyleAdjustment(0.9, false),
+                    new ElementStyleAdjustment(0.3, true)))
+                .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test
@@ -50,8 +57,11 @@ final class BlocStyleResolverTest {
             // so the sector fades to a muted background the spotlight reads against.
             var recede = new ElementStyleAdjustment(0.3, true);
 
-            assertThat(BlocStyleResolver.resolveFilterAdjustment(false, ElementStyleAdjustment.NONE,
-                    recede)).isEqualTo(recede);
+            assertThat(BlocStyleResolver.resolveFilterAdjustment(
+                    false,
+                    ElementStyleAdjustment.NONE,
+                    recede))
+                .isEqualTo(recede);
         }
 
         @Test
@@ -63,7 +73,7 @@ final class BlocStyleResolverTest {
             var sharedRecede = new ElementStyleAdjustment(0.3, true);
 
             assertThat(BlocStyleResolver.resolveFilterAdjustment(false, viewRecede, sharedRecede))
-                    .isEqualTo(new ElementStyleAdjustment(0.3, true));
+                .isEqualTo(new ElementStyleAdjustment(0.3, true));
         }
     }
 
@@ -77,11 +87,15 @@ final class BlocStyleResolverTest {
             // view's, so independent-held space keeps its independent style rather than snapping to
             // the faction style when a filter turns on. The stub says independent, so a true result
             // proves the filter left the view's base-style call live.
-            var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "independent",
-                    buildViewMockDeciding(true, ElementStyleAdjustment.NONE),
-                    HolderGrouping.identity(), new ElementStyleAdjustment(0.3, true));
+            var decision = BlocStyleResolver.resolveBlocStyleDecision(
+                true,
+                "independent",
+                buildViewMockDeciding(true, ElementStyleAdjustment.NONE),
+                HolderGrouping.identity(),
+                new ElementStyleAdjustment(0.3, true));
 
-            assertThat(decision.usesIndependentStyle()).isTrue();
+            assertThat(decision.usesIndependentStyle())
+                .isTrue();
         }
 
         @Test
@@ -92,11 +106,17 @@ final class BlocStyleResolverTest {
             // twice by compounding the two multipliers.
             var viewRecede = new ElementStyleAdjustment(0.5, false);
             var sharedRecede = new ElementStyleAdjustment(0.3, true);
-            var decision = BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony",
-                    buildViewMockDeciding(false, viewRecede), HolderGrouping.identity(), sharedRecede);
+            var decision = BlocStyleResolver.resolveBlocStyleDecision(
+                true,
+                "hegemony",
+                buildViewMockDeciding(false, viewRecede),
+                HolderGrouping.identity(),
+                sharedRecede);
 
-            assertThat(decision.usesIndependentStyle()).isFalse();
-            assertThat(decision.adjustment()).isEqualTo(new ElementStyleAdjustment(0.3, true));
+            assertThat(decision.usesIndependentStyle())
+                .isFalse();
+            assertThat(decision.adjustment())
+                .isEqualTo(new ElementStyleAdjustment(0.3, true));
         }
 
         @Test
@@ -108,10 +128,17 @@ final class BlocStyleResolverTest {
             // in the desaturation palette while keeping the faction bundle.
             var viewMock = buildViewMockDeciding(false, new ElementStyleAdjustment(0.5, false));
 
-            BlocStyleResolver.resolveBlocStyleDecision(true, "hegemony", viewMock,
-                    HolderGrouping.identity(), new ElementStyleAdjustment(0.3, true));
+            BlocStyleResolver.resolveBlocStyleDecision(
+                true,
+                "hegemony",
+                viewMock,
+                HolderGrouping.identity(),
+                new ElementStyleAdjustment(0.3, true));
 
-            verify(viewMock).shouldUseIndependentStyle("hegemony", HolderGrouping.identity(),
+            verify(viewMock)
+                .shouldUseIndependentStyle(
+                    "hegemony",
+                    HolderGrouping.identity(),
                     new ElementStyleAdjustment(0.3, true));
         }
 
@@ -122,10 +149,17 @@ final class BlocStyleResolverTest {
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var viewMock = buildViewMockDeciding(true, adjustment);
 
-            BlocStyleResolver.resolveBlocStyleDecision(false, "pirates", viewMock,
-                    HolderGrouping.identity(), ElementStyleAdjustment.NONE);
+            BlocStyleResolver.resolveBlocStyleDecision(
+                false,
+                "pirates",
+                viewMock,
+                HolderGrouping.identity(),
+                ElementStyleAdjustment.NONE);
 
-            verify(viewMock).shouldUseIndependentStyle("pirates", HolderGrouping.identity(),
+            verify(viewMock)
+                .shouldUseIndependentStyle(
+                    "pirates",
+                    HolderGrouping.identity(),
                     adjustment);
         }
 
@@ -134,12 +168,17 @@ final class BlocStyleResolverTest {
             // Off filter the decision is the active view's own call, unchanged: its independent-
             // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
             var adjustment = new ElementStyleAdjustment(0.5, true);
-            var decision = BlocStyleResolver.resolveBlocStyleDecision(false, "pirates",
-                    buildViewMockDeciding(true, adjustment), HolderGrouping.identity(),
-                    ElementStyleAdjustment.NONE);
+            var decision = BlocStyleResolver.resolveBlocStyleDecision(
+                false,
+                "pirates",
+                buildViewMockDeciding(true, adjustment),
+                HolderGrouping.identity(),
+                ElementStyleAdjustment.NONE);
 
-            assertThat(decision.usesIndependentStyle()).isTrue();
-            assertThat(decision.adjustment()).isSameAs(adjustment);
+            assertThat(decision.usesIndependentStyle())
+                .isTrue();
+            assertThat(decision.adjustment())
+                .isSameAs(adjustment);
         }
     }
 }

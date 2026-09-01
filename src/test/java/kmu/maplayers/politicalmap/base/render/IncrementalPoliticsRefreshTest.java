@@ -34,7 +34,9 @@ import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapDominanceSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
 
 import org.apache.log4j.Logger;
@@ -146,7 +148,7 @@ final class IncrementalPoliticsRefreshTest {
         private MockedStatic<FactionTerritoryBuilder> territoriesMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
         private MockedStatic<NameFormatPreference> nameFormatMock;
-        private MockedStatic<KmuPoliticalMapSettings> settingsMock;
+        private MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock;
 
         private SectorAPI sectorMock;
 
@@ -236,13 +238,17 @@ final class IncrementalPoliticsRefreshTest {
             // what a band is sized at. Held as a field for the reason the name choice above is:
             // whether a band keeps clear of the names is one of these knobs, so the case about
             // that answer re-stubs it.
-            settingsMock = openSeam(KmuPoliticalMapSettings.class);
+            settingsMock = openSeam(KmuPoliticalMapRibbonSettings.class);
+
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
             // A re-bake also opens its own pass, which samples the dev reveal off the map-layer
             // knobs - LunaLib again. No case here turns on the reveal, so the seam's own false is
-            // the answer.
+            // the answer. The same for the band-path overlay and the weighting a re-fold resolves
+            // its holders under: reached on the way through, turning no case here, LunaLib-backed.
             openSeam(KmuMapLayerSettings.class);
+            openSeam(KmuPoliticalMapDiagnosticsSettings.class);
+            openSeam(KmuPoliticalMapDominanceSettings.class);
         }
 
         @AfterEach
@@ -394,7 +400,7 @@ final class IncrementalPoliticsRefreshTest {
                 .thenReturn(FactionNameFormatChoice.SHORT);
 
             settingsMock
-                .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNameClearance)
+                .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonNameClearance)
                 .thenReturn(RibbonNameClearanceChoice.WORDS);
 
             // Both readings are seams here rather than one being left live: what a name measures
@@ -476,7 +482,7 @@ final class IncrementalPoliticsRefreshTest {
                 .thenReturn(FactionNameFormatChoice.SHORT);
 
             settingsMock
-                .when(KmuPoliticalMapSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
+                .when(KmuPoliticalMapRibbonSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
                 .thenReturn(false);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -604,9 +610,14 @@ final class IncrementalPoliticsRefreshTest {
             // The running game answers with a sector of its own, which is what makes this a
             // regression rather than a restatement: with both answers the same object, a fold that
             // never stopped reading the global would go on passing.
+            //
+            // Built before the stub it answers, so Mockito never sees one stubbing opened inside
+            // another.
+            var runningSector = buildSectorWithSystems(FLIPPED_SYSTEM);
+
             globalMock
                 .when(Global::getSector)
-                .thenReturn(buildSectorWithSystems(FLIPPED_SYSTEM));
+                .thenReturn(runningSector);
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 

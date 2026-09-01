@@ -54,7 +54,9 @@ final class SettingsLayeringIntegrationTest {
     }
 
     /**
-     * The settings classes that belong to one feature apiece. {@link KmuLunaSettings} is absent on
+     * The settings classes that belong to one feature apiece, the political map's seven sections
+     * among them - the split into sections is the feature's own housekeeping and buys nothing here,
+     * so each is listed and none stands in for the rest. {@link KmuLunaSettings} is absent on
      * purpose: the framework reads the settings revision off it, which is mod-wide wiring rather
      * than a feature's knob.
      *
@@ -74,7 +76,15 @@ final class SettingsLayeringIntegrationTest {
                 ExtensionContext context) {
 
             return Stream
-                .of(KmuPoliticalMapSettings.class, KmuMarketConditionSettings.class)
+                .of(
+                    KmuPoliticalMapTerritorySettings.class,
+                    KmuPoliticalMapRibbonSettings.class,
+                    KmuPoliticalMapHighlightSettings.class,
+                    KmuPoliticalMapDrawOrderSettings.class,
+                    KmuPoliticalMapDominanceSettings.class,
+                    KmuPoliticalMapGeometrySettings.class,
+                    KmuPoliticalMapDiagnosticsSettings.class,
+                    KmuMarketConditionSettings.class)
                 .map(Class::getSimpleName)
                 .map(Arguments::of);
         }

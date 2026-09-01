@@ -15,7 +15,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import java.util.List;
@@ -212,7 +212,7 @@ public final class CellRibbonSource {
 
         // Asked before the alliance set is read, so a pass with the bands switched off reads no
         // more live state than it reads sizes: nothing it sampled would settle anything.
-        if (!KmuPoliticalMapSettings.shouldDrawPoliticalMapRibbons()) {
+        if (!KmuPoliticalMapRibbonSettings.shouldDrawPoliticalMapRibbons()) {
             return createBandlessPass();
         }
         var style = RibbonStyleReader.readRibbonStyle();

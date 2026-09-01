@@ -1,0 +1,270 @@
+package kmu.settings;
+
+/**
+ * What the political map lights up in answer to a hover, in two tiers of the same shape: the
+ * cursor's halo and wash on the one cell under the pointer, and the preview's on a whole set of
+ * cells at once. The layer's own two switches sit with them, the bottom tier of the hover
+ * switching that starts on the map-wide tab.
+ *
+ * <p>The two tiers are read as a pair even though only one paints at a time, since what each is
+ * worth is judged against the other: they light the same map in the same palette, and a weight
+ * set without the other in view is set against nothing.
+ */
+public final class KmuPoliticalMapHighlightSettings {
+
+    private static final String LAYER_HOVER_EFFECTS_ENABLED_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_areEffectsEnabled";
+    private static final String LAYER_HOVER_TOOLTIP_ENABLED_FIELD =
+        "kmu_map_politics_visuals_hoverTooltip_isEnabled";
+
+    private static final String HOVER_HIGHLIGHT_COLOR_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_colour";
+    private static final String HOVER_GLOW_OPACITY_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_glow_opacity";
+    private static final String HOVER_GLOW_WIDTH_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_glow_width";
+    private static final String HOVER_GLOW_LAYERS_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_glow_layers";
+    private static final String HOVER_GLOW_PULSE_STRENGTH_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_glow_pulseStrength";
+    private static final String HOVER_GLOW_PULSE_PERIOD_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_glow_pulsePeriod";
+    private static final String HOVER_WASH_OPACITY_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_wash_opacity";
+    private static final String HOVER_WASH_OUTLINE_OPACITY_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_wash_outlineOpacity";
+    private static final String HOVER_WASH_OUTLINE_WIDTH_FIELD =
+        "kmu_map_politics_visuals_hoverHighlight_wash_outlineWidth";
+
+    private static final String PREVIEW_HIGHLIGHT_COLOUR_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_colour";
+    private static final String PREVIEW_GLOW_OPACITY_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_glow_opacity";
+    private static final String PREVIEW_GLOW_WIDTH_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_glow_width";
+    private static final String PREVIEW_GLOW_LAYERS_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_glow_layers";
+    private static final String PREVIEW_GLOW_PULSE_STRENGTH_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_glow_pulseStrength";
+    private static final String PREVIEW_GLOW_PULSE_PERIOD_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_glow_pulsePeriod";
+    private static final String PREVIEW_WASH_OPACITY_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_wash_opacity";
+    private static final String PREVIEW_WASH_OUTLINE_OPACITY_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_wash_outlineOpacity";
+    private static final String PREVIEW_WASH_OUTLINE_WIDTH_FIELD =
+        "kmu_map_politics_visuals_previewHighlight_wash_outlineWidth";
+
+    private static final boolean DEFAULT_LAYER_HOVER_EFFECTS_ENABLED = true;
+    private static final boolean DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED = true;
+
+    // Tuned to sit over the fills without swamping them, the fills themselves painting at 0.4.
+    private static final FactionPaletteChoice DEFAULT_HOVER_HIGHLIGHT_COLOUR =
+        FactionPaletteChoice.SECONDARY;
+    private static final double DEFAULT_HOVER_GLOW_OPACITY = 0.5;
+    private static final double DEFAULT_HOVER_GLOW_WIDTH = 14.0;
+    private static final int DEFAULT_HOVER_GLOW_LAYERS = 4;
+    private static final double DEFAULT_HOVER_GLOW_PULSE_STRENGTH = 0.0;
+    private static final double DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS = 0.2;
+    private static final double DEFAULT_HOVER_WASH_OPACITY = 0.35;
+    private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
+    private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
+
+    private static final FactionPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
+        FactionPaletteChoice.PRIMARY;
+    private static final double DEFAULT_PREVIEW_GLOW_OPACITY = 0.6;
+    private static final double DEFAULT_PREVIEW_GLOW_WIDTH = 6.0;
+    private static final int DEFAULT_PREVIEW_GLOW_LAYERS = 3;
+    private static final double DEFAULT_PREVIEW_GLOW_PULSE_STRENGTH = 0.5;
+    private static final double DEFAULT_PREVIEW_GLOW_PULSE_PERIOD_SECONDS = 1.5;
+    private static final double DEFAULT_PREVIEW_WASH_OPACITY = 0.5;
+    private static final double DEFAULT_PREVIEW_WASH_OUTLINE_OPACITY = 0.9;
+    private static final double DEFAULT_PREVIEW_WASH_OUTLINE_WIDTH = 2.0;
+
+    private KmuPoliticalMapHighlightSettings() {
+    }
+
+    /**
+     * @return whether the political map paints its own hover halo and cell wash; on by default.
+     *         The bottom tier, so it can only withhold effects the two global tiers already allow
+     */
+    public static boolean getPoliticalMapHoverEffectsEnabled() {
+        return KmuLunaSettings.readBoolean(
+            LAYER_HOVER_EFFECTS_ENABLED_FIELD,
+            DEFAULT_LAYER_HOVER_EFFECTS_ENABLED);
+    }
+
+    /**
+     * @return whether the political map shows its own hover box; on by default. The bottom tier,
+     *         so it can only withhold the box the two global tiers already allow, and it leaves
+     *         another layer's box alone
+     */
+    public static boolean getPoliticalMapHoverTooltipEnabled() {
+        return KmuLunaSettings.readBoolean(
+            LAYER_HOVER_TOOLTIP_ENABLED_FIELD,
+            DEFAULT_LAYER_HOVER_TOOLTIP_ENABLED);
+    }
+
+    /**
+     * @return which palette colour of the cell under the cursor the hover halo and cell wash both
+     *         draw in; the secondary (dark) colour by default
+     */
+    public static FactionPaletteChoice getPoliticalMapHoverHighlightColour() {
+        return KmuLunaSettings.readChoice(
+            HOVER_HIGHLIGHT_COLOR_FIELD,
+            DEFAULT_HOVER_HIGHLIGHT_COLOUR);
+    }
+
+    /**
+     * @return the alpha of the hover halo's innermost stroke, 0..1; 0.5 by default. Its brightest
+     *         layer, which the outer layers fade away from
+     */
+    public static double getPoliticalMapHoverGlowOpacity() {
+        return KmuLunaSettings.readDouble(HOVER_GLOW_OPACITY_FIELD, DEFAULT_HOVER_GLOW_OPACITY);
+    }
+
+    /**
+     * @return how far the hover halo reaches off the hovered frontier, in pixels; 14.0 by default.
+     *         The width of its widest, faintest stroke
+     */
+    public static double getPoliticalMapHoverGlowWidth() {
+        return KmuLunaSettings.readDouble(HOVER_GLOW_WIDTH_FIELD, DEFAULT_HOVER_GLOW_WIDTH);
+    }
+
+    /**
+     * @return how many strokes the hover halo accumulates from; 4 by default. More buys a smoother
+     *         falloff at a stroke of the whole frontier apiece
+     */
+    public static int getPoliticalMapHoverGlowLayers() {
+        return KmuLunaSettings.readInt(HOVER_GLOW_LAYERS_FIELD, DEFAULT_HOVER_GLOW_LAYERS);
+    }
+
+    /**
+     * @return how much of its alpha the hover halo gives up at the bottom of a breath, 0..1; 0 by
+     *         default, holding it steady
+     */
+    public static double getPoliticalMapHoverGlowPulseStrength() {
+        return KmuLunaSettings.readDouble(
+            HOVER_GLOW_PULSE_STRENGTH_FIELD,
+            DEFAULT_HOVER_GLOW_PULSE_STRENGTH);
+    }
+
+    /**
+     * @return how long one breath of the hover halo's pulse takes, in seconds; 0.2 by default.
+     *         Ignored while the pulse strength is 0
+     */
+    public static double getPoliticalMapHoverGlowPulsePeriod() {
+        return KmuLunaSettings.readDouble(
+            HOVER_GLOW_PULSE_PERIOD_FIELD,
+            DEFAULT_HOVER_GLOW_PULSE_PERIOD_SECONDS);
+    }
+
+    /**
+     * @return the alpha the hovered cell's wash brightens its painted extent by, 0..1; 0.35 by
+     *         default
+     */
+    public static double getPoliticalMapHoverWashOpacity() {
+        return KmuLunaSettings.readDouble(HOVER_WASH_OPACITY_FIELD, DEFAULT_HOVER_WASH_OPACITY);
+    }
+
+    /**
+     * @return the alpha the hovered cell's own outline traces at, 0..1; 0.8 by default. The only
+     *         cue a cell surrounded by its own faction has, so it reads apart from the wash
+     */
+    public static double getPoliticalMapHoverWashOutlineOpacity() {
+        return KmuLunaSettings.readDouble(
+            HOVER_WASH_OUTLINE_OPACITY_FIELD,
+            DEFAULT_HOVER_WASH_OUTLINE_OPACITY);
+    }
+
+    /**
+     * @return the line width the hovered cell's outline traces at, in pixels; 2.0 by default
+     */
+    public static double getPoliticalMapHoverWashOutlineWidth() {
+        return KmuLunaSettings.readDouble(
+            HOVER_WASH_OUTLINE_WIDTH_FIELD,
+            DEFAULT_HOVER_WASH_OUTLINE_WIDTH);
+    }
+
+    /**
+     * @return which palette colour of the previewed bloc the preview halo and cell wash both draw
+     *         in; the primary (bright) colour by default. Keyed on the bloc rather than on each
+     *         lit cell, so one shade covers the whole set
+     */
+    public static FactionPaletteChoice getPoliticalMapPreviewHighlightColour() {
+        return KmuLunaSettings.readChoice(
+            PREVIEW_HIGHLIGHT_COLOUR_FIELD,
+            DEFAULT_PREVIEW_HIGHLIGHT_COLOUR);
+    }
+
+    /**
+     * @return the alpha of the preview halo's innermost stroke, 0..1; 0.6 by default. Its brightest
+     *         layer, which the outer layers fade away from
+     */
+    public static double getPoliticalMapPreviewGlowOpacity() {
+        return KmuLunaSettings.readDouble(PREVIEW_GLOW_OPACITY_FIELD, DEFAULT_PREVIEW_GLOW_OPACITY);
+    }
+
+    /**
+     * @return how far the preview halo reaches off a lit region's outline, in pixels; 6.0 by
+     *         default. The width of its widest, faintest stroke
+     */
+    public static double getPoliticalMapPreviewGlowWidth() {
+        return KmuLunaSettings.readDouble(PREVIEW_GLOW_WIDTH_FIELD, DEFAULT_PREVIEW_GLOW_WIDTH);
+    }
+
+    /**
+     * @return how many strokes the preview halo accumulates from; 3 by default. More buys a
+     *         smoother falloff at a stroke of every lit outline apiece
+     */
+    public static int getPoliticalMapPreviewGlowLayers() {
+        return KmuLunaSettings.readInt(PREVIEW_GLOW_LAYERS_FIELD, DEFAULT_PREVIEW_GLOW_LAYERS);
+    }
+
+    /**
+     * @return how much of its alpha the preview halo gives up at the bottom of a breath, 0..1; 0.5
+     *         by default
+     */
+    public static double getPoliticalMapPreviewGlowPulseStrength() {
+        return KmuLunaSettings.readDouble(
+            PREVIEW_GLOW_PULSE_STRENGTH_FIELD,
+            DEFAULT_PREVIEW_GLOW_PULSE_STRENGTH);
+    }
+
+    /**
+     * @return how long one breath of the preview halo's pulse takes, in seconds; 1.5 by default.
+     *         Ignored while the pulse strength is 0
+     */
+    public static double getPoliticalMapPreviewGlowPulsePeriod() {
+        return KmuLunaSettings.readDouble(
+            PREVIEW_GLOW_PULSE_PERIOD_FIELD,
+            DEFAULT_PREVIEW_GLOW_PULSE_PERIOD_SECONDS);
+    }
+
+    /**
+     * @return the alpha a lit cell's wash brightens its painted extent by, 0..1; 0.5 by default
+     */
+    public static double getPoliticalMapPreviewWashOpacity() {
+        return KmuLunaSettings.readDouble(PREVIEW_WASH_OPACITY_FIELD, DEFAULT_PREVIEW_WASH_OPACITY);
+    }
+
+    /**
+     * @return the alpha a lit region's outline traces at, 0..1; 0.9 by default. The outline is the
+     *         joined edge of the lit cells rather than any cluster frontier, so cells lit inside
+     *         one cluster show no seam between them
+     */
+    public static double getPoliticalMapPreviewWashOutlineOpacity() {
+        return KmuLunaSettings.readDouble(
+            PREVIEW_WASH_OUTLINE_OPACITY_FIELD,
+            DEFAULT_PREVIEW_WASH_OUTLINE_OPACITY);
+    }
+
+    /**
+     * @return the line width a lit region's outline traces at, in pixels; 2.0 by default
+     */
+    public static double getPoliticalMapPreviewWashOutlineWidth() {
+        return KmuLunaSettings.readDouble(
+            PREVIEW_WASH_OUTLINE_WIDTH_FIELD,
+            DEFAULT_PREVIEW_WASH_OUTLINE_WIDTH);
+    }
+}

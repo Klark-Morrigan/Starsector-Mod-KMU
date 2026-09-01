@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.render.MapOverlayBand;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDrawOrderSettings;
 import kmu.settings.NebulaDrawOrderChoice;
 
 /**
@@ -55,10 +55,10 @@ record PoliticalMapBandLayout(
      */
     static PoliticalMapBandLayout readChosenLayout() {
         return new PoliticalMapBandLayout(
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapFillNebulaDrawOrder()),
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapBorderNebulaDrawOrder()),
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapRibbonNebulaDrawOrder()),
-            resolveBand(KmuPoliticalMapSettings.getPoliticalMapLabelNebulaDrawOrder()));
+            resolveBand(KmuPoliticalMapDrawOrderSettings.getPoliticalMapFillNebulaDrawOrder()),
+            resolveBand(KmuPoliticalMapDrawOrderSettings.getPoliticalMapBorderNebulaDrawOrder()),
+            resolveBand(KmuPoliticalMapDrawOrderSettings.getPoliticalMapRibbonNebulaDrawOrder()),
+            resolveBand(KmuPoliticalMapDrawOrderSettings.getPoliticalMapLabelNebulaDrawOrder()));
     }
 
     // The whole of the translation: the map draws its nebulae between two of its terrain passes, so

@@ -13,7 +13,8 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryF
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,9 +87,13 @@ final class CellRibbonsBakerTest {
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));
 
-    // The player's knobs stand in for the whole settings class, so a bake reads its sizes from a
-    // stub rather than from a LunaLib the test JVM has no game to load.
-    private MockedStatic<KmuPoliticalMapSettings> settingsMock;
+    // The band knobs stand in for the settings the bake reads, so it takes its sizes from a stub
+    // rather than from a LunaLib the test JVM has no game to load.
+    private MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock;
+
+    // The diagnostics stand in for the same reason: a bake asks whether to lay the band-path
+    // overlay over its answer. No case here turns on it, so the stub's own false is the answer.
+    private MockedStatic<KmuPoliticalMapDiagnosticsSettings> diagnosticsSettingsMock;
 
     // The map-layer knobs stand in for the same reason, a bake opening a pass that samples the dev
     // reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
@@ -97,7 +102,8 @@ final class CellRibbonsBakerTest {
     @BeforeEach
     void stubBandSettings() {
 
-        settingsMock = mockStatic(KmuPoliticalMapSettings.class);
+        settingsMock = mockStatic(KmuPoliticalMapRibbonSettings.class);
+        diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class);
         mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
@@ -106,6 +112,7 @@ final class CellRibbonsBakerTest {
     @AfterEach
     void releaseBandSettings() {
         mapLayerSettingsMock.close();
+        diagnosticsSettingsMock.close();
         settingsMock.close();
     }
 

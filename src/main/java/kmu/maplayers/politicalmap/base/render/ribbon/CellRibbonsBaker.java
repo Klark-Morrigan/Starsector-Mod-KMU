@@ -9,7 +9,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 
 import org.apache.log4j.Logger;
 
@@ -104,7 +104,7 @@ public final class CellRibbonsBaker {
                 pass,
                 territories.getViewGrouping().view(),
                 RibbonBakeSurface.createForPass(territories, geometryCache, clusterAnchors)),
-            KmuPoliticalMapSettings.shouldShowPoliticalMapRibbonPaths());
+            KmuPoliticalMapDiagnosticsSettings.shouldShowPoliticalMapRibbonPaths());
     }
 
     /** Bakes the band of every drawn cell, replacing whatever each was carrying. */

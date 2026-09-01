@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,9 +35,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the chain that answers what the cursor is over, which two passes read and must agree on: the
  * one that draws the box and the one that claims the key switching it. Every way the chain can come up
- * empty is a case here - nothing hovered, no layer showing a box for it, no live sector, an id that no
- * longer names a system - because each is a frame on which the key must fall through to vanilla rather
- * than flip a mode over a box that is not there.
+ * empty is a case here - nothing hovered, the screen's layers switched off, no layer showing a box for
+ * it, no live sector, an id that no longer names a system - because each is a frame on which the key must
+ * fall through to vanilla rather than flip a mode over a box that is not there.
  *
  * <p>Which box a layer injects is pinned with a stand-in layer, since which concrete layers exist is
  * the composition root's business and this chain must not know: a layer with no renderer, one that

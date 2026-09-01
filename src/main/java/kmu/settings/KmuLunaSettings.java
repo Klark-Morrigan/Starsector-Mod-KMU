@@ -18,21 +18,37 @@ import java.util.concurrent.atomic.AtomicInteger;
  * hookup and the settings-change listener and nothing more; what this class really owns is
  * the mod id every read is scoped by.
  *
- * <p>The knobs sit in three classes beside this one, split by which package reads them:
+ * <p>The knobs sit in classes beside this one, split first by which package reads them:
  * {@link KmuMapLayerSettings} for what the map-layer framework's own chrome and geometry
- * need, {@link KmuPoliticalMapSettings} for the political map layer's paint and verdicts,
- * and {@link KmuMarketConditionSettings} for the condition picker. Splitting on the reader
- * rather than on the settings tab is what keeps a layer's knobs out of reach of the
- * framework: a class no framework code imports cannot leak a feature's vocabulary into it,
- * which a tab-shaped split could not promise. {@code Map - Dev} is where the two part
- * company - it carries the tuning of geometry every layer shares, but most of that tuning is
- * read by the political layer that resolves it, so a class named for that tab would be
- * imported by both halves and be the shared surface again under a new name.
+ * need, {@link KmuMarketConditionSettings} for the condition picker, and the political map
+ * layer's own set. Splitting on the reader rather than on the settings tab is what keeps a
+ * layer's knobs out of reach of the framework: a class no framework code imports cannot leak a
+ * feature's vocabulary into it, which a tab-shaped split could not promise. {@code Map - Dev}
+ * is where the two part company - it carries the tuning of geometry every layer shares, but
+ * most of that tuning is read by the political layer that resolves it, so a class named for
+ * that tab would be imported by both halves and be the shared surface again under a new name.
  *
- * <p>Those three hold field ids, fallbacks and accessors only. The mod id, the revision and
+ * <p>The political map's own set is split again by what its knobs act on, one class per section
+ * of the settings screen: {@link KmuPoliticalMapTerritorySettings} for how each kind of
+ * territory paints, {@link KmuPoliticalMapRibbonSettings} for the presence bands,
+ * {@link KmuPoliticalMapHighlightSettings} for what lights up under a hover,
+ * {@link KmuPoliticalMapDrawOrderSettings} for which side of the nebulae each sub-layer paints
+ * on, {@link KmuPoliticalMapDominanceSettings} for the verdicts rather than the paint,
+ * {@link KmuPoliticalMapGeometrySettings} for the shapes the map is built from, and
+ * {@link KmuPoliticalMapDiagnosticsSettings} for the dev overlays. That second split is by
+ * section rather than by reader because within one feature every knob has the same reader:
+ * what a class named for a section buys is that nothing imports more of the layer's settings
+ * surface than the part it actually reads.
+ *
+ * <p>All of them hold field ids, fallbacks and accessors only. The mod id, the revision and
  * the reads stay here because they are mod-wide - a second layer's settings would want the
  * same reads against the same id - and because a fallback that mirrors a CSV default belongs
  * beside the accessor that answers with it, not beside the reader that fetches it.
+ *
+ * <p>What each knob does for the player is stated once, in the description column of
+ * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
+ * in those classes answers only what that column cannot: why a default is the number it is, and
+ * what a caller has to know to use the value.
  *
  * <p>Every field id spells the tab path a player finds the row under, segment by segment -
  * {@code kmu_<tab>_<section>_<group>_<knob>} - so a knob's stored key says where it is set

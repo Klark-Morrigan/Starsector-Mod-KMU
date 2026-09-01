@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
 import kmu.maplayers.base.hover.MapHoverGates;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapHighlightSettings;
 
 /**
  * Whether the political map answers the cursor, and with which of the two kinds of feedback - the
@@ -28,7 +28,7 @@ public final class PoliticalMapHoverGates {
      */
     public static boolean isHoverEffectsEnabled() {
         return MapHoverGates.isHoverEffectsEnabled()
-            && KmuPoliticalMapSettings.getPoliticalMapHoverEffectsEnabled();
+            && KmuPoliticalMapHighlightSettings.getPoliticalMapHoverEffectsEnabled();
     }
 
     /**
@@ -38,7 +38,7 @@ public final class PoliticalMapHoverGates {
      */
     public static boolean isHoverTooltipEnabled() {
         return MapHoverGates.isHoverTooltipEnabled()
-            && KmuPoliticalMapSettings.getPoliticalMapHoverTooltipEnabled();
+            && KmuPoliticalMapHighlightSettings.getPoliticalMapHoverTooltipEnabled();
     }
 
     /**

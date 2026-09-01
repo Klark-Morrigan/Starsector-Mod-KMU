@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDrawOrderSettings;
 import kmu.settings.NebulaDrawOrderChoice;
 
 import org.mockito.MockedStatic;
@@ -35,7 +35,7 @@ final class NebulaDrawOrderFixtures {
      *                     and closes; a case wanting another layout stubs it on top
      */
     static void stubGeometryBelowAndReadoutsAbove(
-            MockedStatic<KmuPoliticalMapSettings> settingsMock) {
+            MockedStatic<KmuPoliticalMapDrawOrderSettings> settingsMock) {
 
         stubChosenDrawOrders(
             settingsMock,
@@ -57,23 +57,23 @@ final class NebulaDrawOrderFixtures {
      * @param labelDrawOrder   which side the cluster names are asked for
      */
     static void stubChosenDrawOrders(
-            MockedStatic<KmuPoliticalMapSettings> settingsMock,
+            MockedStatic<KmuPoliticalMapDrawOrderSettings> settingsMock,
             NebulaDrawOrderChoice fillDrawOrder,
             NebulaDrawOrderChoice borderDrawOrder,
             NebulaDrawOrderChoice ribbonDrawOrder,
             NebulaDrawOrderChoice labelDrawOrder) {
 
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapFillNebulaDrawOrder)
+            .when(KmuPoliticalMapDrawOrderSettings::getPoliticalMapFillNebulaDrawOrder)
             .thenReturn(fillDrawOrder);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapBorderNebulaDrawOrder)
+            .when(KmuPoliticalMapDrawOrderSettings::getPoliticalMapBorderNebulaDrawOrder)
             .thenReturn(borderDrawOrder);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonNebulaDrawOrder)
+            .when(KmuPoliticalMapDrawOrderSettings::getPoliticalMapRibbonNebulaDrawOrder)
             .thenReturn(ribbonDrawOrder);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapLabelNebulaDrawOrder)
+            .when(KmuPoliticalMapDrawOrderSettings::getPoliticalMapLabelNebulaDrawOrder)
             .thenReturn(labelDrawOrder);
     }
 }

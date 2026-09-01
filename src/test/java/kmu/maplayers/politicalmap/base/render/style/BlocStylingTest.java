@@ -37,6 +37,7 @@ final class BlocStylingTest {
 
         @Test
         void resolveFromPaintsFromTheFactionBundleWhenTheBlocDoesNotRecede() {
+
             var styling = BlocStyling.resolveFrom(
                 buildTheme(),
                 new BlocStyleDecision(false, ElementStyleAdjustment.NONE));
@@ -47,8 +48,8 @@ final class BlocStylingTest {
 
         @Test
         void resolveFromCarriesTheDecisionsAdjustmentThrough() {
-            var adjustment = new ElementStyleAdjustment(0.5, true);
 
+            var adjustment = new ElementStyleAdjustment(0.5, true);
             var styling = BlocStyling.resolveFrom(
                 buildTheme(),
                 new BlocStyleDecision(false, adjustment));

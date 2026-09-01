@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapTerritorySettings;
 
 /**
  * How a cluster name is coloured and faded, per holder group: the outer-border colour choice
@@ -33,10 +33,10 @@ public record BlocNameStyles(
     public static BlocNameStyles readFromLunaSettings() {
         return new BlocNameStyles(
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getFactionOuterBorderColour()),
-                KmuPoliticalMapSettings.getFactionNameOpacity()),
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionOuterBorderColour()),
+                KmuPoliticalMapTerritorySettings.getFactionNameOpacity()),
             new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapSettings.getIndependentOuterBorderColour()),
-                KmuPoliticalMapSettings.getIndependentNameOpacity()));
+                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentOuterBorderColour()),
+                KmuPoliticalMapTerritorySettings.getIndependentNameOpacity()));
     }
 }

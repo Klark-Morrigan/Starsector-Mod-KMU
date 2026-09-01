@@ -22,12 +22,14 @@ final class FactionPaletteSlotTest {
 
         @Test
         void resolvePaintSelectionOfSelectsTheBrightSlotForThePrimaryChoice() {
+
             assertThat(FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY))
                 .isEqualTo(FactionPaletteSlot.PRIMARY);
         }
 
         @Test
         void resolvePaintSelectionOfSelectsTheDarkSlotForTheSecondaryChoice() {
+
             assertThat(FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.SECONDARY))
                 .isEqualTo(FactionPaletteSlot.SECONDARY);
         }

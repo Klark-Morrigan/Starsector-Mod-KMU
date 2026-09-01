@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.ribbon;
 
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 /**
  * How far the runs reach in the band a cell nobody contests draws.
@@ -40,7 +40,7 @@ public record UncontestedRibbonRuns(
      */
     public static UncontestedRibbonRuns readFromLunaSettings() {
         return new UncontestedRibbonRuns(
-            KmuPoliticalMapSettings.shouldShortenPoliticalMapUncontestedRibbonRuns());
+            KmuPoliticalMapRibbonSettings.shouldShortenPoliticalMapUncontestedRibbonRuns());
     }
 
     /**

@@ -27,7 +27,9 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryF
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapGeometrySettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -146,13 +148,15 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         // no test JVM has.
         openSeam(FilterSelection.class);
 
-        var settingsMock = openSeam(KmuPoliticalMapSettings.class);
-        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
+        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(openSeam(KmuPoliticalMapRibbonSettings.class));
+        openSeam(KmuPoliticalMapDiagnosticsSettings.class);
+
+        var settingsMock = openSeam(KmuPoliticalMapGeometrySettings.class);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapCellBoundSegments)
+            .when(KmuPoliticalMapGeometrySettings::getPoliticalMapCellBoundSegments)
             .thenReturn(CELL_BOUND_SEGMENTS);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapCellRadius)
+            .when(KmuPoliticalMapGeometrySettings::getPoliticalMapCellRadius)
             .thenReturn(CELL_RADIUS);
 
         visibilityRulesMock = openSeam(MapVisibilityRules.class);

@@ -30,7 +30,8 @@ import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
+import kmu.settings.KmuPoliticalMapGeometrySettings;
 
 import org.apache.log4j.Logger;
 
@@ -241,8 +242,8 @@ final class PoliticalMapCache {
         var cellCut = new CellCutInputs(
             installation.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
             new CellSeedInputs(
-                KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
-                KmuPoliticalMapSettings.getPoliticalMapCellRadius()),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapCellBoundSegments(),
+                KmuPoliticalMapGeometrySettings.getPoliticalMapCellRadius()),
             MapVisibilityRules.readFromLunaSettings());
 
         var isCellCutStale = !cellCut.equals(lastCellCut);
@@ -297,7 +298,7 @@ final class PoliticalMapCache {
         // rebuilds either way - it draws over both views - borrowing the normal build's holder
         // map when there is one, resolving its own from the sector when the debug build left
         // none behind.
-        if (KmuPoliticalMapSettings.shouldTraceBordersForDebug()) {
+        if (KmuPoliticalMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
             rebuildBorderTracingOverlay(sector, view);
 
         } else {
@@ -400,10 +401,12 @@ final class PoliticalMapCache {
     // politics, which would overwrite the spotlit keys and corrupt the spotlight, so a filtered
     // map defers holder changes to the next full rebuild instead.
     //
-    // The drain happens here rather than inside the fold, and unconditionally, because this cache
-    // is what holds the board: the fold is reached through static entry points naming no sector, so
-    // a drain made there would have to ask the running game whose staleness it was emptying. Both
-    // branches drained before and both drain now - one folds what it took in, the other drops it.
+    // The drain happens here rather than inside the fold, and before either branch is chosen,
+    // because this cache is what holds the board: the fold is reached through static entry points
+    // naming no sector, so a drain made there would have to ask the running game whose staleness it
+    // was emptying. Draining unconditionally is what keeps the two branches equivalent - one folds
+    // what it took, the other drops it, and neither leaves a mark standing for the next frame to
+    // find.
     private void applyStandingMapUpdates() {
 
         var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();

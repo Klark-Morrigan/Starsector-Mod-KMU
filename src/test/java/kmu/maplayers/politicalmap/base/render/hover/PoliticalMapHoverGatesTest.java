@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
 import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapHighlightSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,8 @@ final class PoliticalMapHoverGatesTest {
         void isHoverEffectsEnabledIsTrueWithEveryTierOn() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, true);
@@ -44,8 +44,8 @@ final class PoliticalMapHoverGatesTest {
         void isHoverEffectsEnabledIsFalseWithTheHoveringMasterOff() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, false);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, true);
@@ -59,8 +59,8 @@ final class PoliticalMapHoverGatesTest {
         void isHoverEffectsEnabledIsFalseWithTheGlobalEffectsSwitchOff() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, false);
                 stubPoliticalHoverEffects(layerSettingsMock, true);
@@ -75,8 +75,8 @@ final class PoliticalMapHoverGatesTest {
             // The case the tiers above cannot express: every other layer keeps its halo and wash.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, false);
@@ -92,8 +92,8 @@ final class PoliticalMapHoverGatesTest {
             // leaves this layer's halo and wash burning.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, true);
@@ -113,8 +113,8 @@ final class PoliticalMapHoverGatesTest {
         void isHoverTooltipEnabledIsTrueWithEveryTierOn() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverTooltip(frameworkSettingsMock, true);
                 stubPoliticalHoverTooltip(layerSettingsMock, true);
@@ -128,8 +128,8 @@ final class PoliticalMapHoverGatesTest {
         void isHoverTooltipEnabledIsFalseWithTheHoveringMasterOff() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, false);
                 stubGlobalHoverTooltip(frameworkSettingsMock, true);
                 stubPoliticalHoverTooltip(layerSettingsMock, true);
@@ -143,8 +143,8 @@ final class PoliticalMapHoverGatesTest {
         void isHoverTooltipEnabledIsFalseWithTheGlobalTooltipSwitchOff() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverTooltip(frameworkSettingsMock, false);
                 stubPoliticalHoverTooltip(layerSettingsMock, true);
@@ -159,8 +159,8 @@ final class PoliticalMapHoverGatesTest {
             // This layer's box goes; another layer's box, reading its own switch, is untouched.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverTooltip(frameworkSettingsMock, true);
                 stubPoliticalHoverTooltip(layerSettingsMock, false);
@@ -176,8 +176,8 @@ final class PoliticalMapHoverGatesTest {
             // the cursor turns off this layer's effects alone and keeps the box.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverTooltip(frameworkSettingsMock, true);
                 stubPoliticalHoverTooltip(layerSettingsMock, true);
@@ -197,8 +197,8 @@ final class PoliticalMapHoverGatesTest {
         void isCursorReadNeededIsTrueForTheEffectsAlone() {
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, true);
@@ -216,8 +216,8 @@ final class PoliticalMapHoverGatesTest {
             // resolves, so gating the read on the effects would switch the box off with them.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, false);
                 stubPoliticalHoverEffects(layerSettingsMock, false);
@@ -236,8 +236,8 @@ final class PoliticalMapHoverGatesTest {
             // tier, which is the case the layer alone can decide.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, true);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, false);
@@ -254,8 +254,8 @@ final class PoliticalMapHoverGatesTest {
             // The master alone, with every switch beneath it left on: one row takes the whole read.
             try (MockedStatic<KmuMapLayerSettings> frameworkSettingsMock =
                         mockStatic(KmuMapLayerSettings.class);
-                    MockedStatic<KmuPoliticalMapSettings> layerSettingsMock =
-                        mockStatic(KmuPoliticalMapSettings.class)) {
+                    MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock =
+                        mockStatic(KmuPoliticalMapHighlightSettings.class)) {
                 stubHoveringMaster(frameworkSettingsMock, false);
                 stubGlobalHoverEffects(frameworkSettingsMock, true);
                 stubPoliticalHoverEffects(layerSettingsMock, true);
@@ -296,18 +296,18 @@ final class PoliticalMapHoverGatesTest {
     }
 
     private static void stubPoliticalHoverEffects(
-            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
+            MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock,
             boolean isEnabled) {
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapHoverEffectsEnabled)
+            .when(KmuPoliticalMapHighlightSettings::getPoliticalMapHoverEffectsEnabled)
             .thenReturn(isEnabled);
     }
 
     private static void stubPoliticalHoverTooltip(
-            MockedStatic<KmuPoliticalMapSettings> layerSettingsMock,
+            MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock,
             boolean isEnabled) {
         layerSettingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapHoverTooltipEnabled)
+            .when(KmuPoliticalMapHighlightSettings::getPoliticalMapHoverTooltipEnabled)
             .thenReturn(isEnabled);
     }
 }

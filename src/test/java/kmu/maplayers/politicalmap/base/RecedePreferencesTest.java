@@ -7,7 +7,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapTerritorySettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -400,7 +400,7 @@ final class RecedePreferencesTest {
             // Mute alone dims by the modifier and keeps the colour, so a receded bloc recedes
             // without a palette change.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, false);
 
@@ -413,7 +413,7 @@ final class RecedePreferencesTest {
         void resolveRecedeAdjustmentDesaturatesOnlyWhenOnlyDesaturateIsSet() {
             // Desaturate alone recolours at full opacity, so the modifier is left unread.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, true);
 
@@ -426,7 +426,7 @@ final class RecedePreferencesTest {
         void resolveRecedeAdjustmentBothMutesAndDesaturatesWhenBothAreSet() {
             // The two knobs combine: a receded bloc dims and recolours at once.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, true);
 
@@ -439,7 +439,7 @@ final class RecedePreferencesTest {
         void resolveRecedeAdjustmentIsNoneWhenNeitherIsSet() {
             // Both toggles off is the identity adjustment, so an un-receded look is preserved.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, false);
 
@@ -453,7 +453,7 @@ final class RecedePreferencesTest {
             // The muted multiplier is the modifier reading, not a constant, so a different modifier
             // value flows straight through to the adjustment.
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 stubToggles(memoryAccessMock, settingsMock, true, 0.72, false);
 
@@ -467,7 +467,7 @@ final class RecedePreferencesTest {
     // settings mock, so resolveRecedeAdjustment runs its real composition over controlled inputs.
     private static void stubToggles(
             MockedStatic<SectorMemoryAccess> memoryAccessMock,
-            MockedStatic<KmuPoliticalMapSettings> settingsMock,
+            MockedStatic<KmuPoliticalMapTerritorySettings> settingsMock,
             boolean isMuted,
             double mutedModifier,
             boolean shouldDesaturate) {
@@ -490,7 +490,7 @@ final class RecedePreferencesTest {
             .thenReturn(shouldDesaturate);
 
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapAllianceMutedOpacityModifier)
+            .when(KmuPoliticalMapTerritorySettings::getPoliticalMapAllianceMutedOpacityModifier)
             .thenReturn(mutedModifier);
     }
 }

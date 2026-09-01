@@ -220,12 +220,10 @@ public final class KmuMapLayerSettings {
     // library.
     private static final float DEFAULT_SIDEBAR_COLLAPSE_SECONDS = 0.25f;
 
-    // The same 0.25 as the collapse pace above, so the two chrome movements on that screen agree out
-    // of the box and a player who wants instant chrome winds both to 0. Restated rather than read off
-    // the collapse knob: a LunaLib slider always holds a concrete value, so there is no unset state a
-    // dynamic default could fall back from, and a sentinel for "follow the other slider" would collide
-    // with 0 already meaning snap. The two are separate knobs because they animate different amounts of
-    // screen - one folds a panel that stays in view, the other dissolves the whole overlay off it.
+    // The same 0.25 as the collapse pace above, so the two chrome movements on that screen agree out of
+    // the box. Restated rather than read off the collapse knob: a LunaLib slider always holds a concrete
+    // value, so there is no unset state a dynamic default could fall back from, and a sentinel for
+    // "follow the other slider" would collide with 0 already meaning snap.
     private static final float DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS = 0.25f;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette

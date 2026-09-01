@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.render.MapOverlayBand;
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapDrawOrderSettings;
 import kmu.settings.NebulaDrawOrderChoice;
 
 import org.junit.jupiter.api.Nested;
@@ -33,7 +33,7 @@ final class PoliticalMapBandLayoutTest {
             // slot reading another's setting shows as a band rather than passing on a shared answer.
             // The borders go up with the fills because that pairing is the one the layout resolves;
             // it is the group below that holds it to the rule.
-            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapDrawOrderSettings.class)) {
 
                 NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     settingsMock,
@@ -60,7 +60,7 @@ final class PoliticalMapBandLayoutTest {
             // The picture the overlay painted before the draw order became a choice: the cell geometry
             // fogged, the two readouts laid over cells clear of the fog. A player who never opens
             // the group is meant to see no change at all, and this is where that is settled.
-            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapDrawOrderSettings.class)) {
 
                 NebulaDrawOrderFixtures.stubChosenDrawOrders(
                     settingsMock,

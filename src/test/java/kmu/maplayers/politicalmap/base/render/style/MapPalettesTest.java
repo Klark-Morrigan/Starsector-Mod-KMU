@@ -46,6 +46,7 @@ final class MapPalettesTest {
 
         @Test
         void pickPaletteColourReturnsThePrimaryShadeForAPrimaryChoice() {
+
             assertThat(MapPalettes.pickPaletteColour(
                     FactionPaletteSlot.PRIMARY,
                     PALETTE))
@@ -54,6 +55,7 @@ final class MapPalettesTest {
 
         @Test
         void pickPaletteColourReturnsTheSecondaryShadeForASecondaryChoice() {
+
             assertThat(MapPalettes.pickPaletteColour(
                     FactionPaletteSlot.SECONDARY,
                     PALETTE))
@@ -140,6 +142,7 @@ final class MapPalettesTest {
 
         @Test
         void pickHolderPaletteColourReturnsNullForNoColourWhoeverHoldsTheCell() {
+
             assertThat(MapPalettes.pickHolderPaletteColour(
                     null,
                     OWNER,

@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ final class RibbonStyleReaderTest {
 
         @Test
         void readRibbonStyleThreadsEachBandSettingIntoItsMatchingSize() {
-            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapRibbonSettings.class)) {
 
                 stubBandSettings(settingsMock);
 
@@ -60,7 +60,7 @@ final class RibbonStyleReaderTest {
 
         @Test
         void readRibbonStyleKeepsTheMitreLimitAuthored() {
-            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapRibbonSettings.class)) {
 
                 stubBandSettings(settingsMock);
 
@@ -70,22 +70,22 @@ final class RibbonStyleReaderTest {
         }
     }
 
-    private static void stubBandSettings(MockedStatic<KmuPoliticalMapSettings> settingsMock) {
+    private static void stubBandSettings(MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock) {
 
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonWidth)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonWidth)
             .thenReturn(WIDTH_WORLD);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInsetPad)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonInsetPad)
             .thenReturn(INSET_PAD_WORLD);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonSegmentLength)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonSegmentLength)
             .thenReturn(SEGMENT_LENGTH_UNITS);
         settingsMock
-            .when(KmuPoliticalMapSettings::getPoliticalMapRibbonInterjectionLength)
+            .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonInterjectionLength)
             .thenReturn(INTERJECTION_LENGTH_UNITS);
         settingsMock
-            .when(KmuPoliticalMapSettings::shouldAlwaysDrawPoliticalMapRibbons)
+            .when(KmuPoliticalMapRibbonSettings::shouldAlwaysDrawPoliticalMapRibbons)
             .thenReturn(BAND_ALWAYS_DRAWN);
     }
 }

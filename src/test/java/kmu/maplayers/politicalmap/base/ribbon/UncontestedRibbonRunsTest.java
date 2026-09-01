@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.ribbon;
 
-import kmu.settings.KmuPoliticalMapSettings;
+import kmu.settings.KmuPoliticalMapRibbonSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -64,10 +64,10 @@ final class UncontestedRibbonRunsTest {
         void readFromLunaSettingsTakesItsAnswerFromTheShorteningKnob() {
             // Answered off rather than on, which is not the shipped default: a read that ignored
             // the setting and answered its own way would pass against the default and fail here.
-            try (var settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapRibbonSettings.class)) {
 
                 settingsMock
-                    .when(KmuPoliticalMapSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
+                    .when(KmuPoliticalMapRibbonSettings::shouldShortenPoliticalMapUncontestedRibbonRuns)
                     .thenReturn(false);
 
                 assertThat(UncontestedRibbonRuns.readFromLunaSettings())

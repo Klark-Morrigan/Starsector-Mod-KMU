@@ -27,6 +27,7 @@ final class FactionlessStyleResolverTest {
 
         @Test
         void resolveCategoryOfReturnsDecivilisedForASystemHoldingARevealedDeadColony() {
+
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     INHABITED_SYSTEM_IDS,
                     "some-decivilised-system"))
@@ -48,6 +49,7 @@ final class FactionlessStyleResolverTest {
 
         @Test
         void resolveCategoryOfReturnsUninhabitedForASystemOutsideTheInhabitedSet() {
+
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     INHABITED_SYSTEM_IDS,
                     "never-settled-system"))
@@ -75,6 +77,7 @@ final class FactionlessStyleResolverTest {
 
         @Test
         void resolveRecedeOfGivesADecivilisedCellThePassRecede() {
+
             assertThat(FactionlessStyleResolver.resolveRecedeOf(
                     PoliticalMapCategory.DECIVILISED,
                     PASS_RECEDE,
