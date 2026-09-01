@@ -3,14 +3,23 @@ package kmu.maplayers.base.theme;
 /**
  * The sector-wide render style - the tier of the {@link RenderStyle} theme that does not
  * vary by category or cluster: the {@link HatchStyle} a hatched fill is cut with, the
- * {@link BorderSmoothingStyle} cluster frontiers are rounded by, the
- * {@link HoverHighlightStyle} the cursor's answer draws in, and the two spotlight strengths -
+ * {@link BorderSmoothingStyle} cluster frontiers are rounded by, the two
+ * {@link HoverHighlightStyle} tiers a highlight is drawn to - {@code hoverHighlight} for the
+ * cursor's answer on one cell and {@code previewHighlight} for a whole set of cells lit at once -
+ * and the two spotlight strengths -
  * {@code desaturationDarkening}, how far a receded cluster is sunk toward black, and
  * {@code presenceLightening}, how far a cell the spotlight spares is lifted toward white.
  * Holding these once (rather than reading each ad hoc where it is used) gives the global tier a
  * single home; the builders read it off the drawables the same way they read the per-category
  * styles, so an incremental re-shape smooths and hatches against the exact settings the full
  * build baked in.
+ *
+ * <p>The two highlights are separate tiers rather than one tier with a multiplier over it because
+ * they answer different problems. The cursor lights one cell the pointer is already on; a preview
+ * lights a scatter of cells the eye has to find at arm's length, where brightness alone competes
+ * with the map's own fills - so a preview leads on the pulse, many cells breathing in unison being
+ * the cue that carries at that distance, and its halo is set against the smallest cells the map
+ * draws rather than against a cluster frontier.
  *
  * <p>The two strengths are the pair a spotlight separates its subject from its backdrop with,
  * which is why they sit together. One alone cannot do it: both the receded clusters and the spared
@@ -29,6 +38,7 @@ public record GlobalStyle(
     HatchStyle hatch,
     BorderSmoothingStyle borderSmoothing,
     HoverHighlightStyle hoverHighlight,
+    HoverHighlightStyle previewHighlight,
     double desaturationDarkening,
     double presenceLightening) {
 }

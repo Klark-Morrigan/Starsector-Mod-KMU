@@ -39,9 +39,10 @@ A `RenderStyle` is the whole theme, in two tiers:
 
 - `GlobalStyle` - sector-wide, identical for every cluster: the hatched-fill `HatchStyle`, the
   cluster-border `BorderSmoothingStyle` (a `SpikeSandingStyle` and a `CornerRoundingStyle`, each
-  carrying its own pass's gate and the shape that pass works to), the `HoverHighlightStyle`
-  (itself a `HoverGlowStyle` for the frontier halo and a `HoverWashStyle` for the hovered cell),
-  and the two spotlight strengths - how far a receded cluster sinks toward black, and how far a
+  carrying its own pass's gate and the shape that pass works to), two `HoverHighlightStyle` tiers
+  (each a `HoverGlowStyle` for the halo and a `HoverWashStyle` for the cells inside it) - one for
+  the cursor's answer on a single cell, one for a whole set of cells lit at once - and the two
+  spotlight strengths - how far a receded cluster sinks toward black, and how far a
   cell the spotlight spares lifts toward white. Those two are a pair rather than one knob and a
   counterpart: a layer separating its subject from its backdrop in one hue needs both ends to
   move, since sinking the backdrop alone leaves anything it started level with reading as part
@@ -56,6 +57,13 @@ A new sector-wide knob belongs on the matching `GlobalStyle` sub-record, never f
 call site - and where that sub-record is itself split by pass, on the half the pass that reads the
 knob is handed. Splitting `BorderSmoothingStyle` that way is what lets each smoothing pass take
 only its own half, so a sanding number cannot reach the rounding pass and back again.
+
+Two of those sub-records are the same type, which is the one place the tier carries a record twice:
+a highlight is a halo plus a wash whatever resolved the shapes under it, so the cursor's and the
+preview's differ only in the weights they are read at. A single tier with a multiplier over it
+would not do - the two are weighted for different distances, one cell under the pointer against a
+scatter of cells found at arm's length - and a second record type would duplicate a shape that has
+no second meaning.
 
 `HatchStyle` splits along the same line, by *when* each part is decided rather than by which pass
 reads it: `spacing`, `angleRadians` and `joinToleranceFraction` shape the clipped line geometry and

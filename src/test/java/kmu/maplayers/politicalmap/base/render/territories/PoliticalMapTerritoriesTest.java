@@ -302,7 +302,8 @@ final class PoliticalMapTerritoriesTest {
                 new BorderSmoothingStyle(
                     new SpikeSandingStyle(true, 5, 5),
                     new CornerRoundingStyle(true, 5, 5, 5, CornerRounding.ROUND_EVERY_CORNER)),
-                ThemeFixtures.NO_HOVER_HIGHLIGHT,
+                ThemeFixtures.NO_HIGHLIGHT,
+                ThemeFixtures.NO_HIGHLIGHT,
                 0.3,
                 0.2);
 

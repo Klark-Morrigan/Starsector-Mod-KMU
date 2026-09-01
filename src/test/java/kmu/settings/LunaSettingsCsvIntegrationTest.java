@@ -234,6 +234,10 @@ final class LunaSettingsCsvIntegrationTest {
         new ChoiceBackedRadio(
             "kmu_map_politics_visuals_hoverHighlight_colour",
             "DEFAULT_HOVER_HIGHLIGHT_COLOUR",
+            FactionPaletteChoice.values()),
+        new ChoiceBackedRadio(
+            "kmu_map_politics_visuals_previewHighlight_colour",
+            "DEFAULT_PREVIEW_HIGHLIGHT_COLOUR",
             FactionPaletteChoice.values()));
 
     // A named Java fallback as the settings classes declare it: the constant, then the enum constant

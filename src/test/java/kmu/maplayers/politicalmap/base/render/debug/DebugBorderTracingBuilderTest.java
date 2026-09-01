@@ -392,7 +392,8 @@ final class DebugBorderTracingBuilderTest {
             new GlobalStyle(
                 ThemeFixtures.createHatchStyle(0, 0, 0),
                 smoothing,
-                ThemeFixtures.NO_HOVER_HIGHLIGHT,
+                ThemeFixtures.NO_HIGHLIGHT,
+                ThemeFixtures.NO_HIGHLIGHT,
                 0.3,
                 0.2),
             categories);

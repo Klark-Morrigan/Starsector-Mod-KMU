@@ -16,6 +16,7 @@ import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 
 /**
  * Pins how the political-map settings fold into one theme: each owned category threads its
@@ -23,8 +24,12 @@ import static org.mockito.Mockito.mockStatic;
  * opacity/width would show here), a factionless category collapses to neutral-colour elements
  * with no colour choice - a decivilised cell a fill plus an outline, an uninhabited cell an
  * outline whose on/off is the sidebar toggle - the {@link GlobalStyle} global tier gathers the
- * hatch, smoothing, and desaturation knobs, and {@code readRenderStyle} carries all four
- * categories plus the global tier as one snapshot.
+ * hatch, smoothing, desaturation and both highlight tiers, and {@code readRenderStyle} carries all
+ * four categories plus the global tier as one snapshot.
+ *
+ * <p>The two highlight tiers are the same record read out of two sets of getters, so they are
+ * pinned both by value and by which getters each reads: threading one of them into the other's
+ * slot is the failure no single-tier assertion would name.
  */
 final class RenderStyleReaderTest {
 
@@ -279,9 +284,11 @@ final class RenderStyleReaderTest {
         private static final double DESATURATION_DARKENING = 0.4;
         private static final double PRESENCE_LIGHTENING = 0.6;
 
-        // One distinctive hover knob, enough to prove the tier carries the hover style it
-        // gathers; ReadHoverHighlightStyle pins the rest of that bundle's threading.
+        // One distinctive knob from each highlight tier, enough to prove the global tier carries
+        // both styles it gathers and carries them the right way round; ReadHoverHighlightStyle and
+        // ReadPreviewHighlightStyle pin the rest of each bundle's threading.
         private static final double HOVER_GLOW_OPACITY = 0.65;
+        private static final double PREVIEW_GLOW_OPACITY = 0.45;
 
         @Test
         void readGlobalStyleGathersEverySectorWideKnobIntoOneTier() {
@@ -290,6 +297,9 @@ final class RenderStyleReaderTest {
                 settingsMock
                     .when(KmuPoliticalMapSettings::getPoliticalMapHoverGlowOpacity)
                     .thenReturn(HOVER_GLOW_OPACITY);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowOpacity)
+                    .thenReturn(PREVIEW_GLOW_OPACITY);
                 settingsMock
                     .when(KmuPoliticalMapSettings::getPoliticalMapHatchSpacing)
                     .thenReturn(HATCH_SPACING);
@@ -365,6 +375,12 @@ final class RenderStyleReaderTest {
                     .isEqualTo(PRESENCE_LIGHTENING);
                 assertThat(global.hoverHighlight().glow().opacity())
                     .isEqualTo(HOVER_GLOW_OPACITY);
+
+                // Distinct from the cursor tier's for the reason the two strengths above are
+                // distinct from each other: the two tiers are the same record in adjacent slots,
+                // so equal stand-ins would let a transposed pair read as correct.
+                assertThat(global.previewHighlight().glow().opacity())
+                    .isEqualTo(PREVIEW_GLOW_OPACITY);
             }
         }
 
@@ -520,6 +536,96 @@ final class RenderStyleReaderTest {
                     .isEqualTo(WASH_OUTLINE_OPACITY);
                 assertThat(hover.wash().outlineWidth())
                     .isEqualTo(WASH_OUTLINE_WIDTH);
+            }
+        }
+    }
+
+    @Nested
+    class ReadPreviewHighlightStyle {
+
+        // Distinct per knob for the reason the cursor tier's stand-ins are, and distinct from
+        // those as well: the two tiers read the same record out of nine getters apiece, so a
+        // preview slot fed by its cursor counterpart has to fail by value.
+        private static final double GLOW_OPACITY = 0.55;
+        private static final double GLOW_WIDTH = 7.0;
+        private static final int GLOW_LAYERS = 2;
+        private static final double GLOW_PULSE_STRENGTH = 0.7;
+        private static final double GLOW_PULSE_PERIOD = 1.25;
+        private static final double WASH_OPACITY = 0.45;
+        private static final double WASH_OUTLINE_OPACITY = 0.95;
+        private static final double WASH_OUTLINE_WIDTH = 4.5;
+
+        @Test
+        void readPreviewHighlightStyleThreadsEachPreviewSettingIntoItsMatchingSlot() {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewHighlightColour)
+                    .thenReturn(FactionPaletteChoice.PRIMARY);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowOpacity)
+                    .thenReturn(GLOW_OPACITY);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowWidth)
+                    .thenReturn(GLOW_WIDTH);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowLayers)
+                    .thenReturn(GLOW_LAYERS);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowPulseStrength)
+                    .thenReturn(GLOW_PULSE_STRENGTH);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowPulsePeriod)
+                    .thenReturn(GLOW_PULSE_PERIOD);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewWashOpacity)
+                    .thenReturn(WASH_OPACITY);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewWashOutlineOpacity)
+                    .thenReturn(WASH_OUTLINE_OPACITY);
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewWashOutlineWidth)
+                    .thenReturn(WASH_OUTLINE_WIDTH);
+
+                var preview = RenderStyleReader.readPreviewHighlightStyle();
+
+                assertThat(preview.colour())
+                    .isEqualTo(FactionPaletteSlot.PRIMARY);
+
+                assertThat(preview.glow().opacity())
+                    .isEqualTo(GLOW_OPACITY);
+                assertThat(preview.glow().width())
+                    .isEqualTo(GLOW_WIDTH);
+                assertThat(preview.glow().layers())
+                    .isEqualTo(GLOW_LAYERS);
+                assertThat(preview.glow().pulseStrength())
+                    .isEqualTo(GLOW_PULSE_STRENGTH);
+                assertThat(preview.glow().pulsePeriodSeconds())
+                    .isEqualTo(GLOW_PULSE_PERIOD);
+
+                assertThat(preview.wash().fillOpacity())
+                    .isEqualTo(WASH_OPACITY);
+                assertThat(preview.wash().outlineOpacity())
+                    .isEqualTo(WASH_OUTLINE_OPACITY);
+                assertThat(preview.wash().outlineWidth())
+                    .isEqualTo(WASH_OUTLINE_WIDTH);
+            }
+        }
+
+        // The cursor tier's own knobs, left at their unstubbed defaults, must not reach the
+        // preview: a reader wired to the wrong getters would still pass the case above, since
+        // both tiers would then be read from one set of stubs.
+        @Test
+        void readPreviewHighlightStyleReadsNoneOfTheCursorTiersOwnSettings() {
+            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
+
+                settingsMock
+                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowOpacity)
+                    .thenReturn(GLOW_OPACITY);
+
+                RenderStyleReader.readPreviewHighlightStyle();
+
+                settingsMock.verify(KmuPoliticalMapSettings::getPoliticalMapHoverGlowOpacity, never());
             }
         }
     }

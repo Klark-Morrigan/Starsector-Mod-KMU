@@ -4,7 +4,7 @@ import kmlib.opengl.GlLineQuality;
 
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the
- * hover highlight in the shape that reads nothing back.
+ * highlight tiers in the shape that reads nothing back.
  *
  * <p>One home for these because a {@link RenderStyle} cannot be built without a full global tier,
  * so every suite that styles anything at all was spelling out the same four zeroed sub-records to
@@ -16,8 +16,12 @@ import kmlib.opengl.GlLineQuality;
  */
 public final class ThemeFixtures {
 
-    /** The cursor feedback switched off, for the suites that hover nothing. */
-    public static final HoverHighlightStyle NO_HOVER_HIGHLIGHT = new HoverHighlightStyle(
+    /**
+     * A highlight tier that paints nothing, for the suites that light nothing up. Serves either
+     * tier the global style carries - the cursor's and the preview's differ only in the weights
+     * they were read at, and both are off at zero.
+     */
+    public static final HoverHighlightStyle NO_HIGHLIGHT = new HoverHighlightStyle(
             null,
         new HoverGlowStyle(0, 0, 0, 0, 0),
         new HoverWashStyle(0, 0, 0));
@@ -39,8 +43,8 @@ public final class ThemeFixtures {
     }
 
     /**
-     * A global tier that changes nothing it is read for: no hatch, no border smoothing, no hover
-     * feedback, and the shipped spotlight strengths.
+     * A global tier that changes nothing it is read for: no hatch, no border smoothing, neither
+     * highlight painting anything, and the shipped spotlight strengths.
      *
      * @return a live global tier, for a suite whose subject is the per-category tier or the
      *         drawables built off it
@@ -64,7 +68,8 @@ public final class ThemeFixtures {
             new BorderSmoothingStyle(
                 new SpikeSandingStyle(false, 0, 0),
                 cornerRounding),
-            NO_HOVER_HIGHLIGHT,
+            NO_HIGHLIGHT,
+            NO_HIGHLIGHT,
             DESATURATION_DARKENING,
             PRESENCE_LIGHTENING);
     }

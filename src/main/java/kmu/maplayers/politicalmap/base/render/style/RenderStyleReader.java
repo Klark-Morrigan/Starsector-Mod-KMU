@@ -24,8 +24,9 @@ import java.util.Map;
 
 /**
  * Reads the whole political-map theme out of the player's LunaLib settings into one
- * {@link RenderStyle}: the global tier (hatch, border smoothing, hover highlight, desaturation
- * profile) and one {@link CategoryStyle} per {@link PoliticalMapCategory}. This is the single
+ * {@link RenderStyle}: the global tier (hatch, border smoothing, the cursor and preview highlight
+ * tiers, desaturation profile) and one {@link CategoryStyle} per {@link PoliticalMapCategory}.
+ * This is the single
  * seam a rebuild reads the render settings through, so every knob resolves in one place rather
  * than being fetched ad hoc across the builders, and an incremental re-shape restyles against
  * the same snapshot.
@@ -60,7 +61,7 @@ public final class RenderStyleReader {
     }
 
     // Folds the sector-wide knobs into the global tier: the contested-fill hatch, the
-    // national-border smoothing, the hover highlight, and the two strengths a spotlight separates
+    // national-border smoothing, the two highlight tiers, and the two strengths a spotlight separates
     // its subject from its backdrop by - how far a receded bloc's Independent-based grey darkens,
     // and how far a spared cell's neutral lifts. The hatch angle is authored in degrees and
     // converted to
@@ -78,6 +79,7 @@ public final class RenderStyleReader {
                     KmuPoliticalMapSettings.getPoliticalMapHatchWidth())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
+            readPreviewHighlightStyle(),
             KmuPoliticalMapSettings.getPoliticalMapDesaturationDarkening(),
             KmuPoliticalMapSettings.getPoliticalMapPresenceLightening());
     }
@@ -121,6 +123,27 @@ public final class RenderStyleReader {
                 KmuPoliticalMapSettings.getPoliticalMapHoverWashOpacity(),
                 KmuPoliticalMapSettings.getPoliticalMapHoverWashOutlineOpacity(),
                 KmuPoliticalMapSettings.getPoliticalMapHoverWashOutlineWidth()));
+    }
+
+    // Reads the second highlight tier - the one a whole set of cells lights up in - in the same
+    // shape as the cursor's, since what it draws is the same halo and wash over geometry resolved
+    // some other way. Its own knobs rather than a multiplier over the cursor's, because a scatter
+    // of cells read at arm's length and one cell under the pointer want different weights: the
+    // knobs that differ are named on the tier itself.
+    public static HoverHighlightStyle readPreviewHighlightStyle() {
+        return new HoverHighlightStyle(
+            FactionPaletteSlot.resolvePaintSelectionOf(
+                KmuPoliticalMapSettings.getPoliticalMapPreviewHighlightColour()),
+            new HoverGlowStyle(
+                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowOpacity(),
+                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowWidth(),
+                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowLayers(),
+                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowPulseStrength(),
+                KmuPoliticalMapSettings.getPoliticalMapPreviewGlowPulsePeriod()),
+            new HoverWashStyle(
+                KmuPoliticalMapSettings.getPoliticalMapPreviewWashOpacity(),
+                KmuPoliticalMapSettings.getPoliticalMapPreviewWashOutlineOpacity(),
+                KmuPoliticalMapSettings.getPoliticalMapPreviewWashOutlineWidth()));
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build
