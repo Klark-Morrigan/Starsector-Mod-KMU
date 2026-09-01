@@ -36,6 +36,12 @@ import java.util.Set;
  * the exterior coast runs along a cell, exactly as an inlet span does. The rest of a cell's
  * border either faces land or faces water some other line has closed.
  *
+ * <p><b>And the islands, whose whole border is that.</b> A cell alone in the void carries no
+ * coastline - the line round it would be its own border drawn twice - which is a reason not to
+ * draw one and none at all to leave the cell unreachable. So an island is a shape of the sector
+ * like any other here, numbered among them by {@link Coastlines#mapCellsToShapes} and anchored
+ * on its own rim.
+ *
  * <p><b>Against what is already down, never over it.</b> The inlet spans were laid first and are
  * on the map; a link is offered across void some of them have already claimed. So they are
  * walls here - a link that merely doubles one is refused, and a link that crosses one is
@@ -76,7 +82,9 @@ public final class IntercontinentalBridges {
      * @param parameters the knobs the cells are built under
      * @param rules      the knobs the spans are laid under. The thinning is not read: see the
      *                   class note
-     * @return the links, narrowest first
+     * @return the links. Chosen narrowest first, which is what decides them; the widths they
+     *         carry are measured after their feet have settled, so the order is the order they
+     *         were judged in rather than a sort of what came out
      */
     public static List<CellGap> findIntercontinentalBridges(
             Coastlines.TracedCoasts traced,

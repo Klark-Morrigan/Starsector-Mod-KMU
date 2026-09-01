@@ -55,14 +55,17 @@ import java.util.function.BiPredicate;
  * same statement made where there is no coastline to sit on yet.
  *
  * <p>Anchored on points the traced line already carries, rather than on places computed along
- * a cell's arc. The line is sampled, so an analytically exact point on the arc would sit off
- * its chord - near the line, not on it - and a span landing between two of its points forces
- * that stretch of coast to be split there, leaving a sliver wherever it lands close to one.
- * The anchor is therefore quantised to the sampling, a fraction of a cell radius, and in
- * exchange no tolerance stands between the traced line and this. The ROUNDED line the map
- * draws is not the anchor's home: rounding cuts every corner off the vertices, so it is
- * presentation, and everything this pass measures - anchors and walls alike - lives on the
- * traced line the rounding started from.
+ * a cell's arc. An anchor has to sit on the drawn line and on its own cell's rim at once, and
+ * the two are the same places only at the line's vertices: the drawn coast is a chord
+ * approximation of the rim, so a place between two vertices lies inside the cell, and a place on
+ * the rim between them lies off the drawn line. Neither is free - a foot inside its own cell
+ * anchors a span the clearance test refuses, and a foot off the line is not on the thing every
+ * reader measures against. The anchor is therefore quantised to the sampling, a fraction of a
+ * cell radius, and in exchange no tolerance stands between the traced line and this.
+ *
+ * <p>The ROUNDED line the map draws is not the anchor's home either: rounding cuts every corner
+ * off the vertices, so it is presentation, and everything this pass measures - anchors and walls
+ * alike - lives on the traced line the rounding started from.
  *
  * <p><b>The shortest such span, per pair.</b> A cell facing the void more than once offers a
  * frontage per face, so two cells can be joined several ways; the one taken is the shortest,
@@ -111,9 +114,11 @@ public final class ContinentBridges {
      *                           is settled. A rule rather than a display switch: what it
      *                           changes is which spans exist, so a report and a drawing that
      *                           disagreed about it would describe different maps
-     * @param anchorSeparation   how far along its frontage a span's foot is moved off an anchor
-     *                           another span has already claimed, in map units. Non-positive
-     *                           leaves the feet where the search put them
+     * @param anchorSeparation   how close two spans' feet may stand before one of them moves
+     *                           along its frontage, and how much room it reaches for when it
+     *                           does, in map units. One number for both, since a fan is exactly
+     *                           a foot whose nearest neighbour is inside it. Non-positive leaves
+     *                           every foot where the search put it
      */
     public record BridgeRules(
         double reachMultiple,
@@ -131,7 +136,9 @@ public final class ContinentBridges {
      *                   whole of what tells one set from the other
      * @param parameters the knobs the cells are built under
      * @param rules      the knobs the spans are laid under
-     * @return the spans, shortest first
+     * @return the spans. Chosen narrowest first, which is what decides them; the widths they
+     *         carry are measured after their feet have settled, so the order is the order they
+     *         were judged in rather than a sort of what came out
      */
     public static List<CellGap> findAnchoredBridges(
             Coastlines.TracedCoasts traced,

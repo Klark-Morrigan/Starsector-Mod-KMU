@@ -65,9 +65,18 @@ import java.util.Map;
 public final class CrowdedAnchors {
 
     // No place on the stretch answers: it is one point long, or every place on it is taken,
-    // barred, or not worth the walk. Also what says an anchor is on no stretch of this coast at
-    // all, which is a span anchored on a shore this call was not handed.
-    private static final int NO_POINT = -1;
+    // barred, or not worth the walk.
+    private static final int NO_PLACE = -1;
+
+    // The anchor is on no stretch of this coast at all, which is a span anchored on a shore this
+    // call was not handed - a lake span among the exterior frontages, or the other way about.
+    // Apart from NO_PLACE because they are different findings that happen to share a number: one
+    // says the stretch had nothing to offer, the other that there was no stretch.
+    private static final int NOT_ON_THIS_COAST = -1;
+
+    // What is passed as "which of these feet is the one being measured" when it is not one of
+    // them, so no entry is passed over.
+    private static final int NOT_ONE_OF_THEM = -1;
 
     // What staying put is worth, against which every place worth moving to is weighed: no room
     // gained, and no distance walked to gain it.
@@ -80,14 +89,8 @@ public final class CrowdedAnchors {
      * Moves each foot that stands within the separation of another onto the roomiest place its
      * own frontage can offer.
      *
-     * <p>The nearest place clear of every other foot by the separation, so a foot moves as
-     * little as the rule asks; and where the stretch cannot offer that, the place with the most
-     * room on it. That single fallback is what produces the three answers worth naming, without
-     * any of them having to be written down: a stretch with room to spare gives a place clear by
-     * the separation, a stretch too short gives its far end, and a stretch crowded at both ends
-     * gives its middle.
-     *
-     * <p>A foot with nowhere better stays put. Some frontages are a single point, some are
+     * <p>Where a foot goes is {@link #findRoomiestPlace}'s answer, and stated once there. A
+     * foot with nowhere better stays put. Some frontages are a single point, some are
      * hemmed in on both sides, and on some every place worth having would cross a line already
      * down - the fan stands, and {@link SpanFormations} is what answers those.
      *
@@ -129,8 +132,7 @@ public final class CrowdedAnchors {
 
             var moved = spreadOneSpan(
                 working.get(index),
-                settled,
-                new MoveContext(gatherFeet(others), others, union, separation),
+                new MoveContext(settled, gatherFeet(others), others, union, separation),
                 frontages);
 
             working.set(index, moved);
@@ -162,6 +164,9 @@ public final class CrowdedAnchors {
         return others;
     }
 
+    // Both ends of every span, which is what every question here is asked against: what a place
+    // is measured for is how near the nearest FOOT is, and which span it belongs to matters to
+    // none of them.
     private static List<double[]> gatherFeet(List<CellGap> spans) {
 
         var feet = new ArrayList<double[]>(spans.size() * 2);
@@ -181,15 +186,13 @@ public final class CrowdedAnchors {
     // would be answering about a span that no longer exists.
     private static CellGap spreadOneSpan(
             CellGap span,
-            List<double[]> settled,
             MoveContext context,
             Map<Integer, List<List<double[]>>> frontages) {
 
         var start = resolveFreeAnchor(
-            span.fromSite(), span.start(), span.end(), settled, context, frontages);
+            span.fromSite(), span.start(), span.end(), context, frontages);
 
-        var end = resolveFreeAnchor(
-            span.toSite(), span.end(), start, settled, context, frontages);
+        var end = resolveFreeAnchor(span.toSite(), span.end(), start, context, frontages);
 
         if (start == span.start() && end == span.end()) {
             return span;
@@ -205,7 +208,6 @@ public final class CrowdedAnchors {
             int cell,
             double[] anchor,
             double[] otherEnd,
-            List<double[]> settled,
             MoveContext context,
             Map<Integer, List<List<double[]>>> frontages) {
 
@@ -213,7 +215,7 @@ public final class CrowdedAnchors {
         // the settled count, because a crowd has to leave one span where it is - and the first
         // to want a place is the one that keeps it. Read against every foot instead, every span
         // of a fan would find itself crowded and all of them would step away.
-        if (measureClearance(anchor, settled) >= context.separation()) {
+        if (measureClearance(anchor, context.settledFeet()) >= context.separation()) {
             return anchor;
         }
 
@@ -225,13 +227,13 @@ public final class CrowdedAnchors {
 
         var at = indexOfPoint(run, anchor);
 
-        if (at == NO_POINT) {
+        if (at == NOT_ON_THIS_COAST) {
             return anchor;
         }
 
         var moved = findRoomiestPlace(run, measureAlongRun(run), at, otherEnd, context);
 
-        return moved == NO_POINT ? anchor : run.get(moved);
+        return moved == NO_PLACE ? anchor : run.get(moved);
     }
 
     // Which point of the run to stand on instead: the NEAREST that clears every other foot by
@@ -265,7 +267,7 @@ public final class CrowdedAnchors {
             MoveContext context) {
 
         var here = measureClearance(run.get(at), context.takenFeet());
-        var best = NO_POINT;
+        var best = NO_PLACE;
         var bestWorth = STANDING_STILL_IS_WORTH_NOTHING;
 
         for (var candidate : orderByDistanceFrom(run, along, at)) {
@@ -400,7 +402,7 @@ public final class CrowdedAnchors {
 
         for (var run : runs) {
 
-            if (indexOfPoint(run, anchor) != NO_POINT) {
+            if (indexOfPoint(run, anchor) != NOT_ON_THIS_COAST) {
                 return run;
             }
         }
@@ -418,7 +420,7 @@ public final class CrowdedAnchors {
                 return index;
             }
         }
-        return NO_POINT;
+        return NOT_ON_THIS_COAST;
     }
 
     // How much room a place has: the distance to the nearest foot standing anywhere else on the
@@ -427,17 +429,11 @@ public final class CrowdedAnchors {
     // both of them - and a junction is exactly where two cells' coasts pass through very nearly
     // the same place.
     private static double measureClearance(double[] point, List<double[]> feet) {
-
-        var nearest = Double.MAX_VALUE;
-
-        for (var foot : feet) {
-            nearest = Math.min(nearest, Points.computeDistance(point, foot));
-        }
-        return nearest;
+        return measureClearanceApartFrom(point, feet, NOT_ONE_OF_THEM);
     }
 
-    // The same, for a foot that is itself in the list - which would otherwise answer nought,
-    // being no distance from itself.
+    // The same reading with one entry passed over: for a foot that is itself among the feet,
+    // which would otherwise answer nought, being no distance from itself.
     private static double measureClearanceApartFrom(
             double[] point,
             List<double[]> feet,
@@ -460,6 +456,9 @@ public final class CrowdedAnchors {
      * <p>Gathered because every candidate is weighed against all of it, and passing four
      * arguments through three calls made a parameter list nothing could read.
      *
+     * @param settledFeet where the spans that are done have their feet. What forces a move is
+     *                   read against these alone, because a crowd has to leave one span where it
+     *                   is - the first to want a place holds it
      * @param takenFeet  where every other span on the map currently has a foot, settled or not.
      *                   Somewhere to land has to be free of all of them: a point another span
      *                   is standing on is a crowd whichever of the two was there first
@@ -469,6 +468,7 @@ public final class CrowdedAnchors {
      * @param separation how far along the frontage the move is asked to reach
      */
     private record MoveContext(
+        List<double[]> settledFeet,
         List<double[]> takenFeet,
         List<CellGap> otherSpans,
         DiscUnion union,

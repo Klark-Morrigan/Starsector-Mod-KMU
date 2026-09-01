@@ -24,6 +24,11 @@ import java.util.Map;
  * <p>Read off the drawn ring rather than off the arcs the walk found uncovered. The two differ:
  * smoothing passes through only part of what a cell exposes, and it is the drawn line a wall
  * has to meet.
+ *
+ * <p><b>Except where there is no drawn line.</b> A cell alone in the void is on no coast at all,
+ * having none to be on, and its border is nonetheless a border a span may reach - so an island
+ * is answered from its own rim. The exception is narrow and stays narrow: it applies to cells
+ * the walk itself set aside, and to no others.
  */
 public final class CoastFrontages {
 
