@@ -17,7 +17,6 @@ import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -78,10 +77,10 @@ final class PoliticalMapCache {
     // cache, so no two cuts of these cells can be mistaken for each other.
     private static final int FIRST_CUT_NUMBER = 0;
 
-    // The machinery installed on the sector this cache draws. Both the sector a rebuild cuts cells
-    // from and the movers that cut leaves out come off this one handle, so the two cannot name
-    // different sectors - a cut taken from the running game while the drift is this sector's would
-    // leave out systems that never moved.
+    // The machinery installed on the sector this cache draws. The sector a rebuild cuts cells from,
+    // the movers that cut leaves out and the board it reads staleness off all come off this one
+    // handle, so none of the three can name a different sector - a cut taken from the running game
+    // while the drift is this sector's would leave out systems that never moved.
     private final MapLayerInstallation installation;
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
@@ -240,7 +239,7 @@ final class PoliticalMapCache {
         // the bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave
         // cells cut under one rule and painted under another.
         var cellCut = new CellCutInputs(
-            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
+            installation.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
             new CellSeedInputs(
                 KmuPoliticalMapSettings.getPoliticalMapCellBoundSegments(),
                 KmuPoliticalMapSettings.getPoliticalMapCellRadius()),
@@ -325,7 +324,7 @@ final class PoliticalMapCache {
         // A full rebuild re-derives every system, so any pending per-system staleness is
         // already reflected - drain and discard it rather than re-processing the same systems
         // immediately after.
-        MapLayerRefresh.drainStaleGroupingSystemIds();
+        installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
 
         logContentRebuild(
             staleHalves.isCellCutStale(),
@@ -395,24 +394,31 @@ final class PoliticalMapCache {
     // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
     // colony resize marked, re-shaping only those systems and their neighbours over the standing
     // territories; that batch opens a reading of its own, since none was opened for this frame.
-    // The static debug overlay has no draw lists to patch, so its staleness is drained instead -
+    // The static debug overlay has no draw lists to patch, so its staleness is dropped instead -
     // it refreshes on the next full rebuild (any settings or geometry change). Under a filter the
     // incremental re-shape is bypassed too: it re-derives holders through the normal (non-filter)
     // politics, which would overwrite the spotlit keys and corrupt the spotlight, so a filtered
     // map defers holder changes to the next full rebuild instead.
+    //
+    // The drain happens here rather than inside the fold, and unconditionally, because this cache
+    // is what holds the board: the fold is reached through static entry points naming no sector, so
+    // a drain made there would have to ask the running game whose staleness it was emptying. Both
+    // branches drained before and both drain now - one folds what it took in, the other drops it.
     private void applyStandingMapUpdates() {
+
+        var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
 
         if (territories != null && !territories.isFiltering()) {
             // The standing pair goes in whole: a re-fit leaves its own placements and rules in
             // it, and a frame that re-fits nothing leaves both alone, since the placements it
             // did not touch are still described by the rules already recorded for them.
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+                installation.resolveSector(),
                 territories,
                 standingAnchors,
                 factionLabels,
-                cellGeometry);
-        } else {
-            MapLayerRefresh.drainStaleGroupingSystemIds();
+                cellGeometry,
+                staleSystemIds);
         }
     }
 
@@ -465,15 +471,19 @@ final class PoliticalMapCache {
     // rebuilds the territories under whichever view is up, with no view naming it. Those toggles are
     // sector-memory state rather than LunaLib fields, so settingsRevision above does not cover them.
     // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
-    // combine here.
-    private static int computeContentRevision(PoliticalMapView view) {
+    // combine here. The three counters come off this cache's own board, so a signal raised in
+    // another sector cannot restyle these cells - and a signal raised in this one cannot fail to.
+    private int computeContentRevision(PoliticalMapView view) {
+
+        var board = installation.resolveRefreshBoard();
+
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
             view.getContentRevision(),
-            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER),
-            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
-            MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
+            board.getRevision(MapLayerCommonRefreshSignal.FILTER),
+            board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
+            board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells

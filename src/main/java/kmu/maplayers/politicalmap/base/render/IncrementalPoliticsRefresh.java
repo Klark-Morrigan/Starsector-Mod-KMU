@@ -11,7 +11,6 @@ import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -57,10 +56,16 @@ final class IncrementalPoliticsRefresh {
     private IncrementalPoliticsRefresh() {
     }
 
-    // Drains the systems a colony resize marked stale and folds their changes into the standing
-    // territories, the placements, and the name labels. The stale drain runs first, so a frame
-    // with nothing marked returns before opening a pass over the sector or gathering anything -
-    // the cheap per-frame path, which is nearly every frame.
+    // Folds the changes of the systems a colony resize marked stale into the standing territories,
+    // the placements, and the name labels. The empty check runs first, so a frame with nothing
+    // marked returns before opening a pass over the sector or gathering anything - the cheap
+    // per-frame path, which is nearly every frame.
+    //
+    // Both the sector and the marked systems arrive from the caller rather than being resolved
+    // here. These entry points are static and are handed the standing map's four halves, so this
+    // holds no installation to ask either of - and the caller that hands the halves over is exactly
+    // the one that does hold it, so what it drains and what it reads the colonies of are one
+    // sector's by construction.
     //
     // The four halves of the standing map are taken loose here and bundled below, because this is
     // the boundary the plugin's cache hands them over at: the placement and label lists are its own
@@ -74,12 +79,13 @@ final class IncrementalPoliticsRefresh {
     // fit that way, because this path only ever re-shapes cells within a partition it never recut -
     // so what it re-fits is sound against the very geometry that revision speaks for.
     static void applyStalePoliticsUpdates(
+            SectorAPI sector,
             PoliticalMapTerritories territories,
             StandingClusterAnchors standingAnchors,
             List<Label> factionLabels,
-            RevisedCellGeometry cellGeometry) {
+            RevisedCellGeometry cellGeometry,
+            Set<String> staleSystemIds) {
 
-        var staleSystemIds = MapLayerRefresh.drainStaleGroupingSystemIds();
         if (staleSystemIds.isEmpty()) {
             return;
         }
@@ -91,7 +97,7 @@ final class IncrementalPoliticsRefresh {
 
         KmuProfiling.getProfiler().measure(
             "politicalMap.applyPoliticsUpdates",
-            () -> applyDrainedPoliticsUpdates(standingMap, staleSystemIds));
+            () -> applyDrainedPoliticsUpdates(sector, standingMap, staleSystemIds));
     }
 
     // The batch itself, once the drain has found something to do: re-derive what was marked over
@@ -102,11 +108,12 @@ final class IncrementalPoliticsRefresh {
     // per system used to open a pass apiece, which paid a settings read and a colony walk for each
     // of them.
     private static void applyDrainedPoliticsUpdates(
+            SectorAPI sector,
             StandingPoliticalMap standingMap,
             Set<String> staleSystemIds) {
 
         var pass = DominancePass.readFromLunaSettings(
-            Global.getSector(),
+            sector,
             standingMap.territories().getGrouping());
 
         // A system with no cell seeds no drawing, so it is left out of the whole batch: a

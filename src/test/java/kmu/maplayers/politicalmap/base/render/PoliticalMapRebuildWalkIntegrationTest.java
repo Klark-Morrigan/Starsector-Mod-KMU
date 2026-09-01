@@ -9,7 +9,6 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -181,10 +180,6 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         nameFormatMock
             .when(NameFormatPreference::getSelectedNameFormat)
             .thenReturn(FactionNameFormatChoice.NONE);
-
-        // The stale set is static and shared, so a residue from another suite would read here as a
-        // system this one never marked.
-        MapLayerRefresh.drainStaleGroupingSystemIds();
     }
 
     @AfterEach
@@ -369,11 +364,14 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         movingSystems.updateMovingSystems(MapVisibilityPass.over(sector, MapVisibilityRules.BASE));
     }
 
-    // Marks the shared geometry signal so the next refresh finds both halves stale and rebuilds
-    // them, which is how a second rebuild is posed at all: nothing else in this suite moves a
-    // revision, and a cache whose inputs stand still folds the frame into the cheap path.
-    private static void requestTheNextRebuild() {
-        MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+    // Raises the geometry signal on the cache's own board so the next refresh finds both halves
+    // stale and rebuilds them, which is how a second rebuild is posed at all: nothing else in this
+    // suite moves a revision, and a cache whose inputs stand still folds the frame into the cheap
+    // path.
+    private void requestTheNextRebuild() {
+        installation
+            .resolveRefreshBoard()
+            .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
     }
 
     // Two star systems: one settled by two rival colonies, and one empty. The rivalry is what

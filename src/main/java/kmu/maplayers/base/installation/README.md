@@ -149,11 +149,11 @@ nothing to read rather than falling through to whichever sector happens to be lo
 `Global.getSector()`, and it is where that read belongs: vanilla's API offers no other handle, and
 the seams it serves are driven by the engine with no sector named.
 
-Two holders are reached that way from outside. `MapLayerRefresh`'s statics resolve the live sector's
-board, and `MapHoverState.resolveLiveSectorHoverState()` the live sector's hover; both stand for
-readers that are reached from a seam holding no sector. A reader that *does* hold one - or holds an
-installation - goes direct instead, which is why the render surfaces, the political map's cache and
-its staleness poll name none of these.
+One holder is still reached that way from outside: `MapLayerRefresh`'s statics resolve the live
+sector's board, for the producers a settings change drives - a sidebar control is handed no sector.
+Anything that *does* hold one, or holds an installation, goes direct instead, which is why the
+render surfaces, the political map's cache, its staleness poll, its renderers and the cursor read
+name none of these.
 
 ## What is not one sector's
 

@@ -17,7 +17,6 @@ import kmu.maplayers.base.labels.anchor.ClusterIdentity;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
@@ -47,9 +46,11 @@ import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.DISTANT_SYSTEM;
@@ -132,6 +133,11 @@ final class IncrementalPoliticsRefreshTest {
         // as a value that merely compares equal to it.
         private final RevisedCellGeometry cellGeometry =
             new RevisedCellGeometry(buildTwoAdjacentCells(), GEOMETRY_REVISION);
+
+        // What the caller drained off its own installation's board this frame, in the order it was
+        // marked. Held per case rather than raised on a shared board: the fold is handed the ids
+        // rather than draining any board of its own, so a case states the batch directly.
+        private final Set<String> staleSystemIds = new LinkedHashSet<>();
 
         private MockedStatic<Global> globalMock;
         private MockedStatic<SectorPolitics> politicsMock;
@@ -237,10 +243,6 @@ final class IncrementalPoliticsRefreshTest {
             // knobs - LunaLib again. No case here turns on the reveal, so the seam's own false is
             // the answer.
             openSeam(KmuMapLayerSettings.class);
-
-            // The stale set is static and shared, so a residue from another suite would
-            // read here as a system this one never marked.
-            MapLayerRefresh.drainStaleGroupingSystemIds();
         }
 
         @AfterEach
@@ -253,13 +255,9 @@ final class IncrementalPoliticsRefreshTest {
 
         @Test
         void applyStalePoliticsUpdatesReadsNoSectorWhenNothingIsStale() {
-            // The per-frame path: this runs every frame, and on almost all of them the
-            // stale set is empty, so it must cost nothing before it returns.
-            //
-            // Read as "nothing was asked of the sector" rather than "the sector was never named":
-            // the drain resolves the running sector to reach its board, which is a field read and
-            // a lookup. What the empty batch must not cost is the pass over that sector and the
-            // walk behind it, and neither leaves the sector untouched.
+            // The per-frame path: this runs every frame, and on almost all of them the caller
+            // drains an empty batch, so it must cost nothing before it returns. What it must not
+            // cost is the pass over the sector and the walk of every marked system behind it.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             applyTo(territories);
@@ -276,7 +274,7 @@ final class IncrementalPoliticsRefreshTest {
             // reach the re-derive at all.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(CELL_LESS_SYSTEM);
+            markStale(CELL_LESS_SYSTEM);
             applyTo(territories);
 
             politicsMock.verifyNoInteractions();
@@ -295,7 +293,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             styledCellsMock.verifyNoInteractions();
@@ -325,7 +323,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -364,7 +362,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -414,7 +412,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -446,7 +444,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -485,7 +483,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -505,7 +503,7 @@ final class IncrementalPoliticsRefreshTest {
             assertResolvesTo(FLIPPED_SYSTEM, null);
             assertSettledIs(FLIPPED_SYSTEM, true);
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             styledCellsMock.verify(
@@ -538,7 +536,7 @@ final class IncrementalPoliticsRefreshTest {
             assertResolvesTo(DISTANT_SYSTEM, null);
             assertSettledIs(DISTANT_SYSTEM, true);
 
-            MapLayerRefresh.markSystemGroupingStale(DISTANT_SYSTEM);
+            markStale(DISTANT_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -570,12 +568,53 @@ final class IncrementalPoliticsRefreshTest {
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
             assertResolvesTo(NEIGHBOUR_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
-            MapLayerRefresh.markSystemGroupingStale(NEIGHBOUR_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
+            markStale(NEIGHBOUR_SYSTEM);
             applyTo(territories);
 
             passMock.verify(
                 () -> DominancePass.readFromLunaSettings(any(), any(HolderGrouping.class)));
+        }
+
+        @Test
+        void applyStalePoliticsUpdatesReadsTheSectorItWasHandedRatherThanTheRunningOne() {
+            // This fold is reached through static entry points handed the standing map's four
+            // halves, so it used to open its pass over the running game - right only while the
+            // sector its caller holds cells for and the sector loaded are the same one. Posed with
+            // the two apart: a fold reading the running game would re-derive one sector's marked
+            // systems out of another sector's colonies, and write that answer into the first's map.
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            // Built before the seam is opened, so what the seam hands back is a real pass the
+            // reads below can be answered from rather than a stand-in.
+            var batchPass = DominancePass.readFromLunaSettings(
+                sectorMock,
+                HolderGrouping.identity());
+
+            var sectorTheFoldRead = new AtomicReference<SectorAPI>();
+
+            var passMock = openSeam(DominancePass.class);
+            passMock
+                .when(() -> DominancePass.readFromLunaSettings(any(), any(HolderGrouping.class)))
+                .thenAnswer(read -> {
+                    sectorTheFoldRead.set(read.getArgument(0));
+                    return batchPass;
+                });
+
+            // The running game answers with a sector of its own, which is what makes this a
+            // regression rather than a restatement: with both answers the same object, a fold that
+            // never stopped reading the global would go on passing.
+            globalMock
+                .when(Global::getSector)
+                .thenReturn(buildSectorWithSystems(FLIPPED_SYSTEM));
+
+            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
+
+            markStale(FLIPPED_SYSTEM);
+            applyTo(territories);
+
+            assertThat(sectorTheFoldRead)
+                .hasValue(sectorMock);
         }
 
         @Test
@@ -601,7 +640,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             holdingMock.verify(
@@ -621,7 +660,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             styledCellsMock.verify(
@@ -650,7 +689,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             territoriesMock.verify(
@@ -684,7 +723,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -718,7 +757,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -743,8 +782,8 @@ final class IncrementalPoliticsRefreshTest {
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
             assertResolvesTo(DISTANT_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
-            MapLayerRefresh.markSystemGroupingStale(DISTANT_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
+            markStale(DISTANT_SYSTEM);
             applyTo(territories);
 
             assertThat(territories.getRibbonByCellId())
@@ -820,7 +859,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             anchorsMock.verify(
@@ -847,7 +886,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             anchorsMock.verify(
@@ -879,7 +918,7 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
 
-            MapLayerRefresh.markSystemGroupingStale(FLIPPED_SYSTEM);
+            markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
             anchorsMock.verifyNoInteractions();
@@ -918,15 +957,28 @@ final class IncrementalPoliticsRefreshTest {
                 .thenReturn(isInhabited);
         }
 
-        // Runs the refresh over the two-cell geometry every case shares, handing it the pair
-        // the caller holds across frames and an empty stand-in for the label list the plugin
-        // owns beside it.
+        // Adds one system to the batch this case's caller drained.
+        private void markStale(String systemId) {
+            staleSystemIds.add(systemId);
+        }
+
+        // Runs the refresh over the two-cell geometry every case shares, handing it the sector its
+        // caller was installed on, the pair the caller holds across frames, an empty stand-in for
+        // the label list the plugin owns beside it, and this case's own batch.
         private void applyTo(PoliticalMapTerritories territories) {
+            applyOverTheSector(sectorMock, territories);
+        }
+
+        // The same run against a stated sector, for the case that poses one against the running
+        // game's.
+        private void applyOverTheSector(SectorAPI sector, PoliticalMapTerritories territories) {
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+                sector,
                 territories,
                 standingAnchors,
                 new ArrayList<Label>(),
-                cellGeometry);
+                cellGeometry,
+                staleSystemIds);
         }
     }
 

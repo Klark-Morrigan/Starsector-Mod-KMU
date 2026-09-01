@@ -14,7 +14,6 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.sidebar.FilterSelection;
@@ -159,6 +158,10 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         // differ between the legs.
         private final CellGeometryCache cellsMock = buildRowOfAbuttingCells();
 
+        // What the caller drained off its own installation's board this frame, in the order it was
+        // marked - the refresh is handed the batch rather than draining one of its own.
+        private final Set<String> staleSystemIds = new LinkedHashSet<>();
+
         private FactionAPI hegemonyMock;
         private FactionAPI tritachyonMock;
         private FactionAPI piratesMock;
@@ -201,8 +204,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 economyMock,
                 List.of(hegemonyMock, tritachyonMock, piratesMock));
 
-            // The refresh reads the sector globally, where a rebuild is handed one, so both legs
-            // have to be answered with the same object or they would be comparing two sectors.
+            // Both legs are handed this sector: the refresh takes it from its caller and the
+            // rebuild opens its own pass over it, so the comparison is over one sector rather than
+            // two. The global read stands for whatever else the builders reach for on the way past.
             globalMock
                 .when(Global::getSector)
                 .thenReturn(sectorMock);
@@ -215,7 +219,8 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             placeColoniesIn(FRONTIER_SYSTEM);
 
             // The dev reveal and the map-anchor tuning, both LunaLib-backed: no case turns on
-            // either, so the seam's own answers stand for them.
+            // either, so the seam's own answers stand for them. The cell seed inputs and the dev
+            // overlays are seamed for the same reason, a rebuild reaching both on its way through.
             openSeam(KmuMapLayerSettings.class);
 
             var settingsMock = openSeam(KmuPoliticalMapSettings.class);
@@ -244,10 +249,6 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory
             // state as well.
             openSeam(FilterSelection.class);
-
-            // The stale set is static and shared, so a residue from another suite would read here
-            // as a system this one never marked.
-            MapLayerRefresh.drainStaleGroupingSystemIds();
         }
 
         @AfterEach
@@ -427,21 +428,22 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         // Marks the named systems, folds the batch into the standing map, and compares what that
         // leaves against a full rebuild over the very same sector.
         //
-        // The refresh runs first because it is what drains the stale set: a rebuild taken ahead of
-        // it would leave the marks standing, and the batch would then be folded into a map that
-        // had already accounted for them.
+        // The refresh runs first because the rebuild it is compared against is taken from the
+        // sector as it stands after the fold: one built ahead of the fold would be compared against
+        // a map that had not yet accounted for the marks.
         private void assertRefreshDrawsWhatARebuildWould(
                 StandingPoliticalMap standingMap,
                 String... markedSystemIds) {
 
-            for (var systemId : markedSystemIds) {
-                MapLayerRefresh.markSystemGroupingStale(systemId);
-            }
+            staleSystemIds.addAll(List.of(markedSystemIds));
+
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+                sectorMock,
                 standingMap.territories(),
                 standingMap.standingAnchors(),
                 standingMap.factionLabels(),
-                standingMap.cellGeometry());
+                standingMap.cellGeometry(),
+                staleSystemIds);
 
             // Compared structurally rather than by equality: a cell's draw record, a bloc's traced
             // territory and a band's runs are baked geometry, held as float arrays, which compare

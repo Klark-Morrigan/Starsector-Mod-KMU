@@ -67,6 +67,12 @@ public final class MapHoverPublisher {
     // of this publisher's session-long life.
     private final ModelviewMatrixReader modelviewMatrixReader;
 
+    // Where this publisher's answer is left for the passes that need it. One sector's, handed over
+    // at construction rather than resolved per publish: a publisher belongs to the machinery of the
+    // sector whose map it reads, so a read taken over one sector's cells cannot be published where
+    // another sector's highlight and hover box would find it.
+    private final MapHoverState hoverState;
+
     // The last completed reading of where the cursor is: the hover it resolved to - MapHover.NONE
     // for a hit test that found no cell - together with the reading it came from, for the trace.
     // Null until some pass has completed one.
@@ -78,6 +84,8 @@ public final class MapHoverPublisher {
     private SettledCellReading settledCellReading;
 
     /**
+     * @param hoverState                  the holder this publisher's answer is published into, from
+     *                                    the installed machinery of the sector whose map it reads
      * @param modelviewMatrixReader       the binding the running renderer needs, from
      *                                    {@code ModelviewMatrixReaders#selectForActiveRenderer}
      * @param cellArrivalAnnouncer        what the host answers a reached cell with, from its own
@@ -88,10 +96,12 @@ public final class MapHoverPublisher {
      *                                    {@code MapHoverGates#isCursorLocatableOn}
      */
     public MapHoverPublisher(
+            MapHoverState hoverState,
             ModelviewMatrixReader modelviewMatrixReader,
             CellArrivalAnnouncer cellArrivalAnnouncer,
             BooleanSupplier isCursorLocatableOnThisPass) {
 
+        this.hoverState = hoverState;
         this.modelviewMatrixReader = modelviewMatrixReader;
         this.cellArrivalAnnouncer = cellArrivalAnnouncer;
         this.isCursorLocatableOnThisPass = isCursorLocatableOnThisPass;
@@ -188,7 +198,7 @@ public final class MapHoverPublisher {
                 targets.getClusterIndex().findClusterMembersOf(hoveredSystemId));
 
         settledCellReading = new SettledCellReading(hover, cursorRead);
-        MapHoverState.resolveLiveSectorHoverState().publishHover(hover);
+        hoverState.publishHover(hover);
     }
 
     // Parks the hover for a pass whose inputs never arrived, leaving the last sighting standing.
@@ -199,7 +209,7 @@ public final class MapHoverPublisher {
     // The hover itself is still cleared, since a highlight left standing on an unverified cell is
     // the fault every guard here exists to avoid.
     private void parkHoverWithoutASighting() {
-        MapHoverState.resolveLiveSectorHoverState().clearHover();
+        hoverState.clearHover();
     }
 
     // Traces each move onto a new cell: which system the cursor resolved to and how large a

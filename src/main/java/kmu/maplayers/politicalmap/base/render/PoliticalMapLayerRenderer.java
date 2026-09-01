@@ -22,7 +22,7 @@ import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import org.apache.log4j.Logger;
 
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * Draws the political map on the sector map as merged HOI4-style clusters, where adjacent
@@ -67,7 +67,12 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // collaborator needs the transient marking or lazy rebuild a save-serialised holder would. The
     // cache is made for the same installation this renderer was, so the two draw one sector.
     private final PoliticalMapCache cache;
-    private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
+    private final PoliticalMapOverlayRenderer overlayRenderer;
+
+    // What the cursor is over on this renderer's own sector. Held rather than resolved at each park
+    // because the frame it is parked on is this sector's frame: a park taken against the running
+    // game would leave the cell this sector had lit standing while clearing another sector's.
+    private final MapHoverState hoverState;
 
     // Whether anything is drawn over the map where the cursor rests. Handed in rather than composed
     // here, so this layer neither names the things that can cover a map nor holds a set another
@@ -79,7 +84,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // only be read from a running game - and because a player who leaves the hover off never needs
     // one at all. Handed in for the cover reader's reason: what a frame does with the read is this
     // class's business and answerable without a live map, while building one is not.
-    private final Supplier<MapHoverPublisher> hoverPublisherSource;
+    //
+    // It takes the hover holder rather than closing over one, so the publisher it builds and the
+    // park above cannot name two different sectors' hovers.
+    private final Function<MapHoverState, MapHoverPublisher> hoverPublisherSource;
 
     // Which terrain icons the map holds and in what order, reported when that order moves. This
     // layer rides on a terrain, so where its icon was seeded is what decides whether the map's own
@@ -114,11 +122,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     PoliticalMapLayerRenderer(
             PoliticalMapCache cache,
             MapCoverReader mapCoverReader,
-            Supplier<MapHoverPublisher> hoverPublisherSource) {
+            MapHoverState hoverState,
+            Function<MapHoverState, MapHoverPublisher> hoverPublisherSource) {
 
         this.cache = cache;
         this.mapCoverReader = mapCoverReader;
+        this.hoverState = hoverState;
         this.hoverPublisherSource = hoverPublisherSource;
+        this.overlayRenderer = new PoliticalMapOverlayRenderer(hoverState);
     }
 
     /**
@@ -127,13 +138,15 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      * settled here, the renderer itself naming only the reader and the source.
      *
      * @param installation the machinery this renderer is being made for, whose sector its cache cuts
-     *                     its cells from and whose movers that cut leaves out
+     *                     its cells from, whose movers that cut leaves out, and whose hover holder
+     *                     the cursor read publishes into
      * @return a renderer for that installation, its cache empty until the first frame builds it
      */
     public static PoliticalMapLayerRenderer createForLiveScreen(MapLayerInstallation installation) {
         return new PoliticalMapLayerRenderer(
             new PoliticalMapCache(installation),
             MapCoverReader.createForLiveScreen(),
+            installation.resolveHoverState(),
             PoliticalMapLayerRenderer::buildLiveHoverPublisher);
     }
 
@@ -218,7 +231,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             return;
         }
         if (hoverPublisher == null) {
-            hoverPublisher = hoverPublisherSource.get();
+            hoverPublisher = hoverPublisherSource.apply(hoverState);
         }
         // The cursor read sits between the frame's refresh and this pass's draw: after the refresh,
         // so it tests against the shapes the frame actually paints, and before the draw, so the
@@ -249,7 +262,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             && !mapCoverReader.isMapCoveredAtCursor();
 
         if (!isHoverWantedThisFrame) {
-            MapHoverState.resolveLiveSectorHoverState().clearHover();
+            hoverState.clearHover();
         }
     }
 
@@ -261,11 +274,12 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     //
     // Taken as a source rather than built at construction because both reads behind it need a game
     // that is running, and this renderer is created when the class loads.
-    private static MapHoverPublisher buildLiveHoverPublisher() {
+    private static MapHoverPublisher buildLiveHoverPublisher(MapHoverState hoverState) {
 
         var soundPlayer = new VanillaUiSoundPlayer();
 
         return new MapHoverPublisher(
+            hoverState,
             ModelviewMatrixReaders.selectForActiveRenderer(),
             () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
             // Taken from the shared permission rather than composed here, so this pass and the box

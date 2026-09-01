@@ -173,9 +173,12 @@ final class MapHoverPublisherTest {
 
         stubCursorAt(POINT_ON_CELL);
 
-        // A standing hover from an earlier frame, so a parking assertion distinguishes "parked"
-        // from "left alone": both publish nothing new, only the first clears.
-        hoverState = MapHoverState.resolveLiveSectorHoverState();
+        // One sector's holder, made per case rather than shared: a publisher is built with the
+        // holder of the machinery it belongs to, so a case states which one it is publishing into.
+        //
+        // It starts carrying a standing hover from an earlier frame, so a parking assertion
+        // distinguishes "parked" from "left alone": both publish nothing new, only the first clears.
+        hoverState = new MapHoverState();
         hoverState.publishHover(new MapHover("stale", List.of("stale")));
     }
 
@@ -188,7 +191,6 @@ final class MapHoverPublisherTest {
         log.removeAppender(appenderFake);
         log.setAdditivity(true);
         log.setLevel(null);
-        hoverState.clearHover();
         cursorMock.close();
     }
 
@@ -207,6 +209,29 @@ final class MapHoverPublisherTest {
                 .isEqualTo(HOVERED_SYSTEM_ID);
             assertThat(hoverState.getHover().clusterMemberSystemIds())
                 .containsExactly(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID);
+        }
+
+        @Test
+        void publishHoverFromPublishesIntoTheHolderItWasBuiltWith() {
+            // Two sectors' machinery, each with a publisher of its own. A read taken over one
+            // sector's cells has to reach that sector's highlight and hover box and leave the
+            // other's where it stood - a publisher resolving the running sector's holder instead
+            // would light a cell on whichever map happened to be loaded, under an id nothing
+            // forbids both sectors from holding.
+            var otherSectorHoverState = new MapHoverState();
+
+            buildPublisherPublishingInto(otherSectorHoverState)
+                .publishHoverFrom(buildTargetsWithOneCell(), MAP_ZOOM);
+
+            stubCursorAt(POINT_ON_NEIGHBOUR_CELL);
+
+            buildPublisher()
+                .publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
+
+            assertThat(otherSectorHoverState.getHover().hoveredSystemId())
+                .isEqualTo(HOVERED_SYSTEM_ID);
+            assertThat(hoverState.getHover().hoveredSystemId())
+                .isEqualTo(NEIGHBOUR_SYSTEM_ID);
         }
 
         @Test
@@ -580,10 +605,17 @@ final class MapHoverPublisherTest {
         }
     }
 
-    // The publisher under test, reading the case's own cue field so a case can retune or silence
-    // the look between frames the way the settings screen does between visits.
+    // The publisher under test, publishing into the case's own holder and reading the case's own
+    // cue field so a case can retune or silence the look between frames the way the settings screen
+    // does between visits.
     private MapHoverPublisher buildPublisher() {
+        return buildPublisherPublishingInto(hoverState);
+    }
+
+    // A publisher over a stated holder, for the case that needs two of them to disagree.
+    private MapHoverPublisher buildPublisherPublishingInto(MapHoverState publishedInto) {
         return new MapHoverPublisher(
+            publishedInto,
             readerMock,
             () -> soundPlayerFake.playCueIfPresent(cellArrivalCue),
             () -> isCursorLocatable);

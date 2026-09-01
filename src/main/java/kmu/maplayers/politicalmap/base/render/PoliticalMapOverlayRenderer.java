@@ -48,8 +48,22 @@ final class PoliticalMapOverlayRenderer {
     // hovered cell, so a cursor resting on one cell resolves it once instead of every frame.
     private final HoverHighlightRenderer hoverHighlightRenderer = new HoverHighlightRenderer();
 
+    // What the cursor is over on this compositor's own sector, handed over at construction. The
+    // highlight lights a cell the cache's draw lists named, so the hover it reads has to be the one
+    // the pass over those same draw lists published - a hover taken from whichever sector is running
+    // would wash a cell this frame never cut.
+    private final MapHoverState hoverState;
+
     // Diagnostic: ensures the first map render logs exactly once, for the no-draw investigation.
     private boolean hasLoggedFirstRender;
+
+    /**
+     * @param hoverState the hover holder of the sector whose draw lists this compositor paints,
+     *                   from that sector's installed machinery
+     */
+    PoliticalMapOverlayRenderer(MapHoverState hoverState) {
+        this.hoverState = hoverState;
+    }
 
     /**
      * Paints one band of the overlay for one map frame from the cache's current draw lists, in the
@@ -140,7 +154,7 @@ final class PoliticalMapOverlayRenderer {
         hoverHighlightRenderer.renderCursorHighlightOnMap(
             new PoliticalMapHoverHighlightSource(cache.getTerritories()),
             cache.getTerritories().getGlobalStyle().hoverHighlight(),
-            MapHoverState.resolveLiveSectorHoverState().getHover(),
+            hoverState.getHover(),
             factor,
             alphaMult);
     }

@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.colonies.FactionAlliances;
@@ -143,9 +142,9 @@ final class PoliticalMapPollWalkIntegrationTest {
             // Mid-load, before the sector stands up. Every passenger is handed a reading opened
             // over nothing, so each has to answer emptily rather than fault - and a poll that
             // saw nothing must not report the drawn set as having changed.
-            var geometryDelta = runPollsAndReadGeometryDelta(null, TWO_POLLS, () -> { });
+            var geometryRevision = runPollsAndReadGeometryRevision(null, TWO_POLLS, () -> { });
 
-            assertThat(geometryDelta)
+            assertThat(geometryRevision)
                 .isZero();
         }
 
@@ -157,12 +156,12 @@ final class PoliticalMapPollWalkIntegrationTest {
             // two would never join the drawn set and the geometry would never rebuild for it.
             var sector = buildSettledSectorWithAnEmptyNeighbour();
 
-            var geometryDelta = runPollsAndReadGeometryDelta(
+            var geometryRevision = runPollsAndReadGeometryRevision(
                 sector,
                 TWO_POLLS,
                 () -> settleTheEmptyNeighbour(sector));
 
-            assertThat(geometryDelta)
+            assertThat(geometryRevision)
                 .isEqualTo(1);
         }
     }
@@ -170,19 +169,17 @@ final class PoliticalMapPollWalkIntegrationTest {
     // One poll of the real source over a sector nothing disturbs - what a case asserting on
     // what the poll read, rather than on what it decided, wants.
     private static void runOnePoll(SectorAPI sector) {
-        runPollsAndReadGeometryDelta(sector, ONE_POLL, () -> { });
+        runPollsAndReadGeometryRevision(sector, ONE_POLL, () -> { });
     }
 
-    // Drives the real poll pollCount times and reports how far the geometry revision moved.
-    // MapLayerRefresh is left real, so the revision is read as a delta and the stale set drained
-    // either side, isolating the run from whatever else marked the shared counters. The poll is
-    // built against an installation of its own over the run's sector - which is both where it reads
-    // that sector from and what leaves each run's motion observations to itself rather than to
-    // whatever ran before it.
+    // Drives the real poll pollCount times and reports the geometry revision it left standing. The
+    // poll is built against an installation of its own over the run's sector - which is where it
+    // reads that sector from, where it raises what it found, and what leaves each run's motion
+    // observations to itself rather than to whatever ran before it.
     //
     // The interlude runs after the first poll, which is where a case moves the sector under a
     // poll that has already read it.
-    private static int runPollsAndReadGeometryDelta(
+    private static int runPollsAndReadGeometryRevision(
             SectorAPI sector,
             int pollCount,
             Runnable moveTheSectorAfterTheFirstPoll) {
@@ -205,11 +202,10 @@ final class PoliticalMapPollWalkIntegrationTest {
                 .when(DominanceRules::readFromLunaSettings)
                 .thenReturn(STABILITY_WEIGHTED);
 
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            var geometryBefore = MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
-            var stalenessSource =
-                new PoliticalMapStalenessSource(new MapLayerInstallation(sector));
+            // The board is this run's installation's, made with it, so the count is read straight
+            // rather than as a delta: nothing else can have raised on it.
+            var installation = new MapLayerInstallation(sector);
+            var stalenessSource = new PoliticalMapStalenessSource(installation);
 
             for (var poll = 0; poll < pollCount; poll++) {
 
@@ -219,10 +215,9 @@ final class PoliticalMapPollWalkIntegrationTest {
                     moveTheSectorAfterTheFirstPoll.run();
                 }
             }
-            MapLayerRefresh.drainStaleGroupingSystemIds();
-
-            return MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.GEOMETRY)
-                - geometryBefore;
+            return installation
+                .resolveRefreshBoard()
+                .getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
         }
     }
 

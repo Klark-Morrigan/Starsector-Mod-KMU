@@ -6,7 +6,6 @@ import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
@@ -67,11 +66,11 @@ import java.util.Map;
 public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private static final Logger LOG = Global.getLogger(PoliticalMapStalenessSource.class);
 
-    // The installed machinery of the sector being polled. Both the sector this walks and the tracker
-    // it stages motion into come off this one handle, so a poll cannot walk the running game's
-    // sector while observing its drift into another's. Held from construction rather than resolved
-    // per poll because a source is built per load, against the sector it was installed on - the
-    // sector its baselines are diffs of.
+    // The installed machinery of the sector being polled. The sector this walks, the tracker it
+    // stages motion into and the board it raises on all come off this one handle, so a poll cannot
+    // walk the running game's sector while marking another's cache stale. Held from construction
+    // rather than resolved per poll because a source is built per load, against the sector it was
+    // installed on - the sector its baselines are diffs of.
     private final MapLayerInstallation installation;
 
     // Last poll's state; 0 and an empty map are also the empty-sector values, so a
@@ -198,7 +197,9 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (!hasVisibilityChanged) {
             LOG.debug("Political map moving set changed");
         }
-        MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+        installation
+            .resolveRefreshBoard()
+            .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
     }
 
     // Marks politics-stale every system whose holder differs from the last poll: a system
@@ -211,14 +212,17 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
             boolean isFirstPoll) {
 
         if (!isFirstPoll) {
+
+            var board = installation.resolveRefreshBoard();
+
             for (var entry : currentHolderBySystemId.entrySet()) {
                 if (!entry.getValue().equals(lastHolderBySystemId.get(entry.getKey()))) {
-                    MapLayerRefresh.markSystemGroupingStale(entry.getKey());
+                    board.markSystemGroupingStale(entry.getKey());
                 }
             }
             for (var systemId : lastHolderBySystemId.keySet()) {
                 if (!currentHolderBySystemId.containsKey(systemId)) {
-                    MapLayerRefresh.markSystemGroupingStale(systemId);
+                    board.markSystemGroupingStale(systemId);
                 }
             }
         }
@@ -240,7 +244,9 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
                 + " new="
                 + allianceFingerprint);
 
-            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+            installation
+                .resolveRefreshBoard()
+                .requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
         }
         lastAllianceFingerprint = allianceFingerprint;
     }

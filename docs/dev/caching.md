@@ -178,9 +178,9 @@ every signal on it is a fact about one sector, and the stale set names that sect
 systems by bare id. Why that has to be a sector's rather than the process's, and how the
 installation holding it is made and released, are
 [the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md).
-A producer holding a sector raises on that sector's board; one
-driven by a seam vanilla hands no sector - a settings change, the map render hook -
-goes through
+A producer or consumer holding a sector - or the installation over one - reaches that
+sector's board directly; one driven by a seam vanilla hands no sector, which is a
+settings change moved on a sidebar control, goes through
 [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java),
 which resolves the running sector's.
 
