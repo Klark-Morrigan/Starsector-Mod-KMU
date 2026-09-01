@@ -218,6 +218,29 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
+    class ResolveLayerVisibilityOfLiveScreen {
+
+        @Test
+        void resolveLayerVisibilityOfLiveScreenHandsBackTheShowingScreensOwnPick() {
+            // The pick itself rather than a reading of it, since what asks is a control that both
+            // shows it and moves it. Written through, it must move the screen that was up and leave
+            // the other where it was - which is the whole of what a control on one screen's own
+            // chrome may do.
+            intelScreenFake.setIntelTabOpen(true);
+
+            MapLayerRegistry
+                .resolveLayerVisibilityOfLiveScreen()
+                .showLayers(false);
+
+            assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
+                .isEqualTo(false);
+
+            assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
+                .isNull();
+        }
+    }
+
+    @Nested
     class GetActiveLayer {
 
         @Test
