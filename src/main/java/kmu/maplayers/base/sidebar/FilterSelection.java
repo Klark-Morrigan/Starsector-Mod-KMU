@@ -30,12 +30,8 @@ import java.util.function.Predicate;
  * <p>Unlike those stores, a pick or a clear raises {@link MapLayerCommonRefreshSignal#FILTER} so
  * the reading layer repaints live, standing in for the {@code settingsRevision} bump these
  * sidebar-only changes never make. The bump is gated on the store actually landing, so a call
- * before the sector exists (or a clear with nothing selected) neither writes nor repaints.
- *
- * <p>The board to raise on arrives with the write rather than being resolved here. A pick is made on
- * a picker built against one sector's installed machinery, and a board resolved at the click would
- * be whichever sector is running instead - so the picker would repaint a map it does not belong to
- * and leave its own standing on a selection that had moved.
+ * before the sector exists (or a clear with nothing selected) neither writes nor repaints. The board
+ * it raises on arrives with the write, since a picker belongs to the sector it was listed for.
  */
 public final class FilterSelection {
 

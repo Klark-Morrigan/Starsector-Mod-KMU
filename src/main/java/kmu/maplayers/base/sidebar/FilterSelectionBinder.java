@@ -99,8 +99,6 @@ public final class FilterSelectionBinder {
     // The three slots one picker writes into, bound to the scope its item and sort picks belong to
     // and to the board its item picks repaint through. A value rather than loose callbacks so the
     // two are captured once, where they are read, rather than threaded into each write separately.
-    // The board rides along with the scope because a pick is a fact about one sector's map: resolved
-    // at the click instead, it would repaint whichever sector happened to be running.
     private record ScopedPickerStore(String scopeId, MapLayerRefreshBoard board)
         implements ListPickerStore {
 
