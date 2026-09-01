@@ -69,9 +69,9 @@ final class HoverHighlightGeometryTest {
 
         @Test
         void nested_loops_resolve_the_innermost_one_around_the_cell() {
-            // The cluster's enclave, walled inside a rival that is itself walled inside the
-            // cluster's own cluster: three of its loops enclose the cell, and only the tightest
-            // is the cluster the cell actually belongs to.
+            // A group's enclave, walled inside a rival that is itself walled inside another
+            // cluster of that same group: three of its loops enclose the cell, and only the
+            // tightest is the cluster the cell actually belongs to.
             var outerCluster = buildSquareRun(0, 0, 1000);
             var enclaveInsideRival = buildSquareRun(400, 400, 100);
 

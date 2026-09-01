@@ -24,12 +24,15 @@ import java.util.List;
 public interface HoverHighlightSource extends PaintedCellShapes {
 
     /**
-     * The border loops the cell could sit inside - the layer's own traced clusters, from which
-     * the highlight picks the one that actually encloses it.
+     * The border loops the cell could sit inside - every loop the cluster group it fuses into
+     * traced anywhere, from which the highlight picks the one that actually encloses it. The
+     * whole group, not the one cluster around this cell: which cluster that is is the question
+     * the highlight is here to answer, and an implementation deciding it first would be a second
+     * rule for the same answer.
      *
      * @param cellId the hovered cell
      * @return the candidate loops as {@code [x, y, x, y, ...]} runs, empty when the cell
-     *         fuses into no cluster or the cluster it fuses into traced no border
+     *         fuses into no cluster or the group it fuses into traced no border
      */
     List<float[]> resolveCandidateFrontierLoopsOf(String cellId);
 

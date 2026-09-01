@@ -11,19 +11,20 @@ import java.util.List;
  * Works out what a hover lights up: which of the candidate border loops encloses the hovered
  * cell, and that cell's own painted extent as fillable geometry.
  *
- * <p>The loop has to be searched for because a map bakes its borders per cluster, not per
- * cluster: a cluster carries one loop for each of its disjoint clusters and one for each
- * enclave bitten out of them, with nothing naming which is which. The cluster the cursor is in
- * is therefore identified geometrically - by which loop contains the hovered cell - rather
- * than by an index, which would mean keying the whole build per cluster to answer a question
- * only the hover asks.
+ * <p>The loop has to be searched for because a map bakes its borders per cluster group, not per
+ * cluster: a group carries one loop for each of its disjoint clusters and one for each enclave
+ * bitten out of them, with nothing naming which is which. The cluster the cursor is in is
+ * therefore identified geometrically - by which loop contains the hovered cell - rather than by
+ * an index, which would mean keying the whole build per cluster to answer a question only the
+ * hover asks.
  *
  * <p>Two details make that search exact. The cell is represented by the average of its
  * vertices rather than by the cursor itself: a cursor a pixel inside the cell's edge can fall
  * outside a frontier whose corners rounding has cut inward, which would drop the halo just as
- * the player pushes into a corner. And where loops nest - a cluster's enclave inside a rival
- * inside that same cluster's own cluster - three loops contain the point, so the smallest one
- * wins, which is the enclave's own frontier rather than the distant cluster's.
+ * the player pushes into a corner. And where loops nest - one of a group's clusters walled
+ * inside a rival, which itself sits inside another cluster of that same group - three loops
+ * contain the point, so the smallest one wins, which is the enclave's own frontier rather than
+ * the distant one's.
  *
  * <p>Both answers are memoised against the hovered cell and the geometry behind it, since
  * they change only when the cursor crosses into another cell or a rebuild replaces that
@@ -62,7 +63,7 @@ public final class HoverHighlightGeometry {
         if (paintedExtent.isEmpty()) {
             return HoverHighlight.NONE;
         }
-        // A cell that fuses into no cluster - or one whose cluster traced no border at all - has no
+        // A cell that fuses into no cluster - or one whose group traced no border at all - has no
         // candidates, so nothing encloses it and it washes without a halo.
         var frontierLoops = source.resolveCandidateFrontierLoopsOf(cellId);
         if (cellId.equals(resolvedCellId)
