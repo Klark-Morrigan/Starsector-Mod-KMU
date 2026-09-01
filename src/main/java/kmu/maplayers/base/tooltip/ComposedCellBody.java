@@ -1,9 +1,5 @@
 package kmu.maplayers.base.tooltip;
 
-import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
-
-import java.util.List;
-
 /**
  * What a layer composed for one paint of its hover box: the blocks its body reads as, and whether
  * the deeper detail levels hold anything more for this system.
@@ -19,17 +15,21 @@ import java.util.List;
  * takes is the cruellest one: a box advertising a key that does nothing, or drawing a body it has
  * just declined to offer.
  *
+ * <p>The blocks come back as the layer stated them rather than as lines already laid out
+ * ({@link CellTooltipBlocks}), because how much of them there is room to draw is settled after the
+ * reading, against the screen. One read of the sector can then be laid out more than once.
+ *
  * <p>What is carried is the fact alone rather than any wording for it: what a press does is the
  * level's to say ({@link HoverTooltipDetailLevel#resolveNextActionPhrase}), the same phrase over
  * every layer, so a box states only whether it has anything for that press to reach.
  *
- * @param sections        the body's blocks, in reading order; empty where the layer has nothing to
+ * @param blocks          the body's blocks, in reading order; empty where the layer has nothing to
  *                        say about the system, which is what stops the box being drawn at all
  * @param hasDeeperDetail whether a deeper level would state anything more about this system; false
  *                        where every level would draw what is already on screen
  */
 public record ComposedCellBody(
-    List<TooltipSection> sections,
+    CellTooltipBlocks blocks,
     boolean hasDeeperDetail) {
 
     /**
@@ -37,13 +37,6 @@ public record ComposedCellBody(
      * value rather than as an empty pair each caller spells out, since "nothing found" is one state
      * and two spellings of it agree only until one is edited.
      */
-    public static final ComposedCellBody NOTHING = new ComposedCellBody(List.of(), false);
-
-    /**
-     * Copies the blocks, so a layer that went on appending to the list it handed over cannot reshape
-     * a body the box has already drawn.
-     */
-    public ComposedCellBody {
-        sections = List.copyOf(sections);
-    }
+    public static final ComposedCellBody NOTHING =
+        new ComposedCellBody(CellTooltipBlocks.NOTHING, false);
 }

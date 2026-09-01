@@ -18,6 +18,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
 import kmu.settings.KmuMapLayerSettings;
+import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +45,13 @@ import java.util.function.BooleanSupplier;
  * <p>Naming the system in the header is what makes the hover read as landing on a real system: content
  * that resolves to nothing at all draws no box, since a lone name repeats what the cursor already sits
  * on.
+ *
+ * <p>How much of that content there is room for is settled here too, against the screen
+ * ({@link CellTooltipContentFit}), because a box is sized by what the hovered system happens to hold
+ * and then clamped: unfitted, the systems most worth reading about are exactly the ones drawn past
+ * both edges. A layer states what it found and never how tall that comes to, so a layer cannot arrive
+ * at a fit of its own - and the box compresses before it withholds anything, a tooltip taking no input
+ * to reach what it left out with.
  *
  * <p>Subclasses are expected to be stateless - the body is rebuilt from the live sector each paint -
  * so one shared instance per layer serves every view that injects it.
@@ -77,6 +85,16 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     private static final int TIER_2_LEVEL = 2;
     private static final int TIER_3_LEVEL = 3;
 
+    // What a box that drew everything it was asked for withheld. Named so the line at the foot reads as
+    // asking whether anything was left out rather than as comparing against a bare zero.
+    private static final int NOTHING_WITHHELD = 0;
+
+    // The two halves of that line a given box may have nothing for: a box at a level that offers no
+    // further reading of this system, and one that had room for all of it. Named so the composition
+    // below states what the line is missing rather than handing it unexplained nulls.
+    private static final String NO_OFFER = null;
+    private static final String NOTHING_TO_STATE = null;
+
     @Override
     public final void renderFor(
             SectorAPI sector,
@@ -91,22 +109,28 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         var titleRows = buildTitleRows(sector, system);
         var body = composeBody(sector, system, detailLevel);
         // Nothing to say about the system - drawing the name alone would only echo the cursor.
-        if (titleRows.isEmpty() && body.sections().isEmpty()) {
+        if (titleRows.isEmpty() && body.blocks().isEmpty()) {
             return;
         }
-        var sections = new ArrayList<TooltipSection>();
-        sections.add(buildTitleSection(system, titleRows));
-        sections.addAll(body.sections());
-        // Added after the emptiness check above rather than counted by it: the hint is about the box
-        // rather than about the system, so a box with nothing to say about the system stays undrawn
-        // instead of appearing as a lone line offering to expand into nothing.
-        //
-        // Drawn from what the composition above already found rather than from a read of its own: the
-        // hint answers a fact about the body beside it, and a second read would charge the whole
-        // layer's economy walk to a line of fine print - once per frame the cursor rests on the cell.
-        buildFooterSection(detailLevel, body.hasDeeperDetail()).ifPresent(sections::add);
+        var style = buildStyle();
 
-        CursorTooltipRenderer.render(sections, buildStyle());
+        // The box is assembled against the room it has rather than drawn at whatever height its
+        // content came to. A box lists as much as the hovered system holds and is then clamped on
+        // screen, so an unfitted one runs past both edges over exactly the systems worth reading about
+        // - and a tooltip takes no input, so nothing it lost can be reached.
+        //
+        // Assembled through a call rather than built once, because the fit settles how much of the
+        // body there is room for and the answer changes what the box holds. Cheap to repeat: the
+        // sector was read once, above, and everything below that read is line building.
+        var fittedBox = CellTooltipContentFit.fitToHeight(
+            entryAllowance -> assembleSections(system, titleRows, body, detailLevel, entryAllowance),
+            style.typography(),
+            CursorTooltipRenderer.resolveHeightBudget(),
+            body.blocks().countLongestListing());
+
+        CursorTooltipRenderer.render(
+            fittedBox.sections(),
+            style.restyledAs(fittedBox.typography()));
     }
 
     @Override
@@ -202,23 +226,65 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         return false;
     }
 
+    // The whole box at one entry allowance: the heading, the body laid out within that allowance, and
+    // the line at the foot stating what the press would do and what the box could not fit.
+    //
+    // Assembled in one place rather than built up around the body, because the footer answers a fact
+    // about the very laying-out beside it: a box that assembled the two apart could state a figure for
+    // withheld content that the rows above it do not bear out.
+    private static List<TooltipSection> assembleSections(
+            StarSystemAPI system,
+            List<TooltipRow> titleRows,
+            ComposedCellBody body,
+            HoverTooltipDetailLevel detailLevel,
+            int entryAllowance) {
+
+        var drawnBody = body.blocks().readBodyWithin(entryAllowance);
+        var sections = new ArrayList<TooltipSection>();
+
+        sections.add(buildTitleSection(system, titleRows));
+        sections.addAll(drawnBody.sections());
+
+        // Added after the emptiness check the caller made rather than counted by it: the hint is about
+        // the box rather than about the system, so a box with nothing to say about the system stays
+        // undrawn instead of appearing as a lone line offering to expand into nothing.
+        //
+        // Drawn from what the composition already found rather than from a read of its own: the hint
+        // answers a fact about the body beside it, and a second read would charge the whole layer's
+        // economy walk to a line of fine print - once per frame the cursor rests on the cell.
+        buildFooterSection(detailLevel, body.hasDeeperDetail(), drawnBody.withheldEntryCount())
+            .ifPresent(sections::add);
+
+        return sections;
+    }
+
     // The line the box ends on, or none at all: the cycle key and what pressing it would do to this
-    // box. Its own block, so the shared parting sets it off from the content the way any two blocks are
-    // set off - a hint about the box reading as the last line of a list would be read as part of that
-    // list.
+    // box, and what the box had no room to show. Its own block, so the shared parting sets it off from
+    // the content the way any two blocks are set off - a hint about the box reading as the last line of
+    // a list would be read as part of that list.
     //
     // Takes the offer the body came back with rather than asking for one, so the line is drawn from
     // the very reading it describes, and drawn under the same rule the key is claimed by - a hint
     // and a press settled separately are one edit away from advertising a key that does nothing.
+    //
+    // The withheld figure keeps the line where the offer alone would have dropped it. What the box left
+    // out is the one thing it must not keep to itself: the rows standing in for withheld entries say it
+    // listing by listing, and this says it over the box, so a reader can tell a short list from a cut
+    // one wherever the cut happened to land.
     private static Optional<TooltipSection> buildFooterSection(
             HoverTooltipDetailLevel detailLevel,
-            boolean hasDeeperDetail) {
+            boolean hasDeeperDetail,
+            int withheldEntryCount) {
 
-        if (!isOfferingExpansionAt(detailLevel, () -> hasDeeperDetail)) {
+        var isOfferingExpansion = isOfferingExpansionAt(detailLevel, () -> hasDeeperDetail);
+        var isStatingWithheld = withheldEntryCount > NOTHING_WITHHELD;
+
+        if (!isOfferingExpansion && !isStatingWithheld) {
             return Optional.empty();
         }
-        return Optional.of(TooltipSection.createSection(
-            List.of(buildFooterRow(detailLevel.resolveNextActionPhrase()))));
+        return Optional.of(TooltipSection.createSection(List.of(buildFooterRow(
+            isOfferingExpansion ? detailLevel.resolveNextActionPhrase() : NO_OFFER,
+            isStatingWithheld ? formatWithheldPhrase(withheldEntryCount) : NOTHING_TO_STATE))));
     }
 
     // Whether one press would change what the player sees: the one rule behind both the hint the box
@@ -271,23 +337,48 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             .readsAs(TooltipLineStyle.HEADER);
     }
 
-    // The hint itself, in two runs and the game's own two colours for the job: the key picked out in the
-    // shade every vanilla button highlights its shortcut with, and the words about it in the grey vanilla
-    // states such hints in. Two runs rather than one because that is exactly what vanilla draws - the key
-    // is the part the eye is meant to find, and the sentence around it is deliberately quiet.
+    // The line itself, in the game's own colours for the job: the key picked out in the shade every
+    // vanilla button highlights its shortcut with, the words about it in the grey vanilla states such
+    // hints in, and the figure for what the box left out in that same grey. Runs rather than one string
+    // because that is exactly what vanilla draws - the key is the part the eye is meant to find, and the
+    // sentence around it is deliberately quiet.
     //
-    // Laid at the box's content edge rather than centred: it sits at the foot of the box the way the
-    // game's own does, and centring it would read as a verdict over the content above.
-    private static TooltipRow buildFooterRow(String phrase) {
-        return TooltipRow
-            .createRow(new TextSpan(
+    // The withheld figure is quiet for a reason of its own: it is the box speaking about its own
+    // account rather than about the system, which is the shade this box states all such asides in. What
+    // it stands for is loud enough where it happened, on the rows standing in for the entries.
+    //
+    // Composed from whichever runs the box has rather than branched over, so a line missing one half is
+    // the same line short a run. Laid at the box's content edge rather than centred: it sits at the foot
+    // of the box the way the game's own does, and centring it would read as a verdict over the content
+    // above.
+    private static TooltipRow buildFooterRow(String phrase, String withheldPhrase) {
+
+        var runs = new ArrayList<TextSpan>();
+
+        if (phrase != NO_OFFER) {
+            runs.add(new TextSpan(
                 HoverTooltipDetailLevelInput.CYCLE_KEY_NAME,
-                StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()))
-            .clearsCrestColumn()
-            .continuesWith(new TextSpan(
-                phrase,
-                StarsectorUiColour.VANILLA_GRAY.resolve()))
-            .readsAs(TooltipLineStyle.FOOTNOTE);
+                StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()));
+            runs.add(new TextSpan(phrase, StarsectorUiColour.VANILLA_GRAY.resolve()));
+        }
+        if (withheldPhrase != NOTHING_TO_STATE) {
+            runs.add(new TextSpan(withheldPhrase, StarsectorUiColour.VANILLA_GRAY.resolve()));
+        }
+        var remainingRuns = runs.iterator();
+        var row = TooltipRow
+            .createRow(remainingRuns.next())
+            .clearsCrestColumn();
+
+        while (remainingRuns.hasNext()) {
+            row = row.continuesWith(remainingRuns.next());
+        }
+        return row.readsAs(TooltipLineStyle.FOOTNOTE);
+    }
+
+    // What the box says at its foot about the entries it could not fit - the count over the whole box,
+    // whichever listings the cut fell in.
+    private static String formatWithheldPhrase(int withheldEntryCount) {
+        return KmuStrings.format(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_WITHHELD, withheldEntryCount);
     }
 
     // The tooltip's fixed look: the typography each kind of row draws in, the shared opacity, and the

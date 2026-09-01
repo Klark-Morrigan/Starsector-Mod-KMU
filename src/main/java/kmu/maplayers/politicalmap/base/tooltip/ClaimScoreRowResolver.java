@@ -353,10 +353,10 @@ public final class ClaimScoreRowResolver {
     // lost on, which is the one thing it is not - the market was never weighed at all.
     private static CellTooltipEntryLine createNamedMarketLine(MarketClaimBreakdown market) {
 
-        var line = CellTooltipEntryLine.createLine(
+        var line = CellTooltipEntryLine.createCountedLine(
             CellTooltipMark.resolveMarkForMapIcon(market.marketNameplate().mapIcon()),
             market.marketNameplate().displayName(),
-            formatContestScore(market));
+            resolveContestScore(market));
 
         return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
     }
@@ -375,28 +375,21 @@ public final class ClaimScoreRowResolver {
             MarketClaimBreakdown market,
             boolean isCarryingTheStanding) {
 
-        var line = RedactedMarketLines.createRedactedLine(
-            market,
-            resolveBlockedOutValueText(market, isCarryingTheStanding));
+        var line = isStatingBlockedOutScore(market, isCarryingTheStanding)
+            ? RedactedMarketLines.createCountedRedactedLine(market, resolveContestScore(market))
+            : RedactedMarketLines.createRedactedLine(market, CellTooltipRows.NO_SCORE);
 
         return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
     }
 
-    // What number a blocked-out row states, if any: the nought of a market the contest never scored,
-    // the score of the market its faction stands on, and nothing at all in between.
-    private static String resolveBlockedOutValueText(
+    // Whether a blocked-out row states a number at all: the nought of a market the contest never
+    // scored, and the score of the market its faction stands on. Everywhere else the column stands
+    // empty.
+    private static boolean isStatingBlockedOutScore(
             MarketClaimBreakdown market,
             boolean isCarryingTheStanding) {
 
-        return !market.isScoredOnItsOwnAccount() || isCarryingTheStanding
-            ? formatContestScore(market)
-            : CellTooltipRows.NO_SCORE;
-    }
-
-    // What a market's number reads as, wherever a line states one. Named so the two shapes of line
-    // cannot come to spell the same score differently.
-    private static String formatContestScore(MarketClaimBreakdown market) {
-        return KmlibNumbers.formatGroupedInteger(resolveContestScore(market));
+        return !market.isScoredOnItsOwnAccount() || isCarryingTheStanding;
     }
 
     // What a market brought to the contest. An open market brings its score; a hidden one brings

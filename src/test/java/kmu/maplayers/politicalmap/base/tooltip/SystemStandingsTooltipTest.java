@@ -184,7 +184,7 @@ final class SystemStandingsTooltipTest {
             // The one thing a box adds to the shared resolution has to reach it: asked for and then
             // dropped, every box would draw the glance and the detail mode would show nothing new.
             new AccountingStandingsTooltip(claimBreakdownReaderFake)
-                .composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
+                .composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             StandingsTooltipSeamsFake.verifyGroupsResolvedWithTheBoxsAccounts(
                 AccountingStandingsTooltip.FACTION_ACCOUNTS);
@@ -239,7 +239,7 @@ final class SystemStandingsTooltipTest {
             // system name the cursor already sits on.
             StandingsTooltipSeamsFake.stubNoActiveView();
 
-            assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections())
+            assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections())
                 .isEmpty();
         }
 
@@ -249,7 +249,7 @@ final class SystemStandingsTooltipTest {
             // so the two can never disagree about who holds the system. The pass is built from that
             // grouping and the groups named through the pass's own, so the one the view answered with
             // is the one that reaches both.
-            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             StandingsTooltipSeamsFake
                 .verifyPassReadUnderTheViewsGrouping();
@@ -405,7 +405,7 @@ final class SystemStandingsTooltipTest {
                 createLeadingGroupEntry(),
                 createRivalGroupEntry());
 
-            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
+            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             assertThat(sections)
                 .hasSize(2);
@@ -455,7 +455,7 @@ final class SystemStandingsTooltipTest {
             // the hover reads as landing on a real but uninhabited system. It is a block of its own,
             // since what the system is answers a different question from who contests it.
             var statusRow = StandingsTooltipSeamsFake.stubStatusRow("Unpopulated");
-            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
+            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             assertThat(sections)
                 .hasSize(1);
@@ -478,7 +478,7 @@ final class SystemStandingsTooltipTest {
                     UNDER_THE_REVEAL,
                     new SystemColoniesIndex(null))));
 
-            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             StandingsTooltipSeamsFake
                 .verifyStatusJudgedUnderVisibility(UNDER_THE_REVEAL);
@@ -488,7 +488,7 @@ final class SystemStandingsTooltipTest {
         void composeBodyShowsNothingWhenNothingRanksAndTheSystemHasNoStatusEither() {
             // Nothing ranked and nothing to say about the system, so the body stays empty and no box is
             // drawn - the one case where a hover over a real system shows nothing at all.
-            assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections())
+            assertThat(tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections())
                 .isEmpty();
         }
     }
@@ -551,12 +551,12 @@ final class SystemStandingsTooltipTest {
     // opinion about.
     private List<String> readBodyLabelTextsAt(HoverTooltipDetailLevel detailLevel) {
         return readRowOpeningWords(TooltipSection.readRowsInOrder(
-            tooltip.composeBody(sectorMock, systemMock, detailLevel).sections()));
+            tooltip.composeBody(sectorMock, systemMock, detailLevel).blocks().readSections()));
     }
 
     private List<TooltipRow> readBodyRows() {
         return TooltipSection.readRowsInOrder(
-            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections());
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections());
     }
 
     /**

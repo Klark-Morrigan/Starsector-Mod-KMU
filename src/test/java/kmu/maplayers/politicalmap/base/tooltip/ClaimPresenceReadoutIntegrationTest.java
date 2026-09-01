@@ -125,7 +125,7 @@ final class ClaimPresenceReadoutIntegrationTest {
                 .planSystemRibbon(system);
 
             var sections = new SystemClaimTooltip(claimBreakdownReader, HolderGrouping::identity)
-                .composeBody(sector, system, FACTIONS).sections();
+                .composeBody(sector, system, FACTIONS).blocks().readSections();
 
             assertThat(band.segments())
                 .containsExactly(

@@ -26,7 +26,9 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.BUTTON_SHORTCUT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
@@ -119,6 +121,19 @@ final class SystemCellTooltipTest {
     // further must not respace itself.
     private static final int DEEPER_THAN_EITHER_TIER = 5;
 
+    // A screen no box these cases compose could overflow, in UI units - well past any real one, so a
+    // case that is not about the fit is posed over a box drawn exactly as it was composed.
+    private static final float ROOM_FOR_ANY_BOX = 100000f;
+
+    // A screen the listing below cannot be drawn whole on however far it is compressed, which is what
+    // puts the box in the one state that gives content up.
+    private static final float ROOM_FOR_ALMOST_NOTHING = 80f;
+
+    // What a listed thing in those cases is counted in, and the heading it is listed under. Neither is
+    // read by any assertion - what the cases turn on is how many of them the box had room for.
+    private static final int LISTED_ENTRY_VALUE = 100;
+    private static final String LISTED_BLOCK_HEADING = "Contested by:";
+
     // A second reading of one knob, for the case that a box is set from the live settings each paint
     // rather than from a look settled once. Tighter than the gap installed above so the two readings
     // cannot be told apart by luck.
@@ -127,6 +142,15 @@ final class SystemCellTooltipTest {
     // The same second reading for the leader knobs, faded well under the opacity installed above for the
     // same reason.
     private static final float FADED_LEADER_OPACITY = 0.1f;
+
+    // Where the hint sits in a box whose body is one listed block - the heading, that block, then the
+    // line at the foot. Its own name because the boxes about the fit list rather than banner, so their
+    // body is one block whatever it lists.
+    private static final int CUT_BOX_FOOTER_SECTION = 2;
+
+    // Where the figure for withheld content sits among the hint's runs: after the key and the words
+    // about it, since it speaks about the box rather than about the press.
+    private static final int FOOTER_WITHHELD_RUN = 2;
 
     // The blocks the box lays out, in draw order: the heading it is titled with, then the layer's own,
     // then the hint at the foot where the box offers one.
@@ -459,15 +483,15 @@ final class SystemCellTooltipTest {
         void renderForKeepsTheLayersOwnBlocksAsItComposedThem() {
             // What a layer groups together is the layer's statement about its own content, so the shared
             // shape adds a block above it and regroups nothing.
-            var firstSection = buildSection("The Hegemony");
-            var secondSection = buildSection("Independent");
-            var tooltipFake = new SystemCellTooltipFake(List.of(firstSection, secondSection));
+            var tooltipFake = new SystemCellTooltipFake(
+                List.of(buildRow("The Hegemony"), buildRow("Independent")));
+
             var sections = captureDrawnBox(tooltipFake).sections();
 
             assertThat(sections.get(FIRST_BODY_SECTION))
-                .isEqualTo(firstSection);
+                .isEqualTo(buildSection("The Hegemony"));
             assertThat(sections.get(SECOND_BODY_SECTION))
-                .isEqualTo(secondSection);
+                .isEqualTo(buildSection("Independent"));
         }
 
         @Test
@@ -477,7 +501,7 @@ final class SystemCellTooltipTest {
             var titleRow = buildRow("The Hegemony");
             var tooltipFake = new SystemCellTooltipFake(
                 List.of(titleRow),
-                List.of(buildSection("Unpopulated")));
+                List.of(buildRow("Unpopulated")));
 
             var titleSection = captureDrawnBox(tooltipFake).sections().get(TITLE_SECTION);
 
@@ -491,13 +515,12 @@ final class SystemCellTooltipTest {
         void renderForPartsTheBodyFromTheTitleLinesAboveIt() {
             // The box's one parting falls under the whole heading block rather than at a fixed line, so
             // a line added to the heading joins it instead of being cut off above the break.
-            var bodySection = buildSection("Unpopulated");
             var tooltipFake = new SystemCellTooltipFake(
                 List.of(buildRow("The Hegemony")),
-                List.of(bodySection));
+                List.of(buildRow("Unpopulated")));
 
             assertThat(captureDrawnBox(tooltipFake).sections().get(FIRST_BODY_SECTION))
-                .isEqualTo(bodySection);
+                .isEqualTo(buildSection("Unpopulated"));
         }
 
         @Test
@@ -637,6 +660,38 @@ final class SystemCellTooltipTest {
         }
 
         @Test
+        void renderForStatesAtTheFootOfTheBoxWhatItHadNoRoomToShow() {
+            // The one thing a box short of room must not keep to itself. The rows standing in for
+            // withheld entries say it listing by listing; this says it over the box, so a reader can
+            // tell a short list from a cut one wherever the cut happened to land.
+            var tooltipFake = buildTooltipListing("Chicomoztoc", "Kazeron", "Sindria").offering();
+
+            var footerRow = readRow(
+                captureDrawnBoxWithin(tooltipFake, FACTIONS, ROOM_FOR_ALMOST_NOTHING).sections(),
+                CUT_BOX_FOOTER_SECTION,
+                FOOTER_ROW);
+
+            assertThat(CellTooltipRowReads.readLabelTextRun(footerRow, FOOTER_WITHHELD_RUN))
+                .isEqualTo(new TextSpan("2 not shown", GRAY));
+        }
+
+        @Test
+        void renderForSaysNothingAboutWithheldContentInABoxThatFitted() {
+            // A box that was never short of room states no figure about its own account: the hint at
+            // its foot is the whole of that line, exactly as it was before a box could be cut.
+            var tooltipFake = buildTooltipListing("Chicomoztoc", "Kazeron", "Sindria").offering();
+
+            assertThat(readRow(
+                    captureDrawnBox(tooltipFake).sections(),
+                    CUT_BOX_FOOTER_SECTION,
+                    FOOTER_ROW)
+                .labelRuns())
+                .containsExactly(
+                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
+                    new TextSpan(EXPAND_SYSTEM_COMPOSITION, GRAY));
+        }
+
+        @Test
         void renderForEndsABoxOfferingNoDetailWithItsContent() {
             // The ordinary box takes no part in the detail cycle, so it ends where its content does rather
             // than on a line offering a counterpart that does not exist.
@@ -734,10 +789,27 @@ final class SystemCellTooltipTest {
             SystemCellTooltip tooltip,
             HoverTooltipDetailLevel detailLevel) {
 
+        // A screen taller than anything these cases put in a box, so every one of them is about a box
+        // drawn as it was composed. What a box short of room does is the subject of its own cases,
+        // which state a budget of their own.
+        return captureDrawnBoxWithin(tooltip, detailLevel, ROOM_FOR_ANY_BOX);
+    }
+
+    // The same over a stated amount of room, for the cases about a box with less of it than its
+    // content needs. The screen is read once per paint, so the budget is the one seam standing in for
+    // it.
+    private static DrawnBox captureDrawnBoxWithin(
+            SystemCellTooltip tooltip,
+            HoverTooltipDetailLevel detailLevel,
+            float heightBudget) {
+
         ArgumentCaptor<List<TooltipSection>> sectionsCaptor = ArgumentCaptor.captor();
         ArgumentCaptor<CursorTooltipStyle> styleCaptor = ArgumentCaptor.captor();
 
         try (var rendererMock = Mockito.mockStatic(CursorTooltipRenderer.class)) {
+
+            rendererMock.when(CursorTooltipRenderer::resolveHeightBudget)
+                .thenReturn(heightBudget);
 
             tooltip.renderFor(buildSectorWithEconomy(), buildNamedSystem(), detailLevel);
 
@@ -776,13 +848,28 @@ final class SystemCellTooltipTest {
     // rather than on what its body holds. Which line the body carries is this class's business only where
     // a test names its rows, so the ones that do not are spared inventing one.
     private static SystemCellTooltipFake buildTooltipSayingSomething() {
-        return new SystemCellTooltipFake(List.of(buildSection("The Hegemony")));
+        return new SystemCellTooltipFake(List.of(buildRow("The Hegemony")));
     }
 
     // The same layer, taking part in the detail cycle: it has something to say and something more to
     // say a level down, which is what every case about the hint is posed over.
     private static SystemCellTooltipFake buildTooltipOfferingDetail() {
         return buildTooltipSayingSomething().offering();
+    }
+
+    // A layer whose body is one block listing several things, which is what a box short of room can
+    // actually give up: a line stating something about the system as a whole has no tail to take off.
+    private static SystemCellTooltipFake buildTooltipListing(String... labelTexts) {
+
+        var entries = new ArrayList<CellTooltipEntry>(labelTexts.length);
+
+        for (var labelText : labelTexts) {
+            entries.add(CellTooltipEntry.createEntry(CellTooltipEntryLine.createCountedLine(
+                null,
+                labelText,
+                LISTED_ENTRY_VALUE)));
+        }
+        return new SystemCellTooltipFake(List.of(), List.of()).listing(entries);
     }
 
     // A one-line block, which is all most cases here need: what a layer groups is its own business, and
@@ -835,7 +922,7 @@ final class SystemCellTooltipTest {
     private static final class SystemCellTooltipFake extends SystemCellTooltip {
 
         private final List<TooltipRow> titleRows;
-        private final List<TooltipSection> bodySections;
+        private final List<TooltipRow> bodyRows;
         private boolean hasBuiltBodySections;
 
         // The depth the body was asked for, held rather than acted on: a stand-in body hands back the
@@ -847,22 +934,26 @@ final class SystemCellTooltipTest {
         // in the detail cycle, which is the ordinary case.
         private boolean hasDeeperDetail;
 
+        // What this box lists under a heading, for the cases about a box with less room than its
+        // content needs. Empty for a box whose lines each stand alone, which is every other case here.
+        private List<CellTooltipEntry> listedEntries = List.of();
+
         // How many times the box was asked that through the press-time seam. Counted rather than
         // flagged, since what a paint must not do is ask it even once.
         private int deeperDetailAskCount;
 
         // A layer heading its box with nothing, which is the ordinary case and the one most cases here
         // are about - so only a case actually about the heading block names one.
-        private SystemCellTooltipFake(List<TooltipSection> bodySections) {
-            this(List.of(), bodySections);
+        private SystemCellTooltipFake(List<TooltipRow> bodyRows) {
+            this(List.of(), bodyRows);
         }
 
         private SystemCellTooltipFake(
                 List<TooltipRow> titleRows,
-                List<TooltipSection> bodySections) {
+                List<TooltipRow> bodyRows) {
 
             this.titleRows = titleRows;
-            this.bodySections = bodySections;
+            this.bodyRows = bodyRows;
         }
 
         @Override
@@ -879,10 +970,20 @@ final class SystemCellTooltipTest {
             hasBuiltBodySections = true;
             bodyDetailLevel = detailLevel;
 
+            // Each line stated as a block of its own, through the very body a real layer composes
+            // into - so what this box hands back is a body the box lays out rather than blocks it
+            // could not have built. A banner is the block that lists nothing, which is exactly what a
+            // stand-in line is.
+            var body = CellTooltipBody.openBody(detailLevel);
+
+            for (var bodyRow : bodyRows) {
+                body.appendBannerSection(Optional.of(bodyRow));
+            }
+            body.appendSection(LISTED_BLOCK_HEADING, listedEntries);
             // The offer is stated beside the blocks the way a real box states it, off the same
             // stand-in answer - so a case reading the hint reads it from this box's composition
             // rather than from a second seam only the stand-in has.
-            return new ComposedCellBody(bodySections, hasDeeperDetail);
+            return new ComposedCellBody(body.readBlocks(), hasDeeperDetail);
         }
 
         @Override
@@ -896,6 +997,13 @@ final class SystemCellTooltipTest {
         // Puts this box in the detail cycle, with something for a deeper level to state.
         private SystemCellTooltipFake offering() {
             hasDeeperDetail = true;
+            return this;
+        }
+
+        // Gives this box a block listing several things, which is content a box short of room can
+        // give some of up.
+        private SystemCellTooltipFake listing(List<CellTooltipEntry> listedEntries) {
+            this.listedEntries = listedEntries;
             return this;
         }
     }

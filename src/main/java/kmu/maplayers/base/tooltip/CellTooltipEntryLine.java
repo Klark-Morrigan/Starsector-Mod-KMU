@@ -1,5 +1,7 @@
 package kmu.maplayers.base.tooltip;
 
+import kmlib.text.KmlibNumbers;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -39,6 +41,10 @@ import java.util.Objects;
  * @param qualifier           the status called out after the line's name, or null when it states none
  * @param valueText           what the block counts this line in, or {@link CellTooltipRows#NO_SCORE}
  *                            for a line carrying no number
+ * @param countedValue        the number the value states, where it is one the block's own arithmetic
+ *                            adds up, or null where the line's value is not such a number. Never a
+ *                            second statement of the value: a counted line is built from the number
+ *                            and words the value out of it, so the two cannot come to disagree
  * @param valueWorkingText    the arithmetic the number came out of, stated before it, or null where
  *                            the line shows its number alone
  * @param isAside             whether the line is a note about the list rather than one of the things
@@ -59,6 +65,7 @@ public record CellTooltipEntryLine(
     String noteText,
     CellTooltipQualifier qualifier,
     String valueText,
+    Integer countedValue,
     String valueWorkingText,
     boolean isAside,
     boolean isValueUncounted) {
@@ -75,6 +82,11 @@ public record CellTooltipEntryLine(
     private static final String NO_NOTE = null;
     private static final CellTooltipQualifier NO_QUALIFIER = null;
     private static final String NO_WORKING = null;
+
+    // What a line whose value is not a number the block adds up carries in its place - a status, a
+    // rate, a size, or no value at all. Named for the same reason the absences above are, and read by
+    // whatever has to stand for lines it could not show: nothing here is a number to sum.
+    private static final Integer NO_COUNT = null;
 
     // What an ordinary line is: one of the things the block lists rather than a note about them, and
     // carrying a number it earned. Both are the plain case and what every factory below builds.
@@ -137,6 +149,42 @@ public record CellTooltipEntryLine(
             NO_NOTE,
             NO_QUALIFIER,
             valueText,
+            NO_COUNT,
+            NO_WORKING,
+            IS_LISTED_IN_ITS_OWN_RIGHT,
+            IS_VALUE_EARNED);
+    }
+
+    /**
+     * Builds the same plain line from the number its value states rather than from words for it - for
+     * a caller listing something the block's own arithmetic counts, which is most of what a box lists.
+     *
+     * <p>The number is worded here rather than by the caller, so a line that holds one holds the very
+     * number its value shows. That is what lets a listing be stood for when it cannot all be drawn: a
+     * row saying how much was left out can only add up lines that carry the figure they state, and a
+     * count passed in beside separately-worded text would be free to disagree with it.
+     *
+     * @param mark         the mark the line opens on and how it is coloured, or null for a line
+     *                     carrying none
+     * @param labelText    what the line is called
+     * @param countedValue what the block counts this line in
+     * @return the bare line, stating that number
+     */
+    public static CellTooltipEntryLine createCountedLine(
+            CellTooltipMark mark,
+            String labelText,
+            int countedValue) {
+
+        return new CellTooltipEntryLine(
+            mark,
+            labelText,
+            NO_REDACTION,
+            NO_LABEL_FINDING,
+            NO_PLACE,
+            NO_NOTE,
+            NO_QUALIFIER,
+            formatCountedValue(countedValue),
+            countedValue,
             NO_WORKING,
             IS_LISTED_IN_ITS_OWN_RIGHT,
             IS_VALUE_EARNED);
@@ -175,9 +223,61 @@ public record CellTooltipEntryLine(
             NO_NOTE,
             NO_QUALIFIER,
             valueText,
+            NO_COUNT,
             NO_WORKING,
             IS_LISTED_IN_ITS_OWN_RIGHT,
             IS_VALUE_EARNED);
+    }
+
+    /**
+     * Builds that same blocked-out line from the number its value states - for a withheld thing the
+     * block's arithmetic counts all the same, which is the ordinary case: what is kept back is the
+     * name, never the figure beside it.
+     *
+     * <p>The number is worded here for the reason the named line's is
+     * ({@link #createCountedLine}), and the two are worded through one call, so a listing holding
+     * both shapes cannot spell one score two ways.
+     *
+     * @param mark                the mark the line opens on and how it is coloured, or null for a line
+     *                            carrying none
+     * @param redactedWordLengths how many characters each word of the withheld name ran to, in reading
+     *                            order
+     * @param countedValue        what the block counts this line in
+     * @return the bare line, its name blocked out and that number stated
+     */
+    public static CellTooltipEntryLine createRedactedCountedLine(
+            CellTooltipMark mark,
+            List<Integer> redactedWordLengths,
+            int countedValue) {
+
+        return new CellTooltipEntryLine(
+            mark,
+            NO_NAME,
+            redactedWordLengths,
+            NO_LABEL_FINDING,
+            NO_PLACE,
+            NO_NOTE,
+            NO_QUALIFIER,
+            formatCountedValue(countedValue),
+            countedValue,
+            NO_WORKING,
+            IS_LISTED_IN_ITS_OWN_RIGHT,
+            IS_VALUE_EARNED);
+    }
+
+    /**
+     * Words a number the way every counted line in the box words its own, for whatever has to state a
+     * figure of its own about lines it is standing in for.
+     *
+     * <p>Offered beside the factories that spend it so a summing caller cannot arrive at a total
+     * spelled unlike the figures it was summed from - which is the one way a stand-in row could read
+     * as belonging to a different list from the one it closes.
+     *
+     * @param countedValue the number to word
+     * @return the number as a counted line states it
+     */
+    public static String formatCountedValue(int countedValue) {
+        return KmlibNumbers.formatGroupedInteger(countedValue);
     }
 
     /**
@@ -399,6 +499,7 @@ public record CellTooltipEntryLine(
         private String noteText;
         private CellTooltipQualifier qualifier;
         private String valueText;
+        private Integer countedValue;
         private String valueWorkingText;
         private boolean isAside;
         private boolean isValueUncounted;
@@ -412,6 +513,7 @@ public record CellTooltipEntryLine(
             noteText = line.noteText();
             qualifier = line.qualifier();
             valueText = line.valueText();
+            countedValue = line.countedValue();
             valueWorkingText = line.valueWorkingText();
             isAside = line.isAside();
             isValueUncounted = line.isValueUncounted();
@@ -427,6 +529,7 @@ public record CellTooltipEntryLine(
                 noteText,
                 qualifier,
                 valueText,
+                countedValue,
                 valueWorkingText,
                 isAside,
                 isValueUncounted);

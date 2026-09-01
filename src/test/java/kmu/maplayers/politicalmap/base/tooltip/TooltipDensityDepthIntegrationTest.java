@@ -180,7 +180,7 @@ final class TooltipDensityDepthIntegrationTest {
 
         body.appendSection("Dominated by:", entries);
 
-        return TooltipSection.readRowsInOrder(body.readSections());
+        return TooltipSection.readRowsInOrder(body.readBlocks().readSections());
     }
 
     // One colony fielding a single small patrol: enough to reach every depth the box has, and no more,

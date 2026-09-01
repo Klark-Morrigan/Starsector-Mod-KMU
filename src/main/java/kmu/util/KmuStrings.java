@@ -41,6 +41,10 @@ public final class KmuStrings {
         "map_layer_tooltip_footer_expand_market_stats";
     public static final String MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS =
         "map_layer_tooltip_footer_expand_patrol_details";
+    public static final String MAP_LAYER_TOOLTIP_FOOTER_WITHHELD =
+        "map_layer_tooltip_footer_withheld";
+    public static final String MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES =
+        "map_layer_tooltip_withheld_entries";
     public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
     public static final String POLITICAL_MAP_CTL_UNINHABITED = "political_map_ctl_uninhabited";
     public static final String POLITICAL_MAP_CTL_NAME_FULL = "political_map_ctl_name_full";

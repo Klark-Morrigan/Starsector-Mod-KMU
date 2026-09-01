@@ -96,6 +96,8 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS,
             "expand patrol details");
+        stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_WITHHELD, "%d not shown");
+        stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES, "+ %d more");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN, "last seen %s (%s)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY, "today");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO, "a day ago");

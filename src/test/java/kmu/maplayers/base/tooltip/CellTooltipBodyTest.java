@@ -97,9 +97,9 @@ final class CellTooltipBodyTest {
                 "Contested by:",
                 List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
 
-            assertThat(body.readSections())
+            assertThat(body.readBlocks().readSections())
                 .hasSize(1);
-            assertThat(body.readSections().get(0).readRowsInOrder())
+            assertThat(body.readBlocks().readSections().get(0).readRowsInOrder())
                 .hasSize(3);
         }
 
@@ -429,9 +429,9 @@ final class CellTooltipBodyTest {
                 "Contested by:",
                 List.of(createEntry("The Hegemony"), createEntry("Tri-Tachyon")));
 
-            assertThat(body.readSections().get(0).openingRows())
+            assertThat(body.readBlocks().readSections().get(0).openingRows())
                 .hasSize(1);
-            assertThat(body.readSections().get(0).members())
+            assertThat(body.readBlocks().readSections().get(0).members())
                 .hasSize(2);
         }
 
@@ -456,7 +456,7 @@ final class CellTooltipBodyTest {
                             CellTooltipRows.NO_SCORE))
                         .nesting(List.of(createEntry("Size")))))));
 
-            var factionSection = body.readSections().get(0).members().get(0);
+            var factionSection = body.readBlocks().readSections().get(0).members().get(0);
             var marketSection = factionSection.members().get(0);
 
             assertThat(factionSection.countLines())
@@ -528,7 +528,7 @@ final class CellTooltipBodyTest {
                 List.of(createEntry("The Hegemony")
                     .nesting(List.of(createEntry("Chicomoztoc")))));
 
-            assertThat(body.readSections())
+            assertThat(body.readBlocks().readSections())
                 .hasSize(1);
         }
     }
@@ -545,9 +545,9 @@ final class CellTooltipBodyTest {
 
             body.appendBannerSection(Optional.of(bannerRow));
 
-            assertThat(body.readSections())
+            assertThat(body.readBlocks().readSections())
                 .hasSize(1);
-            assertThat(body.readSections().get(0).readRowsInOrder())
+            assertThat(body.readBlocks().readSections().get(0).readRowsInOrder())
                 .containsExactly(bannerRow);
         }
 
@@ -559,7 +559,7 @@ final class CellTooltipBodyTest {
 
             body.appendBannerSection(Optional.empty());
 
-            assertThat(body.readSections())
+            assertThat(body.readBlocks().readSections())
                 .isEmpty();
         }
 
@@ -605,7 +605,7 @@ final class CellTooltipBodyTest {
     // lines a block contributes, so its own grouping is read back out rather than walked.
     private static TooltipRow readRow(CellTooltipBody body, int rowIndex) {
         return TooltipSection
-            .readRowsInOrder(body.readSections())
+            .readRowsInOrder(body.readBlocks().readSections())
             .get(rowIndex);
     }
 
@@ -614,7 +614,7 @@ final class CellTooltipBodyTest {
     // pass while the lines around it opened from another column.
     private static List<TooltipLabelPlacement> readLabelPlacements(CellTooltipBody body) {
         return TooltipSection
-            .readRowsInOrder(body.readSections())
+            .readRowsInOrder(body.readBlocks().readSections())
             .stream()
             .map(row -> ((TooltipRow.TableRow) row).labelPlacement())
             .toList();
@@ -623,6 +623,6 @@ final class CellTooltipBodyTest {
     // What each line of a body says, in draw order, taken off the body rather than off the blocks it
     // came to - which is what every case here holds.
     private static List<String> readLabelTexts(CellTooltipBody body) {
-        return CellTooltipRowReads.readSectionOpeningWords(body.readSections());
+        return CellTooltipRowReads.readSectionOpeningWords(body.readBlocks().readSections());
     }
 }

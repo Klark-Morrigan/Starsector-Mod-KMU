@@ -231,7 +231,7 @@ final class DerelictReadoutIntegrationTest {
 
         return readSectionOpeningWords(
             new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-                .composeBody(sector, buildOnlySystem(sector), FACTIONS).sections());
+                .composeBody(sector, buildOnlySystem(sector), FACTIONS).blocks().readSections());
     }
 
     // Whether the dominance box has anything deeper to state over the sector's one system, which is
@@ -313,7 +313,7 @@ final class DerelictReadoutIntegrationTest {
     private static List<TooltipSection> readExpandedDominationSections(SectorAPI sector) {
 
         return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).sections();
+            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).blocks().readSections();
     }
 
     // The claims box over the same system at that same depth, read through the real mechanic: a
@@ -326,7 +326,7 @@ final class DerelictReadoutIntegrationTest {
         return new SystemClaimTooltip(
                 new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()),
                 HolderGrouping::identity)
-            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).sections();
+            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).blocks().readSections();
     }
 
     // Every word the box says anywhere in it, in draw order. Read as a flat bag rather than by run

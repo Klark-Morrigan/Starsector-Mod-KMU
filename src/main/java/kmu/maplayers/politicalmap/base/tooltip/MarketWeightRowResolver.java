@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.entities.EntityNameplate;
-import kmlib.text.KmlibNumbers;
 
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
@@ -170,10 +169,10 @@ public final class MarketWeightRowResolver {
             SystemColonyReading colonyReading,
             HoverTooltipDetailLevel detailLevel) {
 
-        var line = createMapEntityLine(
+        var line = createCountedMapEntityLine(
             breakdown.marketNameplate(),
             breakdown.marketNameplate().displayName(),
-            KmlibNumbers.formatGroupedInteger(breakdown.computeTotalWeight()));
+            breakdown.computeTotalWeight());
 
         return CellTooltipEntry
             .createEntry(colonyReading.describeColony(
@@ -201,10 +200,10 @@ public final class MarketWeightRowResolver {
             UnweighedColony colony,
             SystemColonyReading colonyReading) {
 
-        var line = createMapEntityLine(
+        var line = createCountedMapEntityLine(
                 colony.nameplate(),
                 colony.nameplate().displayName(),
-                KmlibNumbers.formatGroupedInteger(NO_WEIGHT))
+                NO_WEIGHT)
             .statesUncountedValue();
 
         // The kind and the concealment are read off the colony itself rather than off the walk
@@ -239,9 +238,30 @@ public final class MarketWeightRowResolver {
             String valueText) {
 
         return CellTooltipEntryLine.createLine(
-            CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon()),
+            resolveMapEntityMark(entity),
             statedName,
             valueText);
+    }
+
+    // The same line where what it carries is a weight the account adds up - a colony's, or the nought
+    // of one nothing was worked out for. The number travels rather than words for it, so a listing of
+    // colonies too long to draw whole can be closed by a row summing the ones it left out.
+    private static CellTooltipEntryLine createCountedMapEntityLine(
+            EntityNameplate entity,
+            String statedName,
+            int countedValue) {
+
+        return CellTooltipEntryLine.createCountedLine(
+            resolveMapEntityMark(entity),
+            statedName,
+            countedValue);
+    }
+
+    // The glyph the map marks an entity with, read off the entity the line is about. Shared by both
+    // shapes of line so a colony and a station are marked alike whether or not the number beside them
+    // is one the account sums.
+    private static CellTooltipMark resolveMapEntityMark(EntityNameplate entity) {
+        return CellTooltipMark.resolveMarkForMapIcon(entity.mapIcon());
     }
 
     // The factors of one colony, in the order the weight read applied them - the stability that

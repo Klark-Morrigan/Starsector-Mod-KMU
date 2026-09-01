@@ -9,7 +9,6 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
-import kmlib.text.KmlibNumbers;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.CellTooltipBody;
@@ -176,7 +175,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // The offer goes back beside the blocks, judged on the very contest they were drawn from: a
         // box listing nobody has nothing for a deeper level to account for, and asking again would
         // read the system a second time to settle what this one already knows.
-        return new ComposedCellBody(body.readSections(), contest.hasListedStanding());
+        return new ComposedCellBody(body.readBlocks(), contest.hasListedStanding());
     }
 
     @Override
@@ -394,10 +393,10 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             SectorAPI sector,
             FactionClaimStanding standing) {
 
-        var standingLine = FactionTooltipLine.buildFactionLine(
+        var standingLine = FactionTooltipLine.buildCountedFactionLine(
             sector,
             standing.factionId(),
-            KmlibNumbers.formatGroupedInteger(standing.score()));
+            standing.score());
 
         return standing instanceof WeighedClaimStanding
             ? standingLine

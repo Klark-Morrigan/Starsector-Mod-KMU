@@ -3,8 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.text.KmlibNumbers;
-
 import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.CellTooltipMark;
@@ -196,10 +194,10 @@ public final class StandingRowResolver {
             String labelText,
             GroupStanding standing) {
 
-        var groupLine = CellTooltipEntryLine.createLine(
+        var groupLine = CellTooltipEntryLine.createCountedLine(
             mark,
             labelText,
-            KmlibNumbers.formatGroupedInteger(standing.aggregateScore()));
+            standing.aggregateScore());
 
         return standing.hasWeighedMember() ? groupLine : groupLine.statesUncountedValue();
     }
@@ -236,10 +234,10 @@ public final class StandingRowResolver {
     // would read as one competed for and lost, inviting exactly the comparison it cannot bear.
     private static CellTooltipEntryLine buildMemberLine(SectorAPI sector, FactionStanding member) {
 
-        var memberLine = FactionTooltipLine.buildFactionLine(
+        var memberLine = FactionTooltipLine.buildCountedFactionLine(
             sector,
             member.factionId(),
-            KmlibNumbers.formatGroupedInteger(member.score()));
+            member.score());
 
         return member instanceof WeighedFactionStanding
             ? memberLine

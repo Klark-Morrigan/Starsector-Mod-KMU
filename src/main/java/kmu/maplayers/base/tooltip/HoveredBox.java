@@ -103,6 +103,13 @@ record HoveredBox(
      * @return the active layer's injected box, or empty when it injects none
      */
     static Optional<MapHoverTooltip> resolveActiveTooltip(MapLayerInstallation installation) {
+
+        // The crisp pick rather than the dissolve the overlay rides out. A box reporting what the cursor
+        // is over has nothing left to report the moment the player switches the layers off, and it reads
+        // the pick rather than painting through the pass that carries the fade.
+        if (!MapLayerRegistry.areLayersShownOnLiveScreen()) {
+            return Optional.empty();
+        }
         var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer(installation);
         if (layerRenderer == null) {
             return Optional.empty();

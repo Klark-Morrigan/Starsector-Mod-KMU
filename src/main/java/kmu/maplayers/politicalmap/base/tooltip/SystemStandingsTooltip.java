@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.relation.StarsectorFactionRelations;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
-import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
+import kmu.maplayers.base.tooltip.CellTooltipBlocks;
 import kmu.maplayers.base.tooltip.CellTooltipBody;
 import kmu.maplayers.base.tooltip.ComposedCellBody;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
@@ -21,7 +21,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
 import kmu.util.KmuStrings;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -98,7 +97,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // system per frame, and the hint could describe a contest the body no longer draws.
         return readRankedStandings(sector, system)
             .map(ranking -> new ComposedCellBody(
-                buildSectionsFrom(sector, system, ranking, detailLevel),
+                buildBlocksFrom(sector, system, ranking, detailLevel),
                 hasAnyStanding(ranking)))
             .orElse(ComposedCellBody.NOTHING);
     }
@@ -223,7 +222,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     // The body itself, off the one reading: what the system is, then the contest over it.
-    private List<TooltipSection> buildSectionsFrom(
+    private CellTooltipBlocks buildBlocksFrom(
             SectorAPI sector,
             StarSystemAPI system,
             RankedStandings ranking,
@@ -255,7 +254,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             ranking,
             createAdmittedAccountResolver(system, pass, detailLevel));
 
-        return body.readSections();
+        return body.readBlocks();
     }
 
     // The standings as the blocks they are read in, laid down in the order those blocks are declared

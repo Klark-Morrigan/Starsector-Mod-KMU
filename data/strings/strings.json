@@ -26,6 +26,8 @@
     "map_layer_tooltip_footer_expand_system_composition": "expand system composition",
     "map_layer_tooltip_footer_expand_market_stats": "expand market stats",
     "map_layer_tooltip_footer_expand_patrol_details": "expand patrol details",
+    "map_layer_tooltip_footer_withheld": "%d not shown",
+    "map_layer_tooltip_withheld_entries": "+ %d more",
 
     "political_map_tab_political_map": "Political Map",
 

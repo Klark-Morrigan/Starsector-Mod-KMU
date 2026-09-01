@@ -307,7 +307,7 @@ final class SystemDominationTooltipTest {
                 List.of(createLoneGroupEntry(), createPlaceholderGroupEntry()));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -342,7 +342,7 @@ final class SystemDominationTooltipTest {
                     createPlaceholderGroupEntry()));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -378,7 +378,7 @@ final class SystemDominationTooltipTest {
                     createNamedGroupEntry("Persean League")));
 
             assertThat(readSectionOpeningWords(
-                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections()))
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .containsExactly(
                     "Dominated by:",
                     "Rebel Pact",
@@ -397,7 +397,7 @@ final class SystemDominationTooltipTest {
             StandingsTooltipSeamsFake.stubGroupEntries();
             stubBreakdowns(Map.of());
 
-            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections();
+            var sections = tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 
             assertThat(sections)
                 .hasSize(1);
@@ -651,7 +651,7 @@ final class SystemDominationTooltipTest {
     // The body read top to bottom as the lines a player sees, which is the shape these cases are about.
     private List<TooltipRow> readBodyRows() {
         return TooltipSection.readRowsInOrder(
-            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).sections());
+            tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections());
     }
 
     // Stands the economy read in as the colonies each faction holds in the system, so no case needs a

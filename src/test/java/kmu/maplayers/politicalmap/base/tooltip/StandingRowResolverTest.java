@@ -94,10 +94,10 @@ final class StandingRowResolverTest {
             // A lone faction is made up of nothing: its one member would only repeat the line above it.
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
-                    CellTooltipEntryLine.createLine(
+                    CellTooltipEntryLine.createCountedLine(
                         CellTooltipMark.resolveMarkAsAuthored("graphics/hegemony_crest.png"),
                         "The Hegemony",
-                        "7")));
+                        7)));
         }
 
         @Test
@@ -142,7 +142,7 @@ final class StandingRowResolverTest {
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
-                    CellTooltipEntryLine.createLine(null, "The Hegemony", "7")));
+                    CellTooltipEntryLine.createCountedLine(null, "The Hegemony", 7)));
         }
 
         @Test
@@ -167,19 +167,19 @@ final class StandingRowResolverTest {
             // the ranking order the standing placed them.
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
-                    .createEntry(CellTooltipEntryLine.createLine(
+                    .createEntry(CellTooltipEntryLine.createCountedLine(
                         CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "Allied Powers",
-                        "11"))
+                        11))
                     .grouping(List.of(
-                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
+                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createCountedLine(
                             CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                             "The Hegemony",
-                            "8")),
-                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
+                            8)),
+                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createCountedLine(
                             CellTooltipMark.resolveMarkAsAuthored("graphics/aa.png"),
                             "Astral Armada",
-                            "3")))));
+                            3)))));
         }
 
         @Test
@@ -204,14 +204,14 @@ final class StandingRowResolverTest {
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
-                    .createEntry(CellTooltipEntryLine.createLine(null, "Allied Powers", "11"))
+                    .createEntry(CellTooltipEntryLine.createCountedLine(null, "Allied Powers", 11))
                     .grouping(List.of(
                         CellTooltipEntry.createEntry(
-                            CellTooltipEntryLine.createLine(null, "The Hegemony", "8")),
-                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
+                            CellTooltipEntryLine.createCountedLine(null, "The Hegemony", 8)),
+                        CellTooltipEntry.createEntry(CellTooltipEntryLine.createCountedLine(
                             CellTooltipMark.resolveMarkAsAuthored("graphics/aa.png"),
                             "Astral Armada",
-                            "3")))));
+                            3)))));
         }
 
         @Test
@@ -399,7 +399,7 @@ final class StandingRowResolverTest {
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry.createEntry(
-                    CellTooltipEntryLine.createLine(null, "ghost", "5")));
+                    CellTooltipEntryLine.createCountedLine(null, "ghost", 5)));
         }
 
         @Test
@@ -424,14 +424,15 @@ final class StandingRowResolverTest {
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
-                    .createEntry(CellTooltipEntryLine.createLine(
+                    .createEntry(CellTooltipEntryLine.createCountedLine(
                         CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "Allied Powers",
-                        "8"))
-                    .grouping(List.of(CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
-                        CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
-                        "The Hegemony",
-                        "8")))));
+                        8))
+                    .grouping(List.of(CellTooltipEntry.createEntry(
+                        CellTooltipEntryLine.createCountedLine(
+                            CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
+                            "The Hegemony",
+                            8)))));
         }
 
         @Test
@@ -529,10 +530,10 @@ final class StandingRowResolverTest {
 
             assertThat(entries)
                 .containsExactly(CellTooltipEntry
-                    .createEntry(CellTooltipEntryLine.createLine(
+                    .createEntry(CellTooltipEntryLine.createCountedLine(
                         CellTooltipMark.resolveMarkAsAuthored("graphics/heg.png"),
                         "The Hegemony",
-                        "7"))
+                        7))
                     .nesting(List.of(CellTooltipEntry.createEntry(
                         CellTooltipEntryLine.createLine(null, "hegemony colony", "1")))));
         }

@@ -86,9 +86,37 @@ final class RedactedMarketLines {
             String valueText) {
 
         return CellTooltipEntryLine.createRedactedLine(
-            CellTooltipMark.resolveMarkInLineColour(REDACTED_MARKET_SPRITE_PATH),
+            resolveStandInMark(),
             measureNameWordLengths(market.marketNameplate()),
             valueText);
+    }
+
+    /**
+     * Builds that same line where the account does state the row's number - the ordinary case for a
+     * withheld market, since what is kept back is the name and never the figure.
+     *
+     * <p>The number travels rather than words for it, so a listing too long to draw whole can be closed
+     * by a row summing what it left out: a blocked-out row is one of the list's members and counts
+     * towards that sum exactly as a named one does.
+     *
+     * @param market       the market whose name is withheld
+     * @param countedValue what the block counts this line in
+     * @return the line, its name blocked out and that number stated
+     */
+    static CellTooltipEntryLine createCountedRedactedLine(
+            MarketClaimBreakdown market,
+            int countedValue) {
+
+        return CellTooltipEntryLine.createRedactedCountedLine(
+            resolveStandInMark(),
+            measureNameWordLengths(market.marketNameplate()),
+            countedValue);
+    }
+
+    // The glyph a withheld market stands under, drawn in its line's own colour. Shared by both shapes
+    // so a row that states its number and one that does not are marked alike.
+    private static CellTooltipMark resolveStandInMark() {
+        return CellTooltipMark.resolveMarkInLineColour(REDACTED_MARKET_SPRITE_PATH);
     }
 
     // The shape of a withheld name: how many characters each of its words ran to, in reading order.

@@ -52,6 +52,10 @@ final class CellTooltipEntryLineTest {
     // every line until one is remarked on.
     private static final String NO_NOTE = null;
 
+    // What a line whose value is words rather than a number the block adds up carries in the counted
+    // slot - every line built through the plain factories, which are handed the value already worded.
+    private static final Integer NO_COUNT = null;
+
     // What every line built through the factory is: one of the things a block lists rather than a note
     // about them, carrying a number it earned rather than one an account recorded for it.
     private static final boolean IS_LISTED_IN_ITS_OWN_RIGHT = false;
@@ -76,6 +80,7 @@ final class CellTooltipEntryLineTest {
                         NO_NOTE,
                         null,
                         "1,200",
+                        NO_COUNT,
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
@@ -109,6 +114,67 @@ final class CellTooltipEntryLineTest {
     }
 
     @Nested
+    class CreateCountedLine {
+
+        @Test
+        void createCountedLineWordsTheNumberItWasHandedAndHoldsOntoIt() {
+            // The whole point of the shape: the line shows the figure and carries it, so a row standing
+            // in for lines the box could not draw can add them up and word the total the same way.
+            var line = CellTooltipEntryLine.createCountedLine(CREST_MARK, "The Hegemony", 23600);
+
+            assertThat(line.valueText())
+                .isEqualTo("23,600");
+            assertThat(line.countedValue())
+                .isEqualTo(23600);
+        }
+
+        @Test
+        void createCountedLineCallsNothingOutAndShowsItsNumberAlone() {
+            // The plainest line there is, arrived at from the number rather than from words for it:
+            // everything a line may go on to say is layered onto it afterwards, as on any other.
+            assertThat(CellTooltipEntryLine.createCountedLine(CREST_MARK, "The Hegemony", 1200))
+                .isEqualTo(
+                    new CellTooltipEntryLine(
+                        CREST_MARK,
+                        "The Hegemony",
+                        NO_REDACTION,
+                        NO_LABEL_FINDING,
+                        NO_PLACE,
+                        NO_NOTE,
+                        null,
+                        "1,200",
+                        1200,
+                        null,
+                        IS_LISTED_IN_ITS_OWN_RIGHT,
+                        IS_VALUE_EARNED));
+        }
+
+        @Test
+        void createCountedLineKeepsItsNumberThroughARefinementLaidOnIt() {
+            // A line refined into an aside, a quiet value, or a qualified one is the same line and the
+            // same figure - a refinement that dropped the count would leave the row standing in for it
+            // silently short.
+            assertThat(CellTooltipEntryLine
+                    .createCountedLine(CREST_MARK, "The Hegemony", 1200)
+                    .statesUncountedValue()
+                    .countedValue())
+                .isEqualTo(1200);
+        }
+    }
+
+    @Nested
+    class FormatCountedValue {
+
+        @Test
+        void formatCountedValueWordsANumberTheWayACountedLineStatesItsOwn() {
+            // What a stand-in row words its total through, so a total cannot come out spelled unlike
+            // the figures it was summed from.
+            assertThat(CellTooltipEntryLine.formatCountedValue(4320))
+                .isEqualTo("4,320");
+        }
+    }
+
+    @Nested
     class CreateRedactedLine {
 
         @Test
@@ -127,6 +193,7 @@ final class CellTooltipEntryLineTest {
                         NO_NOTE,
                         null,
                         "820",
+                        NO_COUNT,
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
@@ -168,6 +235,7 @@ final class CellTooltipEntryLineTest {
                     NO_NOTE,
                     null,
                     "820",
+                    NO_COUNT,
                     null,
                     IS_LISTED_IN_ITS_OWN_RIGHT,
                     IS_VALUE_EARNED))
@@ -181,6 +249,26 @@ final class CellTooltipEntryLineTest {
             assertThatThrownBy(() ->
                     CellTooltipEntryLine.createRedactedLine(CREST_MARK, WITHHELD_NAME, null))
                 .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class CreateRedactedCountedLine {
+
+        @Test
+        void createRedactedCountedLineKeepsBackTheNameAndNotTheFigure() {
+            // What a withheld line withholds is the name. Its number is one of the block's own, so it
+            // is stated and counted like any other - a listing cut short still adds up.
+            var line = CellTooltipEntryLine.createRedactedCountedLine(CREST_MARK, WITHHELD_NAME, 820);
+
+            assertThat(line.labelText())
+                .isNull();
+            assertThat(line.redactedWordLengths())
+                .containsExactly(7, 4);
+            assertThat(line.valueText())
+                .isEqualTo("820");
+            assertThat(line.countedValue())
+                .isEqualTo(820);
         }
     }
 
@@ -249,6 +337,7 @@ final class CellTooltipEntryLineTest {
                         NO_NOTE,
                         CellTooltipQualifier.stateFinding("(core)"),
                         "1,200",
+                        NO_COUNT,
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
@@ -301,6 +390,7 @@ final class CellTooltipEntryLineTest {
                         NO_NOTE,
                         null,
                         "0",
+                        NO_COUNT,
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
@@ -376,6 +466,7 @@ final class CellTooltipEntryLineTest {
                         "last seen 34 days ago (c206.05.12)",
                         null,
                         "0",
+                        NO_COUNT,
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
@@ -428,6 +519,7 @@ final class CellTooltipEntryLineTest {
                         NO_NOTE,
                         null,
                         "1,200",
+                        NO_COUNT,
                         null,
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));
@@ -555,6 +647,7 @@ final class CellTooltipEntryLineTest {
                         NO_NOTE,
                         null,
                         "500",
+                        NO_COUNT,
                         "0.25 /",
                         IS_LISTED_IN_ITS_OWN_RIGHT,
                         IS_VALUE_EARNED));

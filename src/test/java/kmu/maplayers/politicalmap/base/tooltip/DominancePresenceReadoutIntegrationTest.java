@@ -139,7 +139,7 @@ final class DominancePresenceReadoutIntegrationTest {
             var sections = new SystemDominationTooltip(
                     new ClaimBreakdownReaderFake(),
                     HolderGrouping::identity)
-                .composeBody(sector, system, FACTIONS).sections();
+                .composeBody(sector, system, FACTIONS).blocks().readSections();
 
             assertThat(band.segments())
                 .containsExactly(

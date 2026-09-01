@@ -412,7 +412,11 @@ about what the overlay means.
   from, and it asks once per press - and not at all at the deepest level, where the collapse settles
   it. Hint and press run off that one rule, so the box cannot advertise a key that does nothing. The
   hint is not content: a box with nothing to say about the system stays undrawn
-  rather than appearing as a lone offer to expand into nothing. How
+  rather than appearing as a lone offer to expand into nothing. That same line carries one more run
+  where the box had less room than its content needed: how many entries it could not show, in the
+  quiet shade the box states everything about its own account in. It is what stops a cut box reading
+  as a complete one over the whole of it, the rows standing in for withheld entries saying the same
+  thing listing by listing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, and a listing nested inside a block by a narrower one, so what sets two things
   apart is what they are rather than which line happens to open them. A layer states
@@ -485,14 +489,42 @@ about what the overlay means.
   one line beat another. Text and outcome travel as one value because neither is separately true, and
   carried apart they could drift - an outcome left behind by a re-numbered place would mark the wrong
   line as having won.
-  `CellTooltipBody` walks that depth-first into a block, each entry becoming a nested block of its
+  A line whose number is one the block's own arithmetic adds up states that number rather than words
+  for it (`createCountedLine`, and `createRedactedCountedLine` where the name is withheld), and the
+  line words it. That is what lets a listing be stood for when there is no room to draw it whole: a
+  row saying how much was left out can only sum lines that carry the figure they show, and a count
+  passed in beside separately-worded text would be free to disagree with it.
+  `CellTooltipBody` is the body under construction, appended to block by block: a heading over what it
+  lists, or a banner listing nothing. It holds both the running order and the depth because every
+  block needs both - a layer that stated them per block could append one to the wrong list or hand
+  four blocks a level and the fifth another, and a box that is two depths at once is a state the
+  player cannot ask for - and it drops a block that resolved empty.
+  What it comes to is `CellTooltipBlocks`, and that is what a layer hands back. The blocks stay
+  blocks rather than becoming lines because a body is laid out more than once: what a system holds
+  decides how tall the box is and only the screen decides what fits, which is known after the reading
+  rather than during it. Laying out walks the entries depth-first, each becoming a nested block of its
   own line over its account - which is what lets KMLib set one entry's whole breakdown apart from the
-  next entry at its tier rather than from its last line - carrying the indent and the demotion as
-  one `CellTooltipEntryLevel`, and drops a block that resolved empty. It is the body under
-  construction rather than a static over a list a layer holds, because every block needs both the
-  running order and the depth: a layer that stated them per block could append one to the wrong list
-  or hand four blocks a level and the fifth another, and a box that is two depths at once is a state
-  the player cannot ask for. `CellTooltipRows` is the line
+  next entry at its tier rather than from its last line - carrying the indent and the demotion as one
+  `CellTooltipEntryLevel`.
+  Two cuts are spent in that walk and they answer different questions. The detail level is the
+  player's standing choice, applied the same way over every system, and what it leaves out is not
+  reported - the hint at the foot already offers it back. The entry allowance is the box's answer to
+  one system being too large for the screen, so what *it* leaves out is stated: the tail of each
+  listing goes, which is its low-scoring end, and one `WithheldEntriesLine` row closes the listing
+  with how many entries stand behind it and what they came to between them. At least the first entry
+  of every listing survives, a heading over nothing being a block that failed to fill rather than a
+  box short of room. The allowance is spent at every depth, since a box runs long by depth as much as
+  by breadth: reaching only the blocks' own entries, it would drop whole factions while leaving every
+  term of the one that survived.
+  Which of the two a box reaches for is `CellTooltipContentFit`'s order, and it is size first, content
+  last. A tooltip takes no input, so nothing it leaves out can be scrolled back to - which makes every
+  line worth keeping at a smaller size than it is worth dropping. So the box is measured against the
+  screen, compressed toward its deepest line by KMLib's `TooltipHeightFit` where that brings it
+  inside, and only where the floor that compression stops at is still too tall is an allowance solved
+  for. The gentlest answer wins at both steps: the cut box is compressed afresh from the authored
+  look, being a smaller box than the one that needed the floor, and no more entries are given up than
+  the room requires. A box that fits - which is nearly every box - is drawn exactly as it was
+  composed. `CellTooltipRows` is the line
   vocabulary it lays them in, which reads the tier and the indent off that level rather than off a
   choice the block makes,
   plus the banner centred under the title. Everything a listed line *says* - its mark, its name picked

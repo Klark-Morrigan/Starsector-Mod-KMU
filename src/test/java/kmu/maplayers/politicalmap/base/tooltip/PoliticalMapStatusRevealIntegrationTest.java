@@ -145,9 +145,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
             // The leak that started this: the claims layer counted the unknown base and drew no
             // status, so its absence told the player a base was hiding there.
-            assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).sections()))
+            assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isEqualTo("Unpopulated");
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).sections()))
+            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isEqualTo("Unpopulated");
         }
 
@@ -158,9 +158,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
             // Raiding the base never un-hides it, so a filter reading hiddenness would still call
             // this system empty. Both layers must agree it is not.
-            assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).sections()))
+            assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).sections()))
+            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
         }
 
@@ -173,9 +173,9 @@ final class PoliticalMapStatusRevealIntegrationTest {
 
             // One toggle, two boxes: the faction layer reaches it through its pass and the claims
             // layer reads it directly, and the same unknown base has to satisfy both.
-            assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).sections()))
+            assertThat(readStatus(claimTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
-            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).sections()))
+            assertThat(readStatus(dominationTooltip.composeBody(sector, systemMock, PATROL_DETAILS).blocks().readSections()))
                 .isNull();
         }
     }
