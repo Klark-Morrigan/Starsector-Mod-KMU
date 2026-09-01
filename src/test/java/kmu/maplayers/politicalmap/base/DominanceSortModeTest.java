@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -7,6 +8,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * mode carries no Starsector types.
  */
 final class DominanceSortModeTest {
+
+    // The tone the picker offers a mode with no colour opinion of its own. Arbitrary and distinct from
+    // any engine shade, since what the value cases read off it is only that the offered tone came back
+    // on the run rather than one the mode chose.
+    private static final Color ROW_COLOUR = Color.ORANGE;
 
     @Nested
     class PersistenceKey {
@@ -44,34 +51,39 @@ final class DominanceSortModeTest {
     }
 
     @Nested
-    class ResolveTrailingValue {
+    class ResolveTrailingRuns {
 
         @Test
-        void resolveTrailingValueIsTheModesMetricForANumericMode() {
+        void resolveTrailingRunsIsTheModesMetricAsOneRowColouredRunForANumericMode() {
 
             var bloc = buildBloc(
                 "hegemony",
                 "Hegemony",
                 new DominanceStats(5, 8, 40, 12));
 
-            assertThat(DominanceSortMode.DOMINATION.resolveTrailingValue(bloc))
-                .isEqualTo("5");
-            assertThat(DominanceSortMode.PRESENCE.resolveTrailingValue(bloc))
-                .isEqualTo("8");
-            assertThat(DominanceSortMode.SCORE.resolveTrailingValue(bloc))
-                .isEqualTo("40");
-            assertThat(DominanceSortMode.MARKET_SIZE.resolveTrailingValue(bloc))
-                .isEqualTo("12");
+            // One run apiece, in the tone the picker offered: none of these metrics carries a colour
+            // of its own, so each value matches the name beside it.
+            assertThat(DominanceSortMode.DOMINATION.resolveTrailingRuns(bloc, ROW_COLOUR))
+                .containsExactly(new TextSpan("5", ROW_COLOUR));
+            assertThat(DominanceSortMode.PRESENCE.resolveTrailingRuns(bloc, ROW_COLOUR))
+                .containsExactly(new TextSpan("8", ROW_COLOUR));
+            assertThat(DominanceSortMode.SCORE.resolveTrailingRuns(bloc, ROW_COLOUR))
+                .containsExactly(new TextSpan("40", ROW_COLOUR));
+            assertThat(DominanceSortMode.MARKET_SIZE.resolveTrailingRuns(bloc, ROW_COLOUR))
+                .containsExactly(new TextSpan("12", ROW_COLOUR));
         }
 
         @Test
-        void resolveTrailingValueIsBlankUnderTheNameMode() {
+        void resolveTrailingRunsIsNoRunsUnderTheNameMode() {
 
-            // The name mode ranks on the label, so there is no number to show and the row draws blank.
-            assertThat(DominanceSortMode.NAME.resolveTrailingValue(buildBloc(
-                    "hegemony",
-                    "Hegemony",
-                    new DominanceStats(5, 8, 40, 12))))
+            // The name mode ranks on the label, so there is no number to show and the row's value
+            // column stays unfilled.
+            assertThat(DominanceSortMode.NAME.resolveTrailingRuns(
+                    buildBloc(
+                        "hegemony",
+                        "Hegemony",
+                        new DominanceStats(5, 8, 40, 12)),
+                    ROW_COLOUR))
                 .isEmpty();
         }
     }

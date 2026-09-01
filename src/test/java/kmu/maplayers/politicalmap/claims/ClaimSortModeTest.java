@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.claims;
 
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
@@ -10,6 +11,7 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * no Starsector types.
  */
 final class ClaimSortModeTest {
+
+    // The tone the picker offers a mode with no colour opinion of its own. Arbitrary and distinct from
+    // any engine shade, since what the value cases read off it is only that the offered tone came back
+    // on the run rather than one the mode chose.
+    private static final Color ROW_COLOUR = Color.ORANGE;
 
     @Nested
     class Modes {
@@ -76,25 +83,29 @@ final class ClaimSortModeTest {
     }
 
     @Nested
-    class ResolveTrailingValue {
+    class ResolveTrailingRuns {
 
         @Test
-        void resolveTrailingValueIsTheModesMetricForANumericMode() {
+        void resolveTrailingRunsIsTheModesMetricAsOneRowColouredRunForANumericMode() {
 
             var bloc = buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26));
 
-            assertThat(ClaimSortMode.CLAIMS.resolveTrailingValue(bloc))
-                .isEqualTo("4");
-            assertThat(ClaimSortMode.MARKET_SIZE.resolveTrailingValue(bloc))
-                .isEqualTo("26");
+            // One run apiece, in the tone the picker offered: neither metric carries a colour of its
+            // own, so each value matches the name beside it.
+            assertThat(ClaimSortMode.CLAIMS.resolveTrailingRuns(bloc, ROW_COLOUR))
+                .containsExactly(new TextSpan("4", ROW_COLOUR));
+            assertThat(ClaimSortMode.MARKET_SIZE.resolveTrailingRuns(bloc, ROW_COLOUR))
+                .containsExactly(new TextSpan("26", ROW_COLOUR));
         }
 
         @Test
-        void resolveTrailingValueIsBlankUnderTheNameMode() {
+        void resolveTrailingRunsIsNoRunsUnderTheNameMode() {
 
-            // The name mode ranks on the label, so there is no number to show and the row draws blank.
-            assertThat(ClaimSortMode.NAME.resolveTrailingValue(
-                    buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26))))
+            // The name mode ranks on the label, so there is no number to show and the row's value
+            // column stays unfilled.
+            assertThat(ClaimSortMode.NAME.resolveTrailingRuns(
+                    buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26)),
+                    ROW_COLOUR))
                 .isEmpty();
         }
     }

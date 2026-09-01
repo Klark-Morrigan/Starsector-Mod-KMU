@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.claims;
 
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
@@ -8,6 +9,7 @@ import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.util.KmuStrings;
 
+import java.awt.Color;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -115,15 +117,19 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
 
     /**
      * The trailing value the picker draws on a bloc's row under this mode: the mode's metric read
-     * off the bloc's whole-sector stats, or the seam's blank default under the name mode, which
-     * ranks on the label and has no number to show.
+     * off the bloc's whole-sector stats, as one run in the tone the rest of the row takes, or the
+     * seam's no-runs default under the name mode, which ranks on the label and has no number to show.
+     * Neither metric carries a colour of its own, so neither overrides the row's.
      *
-     * @param bloc the listed bloc
-     * @return the metric's value as text, or "" when this mode sorts by name
+     * @param bloc          the listed bloc
+     * @param defaultColour the tone the rest of the row draws in, which a plain number matches
+     * @return the metric's value as a single run, or no runs when this mode sorts by name
      */
     @Override
-    public String resolveTrailingValue(RankedBloc<ClaimStats> bloc) {
-        return metric == null ? "" : String.valueOf(metric.applyAsInt(bloc.stats()));
+    public List<TextSpan> resolveTrailingRuns(RankedBloc<ClaimStats> bloc, Color defaultColour) {
+        return metric == null
+            ? List.of()
+            : List.of(new TextSpan(String.valueOf(metric.applyAsInt(bloc.stats())), defaultColour));
     }
 
     /**

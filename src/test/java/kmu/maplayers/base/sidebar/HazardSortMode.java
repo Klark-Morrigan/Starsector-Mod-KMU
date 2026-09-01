@@ -1,18 +1,21 @@
 package kmu.maplayers.base.sidebar;
 
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.util.KmuStrings;
 
+import java.awt.Color;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  * Test fixture: a set of sort modes no part of the political map declares - the stand-in for
  * whatever a second layer ranks its picker list by. An enum, since that is the shape a layer is
  * expected to reach for. Alpha runs ascending by default while the two numeric modes run
  * descending, so a suite can tell a mode's own default direction from the active sort's live one.
- * Only {@link #RADIUS} declares a trailing value; the other two leave the seam's blank default, so
+ * Only {@link #RADIUS} declares a trailing value; the other two leave the seam's no-runs default, so
  * a suite can tell a mode that writes a number onto its rows from one that shows none.
  *
  * <p>Each label resolves through {@link kmu.util.KmuStrings} under a key of its own, which is what a
@@ -40,10 +43,11 @@ enum HazardSortMode implements ListSortMode<Hazard> {
         Comparator.comparingInt(Hazard::radius)) {
 
         // The one mode that writes its number onto the rows, so a suite can tell a drawn trailing
-        // value apart from the blank the other two leave.
+        // value apart from the unfilled slot the other two leave. One run in the row's own tone,
+        // which is what a mode with no colour opinion of its own answers.
         @Override
-        public String resolveTrailingValue(Hazard hazard) {
-            return String.valueOf(hazard.radius());
+        public List<TextSpan> resolveTrailingRuns(Hazard hazard, Color defaultColour) {
+            return List.of(new TextSpan(String.valueOf(hazard.radius()), defaultColour));
         }
     };
 
