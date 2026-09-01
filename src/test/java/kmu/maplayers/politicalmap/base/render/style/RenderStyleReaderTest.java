@@ -16,7 +16,6 @@ import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 
 /**
  * Pins how the political-map settings fold into one theme: each owned category threads its
@@ -27,9 +26,9 @@ import static org.mockito.Mockito.never;
  * hatch, smoothing, desaturation and both highlight tiers, and {@code readRenderStyle} carries all
  * four categories plus the global tier as one snapshot.
  *
- * <p>The two highlight tiers are the same record read out of two sets of getters, so they are
- * pinned both by value and by which getters each reads: threading one of them into the other's
- * slot is the failure no single-tier assertion would name.
+ * <p>The two highlight tiers are the same record read out of two sets of getters, so every
+ * stand-in below is distinct across both: a slot reading its counterpart in the other tier then
+ * arrives unstubbed and fails by value, which is the only thing that tells the two apart.
  */
 final class RenderStyleReaderTest {
 
@@ -544,8 +543,7 @@ final class RenderStyleReaderTest {
     class ReadPreviewHighlightStyle {
 
         // Distinct per knob for the reason the cursor tier's stand-ins are, and distinct from
-        // those as well: the two tiers read the same record out of nine getters apiece, so a
-        // preview slot fed by its cursor counterpart has to fail by value.
+        // those as well, so a preview slot fed by its cursor counterpart fails by value.
         private static final double GLOW_OPACITY = 0.55;
         private static final double GLOW_WIDTH = 7.0;
         private static final int GLOW_LAYERS = 2;
@@ -609,23 +607,6 @@ final class RenderStyleReaderTest {
                     .isEqualTo(WASH_OUTLINE_OPACITY);
                 assertThat(preview.wash().outlineWidth())
                     .isEqualTo(WASH_OUTLINE_WIDTH);
-            }
-        }
-
-        // The cursor tier's own knobs, left at their unstubbed defaults, must not reach the
-        // preview: a reader wired to the wrong getters would still pass the case above, since
-        // both tiers would then be read from one set of stubs.
-        @Test
-        void readPreviewHighlightStyleReadsNoneOfTheCursorTiersOwnSettings() {
-            try (MockedStatic<KmuPoliticalMapSettings> settingsMock = mockStatic(KmuPoliticalMapSettings.class)) {
-
-                settingsMock
-                    .when(KmuPoliticalMapSettings::getPoliticalMapPreviewGlowOpacity)
-                    .thenReturn(GLOW_OPACITY);
-
-                RenderStyleReader.readPreviewHighlightStyle();
-
-                settingsMock.verify(KmuPoliticalMapSettings::getPoliticalMapHoverGlowOpacity, never());
             }
         }
     }

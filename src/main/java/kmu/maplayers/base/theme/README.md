@@ -58,12 +58,10 @@ call site - and where that sub-record is itself split by pass, on the half the p
 knob is handed. Splitting `BorderSmoothingStyle` that way is what lets each smoothing pass take
 only its own half, so a sanding number cannot reach the rounding pass and back again.
 
-Two of those sub-records are the same type, which is the one place the tier carries a record twice:
-a highlight is a halo plus a wash whatever resolved the shapes under it, so the cursor's and the
-preview's differ only in the weights they are read at. A single tier with a multiplier over it
-would not do - the two are weighted for different distances, one cell under the pointer against a
-scatter of cells found at arm's length - and a second record type would duplicate a shape that has
-no second meaning.
+Two of those sub-records are the same type, the one place the tier carries a record twice: a
+highlight is a halo plus a wash whatever resolved the shapes under it, so the cursor's and the
+preview's differ only in the weights they are read at. `GlobalStyle` carries why they are two
+tiers rather than one and a multiplier.
 
 `HatchStyle` splits along the same line, by *when* each part is decided rather than by which pass
 reads it: `spacing`, `angleRadians` and `joinToleranceFraction` shape the clipped line geometry and

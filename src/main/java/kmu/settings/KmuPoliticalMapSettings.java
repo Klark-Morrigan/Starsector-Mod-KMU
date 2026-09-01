@@ -318,20 +318,9 @@ public final class KmuPoliticalMapSettings {
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
-    // The preview tier ships heavier than the cursor tier beside it, and leads on the pulse: it
-    // lights a scatter of cells the eye has to find across the whole sector rather than one cell
-    // the pointer is already on, and at that distance movement is what the eye catches where
-    // brightness only competes with the fills. The primary shade for the same reason - the bright
-    // arm of the palette, over a map that may be receded behind it.
     private static final FactionPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_PREVIEW_GLOW_OPACITY = 0.6;
-
-    // Set against the smallest cells the map draws rather than against the cursor tier's 14: the
-    // stack is centred on the line, so half of every layer spills inward, and over a single cell a
-    // cursor-width halo lands on the wash and reads as a lump. The narrow stack with few layers is
-    // also the steep falloff that keeps two lit groups sitting close from piling into a bright
-    // patch, the pass being additive.
     private static final double DEFAULT_PREVIEW_GLOW_WIDTH = 6.0;
     private static final int DEFAULT_PREVIEW_GLOW_LAYERS = 3;
     private static final double DEFAULT_PREVIEW_GLOW_PULSE_STRENGTH = 0.5;

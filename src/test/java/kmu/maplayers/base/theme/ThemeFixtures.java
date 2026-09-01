@@ -22,7 +22,7 @@ public final class ThemeFixtures {
      * they were read at, and both are off at zero.
      */
     public static final HoverHighlightStyle NO_HIGHLIGHT = new HoverHighlightStyle(
-            null,
+        null,
         new HoverGlowStyle(0, 0, 0, 0, 0),
         new HoverWashStyle(0, 0, 0));
 
