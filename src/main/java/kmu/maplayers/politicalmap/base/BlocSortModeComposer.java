@@ -18,10 +18,10 @@ import java.util.function.ToIntFunction;
  * does not differ, and is stated here instead of once per vocabulary.
  *
  * <p>The shape assembled is fixed: the mode's own key in the requested direction, then the canonical
- * tie-break chain minus the mode's own slot, then the name, then the bloc id. Sharing the tail is the
- * point - two blocs a player cannot tell apart break the same way under every mode of every
- * vocabulary, and no mode can be written that forgets the by-id key which keeps a fully-level pair
- * from reshuffling between frames.
+ * tie-break chain, then the name, then the bloc id. Sharing the tail is the point - two blocs a
+ * player cannot tell apart break the same way under every mode of every vocabulary, and no mode can
+ * be written that forgets the by-id key which keeps a fully-level pair from reshuffling between
+ * frames.
  *
  * <p>A mode that ranks by name rather than by a number names no metric, which is the one distinction
  * the shape turns on: it leads with the label, lets the whole numeric chain follow, and draws no
@@ -40,9 +40,7 @@ public final class BlocSortModeComposer {
      * @param <S>                  the vocabulary's metrics record
      * @param primaryMetric        the number this mode promotes to the primary key, or null for a
      *                             mode that ranks by name
-     * @param canonicalMetricChain the vocabulary's numbers in the order ties break down them, held as
-     *                             the same accessors its modes name, so the mode's own slot is
-     *                             recognised in the chain and left out of it
+     * @param canonicalMetricChain the vocabulary's numbers in the order ties break down them
      * @param direction            the way the primary key runs - the mode's default, or the flipped
      *                             opposite
      * @return the bloc comparator for that mode in the requested direction
@@ -53,13 +51,12 @@ public final class BlocSortModeComposer {
             SortDirection direction) {
 
         Comparator<RankedBloc<S>> order = resolvePrimaryOrder(primaryMetric, direction);
+        // The chain is appended entire, the promoted metric included: a pair that reached the chain is
+        // level on the primary key, so reading that same number again lands on the same answer and the
+        // next key decides. Leaving its slot in is what keeps the chain one list rather than a list
+        // plus a rule about which of its entries is being skipped.
         for (var metric : canonicalMetricChain) {
-            // The primary's own slot is skipped by identity: a chain still holding it would compare a
-            // key the primary has already found level, which decides nothing and reads as though it
-            // might.
-            if (metric != primaryMetric) {
-                order = order.thenComparing(compareByMetricDescending(metric));
-            }
+            order = order.thenComparing(compareByMetricDescending(metric));
         }
         if (primaryMetric != null) {
             // A numeric mode breaks a chain-level pair by name; the name mode has already led with it.

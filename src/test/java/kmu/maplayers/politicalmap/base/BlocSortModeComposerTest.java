@@ -29,9 +29,8 @@ final class BlocSortModeComposerTest {
     // on the run rather than one the assembly chose.
     private static final Color ROW_COLOUR = Color.ORANGE;
 
-    // The stand-in vocabulary's two numbers, held as fields for the reason a vocabulary holds its own:
-    // the accessor a mode ranks by has to be the very one sitting in the chain for its slot to be
-    // recognised there.
+    // The stand-in vocabulary's two numbers, named once so a case can promote either one and read the
+    // same accessor back out of the chain.
     private static final ToIntFunction<HazardRating> SEVERITY = HazardRating::severity;
     private static final ToIntFunction<HazardRating> VOLATILITY = HazardRating::volatility;
 
@@ -93,8 +92,8 @@ final class BlocSortModeComposerTest {
         @Test
         void assembleComparatorBreaksANameTieDownTheWholeChain() {
 
-            // Two blocs share a name, so a by-name ranking falls through to the numeric chain entire -
-            // no slot of it was promoted away - and the more severe one leads.
+            // Two blocs share a name, so a by-name ranking falls through to the numeric chain and the
+            // more severe one leads.
             var milder = buildBloc("milder", "Same", 1, 0);
             var harsher = buildBloc("harsher", "Same", 8, 0);
 

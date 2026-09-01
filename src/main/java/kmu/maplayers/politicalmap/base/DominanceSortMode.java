@@ -62,10 +62,8 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
         KmuStrings.POLITICAL_MAP_CTL_SORT_MARKET_SIZE,
         DominanceStats::marketSize);
 
-    // The numeric metrics in their canonical tie-break order - the chain every mode breaks ties down.
-    // A numeric mode moves its own metric to the front of this chain; the name mode appends the whole
-    // chain after the name. Held as the modes' own accessors rather than as fresh method references,
-    // so a mode's slot in the chain is the very accessor it ranks by and the assembly recognises it.
+    // This vocabulary's numbers in the order ties break down them. Read off the modes' own accessors
+    // rather than named again here, so the chain cannot drift from what the constants above declare.
     private static final List<ToIntFunction<DominanceStats>> CANONICAL_METRIC_CHAIN =
         List.of(DOMINATION.metric, PRESENCE.metric, SCORE.metric, MARKET_SIZE.metric);
 
@@ -117,10 +115,9 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
     }
 
     /**
-     * The trailing value the picker draws on a bloc's row under this mode: the mode's metric read
-     * off the bloc's whole-sector stats, as one run in the tone the rest of the row takes, or the
-     * seam's no-runs default under the name mode, which ranks on the label and has no number to show.
-     * None of these metrics carries a colour of its own, so none overrides the row's.
+     * The trailing value the picker draws on a bloc's row under this mode. None of these metrics
+     * carries a colour of its own, so a value here is the plain kind {@link BlocSortModeComposer}
+     * draws in the row's own tone.
      *
      * @param bloc          the listed bloc
      * @param defaultColour the tone the rest of the row draws in, which a plain number matches
@@ -135,9 +132,8 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
     }
 
     /**
-     * The direction this mode ranks in until the player flips it: descending for the numeric metrics,
-     * so the bigger bloc leads, and ascending for the name, so the list reads A-to-Z. A fresh save and
-     * a mode the player has just switched to both start here.
+     * The direction this mode ranks in until the player flips it. A fresh save and a mode the player
+     * has just switched to both start here.
      *
      * @return this mode's natural sort direction
      */
@@ -147,10 +143,8 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
     }
 
     /**
-     * The comparator that orders the picker's blocs under this mode in {@code direction}: the mode's
-     * own key first (run the requested way), then the shared canonical tie-break chain, then a by-id
-     * key for a total order. Only the primary key follows {@code direction}; the tie-break chain stays
-     * canonical, so two blocs level on the primary always break the same way whichever direction shows.
+     * The comparator that orders the picker's blocs under this mode in {@code direction} - this
+     * vocabulary's metric and chain laid out in the shape {@link BlocSortModeComposer} assembles.
      *
      * @param direction the way the primary key runs - this mode's default, or the flipped opposite
      * @return the bloc comparator for this mode in the requested direction

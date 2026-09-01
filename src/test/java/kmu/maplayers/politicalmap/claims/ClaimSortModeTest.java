@@ -18,12 +18,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the claims vocabulary's surfaces: the frozen persistence keys a save round-trips through, the
- * trailing value each mode draws on a row, and the comparator that lays a claimant list out. The
- * comparator tests are the meat - they pin that each mode promotes its own metric to the primary key,
- * that the shared canonical chain breaks ties the same way behind every mode, and that a fully-level
- * pair falls back to a stable by-id order. All exercised on hand-built blocs, since the mode carries
- * no Starsector types.
+ * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
+ * number each mode reads, the direction that follows from it, the order ties break down the canonical
+ * chain, and where the blocs that claim nowhere land. The shape the ranking is then laid out in - the
+ * promoted key, the flip, the name and by-id tail - is the shared assembly's and is pinned in its own
+ * suite, so a case here fails only when this vocabulary's own declaration changes. All exercised on
+ * hand-built blocs, since the mode carries no Starsector types.
  */
 final class ClaimSortModeTest {
 
@@ -136,7 +136,7 @@ final class ClaimSortModeTest {
     class Comparator {
 
         @Test
-        void comparatorRanksANumericModeByItsOwnMetricHighToLow() {
+        void comparatorRanksANumericModeByItsOwnMetric() {
 
             var low = buildBloc("low", "Low", new ClaimStats(1, 0));
             var high = buildBloc("high", "High", new ClaimStats(9, 0));
@@ -146,37 +146,15 @@ final class ClaimSortModeTest {
         }
 
         @Test
-        void comparatorBreaksAMetricTieDownTheCanonicalChain() {
+        void comparatorBreaksTiesDownTheCanonicalChainInOrder() {
 
-            // Level on claims, so the tie falls to market size next in the canonical chain: the bigger
-            // claimant leads even though the mode being sorted is claims.
+            // The order this vocabulary declares behind its numbers: claims, then market size. The pair
+            // is level on claims, so which bloc leads names the number the chain reaches next.
             var smaller = buildBloc("a", "A", new ClaimStats(5, 2));
             var bigger = buildBloc("b", "B", new ClaimStats(5, 7));
 
             assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, smaller, bigger))
                 .containsExactly("b", "a");
-        }
-
-        @Test
-        void comparatorPromotesEachModesMetricAheadOfTheCanonicalChain() {
-
-            // Under market size, the fewer-claiming but bigger bloc leads: market size is promoted to
-            // the primary key ahead of claims, which would otherwise win.
-            var claimant = buildBloc("claimant", "Claimant", new ClaimStats(9, 10));
-            var conglomerate = buildBloc("conglomerate", "Conglomerate", new ClaimStats(1, 50));
-
-            assertThat(listIdsSortedBy(ClaimSortMode.MARKET_SIZE, claimant, conglomerate))
-                .containsExactly("conglomerate", "claimant");
-        }
-
-        @Test
-        void comparatorRanksTheNameModeAlphabetically() {
-
-            var zeta = buildBloc("z", "Zeta", ClaimStats.EMPTY);
-            var alpha = buildBloc("a", "Alpha", ClaimStats.EMPTY);
-
-            assertThat(listIdsSortedBy(ClaimSortMode.NAME, zeta, alpha))
-                .containsExactly("a", "z");
         }
 
         @Test
@@ -202,91 +180,19 @@ final class ClaimSortModeTest {
             assertThat(listIdsSortedBy(ClaimSortMode.NAME, claimant, holder))
                 .containsExactly("a", "b");
         }
-
-        @Test
-        void comparatorFlipsANumericModesPrimaryKeyWhenTheDirectionIsAscending() {
-
-            // Ascending reverses the primary metric, so the fewer-claiming bloc leads while the metric
-            // is still claims - only its direction changed.
-            var low = buildBloc("low", "Low", new ClaimStats(1, 0));
-            var high = buildBloc("high", "High", new ClaimStats(9, 0));
-
-            assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, SortDirection.ASCENDING, low, high))
-                .containsExactly("low", "high");
-        }
-
-        @Test
-        void comparatorKeepsTheCanonicalTieBreakChainWhenThePrimaryFlips() {
-
-            // Even with the primary metric ascending, a tie on it still breaks down the canonical chain
-            // the same way: level on claims, the bigger market size leads regardless of direction.
-            var smaller = buildBloc("a", "A", new ClaimStats(5, 2));
-            var bigger = buildBloc("b", "B", new ClaimStats(5, 7));
-
-            assertThat(listIdsSortedBy(
-                    ClaimSortMode.CLAIMS,
-                    SortDirection.ASCENDING,
-                    smaller,
-                    bigger))
-                .containsExactly("b", "a");
-        }
-
-        @Test
-        void comparatorFlipsTheNameModeToDescendingWhenTheDirectionIsDescending() {
-
-            // The name mode's default is ascending, so descending reverses it to Z-to-A.
-            var zeta = buildBloc("z", "Zeta", ClaimStats.EMPTY);
-            var alpha = buildBloc("a", "Alpha", ClaimStats.EMPTY);
-
-            assertThat(listIdsSortedBy(ClaimSortMode.NAME, SortDirection.DESCENDING, zeta, alpha))
-                .containsExactly("z", "a");
-        }
-
-        @Test
-        void comparatorBreaksANameTieDownTheNumericChain() {
-
-            // Two blocs share a name, so the name mode falls through to the numeric chain: the one
-            // claiming more leads.
-            var weaker = buildBloc("weaker", "Same", new ClaimStats(1, 0));
-            var stronger = buildBloc("stronger", "Same", new ClaimStats(8, 0));
-
-            assertThat(listIdsSortedBy(ClaimSortMode.NAME, weaker, stronger))
-                .containsExactly("stronger", "weaker");
-        }
-
-        @Test
-        void comparatorFallsBackToAStableByIdOrderWhenEveryKeyIsLevel() {
-
-            // Same name and identical stats, so every visible key is level; the by-id key gives a total
-            // order so the pair holds a fixed position rather than reshuffling frame to frame.
-            var second = buildBloc("bbb", "Same", new ClaimStats(3, 3));
-            var first = buildBloc("aaa", "Same", new ClaimStats(3, 3));
-
-            assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, second, first))
-                .containsExactly("aaa", "bbb");
-        }
     }
 
     // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
-    // ids in the resulting order, so an assertion reads the default arrangement without spelling out
-    // the direction. The direction-flip tests use the direction overload.
+    // ids in the resulting order, so an assertion reads the arrangement without the blocs' other
+    // fields getting in the way. The flipped direction belongs to the shared assembly and is pinned
+    // where that lives.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
             ClaimSortMode mode,
-            RankedBloc<ClaimStats>... blocs) {
-        return listIdsSortedBy(mode, mode.defaultDirection(), blocs);
-    }
-
-    // Sorts the blocs by the mode's comparator in the given direction and returns their ids in order,
-    // so an assertion reads the arrangement without the blocs' other fields getting in the way.
-    @SafeVarargs
-    private static List<String> listIdsSortedBy(
-            ClaimSortMode mode,
-            SortDirection direction,
             RankedBloc<ClaimStats>... blocs) {
 
         var sorted = new ArrayList<>(List.of(blocs));
-        sorted.sort(mode.comparator(direction));
+        sorted.sort(mode.comparator(mode.defaultDirection()));
 
         var ids = new ArrayList<String>(sorted.size());
         for (var bloc : sorted) {
