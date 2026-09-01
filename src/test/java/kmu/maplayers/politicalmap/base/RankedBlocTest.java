@@ -98,7 +98,7 @@ final class RankedBlocTest {
             // whether it was consulted or not.
             var measured = new RankedBloc<>(
                 new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
-                new HazardRating(4));
+                new HazardRating(4, 1));
 
             assertThat(measured.isDimmed())
                 .isFalse();

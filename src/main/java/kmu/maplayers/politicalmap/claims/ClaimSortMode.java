@@ -5,6 +5,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
+import kmu.maplayers.politicalmap.base.BlocSortModeComposer;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.util.KmuStrings;
@@ -25,14 +26,11 @@ import java.util.function.ToIntFunction;
  * one layer's vocabulary rather than shared machinery: a view painted by another mechanic declares
  * its own three-or-so modes instead of extending this one.
  *
- * <p>The comparators share one fixed tie-break chain so two blocs level on the chosen metric always
- * break the same way: claims, then market size, then name. A numeric mode promotes its own metric to
- * the front of that chain and lets the rest follow in the canonical order; the name mode leads with
- * the name and lets the whole numeric chain follow. Numeric keys sort high-to-low (the bigger
- * claimant ranks first), the name sorts A-to-Z, and a final by-id key gives a total order so a
- * fully-level pair never reshuffles between frames. This is each mode's {@link #defaultDirection()}
- * ordering; {@link #comparator(SortDirection)} flips only the primary key when the player picks the
- * opposite direction, leaving the canonical tie-break chain fixed either way.
+ * <p>What this vocabulary states of itself is its numbers and the order ties break down them: claims,
+ * then market size. Laying that declaration out into a ranking - the mode's own metric promoted to
+ * the primary key, the rest of the chain behind it, the name and then the bloc id at the tail, and
+ * only the primary key following the player's chosen direction - is {@link BlocSortModeComposer}'s,
+ * so every mode of every vocabulary breaks a tie the same way.
  *
  * <p>{@link #DEFAULT} is claims - the metric the layer is actually painted by, so a fresh save and
  * any unrecognised stored key open on the ranking that matches what the map shows. The list holds
@@ -61,8 +59,10 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
 
     // The numeric metrics in their canonical tie-break order - the chain every mode breaks ties down.
     // A numeric mode moves its own metric to the front of this chain; the name mode appends the whole
-    // chain after the name.
-    private static final List<ClaimSortMode> CANONICAL_NUMERIC_ORDER = List.of(CLAIMS, MARKET_SIZE);
+    // chain after the name. Held as the modes' own accessors rather than as fresh method references,
+    // so a mode's slot in the chain is the very accessor it ranks by and the assembly recognises it.
+    private static final List<ToIntFunction<ClaimStats>> CANONICAL_METRIC_CHAIN =
+        List.of(CLAIMS.metric, MARKET_SIZE.metric);
 
     /** The metric a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
     public static final ClaimSortMode DEFAULT = CLAIMS;
@@ -127,9 +127,7 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
      */
     @Override
     public List<TextSpan> resolveTrailingRuns(RankedBloc<ClaimStats> bloc, Color defaultColour) {
-        return metric == null
-            ? List.of()
-            : List.of(new TextSpan(String.valueOf(metric.applyAsInt(bloc.stats())), defaultColour));
+        return BlocSortModeComposer.resolveMetricRuns(metric, bloc, defaultColour);
     }
 
     /**
@@ -141,7 +139,7 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
      */
     @Override
     public SortDirection defaultDirection() {
-        return metric == null ? SortDirection.ASCENDING : SortDirection.DESCENDING;
+        return BlocSortModeComposer.resolveDefaultDirection(metric);
     }
 
     /**
@@ -155,58 +153,6 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
      */
     @Override
     public Comparator<RankedBloc<ClaimStats>> comparator(SortDirection direction) {
-        Comparator<RankedBloc<ClaimStats>> order = primaryComparator(direction);
-        if (metric == null) {
-            // Name mode leads with the label, then breaks ties down the whole numeric chain.
-            for (var mode : CANONICAL_NUMERIC_ORDER) {
-                order = order.thenComparing(mode.byMetricDescending());
-            }
-        } else {
-            // A numeric mode leads with its own metric, then follows the canonical chain skipping that
-            // metric's own slot, and finally breaks a numeric-level pair by name.
-            for (var mode : CANONICAL_NUMERIC_ORDER) {
-                if (mode != this) {
-                    order = order.thenComparing(mode.byMetricDescending());
-                }
-            }
-            order = order.thenComparing(byNameAscending());
-        }
-        // A final by-id key gives a total order, so two blocs level on every visible key keep a fixed
-        // position rather than reshuffling as the per-frame sort re-runs.
-        return order.thenComparing(RankedBloc::itemId);
-    }
-
-    // This mode's primary key in the requested direction: the default-direction primary (numerics
-    // high-to-low, name A-to-Z), reversed when the requested direction is the opposite of the mode's
-    // default. Only the primary flips - the tie-break chain the caller appends stays canonical.
-    private Comparator<RankedBloc<ClaimStats>> primaryComparator(SortDirection direction) {
-
-        Comparator<RankedBloc<ClaimStats>> defaultOrder = metric == null
-            ? byNameAscending()
-            : byMetricDescending();
-
-        return direction == defaultDirection()
-            ? defaultOrder
-            : defaultOrder.reversed();
-    }
-
-    // This mode's metric as a high-to-low bloc comparator, so the bigger claimant ranks first. Only
-    // ever built for a numeric mode, where the metric accessor is non-null.
-    private Comparator<RankedBloc<ClaimStats>> byMetricDescending() {
-        return Comparator
-            .comparingInt((RankedBloc<ClaimStats> bloc) -> metric.applyAsInt(bloc.stats()))
-            .reversed();
-    }
-
-    // Blocs by label, A-to-Z, case-insensitively, treating a null name as empty so an unlabelled bloc
-    // sorts with the blanks rather than throwing.
-    private static Comparator<RankedBloc<ClaimStats>> byNameAscending() {
-        return Comparator.comparing(
-            ClaimSortMode::displayNameOrEmpty,
-            String.CASE_INSENSITIVE_ORDER);
-    }
-
-    private static String displayNameOrEmpty(RankedBloc<ClaimStats> bloc) {
-        return bloc.displayName() == null ? "" : bloc.displayName();
+        return BlocSortModeComposer.assembleComparator(metric, CANONICAL_METRIC_CHAIN, direction);
     }
 }

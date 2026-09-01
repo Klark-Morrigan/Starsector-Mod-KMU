@@ -23,14 +23,12 @@ import java.util.function.ToIntFunction;
  * persists under, the label its selector row draws, its natural direction, the comparator that
  * lays the bloc list out under it, and the trailing value a row shows.
  *
- * <p>The comparators share one fixed tie-break chain so two blocs level on the chosen metric always
- * break the same way: domination, then presence, then score, then market size, then name. A numeric
- * mode promotes its own metric to the front of that chain and lets the rest follow in the canonical
- * order; the name mode leads with the name and lets the whole numeric chain follow. Numeric keys sort
- * high-to-low (the bigger bloc ranks first), the name sorts A-to-Z, and a final by-id key gives a
- * total order so a fully-level pair never reshuffles between frames. This is each mode's {@link
- * #defaultDirection()} ordering; {@link #comparator(SortDirection)} flips only the primary key when
- * the player picks the opposite direction, leaving the canonical tie-break chain fixed either way.
+ * <p>What this vocabulary states of itself is its numbers and the order ties break down them:
+ * domination, then presence, then score, then market size. Laying that declaration out into a
+ * ranking - the mode's own metric promoted to the primary key, the rest of the chain behind it, the
+ * name and then the bloc id at the tail, and only the primary key following the player's chosen
+ * direction - is {@link BlocSortModeComposer}'s, so every mode of every vocabulary breaks a tie the
+ * same way.
  *
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
@@ -66,9 +64,10 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
 
     // The numeric metrics in their canonical tie-break order - the chain every mode breaks ties down.
     // A numeric mode moves its own metric to the front of this chain; the name mode appends the whole
-    // chain after the name.
-    private static final List<DominanceSortMode> CANONICAL_NUMERIC_ORDER =
-        List.of(DOMINATION, PRESENCE, SCORE, MARKET_SIZE);
+    // chain after the name. Held as the modes' own accessors rather than as fresh method references,
+    // so a mode's slot in the chain is the very accessor it ranks by and the assembly recognises it.
+    private static final List<ToIntFunction<DominanceStats>> CANONICAL_METRIC_CHAIN =
+        List.of(DOMINATION.metric, PRESENCE.metric, SCORE.metric, MARKET_SIZE.metric);
 
     /** The metric a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
     public static final DominanceSortMode DEFAULT = DOMINATION;
@@ -132,9 +131,7 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
             RankedBloc<DominanceStats> bloc,
             Color defaultColour) {
 
-        return metric == null
-            ? List.of()
-            : List.of(new TextSpan(String.valueOf(metric.applyAsInt(bloc.stats())), defaultColour));
+        return BlocSortModeComposer.resolveMetricRuns(metric, bloc, defaultColour);
     }
 
     /**
@@ -146,7 +143,7 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
      */
     @Override
     public SortDirection defaultDirection() {
-        return metric == null ? SortDirection.ASCENDING : SortDirection.DESCENDING;
+        return BlocSortModeComposer.resolveDefaultDirection(metric);
     }
 
     /**
@@ -160,58 +157,6 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
      */
     @Override
     public Comparator<RankedBloc<DominanceStats>> comparator(SortDirection direction) {
-        Comparator<RankedBloc<DominanceStats>> order = primaryComparator(direction);
-        if (metric == null) {
-            // Name mode leads with the label, then breaks ties down the whole numeric chain.
-            for (var mode : CANONICAL_NUMERIC_ORDER) {
-                order = order.thenComparing(mode.byMetricDescending());
-            }
-        } else {
-            // A numeric mode leads with its own metric, then follows the canonical chain skipping that
-            // metric's own slot, and finally breaks a numeric-level pair by name.
-            for (var mode : CANONICAL_NUMERIC_ORDER) {
-                if (mode != this) {
-                    order = order.thenComparing(mode.byMetricDescending());
-                }
-            }
-            order = order.thenComparing(byNameAscending());
-        }
-        // A final by-id key gives a total order, so two blocs level on every visible key keep a fixed
-        // position rather than reshuffling as the per-frame sort re-runs.
-        return order.thenComparing(RankedBloc::itemId);
-    }
-
-    // This mode's primary key in the requested direction: the default-direction primary (numerics
-    // high-to-low, name A-to-Z), reversed when the requested direction is the opposite of the mode's
-    // default. Only the primary flips - the tie-break chain the caller appends stays canonical.
-    private Comparator<RankedBloc<DominanceStats>> primaryComparator(SortDirection direction) {
-
-        Comparator<RankedBloc<DominanceStats>> defaultOrder = metric == null
-            ? byNameAscending()
-            : byMetricDescending();
-
-        return direction == defaultDirection()
-            ? defaultOrder
-            : defaultOrder.reversed();
-    }
-
-    // This mode's metric as a high-to-low bloc comparator, so the bigger bloc ranks first. Only ever
-    // built for a numeric mode, where the metric accessor is non-null.
-    private Comparator<RankedBloc<DominanceStats>> byMetricDescending() {
-        return Comparator
-            .comparingInt((RankedBloc<DominanceStats> bloc) -> metric.applyAsInt(bloc.stats()))
-            .reversed();
-    }
-
-    // Blocs by label, A-to-Z, case-insensitively, treating a null name as empty so an unlabelled bloc
-    // sorts with the blanks rather than throwing.
-    private static Comparator<RankedBloc<DominanceStats>> byNameAscending() {
-        return Comparator.comparing(
-            DominanceSortMode::displayNameOrEmpty,
-            String.CASE_INSENSITIVE_ORDER);
-    }
-
-    private static String displayNameOrEmpty(RankedBloc<DominanceStats> bloc) {
-        return bloc.displayName() == null ? "" : bloc.displayName();
+        return BlocSortModeComposer.assembleComparator(metric, CANONICAL_METRIC_CHAIN, direction);
     }
 }

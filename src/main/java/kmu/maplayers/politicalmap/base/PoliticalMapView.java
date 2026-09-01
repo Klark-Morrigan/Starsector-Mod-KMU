@@ -72,11 +72,10 @@ public interface PoliticalMapView {
      * without naming any concrete view - each view declares its own fingerprint.
      *
      * <p>The board arrives as an argument because a view is a stateless strategy every sector's
-     * machinery shares, while the counters it folds are one sector's: a view reading an ambient
-     * board would answer one sector's ask off another sector's revisions, which is a wrong number
-     * rather than a stale one - the cells stay drawn as they were and no signal can ever move the
-     * token that would rebuild them. Both callers already hold the installation they are asking
-     * for, so the board is named at the call rather than resolved again here.
+     * machinery shares, while the counters it folds are one sector's: a view resolving a board of
+     * its own would answer one sector's ask off another sector's revisions, which is a wrong number
+     * rather than a stale one - the drawing stands as it was and no signal can move the token that
+     * would rebuild it.
      *
      * @param board the refresh board of the sector this ask is about, whose revisions the view
      *              folds

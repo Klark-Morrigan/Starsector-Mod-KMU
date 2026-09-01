@@ -150,6 +150,11 @@ on without naming either. Factions and Alliances are painted by the same contest
 which is the Spotlight targets column above. A view painted by another mechanic implements the seam
 directly and pairs its own list with its own vocabulary rather than widening theirs.
 
+A vocabulary states only its numbers and the order ties break down them; `BlocSortModeComposer` lays
+that declaration out into a ranking - the chosen metric first, the rest of the chain behind it, then
+the name and the bloc id - so the numbers stay one layer's while the shape of the ordering, and the
+tail that keeps a fully-level pair from reshuffling, are the same under every view.
+
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
 faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what

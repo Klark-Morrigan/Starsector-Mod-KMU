@@ -214,7 +214,7 @@ final class PoliticalMapViewTest {
             // would not notice.
             var sectorMock = mock(SectorAPI.class);
             var viewFake = new PoliticalMapViewFake(Map.of("pirates", "Pirates"));
-            var rating = new HazardRating(4);
+            var rating = new HazardRating(4, 1);
 
             assertThat(viewFake.buildBlocPickerRead(
                     sectorMock,

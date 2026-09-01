@@ -92,9 +92,6 @@ public final class ClaimsView implements PoliticalMapView {
         // economy, which the shared economy revision already repaints on. A live fingerprint for
         // explicit claim-flag flips is a later concern; until then a flag-only claim change waits for
         // the next economy rebuild.
-        //
-        // Read off the board the caller named, so the alliance revision folded here is the one raised
-        // in the sector whose cells are being asked about.
         return Fingerprints.compute(
             () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
     }
