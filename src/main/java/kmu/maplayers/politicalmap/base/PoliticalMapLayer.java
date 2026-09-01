@@ -72,42 +72,7 @@ public final class PoliticalMapLayer implements MapLayer {
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
 
         if (selectedView != null) {
-
-            // The stored column count, resolved to the default (one column) when a save has never
-            // picked one, so the list always lays out under a live count.
-            var columns = ColumnSelectionBinder.resolveStoredColumns();
-            var viewId = selectedView.getId();
-
-            // The picker list is one sector's - a walk of that sector's economy, memoised against
-            // that sector's revisions - so it is held by the machinery installed on the sector this
-            // sidebar is drawn over. The sector is read from the running game here because a body
-            // build is an adapter onto a vanilla screen and is handed nothing: the map and intel
-            // screens both show the sector the player is in.
-            var blocCache = SelectableBlocCache.resolveBlocCacheIn(
-                MapLayerInstallations.resolveInstallationFor(Global.getSector()));
-
-            // The picker is the selected view's own - its selectable blocs under the player's live
-            // dominance and visibility settings, bundled with the vocabulary that ranks them, so this
-            // layer names neither the metrics a view's blocs carry nor the modes that sort them and a
-            // view painted by another mechanic needs no edit here. Empty (no present bloc)
-            // contributes no picker. Read through the memo so this per-frame body build reads a cached
-            // list rather than re-walking the economy every frame the map is open.
-            //
-            // KMLib's picker composes the block and the binder ties its picks to this mod's save
-            // slots; what pairs with its sort selector is this layer's to decide, and the political
-            // map pairs it with the filter recede - how the rest of the sector fades behind a
-            // spotlight. It is always shown: a change there simply has no visible effect until a bloc
-            // is spotlighted, so the knobs stay put whether or not a filter is active. It is the same
-            // reusable control the alliances view places under its own caption, here bound to the
-            // filter recede set rather than the non-allied one.
-            controls.addAll(FilterSelectionBinder.buildPicker(
-                viewId,
-                blocCache.resolveBlocPickerRead(selectedView).picker(),
-                columns,
-                RecedeControl.buildControls(
-                    RecedePreferences.FILTER,
-                    KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION))));
-
+            controls.addAll(buildSpotlightControls(selectedView));
             controls.addAll(selectedView.getViewBodyControls());
         }
         return List.copyOf(controls);
@@ -134,5 +99,36 @@ public final class PoliticalMapLayer implements MapLayer {
         return installation.resolveMachinery(
             PoliticalMapLayerRenderer.class,
             () -> PoliticalMapLayerRenderer.createForLiveScreen(installation));
+    }
+
+    // The spotlight picker for the selected view: its selectable blocs under the player's live
+    // dominance and visibility settings, bundled with the vocabulary that ranks them, so this layer
+    // names neither the metrics a view's blocs carry nor the modes that sort them and a view painted
+    // by another mechanic needs no edit here. Empty (no present bloc) contributes no picker.
+    //
+    // KMLib's picker composes the block and the binder ties its picks to this mod's save slots; what
+    // pairs with its sort selector is this layer's to decide, and the political map pairs it with
+    // the filter recede - how the rest of the sector fades behind a spotlight. It is always shown: a
+    // change there simply has no visible effect until a bloc is spotlighted, so the knobs stay put
+    // whether or not a filter is active. It is the same reusable control the alliances view places
+    // under its own caption, here bound to the filter recede set rather than the non-allied one.
+    private static List<ControlSpec> buildSpotlightControls(PoliticalMapView selectedView) {
+
+        // The list is read through the memo the sector's installed machinery holds, so this
+        // per-frame body build reads a cached list rather than re-walking the economy every frame
+        // the map is open. Which sector that is has to be read from the running game here: a body
+        // build is an adapter onto a vanilla screen, which hands it none.
+        var blocCache = SelectableBlocCache.resolveBlocCacheIn(
+            MapLayerInstallations.resolveInstallationFor(Global.getSector()));
+
+        return FilterSelectionBinder.buildPicker(
+            selectedView.getId(),
+            blocCache.resolveBlocPickerRead(selectedView).picker(),
+            // The stored column count, resolved to the default (one column) when a save has never
+            // picked one, so the list always lays out under a live count.
+            ColumnSelectionBinder.resolveStoredColumns(),
+            RecedeControl.buildControls(
+                RecedePreferences.FILTER,
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
     }
 }

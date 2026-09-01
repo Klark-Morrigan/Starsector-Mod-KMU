@@ -259,7 +259,15 @@ about what the overlay means.
   inside, and the shade its fill draws in. `HoverHighlightRenderer` burns the halo and the wash over
   a resolved pair, which is what lets a caller that lights a whole set of cells in one bloc's own
   colour reuse the pass whole rather than re-deriving it; the cursor's own entry there is the one
-  part that composes the two resolves. Both seams extend `PaintedCellShapes`, the frame's cell
+  part that composes the two resolves. `PreviewHighlightGeometry` is that caller's half: a set of
+  cells resolved elsewhere, lit over the map already painting without a rebuild, a refilter, a
+  re-clustering or a border re-trace. It joins its cells only where the map joins them - grouped by
+  which frontier encloses each, so one cluster's lit cells wash as one shape while two in rival
+  clusters keep the seam the map draws - and its halo traces those joined outlines rather than any
+  cluster frontier, since what a lit set says is the reach of the set. Both geometries settle
+  "which cluster is this cell in" and "this cell clamped to that cluster's frontier" through the
+  one `CellFrontierGeometry`, so a cell reads the same under the cursor as it does inside a lit
+  set. Both seams extend `PaintedCellShapes`, the frame's cell
   shapes themselves, so the halo can only trace an outline the cursor was actually hit-tested
   against - one supplier, not two that must agree. `MapHoverGates` is the settings side: hovering is
   switched at three tiers - a master over the whole map, a pair under it for the effects and the box

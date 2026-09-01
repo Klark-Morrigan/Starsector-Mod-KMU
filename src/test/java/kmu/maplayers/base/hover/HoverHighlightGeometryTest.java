@@ -1,13 +1,14 @@
 package kmu.maplayers.base.hover;
 
-import kmu.maplayers.base.theme.ElementPaintSelection;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.Map;
+
+import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquare;
+import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquareRun;
+import static kmu.maplayers.base.hover.HighlightShapeFixtures.computeTotalTriangleArea;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -78,6 +79,25 @@ final class HoverHighlightGeometryTest {
             var sourceFake = readSourceOf(
                 buildSquare(410, 410, 80),
                 List.of(outerCluster, enclaveInsideRival));
+
+            var highlight = new HoverHighlightGeometry()
+                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
+
+            assertThat(highlight.glowLoops())
+                .containsExactly(enclaveInsideRival);
+        }
+
+        @Test
+        void nested_loops_resolve_the_innermost_one_whichever_order_they_arrive_in() {
+            // The same nesting with the tight loop met first: a group hands its loops over in
+            // whatever order it traced them, so the rule has to be "the smallest that encloses"
+            // rather than "the last one found to".
+            var outerCluster = buildSquareRun(0, 0, 1000);
+            var enclaveInsideRival = buildSquareRun(400, 400, 100);
+
+            var sourceFake = readSourceOf(
+                buildSquare(410, 410, 80),
+                List.of(enclaveInsideRival, outerCluster));
 
             var highlight = new HoverHighlightGeometry()
                 .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
@@ -253,7 +273,9 @@ final class HoverHighlightGeometryTest {
         return new MapHover(cellId, List.of(cellId));
     }
 
-    // A source answering for the one hovered cell every case here uses.
+    // A source answering for the one hovered cell every case here uses, handing back the very
+    // instances it was built with so the memo's identity comparison is exercised as a real
+    // layer's answers would exercise it.
     private static HoverHighlightSourceFake readSourceOf(
             List<double[]> paintedExtent,
             List<float[]> frontierLoops) {
@@ -263,70 +285,4 @@ final class HoverHighlightGeometryTest {
             Map.of(CELL_ID, frontierLoops));
     }
 
-    // An axis-aligned square, counter-clockwise, spanning [minX, minX + side] x
-    // [minY, minY + side] - a stand-in cell shape or traced loop, which the search reads only
-    // as an area that does or does not enclose a point.
-    private static List<double[]> buildSquare(double minX, double minY, double side) {
-
-        return List.of(
-            new double[] {minX, minY},
-            new double[] {minX + side, minY},
-            new double[] {minX + side, minY + side},
-            new double[] {minX, minY + side});
-    }
-
-    // Sums the unsigned area of every triangle in a flat [x, y, x, y, ...] soup, six floats per
-    // triangle - the area the wash actually covers, for asserting the clip clamped it.
-    private static double computeTotalTriangleArea(float[] triangles) {
-
-        var floatsPerTriangle = 6;
-        var total = 0.0;
-
-        for (var i = 0; i + floatsPerTriangle <= triangles.length; i += floatsPerTriangle) {
-
-            var ax = triangles[i];
-            var ay = triangles[i + 1];
-            var bx = triangles[i + 2];
-            var by = triangles[i + 3];
-            var cx = triangles[i + 4];
-            var cy = triangles[i + 5];
-
-            total += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2.0;
-        }
-        return total;
-    }
-
-    // The same square as the baked [x, y, x, y, ...] run a border loop is kept in.
-    private static float[] buildSquareRun(float minX, float minY, float side) {
-
-        return new float[] {
-            minX, minY,
-            minX + side, minY,
-            minX + side, minY + side,
-            minX, minY + side};
-    }
-
-    // A layer's answers as two plain maps, handing back the very instances it was built with so
-    // the memo's identity comparison is exercised exactly as a real layer's would be. The cell
-    // extents come off the inherited read over the shapes map, the way a real layer's do. The
-    // highlight colour is a constant: the geometry never reads it.
-    private record HoverHighlightSourceFake(
-        Map<String, List<double[]>> fillPolygonByCellId,
-        Map<String, List<float[]>> frontierLoopsByCellId) implements HoverHighlightSource {
-
-        @Override
-        public Map<String, List<double[]>> getFillPolygonByCellId() {
-            return fillPolygonByCellId;
-        }
-
-        @Override
-        public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
-            return frontierLoopsByCellId.getOrDefault(cellId, List.of());
-        }
-
-        @Override
-        public Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection) {
-            return Color.RED;
-        }
-    }
 }

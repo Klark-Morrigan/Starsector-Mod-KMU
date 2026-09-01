@@ -1,30 +1,15 @@
 package kmu.maplayers.base.hover;
 
-import kmlib.math.geometry.Points;
-import kmlib.math.geometry.PolygonRegions;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 
 import java.util.List;
 
 /**
- * Works out what a hover lights up: which of the candidate border loops encloses the hovered
- * cell, and that cell's own painted extent as fillable geometry.
- *
- * <p>The loop has to be searched for because a map bakes its borders per cluster group, not per
- * cluster: a group carries one loop for each of its disjoint clusters and one for each enclave
- * bitten out of them, with nothing naming which is which. The cluster the cursor is in is
- * therefore identified geometrically - by which loop contains the hovered cell - rather than by
- * an index, which would mean keying the whole build per cluster to answer a question only the
- * hover asks.
- *
- * <p>Two details make that search exact. The cell is represented by the average of its
- * vertices rather than by the cursor itself: a cursor a pixel inside the cell's edge can fall
- * outside a frontier whose corners rounding has cut inward, which would drop the halo just as
- * the player pushes into a corner. And where loops nest - one of a group's clusters walled
- * inside a rival, which itself sits inside another cluster of that same group - three loops
- * contain the point, so the smallest one wins, which is the enclave's own frontier rather than
- * the distant one's.
+ * Works out what the cursor's hover lights up: the frontier of the cluster the hovered cell sits
+ * in, and that cell's own painted extent as fillable geometry, both resolved through
+ * {@link CellFrontierGeometry} so one lit cell reads as part of the same cluster a whole lit set
+ * would.
  *
  * <p>Both answers are memoised against the hovered cell and the geometry behind it, since
  * they change only when the cursor crosses into another cell or a rebuild replaces that
@@ -84,68 +69,22 @@ public final class HoverHighlightGeometry {
             List<float[]> frontierLoops,
             List<double[]> paintedExtent) {
 
-        var enclosingLoop = findEnclosingLoop(frontierLoops, paintedExtent);
+        var enclosingLoop = CellFrontierGeometry.findEnclosingLoop(frontierLoops, paintedExtent);
 
         // Resolve the wash to boundary loops once, then fill and trace both come off it - so the
         // wash and its outline are the same cluster by construction (as a cluster's fill and its
         // border already are), and the clip runs a single tessellation rather than one per half.
-        var washLoops = clipCellToFrontier(paintedExtent, enclosingLoop);
+        var washLoops = CellFrontierGeometry.clipCellsToFrontier(
+            List.of(paintedExtent),
+            enclosingLoop);
+
+        // The halo traces the cluster's own frontier rather than the washed cell: what the cursor
+        // is telling the player is which cluster it has landed in.
         return new HoverHighlight(
             enclosingLoop == null
                 ? List.of()
                 : List.of(enclosingLoop),
             PolygonTessellator.tessellateToTriangles(washLoops),
-            washLoops
-                .stream()
-                .map(GlVertexRuns::flattenVertices)
-                .toList());
+            GlVertexRuns.flattenLoops(washLoops));
     }
-
-    // The hovered cell as the boundary loops its wash fills and traces, clamped to the frontier it
-    // sits inside so neither spills past the rounded border - it stops at the exact line the border
-    // strokes instead of keeping the sharp mitered corner the border's rounding cut away, the same
-    // clip a cluster's own fill applies to itself. A cell no loop encloses has no frontier (null
-    // loop), so it resolves to the cell's own boundary. The clip can bite the extent into more than
-    // one loop, so it returns however many the overlap has.
-    private static List<List<double[]>> clipCellToFrontier(
-            List<double[]> paintedExtent,
-            float[] enclosingLoop) {
-
-        var cell = List.of(paintedExtent);
-        if (enclosingLoop == null) {
-            return PolygonTessellator.tessellateToBoundaryLoops(cell);
-        }
-        return PolygonTessellator.tessellateIntersectionToBoundaryLoops(
-            cell,
-            List.of(GlVertexRuns.unflattenVertices(enclosingLoop)));
-    }
-
-    // The hovered cluster's frontier: the smallest of the candidate loops that encloses the cell,
-    // or null when the cell has no candidates or none of them encloses it. Smallest rather than
-    // first because nested loops all enclose the point and only the innermost is the cell's own
-    // cluster; area is compared by magnitude since a hole ring winds against its outer ring.
-    private static float[] findEnclosingLoop(
-            List<float[]> frontierLoops,
-            List<double[]> paintedExtent) {
-
-        // A point standing in for the whole cell, well clear of its edges: the mean of its
-        // vertices. Not the cursor, which can rest a pixel inside an edge.
-        var point = Points.computeMean(paintedExtent);
-        float[] smallestLoop = null;
-        var smallestArea = Double.MAX_VALUE;
-
-        for (var loop : frontierLoops) {
-            var ring = GlVertexRuns.unflattenVertices(loop);
-            if (!PolygonRegions.isPointInsideRing(ring, point[0], point[1])) {
-                continue;
-            }
-            var area = Math.abs(PolygonRegions.computeSignedArea(ring));
-            if (area < smallestArea) {
-                smallestArea = area;
-                smallestLoop = loop;
-            }
-        }
-        return smallestLoop;
-    }
-
 }
