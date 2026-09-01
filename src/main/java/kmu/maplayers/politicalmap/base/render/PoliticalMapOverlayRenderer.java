@@ -137,7 +137,7 @@ final class PoliticalMapOverlayRenderer {
     // wrapped as the highlight's source, so the framework's pass asks this layer what the cursor is
     // on rather than reading the political model itself.
     private void renderHoverHighlight(PoliticalMapCache cache, float factor, float alphaMult) {
-        hoverHighlightRenderer.renderOnMap(
+        hoverHighlightRenderer.renderCursorHighlightOnMap(
             new PoliticalMapHoverHighlightSource(cache.getTerritories()),
             cache.getTerritories().getGlobalStyle().hoverHighlight(),
             MapHoverState.resolveLiveSectorHoverState().getHover(),

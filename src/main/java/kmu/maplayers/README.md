@@ -253,10 +253,13 @@ about what the overlay means.
   What that tick sounds like is `MapHoverCues` beside it - the map's own sample and the player's own
   level, read live like the switches are, and no cue at all once that level reaches the bottom of
   its slider. The cell rather than the cluster is what the tick is keyed by, so it answers the same
-  change the hover box does. `HoverHighlightGeometry` resolves the highlight geometry and
-  `HoverHighlightRenderer` burns the halo and the wash, both over a `HoverHighlightSource` - the two
+  change the hover box does. `HoverHighlightGeometry` resolves what lights up and
+  `HoverHighlightColour` the shade it lights up in, both over a `HoverHighlightSource` - the two
   questions only the layer that owns the clusters can answer: the loops the hovered cell might sit
-  inside, and the shade its fill draws in. Both seams extend `PaintedCellShapes`, the frame's cell
+  inside, and the shade its fill draws in. `HoverHighlightRenderer` burns the halo and the wash over
+  a resolved pair, which is what lets a caller that lights a whole set of cells in one bloc's own
+  colour reuse the pass whole rather than re-deriving it; the cursor's own entry there is the one
+  part that composes the two resolves. Both seams extend `PaintedCellShapes`, the frame's cell
   shapes themselves, so the halo can only trace an outline the cursor was actually hit-tested
   against - one supplier, not two that must agree. `MapHoverGates` is the settings side: hovering is
   switched at three tiers - a master over the whole map, a pair under it for the effects and the box

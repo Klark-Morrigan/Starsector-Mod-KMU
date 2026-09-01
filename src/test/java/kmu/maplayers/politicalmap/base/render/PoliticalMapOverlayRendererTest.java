@@ -186,7 +186,7 @@ final class PoliticalMapOverlayRendererTest {
                     ClusterAnchorRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
 
                 verify(hoverRendererConstructionMock.constructed().get(0))
-                    .renderOnMap(any(), any(), any(), anyFloat(), anyFloat());
+                    .renderCursorHighlightOnMap(any(), any(), any(), anyFloat(), anyFloat());
             }
         }
 
@@ -432,7 +432,7 @@ final class PoliticalMapOverlayRendererTest {
                     ClusterAnchorRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
 
                 verify(hoverRendererConstructionMock.constructed().get(0))
-                    .renderOnMap(any(), any(), any(), anyFloat(), anyFloat());
+                    .renderCursorHighlightOnMap(any(), any(), any(), anyFloat(), anyFloat());
             }
         }
 

@@ -27,12 +27,15 @@ import static org.assertj.core.api.Assertions.within;
  * involved in which loop it picks.
  */
 final class HoverHighlightGeometryTest {
+
     private static final String CELL_ID = "A";
 
     @Nested
     class ResolveHighlightFor {
+
         @Test
         void a_hovered_cell_resolves_the_loop_that_encloses_it() {
+
             var loop = buildSquareRun(0, 0, 100);
 
             var sourceFake = readSourceOf(
@@ -127,9 +130,12 @@ final class HoverHighlightGeometryTest {
             var highlight = new HoverHighlightGeometry()
                 .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(highlight.glowLoops()).isEmpty();
-            assertThat(highlight.washOutline()).isNotEmpty();
-            assertThat(highlight.washTriangles()).isNotEmpty();
+            assertThat(highlight.glowLoops())
+                .isEmpty();
+            assertThat(highlight.washOutline())
+                .isNotEmpty();
+            assertThat(highlight.washTriangles())
+                .isNotEmpty();
         }
 
         @Test
@@ -143,12 +149,15 @@ final class HoverHighlightGeometryTest {
             var highlight = new HoverHighlightGeometry()
                 .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(highlight.glowLoops()).isEmpty();
-            assertThat(highlight.washOutline()).isNotEmpty();
+            assertThat(highlight.glowLoops())
+                .isEmpty();
+            assertThat(highlight.washOutline())
+                .isNotEmpty();
         }
 
         @Test
         void nothing_hovered_lights_nothing_up() {
+
             var sourceFake = readSourceOf(
                 buildSquare(10, 10, 80),
                 List.of(buildSquareRun(0, 0, 100)));
@@ -156,11 +165,13 @@ final class HoverHighlightGeometryTest {
             var highlight = new HoverHighlightGeometry()
                 .resolveHighlightFor(sourceFake, MapHover.NONE);
 
-            assertThat(highlight.isEmpty()).isTrue();
+            assertThat(highlight.isEmpty())
+                .isTrue();
         }
 
         @Test
         void a_hovered_cell_with_no_drawable_shape_lights_nothing_up() {
+
             var sourceFake = readSourceOf(
                 List.of(),
                 List.of(buildSquareRun(0, 0, 100)));
@@ -168,7 +179,8 @@ final class HoverHighlightGeometryTest {
             var highlight = new HoverHighlightGeometry()
                 .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(highlight.isEmpty()).isTrue();
+            assertThat(highlight.isEmpty())
+                .isTrue();
         }
 
         @Test
@@ -184,7 +196,8 @@ final class HoverHighlightGeometryTest {
             var first = geometry.resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
             var second = geometry.resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
 
-            assertThat(second).isSameAs(first);
+            assertThat(second)
+                .isSameAs(first);
         }
 
         @Test
@@ -195,6 +208,7 @@ final class HoverHighlightGeometryTest {
             var paintedExtent = buildSquare(10, 10, 80);
             var frontierLoops = List.of(buildSquareRun(0, 0, 100));
             var geometry = new HoverHighlightGeometry();
+
             var first = geometry.resolveHighlightFor(
                 readSourceOf(paintedExtent, frontierLoops),
                 hoverOf(CELL_ID));
@@ -203,12 +217,15 @@ final class HoverHighlightGeometryTest {
                 readSourceOf(paintedExtent, frontierLoops),
                 hoverOf(CELL_ID));
 
-            assertThat(second).isSameAs(first);
+            assertThat(second)
+                .isSameAs(first);
         }
 
         @Test
         void a_rebuilt_cell_resolves_again_rather_than_tracing_a_shape_that_is_gone() {
+
             var geometry = new HoverHighlightGeometry();
+
             var first = geometry.resolveHighlightFor(
                 readSourceOf(
                     buildSquare(10, 10, 80),
@@ -218,6 +235,7 @@ final class HoverHighlightGeometryTest {
             // An incremental re-shape replaces the cell's extent and its cluster's loops; the
             // retained answer describes geometry the map no longer paints.
             var reshapedLoop = buildSquareRun(0, 0, 60);
+
             var second = geometry.resolveHighlightFor(
                 readSourceOf(
                     buildSquare(5, 5, 50),
@@ -239,6 +257,7 @@ final class HoverHighlightGeometryTest {
     private static HoverHighlightSourceFake readSourceOf(
             List<double[]> paintedExtent,
             List<float[]> frontierLoops) {
+
         return new HoverHighlightSourceFake(
             Map.of(CELL_ID, paintedExtent),
             Map.of(CELL_ID, frontierLoops));
@@ -248,6 +267,7 @@ final class HoverHighlightGeometryTest {
     // [minY, minY + side] - a stand-in cell shape or traced loop, which the search reads only
     // as an area that does or does not enclose a point.
     private static List<double[]> buildSquare(double minX, double minY, double side) {
+
         return List.of(
             new double[] {minX, minY},
             new double[] {minX + side, minY},
@@ -258,15 +278,19 @@ final class HoverHighlightGeometryTest {
     // Sums the unsigned area of every triangle in a flat [x, y, x, y, ...] soup, six floats per
     // triangle - the area the wash actually covers, for asserting the clip clamped it.
     private static double computeTotalTriangleArea(float[] triangles) {
+
         var floatsPerTriangle = 6;
         var total = 0.0;
+
         for (var i = 0; i + floatsPerTriangle <= triangles.length; i += floatsPerTriangle) {
+
             var ax = triangles[i];
             var ay = triangles[i + 1];
             var bx = triangles[i + 2];
             var by = triangles[i + 3];
             var cx = triangles[i + 4];
             var cy = triangles[i + 5];
+
             total += Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) / 2.0;
         }
         return total;
@@ -274,6 +298,7 @@ final class HoverHighlightGeometryTest {
 
     // The same square as the baked [x, y, x, y, ...] run a border loop is kept in.
     private static float[] buildSquareRun(float minX, float minY, float side) {
+
         return new float[] {
             minX, minY,
             minX + side, minY,

@@ -16,8 +16,8 @@ import org.lwjgl.opengl.GL11;
 import java.awt.Color;
 
 /**
- * Draws the map's answer to the cursor: a halo blooming off the hovered cluster's frontier
- * and a wash lifting the one cell the cursor is in.
+ * Draws a highlight over the map: a halo blooming off the loops it was handed and a wash
+ * lifting the extents beside them.
  *
  * <p>Both burn additively rather than blending over the map. A halo is layers of the same
  * loop stacked on each other - only additive blending lets those layers accumulate into a
@@ -25,15 +25,19 @@ import java.awt.Color;
  * brightens what is already painted, so adding light to the fill under it reads as the cell
  * lighting up rather than as a second, flatter fill laid over it.
  *
- * <p>Pure GL emission over the geometry {@link HoverHighlightGeometry} resolved and the style
- * the theme baked; nothing here decides what is hovered or reads a setting.
+ * <p>The pass itself is pure GL emission over a resolved highlight, a resolved colour and the
+ * style the theme baked, so what lights up and what it lights up in are the caller's to decide.
+ * The cursor's own entry composes the three - {@link HoverHighlightGeometry} for the shapes and
+ * {@link HoverHighlightColour} for the shade - and is the only part of this that knows a cursor
+ * exists.
  */
 public final class HoverHighlightRenderer {
+
     private final HoverHighlightGeometry geometry = new HoverHighlightGeometry();
 
     /**
-     * Paints the hover highlight for one map frame, or nothing when the cursor is over no
-     * cell.
+     * Paints the cursor's hover highlight for one map frame, or nothing when the cursor is
+     * over no cell.
      *
      * @param source    the active layer's answers about the frame it painted - the hovered
      *                  extent, the loops around it, and the shade its fill draws in
@@ -43,23 +47,48 @@ public final class HoverHighlightRenderer {
      * @param factor    the per-vertex scale the map applies to world coordinates
      * @param alphaMult the map's own fade, applied on top of every element's opacity
      */
-    public void renderOnMap(
+    public void renderCursorHighlightOnMap(
             HoverHighlightSource source,
             HoverHighlightStyle style,
             MapHover hover,
             float factor,
             float alphaMult) {
 
-        var colour = resolveHighlightColour(source, hover, style);
-        // Nothing to paint when the cursor is over no cell (which is also how a disabled highlight
-        // reads, its hover parked upstream) or the map has fully faded at the ends of its zoom
-        // fade - both would emit every run for nothing, so both skip the GL state push rather than
-        // being left to blend away.
-        if (colour == null || alphaMult <= 0f) {
+        var colour = HoverHighlightColour.resolveColourFor(source, hover, style);
+        // Checked here rather than left to the pass's own gate, since it is what says whether the
+        // geometry is worth resolving at all: a null colour is a parked hover or a highlight the
+        // player has switched off, and both stand every frame the map is open.
+        if (colour == null) {
             return;
         }
-        var highlight = geometry.resolveHighlightFor(source, hover);
-        if (highlight.isEmpty()) {
+        renderHighlightOnMap(
+            geometry.resolveHighlightFor(source, hover),
+            colour,
+            style,
+            factor,
+            alphaMult);
+    }
+
+    /**
+     * Paints one resolved highlight, whatever resolved it.
+     *
+     * @param highlight the loops to bloom off and the extents to wash
+     * @param colour    the single shade both burn in
+     * @param style     the tier owning the shape of the halo and the weight of the wash
+     * @param factor    the per-vertex scale the map applies to world coordinates
+     * @param alphaMult the map's own fade, applied on top of every element's opacity
+     */
+    public static void renderHighlightOnMap(
+            HoverHighlight highlight,
+            Color colour,
+            HoverHighlightStyle style,
+            float factor,
+            float alphaMult) {
+
+        // Nothing to paint when the highlight resolved no shape, no colour was resolved for it, or
+        // the map has fully faded at the ends of its zoom fade - each would emit every run for
+        // nothing, so each skips the GL state push rather than being left to blend away.
+        if (highlight.isEmpty() || colour == null || alphaMult <= 0f) {
             return;
         }
         // Additive and smoothed: the halo is layers of one loop stacked on each other, which only
@@ -74,23 +103,6 @@ public final class HoverHighlightRenderer {
                 drawGlow(highlight, style.glow(), colour, factor, alphaMult);
                 drawWash(highlight, style.wash(), colour, factor, alphaMult);
             });
-    }
-
-    // The colour the whole highlight paints in: the shade of the cell under the cursor, which
-    // only the layer that owns that cell can name. Null when the cursor is over nothing (a
-    // parked hover, including when the highlight is disabled) or the selection paints nothing,
-    // so the caller skips the pass.
-    private static Color resolveHighlightColour(
-            HoverHighlightSource source,
-            MapHover hover,
-            HoverHighlightStyle style) {
-
-        if (!hover.isHovering()) {
-            return null;
-        }
-        return source.resolveHighlightColourOf(
-            hover.hoveredSystemId(),
-            style.colour());
     }
 
     // Strokes the hovered frontier once per layer, so the additive layers pile into a halo;
