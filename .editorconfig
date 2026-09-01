@@ -1,0 +1,45 @@
+# Editor-side whitespace conventions, so the lint gates in Common-Java never
+# have to catch what the editor could have avoided. The one that motivated this
+# file is enforceNoTrailingWhitespace: nearly every violation is a blank line
+# left carrying the indent of the line above, produced by pressing Enter rather
+# than by writing anything.
+#
+# EditorConfig has no include mechanism, so this file is duplicated verbatim per
+# repo rather than shared from a sibling checkout the way the Gradle scripts
+# are. It has to live in the repo to travel with a clone; .vscode/ is ignored
+# here, so editor settings are not an alternative. root = true also keeps a
+# stray .editorconfig in a parent directory from reaching this tree.
+#
+# Values match the Eclipse formatter Spotless drives
+# (Common-Java/gradle/eclipse-formatter.xml): spaces, width 4, 120 columns.
+root = true
+
+[*]
+charset = utf-8
+# LF everywhere, matching both what is on disk and the .gitattributes pins.
+# Left unset, a Windows editor writes CRLF into new files while every existing
+# one is LF, and nothing here normalises line endings on commit.
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+max_line_length = 120
+trim_trailing_whitespace = true
+
+# Two trailing spaces are a hard line break in Markdown, so trimming them
+# rewrites the rendered output rather than tidying it.
+[*.md]
+trim_trailing_whitespace = false
+
+# Game data the engine parses: a trailing space belongs to the last column's
+# value, so trimming would edit data rather than formatting.
+[*.csv]
+trim_trailing_whitespace = false
+
+# yamllint's indentation, and what the workflows are already written to.
+[*.{yml,yaml}]
+indent_size = 2
+
+# cmd.exe requires CRLF in batch files; the .gitattributes pin says the same.
+[*.{bat,cmd}]
+end_of_line = crlf
