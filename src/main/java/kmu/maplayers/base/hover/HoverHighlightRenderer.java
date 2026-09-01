@@ -105,8 +105,8 @@ public final class HoverHighlightRenderer {
             });
     }
 
-    // Strokes the hovered frontier once per layer, so the additive layers pile into a halo;
-    // each layer's width and alpha come off the style, which owns the shape of the stack.
+    // Strokes every loop the highlight carries once per layer, so the additive layers pile into a
+    // halo; each layer's width and alpha come off the style, which owns the shape of the stack.
     private static void drawGlow(
             HoverHighlight highlight,
             HoverGlowStyle style,
@@ -138,10 +138,10 @@ public final class HoverHighlightRenderer {
         }
     }
 
-    // Lifts the hovered cell: its whole painted extent brightened, then its boundary traced all
-    // the way round. The trace is what names an interior cell - one walled in by its own cluster
-    // draws no border of its own, so without it a wash inside a same-coloured cluster would
-    // have no edge to read.
+    // Lifts what the highlight covers: its whole extent brightened, then its boundary traced all
+    // the way round. The trace is what names a lit cell inside a cluster - one walled in by its
+    // own neighbours draws no border of its own, so without it a wash inside a same-coloured
+    // cluster would have no edge to read.
     private static void drawWash(
             HoverHighlight highlight,
             HoverWashStyle style,

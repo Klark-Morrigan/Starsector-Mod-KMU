@@ -9,9 +9,10 @@ import java.awt.Color;
  * that owns that cell can name.
  *
  * <p>Its own resolve beside {@link HoverHighlightGeometry} rather than a step inside the paint
- * pass, because the pass paints a colour it is handed: what a highlight lights up and what it
- * lights up in are two answers, and a caller lighting a set of cells that share no single owner
- * has its own answer to the second while reusing the pass whole.
+ * pass: what a highlight lights up and what it lights up in are two answers, and the pass burns
+ * the colour it is handed rather than deciding one. Keeping them apart is what leaves this free
+ * to be the cursor's own rule - the shade of the cell the pointer is on - without that rule
+ * being the pass's.
  */
 public final class HoverHighlightColour {
 
