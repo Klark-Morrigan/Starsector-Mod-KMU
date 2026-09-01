@@ -57,7 +57,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * taste: the hover tiers ship on so that switching them is the player's move and not the file's, the
  * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
  * nothing beyond it, the unfinished feature ships off so that nothing the mod does not yet stand
- * behind runs unasked, and
+ * behind runs unasked, the escape hatch over the vanilla filter row ships on so that the control it
+ * gates is there before anyone needs it, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
  * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
  * that one table's business; that the two spellings of it agree is every Boolean row's, so the
@@ -134,6 +135,15 @@ final class LunaSettingsCsvIntegrationTest {
     // so on the settings screen.
     private static final String UNFINISHED_FEATURE_FIELD_ID =
         "kmu_features_toggles_isMarketConditionManagerEnabled";
+
+    // The escape hatch over the one widget the mod writes into that is not its own, held to shipping
+    // on. Its own check for the reason the row above has one: what it pins is a decision rather than
+    // two spellings of a value agreeing. Shipped off, neither map screen is given the control that
+    // shows and hides the layers, and a screen with no control holds its layers shown - which leaves
+    // a fresh player a feature that draws and cannot be put away, indistinguishable from the
+    // attachment having broken. A hatch is reached for after something misbehaves, so it ships open.
+    private static final String FILTER_ROW_TOGGLE_FIELD_ID =
+        "kmu_map_dev_mapUi_filters_mapLayersToggle_isEnabled";
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
@@ -416,6 +426,24 @@ final class LunaSettingsCsvIntegrationTest {
                     UNFINISHED_FEATURE_FIELD_ID,
                     SETTINGS_CSV)
                 .isEqualTo(BOOLEAN_OFF_VALUE);
+        }
+    }
+
+    @Nested
+    class FilterRowToggleDefaults {
+
+        @Test
+        void theFilterRowToggleRowShipsSwitchedOn() {
+
+            assertThat(readColumn(FILTER_ROW_TOGGLE_FIELD_ID, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: shipped off, neither map screen gets the control that shows"
+                        + " and hides the layers, and no screen with no control hides them - so the"
+                        + " feature draws with no way to put it away, which reads as the attachment"
+                        + " having broken rather than as a switch nobody has turned on",
+                    FILTER_ROW_TOGGLE_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo(BOOLEAN_ON_VALUE);
         }
     }
 

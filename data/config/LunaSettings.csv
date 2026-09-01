@@ -191,6 +191,9 @@ kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_dev_mapUi_filters_mapLayersToggle_header,,,,Vanilla filter row,,Header,Vanilla filter row,,,,,,,,,Map - Dev
+kmu_map_dev_mapUi_filters_mapLayersToggle_isEnabled,,,,Add map layer toggle to the filter row,,Boolean,TRUE,,,,"Dev: whether the map layers get a tick box of their own in the vanilla filter row - the row the sector map's Starscape, Fuel range and Names toggles sit in, and the shorter band at the top of the intel screen's map. On adds the box to both rows wherever there is room left for it, and it is what shows and hides everything the map layers draw on that screen. Off leaves both rows exactly as the game builds them; with no box on either screen to switch the layers off, they stay shown. This says nothing about whether the map layers are installed - that is the Features tab's switch. [Default: true].",,,,,Map - Dev
+,,,,,,,,,,,,,,,,
 kmu_map_dev_cellGeometry_header,,,,Cell geometry,,Header,Cell geometry,,,,,,,,,Map - Dev
 kmu_map_dev_cellGeometry_radius,,,,Territory reach,,Double,4000,,,,"Dev: how far each system's coloured territory extends into empty space, in world units, before its frontier edge closes it off. Higher lets each system claim more open space - distant systems' territories grow until they meet and merge; lower pulls every territory in tight around its own systems. [Default: 4000].",,,500,12000,Map - Dev
 kmu_map_dev_cellGeometry_boundSegments,,,,Cell frontier segments,,Int,48,,,,"Dev: sides of the polygon that rounds each system cell's outer frontier - its reach into empty space. Higher is smoother but adds a vertex per segment to every frontier cell, which can cost map FPS; lower trades a faceted frontier for fewer vertices. [Default: 48].",,,8,128,Map - Dev

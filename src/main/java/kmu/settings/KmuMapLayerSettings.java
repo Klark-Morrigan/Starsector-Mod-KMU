@@ -21,6 +21,13 @@ public final class KmuMapLayerSettings {
     private static final String MAP_LAYER_HIDE_FADE_SECONDS_FIELD =
         "kmu_map_visuals_layers_hideFadeSeconds";
 
+    // Whether the control that drives the fade above is put where the player looks for it. A dev knob
+    // rather than an appearance one: what it governs is a reach into another party's widget, so it is
+    // the escape hatch for the case where that reach misbehaves, and it is diagnostics that a player
+    // wants a way to leave the vanilla row untouched.
+    private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
+        "kmu_map_dev_mapUi_filters_mapLayersToggle_isEnabled";
+
     private static final String SIDEBAR_PADDING_TOP_FIELD =
         "kmu_map_visuals_sidebar_paddingTop";
     private static final String SIDEBAR_PADDING_LEFT_FIELD =
@@ -225,6 +232,13 @@ public final class KmuMapLayerSettings {
     // value, so there is no unset state a dynamic default could fall back from, and a sentinel for
     // "follow the other slider" would collide with 0 already meaning snap.
     private static final float DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS = 0.25f;
+
+    // On, and for the reason the hover tiers above ship on rather than the reason the visibility
+    // overrides ship off: switched off there is no control on either screen, and a screen with no
+    // control holds its layers shown - so a player who never opens the settings would be left with a
+    // feature that draws and cannot be put away, which reads as the button having gone missing. An
+    // escape hatch is reached for after something misbehaves, so it ships open.
+    private static final boolean DEFAULT_FILTER_ROW_TOGGLE_ENABLED = true;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette
     // whatever faction the player flies, so a panel following the faction is the one thing on the
@@ -870,6 +884,19 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readFloat(
             MAP_LAYER_HIDE_FADE_SECONDS_FIELD,
             DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS);
+    }
+
+    /**
+     * @return whether the tick box that shows and hides the map layers is added to the vanilla map
+     *         filter row on either map screen; on by default. Off makes no attempt on either screen,
+     *         so the vanilla row is left exactly as the game builds it - and since a screen with no
+     *         control of its own never hides its layers, they stay shown whatever the save holds.
+     *         Nothing to do with whether the map layers are installed at all
+     */
+    public static boolean getMapFilterRowToggleEnabled() {
+        return KmuLunaSettings.readBoolean(
+            FILTER_ROW_TOGGLE_ENABLED_FIELD,
+            DEFAULT_FILTER_ROW_TOGGLE_ENABLED);
     }
 
     /**
