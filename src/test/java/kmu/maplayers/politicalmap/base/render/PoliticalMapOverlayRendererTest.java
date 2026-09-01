@@ -1,6 +1,8 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
+import kmu.maplayers.base.hover.MapHover;
+import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
@@ -55,7 +57,16 @@ final class PoliticalMapOverlayRendererTest {
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
 
-    private final PoliticalMapOverlayRenderer overlayRenderer = new PoliticalMapOverlayRenderer();
+    // What the cursor was resolved to on this sector's map, for the case about which holder the
+    // highlight traces.
+    private static final MapHover HOVERED_CELL = new MapHover("system_id", List.of("system_id"));
+
+    // The hover holder of the sector this compositor's draw lists belong to. Made per case, since a
+    // compositor is built with the holder of its own installed machinery.
+    private final MapHoverState hoverState = new MapHoverState();
+
+    private final PoliticalMapOverlayRenderer overlayRenderer =
+        new PoliticalMapOverlayRenderer(hoverState);
 
     @Nested
     class RenderOnMap {
@@ -182,7 +193,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 // Built inside the construction mock, since the highlight renderer is a field this
                 // compositor creates for itself - there is no seam to inject one through.
-                new PoliticalMapOverlayRenderer().renderOnMap(
+                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -193,6 +204,40 @@ final class PoliticalMapOverlayRendererTest {
 
                 verify(hoverRendererConstructionMock.constructed().get(0))
                     .renderCursorHighlightOnMap(any(), any(), any(), anyFloat(), anyFloat());
+            }
+        }
+
+        @Test
+        void renderOnMapLightsTheCellItsOwnHoverHolderNames() {
+            // The highlight brightens a cell the cache's draw lists cut, so the hover it traces has
+            // to be the one the pass over those very lists published. Read off whichever sector was
+            // running instead, this would wash a cell the sector it is compositing never drew -
+            // nothing forbidding two sectors from holding a system under the same id.
+            hoverState.publishHover(HOVERED_CELL);
+
+            try (var hoverRendererConstructionMock = mockConstruction(HoverHighlightRenderer.class);
+                    var anchorRendererMock = mockStatic(ClusterAnchorRenderer.class);
+                    var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var drawOrderSettingsMock = mockStatic(KmuPoliticalMapDrawOrderSettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
+
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
+                openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
+
+                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                verify(hoverRendererConstructionMock.constructed().get(0))
+                    .renderCursorHighlightOnMap(
+                        any(),
+                        any(),
+                        eq(HOVERED_CELL),
+                        anyFloat(),
+                        anyFloat());
             }
         }
 
@@ -210,7 +255,7 @@ final class PoliticalMapOverlayRendererTest {
                 NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer().renderOnMap(
+                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -436,7 +481,7 @@ final class PoliticalMapOverlayRendererTest {
                     NebulaDrawOrderChoice.ABOVE);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer().renderOnMap(
+                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,
@@ -505,7 +550,7 @@ final class PoliticalMapOverlayRendererTest {
                     NebulaDrawOrderChoice.ABOVE);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                new PoliticalMapOverlayRenderer().renderOnMap(
+                new PoliticalMapOverlayRenderer(hoverState).renderOnMap(
                     buildCacheMock(),
                     FACTOR,
                     ALPHA_MULT,

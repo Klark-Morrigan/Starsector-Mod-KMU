@@ -260,20 +260,6 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesReadsNoSectorWhenNothingIsStale() {
-            // The per-frame path: this runs every frame, and on almost all of them the caller
-            // drains an empty batch, so it must cost nothing before it returns. What it must not
-            // cost is the pass over the sector and the walk of every marked system behind it.
-            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
-
-            applyTo(territories);
-
-            verifyNoInteractions(sectorMock);
-            assertThat(territories.getStyledCellByCellId())
-                .isEmpty();
-        }
-
-        @Test
         void applyStalePoliticsUpdatesSkipsAStaleSystemThatSeedsNoCell() {
             // A resize changes holding over cells already drawn; it never admits a
             // system to the map, so one with no cell has nothing to re-shape and must not
@@ -909,22 +895,10 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesLeavesTheStandingPairAloneWhenNothingIsStale() {
-            // Nothing was re-fitted, so the standing placements and the rules recorded for them
-            // still describe each other and neither half may move.
-            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
-
-            applyTo(territories);
-
-            anchorsMock.verifyNoInteractions();
-            assertThat(standingAnchors.getFitFingerprint())
-                .isEqualTo(STANDING_FIT);
-        }
-
-        @Test
         void applyStalePoliticsUpdatesLeavesTheStandingPairAloneWhenTheHolderDidNotChange() {
-            // The same claim on the other early return: a resize that leaves the winner alone
-            // leaves the placements alone, so there is nothing about them to restate.
+            // A resize that leaves the winner alone leaves the placements alone: nothing was
+            // re-fitted, so the standing placements and the rules recorded for them still describe
+            // each other and neither half may move.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
@@ -974,8 +948,9 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         // Runs the refresh over the two-cell geometry every case shares, handing it the sector its
-        // caller was installed on, the pair the caller holds across frames, an empty stand-in for
-        // the label list the plugin owns beside it, and this case's own batch.
+        // caller was installed on, the standing map that caller holds across frames - the pair, an
+        // empty stand-in for the label list the plugin owns beside it, and the cells - and this
+        // case's own batch.
         private void applyTo(PoliticalMapTerritories territories) {
             applyOverTheSector(sectorMock, territories);
         }
@@ -985,10 +960,11 @@ final class IncrementalPoliticsRefreshTest {
         private void applyOverTheSector(SectorAPI sector, PoliticalMapTerritories territories) {
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 sector,
-                territories,
-                standingAnchors,
-                new ArrayList<Label>(),
-                cellGeometry,
+                new StandingPoliticalMap(
+                    territories,
+                    standingAnchors,
+                    new ArrayList<Label>(),
+                    cellGeometry),
                 staleSystemIds);
         }
     }

@@ -10,7 +10,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverPermissionFixture;
-import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
@@ -88,8 +88,9 @@ final class MapLayerCellTooltipTest {
         void hoverACell() {
             // Every case here is about what the gates do around a live hover, so the hover is the
             // group's fixture rather than each test's opening lines.
-            MapHoverState
-                .resolveLiveSectorHoverState()
+            MapLayerInstallations
+                .resolveInstallationForLiveSector()
+                .resolveHoverState()
                 .publishHover(new MapHover("system", List.of("system")));
         }
 
@@ -97,7 +98,7 @@ final class MapLayerCellTooltipTest {
         void clearTheHover() {
             // The hover state is a process-wide singleton, so one left published would reach the
             // next test as a hover it never asked for.
-            MapHoverState.resolveLiveSectorHoverState().clearHover();
+            MapLayerInstallations.resolveInstallationForLiveSector().resolveHoverState().clearHover();
         }
 
         @AfterEach

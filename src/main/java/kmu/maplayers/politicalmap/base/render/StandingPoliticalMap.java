@@ -18,9 +18,9 @@ import java.util.List;
  * would leave a name standing over a bloc that no longer holds the cell beneath it. Carrying them
  * as one value is what stops a step of that redraw being handed a different three.
  *
- * <p>Assembled inside the refresh once a batch has something to do, rather than by the caller
- * holding these four: the per-frame path drains an empty stale set and returns, and it does that
- * on nearly every frame, so nothing is built for it.
+ * <p>Assembled by the holder of these four once its drained batch has something in it, which is the
+ * only caller in a position to know: it holds the board the batch came off. A frame that drained
+ * nothing - nearly every frame - returns without building one.
  *
  * @param territories     the built map state - the draw lists, the occupancy, and the styling a
  *                        redrawn cell is resolved against

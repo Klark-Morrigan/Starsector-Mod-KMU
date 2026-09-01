@@ -6,11 +6,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
-import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -57,57 +54,33 @@ final class IncrementalPoliticsRefresh {
     }
 
     // Folds the changes of the systems a colony resize marked stale into the standing territories,
-    // the placements, and the name labels. The empty check runs first, so a frame with nothing
-    // marked returns before opening a pass over the sector or gathering anything - the cheap
-    // per-frame path, which is nearly every frame.
+    // the placements, and the name labels: re-derive what was marked over one reading of the
+    // sector, then redraw whatever that disturbed.
     //
     // Both the sector and the marked systems arrive from the caller rather than being resolved
-    // here. These entry points are static and are handed the standing map's four halves, so this
-    // holds no installation to ask either of - and the caller that hands the halves over is exactly
-    // the one that does hold it, so what it drains and what it reads the colonies of are one
-    // sector's by construction.
-    //
-    // The four halves of the standing map are taken loose here and bundled below, because this is
-    // the boundary the plugin's cache hands them over at: the placement and label lists are its own
-    // overlays rather than part of the territories, yet must track the same holding the cells do.
-    //
-    // The placements arrive paired with what they were fitted under and are left that way: a
-    // re-fit here is partial the same way a full rebuild's is - the placements of every cluster
-    // a flip left alone are carried rather than searched again - so the record has to reach the
-    // fit, and the fit leaves its own in the same pair. A frame that re-fits none touches neither
-    // half. The geometry revision arrives paired with the cells it names, and goes back out to the
-    // fit that way, because this path only ever re-shapes cells within a partition it never recut -
-    // so what it re-fits is sound against the very geometry that revision speaks for.
-    static void applyStalePoliticsUpdates(
-            SectorAPI sector,
-            PoliticalMapTerritories territories,
-            StandingClusterAnchors standingAnchors,
-            List<Label> factionLabels,
-            RevisedCellGeometry cellGeometry,
-            Set<String> staleSystemIds) {
-
-        if (staleSystemIds.isEmpty()) {
-            return;
-        }
-        var standingMap = new StandingPoliticalMap(
-            territories,
-            standingAnchors,
-            factionLabels,
-            cellGeometry);
-
-        KmuProfiling.getProfiler().measure(
-            "politicalMap.applyPoliticsUpdates",
-            () -> applyDrainedPoliticsUpdates(sector, standingMap, staleSystemIds));
-    }
-
-    // The batch itself, once the drain has found something to do: re-derive what was marked over
-    // one reading of the sector, then redraw whatever that disturbed.
+    // here. These entry points are static and are handed the standing map whole, so this holds no
+    // installation to ask either of - and the caller that assembles that map is exactly the one
+    // that does hold it, so what it drains and what it reads the colonies of are one sector's by
+    // construction. It is also what answers for the frames with nothing marked, which is nearly all
+    // of them: having drained the board itself, it knows there is nothing to fold before it
+    // assembles anything for one.
     //
     // The batch opens one pass, so every question asked about a marked system - its holder, and
     // the spotlit bloc's presence in it - is answered off a single walk of it. Resolving a holder
     // per system used to open a pass apiece, which paid a settings read and a colony walk for each
     // of them.
-    private static void applyDrainedPoliticsUpdates(
+    static void applyStalePoliticsUpdates(
+            SectorAPI sector,
+            StandingPoliticalMap standingMap,
+            Set<String> staleSystemIds) {
+
+        KmuProfiling.getProfiler().measure(
+            "politicalMap.applyPoliticsUpdates",
+            () -> applyMarkedPoliticsUpdates(sector, standingMap, staleSystemIds));
+    }
+
+    // The batch itself, inside the measurement the entry point opened.
+    private static void applyMarkedPoliticsUpdates(
             SectorAPI sector,
             StandingPoliticalMap standingMap,
             Set<String> staleSystemIds) {

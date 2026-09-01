@@ -14,7 +14,7 @@ import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverState;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
@@ -108,8 +108,9 @@ class MapLayerCellTooltipGateIntegrationTest {
         MapLayerRegistry.registerIntelScreen(new IntelScreenViewFake());
 
         // Everything below the map gate is open, so what the box does is the gate's answer alone.
-        MapHoverState
-            .resolveLiveSectorHoverState()
+        MapLayerInstallations
+            .resolveInstallationForLiveSector()
+            .resolveHoverState()
             .publishHover(new MapHover("system", List.of("system")));
     }
 
@@ -117,7 +118,7 @@ class MapLayerCellTooltipGateIntegrationTest {
     void restoreTheSharedState() {
 
         MapLayerRosters.restoreNonEmptyRoster();
-        MapHoverState.resolveLiveSectorHoverState().clearHover();
+        MapLayerInstallations.resolveInstallationForLiveSector().resolveHoverState().clearHover();
 
         // The level holder is a process-wide singleton like the hover, so an advance left standing
         // would reach the next test as a detail level it never asked for.

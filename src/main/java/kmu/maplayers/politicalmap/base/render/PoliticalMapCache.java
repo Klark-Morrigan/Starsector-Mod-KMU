@@ -404,25 +404,27 @@ final class PoliticalMapCache {
     // The drain happens here rather than inside the fold, and before either branch is chosen,
     // because this cache is what holds the board: the fold is reached through static entry points
     // naming no sector, so a drain made there would have to ask the running game whose staleness it
-    // was emptying. Draining unconditionally is what keeps the two branches equivalent - one folds
+    // was emptying. Draining unconditionally is what keeps the two outcomes equivalent - one folds
     // what it took, the other drops it, and neither leaves a mark standing for the next frame to
     // find.
+    //
+    // Having drained, this is also what answers the frame that owes nothing, which is nearly every
+    // frame: it returns before assembling the standing map for a fold that would find nothing in it.
     private void applyStandingMapUpdates() {
 
         var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
 
-        if (territories != null && !territories.isFiltering()) {
-            // The standing pair goes in whole: a re-fit leaves its own placements and rules in
-            // it, and a frame that re-fits nothing leaves both alone, since the placements it
-            // did not touch are still described by the rules already recorded for them.
-            IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
-                installation.resolveSector(),
-                territories,
-                standingAnchors,
-                factionLabels,
-                cellGeometry,
-                staleSystemIds);
+        if (staleSystemIds.isEmpty() || territories == null || territories.isFiltering()) {
+            return;
         }
+        // The four halves go over as one value, and the standing pair goes in whole: a re-fit
+        // leaves its own placements and rules in it, and a frame that re-fits nothing leaves both
+        // alone, since the placements it did not touch are still described by the rules already
+        // recorded for them.
+        IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
+            installation.resolveSector(),
+            new StandingPoliticalMap(territories, standingAnchors, factionLabels, cellGeometry),
+            staleSystemIds);
     }
 
     // Traces the content rebuild's result: the counts the render will paint and the whole-rebuild

@@ -7,8 +7,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
@@ -85,7 +85,7 @@ final class HoveredBoxTest {
     void restoreTheSharedState() {
 
         MapLayerRosters.restoreNonEmptyRoster();
-        MapHoverState.resolveLiveSectorHoverState().clearHover();
+        MapLayerInstallations.resolveInstallationForLiveSector().resolveHoverState().clearHover();
     }
 
     @Nested
@@ -161,8 +161,9 @@ final class HoveredBoxTest {
         void resolveHoveredBoxIsEmptyWhenTheHoveredIdNoLongerNamesASystem() {
             // A system dropped between the hover being published and this frame reading it. Tolerated
             // rather than dereferenced, since the hover is a value the map pass left behind.
-            MapHoverState
-                .resolveLiveSectorHoverState()
+            MapLayerInstallations
+                .resolveInstallationForLiveSector()
+                .resolveHoverState()
                 .publishHover(new MapHover("gone", List.of("gone")));
 
             try (var globalMock = mockStatic(Global.class)) {
@@ -382,8 +383,9 @@ final class HoveredBoxTest {
     // Puts the cursor over the registered system, which the chain resolves the hovered id against.
     private void hoverTheSystem() {
 
-        MapHoverState
-            .resolveLiveSectorHoverState()
+        MapLayerInstallations
+            .resolveInstallationForLiveSector()
+            .resolveHoverState()
             .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));
     }
 }

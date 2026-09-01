@@ -444,10 +444,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 sectorMock,
-                standingMap.territories(),
-                standingMap.standingAnchors(),
-                standingMap.factionLabels(),
-                standingMap.cellGeometry(),
+                standingMap,
                 staleSystemIds);
 
             // Compared structurally rather than by equality: a cell's draw record, a bloc's traced
