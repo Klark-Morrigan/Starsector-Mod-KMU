@@ -155,6 +155,11 @@ Anything that *does* hold one, or holds an installation, goes direct instead, wh
 render surfaces, the political map's cache, its staleness poll, its renderers and the cursor read
 name none of these.
 
+The hover has no such resolution at all. `MapHoverState` is reached only through the installation
+that holds it, and `kmu.maplayers.base.hover` is gated from importing this package so it stays that
+way: a holder that could resolve an installation of its own could only resolve the running game's,
+which is the one sector a caller drawing another's map is not looking at.
+
 ## What is not one sector's
 
 Kept out of here on purpose, so a reader does not go looking:

@@ -1,7 +1,5 @@
 package kmu.maplayers.base.hover;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
-
 /**
  * One sector's seam joining the pass that can work out what the cursor is over to the passes that
  * need the answer.
@@ -34,19 +32,6 @@ public final class MapHoverState {
     // Whether a map pass has published since the last frame closed. Volatile for the reason above:
     // the pass that sets it and the frame tick that reads it are not the same caller.
     private volatile boolean hasPassPublishedSinceLastFrame;
-
-    /**
-     * @return the running sector's hover holder, for a caller vanilla drives without naming a sector
-     *         and that has no other handle to resolve one from. Every pass the map itself drives now
-     *         has one - a render surface resolves by the location its terrain sits in, and the box
-     *         the tooltip draws by the sector it already reads - so this stands only for a seam that
-     *         turns up holding neither
-     */
-    public static MapHoverState resolveLiveSectorHoverState() {
-        return MapLayerInstallations
-            .resolveInstallationForLiveSector()
-            .resolveHoverState();
-    }
 
     /**
      * @return what the cursor is over as of the last map render, or {@link MapHover#NONE}
