@@ -154,20 +154,6 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             : FactionAccountResolver.NO_ACCOUNT;
     }
 
-    // The hovered system as this layer reads it: the pass the active view paints under, the groups
-    // that pass ranks the system into, and the block each of those groups is listed under.
-    //
-    // One read behind both the body and the key hint at its foot, because the hint offers an account
-    // of exactly the standings the body lists. Resolved apart, the two are free to be answered from
-    // different readings of one system - and the shape that takes is a box advertising a key that
-    // does nothing, or declining to over a system it has just listed somebody in.
-    //
-    // The routing is settled here for the same reason and travels with the rest of the read: it is
-    // taken over the live alliance set and the sector's live relations, so a box routing its blocks
-    // one at a time could file a group as an ally and the next block's read file it as a rival out
-    // of one hover. The alliance set is read as an affiliation at the point it is sampled, which is
-    // where a grouping stops being a fold and becomes the one question the blocks ask.
-    //
     // Whether the ranking found anybody the box may name - the one judgement behind both the hint at
     // the foot and the press that acts on it. Named once so the two entries cannot come to ask
     // different questions of one reading.
@@ -181,8 +167,21 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return ranking.routing().hasAnyStanding();
     }
 
-    // Empty where no view is painting: there is then no grouping to rank under, and no body being
-    // drawn for a hint to sit beneath.
+    // The hovered system as this layer reads it: the pass the active view paints under, the groups
+    // that pass ranks the system into, and the block each of those groups is listed under. Empty
+    // where no view is painting - there is then no grouping to rank under, and no body being drawn
+    // for a hint to sit beneath.
+    //
+    // One read behind both the body and the key hint at its foot, because the hint offers an account
+    // of exactly the standings the body lists. Resolved apart, the two are free to be answered from
+    // different readings of one system - and the shape that takes is a box advertising a key that
+    // does nothing, or declining to over a system it has just listed somebody in.
+    //
+    // The routing is settled here for the same reason and travels with the rest of the read: it is
+    // taken over the live alliance set and the sector's live relations, so a box routing its blocks
+    // one at a time could file a group as an ally and the next block's read file it as a rival out
+    // of one hover. The alliance set is read as an affiliation at the point it is sampled, which is
+    // where a grouping stops being a fold and becomes the one question the blocks ask.
     private Optional<RankedStandings> readRankedStandings(
             SectorAPI sector,
             StarSystemAPI system) {

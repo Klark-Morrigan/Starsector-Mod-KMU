@@ -164,6 +164,6 @@ Kept out of here on purpose, so a reader does not go looking:
 - **Every selection.** The active layer and view, the filter pick, the name format, the recede style
   and the sighting register are already one sector's - they live in that sector's own memory, and
   need nothing from this package.
-- **`HoverTooltipDetailModeState`.** A reading preference, not a fact about a sector; a player who
+- **`HoverTooltipDetailLevelState`.** A reading preference, not a fact about a sector; a player who
   set it in one would be surprised to lose it in another.
 - **The sidebar hosts.** They host a panel on a screen, and one screen is showing at a time.
