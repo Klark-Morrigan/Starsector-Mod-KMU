@@ -142,10 +142,8 @@ about what the overlay means.
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`, and
-  `MapLayerVisibility` - a screen's show-or-hide pick, which is a second per-screen value beside its
-  tab. Its persisted form carries the ramp between the two states as well as the pick, derived from
-  how long ago the pick changed rather than advanced per frame, so a settled pick costs nothing and a
-  frame the layers miss cannot strand the fade halfway. A layer is
+  `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
+  beside its tab. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own.
