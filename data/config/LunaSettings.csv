@@ -9,7 +9,7 @@ kmu_features_toggles_isMarketConditionManagerEnabled,,,,Enable Market Condition 
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_layers_header,,,,Map layers,,Header,Map layers,,,,,,,,,Map - Visuals
-kmu_map_visuals_layers_hideFadeSeconds,,,,Hide fade time,,Double,0.25,,,,"How long the map layers take to fade off the screen when they are hidden (and to fade back in when they are shown again), in seconds. Everything the layers draw fades together - the overlay, its names, and the overlay control box. 0 switches them straight off with no animation; higher makes the fade slower and smoother, up to 2 seconds. Set to the same value as the overlay control box's collapse time so the two movements agree; they are separate settings because one folds a box that stays in view and the other clears the whole overlay. [Default: 0.25].",,,0,2,Map - Visuals
+kmu_map_visuals_layers_hideFadeSeconds,,,,Hide fade time,,Double,0.25,,,,"How long the map layers take to fade off the screen when they are hidden (and to fade back in when they are shown again), in seconds. Everything the layers draw fades together - the overlay, its names, and the overlay control box. 0 switches them straight off with no animation; higher makes the fade slower and smoother, up to 2 seconds. [Default: 0.25].",,,0,2,Map - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_sidebar_header,,,,Overlay sidebar,,Header,Overlay sidebar,,,,,,,,,Map - Visuals
 kmu_map_visuals_sidebar_borderWidth,,,,Border width,,Int,1,,,,"Line width of the outer border framing the political-map overlay control box, in pixels; 0 draws no border. [Default: 1].",,,0,8,Map - Visuals
