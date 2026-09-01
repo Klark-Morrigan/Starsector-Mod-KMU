@@ -45,6 +45,13 @@ import java.util.Set;
  * cells is a question about the cells, so it is settled where the pairs are chosen rather than
  * left for the wall test to answer about a line.
  *
+ * <p><b>Nor onto a foot one of them is standing on.</b> A link settling on the vertex an inlet
+ * span already anchors at draws a fan neither search could see, since each was laid without the
+ * other; worse, the boundary walk gives a cell's mouth to one wall only, so one of the two goes
+ * unlaid and the water it would have closed never appears. The link is the one that steps
+ * along its frontage, the inlet spans having claimed their feet first - see
+ * {@link CrowdedAnchors}.
+ *
  * <p><b>Not thinned.</b> The formation pass drops spans that share an anchor and hold no water
  * back, which is right for a set tidying one outline and wrong for a set of links: what a link
  * holds is not water but the sector together, and two links leaving one crowded anchor are two
@@ -79,8 +86,8 @@ public final class IntercontinentalBridges {
         // The exterior shore's, because that is the coastline that faces the void between the
         // continents. A lake shore faces water one continent has closed around, and a link
         // anchored there would leave from inside the very shape it is meant to reach out of.
-        var frontages = CoastFrontages.gatherFrontagePoints(
-            CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
+        var runs = CoastFrontages.Shore.EXTERIOR.collectFrontages(traced);
+        var frontages = CoastFrontages.gatherFrontagePoints(runs);
 
         if (frontages.size() < 2) {
             return List.of();
@@ -124,8 +131,16 @@ public final class IntercontinentalBridges {
             }
         }
 
-        return List.copyOf(AnchoredSpans.keepSpansWorthLaying(
-            offered, AnchoredSpans.collectCoastWalls(traced), laid, rules.coastSlack()));
+        var kept = AnchoredSpans.keepSpansWorthLaying(
+            offered, AnchoredSpans.collectCoastWalls(traced), laid, rules.coastSlack());
+
+        // Spread against the spans already down as well as against each other, which is the
+        // whole point of doing it here: a link and the inlet span it fans with were laid by two
+        // searches, so neither of them could see the crowd on its own. The inlet spans claimed
+        // their feet first, so a link is what steps aside - which is right, since the spans it
+        // is stepping around were settled before it was offered.
+        return List.copyOf(CrowdedAnchors.spreadCrowdedAnchors(
+            kept, laid, runs, union, rules.anchorSeparation()));
     }
 
     // Whether two cells sit on continents that are not the same one, which is the whole of what

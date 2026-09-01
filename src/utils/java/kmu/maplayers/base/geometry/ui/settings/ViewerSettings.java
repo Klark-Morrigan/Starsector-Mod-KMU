@@ -130,6 +130,14 @@ public final class ViewerSettings {
     // the doubled line survives on a technicality.
     public static final double CONTINENT_BRIDGE_COAST_SLACK_DEFAULT = MapLook.SPAN_STROKE;
 
+    // How far along its frontage a span's foot steps off an anchor another span already holds.
+    //
+    // Twice the width a span is drawn at, so the two feet stand a full stroke clear of each
+    // other rather than merely not coincident: at one stroke they touch, and a fan drawn with
+    // its lines touching at the base still reads as a fan. Wider than that starts moving feet
+    // for the sake of the rule rather than for what can be seen.
+    public static final double SPAN_ANCHOR_SEPARATION_DEFAULT = 2 * MapLook.SPAN_STROKE;
+
     public static final float JITTER_DEFAULT = 35;
     public static final double JITTER_SCALE = 100.0;
 
@@ -321,6 +329,15 @@ public final class ViewerSettings {
     // apart and still call them one, and that is a matter of taste about the map.
     public double continentBridgeCoastSlack = CONTINENT_BRIDGE_COAST_SLACK_DEFAULT;
 
+    // How far along its frontage a span's foot is moved when another span is already standing
+    // on it, in map units. Zero leaves every foot where the search put it, which is the only
+    // way to see what the spreading did - a moved foot is moved rather than marked.
+    //
+    // One knob over every span the construction lays, like the rounding: what it decides is how
+    // close two feet may be before a reader calls them one place, which is a claim about the
+    // drawing rather than about which set is being laid.
+    public double spanAnchorSeparation = SPAN_ANCHOR_SEPARATION_DEFAULT;
+
     public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
     public Color intercontinentalBridgeColour = INTERCONTINENTAL_BRIDGE_DEFAULT;
     public Color bridgeFrontageColour = BRIDGE_FRONTAGE_DEFAULT;
@@ -492,7 +509,8 @@ public final class ViewerSettings {
         return new ContinentBridges.BridgeRules(
             continentBridgeReachMultiple,
             continentBridgeCoastSlack,
-            shouldThinSpanFormations);
+            shouldThinSpanFormations,
+            spanAnchorSeparation);
     }
 
     // How the v3 coast is traced. Its own method rather than the settled coast's, because a

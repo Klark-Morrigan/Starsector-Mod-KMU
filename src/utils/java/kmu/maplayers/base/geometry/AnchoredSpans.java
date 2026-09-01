@@ -187,7 +187,7 @@ public final class AnchoredSpans {
         for (var span : narrowestFirst) {
 
             if (WallCoverage.isAlreadyWalled(span.start(), span.end(), walls, coastSlack)
-                    || doesCrossAnyLaid(span, laid)) {
+                    || doesCrossAnySpan(span.start(), span.end(), laid)) {
 
                 continue;
             }
@@ -196,6 +196,41 @@ public final class AnchoredSpans {
             walls.add(new double[][] {span.start(), span.end()});
         }
         return kept;
+    }
+
+    /**
+     * Whether a line crosses a span already down.
+     *
+     * <p><b>Two spans that merely share an anchor do not count.</b> The shared-endpoint case is
+     * a touch rather than a crossing, and counting it would knock out every span but one of any
+     * set leaving one place - which is not what refusing crossings is for.
+     *
+     * <p>Rare now that a span anchors at whichever point of a frontage faces the other cell,
+     * since two cells in different directions are faced from different points. What still
+     * produces it is a frontage the drawn coast crosses in a single point: everything leaving
+     * that cell has only the one place to leave from.
+     *
+     * <p>Asked of two loose points rather than of a span, because it is asked twice over: of a
+     * span being offered, and of the line a span WOULD have if one of its feet were moved. The
+     * second has no span to be asked about until the answer is known.
+     *
+     * @param start one end of the line
+     * @param end   the other
+     * @param laid  the spans already down
+     * @return whether it crosses one of them
+     */
+    static boolean doesCrossAnySpan(double[] start, double[] end, List<CellGap> laid) {
+
+        for (var held : laid) {
+
+            if (!isSharingAnAnchor(start, end, held)
+                    && Segments.intersectSegments(
+                        start, end, held.start(), held.end()) != null) {
+
+                return true;
+            }
+        }
+        return false;
     }
 
     // The closest pairing of two frontages that the caller will accept.
@@ -229,38 +264,12 @@ public final class AnchoredSpans {
         return closest;
     }
 
-    // Whether a span crosses one already down.
-    //
-    // Two spans that merely share an anchor do not count. The shared-endpoint case is a touch
-    // rather than a crossing, and counting it would knock out every span but one of any set
-    // leaving one place - which is not what refusing crossings is for.
-    //
-    // Rare now that a span anchors at whichever point of a frontage faces the other cell, since
-    // two cells in different directions are faced from different points. What still produces it
-    // is a frontage the drawn coast crosses in a single point: everything leaving that cell has
-    // only the one place to leave from. Kept for that case rather than for the fan it was
-    // written against - and the fans and chains it lets through are {@link SpanFormations}'
-    // business, thinned after the laying is settled.
-    private static boolean doesCrossAnyLaid(CellGap span, List<CellGap> laid) {
+    private static boolean isSharingAnAnchor(double[] start, double[] end, CellGap held) {
 
-        for (var held : laid) {
-
-            if (!isSharingAnAnchor(span, held)
-                    && Segments.intersectSegments(
-                        span.start(), span.end(), held.start(), held.end()) != null) {
-
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean isSharingAnAnchor(CellGap span, CellGap held) {
-
-        return isSamePlace(span.start(), held.start())
-            || isSamePlace(span.start(), held.end())
-            || isSamePlace(span.end(), held.start())
-            || isSamePlace(span.end(), held.end());
+        return isSamePlace(start, held.start())
+            || isSamePlace(start, held.end())
+            || isSamePlace(end, held.start())
+            || isSamePlace(end, held.end());
     }
 
     private static boolean isSamePlace(double[] one, double[] other) {

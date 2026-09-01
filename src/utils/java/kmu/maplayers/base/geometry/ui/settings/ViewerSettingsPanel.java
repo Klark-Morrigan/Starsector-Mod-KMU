@@ -177,6 +177,15 @@ public final class ViewerSettingsPanel {
 
     private static final double COAST_SLACK_MAXIMUM = 500;
 
+    // How far along its frontage a span's foot steps off an anchor another span holds, in map
+    // units. Zero switches the spreading off, which is what the pass reads a non-positive
+    // setting as. The ceiling is about a fifth of a cell's turn: past that the rule is asking
+    // for room that almost no frontage has, so every foot snaps to the end of its stretch and
+    // the knob stops distinguishing anything.
+    private static final double ANCHOR_SEPARATION_MINIMUM = 0;
+
+    private static final double ANCHOR_SEPARATION_MAXIMUM = 1200;
+
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
     // and narrow enough that they still read as one palette; the slider exists because which
@@ -943,6 +952,21 @@ public final class ViewerSettingsPanel {
                 ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
             new SliderRows.SliderWork(
                 slack -> settings.continentBridgeCoastSlack = slack,
+                refreshes::refreshCoastlines,
+                () -> { })));
+
+        // Beside the thinning, because the two answer one crowded anchor: that one drops the
+        // spans buying nothing, this moves the feet of the ones that stay. Over every span the
+        // construction lays, links included, so it is read here whichever set is on screen.
+        controls.add(SliderRows.buildSlider(
+            "spanAnchorSeparation",
+            "Least space between two span feet",
+            new SliderRows.SliderRange(
+                ANCHOR_SEPARATION_MINIMUM,
+                ANCHOR_SEPARATION_MAXIMUM,
+                ViewerSettings.SPAN_ANCHOR_SEPARATION_DEFAULT),
+            new SliderRows.SliderWork(
+                separation -> settings.spanAnchorSeparation = separation,
                 refreshes::refreshCoastlines,
                 () -> { })));
 
