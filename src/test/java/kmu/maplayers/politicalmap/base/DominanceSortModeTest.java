@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.ui.text.TextSpan;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -161,7 +162,7 @@ final class DominanceSortModeTest {
     // where that lives.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
-            DominanceSortMode mode,
+            ListSortMode<RankedBloc<DominanceStats>> mode,
             RankedBloc<DominanceStats>... blocs) {
 
         var sorted = new ArrayList<>(List.of(blocs));

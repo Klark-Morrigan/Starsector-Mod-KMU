@@ -12,8 +12,8 @@ package kmu.maplayers.politicalmap.base;
  * smallest bloc in the sector rather than as a number nobody measured. Opting in is what leaves a
  * vocabulary whose record does not carry the size unable to be offered a ranking over it at all.
  *
- * <p>Because the number is shared, so is the mode that ranks by it: {@link BlocMarketSizeSortMode} is
- * declared once over this capability rather than once per vocabulary. What stays per-vocabulary is
+ * <p>Because the number is shared, so is the mode that ranks by it: {@link SharedBlocSortModes}
+ * declares it once over this capability rather than once per vocabulary. What stays per-vocabulary is
  * the chain ties break down behind it, which is that layer's own numbers in that layer's own order.
  */
 public interface SizedBlocMetrics extends BlocMetrics {

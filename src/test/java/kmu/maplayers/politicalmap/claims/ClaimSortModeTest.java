@@ -188,7 +188,7 @@ final class ClaimSortModeTest {
     // where that lives.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
-            ClaimSortMode mode,
+            ListSortMode<RankedBloc<ClaimStats>> mode,
             RankedBloc<ClaimStats>... blocs) {
 
         var sorted = new ArrayList<>(List.of(blocs));

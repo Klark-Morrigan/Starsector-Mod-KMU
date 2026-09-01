@@ -150,17 +150,16 @@ on without naming either. Factions and Alliances are painted by the same contest
 which is the Spotlight targets column above. A view painted by another mechanic implements the seam
 directly and pairs its own list with its own vocabulary rather than widening theirs.
 
-A vocabulary states only its numbers and the order ties break down them; `BlocSortModeComposer` lays
-that declaration out into a ranking - the chosen metric first, the rest of the chain behind it, then
-the name and the bloc id - so the numbers stay one layer's while the shape of the ordering, and the
-tail that keeps a fully-level pair from reshuffling, are the same under every view.
+A vocabulary states only its numbers, the key and label each is offered under, and the order ties
+break down them. What a mode then is, is `BlocMetricSortMode`; how its declaration becomes a ranking -
+the chosen metric first, the rest of the chain behind it, then the name and the bloc id - is
+`BlocSortModeComposer`. So the numbers stay one layer's while the shape of the ordering, and the tail
+that keeps a fully-level pair from reshuffling, are the same under every view.
 
 One number is not one layer's, though: a bloc's whole-sector colony size is the same sum off the same
-habitation projection whichever mechanic paints the map. So it is stated as a capability the metrics
-opt into, `SizedBlocMetrics`, and ranked by `BlocMarketSizeSortMode`, declared once and constructed
-per vocabulary with that vocabulary's own tie-break chain. A vocabulary whose record does not carry a
-size cannot be handed the mode at all, so sharing it widens nobody. Everything else each enum lists is
-its own mechanic's, and is named nowhere else.
+habitation projection whichever mechanic paints the map. It is stated as a capability the metrics opt
+into, `SizedBlocMetrics`, and its mode is asked for from `SharedBlocSortModes` rather than declared
+twice.
 
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
