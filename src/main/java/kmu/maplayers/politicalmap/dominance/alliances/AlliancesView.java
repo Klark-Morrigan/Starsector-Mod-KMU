@@ -171,10 +171,10 @@ public final class AlliancesView implements DominancePaintedView {
     }
 
     @Override
-    public List<ControlSpec> getViewBodyControls() {
+    public List<ControlSpec> getViewBodyControls(MapLayerRefreshBoard board) {
         // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
         // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
         // alliances package with the view that owns them.
-        return AllianceBodyControls.buildControls();
+        return AllianceBodyControls.buildControls(board);
     }
 }

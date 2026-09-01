@@ -57,10 +57,17 @@ public final class PoliticalMapLayer implements MapLayer {
     @Override
     public List<ControlSpec> getBodyControls() {
 
+        // Which sector this body is being built for has to be read from the running game here: a
+        // body build is an adapter onto a vanilla screen, which hands it none. Resolved once for the
+        // whole build so every control on the tab writes and repaints through the same installed
+        // machinery - a second resolve mid-build could name a different sector.
+        var installation = MapLayerInstallations.resolveInstallationFor(Global.getSector());
+        var board = installation.resolveRefreshBoard();
+
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
         // radio only switches between views; turning the map off is the tab bar's No Layer pick.
-        var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls());
+        var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls(board));
         controls.add(PoliticalMapBodyControls.buildViewSelector());
 
         // Then the spotlight picker and the selected view's own controls, so the body shows the
@@ -72,8 +79,8 @@ public final class PoliticalMapLayer implements MapLayer {
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
 
         if (selectedView != null) {
-            controls.addAll(buildSpotlightControls(selectedView));
-            controls.addAll(selectedView.getViewBodyControls());
+            controls.addAll(buildSpotlightControls(selectedView, installation));
+            controls.addAll(selectedView.getViewBodyControls(board));
         }
         return List.copyOf(controls);
     }
@@ -112,14 +119,19 @@ public final class PoliticalMapLayer implements MapLayer {
     // change there simply has no visible effect until a bloc is spotlighted, so the knobs stay put
     // whether or not a filter is active. It is the same reusable control the alliances view places
     // under its own caption, here bound to the filter recede set rather than the non-allied one.
-    private static List<ControlSpec> buildSpotlightControls(PoliticalMapView selectedView) {
+    private static List<ControlSpec> buildSpotlightControls(
+            PoliticalMapView selectedView,
+            MapLayerInstallation installation) {
 
         // The list is read through the memo the sector's installed machinery holds, so this
         // per-frame body build reads a cached list rather than re-walking the economy every frame
-        // the map is open. Which sector that is has to be read from the running game here: a body
-        // build is an adapter onto a vanilla screen, which hands it none.
-        var blocCache = SelectableBlocCache.resolveBlocCacheIn(
-            MapLayerInstallations.resolveInstallationFor(Global.getSector()));
+        // the map is open.
+        var blocCache = SelectableBlocCache.resolveBlocCacheIn(installation);
+
+        // The same installation's board goes into both halves: a spotlight pick and a recede flip
+        // each repaint the map this body was built over, so neither may raise on a sector resolved
+        // afresh when the click lands.
+        var board = installation.resolveRefreshBoard();
 
         return FilterSelectionBinder.buildPicker(
             selectedView.getId(),
@@ -129,6 +141,8 @@ public final class PoliticalMapLayer implements MapLayer {
             ColumnSelectionBinder.resolveStoredColumns(),
             RecedeControl.buildControls(
                 RecedePreferences.FILTER,
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION)));
+                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
+                board),
+            board);
     }
 }

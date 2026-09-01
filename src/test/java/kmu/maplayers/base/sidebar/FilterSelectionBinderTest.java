@@ -8,6 +8,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStrings;
 
@@ -33,6 +34,10 @@ import static org.mockito.Mockito.never;
  * out. The picker's own shape and click rules are KMLib's and are pinned there; the stores are
  * mocked, so this reads the wiring alone.
  *
+ * <p>Each item pick is verified against the board the picker was built with, which is what fails if
+ * the store ever resolved a board when the click landed: the spotlight would then repaint whichever
+ * sector was running rather than the one the picker was listed for.
+ *
  * <p>Run over the foreign {@link Hazard} item and {@link HazardSortMode} vocabulary, since the
  * binder is no more one layer's than the picker it binds. That is also what proves the wildcard
  * capture is shaped by no layer in particular: these types stand in for a second layer's list, so a
@@ -53,6 +58,11 @@ final class FilterSelectionBinderTest {
 
     private static final ListPicker<Hazard> HAZARD_PICKER =
         new ListPicker<>(List.of(STORM, DRIFT), MODES);
+
+    // The board the picker is built against, standing in for one sector's installed machinery. Held
+    // by identity rather than read for revisions: the selection store is stubbed, so nothing raises
+    // on it and what each pick case pins is that this exact board reached the write.
+    private static final MapLayerRefreshBoard BUILT_BOARD = new MapLayerRefreshBoard();
 
     // The rows the picker lays out, so a test names the widget it clicks rather than an index into
     // the block.
@@ -150,7 +160,7 @@ final class FilterSelectionBinderTest {
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
-                    () -> FilterSelection.selectId(SCOPE_ID, "drift_1"));
+                    () -> FilterSelection.selectId(SCOPE_ID, "drift_1", BUILT_BOARD));
             }
         }
 
@@ -171,7 +181,7 @@ final class FilterSelectionBinderTest {
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
-                    () -> FilterSelection.clearSelection(SCOPE_ID));
+                    () -> FilterSelection.clearSelection(SCOPE_ID, BUILT_BOARD));
             }
         }
 
@@ -247,7 +257,8 @@ final class FilterSelectionBinderTest {
                         SCOPE_ID,
                         ListPicker.empty(),
                         ListColumns.ONE,
-                        List.of()))
+                        List.of(),
+                        BUILT_BOARD))
                     .isEmpty();
 
                 sortBinderMock.verify(
@@ -270,7 +281,8 @@ final class FilterSelectionBinderTest {
             SCOPE_ID,
             HAZARD_PICKER,
             ListColumns.ONE,
-            List.of());
+            List.of(),
+            BUILT_BOARD);
     }
 
     // A mode in its own natural direction over the foreign vocabulary - what a save that has never

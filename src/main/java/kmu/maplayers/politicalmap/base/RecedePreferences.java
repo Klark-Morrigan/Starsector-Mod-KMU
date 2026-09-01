@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import kmlib.starsector.memory.SectorMemoryFlag;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuPoliticalMapTerritorySettings;
 
@@ -84,15 +84,21 @@ public final class RecedePreferences {
      * the overlay so the flip shows at once.
      *
      * @param isMuted the new Mute state, as the sidebar checkbox reads it
+     * @param board   the refresh board of the sector whose checkbox was flipped, raised on so that
+     *                sector's backdrop repaints
      */
-    public void setMuted(boolean isMuted) {
+    public void setMuted(boolean isMuted, MapLayerRefreshBoard board) {
         // Repaint only on a real write: before the sector exists the flag no-ops and reports no
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
         // fields. The revision is one coarse signal every set shares, so a consumer only draws the
         // backdrop it owns even though any set's flip advances it.
+        //
+        // The board is the checkbox's rather than one resolved here: the control was built against
+        // one sector's installed machinery, and a board picked up at the click would be whichever
+        // sector is running instead.
         if (muteFlag.set(isMuted)) {
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
 
@@ -101,10 +107,12 @@ public final class RecedePreferences {
      * choice in this save and repainting the overlay so the flip shows at once.
      *
      * @param shouldDesaturate the new Desaturate state, as the sidebar checkbox reads it
+     * @param board            the refresh board of the sector whose checkbox was flipped, raised on
+     *                         so that sector's backdrop repaints
      */
-    public void setDesaturated(boolean shouldDesaturate) {
+    public void setDesaturated(boolean shouldDesaturate, MapLayerRefreshBoard board) {
         if (desaturateFlag.set(shouldDesaturate)) {
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
 

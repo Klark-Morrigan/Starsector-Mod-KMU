@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,9 +23,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the name-format preference: the read resolves the stored key back to its choice and falls
  * back to full names when nothing is stored, the write persists the choice's key to the frozen
- * memory key and bumps the map-style revision so the labels re-fit, and both no-op cleanly before
- * the sector exists. The frozen key is pinned as a literal, since renaming it silently resets every
- * existing save's choice.
+ * memory key and bumps the map-style revision on the board it was handed so the labels re-fit, and
+ * both no-op cleanly before the sector exists. The frozen key is pinned as a literal, since renaming
+ * it silently resets every existing save's choice.
  */
 final class NameFormatPreferenceTest {
     // The live key, pinned as a literal: a rename must break this test rather than shipping and
@@ -68,40 +68,35 @@ final class NameFormatPreferenceTest {
     class SelectNameFormat {
 
         @Test
-        void selectNameFormatPersistsTheChoiceKeyAndRequestsAStyleRefresh() {
+        void selectNameFormatPersistsTheChoiceKeyAndRaisesOnTheBoardItWasHanded() {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<MapLayerRefresh> refreshMock =
-                            mockStatic(MapLayerRefresh.class)) {
+                    mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                var board = new MapLayerRefreshBoard();
 
-                NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
+                NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT, board);
 
                 verify(memoryMock).set(NAME_FORMAT_KEY,
                         FactionNameFormatChoice.SHORT.persistenceKey());
-                refreshMock.verify(
-                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE));
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE)).isEqualTo(1);
             }
         }
 
         @Test
-        void selectNameFormatWritesNothingAndRequestsNoRefreshBeforeTheSectorExists() {
+        void selectNameFormatWritesNothingAndRaisesNothingBeforeTheSectorExists() {
             // Before a save there is nothing to write into, so the pick is dropped rather than
             // bumping a revision no overlay would read.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<MapLayerRefresh> refreshMock =
-                            mockStatic(MapLayerRefresh.class)) {
+                    mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+                var board = new MapLayerRefreshBoard();
 
-                NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
+                NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT, board);
 
                 verify(memoryMock, never()).set(eq(NAME_FORMAT_KEY), anyString());
-                refreshMock.verify(
-                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE),
-                        never());
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE)).isEqualTo(0);
             }
         }
     }

@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,9 +22,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the uninhabited-outline preference: the read reports off until the save says otherwise, the
- * write persists the frozen key to sector memory and bumps the map-style revision so the overlay
- * restyles, and both no-op cleanly before the sector exists. The frozen key is pinned as a literal,
- * since renaming it silently resets every existing save's choice.
+ * write persists the frozen key to sector memory and bumps the map-style revision on the board it
+ * was handed so that sector's overlay restyles, and both no-op cleanly before the sector exists. The
+ * frozen key is pinned as a literal, since renaming it silently resets every existing save's choice.
  */
 final class UninhabitedOutlinePreferenceTest {
     // The live key, pinned as a literal: a rename must break this test rather than shipping and
@@ -64,39 +64,34 @@ final class UninhabitedOutlinePreferenceTest {
     class SetOutlineDrawn {
 
         @Test
-        void setOutlineDrawnPersistsTheChoiceAndRequestsAStyleRefresh() {
+        void setOutlineDrawnPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<MapLayerRefresh> refreshMock =
-                            mockStatic(MapLayerRefresh.class)) {
+                    mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(memoryMock);
+                var board = new MapLayerRefreshBoard();
 
-                UninhabitedOutlinePreference.setOutlineDrawn(true);
+                UninhabitedOutlinePreference.setOutlineDrawn(true, board);
 
                 verify(memoryMock).set(OUTLINE_KEY, true);
-                refreshMock.verify(
-                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE));
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE)).isEqualTo(1);
             }
         }
 
         @Test
-        void setOutlineDrawnWritesNothingAndRequestsNoRefreshBeforeTheSectorExists() {
+        void setOutlineDrawnWritesNothingAndRaisesNothingBeforeTheSectorExists() {
             // Before a save there is nothing to write into, so the flip is dropped rather than
             // bumping a revision no overlay would read.
             try (MockedStatic<SectorMemoryAccess> memoryAccessMock =
-                    mockStatic(SectorMemoryAccess.class);
-                    MockedStatic<MapLayerRefresh> refreshMock =
-                            mockStatic(MapLayerRefresh.class)) {
+                    mockStatic(SectorMemoryAccess.class)) {
                 var memoryMock = mock(MemoryAPI.class);
                 memoryAccessMock.when(SectorMemoryAccess::readSectorMemory).thenReturn(null);
+                var board = new MapLayerRefreshBoard();
 
-                UninhabitedOutlinePreference.setOutlineDrawn(true);
+                UninhabitedOutlinePreference.setOutlineDrawn(true, board);
 
                 verify(memoryMock, never()).set(eq(OUTLINE_KEY), anyBoolean());
-                refreshMock.verify(
-                        () -> MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE),
-                        never());
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE)).isEqualTo(0);
             }
         }
     }

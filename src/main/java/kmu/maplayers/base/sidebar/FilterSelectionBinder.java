@@ -8,6 +8,7 @@ import kmlib.starsector.ui.widgets.lists.ListPickerStore;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.util.KmuStrings;
 
 import java.util.List;
@@ -53,15 +54,18 @@ public final class FilterSelectionBinder {
      * @param columns          how many columns the item list wraps its rows across
      * @param trailingControls the controls filling the right half of the sort row; empty leaves the
      *                         sort selector alone on the row
+     * @param board            the refresh board of the sector this picker was built for, carried
+     *                         into the item picks so a spotlight change repaints that sector's map
      * @return the picker controls, top to bottom; empty when the picker offers no items
      */
     public static List<ControlSpec> buildPicker(
             String scopeId,
             ListPicker<?> picker,
             ListColumns columns,
-            List<ControlSpec> trailingControls) {
+            List<ControlSpec> trailingControls,
+            MapLayerRefreshBoard board) {
 
-        return buildCapturedPicker(scopeId, picker, columns, trailingControls);
+        return buildCapturedPicker(scopeId, picker, columns, trailingControls, board);
     }
 
     // The picker built under a captured item type, which is what lets the items and their
@@ -75,7 +79,8 @@ public final class FilterSelectionBinder {
             String scopeId,
             ListPicker<T> picker,
             ListColumns columns,
-            List<ControlSpec> trailingControls) {
+            List<ControlSpec> trailingControls,
+            MapLayerRefreshBoard board) {
 
         if (picker.items().isEmpty()) {
             return List.of();
@@ -88,17 +93,20 @@ public final class FilterSelectionBinder {
             columns,
             KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,
-            new ScopedPickerStore(scopeId));
+            new ScopedPickerStore(scopeId, board));
     }
 
-    // The three slots one picker writes into, bound to the scope its item and sort picks belong to.
-    // A value rather than three loose callbacks so the scope is captured once, where it is read,
-    // rather than threaded into each write separately.
-    private record ScopedPickerStore(String scopeId) implements ListPickerStore {
+    // The three slots one picker writes into, bound to the scope its item and sort picks belong to
+    // and to the board its item picks repaint through. A value rather than loose callbacks so the
+    // two are captured once, where they are read, rather than threaded into each write separately.
+    // The board rides along with the scope because a pick is a fact about one sector's map: resolved
+    // at the click instead, it would repaint whichever sector happened to be running.
+    private record ScopedPickerStore(String scopeId, MapLayerRefreshBoard board)
+        implements ListPickerStore {
 
         @Override
         public void clearItemPick() {
-            FilterSelection.clearSelection(scopeId);
+            FilterSelection.clearSelection(scopeId, board);
         }
 
         @Override
@@ -108,7 +116,7 @@ public final class FilterSelectionBinder {
 
         @Override
         public void storeItemPick(String itemId) {
-            FilterSelection.selectId(scopeId, itemId);
+            FilterSelection.selectId(scopeId, itemId, board);
         }
 
         @Override

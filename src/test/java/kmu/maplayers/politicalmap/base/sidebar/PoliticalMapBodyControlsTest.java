@@ -5,6 +5,7 @@ import com.fs.starfarer.api.util.Misc;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
@@ -42,13 +43,21 @@ import static org.mockito.Mockito.when;
  *
  * <p>The shared sub-options are pinned the same way: each lights off its per-save preference and writes
  * the flipped or clicked value back through it, with the preferences stubbed so the wiring is what is
- * asserted rather than how either choice persists.
+ * asserted rather than how either choice persists. Each write is verified against the board the
+ * controls were built with, which is what fails if either writer were handed a board resolved when
+ * the click landed: the repaint would then reach whichever sector was running rather than the one
+ * whose sidebar is up.
  */
 final class PoliticalMapBodyControlsTest {
 
     // The engine tone the checkbox label carries, stood in for so the controls can be built without
     // the live palette in reach.
     private static final Color TEXT = Color.LIGHT_GRAY;
+
+    // The board the shared controls are built against, standing in for one sector's installed
+    // machinery. Held by identity rather than read for revisions: the preferences are stubbed, so
+    // nothing raises on it and what each case pins is that this exact board reached the writer.
+    private static final MapLayerRefreshBoard BUILT_BOARD = new MapLayerRefreshBoard();
 
     private final PoliticalMapView factionsViewMock = mock(PoliticalMapView.class);
     private final PoliticalMapView alliancesViewMock = mock(PoliticalMapView.class);
@@ -182,12 +191,13 @@ final class PoliticalMapBodyControlsTest {
                 stubControlLabels(stringsMock);
                 preferenceMock.when(UninhabitedOutlinePreference::isOutlineDrawn).thenReturn(true);
 
-                var checkbox = (ControlSpec.Checkbox) PoliticalMapBodyControls.buildSharedControls()
+                var checkbox = (ControlSpec.Checkbox) PoliticalMapBodyControls
+                        .buildSharedControls(BUILT_BOARD)
                         .get(0);
                 checkbox.action().activateCell(0);
 
                 assertThat(checkbox.isLit()).isTrue();
-                preferenceMock.verify(() -> UninhabitedOutlinePreference.setOutlineDrawn(false));
+                preferenceMock.verify(() -> UninhabitedOutlinePreference.setOutlineDrawn(false, BUILT_BOARD));
             }
         }
 
@@ -204,12 +214,12 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(FactionNameFormatChoice.SHORT);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
-                        .buildSharedControls().get(1);
+                        .buildSharedControls(BUILT_BOARD).get(1);
                 radio.action().activateCell(0);
 
                 assertThat(radio.selectedIndex()).isEqualTo(1);
                 preferenceMock.verify(() ->
-                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL));
+                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL, BUILT_BOARD));
             }
         }
 
@@ -226,12 +236,12 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(FactionNameFormatChoice.NONE);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
-                        .buildSharedControls().get(1);
+                        .buildSharedControls(BUILT_BOARD).get(1);
                 radio.action().activateCell(2);
 
                 assertThat(radio.selectedIndex()).isEqualTo(2);
                 preferenceMock.verify(() ->
-                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE));
+                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE, BUILT_BOARD));
             }
         }
     }

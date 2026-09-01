@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,8 +20,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the per-scope filter selection state: the read reports one scope's stored id or none, a pick
- * persists that scope's frozen key and bumps the filter revision so the reading layer repaints, a
- * clear drops the key and bumps too, every mutation no-ops cleanly before the sector exists, the
+ * persists that scope's frozen key and bumps the filter revision on the board it was handed so that
+ * sector's reading layer repaints, a clear drops the key and bumps too, every mutation no-ops
+ * cleanly before the sector exists, the
  * self-heal clears only a stored id that is no longer selectable, and the legacy migration carries a
  * pre-per-scope save's single shared choice into a scope slot. The frozen key prefix is pinned as a
  * literal so a rename that would silently reset every save's filter choice fails here rather than
@@ -123,7 +124,7 @@ final class FilterSelectionTest {
     class SelectId {
 
         @Test
-        void selectIdPersistsTheChoiceAndRequestsARefresh() {
+        void selectIdPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
 
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -133,17 +134,17 @@ final class FilterSelectionTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                var revisionBefore = readLiveFilterRevision();
+                var board = new MapLayerRefreshBoard();
 
-                FilterSelection.selectId(SCOPE_ID, SELECTED_ID);
+                FilterSelection.selectId(SCOPE_ID, SELECTED_ID, board);
 
                 verify(memoryMock)
                     .set(SELECTED_ID_KEY, SELECTED_ID);
 
                 // The pick must bump the filter revision, since this sidebar-only choice never moves
                 // settingsRevision - that bump is what repaints the reading layer live.
-                assertThat(readLiveFilterRevision())
-                    .isNotEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                    .isEqualTo(1);
             }
         }
 
@@ -157,12 +158,12 @@ final class FilterSelectionTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var revisionBefore = readLiveFilterRevision();
+                var board = new MapLayerRefreshBoard();
 
-                FilterSelection.selectId(SCOPE_ID, SELECTED_ID);
+                FilterSelection.selectId(SCOPE_ID, SELECTED_ID, board);
 
-                assertThat(readLiveFilterRevision())
-                    .isEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                    .isEqualTo(0);
             }
         }
     }
@@ -171,7 +172,7 @@ final class FilterSelectionTest {
     class ClearSelection {
 
         @Test
-        void clearSelectionDropsTheStoredIdAndRequestsARefresh() {
+        void clearSelectionDropsTheStoredIdAndRaisesOnTheBoardItWasHanded() {
 
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
@@ -184,15 +185,15 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_ID_KEY))
                     .thenReturn(true);
 
-                var revisionBefore = readLiveFilterRevision();
+                var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(SCOPE_ID);
+                FilterSelection.clearSelection(SCOPE_ID, board);
 
                 verify(memoryMock)
                     .unset(SELECTED_ID_KEY);
 
-                assertThat(readLiveFilterRevision())
-                    .isNotEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                    .isEqualTo(1);
             }
         }
 
@@ -208,15 +209,15 @@ final class FilterSelectionTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                var revisionBefore = readLiveFilterRevision();
+                var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(SCOPE_ID);
+                FilterSelection.clearSelection(SCOPE_ID, board);
 
                 verify(memoryMock, never())
                     .unset(anyString());
 
-                assertThat(readLiveFilterRevision())
-                    .isEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                    .isEqualTo(0);
             }
         }
 
@@ -236,15 +237,15 @@ final class FilterSelectionTest {
                 when(memoryMock.contains(SELECTED_ID_KEY))
                     .thenReturn(true);
 
-                var revisionBefore = readLiveFilterRevision();
+                var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(OTHER_SCOPE_ID);
+                FilterSelection.clearSelection(OTHER_SCOPE_ID, board);
 
                 verify(memoryMock, never())
                     .unset(anyString());
 
-                assertThat(readLiveFilterRevision())
-                    .isEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                    .isEqualTo(0);
             }
         }
 
@@ -257,12 +258,12 @@ final class FilterSelectionTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var revisionBefore = readLiveFilterRevision();
+                var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(SCOPE_ID);
+                FilterSelection.clearSelection(SCOPE_ID, board);
 
-                assertThat(readLiveFilterRevision())
-                    .isEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                    .isEqualTo(0);
             }
         }
     }
@@ -361,17 +362,5 @@ final class FilterSelectionTest {
                 memoryAccessMock.verify(SectorMemoryAccess::readSectorMemory);
             }
         }
-    }
-
-    // The board a pick or a clear is read back off: the live sector's, which is the one the writer
-    // raises on. No sector is loaded under the suite, so both ends land on the detached
-    // installation's board - shared with every other suite raising with no game loaded, which is why
-    // each case reads a step rather than an absolute count.
-    private static int readLiveFilterRevision() {
-
-        return MapLayerInstallations
-            .resolveInstallationForLiveSector()
-            .resolveRefreshBoard()
-            .getRevision(MapLayerCommonRefreshSignal.FILTER);
     }
 }

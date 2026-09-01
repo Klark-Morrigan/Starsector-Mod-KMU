@@ -4,6 +4,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.util.KmuStrings;
 
@@ -15,9 +16,12 @@ import java.util.List;
  * context that recedes a backdrop contributes this same control - the filter picker and the
  * alliances view each build it - so one control shape and one toggle-wiring live in one place.
  *
- * <p>The caller supplies the target preferences set - what its context recedes - and the
- * caption naming it, while the two checkbox labels and their toggle wiring are fixed here, so the
- * recede reads and behaves identically wherever it is placed and only the set it drives differs. Each
+ * <p>The caller supplies the target preferences set - what its context recedes - the caption naming
+ * it, and the board a flip repaints through, while the two checkbox labels and their toggle wiring
+ * are fixed here, so the recede reads and behaves identically wherever it is placed and only the set
+ * it drives differs. The board comes from the caller because it is the sidebar build that knows
+ * which sector's machinery the control is being placed for; this class only carries it to the
+ * setters. Each
  * checkbox reads its lit state live from the passed set when the spec is built (specs are rebuilt each
  * frame), so a flip - from this checkbox or a reload of the save's stored choice - shows at once.
  */
@@ -31,10 +35,16 @@ public final class RecedeControl {
      *                     view's non-allied recede - read for its lit state and written on a click
      * @param captionLabel the resolved caption naming what this context recedes, shown ahead of
      *                     the two checkboxes
+     * @param board        the refresh board of the sector this control was built for, carried into
+     *                     both checkboxes so a flip repaints that sector's backdrop
      * @return the recede control, top to bottom: the caption, the Mute checkbox (lit when the set's
      *         receded backdrop is dimmed), and the Desaturate checkbox (lit when it is recoloured)
      */
-    public static List<ControlSpec> buildControls(RecedePreferences preferences, String captionLabel) {
+    public static List<ControlSpec> buildControls(
+            RecedePreferences preferences,
+            String captionLabel,
+            MapLayerRefreshBoard board) {
+
         // The caption and both boxes read in the engine's plain text tone - the control block calls
         // nothing out, so every run of it is the same one colour, resolved once here.
         var textColour = StarsectorUiColour.VANILLA_TEXT.resolve();
@@ -44,22 +54,26 @@ public final class RecedeControl {
             ControlSpec.Checkbox.lit(
                 new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED), textColour),
                 preferences.isMuted(),
-                cellIndex -> toggleMuted(preferences)),
+                cellIndex -> toggleMuted(preferences, board)),
             ControlSpec.Checkbox.lit(
                 new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED), textColour),
                 preferences.isDesaturated(),
-                cellIndex -> toggleDesaturated(preferences)));
+                cellIndex -> toggleDesaturated(preferences, board)));
     }
 
     // Flips the set's Mute toggle to the opposite of its current state, so the checkbox is a plain
-    // on/off. The setter persists the choice and requests the overlay repaint.
-    private static void toggleMuted(RecedePreferences preferences) {
-        preferences.setMuted(!preferences.isMuted());
+    // on/off. The setter persists the choice and raises on the board this control was built with, so
+    // the repaint lands on the sector whose sidebar the click came from.
+    private static void toggleMuted(RecedePreferences preferences, MapLayerRefreshBoard board) {
+        preferences.setMuted(!preferences.isMuted(), board);
     }
 
     // Flips the set's Desaturate toggle to the opposite of its current state, matching the Mute
     // checkbox.
-    private static void toggleDesaturated(RecedePreferences preferences) {
-        preferences.setDesaturated(!preferences.isDesaturated());
+    private static void toggleDesaturated(
+            RecedePreferences preferences,
+            MapLayerRefreshBoard board) {
+
+        preferences.setDesaturated(!preferences.isDesaturated(), board);
     }
 }

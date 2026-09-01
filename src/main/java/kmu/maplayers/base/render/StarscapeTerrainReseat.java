@@ -1,6 +1,5 @@
 package kmu.maplayers.base.render;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
@@ -75,7 +74,8 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
      * one and stand the move down over a sector it never tried. Transient: pure runtime logic that
      * must not enter a save, so it is re-added fresh each load and never duplicates across reloads.
      *
-     * @param sector the sector to put the script on; null installs nothing
+     * @param sector the sector to put the script on and whose above-nebulae terrain it lifts; null
+     *               installs nothing
      */
     void installReseatOn(SectorAPI sector) {
 
@@ -84,9 +84,12 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         // repointed at the other surface.
         //
         // Read afresh per call rather than resolved here, since a save load replaces the entity and
-        // the script outlives no load anyway.
+        // the script outlives no load anyway. The lookup closes over the sector this reseat is being
+        // installed on rather than reading the running one: this holder belongs to one sector's
+        // installation, so a running-sector read would have it lift another sector's terrain - and
+        // leave the sector it was installed for fogged.
         Supplier<SectorEntityToken> findAboveNebulaeTerrain =
-            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(Global.getSector());
+            () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sector);
 
         // The map read is the Starscape one and its sibling on MapPresence is the wrong one, which
         // is worth stating because nothing catches the swap: both compile, both are on the same

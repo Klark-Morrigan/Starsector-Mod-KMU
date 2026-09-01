@@ -4,6 +4,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -26,6 +27,10 @@ import java.util.List;
  * <p>The specs carry resolved display strings and the controls' live lit state, since the layout
  * snaps each control to its measured text and the renderer draws each in its current state; they
  * are rebuilt per call so a flipped toggle shows immediately.
+ *
+ * <p>The sub-options are handed the refresh board of the sector they are built for, so a flip
+ * repaints the map the sidebar is over rather than whichever sector is running. The selector takes
+ * none: switching views writes a selection the overlay reads directly and raises no signal.
  */
 public final class PoliticalMapBodyControls {
 
@@ -41,11 +46,13 @@ public final class PoliticalMapBodyControls {
     }
 
     /**
+     * @param board the refresh board of the sector these controls are built for, carried into both
+     *              writers so a flip or a pick repaints that sector's overlay
      * @return the tab's view-agnostic sub-options, top to bottom: the uninhabited-systems checkbox
      *         (lit when uninhabited systems draw), then the Full/Short/No name radio (its lit
      *         segment the active choice) with its trailing "faction names" label
      */
-    public static List<ControlSpec> buildSharedControls() {
+    public static List<ControlSpec> buildSharedControls(MapLayerRefreshBoard board) {
         return List.of(
             ControlSpec.Checkbox.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
@@ -53,7 +60,7 @@ public final class PoliticalMapBodyControls {
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
                 UninhabitedOutlinePreference.isOutlineDrawn(),
-                cellIndex -> toggleUninhabitedSystems()),
+                cellIndex -> toggleUninhabitedSystems(board)),
             ControlSpec.HorizontalRadio
                 .of(
                     List.of(
@@ -61,7 +68,7 @@ public final class PoliticalMapBodyControls {
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
                     nameFormatRadioState(),
-                    PoliticalMapBodyControls::selectNameFormatSegment)
+                    segmentIndex -> selectNameFormatSegment(segmentIndex, board))
                 .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
     }
 
@@ -105,24 +112,25 @@ public final class PoliticalMapBodyControls {
     }
 
     // Flips the uninhabited-systems outline on or off: if it currently draws, hide it; otherwise draw
-    // it. The preference persists the flip in this save and requests the restyle, so the live map
-    // follows the checkbox on the next frame.
-    private static void toggleUninhabitedSystems() {
+    // it. The preference persists the flip in this save and raises on the board this control was
+    // built with, so the map that repaints is the one whose sidebar the click came from.
+    private static void toggleUninhabitedSystems(MapLayerRefreshBoard board) {
         UninhabitedOutlinePreference.setOutlineDrawn(
-            !UninhabitedOutlinePreference.isOutlineDrawn());
+            !UninhabitedOutlinePreference.isOutlineDrawn(),
+            board);
     }
 
     // Writes the name choice for the clicked radio segment, matching the Full-Short-No segment order
     // the labels are supplied in. No is a choice like the other two rather than a separate gate, so
     // turning the names off is the same one write. Any other index is ignored, so a stray hit outside
     // the three known segments changes nothing.
-    private static void selectNameFormatSegment(int segmentIndex) {
+    private static void selectNameFormatSegment(int segmentIndex, MapLayerRefreshBoard board) {
         if (segmentIndex == NAME_FULL_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL);
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL, board);
         } else if (segmentIndex == NAME_SHORT_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT);
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT, board);
         } else if (segmentIndex == NAME_NONE_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE);
+            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE, board);
         }
     }
 

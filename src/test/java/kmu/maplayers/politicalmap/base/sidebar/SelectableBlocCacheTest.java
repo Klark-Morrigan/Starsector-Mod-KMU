@@ -132,6 +132,23 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
+        void resolveBlocPickerReadKeysTheMemoOnItsOwnInstallationsBoard() {
+            // The key is the view's fold of a board, and the board it folds has to be this
+            // installation's: keyed on the running sector's instead, a list would never be re-walked
+            // when its own sector's alliances moved, and would be thrown away when another sector's
+            // did. Every other case here stubs the fold against any board, so this is the one that
+            // reads the argument back.
+            var sectorMock = mock(SectorAPI.class);
+            var viewMock = stubViewAnswering(sectorMock, "factions");
+            var installation = new MapLayerInstallation(sectorMock);
+
+            new SelectableBlocCache(installation).resolveBlocPickerRead(viewMock);
+
+            verify(viewMock)
+                .getContentRevision(installation.resolveRefreshBoard());
+        }
+
+        @Test
         void resolveBlocPickerReadServesEachInstallationItsOwnSectorsRows() {
             // The wrongness a shared memo produces is a wrong list, not a stale one: the revision is
             // the view's, so one sector's rows would answer under the other's ask with nothing about

@@ -3,7 +3,7 @@ package kmu.maplayers.base.sidebar;
 import kmlib.starsector.memory.SectorMemoryString;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 import java.util.function.Predicate;
 
@@ -31,6 +31,11 @@ import java.util.function.Predicate;
  * the reading layer repaints live, standing in for the {@code settingsRevision} bump these
  * sidebar-only changes never make. The bump is gated on the store actually landing, so a call
  * before the sector exists (or a clear with nothing selected) neither writes nor repaints.
+ *
+ * <p>The board to raise on arrives with the write rather than being resolved here. A pick is made on
+ * a picker built against one sector's installed machinery, and a board resolved at the click would
+ * be whichever sector is running instead - so the picker would repaint a map it does not belong to
+ * and leave its own standing on a selection that had moved.
  */
 public final class FilterSelection {
 
@@ -61,10 +66,12 @@ public final class FilterSelection {
      *
      * @param scopeId    the scope the pick belongs to
      * @param selectedId the stable id to filter to
+     * @param board      the refresh board of the sector whose picker made the pick, raised on so
+     *                   that sector's overlay repaints
      */
-    public static void selectId(String scopeId, String selectedId) {
+    public static void selectId(String scopeId, String selectedId, MapLayerRefreshBoard board) {
         if (resolveSlot(scopeId).set(selectedId)) {
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
+            board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
         }
     }
 
@@ -74,10 +81,12 @@ public final class FilterSelection {
      * when the scope had no id selected - nothing to unset and nothing to repaint.
      *
      * @param scopeId the scope whose filter is cleared
+     * @param board   the refresh board of the sector whose picker made the clear, raised on so that
+     *                sector's overlay repaints
      */
-    public static void clearSelection(String scopeId) {
+    public static void clearSelection(String scopeId, MapLayerRefreshBoard board) {
         if (resolveSlot(scopeId).clear()) {
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
+            board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
         }
     }
 

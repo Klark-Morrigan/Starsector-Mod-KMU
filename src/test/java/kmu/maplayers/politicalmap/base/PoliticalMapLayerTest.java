@@ -123,7 +123,7 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsAppendsTheSelectedViewsControlsAfterTheSelector() {
 
-            when(viewWithControlsMock.getViewBodyControls())
+            when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
             registerDefaultView(viewWithControlsMock);
@@ -157,7 +157,7 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsPlacesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
 
-            when(viewWithControlsMock.getViewBodyControls())
+            when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
             registerDefaultView(viewWithControlsMock);
@@ -185,6 +185,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
@@ -200,7 +201,7 @@ final class PoliticalMapLayerTest {
 
             // The faction view adds no controls of its own, so the body is only the shared rows and
             // the selector - nothing trails the selector.
-            when(viewWithoutControlsMock.getViewBodyControls())
+            when(viewWithoutControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of());
 
             registerDefaultView(viewWithoutControlsMock);
@@ -340,6 +341,7 @@ final class PoliticalMapLayerTest {
                         eq(PICKER_VIEW_ID),
                         any(),
                         any(),
+                        any(),
                         any()));
             }
         }
@@ -384,6 +386,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
@@ -393,6 +396,69 @@ final class PoliticalMapLayerTest {
                 // that sector's own memo - the machinery of no sector reads no economy at all.
                 verify(viewWithoutControlsMock)
                     .resolveBlocPickerRead(sectorMock);
+
+            } finally {
+                MapLayerInstallations.uninstallMachineryFrom(sectorMock);
+            }
+        }
+
+        @Test
+        void getBodyControlsHandsEveryWriterTheRunningSectorsOwnRefreshBoard() {
+            // The controls this body builds all write a sidebar-only preference, which repaints by
+            // raising a signal rather than by moving settingsRevision - so each is handed the board
+            // of the machinery this build resolved. Handed any other, a flip would repaint a map the
+            // player is not looking at and leave the one they are as it was.
+            registerViewWithOneBloc(viewWithoutControlsMock);
+
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getMemoryWithoutUpdate())
+                .thenReturn(mock(MemoryAPI.class));
+
+            var settingsMock = buildSettingsAnsweringColours();
+
+            // Installed outside the stubbing below, so the index resolves a real logger.
+            var installedBoard = MapLayerInstallations
+                .installMachineryOn(sectorMock)
+                .resolveRefreshBoard();
+
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class);
+                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
+
+                stubSharedControlsAndSelector(controlsMock);
+                pickerMock
+                    .when(() -> FilterSelectionBinder.buildPicker(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                    .thenReturn(List.of(PICKER_MARKER));
+
+                PoliticalMapLayer.INSTANCE.getBodyControls();
+
+                // The three seams the body hands a board to: the shared sub-options, the spotlight
+                // picker, and the selected view's own controls.
+                controlsMock.verify(
+                    () -> PoliticalMapBodyControls.buildSharedControls(installedBoard));
+                pickerMock.verify(
+                    () -> FilterSelectionBinder.buildPicker(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        eq(installedBoard)));
+                verify(viewWithoutControlsMock)
+                    .getViewBodyControls(installedBoard);
 
             } finally {
                 MapLayerInstallations.uninstallMachineryFrom(sectorMock);
@@ -413,7 +479,7 @@ final class PoliticalMapLayerTest {
         when(view.getContentRevision(any()))
             .thenReturn(1);
 
-        when(view.getViewBodyControls())
+        when(view.getViewBodyControls(any()))
             .thenReturn(List.of());
 
         // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item
@@ -472,7 +538,7 @@ final class PoliticalMapLayerTest {
             MockedStatic<PoliticalMapBodyControls> controlsMock) {
 
         controlsMock
-            .when(PoliticalMapBodyControls::buildSharedControls)
+            .when(() -> PoliticalMapBodyControls.buildSharedControls(any()))
             .thenReturn(List.of(SHARED_MARKER));
 
         controlsMock

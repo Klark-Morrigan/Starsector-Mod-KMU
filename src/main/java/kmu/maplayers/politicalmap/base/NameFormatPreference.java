@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import kmlib.starsector.memory.SectorMemoryString;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 /**
  * How cluster labels spell their holders' names - full, short, or not at all - persisted per save.
@@ -49,14 +49,20 @@ public final class NameFormatPreference {
      * disappear) at once. A no-op before the sector exists, since there is no save to write into yet.
      *
      * @param choice how cluster labels should spell their holders' names, or that they draw none
+     * @param board  the refresh board of the sector whose radio made the pick, raised on so that
+     *               sector's labels re-fit
      */
-    public static void selectNameFormat(FactionNameFormatChoice choice) {
+    public static void selectNameFormat(FactionNameFormatChoice choice, MapLayerRefreshBoard board) {
         // Repaint only on a real write: before the sector exists the write no-ops and reports no
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which this sidebar-only choice never moves since it is not a LunaLib
         // field.
+        //
+        // The board is the radio's rather than one resolved here: the control was built against one
+        // sector's installed machinery, and a board picked up at the click would be whichever sector
+        // is running instead.
         if (selectedNameFormat.set(choice.persistenceKey())) {
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
+            board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }
     }
 }

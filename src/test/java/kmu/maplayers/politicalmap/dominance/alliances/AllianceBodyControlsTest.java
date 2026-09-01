@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.dominance.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.util.KmuStrings;
@@ -20,27 +21,34 @@ import static org.mockito.Mockito.mockStatic;
  * non-allied recede set and the {@code Non-allied factions are} caption, then returns exactly what the
  * control builds - so the checkbox shape and toggle wiring stay the shared control's concern while the
  * set and caption are the view's. The strings are stubbed so the caption is pinned by its key, not its
- * live text.
+ * live text. The board it was handed travels through with them, so the flip a checkbox makes lands on
+ * the sector whose sidebar the view is drawn in.
  */
 final class AllianceBodyControlsTest {
     // A sentinel the shared control is stubbed to return, so the test proves the adapter passes it
     // straight through rather than building its own controls.
     private static final List<ControlSpec> BUILT_CONTROLS = List.of();
 
+    // The board the tab hands down, stood in for so the pass-through can be pinned by identity.
+    private static final MapLayerRefreshBoard PASSED_BOARD = new MapLayerRefreshBoard();
+
     @Nested
     class BuildControls {
 
         @Test
-        void buildControlsHandsTheNonAlliedSetAndCaptionToTheSharedRecedeControl() {
+        void buildControlsHandsTheNonAlliedSetCaptionAndBoardToTheSharedRecedeControl() {
             try (MockedStatic<RecedeControl> controlMock = mockStatic(RecedeControl.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
                         .thenReturn("Non-allied factions are");
                 controlMock.when(() -> RecedeControl.buildControls(
-                        RecedePreferences.ALLIANCE_NON_ALLIED, "Non-allied factions are"))
+                        RecedePreferences.ALLIANCE_NON_ALLIED,
+                        "Non-allied factions are",
+                        PASSED_BOARD))
                         .thenReturn(BUILT_CONTROLS);
 
-                assertThat(AllianceBodyControls.buildControls()).isSameAs(BUILT_CONTROLS);
+                assertThat(AllianceBodyControls.buildControls(PASSED_BOARD))
+                        .isSameAs(BUILT_CONTROLS);
             }
         }
     }

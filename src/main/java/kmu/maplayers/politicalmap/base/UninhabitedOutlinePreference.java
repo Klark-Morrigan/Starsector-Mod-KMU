@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import kmlib.starsector.memory.SectorMemoryFlag;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 /**
  * Whether uninhabited systems draw their outline, persisted per save. Off by default, so only
@@ -45,14 +45,20 @@ public final class UninhabitedOutlinePreference {
      * yet.
      *
      * @param shouldDrawOutline the new state, as the sidebar checkbox reads it
+     * @param board             the refresh board of the sector whose checkbox was flipped, raised on
+     *                          so that sector's overlay restyles
      */
-    public static void setOutlineDrawn(boolean shouldDrawOutline) {
+    public static void setOutlineDrawn(boolean shouldDrawOutline, MapLayerRefreshBoard board) {
         // Repaint only on a real write: before the sector exists the write no-ops and reports no
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which this sidebar-only toggle never moves since it is not a LunaLib
         // field.
+        //
+        // The board is the checkbox's rather than one resolved here: the control was built against
+        // one sector's installed machinery, and a board picked up at the click would be whichever
+        // sector is running instead.
         if (isOutlineDrawn.set(shouldDrawOutline)) {
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
+            board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }
     }
 }

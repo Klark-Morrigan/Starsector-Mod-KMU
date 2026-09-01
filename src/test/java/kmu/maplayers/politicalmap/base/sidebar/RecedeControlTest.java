@@ -4,6 +4,7 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStrings;
@@ -29,11 +30,20 @@ import static org.mockito.Mockito.when;
  * and the preferences set is a mock, so this pins the control shape and the toggle wiring alone - not
  * how a string resolves or how a set persists - and proves the control drives whichever set it is
  * handed rather than a fixed one.
+ *
+ * <p>Each click is verified against the board the control was built with, which is what fails if the
+ * control ever resolved a board of its own instead: the flip would then repaint whichever sector was
+ * running rather than the one the sidebar was placed over.
  */
 final class RecedeControlTest {
     // A sample caption the caller supplies, echoed into the first cell; a fixed value so the test
     // depends on no context's real caption.
     private static final String CAPTION_LABEL = "Non-allied factions are";
+
+    // The board a control is built against, standing in for one sector's installed machinery. Held
+    // by identity rather than read for revisions: the set is a mock, so nothing raises on it here and
+    // what each click case pins is that this exact board reached the setter.
+    private static final MapLayerRefreshBoard BUILT_BOARD = new MapLayerRefreshBoard();
 
     // The three cell positions the controls are built in, so a test names the control it inspects
     // rather than reaching for a bare index.
@@ -74,7 +84,8 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
-                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL).get(CAPTION);
+                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD)
+                        .get(CAPTION);
 
                 // A caption is a text-only Label - drawn but never clicked, so it is not Interactive and
                 // carries no lit cell at all.
@@ -91,7 +102,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
-                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL);
+                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD);
 
                 assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
@@ -160,7 +171,7 @@ final class RecedeControlTest {
 
                 buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setMuted(true);
+                verify(preferencesMock).setMuted(true, BUILT_BOARD);
             }
         }
 
@@ -173,7 +184,7 @@ final class RecedeControlTest {
 
                 buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setMuted(false);
+                verify(preferencesMock).setMuted(false, BUILT_BOARD);
             }
         }
 
@@ -186,7 +197,7 @@ final class RecedeControlTest {
 
                 buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setDesaturated(true);
+                verify(preferencesMock).setDesaturated(true, BUILT_BOARD);
             }
         }
 
@@ -199,7 +210,7 @@ final class RecedeControlTest {
 
                 buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setDesaturated(false);
+                verify(preferencesMock).setDesaturated(false, BUILT_BOARD);
             }
         }
     }
@@ -208,7 +219,8 @@ final class RecedeControlTest {
     // caption is chrome and not Interactive, so only the checkboxes below it expose the lit cell and
     // click action a test drives. Rebuilt fresh each call, so a test reads the state its stubs set.
     private static ControlSpec.Interactive buildInteractiveAt(RecedePreferences preferences, int index) {
-        return (ControlSpec.Interactive) RecedeControl.buildControls(preferences, CAPTION_LABEL)
+        return (ControlSpec.Interactive) RecedeControl
+                .buildControls(preferences, CAPTION_LABEL, BUILT_BOARD)
                 .get(index);
     }
 

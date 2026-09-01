@@ -168,6 +168,54 @@ class MapSurfaceInstallerTest {
         }
 
         @Test
+        void looksUpTheTerrainOfTheSectorItWasInstalledOnRatherThanTheRunningOne() {
+            // A reseat is held per installation, so the terrain it lifts must be the terrain of the
+            // sector it was installed for. Reading the running sector instead would have one
+            // sector's script lift another sector's entity - and leave its own sector's map fogged
+            // where the band was meant to clear it.
+            var installedSectorMock = mock(SectorAPI.class);
+            var runningSectorMock = mock(SectorAPI.class);
+
+            // Loaded before Global is stood in for, so the installer's logger is resolved outside
+            // the stubbed scope rather than left null for the rest of the JVM.
+            MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
+
+            MapLayerInstallations.installMachineryOn(installedSectorMock);
+
+            try (var mapViewMock = mockStatic(CampaignMapView.class);
+                    var globalMock = mockStatic(Global.class);
+                    var terrainMock = mockStatic(MapLayerTerrainInstaller.class);
+                    var layeringProbeMock = mockStatic(MapIconLayeringProbe.class)) {
+
+                // The two sectors disagree, which is the whole of what makes this a regression
+                // rather than a restatement: a lookup off the global answers the running one.
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(runningSectorMock);
+
+                mapViewMock
+                    .when(CampaignMapView::resolveSectorMapState)
+                    .thenReturn(SectorMapState.SHOWING_IN_STARSCAPE_MODE);
+
+                MapSurfaceInstaller.installStarscapeTerrainReseater(installedSectorMock);
+
+                var reseater = ArgumentCaptor.forClass(MapIconReseater.class);
+
+                verify(installedSectorMock)
+                    .addTransientScript(reseater.capture());
+
+                reseater.getValue().advance(ONE_FRAME);
+
+                terrainMock.verify(() -> MapLayerTerrainInstaller
+                    .findAboveStarscapeNebulaeTerrain(installedSectorMock));
+                terrainMock.verify(
+                    () -> MapLayerTerrainInstaller
+                        .findAboveStarscapeNebulaeTerrain(runningSectorMock),
+                    never());
+            }
+        }
+
+        @Test
         void toleratesANullSector() {
 
             var reseaterInstallOnNullSector = (Runnable) () ->

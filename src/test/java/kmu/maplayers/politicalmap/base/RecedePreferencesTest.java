@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuPoliticalMapTerritorySettings;
 
@@ -22,8 +22,9 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the recede preferences set: each read falls back to its own toggle's default while no choice is
  * stored - Mute off, Desaturate on - and a stored value always outranks it, each write persists
- * its instance's frozen key to sector memory and bumps the recede-style revision so the overlay
- * repaints, both no-op cleanly before the sector exists, and the toggles resolve into the adjustment
+ * its instance's frozen key to sector memory and bumps the recede-style revision on the board it was
+ * handed so that sector's overlay repaints, both no-op cleanly before the sector exists, and the
+ * toggles resolve into the adjustment
  * every context this set backs applies. The generic behaviour is exercised through a test-keyed set,
  * while the two live sets' frozen keys are pinned through their writes so a rename that would silently
  * reset every existing save's choice fails here rather than shipping. The migrations that carry an
@@ -193,7 +194,7 @@ final class RecedePreferencesTest {
     class SetMuted {
 
         @Test
-        void setMutedPersistsTheChoiceAndRequestsARefresh() {
+        void setMutedPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -202,17 +203,17 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                var revisionBefore = readLiveRecedeStyleRevision();
+                var board = new MapLayerRefreshBoard();
 
-                TEST_SET.setMuted(true);
+                TEST_SET.setMuted(true, board);
 
                 verify(memoryMock)
                     .set(TEST_MUTE_KEY, true);
 
                 // The flip must bump the recede-style revision, since these sidebar-only toggles
                 // never move settingsRevision - that bump is what repaints the overlay live.
-                assertThat(readLiveRecedeStyleRevision())
-                    .isNotEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                    .isEqualTo(1);
             }
         }
 
@@ -227,7 +228,7 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                TEST_SET.setMuted(false);
+                TEST_SET.setMuted(false, new MapLayerRefreshBoard());
 
                 verify(memoryMock)
                     .set(TEST_MUTE_KEY, false);
@@ -244,12 +245,12 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var revisionBefore = readLiveRecedeStyleRevision();
+                var board = new MapLayerRefreshBoard();
 
-                TEST_SET.setMuted(true);
+                TEST_SET.setMuted(true, board);
 
-                assertThat(readLiveRecedeStyleRevision())
-                    .isEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                    .isEqualTo(0);
             }
         }
 
@@ -265,7 +266,7 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                RecedePreferences.FILTER.setMuted(true);
+                RecedePreferences.FILTER.setMuted(true, new MapLayerRefreshBoard());
 
                 verify(memoryMock)
                     .set(FILTER_MUTE_KEY, true);
@@ -284,7 +285,7 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                RecedePreferences.ALLIANCE_NON_ALLIED.setMuted(true);
+                RecedePreferences.ALLIANCE_NON_ALLIED.setMuted(true, new MapLayerRefreshBoard());
 
                 verify(memoryMock)
                     .set(ALLIANCE_MUTE_KEY, true);
@@ -296,7 +297,7 @@ final class RecedePreferencesTest {
     class SetDesaturated {
 
         @Test
-        void setDesaturatedPersistsTheChoiceAndRequestsARefresh() {
+        void setDesaturatedPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
             try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
@@ -305,15 +306,15 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                var revisionBefore = readLiveRecedeStyleRevision();
+                var board = new MapLayerRefreshBoard();
 
-                TEST_SET.setDesaturated(true);
+                TEST_SET.setDesaturated(true, board);
 
                 verify(memoryMock)
                     .set(TEST_DESATURATE_KEY, true);
 
-                assertThat(readLiveRecedeStyleRevision())
-                    .isNotEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                    .isEqualTo(1);
             }
         }
 
@@ -329,7 +330,7 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                TEST_SET.setDesaturated(false);
+                TEST_SET.setDesaturated(false, new MapLayerRefreshBoard());
 
                 verify(memoryMock)
                     .set(TEST_DESATURATE_KEY, false);
@@ -344,12 +345,12 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var revisionBefore = readLiveRecedeStyleRevision();
+                var board = new MapLayerRefreshBoard();
 
-                TEST_SET.setDesaturated(true);
+                TEST_SET.setDesaturated(true, board);
 
-                assertThat(readLiveRecedeStyleRevision())
-                    .isEqualTo(revisionBefore);
+                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                    .isEqualTo(0);
             }
         }
 
@@ -363,7 +364,7 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                RecedePreferences.FILTER.setDesaturated(true);
+                RecedePreferences.FILTER.setDesaturated(true, new MapLayerRefreshBoard());
 
                 verify(memoryMock)
                     .set(FILTER_DESATURATE_KEY, true);
@@ -380,7 +381,9 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(true);
+                RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(
+                    true,
+                    new MapLayerRefreshBoard());
 
                 verify(memoryMock)
                     .set(ALLIANCE_DESATURATE_KEY, true);
@@ -488,17 +491,5 @@ final class RecedePreferencesTest {
         settingsMock
             .when(KmuPoliticalMapTerritorySettings::getPoliticalMapAllianceMutedOpacityModifier)
             .thenReturn(mutedModifier);
-    }
-
-    // The board a flip is read back off: the live sector's, which is the one the setter raises on.
-    // No sector is loaded under the suite, so both ends land on the detached installation's board -
-    // shared with every other suite raising with no game loaded, which is why each case reads a
-    // step rather than an absolute count.
-    private static int readLiveRecedeStyleRevision() {
-
-        return MapLayerInstallations
-            .resolveInstallationForLiveSector()
-            .resolveRefreshBoard()
-            .getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
     }
 }
