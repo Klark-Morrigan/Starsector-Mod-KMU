@@ -9,6 +9,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
+import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -56,6 +57,9 @@ import static org.mockito.Mockito.when;
  * is sampled from Nexerelin,
  * so its resolution is pinned only for the Nex-absent fallback here; a live alliance set is the
  * in-game test's concern.
+ *
+ * <p>Its two seams that take a refresh board are pinned on the board they are handed rather than on
+ * one resolved for them: the revision it folds, and the body controls it contributes.
  */
 final class AlliancesViewTest {
 
@@ -154,6 +158,32 @@ final class AlliancesViewTest {
 
                 assertThat(AlliancesView.INSTANCE.resolveGrouping())
                     .isSameAs(HolderGrouping.identity());
+            }
+        }
+    }
+
+    @Nested
+    class GetViewBodyControls {
+
+        @Test
+        void getViewBodyControlsHandsTheBoardItWasGivenToTheRecedeAdapter() {
+            // This view's Mute/Desaturate checkboxes repaint by raising a signal, so the board has to
+            // reach them from the tab that placed them. Dropped here - a delegation short enough to
+            // look incapable of losing anything - the checkboxes would fall back to no board at all
+            // or to the running sector's, and a flip would repaint a map the player is not looking
+            // at.
+            var passedBoard = new MapLayerRefreshBoard();
+
+            try (var controlsMock = mockStatic(AllianceBodyControls.class)) {
+
+                var builtControls = List.<ControlSpec>of();
+
+                controlsMock
+                    .when(() -> AllianceBodyControls.buildControls(passedBoard))
+                    .thenReturn(builtControls);
+
+                assertThat(AlliancesView.INSTANCE.getViewBodyControls(passedBoard))
+                    .isSameAs(builtControls);
             }
         }
     }
