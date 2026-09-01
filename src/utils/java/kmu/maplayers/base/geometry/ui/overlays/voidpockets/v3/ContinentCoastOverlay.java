@@ -5,6 +5,7 @@ import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.IntercontinentalBridges;
+import kmu.maplayers.base.geometry.IntercontinentalPockets;
 import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
@@ -26,7 +27,8 @@ import java.util.Map;
  * its own closed coast, and everything that reading of the sector then produces: the outer
  * shores and the void behind them, the lake shores round the water the cells closed unaided,
  * the puddles too small for a shore, the spans laid across the inlets and the puddles and the
- * water those spans shut in, and the links laid between one continent and the next.
+ * water those spans shut in, and the links laid between one continent and the next with the sea
+ * a run of them takes in.
  *
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
@@ -81,9 +83,10 @@ public final class ContinentCoastOverlay {
     private List<CellGap> puddleBridges = List.of();
 
     // The links between the continents, held beside the trace and the inlet spans they were
-    // judged against. No fill either: a link joins two shapes rather than closing water in, so
-    // there is nothing behind it to draw.
-    private List<CellGap> intercontinentalBridges = List.of();
+    // judged against, with the sea a run of them shut in. Paired for the same reason the other
+    // two are: one link closes nothing and several close the void between two continents, so
+    // the lines and the water are one construction seen twice.
+    private SpanWater linkWater = SpanWater.NONE;
 
     // The settled bridge search, shared with the construction that also asks it. Handed in
     // rather than made here: two overlays asking one question of one sector have to be one
@@ -119,7 +122,7 @@ public final class ContinentCoastOverlay {
         inletWater = SpanWater.NONE;
         lakeWater = SpanWater.NONE;
         puddleBridges = List.of();
-        intercontinentalBridges = List.of();
+        linkWater = SpanWater.NONE;
         frontages = List.of();
 
         // The coasts are traced while any of them is wanted, because each is built on them:
@@ -143,14 +146,14 @@ public final class ContinentCoastOverlay {
         // because the two are laid independently: a formation is thinned among the spans it
         // shares an anchor with, and a span across a lake shares no anchor with one across
         // the void outside the continent.
-        // The links are laid against the inlet spans, so those have to exist whenever the links
-        // are wanted - drawn or not. Found only while their own layer is on, the links would be
-        // judged against a map missing every wall the inlet search put down, and switching the
-        // inlet spans on would silently change which links survive.
+        // The links are laid against the inlet spans, so those have to exist whenever anything
+        // of the links is wanted - drawn or not. Found only while their own layer is on, the
+        // links would be judged against a map missing every wall the inlet search put down, and
+        // switching the inlet spans on would silently change which links survive.
         inletWater = findSpanWater(
             fixture,
             CoastFrontages.Shore.EXTERIOR,
-            settings.showContinentBridges || settings.showIntercontinentalBridges,
+            settings.showContinentBridges || isAnyLinkLayerShown(),
             settings.showContinentInletFill);
 
         lakeWater = findSpanWater(
@@ -189,13 +192,8 @@ public final class ContinentCoastOverlay {
         // and over the same open void, so they are the ones a link can double or cross; a lake
         // span and a puddle span both stand over water the cells have already closed around,
         // which a line running between two continents cannot reach without crossing a cell.
-        if (settings.showIntercontinentalBridges) {
-
-            intercontinentalBridges = IntercontinentalBridges.findIntercontinentalBridges(
-                coast.getTrace(),
-                inletWater.spans(),
-                settings.parameters,
-                settings.resolveContinentBridgeRules());
+        if (isAnyLinkLayerShown()) {
+            linkWater = findLinkWater();
         }
     }
 
@@ -326,6 +324,9 @@ public final class ContinentCoastOverlay {
         if (settings.showContinentPuddleFill) {
             sheet.addRings(coast.collectPuddleRings());
         }
+        if (settings.showIntercontinentalFill) {
+            sheet.addRings(linkWater.pockets());
+        }
 
         // Last, and the one layer that takes water back OUT of the sheet: a lake's open middle
         // stays bare unless the spans' pockets fill it, which is what the two layers each mean
@@ -383,6 +384,40 @@ public final class ContinentCoastOverlay {
         return new SpanWater(spans, VoidBridgePockets.findBridgeWalledPockets(
             fixture.getSites(),
             spans,
+            settings.parameters,
+            settings.resolvePocketShaping()));
+    }
+
+    // Whether anything the links produce is wanted, which is what decides whether they are laid
+    // at all. Both their layers rather than the lines' alone: the fill is walked with the links
+    // as its subject, so asking for it is asking for them.
+    private boolean isAnyLinkLayerShown() {
+        return settings.showIntercontinentalBridges || settings.showIntercontinentalFill;
+    }
+
+    // The links and the sea they shut in, found together for the reason the shore spans are: the
+    // fill is walked with exactly the links that came out of the search, and a pair carried as
+    // two loose lists could be assembled out of two different layings.
+    //
+    // Walled by the inlet spans as well as by the links, since those are the remaining lines a
+    // sea between two continents can come to rest against - the walls deliberately left out are
+    // named where the walk is.
+    private SpanWater findLinkWater() {
+
+        var links = IntercontinentalBridges.findIntercontinentalBridges(
+            coast.getTrace(),
+            inletWater.spans(),
+            settings.parameters,
+            settings.resolveContinentBridgeRules());
+
+        if (!settings.showIntercontinentalFill || links.isEmpty()) {
+            return new SpanWater(links, List.of());
+        }
+
+        return new SpanWater(links, IntercontinentalPockets.findLinkWalledPockets(
+            coast.getTrace(),
+            links,
+            inletWater.spans(),
             settings.parameters,
             settings.resolvePocketShaping()));
     }
@@ -468,7 +503,7 @@ public final class ContinentCoastOverlay {
             g2.setColor(MapPainting.applyAlpha(
                 settings.intercontinentalBridgeColour, MapLook.OPAQUE_ALPHA));
 
-            paintSpans(g2, intercontinentalBridges);
+            paintSpans(g2, linkWater.spans());
         }
     }
 
@@ -481,12 +516,12 @@ public final class ContinentCoastOverlay {
         }
     }
 
-    // One shore's spans and the water they shut in, handed back together because they are
-    // found together - the fill is walked with exactly the spans that came out of the search,
-    // and a pair carried as two loose lists could be reassembled across shores.
+    // One set of spans and the water they shut in, handed back together because they are found
+    // together - the fill is walked with exactly the spans that came out of the search, and a
+    // pair carried as two loose lists could be reassembled across sets.
     private record SpanWater(List<CellGap> spans, List<List<double[]>> pockets) {
 
-        // What a shore neither switch asks for comes back as, so an idle shore costs nothing.
+        // What a set neither switch asks for comes back as, so an idle one costs nothing.
         private static final SpanWater NONE = new SpanWater(List.of(), List.of());
     }
 }

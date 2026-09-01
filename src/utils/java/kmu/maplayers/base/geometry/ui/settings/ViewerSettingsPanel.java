@@ -81,6 +81,7 @@ public final class ViewerSettingsPanel {
     private static final String LAKE_BRIDGES = "showContinentLakeBridges";
     private static final String LAKE_POCKET_FILL = "showContinentLakePocketFill";
     private static final String INTERCONTINENTAL_BRIDGES = "showIntercontinentalBridges";
+    private static final String INTERCONTINENTAL_FILL = "showIntercontinentalFill";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -783,7 +784,7 @@ public final class ViewerSettingsPanel {
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
             LAKE_BRIDGES, LAKE_POCKET_FILL,
             CONTINENT_BRIDGES, INLET_FILL,
-            INTERCONTINENTAL_BRIDGES));
+            INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL));
 
         rows.addAll(buildContinentBranchRows());
         rows.addAll(buildContinentGlobalRows());
@@ -845,12 +846,16 @@ public final class ViewerSettingsPanel {
                 INLET_FILL, "Fill", false,
                 on -> settings.showContinentInletFill = on)),
 
-            // A branch of one, and no roll-up over it: a link holds nothing, so there is no
-            // fill to see of it and nothing for a roll-up to gather. Last, because it is the
-            // only set laid against everything above rather than against the coasts alone.
-            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
-                INTERCONTINENTAL_BRIDGES, "Intercontinental bridges", false,
-                on -> settings.showIntercontinentalBridges = on)));
+            // Last, because it is the only set laid against everything above rather than
+            // against the coasts alone.
+            ToggleTree.Row.ofRollUp(
+                1, "Intercontinental bridges", INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                INTERCONTINENTAL_BRIDGES, "Bridges", false,
+                on -> settings.showIntercontinentalBridges = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                INTERCONTINENTAL_FILL, "Fill", false,
+                on -> settings.showIntercontinentalFill = on)));
     }
 
     // The globals: one per KIND of thing, cutting across every branch above. No switches of
@@ -875,7 +880,8 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 1,
                 "Fill",
-                LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL));
+                LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL,
+                INTERCONTINENTAL_FILL));
     }
 
     // What the v3 coastlines are and how they are drawn, which is what everything below is

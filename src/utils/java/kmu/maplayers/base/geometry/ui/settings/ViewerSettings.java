@@ -263,7 +263,14 @@ public final class ViewerSettings {
     //
     // Laid against the inlet spans whether or not those are drawn, so what survives here does
     // not depend on which layers happen to be on.
+    //
+    // The fill is the sea a run of links shuts in between two continents: one link closes
+    // nothing, and a second one joining the same pair rings the void between them. Found with
+    // the links and the inlet spans as the walls, and only what a link actually closed is drawn -
+    // water an inlet span holds is the layer above's, and water the cells closed unaided is a
+    // lake or a puddle with its own switch.
     public boolean showIntercontinentalBridges;
+    public boolean showIntercontinentalFill;
 
     // The same spans laid over the interior coastlines instead - across water the cells closed
     // around unaided rather than across the void between continents. One search over two shores
@@ -454,7 +461,8 @@ public final class ViewerSettings {
                 || showContinentInletFill
                 || showContinentLakeBridges
                 || showContinentLakePocketFill
-                || showIntercontinentalBridges);
+                || showIntercontinentalBridges
+                || showIntercontinentalFill);
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with
