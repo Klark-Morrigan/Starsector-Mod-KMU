@@ -130,17 +130,25 @@ public final class ViewerSettings {
     // the doubled line survives on a technicality.
     public static final double CONTINENT_BRIDGE_COAST_SLACK_DEFAULT = MapLook.SPAN_STROKE;
 
-    // How far along its frontage a span's foot steps off an anchor another span already holds.
+    // How close two span feet may stand before one of them moves.
     //
-    // Read against the COAST'S OWN SAMPLING rather than against the width a span is drawn at.
-    // A foot lands on a vertex the traced line already carries, so the shortest move there is
-    // is one sampling step - and the step is a few hundred map units on a typical stretch. Any
-    // setting under that selects the same vertex as any other, which is a knob that reads as a
-    // switch: off, or one step along.
+    // The width a span is drawn at, which is as small as the setting can be and still mean
+    // anything: two feet closer than the line they carry are one place to the eye, and there is
+    // nothing under that to tell apart.
     //
-    // Several steps, then, so that moving it moves feet. Wider still starts flinging a foot to
-    // the end of every stretch, which is the snap rule doing the work rather than this one.
-    public static final double SPAN_ANCHOR_SEPARATION_DEFAULT = 800;
+    // Small on purpose, because what this buys is bought at the bottom of its range. Feet that
+    // are EXACTLY coincident cost walls - the boundary walk gives a cell's mouth to one wall
+    // only, so at such a place every span but one goes unlaid and the water it would have closed
+    // never appears. Separating those is worth a fifth of the sector's walled pockets, measured
+    // on both fixtures, and any positive setting does it.
+    //
+    // Above that the knob stops building and starts trading. A foot's place is where its two
+    // cells come closest, so moving it off costs the span its claim to mark that crossing, and
+    // moving several breaks rings that were closing pockets. From this setting up to a cell's
+    // whole frontage the fixtures lose about a tenth of their pockets and gain a fiftieth on
+    // every span's length, for spacing only the eye wants. Worth having as a knob, not as a
+    // default.
+    public static final double SPAN_ANCHOR_SEPARATION_DEFAULT = MapLook.SPAN_STROKE;
 
     public static final float JITTER_DEFAULT = 35;
     public static final double JITTER_SCALE = 100.0;
@@ -333,13 +341,14 @@ public final class ViewerSettings {
     // apart and still call them one, and that is a matter of taste about the map.
     public double continentBridgeCoastSlack = CONTINENT_BRIDGE_COAST_SLACK_DEFAULT;
 
-    // How far along its frontage a span's foot is moved when another span is already standing
-    // on it, in map units. Zero leaves every foot where the search put it, which is the only
-    // way to see what the spreading did - a moved foot is moved rather than marked.
+    // How close two span feet may stand before one of them moves along its frontage, in map
+    // units. Zero leaves every foot where the search put it, which is the only way to see what
+    // the spreading did - a moved foot is moved rather than marked.
     //
     // One knob over every span the construction lays, like the rounding: what it decides is how
     // close two feet may be before a reader calls them one place, which is a claim about the
-    // drawing rather than about which set is being laid.
+    // drawing rather than about which set is being laid. Turned up it is a trade rather than an
+    // improvement - see the default, where the measurements are.
     public double spanAnchorSeparation = SPAN_ANCHOR_SEPARATION_DEFAULT;
 
     public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;

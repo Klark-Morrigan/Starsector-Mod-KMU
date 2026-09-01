@@ -114,7 +114,7 @@ import javax.swing.SwingUtilities;
  *       side of it, so a rounding sharp enough to push one arc through another shows here as
  *       a crossing the map would have resolved away.</li>
  *   <li><i>Painting it</i> - {@code RenderStyleReader.readRenderStyle}, {@code MapPalettes},
- *       {@code ClusterRenderer}, the label pass, and {@code KmuPoliticalMapSettings} entirely.
+ *       {@code ClusterRenderer}, the label pass, and every political-map settings class entirely.
  *       Nothing reads {@code Global}. Colours here are hash-derived hues for telling owners
  *       apart, never the faction palette, and this is Java2D, so no blend mode, line
  *       smoothing, hatching, or layering against vanilla is exercised.</li>

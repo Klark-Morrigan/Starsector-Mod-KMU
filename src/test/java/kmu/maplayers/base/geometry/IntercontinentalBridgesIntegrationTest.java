@@ -49,10 +49,13 @@ class IntercontinentalBridgesIntegrationTest {
     // drawing, which this package may not reach into.
     private static final double COAST_SLACK = 120;
 
-    // How far along its frontage a span's foot steps off one another span already holds. The
-    // shipped setting, which is several of the coast's own sampling steps: a foot lands on one
-    // of the traced line's vertices, so a shorter separation picks the same vertex anyway.
-    private static final double ANCHOR_SEPARATION = 800;
+    // How close two span feet may stand before one of them moves. The shipped setting, which
+    // separates feet that are coincident and leaves the rest where the search put them.
+    private static final double ANCHOR_SEPARATION = 120;
+
+    // How far off the drawn coast an anchor may be read as standing on it, in map units. Only
+    // the arithmetic of interpolating along a segment is being absorbed.
+    private static final double ON_THE_LINE = 1e-6;
 
     // The laying the map ships, which is the one worth reporting on.
     private static final ContinentBridges.BridgeRules SPAN_RULES =
@@ -130,12 +133,10 @@ class IntercontinentalBridgesIntegrationTest {
         @MethodSource(SECTORS)
         void every_link_is_anchored_on_bridgeable_frontage(String sector) {
             // A link has to end ON the drawn coast, since one ending short of it joins nothing
-            // that is on the map. Checked as identity against the traced points rather than as
-            // a distance: an anchor is one of the line's own vertices, so anything else is the
-            // search having computed a place on the arc instead of taking one off the line.
-            var frontages = CoastFrontages.gatherFrontagePoints(
-                CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector)));
-
+            // that is on the map. Measured against the line's segments rather than its corners,
+            // because a foot the spreading has moved sits wherever along its stretch the room
+            // was - which is generally between two of the points the line was sampled at.
+            var frontages = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector));
             var strayed = new ArrayList<String>();
 
             for (var link : linkContinentsOf(sector)) {
@@ -241,17 +242,25 @@ class IntercontinentalBridgesIntegrationTest {
         }
     }
 
-    // Whether a point is one of the traced points a cell offers, which is what anchoring on the
+    // Whether a point lies on the traced coast a cell offers, which is what anchoring on the
     // frontage means - on the line rather than near it.
-    private static boolean isPointOfFrontage(double[] anchor, List<double[]> frontage) {
+    private static boolean isPointOfFrontage(double[] anchor, List<List<double[]>> runs) {
 
-        if (frontage == null) {
+        if (runs == null) {
             return false;
         }
 
-        for (var point : frontage) {
+        for (var run : runs) {
+            for (var index = 1; index < run.size(); index++) {
 
-            if (Arrays.equals(anchor, point)) {
+                if (Segments.computeDistanceToPoint(
+                        run.get(index - 1), run.get(index), anchor) <= ON_THE_LINE) {
+
+                    return true;
+                }
+            }
+
+            if (run.size() == 1 && Points.computeDistance(run.get(0), anchor) <= ON_THE_LINE) {
                 return true;
             }
         }

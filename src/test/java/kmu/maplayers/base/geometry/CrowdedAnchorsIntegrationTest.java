@@ -19,10 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Integration coverage for spreading crowded span feet, over real sectors.
  *
  * <p>The pass only ever MOVES a foot, so what is worth pinning is the four things a move must
- * not break and the one thing it is for. It must keep every foot on the drawn coast, it must
- * lay no line across another, it must leave the set of spans exactly as it found it, and it
- * must not fidget - a foot nothing else wanted stays where the search put it. What it is for is
- * that fewer feet stand on one place afterwards than before.
+ * not break and the one thing it is for. It must keep every foot on the drawn coast, it must lay
+ * no line across another, it must leave the set of spans exactly as it found it, and it must not
+ * fidget - a foot with room already stays where the search put it. What it is for is that fewer
+ * feet stand within the separation of another afterwards than before.
  *
  * <p>Asked of the pass directly, over a laying the shipped pipeline produced with the spreading
  * switched off. That is the one comparison that isolates it: the same spans, in the same order,
@@ -44,24 +44,29 @@ class CrowdedAnchorsIntegrationTest {
     // units. The shipped setting; nothing below turns on the number.
     private static final double COAST_SLACK = 120;
 
-    // How far along its frontage a foot steps off one another span holds. The shipped setting,
-    // which is several of the coast's own sampling steps - a foot lands on one of the traced
-    // line's vertices, so a separation under one step selects the same vertex as any other.
+    // How close two feet may stand before one moves. Well above what the map ships with, and
+    // deliberately so: the shipped setting only separates feet that are coincident, and a suite
+    // that asked about that alone would exercise the rule for choosing a place hardly at all.
+    // Several of the coast's own sampling steps, so the pass has real decisions to make.
     private static final double ANCHOR_SEPARATION = 800;
 
     // What a laying is asked for with the spreading off, which is what a non-positive
     // separation means to the pass.
     private static final double NO_SPREADING = 0;
 
-    // How close two feet have to be to count as standing on one place. The tolerance two spans
-    // are said to share an anchor at, since that is the state the pass exists to undo.
+    // How close two feet have to be to be one place rather than two, which is only ever asked
+    // to tell whether a foot moved at all. What counts as CROWDED is the separation, hundreds
+    // of times this.
     private static final double ONE_PLACE = DiscUnion.TOUCHING_TOLERANCE;
 
-    // Slack on "did this foot move at least the separation along its frontage", in map units.
-    // A foot lands on one of the run's own points rather than at an exact distance along it, so
-    // the rule is met to within one sampling step; this is well under the shortest step the
-    // coast is sampled at and only absorbs the arithmetic.
-    private static final double ALONG_SLACK = 1e-6;
+    // What is passed as "which of these feet is the one being measured" when it is not one of
+    // them, so no entry is skipped.
+    private static final int NOT_IN_THE_LIST = -1;
+
+    // How far off the drawn coast a foot may be read as standing on it, in map units. Only the
+    // arithmetic of interpolating along a segment is being absorbed - a foot genuinely off the
+    // line misses by a sagitta, which on these cells is tens of units.
+    private static final double ON_THE_LINE = 1e-6;
 
     private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
     private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
@@ -84,11 +89,11 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void fewer_feet_stand_on_one_place_than_before(String sector) {
+        void fewer_feet_stand_within_the_separation_than_before(String sector) {
             // What the pass is for. Not all of them: a frontage of one point has nowhere to
-            // step, and a run whose every point is taken or would put the line across another
-            // span has nowhere worth stepping - so what is claimed is that it helps, not that
-            // it cures.
+            // step, one hemmed in on both sides has nowhere better, and a place that would put
+            // the line across another span is no place at all - so what is claimed is that it
+            // helps, not that it cures.
             var before = countCrowdedFeet(layUnspreadOn(sector));
             var after = countCrowdedFeet(laySpreadOn(sector));
 
@@ -97,7 +102,7 @@ class CrowdedAnchorsIntegrationTest {
                 .isPositive();
 
             assertThat(after)
-                .as("%s: spreading left as many feet on one place as it found", sector)
+                .as("%s: spreading left as many feet crowded as it found", sector)
                 .isLessThan(before);
         }
 
@@ -137,12 +142,15 @@ class CrowdedAnchorsIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_foot_still_stands_on_the_drawn_coast(String sector) {
-            // The invariant every anchor rests on: a foot is one of the traced line's own
-            // points, so the pieces are cut against the line rather than near it. A move that
-            // computed a place at an exact distance along the arc would sit off its chord.
-            var frontages = CoastFrontages.gatherFrontagePoints(
-                CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector)));
-
+            // The invariant every anchor rests on: a foot sits ON the traced line, so the
+            // pieces are cut against the line rather than near it. A place worked out on the
+            // cell's true arc would sit off its chord by the sagitta - near the coast, not on
+            // it - which is a fault no drawing shows and every measurement inherits.
+            //
+            // On the line, not at one of its corners. A foot moves to wherever along its own
+            // stretch the room is, which is generally between two of the points the line was
+            // sampled at.
+            var frontages = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector));
             var strayed = new ArrayList<String>();
 
             for (var span : laySpreadOn(sector)) {
@@ -197,173 +205,153 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_foot_nothing_else_wanted_is_left_where_it_stood(String sector) {
-            // The pass must not fidget. A foot moves because something is already standing on
-            // it, so a foot that moved off a place nothing else held would be the rule firing
-            // where it was not owed - and every such move is a span drawn somewhere other than
-            // where the search put it, for no reason a reader could find on the map.
+        void a_foot_only_moves_off_a_place_something_stands_too_close_to(String sector) {
+            // The pass must not fidget: a foot moves because another is inside the separation
+            // of it, so one that left a place with room to spare would be the rule firing where
+            // it was not owed - a span drawn somewhere other than where the search put it, for
+            // no reason a reader could find on the map.
+            //
+            // The crowd is looked for in the FINAL laying rather than the one the pass started
+            // from, because a foot is crowded by whatever is beside it WHEN IT IS LOOKED AT.
+            // Resolving one fan can put a foot next to a neighbour that had room until then,
+            // and that neighbour moving in its turn is the pass carrying on rather than
+            // fidgeting.
             var spread = laySpreadOn(sector);
             var unspread = layUnspreadOn(sector);
-            var feet = collectFeet(unspread);
             var fidgeted = new ArrayList<String>();
 
             for (var index = 0; index < spread.size(); index++) {
 
-                var was = unspread.get(index);
-                var now = spread.get(index);
+                var others = collectFeetExcept(spread, index);
 
-                if (!isSamePlace(now.start(), was.start())
-                        && countStandingOn(was.start(), feet) < 2) {
+                for (var side = 0; side < 2; side++) {
 
-                    fidgeted.add(String.format("%d-%d, first foot", was.fromSite(), was.toSite()));
-                }
-                if (!isSamePlace(now.end(), was.end())
-                        && countStandingOn(was.end(), feet) < 2) {
+                    var from = side == 0
+                        ? unspread.get(index).start() : unspread.get(index).end();
 
-                    fidgeted.add(String.format("%d-%d, second foot", was.fromSite(), was.toSite()));
+                    var to = side == 0 ? spread.get(index).start() : spread.get(index).end();
+
+                    if (!isSamePlace(from, to)
+                            && measureClearance(from, others) >= ANCHOR_SEPARATION) {
+
+                        fidgeted.add(String.format(
+                            "%d-%d foot %d, which had %.0f of room",
+                            spread.get(index).fromSite(), spread.get(index).toSite(), side,
+                            measureClearance(from, others)));
+                    }
                 }
             }
 
             assertThat(fidgeted)
-                .as("%s: a foot moved off a place nothing else was standing on", sector)
+                .as("%s: a foot moved off a place that had room", sector)
                 .isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_moved_foot_is_one_of_the_places_the_rule_names(String sector) {
-            // The rule itself: a foot moves the separation along its frontage, or to that
-            // stretch's end when it has less room than that, or - when both ends are spoken
-            // for - inward, toward the middle. Any other landing would mean the move had been
-            // decided by something other than the room available.
+        void a_moved_foot_stands_better_than_where_it_left(String sector) {
+            // The rule itself, and the whole of it. A foot goes to the nearest place clear of
+            // every other by the separation, or failing that to the place with the most room on
+            // its stretch - so a move that did not buy room is a move made for some other
+            // reason, and there is no other reason to make one.
             //
-            // The inward case is not pinned to the middle POINT. Where everything better is
-            // barred the foot takes what it can, which is often a single sampling place off the
-            // crowded end; what makes that the same answer is the direction, since the only
-            // room left on such a stretch is between its two ends.
-            var runs = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector));
+            // Both places are weighed against where the feet FINALLY stand, which is the only
+            // reading a viewer of the map can take. Weighed against the laying the pass started
+            // from, a foot that moved early and was then crowded by a later arrival reads as
+            // having lost room - a fact about the order the spans were looked at rather than
+            // about the map.
             var spread = laySpreadOn(sector);
             var unspread = layUnspreadOn(sector);
-            var landed = new ArrayList<String>();
+            var pointless = new ArrayList<String>();
 
             for (var index = 0; index < spread.size(); index++) {
 
-                var was = unspread.get(index);
-                var now = spread.get(index);
+                // Its own span's two feet left out: a foot is nought from itself, and the far
+                // end of its own span moves with it.
+                var settled = collectFeetExcept(spread, index);
 
-                if (!isSamePlace(now.start(), was.start())
-                        && !isPlaceTheRuleAllows(
-                            runs.get(was.fromSite()), was.start(), now.start())) {
+                for (var side = 0; side < 2; side++) {
 
-                    landed.add(String.format("%d-%d, first foot", was.fromSite(), was.toSite()));
-                }
-                if (!isSamePlace(now.end(), was.end())
-                        && !isPlaceTheRuleAllows(runs.get(was.toSite()), was.end(), now.end())) {
+                    var from = side == 0
+                        ? unspread.get(index).start() : unspread.get(index).end();
 
-                    landed.add(String.format("%d-%d, second foot", was.fromSite(), was.toSite()));
+                    var to = side == 0 ? spread.get(index).start() : spread.get(index).end();
+
+                    if (!isSamePlace(from, to)
+                            && measureClearance(to, settled) <= measureClearance(from, settled)) {
+
+                        pointless.add(String.format(
+                            "%d-%d foot %d: left %.0f of room for %.0f",
+                            spread.get(index).fromSite(), spread.get(index).toSite(), side,
+                            measureClearance(from, settled), measureClearance(to, settled)));
+                    }
                 }
             }
 
-            assertThat(landed)
-                .as("%s: a foot moved somewhere the rule does not name", sector)
+            assertThat(pointless)
+                .as("%s: a foot moved without gaining room", sector)
                 .isEmpty();
         }
     }
 
-    // Whether a moved foot is one of the landings the rule allows: the separation or more along
-    // the same stretch of coast, one of that stretch's ends, or a place further into it than the
-    // foot started - which is the inward answer for a stretch that can offer neither.
-    private static boolean isPlaceTheRuleAllows(
-            List<List<double[]>> runs,
-            double[] was,
-            double[] now) {
-
-        var run = findRunHolding(runs, was);
-
-        if (run == null) {
-            return false;
-        }
-
-        var from = indexOfPoint(run, was);
-        var to = indexOfPoint(run, now);
-
-        if (to == -1) {
-            return false;
-        }
-
-        var along = measureAlongRun(run);
-        var middle = along[run.size() - 1] / 2;
-
-        return Math.abs(along[to] - along[from]) >= ANCHOR_SEPARATION - ALONG_SLACK
-            || to == 0
-            || to == run.size() - 1
-            || Math.abs(along[to] - middle) < Math.abs(along[from] - middle);
-    }
-
-    private static double[] measureAlongRun(List<double[]> run) {
-
-        var along = new double[run.size()];
-
-        for (var index = 1; index < run.size(); index++) {
-
-            along[index] = along[index - 1]
-                + Points.computeDistance(run.get(index - 1), run.get(index));
-        }
-        return along;
-    }
-
-    private static List<double[]> findRunHolding(List<List<double[]>> runs, double[] point) {
-
-        if (runs == null) {
-            return null;
-        }
-
-        for (var run : runs) {
-
-            if (indexOfPoint(run, point) != -1) {
-                return run;
-            }
-        }
-        return null;
-    }
-
-    private static int indexOfPoint(List<double[]> run, double[] point) {
-
-        for (var index = 0; index < run.size(); index++) {
-
-            if (Arrays.equals(run.get(index), point)) {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    // How many feet of a laying stand where another one already does.
+    // How many feet of a laying stand within the separation of another - which is what the pass
+    // means by crowded, and so what "helped" has to be counted in.
+    //
+    // Every foot is compared with every other BY POSITION IN THE LIST rather than by distance,
+    // which matters at exactly the case this is about: two feet on one point are nought apart,
+    // and a counter that skipped everything nearer than a hair would call the worst crowding on
+    // the map no crowding at all - then count the same pair as crowded once the pass had moved
+    // them a few hundred units apart, and report the cure as the disease.
     private static int countCrowdedFeet(List<CellGap> spans) {
 
         var feet = collectFeet(spans);
         var crowded = 0;
 
-        for (var foot : feet) {
+        for (var index = 0; index < feet.size(); index++) {
 
-            if (countStandingOn(foot, feet) > 1) {
+            if (measureClearanceApartFrom(feet.get(index), feet, index) < ANCHOR_SEPARATION) {
                 crowded++;
             }
         }
         return crowded;
     }
 
-    private static int countStandingOn(double[] foot, List<double[]> feet) {
+    // The distance to the nearest other foot.
+    private static double measureClearance(double[] foot, List<double[]> feet) {
+        return measureClearanceApartFrom(foot, feet, NOT_IN_THE_LIST);
+    }
 
-        var standing = 0;
+    private static double measureClearanceApartFrom(
+            double[] foot,
+            List<double[]> feet,
+            int own) {
 
-        for (var other : feet) {
+        var nearest = Double.MAX_VALUE;
 
-            if (isSamePlace(foot, other)) {
-                standing++;
+        for (var index = 0; index < feet.size(); index++) {
+
+            if (index != own) {
+                nearest = Math.min(nearest, Points.computeDistance(foot, feet.get(index)));
             }
         }
-        return standing;
+        return nearest;
+    }
+
+    // Every foot of a laying but the two belonging to one span, which is what that span's own
+    // feet have to be measured against - a foot is always nought from itself.
+    private static List<double[]> collectFeetExcept(List<CellGap> spans, int own) {
+
+        var feet = new ArrayList<double[]>(spans.size() * 2);
+
+        for (var index = 0; index < spans.size(); index++) {
+
+            if (index != own) {
+
+                feet.add(spans.get(index).start());
+                feet.add(spans.get(index).end());
+            }
+        }
+        return feet;
     }
 
     private static List<double[]> collectFeet(List<CellGap> spans) {
@@ -378,15 +366,24 @@ class CrowdedAnchorsIntegrationTest {
         return feet;
     }
 
-    private static boolean isPointOfFrontage(double[] foot, List<double[]> frontage) {
+    // Whether a foot lies on a cell's own drawn coast, corner or not.
+    private static boolean isPointOfFrontage(double[] foot, List<List<double[]>> runs) {
 
-        if (frontage == null) {
+        if (runs == null) {
             return false;
         }
 
-        for (var point : frontage) {
+        for (var run : runs) {
+            for (var index = 1; index < run.size(); index++) {
 
-            if (Arrays.equals(foot, point)) {
+                if (Segments.computeDistanceToPoint(
+                        run.get(index - 1), run.get(index), foot) <= ON_THE_LINE) {
+
+                    return true;
+                }
+            }
+
+            if (run.size() == 1 && Points.computeDistance(run.get(0), foot) <= ON_THE_LINE) {
                 return true;
             }
         }

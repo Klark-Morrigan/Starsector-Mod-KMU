@@ -54,10 +54,10 @@ class ContinentExposureIntegrationTest {
     // anyway, only on the spans being a real laying over a real sector.
     private static final double COAST_SLACK = 120;
 
-    // How far along its frontage a span's foot steps off one another span already holds. The
-    // shipped setting, stated here for the reason the slack is - and nothing below turns on the
-    // number, only on the spans being a real laying over a real sector.
-    private static final double ANCHOR_SEPARATION = 800;
+    // How close two span feet may stand before one of them moves. Stated here for the reason
+    // the slack is - and nothing below turns on the number, only on the spans being a real
+    // laying over a real sector.
+    private static final double ANCHOR_SEPARATION = 120;
 
     // The laying the map ships, which is the one worth reporting on.
     private static final ContinentBridges.BridgeRules SPAN_RULES =

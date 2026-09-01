@@ -177,18 +177,20 @@ public final class ViewerSettingsPanel {
 
     private static final double COAST_SLACK_MAXIMUM = 500;
 
-    // How far along its frontage a span's foot steps off an anchor another span holds, in map
-    // units. Zero switches the spreading off, which is what the pass reads a non-positive
-    // setting as.
+    // How close two span feet may stand before one of them moves, in map units. Zero switches
+    // the spreading off, which is what the pass reads a non-positive setting as.
     //
-    // The floor of the useful range is the coast's own sampling step, a few hundred units: a
-    // foot lands on one of the traced line's vertices, so anything under one step picks the
-    // same vertex as any other and the slider reads as a switch. The ceiling is most of a
-    // cell's turn - past that no frontage has the room, every foot snaps to the end of its
-    // stretch, and the knob stops distinguishing anything either.
+    // The whole of the construction's gain sits at the very bottom of this range, where merely
+    // coincident feet are separated. What the rest of the range does is spread feet that are
+    // already distinct, which is a legibility trade paid for in pockets - so the range runs up
+    // to about a third of a cell's frontage, far enough to see what the trade looks like and
+    // short of the settings where every foot ends up at the end of its stretch.
+    //
+    // A slider rather than a switch even so, because how much of that trade is worth making is
+    // a matter of taste about the map, and taste needs somewhere to be exercised.
     private static final double ANCHOR_SEPARATION_MINIMUM = 0;
 
-    private static final double ANCHOR_SEPARATION_MAXIMUM = 3000;
+    private static final double ANCHOR_SEPARATION_MAXIMUM = 2000;
 
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
