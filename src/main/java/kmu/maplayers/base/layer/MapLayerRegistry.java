@@ -209,21 +209,17 @@ public final class MapLayerRegistry {
         return getActiveLayer() == layer;
     }
 
-    // The pick of the screen that is up: the intel screen's while its tab is the one open, the map
-    // screen's otherwise. The map screen is the fallback because the sector map is the overlay's home
-    // surface, so a read taken elsewhere - or before the composition root has wired the seam - lands on
-    // the pick that surface has always followed.
+    // The active-layer pick of the screen that is up.
     private static ActiveLayerSelection resolveLiveSelection() {
-        return intelScreen != null && intelScreen.isIntelTabOpen()
+        return isIntelScreenLive()
             ? INTEL_SELECTION
             : MAP_SELECTION;
     }
 
-    // Whether anything of the showing screen's layers is on it at all - the gate the active pick answers
-    // through, and the reason hiding dissolves rather than blinking out: a screen switched off goes on
-    // being drawn until its ramp reaches the end, and only then reads as nothing at all.
+    // Whether anything of the showing screen's layers is on it at all: a screen switched off goes on
+    // being drawn until its ramp reaches the end, which is what dissolves it rather than blinking it out.
     //
-    // The crisp pick settles a shown screen outright, the fade being asked for only where the answer
+    // The crisp pick settles a shown screen outright, and the fade is asked for only where the answer
     // could still turn on it. A screen coming back paints from the first frame of its ramp whatever the
     // fade reads, so consulting it there could only ever agree - at the price of a clock read, and of a
     // settings read behind it, on every frame the layers are simply on.
@@ -234,12 +230,18 @@ public final class MapLayerRegistry {
         return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
     }
 
-    // The show-or-hide pick of the screen that is up, resolved the same way and off the same read as the
-    // pick above. Written as its own resolution rather than derived from that one, so the two cannot come
-    // to answer for different screens - which would hide one screen's layers over the other's tab.
+    // The show-or-hide pick of the screen that is up. Resolved for itself rather than derived from the
+    // active pick beside it, so the two cannot come to answer for different screens - which would hide
+    // one screen's layers over the other's tab.
     private static MapLayerVisibility resolveLiveVisibility() {
-        return intelScreen != null && intelScreen.isIntelTabOpen()
+        return isIntelScreenLive()
             ? INTEL_VISIBILITY
             : MAP_VISIBILITY;
+    }
+
+    // Whether the intel screen is the one up, which is what "live screen" means in both resolutions
+    // above - so they cannot come to disagree about which screen that is.
+    private static boolean isIntelScreenLive() {
+        return intelScreen != null && intelScreen.isIntelTabOpen();
     }
 }

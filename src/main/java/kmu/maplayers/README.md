@@ -143,7 +143,9 @@ about what the overlay means.
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`, and
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
-  beside its tab. A layer is
+  beside its tab. The pick is folded into the active-layer answer rather than read by each consumer:
+  a hidden screen resolves to no active layer once its fade is out, which every pass driven by that
+  pick already draws nothing for. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own.

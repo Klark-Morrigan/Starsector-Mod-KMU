@@ -187,7 +187,7 @@ final class MapLayerRegistryTest {
         void areLayersShownOnLiveScreenAnswersFromTheShowingScreensPick() {
             // Per screen, so hiding on one leaves the other showing: the control sits on each screen's
             // own chrome, and a shared answer would empty a screen the player is not looking at.
-            sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+            hideTheIntelScreensLayers();
             intelScreenFake.setIntelTabOpen(true);
 
             assertThat(MapLayerRegistry.areLayersShownOnLiveScreen())
@@ -207,7 +207,7 @@ final class MapLayerRegistryTest {
         void resolveShownFadeOnLiveScreenAnswersFromTheShowingScreensPick() {
             // What a pass multiplies into its alpha, and it follows the same screen the pick does - a
             // fade taken off the other screen would thin an overlay nobody asked to hide.
-            sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+            hideTheIntelScreensLayers();
             intelScreenFake.setIntelTabOpen(true);
 
             assertThat(MapLayerRegistry.resolveShownFadeOnLiveScreen())
@@ -237,7 +237,7 @@ final class MapLayerRegistryTest {
         void getActiveLayerIsNullOnceTheShowingScreensLayersHaveFadedOff() {
             // The one read hiding hangs off: every pass driven by the active pick already draws nothing
             // for a null, so this takes the overlay, the labels and the hover box off together.
-            sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+            hideTheMapScreensLayers();
 
             assertThat(MapLayerRegistry.getActiveLayer())
                 .isNull();
@@ -248,11 +248,24 @@ final class MapLayerRegistryTest {
             // The per-screen half of the same gate: the intel screen hidden must leave the sector map
             // painting its own pick, which is the whole reason the two picks are kept apart.
             storeADifferentPickOnEachScreen();
-            sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+            hideTheIntelScreensLayers();
             intelScreenFake.setIntelTabOpen(false);
 
             assertThat(MapLayerRegistry.getActiveLayer())
                 .isSameAs(secondLayerMock);
+        }
+
+        @Test
+        void getActiveLayerAnswersAShownScreenWithoutReadingTheHidePace() {
+            // A screen with its layers on is answered off the stored pick alone. Worth pinning rather
+            // than left as an accident of the order two conditions are written in: the fade is derived
+            // from a clock and a settings read, and asking for it on every frame the layers are simply
+            // on would put both on the map's hottest path to say what the pick has already said.
+            assertThat(MapLayerRegistry.getActiveLayer())
+                .isSameAs(secondLayerMock);
+
+            mapLayerSettingsMock
+                .verifyNoInteractions();
         }
 
         @Test
@@ -375,7 +388,7 @@ final class MapLayerRegistryTest {
             // A hidden screen has no layer in play at all, which is what stands each layer's own state
             // down without a read of its own - the default pick included, since it is the one a layer
             // would otherwise go on thinking it held.
-            sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+            hideTheMapScreensLayers();
 
             assertThat(MapLayerRegistry.isActive(secondLayerMock))
                 .isFalse();
@@ -390,6 +403,16 @@ final class MapLayerRegistryTest {
 
         sectorMemoryFake.storeValue(MAP_ACTIVE_LAYER_KEY, "second");
         sectorMemoryFake.storeValue(INTEL_ACTIVE_LAYER_KEY, "first");
+    }
+
+    // Poses a save in which one screen's layers were switched off and their ramp has long since run out.
+    // Seeded rather than flipped, so the reading is the settled one whatever the pace reads.
+    private void hideTheMapScreensLayers() {
+        sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+    }
+
+    private void hideTheIntelScreensLayers() {
+        sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
     }
 
     // Puts the map screen part-way down its hide ramp. The flip is made while the pace still reads as
