@@ -407,6 +407,15 @@ and it deliberately **excludes** the filter selection. The picker is which blocs
 selectable, not which one is spotlighted, so picking or clearing a filter moves the
 lit row without invalidating the list.
 
+One memo per sector, not one for the process: the list is a walk of one sector's
+economy memoised against that sector's revisions, so a shared memo would serve one
+sector's rows under another's revision - a wrong list rather than a stale one - and two
+sectors' sidebars would evict each other's single entry on every alternation. It is
+therefore held by the sector's
+[installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md)
+and goes when that does, which is also what replaces the discard it would otherwise
+need on load.
+
 Because the economy can drift between rebuild triggers, a displayed metric can lag
 until the next settings, view, or alliance change - the same cadence the overlay's
 own rebuild reconciles on, so the picker's numbers and the painted map stay in step

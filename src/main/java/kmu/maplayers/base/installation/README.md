@@ -164,7 +164,15 @@ Kept out of here on purpose, so a reader does not go looking:
   by `MapLayers.registerAll` before any sector exists. Which layers *exist* is the process's; which
   is *picked* is the sector's, and that half lives in sector memory.
 - **The views and layers themselves.** They are stateless strategies. One that started remembering
-  would become a shared cache two installations read.
+  would become a shared cache two installations read. The claims view is the one that holds a field
+  at all, and it holds the *means of opening* a claim reader rather than a reader - one is opened
+  over the read being made and discarded with it.
+- **The alliance-source registration.** `FactionAllianceRegistry`'s registered source is written
+  once by the composition root, which is the only place in a position to know what is installed. It
+  memoises nothing: every pass reads the arrangement standing at that moment through it.
+- **The diagnostic throttles.** What has already been logged (a repeated font tolerance, a
+  foreign render pass) and whether a vanilla map is on screen are facts about the process and the
+  screen, not derivations from a sector.
 - **Every selection.** The active layer and view, the filter pick, the name format, the recede style
   and the sighting register are already one sector's - they live in that sector's own memory, and
   need nothing from this package.

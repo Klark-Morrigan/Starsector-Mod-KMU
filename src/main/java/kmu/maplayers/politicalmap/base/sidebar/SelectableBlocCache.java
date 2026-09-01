@@ -1,9 +1,9 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
-import com.fs.starfarer.api.campaign.SectorAPI;
-
 import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
+import kmu.maplayers.base.installation.InstalledMachinery;
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
@@ -23,12 +23,24 @@ import java.util.Set;
  * same invalidation - a surface lighting a bloc's systems reads it here rather than re-walking, and
  * cannot end up holding presence from one reading beside rows from another.
  *
+ * <p>One sector's, held by that sector's installation rather than for the process. A list is a walk
+ * of one sector's economy memoised against that sector's own revisions, so a shared memo would serve
+ * one sector's rows under another sector's revision - a wrong list rather than a stale one - and two
+ * sectors' sidebars would evict each other's entry and re-walk on every alternation. Held that way
+ * it needs no discard of its own: a load disposes the installation and the memoised read goes with
+ * it.
+ *
  * <p>The economy can drift between rebuild triggers (a colony resized without changing holder leaves
  * the settings and grouping revisions untouched), so a metric can lag until the next settings, view,
  * or alliance-set change forces a recompute - the same cadence the overlay's own full territory
  * rebuild reconciles on, so the picker numbers and the painted map stay in step.
  */
-public final class SelectableBlocCache {
+public final class SelectableBlocCache implements InstalledMachinery {
+
+    // The machinery this cache belongs to, and so the sector every list here is walked from. Taken
+    // whole rather than as a bare sector so the sector a walk reads and the holder its answer is
+    // memoised in cannot name two different ones.
+    private final MapLayerInstallation installation;
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
     // switch is a miss on the view id and the switched-in view's picker replaces the previous one.
@@ -36,30 +48,43 @@ public final class SelectableBlocCache {
     // agree on the view thrash it rather than share it.
     // Held wildcarded because each view's blocs carry that view's own metrics, which is knowledge
     // the memo has no use for - it caches whatever the view answered.
-    private static final RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
+    // Not final because the memo offers no discard of its own, and disposal has to leave nothing of
+    // the gone sector's rows behind.
+    private RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
 
-    private SelectableBlocCache() {
+    // Reached through resolveBlocCacheIn, so the only caches that exist are ones an installation
+    // holds - and so go with the sector they were made for.
+    SelectableBlocCache(MapLayerInstallation installation) {
+        this.installation = installation;
     }
 
     /**
-     * The selected view's picker under the player's live settings, rebuilt only when the sector, the
-     * view, or the revision the list depends on has changed since the last call.
+     * The memoised picker {@code installation}'s sidebar body reads, made on the first ask and
+     * released with the installation holding it.
      *
-     * @param view   the selected political-map view whose blocs the picker draws
-     * @param sector the sector whose economy the list is read from; a null sector resolves to the
-     *               view's empty list
-     * @return the memoised read - the picker and the presence behind it; the same instance while
-     *         nothing it depends on moves
+     * <p>The one way to this sector's memo, so the body build drawing the rows and the pass reading
+     * the presence behind them cannot end up on two different walks.
+     *
+     * @param installation the machinery installed on the sector whose picker is being drawn
+     * @return that sector's memoised picker
      */
-    public static BlocPickerRead<?> resolveBlocPickerRead(
-            PoliticalMapView view,
-            SectorAPI sector) {
+    public static SelectableBlocCache resolveBlocCacheIn(MapLayerInstallation installation) {
+        return installation.resolveMachinery(
+            SelectableBlocCache.class,
+            () -> new SelectableBlocCache(installation));
+    }
 
-        return blocCache.resolveValue(
-            sector,
-            view.getId(),
-            computeRevision(view),
-            () -> view.resolveBlocPickerRead(sector));
+    /**
+     * Drops the memoised read, so the next ask walks afresh rather than serving what this sector's
+     * economy last answered.
+     *
+     * <p>Holds nothing a collector would not free, so this is about the answer rather than the
+     * memory: a caller still holding a cache resolved before the disposal must not be served the
+     * gone sector's rows under a revision that never moved.
+     */
+    @Override
+    public void disposeMachinery() {
+        blocCache = new RevisionMemo<>();
     }
 
     /**
@@ -75,17 +100,31 @@ public final class SelectableBlocCache {
      * living in a system under the dominance views, claiming it under the claims one.
      *
      * @param view   the selected political-map view the bloc was surfaced by
-     * @param sector the sector whose economy the read is taken from; a null sector resolves to the
-     *               view's empty read
      * @param blocId the bloc to look up; an id this view never surfaced answers empty
      * @return that bloc's system ids in walk order, never null
      */
-    public static Set<String> readPresentSystemIds(
-            PoliticalMapView view,
-            SectorAPI sector,
-            String blocId) {
+    public Set<String> readPresentSystemIds(PoliticalMapView view, String blocId) {
+        return resolveBlocPickerRead(view).presenceIndex().readPresentSystemIds(blocId);
+    }
 
-        return resolveBlocPickerRead(view, sector).presenceIndex().readPresentSystemIds(blocId);
+    /**
+     * The selected view's picker over this cache's sector under the player's live settings, rebuilt
+     * only when the view or the revision the list depends on has changed since the last call.
+     *
+     * @param view the selected political-map view whose blocs the picker draws
+     * @return the memoised read - the picker and the presence behind it; the same instance while
+     *         nothing it depends on moves. A cache over no sector - the detached installation -
+     *         resolves to the view's empty list
+     */
+    public BlocPickerRead<?> resolveBlocPickerRead(PoliticalMapView view) {
+
+        var sector = installation.resolveSector();
+
+        return blocCache.resolveValue(
+            sector,
+            view.getId(),
+            computeRevision(view),
+            () -> view.resolveBlocPickerRead(sector));
     }
 
     // The revision the memoised list is valid for: the economy-weighting settings (the dominance

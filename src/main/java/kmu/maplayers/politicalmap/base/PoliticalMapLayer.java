@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
@@ -77,6 +78,14 @@ public final class PoliticalMapLayer implements MapLayer {
             var columns = ColumnSelectionBinder.resolveStoredColumns();
             var viewId = selectedView.getId();
 
+            // The picker list is one sector's - a walk of that sector's economy, memoised against
+            // that sector's revisions - so it is held by the machinery installed on the sector this
+            // sidebar is drawn over. The sector is read from the running game here because a body
+            // build is an adapter onto a vanilla screen and is handed nothing: the map and intel
+            // screens both show the sector the player is in.
+            var blocCache = SelectableBlocCache.resolveBlocCacheIn(
+                MapLayerInstallations.resolveInstallationFor(Global.getSector()));
+
             // The picker is the selected view's own - its selectable blocs under the player's live
             // dominance and visibility settings, bundled with the vocabulary that ranks them, so this
             // layer names neither the metrics a view's blocs carry nor the modes that sort them and a
@@ -93,7 +102,7 @@ public final class PoliticalMapLayer implements MapLayer {
             // filter recede set rather than the non-allied one.
             controls.addAll(FilterSelectionBinder.buildPicker(
                 viewId,
-                SelectableBlocCache.resolveBlocPickerRead(selectedView, Global.getSector()).picker(),
+                blocCache.resolveBlocPickerRead(selectedView).picker(),
                 columns,
                 RecedeControl.buildControls(
                     RecedePreferences.FILTER,

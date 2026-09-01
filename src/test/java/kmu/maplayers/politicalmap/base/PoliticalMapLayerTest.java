@@ -334,9 +334,10 @@ final class PoliticalMapLayerTest {
     }
 
     // Registers a view offering one spotlightable bloc, under an id and revision of its own so the
-    // shared picker memo misses on it rather than serving the empty list the composition tests leave
-    // cached. The bloc's contents do not matter - what matters is that the picker builds at all,
-    // since an empty list contributes none.
+    // picker memo misses on it rather than serving the empty list the composition tests leave
+    // cached - these cases resolve no sector, so they all reach the one detached installation and
+    // share the memo it holds. The bloc's contents do not matter - what matters is that the picker
+    // builds at all, since an empty list contributes none.
     private static void registerViewWithOneBloc(PoliticalMapView view) {
 
         when(view.getId())
