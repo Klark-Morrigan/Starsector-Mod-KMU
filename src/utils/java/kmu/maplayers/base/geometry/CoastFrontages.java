@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Angles;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,6 +30,10 @@ public final class CoastFrontages {
     // No cell yet, while a walk is between one frontage and the next. Named rather than left
     // as a bare -1 because it is compared against real cell numbers.
     private static final int NO_CELL = -1;
+
+    // How many half turns a whole one is, which is what turns the arc density the coasts are
+    // sampled at into the step count a full circle wants.
+    private static final int WHOLE_TURNS_OF_HALF_TURNS = 2;
 
     private CoastFrontages() {
     }
@@ -109,6 +115,53 @@ public final class CoastFrontages {
             Coastlines.TracedCoasts traced) {
 
         return collectFrontagesAlong(traced.coasts());
+    }
+
+    /**
+     * The same question asked of the cells that have no coast at all: an island's whole rim.
+     *
+     * <p>A cell alone in the void is on no silhouette, because the line round it would be its
+     * own border drawn a second time and would enclose nothing the cell does not already claim.
+     * That is a good reason not to DRAW it and no reason at all to refuse to reach it: the cell
+     * is there, it faces the void the whole way round, and a span laid to it joins it to
+     * whatever is on the other end.
+     *
+     * <p>So the whole turn is offered, which is exactly what "the part of a cell's border that
+     * faces the void" comes to for a cell with no neighbours. Sampled at the density the coasts
+     * are, so an anchor on an island and an anchor on a continent are places of the same
+     * spacing and the rules that measure between them read one scale.
+     *
+     * <p>Closed, unlike a coast's frontage, since an island's rim has no ends - the run comes
+     * back to where it started, and the last point is not repeated.
+     *
+     * @param traced      the coast, for the islands it found and the cells to measure them on
+     * @param arcSegments how many steps to sample a half turn at
+     * @return each island's rim, by cell; empty where the sector has no islands
+     */
+    public static Map<Integer, List<List<double[]>>> collectIslandFrontages(
+            Coastlines.TracedCoasts traced,
+            int arcSegments) {
+
+        var frontages = new LinkedHashMap<Integer, List<List<double[]>>>();
+        var union = traced.union();
+        var steps = Math.max(1, arcSegments * WHOLE_TURNS_OF_HALF_TURNS);
+
+        for (var island : traced.islands()) {
+
+            var site = union.sites().get(island);
+            var rim = new ArrayList<double[]>(steps);
+
+            for (var step = 0; step < steps; step++) {
+
+                var angle = Angles.FULL_TURN * step / steps;
+
+                rim.add(new double[] {
+                    site[0] + union.reach() * Math.cos(angle),
+                    site[1] + union.reach() * Math.sin(angle)});
+            }
+            frontages.put(island, List.of(List.copyOf(rim)));
+        }
+        return frontages;
     }
 
     /**

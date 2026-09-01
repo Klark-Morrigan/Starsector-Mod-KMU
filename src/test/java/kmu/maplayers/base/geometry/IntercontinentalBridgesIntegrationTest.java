@@ -8,7 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,11 +105,14 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_link_joins_two_different_continents(String sector) {
-            // The whole of what makes a link a link. A span between two cells of one continent
-            // is an inlet span - the other pass's answer - and one leaving a cell on no
-            // continent leaves a shore that faces no open void at all.
-            var continentOf = Coastlines.mapCellsToContinents(traceCoastOf(sector));
+        void every_link_joins_two_different_shapes(String sector) {
+            // The whole of what makes a link a link. A span between two cells of one shape is
+            // an inlet span - the other pass's answer - and one leaving a cell on no shape at
+            // all leaves a border that faces no open void.
+            //
+            // Shapes rather than continents, since an island is a shape of the sector with no
+            // coastline: absent from the silhouettes, and still a thing a link may join.
+            var continentOf = Coastlines.mapCellsToShapes(traceCoastOf(sector));
             var misjoined = new ArrayList<String>();
 
             for (var link : linkContinentsOf(sector)) {
@@ -136,7 +139,10 @@ class IntercontinentalBridgesIntegrationTest {
             // that is on the map. Measured against the line's segments rather than its corners,
             // because a foot the spreading has moved sits wherever along its stretch the room
             // was - which is generally between two of the points the line was sampled at.
-            var frontages = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector));
+            //
+            // The islands' rims among the frontages, since a cell alone in the void has no
+            // coast and its whole border is where a link may land.
+            var frontages = collectAnchorableFrontagesOf(sector);
             var strayed = new ArrayList<String>();
 
             for (var link : linkContinentsOf(sector)) {
@@ -217,6 +223,78 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
+        void a_link_reaches_a_cell_that_has_no_coast(String sector) {
+            // Islands are shapes of the sector like any other. They carry no coastline, since
+            // the line round a cell touching nothing would be its own border drawn twice - but
+            // that is a reason not to draw one, not a reason to leave the cell unreachable.
+            var traced = traceCoastOf(sector);
+            var islands = new LinkedHashSet<>(traced.islands());
+
+            assertThat(islands)
+                .as("%s: no cell is alone in the void, so this check asks nothing", sector)
+                .isNotEmpty();
+
+            var reached = new LinkedHashSet<Integer>();
+
+            for (var link : linkContinentsOf(sector)) {
+
+                if (islands.contains(link.fromSite())) {
+                    reached.add(link.fromSite());
+                }
+                if (islands.contains(link.toSite())) {
+                    reached.add(link.toSite());
+                }
+            }
+
+            assertThat(reached)
+                .as("%s: not one island was linked to anything", sector)
+                .isNotEmpty();
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void an_island_left_unlinked_had_nothing_within_reach(String sector) {
+            // The other direction: an island the pass passed over has to be one nothing could
+            // have reached. An island within the reach of another shape and still unlinked
+            // would be the pass refusing a cell for having no coastline, which is the whole
+            // fault this admits.
+            var traced = traceCoastOf(sector);
+            var sites = traced.union().sites();
+            var reach = PARAMETERS.cellRadius() * SPAN_RULES.reachMultiple();
+            var linked = new LinkedHashSet<Integer>();
+
+            for (var link : linkContinentsOf(sector)) {
+
+                linked.add(link.fromSite());
+                linked.add(link.toSite());
+            }
+
+            var overlooked = new ArrayList<String>();
+
+            for (var island : traced.islands()) {
+
+                if (linked.contains(island)) {
+                    continue;
+                }
+
+                for (var cell : collectAnchorableFrontagesOf(sector).keySet()) {
+
+                    if (cell != island
+                            && Points.computeDistance(sites.get(cell), sites.get(island))
+                                <= reach) {
+
+                        overlooked.add(String.format("island %d, cell %d near it", island, cell));
+                    }
+                }
+            }
+
+            assertThat(overlooked)
+                .as("%s: an island was left unlinked with something within reach of it", sector)
+                .isEmpty();
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
         void every_link_joins_cells_within_reach_of_each_other(String sector) {
             // Range-based, the way the settled bridges are: two cells hold the void between
             // them only while they sit near enough to trap it, measured centre to centre.
@@ -240,6 +318,19 @@ class IntercontinentalBridgesIntegrationTest {
                 .as("%s: a link between cells further apart than the reach", sector)
                 .isEmpty();
         }
+    }
+
+    // Every stretch a link may anchor on: the continents' coasts, and the islands' whole rims.
+    private static Map<Integer, List<List<double[]>>> collectAnchorableFrontagesOf(String sector) {
+
+        var traced = traceCoastOf(sector);
+        var frontages = new java.util.LinkedHashMap<>(
+            CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
+
+        frontages.putAll(CoastFrontages.collectIslandFrontages(
+            traced, PARAMETERS.measureArcSegments()));
+
+        return frontages;
     }
 
     // Whether a point lies on the traced coast a cell offers, which is what anchoring on the

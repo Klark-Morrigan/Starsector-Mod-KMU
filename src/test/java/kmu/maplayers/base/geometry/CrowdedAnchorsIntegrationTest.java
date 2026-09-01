@@ -8,7 +8,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -150,7 +149,15 @@ class CrowdedAnchorsIntegrationTest {
             // On the line, not at one of its corners. A foot moves to wherever along its own
             // stretch the room is, which is generally between two of the points the line was
             // sampled at.
-            var frontages = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector));
+            // The islands' rims among them, since a cell alone in the void has no coast and
+            // its whole border is where a foot may stand.
+            var traced = traceCoastOf(sector);
+            var frontages = new java.util.LinkedHashMap<>(
+                CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
+
+            frontages.putAll(CoastFrontages.collectIslandFrontages(
+                traced, PARAMETERS.measureArcSegments()));
+
             var strayed = new ArrayList<String>();
 
             for (var span : laySpreadOn(sector)) {

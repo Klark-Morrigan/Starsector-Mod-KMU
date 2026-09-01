@@ -215,6 +215,12 @@ public final class Coastlines {
      *                    Carried for whatever lays more walls alongside them: found again
      *                    from the knobs, they are a second answer that can differ from the
      *                    one the coast was actually walked against
+     * @param islands     the cells the walk found alone in the void, which are on no silhouette
+     *                    because they have no coast: a cell touching nothing draws its own
+     *                    border and encloses nothing further. Handed on rather than forgotten,
+     *                    since a shape with no coast is still a shape a span can reach - and
+     *                    read off the walk that dropped them rather than worked out again, so
+     *                    nothing can come to disagree with it about what is alone
      * @param lakes       the void the cells closed around unaided - inland water, ringed by
      *                    land the whole way round. Out of the same walk and the same
      *                    smoothing as the coasts above, because a lake shore and an outer
@@ -227,6 +233,7 @@ public final class Coastlines {
     public record TracedCoasts(
         List<Coast> coasts,
         List<List<DiscUnionBoundary.CoastMark>> silhouettes,
+        List<Integer> islands,
         List<DiscUnionBoundary.CoastMark> dropped,
         DiscUnion union,
         DiscUnionBoundary.Walls walls,
@@ -350,6 +357,40 @@ public final class Coastlines {
         return continentOf;
     }
 
+    /**
+     * Which shape of the sector each cell belongs to: its continent, or its own island.
+     *
+     * <p>The continents come off the silhouettes, as everything else reads them. The islands
+     * are the cells the walk found alone, which are on no silhouette at all - a lone cell has
+     * no coast, since the line round it would be its own border drawn twice.
+     *
+     * <p><b>Numbered after the continents rather than among them</b>, so that a number means the
+     * same thing here as it does to every other reader of the trace. What this adds is names for
+     * shapes those readers have none for, and it adds them where they cannot be mistaken for a
+     * continent's.
+     *
+     * <p>Its own reading rather than {@link #mapCellsToContinents}, and deliberately
+     * not an extension of it: that map is indexed against the silhouettes by everything that
+     * gathers per continent, so a cell numbered past the end of them would run off those lists.
+     * What is wanted here is a coarser question - is this the same SHAPE - which the sector's
+     * islands are part of the answer to and the continents' own bookkeeping is not.
+     *
+     * @param traced the coast
+     * @return the shape each cell sits on, by cell; a cell on neither is absent
+     */
+    public static Map<Integer, Integer> mapCellsToShapes(TracedCoasts traced) {
+
+        var shapeOf = new LinkedHashMap<>(mapCellsToContinents(traced));
+        var island = traced.silhouettes().size();
+
+        for (var cell : traced.islands()) {
+
+            shapeOf.put(cell, island);
+            island++;
+        }
+        return shapeOf;
+    }
+
     // One mark's stretch of border as points along its arc, at the density asked for. The one
     // flattening for every reader of a raw arc, so a diagnostic and a water's edge sampled on
     // the same stretch land on the same points.
@@ -467,7 +508,8 @@ public final class Coastlines {
         var union = new DiscUnion(sites, parameters.cellRadius());
 
         var runs = DiscUnionBoundary.traceCoastRuns(union, walls, parameters.boundSegments());
-        var silhouettes = dropLoneIslands(runs.silhouettes());
+        var silhouettes = keepJoinedRuns(runs.silhouettes());
+        var islands = collectLoneIslands(runs.silhouettes());
         var bridged = findBridgedCircles(union, walls);
         var smoothingRules = new SmoothingRules(
             rules.minFrontageShare(),
@@ -479,6 +521,7 @@ public final class Coastlines {
         return new TracedCoasts(
             buildCoasts(smoothed.coasts(), rules.rounding()),
             silhouettes,
+            islands,
             concatenateDropped(smoothed.dropped(), water.dropped()),
             union,
             walls,
@@ -891,7 +934,7 @@ public final class Coastlines {
         return points;
     }
 
-    // A cell alone in the void has no coast.
+    // A cell alone in the void has no coast, so the runs that name one are not silhouettes.
     //
     // A coast is where settled space ends along a run of cells that hold something BETWEEN
     // them. A cell touching nothing, joined to nothing, holds only itself: the line traced
@@ -903,7 +946,7 @@ public final class Coastlines {
     // Read off the run itself: cells that touch, and cells a laid bridge joins, are walked
     // into ONE run - so a run naming a single circle is exactly the degenerate case, with no
     // separate test for touching or for bridges to fall out of step with the walk.
-    private static List<List<DiscUnionBoundary.CoastMark>> dropLoneIslands(
+    private static List<List<DiscUnionBoundary.CoastMark>> keepJoinedRuns(
             List<List<DiscUnionBoundary.CoastMark>> silhouettes) {
 
         var joined = new ArrayList<List<DiscUnionBoundary.CoastMark>>(silhouettes.size());
@@ -915,6 +958,28 @@ public final class Coastlines {
             }
         }
         return joined;
+    }
+
+    // The other half of the same reading: which cells those dropped runs were.
+    //
+    // Kept because having no coast is not the same as not being there. A cell alone in the void
+    // is a shape of the sector like any other - it can be reached, and a span laid to it joins
+    // it to whatever it reaches - and the only thing it lacks is a line of its own to draw.
+    //
+    // An empty run names no cell and is not an island; it is a walk that found nothing, and
+    // there is no cell to hand on.
+    private static List<Integer> collectLoneIslands(
+            List<List<DiscUnionBoundary.CoastMark>> silhouettes) {
+
+        var islands = new ArrayList<Integer>();
+
+        for (var silhouette : silhouettes) {
+
+            if (isLoneIsland(silhouette) && !silhouette.isEmpty()) {
+                islands.add(silhouette.get(0).circle());
+            }
+        }
+        return List.copyOf(islands);
     }
 
     // Whether a run of coast is one cell's own border and nothing else.

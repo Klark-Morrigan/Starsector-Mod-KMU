@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.Points;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -86,14 +87,18 @@ public final class IntercontinentalBridges {
         // The exterior shore's, because that is the coastline that faces the void between the
         // continents. A lake shore faces water one continent has closed around, and a link
         // anchored there would leave from inside the very shape it is meant to reach out of.
-        var runs = CoastFrontages.Shore.EXTERIOR.collectFrontages(traced);
+        var runs = new LinkedHashMap<>(CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
+
+        runs.putAll(CoastFrontages.collectIslandFrontages(
+            traced, parameters.measureArcSegments()));
+
         var frontages = CoastFrontages.gatherFrontagePoints(runs);
 
         if (frontages.size() < 2) {
             return List.of();
         }
 
-        var continentOf = Coastlines.mapCellsToContinents(traced);
+        var continentOf = Coastlines.mapCellsToShapes(traced);
         var joined = gatherJoinedPairs(laid);
         var union = traced.union();
         var sites = union.sites();
@@ -143,10 +148,10 @@ public final class IntercontinentalBridges {
             kept, laid, runs, union, rules.anchorSeparation()));
     }
 
-    // Whether two cells sit on continents that are not the same one, which is the whole of what
+    // Whether two cells sit on shapes that are not the same one, which is the whole of what
     // makes a span between them a link.
     //
-    // A cell on no continent joins nothing. The silhouettes name only the cells the outer walk
+    // A cell on no shape joins nothing. The silhouettes name only the cells the outer walk
     // touched, so a cell facing nothing but a lake is absent from them - and it has no frontage
     // on the void to reach out over in the first place.
     private static boolean isTwoContinents(
