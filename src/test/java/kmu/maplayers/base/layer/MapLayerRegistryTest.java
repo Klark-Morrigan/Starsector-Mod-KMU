@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the framework registry's contract with fake layers: the tab order it hands back, the pick an
- * untouched save resolves to, and the frozen keys each screen's selection reads and writes. The generic
+ * untouched save resolves to, and the frozen keys each screen's pair of picks reads and writes. The generic
  * persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s, and the show-or-hide pick's is
  * {@link PersistedMapLayerVisibilityTest}'s; this pins only what the registry adds - the four frozen
  * per-screen keys, how {@link MapLayerRegistry#isActive} resolves which screen's pick is the live one,
@@ -121,43 +121,27 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
-    class GetMapSelection {
+    class GetMapPicks {
 
         @Test
-        void getMapSelectionReadsAndWritesTheFrozenMapKey() {
+        void getMapPicksSelectsThroughTheFrozenMapKey() {
 
             MapLayerRegistry
-                .getMapSelection()
+                .getMapPicks()
+                .layerSelection()
                 .selectLayer(firstLayerMock);
 
             assertThat(sectorMemoryFake.readStoredValue(MAP_ACTIVE_LAYER_KEY))
                 .isEqualTo("first");
         }
-    }
-
-    @Nested
-    class GetIntelSelection {
 
         @Test
-        void getIntelSelectionReadsAndWritesTheFrozenIntelKey() {
-
+        void getMapPicksHidesThroughTheFrozenMapKey() {
+            // The pair's second key, pinned beside the first: both are this screen's, so a pair built
+            // from one screen's tab and the other's hiding fails here rather than in play.
             MapLayerRegistry
-                .getIntelSelection()
-                .selectLayer(firstLayerMock);
-
-            assertThat(sectorMemoryFake.readStoredValue(INTEL_ACTIVE_LAYER_KEY))
-                .isEqualTo("first");
-        }
-    }
-
-    @Nested
-    class GetMapVisibility {
-
-        @Test
-        void getMapVisibilityReadsAndWritesTheFrozenMapKey() {
-
-            MapLayerRegistry
-                .getMapVisibility()
+                .getMapPicks()
+                .layerVisibility()
                 .showLayers(false);
 
             assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
@@ -166,13 +150,26 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
-    class GetIntelVisibility {
+    class GetIntelPicks {
 
         @Test
-        void getIntelVisibilityReadsAndWritesTheFrozenIntelKey() {
+        void getIntelPicksSelectsThroughTheFrozenIntelKey() {
 
             MapLayerRegistry
-                .getIntelVisibility()
+                .getIntelPicks()
+                .layerSelection()
+                .selectLayer(firstLayerMock);
+
+            assertThat(sectorMemoryFake.readStoredValue(INTEL_ACTIVE_LAYER_KEY))
+                .isEqualTo("first");
+        }
+
+        @Test
+        void getIntelPicksHidesThroughTheFrozenIntelKey() {
+
+            MapLayerRegistry
+                .getIntelPicks()
+                .layerVisibility()
                 .showLayers(false);
 
             assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
@@ -422,7 +419,8 @@ final class MapLayerRegistryTest {
     private void startHidingTheMapScreensLayers() {
 
         MapLayerRegistry
-            .getMapVisibility()
+            .getMapPicks()
+            .layerVisibility()
             .showLayers(false);
 
         mapLayerSettingsMock

@@ -55,12 +55,11 @@ public final class MapSidebarHost extends BaseSidebarHost {
     MapSidebarHost(ScreenClaim screenClaim) {
         // Opens out on a save that has never folded it: this panel is the player's primary way in to the
         // map layers and has the screen width to sit open, so out is the useful first sight of it. The
-        // map screen's own pick and its own show-or-hide state go with it, so neither is moved by a
-        // switch on the intel screen.
+        // sector map's own picks go with it, so neither its tab nor its hiding is moved by a switch on
+        // the intel screen.
         super(
             new PersistedSidebarFold(MAP_SIDEBAR_DOCKED_KEY, false),
-            MapLayerRegistry.getMapSelection(),
-            MapLayerRegistry.getMapVisibility(),
+            MapLayerRegistry.getMapPicks(),
             screenClaim);
     }
 

@@ -60,10 +60,9 @@ final class IntelSidebarHostTest {
     // writing the intel screen's own pick rather than the sector map's.
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
 
-    // The frozen keys the two screens' show-or-hide picks are stored under, pinned here for the reason the
-    // pick above is: this host has to answer to its own screen's and to no other's.
+    // The frozen key this screen's show-or-hide pick is stored under, pinned here for the reason the pick
+    // above is: this host has to answer to its own screen's and to no other's.
     private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
-    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
 
     // A stand-in layer binding: which layers exist is the composition root's business, so the shortcut is
     // pinned against a registered fake rather than a concrete view's real key.
@@ -148,7 +147,8 @@ final class IntelSidebarHostTest {
         @Test
         void isOverlayShowingIsFalseWhileTheIntelScreensOwnLayersAreHidden() {
             // The wiring, not the rule: the rule is the base host's and pinned there, so what this case
-            // shows is that this host was handed the intel screen's own show-or-hide pick.
+            // shows is that this host was handed the intel screen's picks. Its own key alone is posed - a
+            // host handed the sector map's pair would read shown here and fail.
             var intelScreenFake = new IntelScreenViewFake();
 
             intelScreenFake.setIntelTabOpen(true);
@@ -160,24 +160,6 @@ final class IntelSidebarHostTest {
 
                 assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                     .isFalse();
-            }
-        }
-
-        @Test
-        void isOverlayShowingIsUnmovedByTheSectorMapsHidePick() {
-            // The other half of that wiring: the two screens hide independently, so a host crossed onto
-            // the sector map's pick would empty the visor with the case above still green.
-            var intelScreenFake = new IntelScreenViewFake();
-
-            intelScreenFake.setIntelTabOpen(true);
-            intelScreenFake.setMapVisorRect(MAP_VISOR);
-
-            try (var sectorMemoryFake = new SectorMemoryFake()) {
-
-                sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
-
-                assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
-                    .isTrue();
             }
         }
     }

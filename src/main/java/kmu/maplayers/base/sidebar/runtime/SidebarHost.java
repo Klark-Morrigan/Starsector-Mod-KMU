@@ -117,8 +117,9 @@ public interface SidebarHost {
     /**
      * @return a short description of this host's current view state, for the sidebar's view-state log so a
      *         panel gated out or drawn off-screen is diagnosable from the log alone. Prose for whoever reads
-     *         that log, not a value to branch on: each host names its own states in its own words, and the
-     *         wording is free to change as those states need to say more, so nothing depends on its form
+     *         that log, not a value to branch on: a host names its own screen's states in its own words,
+     *         behind whatever every host reports alike, and the wording is free to change as those states
+     *         need to say more, so nothing depends on its form
      */
     String describeViewState();
 }

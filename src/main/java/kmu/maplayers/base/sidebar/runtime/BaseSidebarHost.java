@@ -11,7 +11,7 @@ import kmlib.starsector.ui.widgets.tabs.TabStrip;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapLayerSettings;
@@ -21,11 +21,11 @@ import java.util.List;
 
 /**
  * The plumbing every sidebar host shares: the panel's controller, the fold selection behind it, the screen's
- * active-layer pick, the reseed that opens the panel at the fold a loaded save was left at, and the shortcut
- * key that jumps to a layer. A concrete host supplies its own fold selection and its own layer selection -
- * its own frozen keys and its own opening default - and answers the questions that actually differ between
- * screens: when the sidebar is live, where it anchors, which frame edges it strokes, and how its view state
- * reads.
+ * picks - which layer is active there and whether its layers show at all - the reseed that opens the panel at
+ * the fold a loaded save was left at, and the shortcut key that jumps to a layer. A concrete host supplies
+ * its own fold selection and its own screen's picks - its own frozen keys and its own opening default - and
+ * answers the questions that actually differ between screens: whether its screen is up, where it anchors,
+ * which frame edges it strokes, and how that screen's own view state reads.
  *
  * <p>The shortcut jump lives here because the panel offers the same tabs on every screen that shows it, so
  * the key that reaches a tab should not depend on which screen the player is looking at. It writes the
@@ -58,19 +58,19 @@ public abstract class BaseSidebarHost implements SidebarHost {
     private static final float FULLY_PAINTED = 1f;
     private static final float HIDDEN = 0f;
 
+    // The end of the screen's own show-or-hide ramp - none of the layers left on it. The same number as
+    // the alpha above and deliberately not the same name: one is how much of the panel is painted, the
+    // other how far a pick has travelled, and a reading is compared against the one it is measured in.
+    private static final float FULLY_HIDDEN = 0f;
+
     // Where this host's panel fold is read from and recorded to. Supplied by the concrete host, so the
     // frozen memory key and the fold the screen opens at stay with the screen that owns them.
     private final SidebarFoldSelection foldSelection;
 
-    // The screen's active-layer pick: which tab is lit here, and what a shortcut key or a tab press moves.
-    // Supplied by the concrete host, so each screen keeps its own pick and a switch on one leaves the other
-    // untouched.
-    private final ActiveLayerSelection layerSelection;
-
-    // The screen's show-or-hide pick: whether the layers are on this screen at all, and how far through a
-    // change the picture stands. Supplied by the concrete host for the reason the pick above is, the two
-    // being the same screen's state under two frozen keys.
-    private final MapLayerVisibility layerVisibility;
+    // The screen's picks: which tab is lit here, and whether the layers are on this screen at all.
+    // Supplied by the concrete host as one pair, so each screen keeps its own state, a switch or a hide on
+    // one leaves the other untouched, and no host can be wired to one screen's tab and another's hiding.
+    private final ScreenLayerPicks screenPicks;
 
     // Whether anything else has claimed the screen this frame. Handed in rather than composed here, so a
     // host depends on the one question and not on which things can answer it - among them an optional mod.
@@ -82,13 +82,11 @@ public abstract class BaseSidebarHost implements SidebarHost {
 
     protected BaseSidebarHost(
             SidebarFoldSelection foldSelection,
-            ActiveLayerSelection layerSelection,
-            MapLayerVisibility layerVisibility,
+            ScreenLayerPicks screenPicks,
             ScreenClaim screenClaim) {
 
         this.foldSelection = foldSelection;
-        this.layerSelection = layerSelection;
-        this.layerVisibility = layerVisibility;
+        this.screenPicks = screenPicks;
         this.screenClaim = screenClaim;
         // The seed takes the library's own balance rather than the player's, being the one controller
         // nothing can be heard through: a host is a process-lifetime singleton built before any sector
@@ -115,15 +113,18 @@ public abstract class BaseSidebarHost implements SidebarHost {
     public final String describeViewState() {
 
         var hostScreenState = describeHostScreenViewState();
+        var visibility = screenPicks.layerVisibility();
 
-        if (layerVisibility.areLayersShown()) {
+        if (visibility.areLayersShown()) {
             return hostScreenState;
         }
         // The fade is consulted only for a screen already switched off, so a shown screen's line costs
         // the pick alone: the reading behind it takes a clock and the hide-pace setting with it.
-        return layerVisibility.resolveShownFade() > HIDDEN
-            ? "layers hiding; " + hostScreenState
-            : "layers hidden; " + hostScreenState;
+        var hidingState = visibility.resolveShownFade() > FULLY_HIDDEN
+            ? "layers hiding; "
+            : "layers hidden; ";
+
+        return hidingState + hostScreenState;
     }
 
     @Override
@@ -160,7 +161,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
         if (tabIndex == TabStrip.NO_TAB) {
             return;
         }
-        layerSelection.selectLayer(layers.get(tabIndex));
+        screenPicks.layerSelection().selectLayer(layers.get(tabIndex));
         controller.startHotkeyBlinkAt(tabIndex);
         event.consume();
     }
@@ -187,7 +188,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
         // first - the panel's screens are off far more often than anything claims them or the layers are
         // hidden - but it would spend a walk to save a read.
         return !screenClaim.isScreenClaimed()
-            && layerVisibility.areLayersShown()
+            && screenPicks.layerVisibility().areLayersShown()
             && isHostScreenShowing();
     }
 
@@ -210,7 +211,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
         }
         // The two dissolves compose rather than one winning, which is what lets a modal raised over a
         // panel already thinning darken over it: neither has to know the other is running.
-        var fade = claimFade * layerVisibility.resolveShownFade();
+        var fade = claimFade * screenPicks.layerVisibility().resolveShownFade();
 
         return fade <= HIDDEN || !isHostScreenShowing()
             ? HIDDEN
@@ -245,7 +246,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
      *         on which pick is this screen's
      */
     protected final ActiveLayerSelection getLayerSelection() {
-        return layerSelection;
+        return screenPicks.layerSelection();
     }
 
     /**

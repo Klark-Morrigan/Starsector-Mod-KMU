@@ -143,7 +143,11 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // no elapsed time to wind it down on re-open, so it would paint as the tail of an interaction
             // the player never saw begin.
             host.getController().resetInputMotions();
-            logViewStateOnChange("hidden; " + host.describeViewState());
+
+            // "Not drawn" rather than "hidden": this says the panel was not painted, while what follows
+            // says why - and one of those reasons is now the layers being hidden, which the two words
+            // together would read as a stutter.
+            logViewStateOnChange("not drawn; " + host.describeViewState());
             return;
         }
 
@@ -168,7 +172,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // host's anchor is gone - so the panel stays absent, logged once.
         var placement = host.resolvePlacement();
         if (placement == null) {
-            logViewStateOnChange("hidden; placement unavailable; " + host.describeViewState());
+            logViewStateOnChange("not drawn; placement unavailable; " + host.describeViewState());
             return;
         }
         // Step the panel's input motions - the hover fades, the tabs' click pulses, and their hotkey

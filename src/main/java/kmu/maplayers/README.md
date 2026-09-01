@@ -144,7 +144,9 @@ about what the overlay means.
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
   shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`, and
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
-  beside its tab. The pick is folded into the active-layer answer rather than read by each consumer:
+  beside its tab and handed out with it as one `ScreenLayerPicks`, so nothing can read one screen's
+  tab against another's hiding. The pick is folded into the active-layer answer rather than read by
+  each consumer:
   a hidden screen resolves to no active layer once its fade is out, which every pass driven by that
   pick already draws nothing for. The sidebar is the one part of the footprint outside that answer,
   since it draws whether or not a layer is picked, so it reads the same pick at

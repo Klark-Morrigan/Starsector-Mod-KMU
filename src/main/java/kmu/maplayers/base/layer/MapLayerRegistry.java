@@ -8,21 +8,21 @@ import kmu.maplayers.base.render.MapLayerRenderer;
 import java.util.List;
 
 /**
- * The map-layer registry and the holder of each screen's active-layer pick. The layer bar
- * composes its tabs from {@link #getLayers()}, a screen's own selection ({@link #getMapSelection()}
- * or {@link #getIntelSelection()}) stores its pick, and each layer's own state reads {@link #isActive}
- * to decide whether it is the one to draw - so all agree on the live selection without sharing
- * state directly. Each screen's pick is its own {@link PersistedActiveLayerSelection} under its own
- * key, so a switch on one screen survives reload without moving the other's; the registry holds both
- * so their keys and the one-time legacy migration live in a single place. Each screen's show-or-hide
- * pick ({@link #getMapVisibility()}, {@link #getIntelVisibility()}) is held the same way and for the
- * same reason, which puts all four save keys of the per-screen state in one place.
+ * The map-layer registry and the holder of each screen's picks. The layer bar composes its tabs from
+ * {@link #getLayers()}, a screen's own pair ({@link #getMapPicks()} or {@link #getIntelPicks()}) stores
+ * which layer is active there and whether that screen's layers show at all, and each layer's own state
+ * reads {@link #isActive} to decide whether it is the one to draw - so all agree on the live selection
+ * without sharing state directly. Each screen's picks are its own {@link PersistedActiveLayerSelection}
+ * and {@link PersistedMapLayerVisibility} under its own keys, so a switch or a hide on one screen
+ * survives reload without moving the other's; the registry holds both pairs so all four save keys and
+ * the one-time legacy migration live in a single place.
  *
- * <p>Because the picks are per-screen, "which pick is live" is a per-frame question rather than a
+ * <p>Because the picks are per-screen, "whose picks are live" is a per-frame question rather than a
  * fixed answer: the same map widget draws on the sector map and inside the intel screen's visor, so an
  * overlay reading one fixed screen's pick would paint the sector map's choice onto the intel screen
  * and ignore the tab the player is looking at. {@link #isActive} settles it by reading which screen is
- * up, through the intel-screen seam {@link #registerIntelScreen} supplies.
+ * up, through the intel-screen seam {@link #registerIntelScreen} supplies, and settles it once for the
+ * pair - which is what {@link ScreenLayerPicks} is for.
  *
  * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer.
  * The set of layers and the default pick are supplied once at startup by a composition root
@@ -46,19 +46,16 @@ public final class MapLayerRegistry {
     // stops being answered at all.
     private static final float FULLY_HIDDEN = 0f;
 
-    // Each screen's pick, persisted under its own frozen key. The map host draws through the map
-    // selection and the overlay follows it; the intel host draws through the intel selection. Held here
-    // so both keys sit in one place.
-    private static final PersistedActiveLayerSelection MAP_SELECTION =
-        new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY);
-    private static final PersistedActiveLayerSelection INTEL_SELECTION =
-        new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY);
-
-    // Each screen's show-or-hide pick, alongside the pick above it and per screen for the same reason.
-    private static final PersistedMapLayerVisibility MAP_VISIBILITY =
-        new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY);
-    private static final PersistedMapLayerVisibility INTEL_VISIBILITY =
-        new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY);
+    // Each screen's pair of picks, persisted under that screen's own frozen keys. The map host draws
+    // through the map pair and the overlay follows it; the intel host draws through the intel pair. Held
+    // here so all four keys sit in one place, and paired so a screen is chosen once rather than at each
+    // site that wants one of its two picks.
+    private static final ScreenLayerPicks MAP_PICKS = new ScreenLayerPicks(
+        new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY),
+        new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY));
+    private static final ScreenLayerPicks INTEL_PICKS = new ScreenLayerPicks(
+        new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY),
+        new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY));
 
     // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
     // until a composition root registers them at startup, before any sector map can open.
@@ -109,35 +106,19 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return the map screen's active-layer pick, for the map host to draw through and switch, so the
-     *         host and the overlay read one selection rather than each resolving their own
+     * @return the map screen's picks, for the map host to draw through, switch and flip, so the host and
+     *         the overlay read one pair rather than each resolving their own
      */
-    public static ActiveLayerSelection getMapSelection() {
-        return MAP_SELECTION;
+    public static ScreenLayerPicks getMapPicks() {
+        return MAP_PICKS;
     }
 
     /**
-     * @return the intel screen's active-layer pick, its own selection under its own key, so the intel
-     *         sidebar's tab is independent of the map screen's and survives reload on its own
+     * @return the intel screen's picks, its own under its own keys, so the intel sidebar's tab and its
+     *         show-or-hide state are independent of the map screen's and survive reload on their own
      */
-    public static ActiveLayerSelection getIntelSelection() {
-        return INTEL_SELECTION;
-    }
-
-    /**
-     * @return the map screen's show-or-hide pick, for that screen's control to flip and for everything
-     *         drawing there to read, so the whole visible footprint of the layers stands down together
-     */
-    public static MapLayerVisibility getMapVisibility() {
-        return MAP_VISIBILITY;
-    }
-
-    /**
-     * @return the intel screen's show-or-hide pick, its own under its own key, so hiding the layers on
-     *         one screen leaves the other screen showing them
-     */
-    public static MapLayerVisibility getIntelVisibility() {
-        return INTEL_VISIBILITY;
+    public static ScreenLayerPicks getIntelPicks() {
+        return INTEL_PICKS;
     }
 
     /**
@@ -147,7 +128,7 @@ public final class MapLayerRegistry {
      *         immediately, whatever is still fading off the screen
      */
     public static boolean areLayersShownOnLiveScreen() {
-        return resolveLiveVisibility().areLayersShown();
+        return resolveLivePicks().layerVisibility().areLayersShown();
     }
 
     /**
@@ -156,7 +137,7 @@ public final class MapLayerRegistry {
      *         whole footprint thins together rather than one part snapping out from under another
      */
     public static float resolveShownFadeOnLiveScreen() {
-        return resolveLiveVisibility().resolveShownFade();
+        return resolveLivePicks().layerVisibility().resolveShownFade();
     }
 
     /**
@@ -169,13 +150,17 @@ public final class MapLayerRegistry {
      */
     public static MapLayer getActiveLayer() {
 
+        // One resolution for both readings, so the pick answered and the show-or-hide state gating it
+        // cannot come off different screens.
+        var livePicks = resolveLivePicks();
+
         // Hiding lands here rather than at each consumer, because every pass driven by the active pick
         // already treats "no pick" as nothing to draw: one read takes the overlay, the labels and the
         // hover box off the screen together.
-        if (!isAnythingOfTheLayersOnLiveScreen()) {
+        if (!isAnythingOfTheLayersOn(livePicks.layerVisibility())) {
             return null;
         }
-        return resolveLiveSelection().getActiveLayer();
+        return livePicks.layerSelection().getActiveLayer();
     }
 
     /**
@@ -209,38 +194,26 @@ public final class MapLayerRegistry {
         return getActiveLayer() == layer;
     }
 
-    // The active-layer pick of the screen that is up.
-    private static ActiveLayerSelection resolveLiveSelection() {
-        return isIntelScreenLive()
-            ? INTEL_SELECTION
-            : MAP_SELECTION;
-    }
-
-    // Whether anything of the showing screen's layers is on it at all: a screen switched off goes on
-    // being drawn until its ramp reaches the end, which is what dissolves it rather than blinking it out.
+    // Whether anything of the given screen's layers is on it at all: a screen switched off goes on being
+    // drawn until its ramp reaches the end, which is what dissolves it rather than blinking it out.
     //
     // The crisp pick settles a shown screen outright, and the fade is asked for only where the answer
     // could still turn on it. A screen coming back paints from the first frame of its ramp whatever the
     // fade reads, so consulting it there could only ever agree - at the price of a clock read, and of a
     // settings read behind it, on every frame the layers are simply on.
-    private static boolean isAnythingOfTheLayersOnLiveScreen() {
-
-        var visibility = resolveLiveVisibility();
-
+    private static boolean isAnythingOfTheLayersOn(MapLayerVisibility visibility) {
         return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
     }
 
-    // The show-or-hide pick of the screen that is up. Resolved for itself rather than derived from the
-    // active pick beside it, so the two cannot come to answer for different screens - which would hide
-    // one screen's layers over the other's tab.
-    private static MapLayerVisibility resolveLiveVisibility() {
+    // The picks of the screen that is up. One resolution for the pair, so no reading can answer for a
+    // screen another reading has already left - which would hide one screen's layers over the other's tab.
+    private static ScreenLayerPicks resolveLivePicks() {
         return isIntelScreenLive()
-            ? INTEL_VISIBILITY
-            : MAP_VISIBILITY;
+            ? INTEL_PICKS
+            : MAP_PICKS;
     }
 
-    // Whether the intel screen is the one up, which is what "live screen" means in both resolutions
-    // above - so they cannot come to disagree about which screen that is.
+    // Whether the intel screen is the one up, which is what "live screen" means above.
     private static boolean isIntelScreenLive() {
         return intelScreen != null && intelScreen.isIntelTabOpen();
     }
