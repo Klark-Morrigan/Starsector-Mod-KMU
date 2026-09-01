@@ -1,22 +1,18 @@
 package kmu.maplayers.base.chrome;
 
 import kmlib.starsector.ui.map.controls.MapFilterRow;
-import kmlib.starsector.ui.map.controls.MapFilterRows;
-import kmlib.starsector.ui.map.probes.EmbeddedMap;
-import kmlib.testfixtures.starsector.ui.map.controls.FilteredMapWidgetFake;
-import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -30,6 +26,11 @@ import static org.mockito.Mockito.when;
  * Pins when the pass writes into the game's filter row and when it leaves it alone: once per row per
  * screen, again as soon as a screen rebuilds its row, never while the switch is closed or no map is
  * up, and never in a way that lets a broken read out.
+ *
+ * <p>Also the two answers that are not decisions of its own but which the whole control rests on:
+ * that it goes on running for the session, and that it runs while the campaign is paused. Every
+ * screen carrying a filter row pauses the campaign, so a pass that stood down under one would never
+ * run on a frame where there was a row to write to.
  */
 final class MapLayerToggleUpkeepTest {
 
@@ -44,13 +45,14 @@ final class MapLayerToggleUpkeepTest {
     class Advance {
 
         @Test
-        void putsAControlOnTheRowOnScreen() {
+        void advancePutsAControlOnTheRowOnScreen() {
 
-            var shownRow = buildRow();
+            var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
-            buildUpkeep(SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock)
+            new MapLayerToggleUpkeep(
+                SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
             // Bound to the pick of the screen the row belongs to, which is what stops a control on
@@ -59,13 +61,13 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void leavesTheControlAloneWhileItStandsOnTheRowOnScreen() {
+        void advanceLeavesTheControlAloneWhileItStandsOnTheRowOnScreen() {
 
-            var shownRow = buildRow();
+            var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
-            var upkeep = buildUpkeep(
+            var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
@@ -77,15 +79,15 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void putsAFreshControlUpOnceTheScreenRebuildsItsRow() {
+        void advancePutsAFreshControlUpOnceTheScreenRebuildsItsRow() {
 
-            var firstRow = buildRow();
-            var rebuiltRow = buildRow();
+            var firstRow = ShownFilterRows.createRowWithRoomToSpare();
+            var rebuiltRow = ShownFilterRows.createRowWithRoomToSpare();
             var shownRow = new AtomicReference<>(firstRow);
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
-            var upkeep = buildUpkeep(
+            var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN, () -> visibilityMock, shownRow::get, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
@@ -99,17 +101,17 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void remembersEachScreensRowSeparately() {
+        void advanceRemembersEachScreensRowSeparately() {
 
-            var mapRow = buildRow();
-            var intelRow = buildRow();
+            var mapRow = ShownFilterRows.createRowWithRoomToSpare();
+            var intelRow = ShownFilterRows.createRowWithRoomToSpare();
             var mapVisibilityMock = mock(MapLayerVisibility.class);
             var intelVisibilityMock = mock(MapLayerVisibility.class);
             var liveScreenVisibility = new AtomicReference<>(mapVisibilityMock);
             var shownRow = new AtomicReference<>(mapRow);
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
-            var upkeep = buildUpkeep(
+            var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN, liveScreenVisibility::get, shownRow::get, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
@@ -129,15 +131,15 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void writesNothingWhileTheSwitchIsClosed() {
+        void advanceWritesNothingWhileTheSwitchIsClosed() {
 
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
-            buildUpkeep(
+            new MapLayerToggleUpkeep(
                 SWITCH_CLOSED,
                 () -> visibilityMock,
-                MapLayerToggleUpkeepTest::buildRow,
+                ShownFilterRows::createRowWithRoomToSpare,
                 toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
@@ -146,12 +148,13 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void writesNothingWhileNoMapIsOnScreen() {
+        void advanceWritesNothingWhileNoMapIsOnScreen() {
 
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
-            buildUpkeep(SWITCH_OPEN, () -> visibilityMock, () -> null, toggleAttacherMock)
+            new MapLayerToggleUpkeep(
+                SWITCH_OPEN, () -> visibilityMock, () -> null, toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
             // Every screen showing no map, which is most of them - the ordinary answer rather than
@@ -160,16 +163,16 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void triesAgainOnTheNextFrameAfterARowRefusesTheControl() {
+        void advanceTriesAgainOnTheNextFrameAfterARowRefusesTheControl() {
 
-            var shownRow = buildRow();
+            var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
             when(toggleAttacherMock.attachToggleTo(any(), any()))
                 .thenReturn(false);
 
-            var upkeep = buildUpkeep(
+            var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
@@ -181,9 +184,9 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void swallowsAFailedReadAndPutsTheControlUpOnTheNextFrame() {
+        void advanceSwallowsAFailedReadAndPutsTheControlUpOnTheNextFrame() {
 
-            var shownRow = buildRow();
+            var shownRow = ShownFilterRows.createRowWithRoomToSpare();
             var readCount = new AtomicInteger();
             var visibilityMock = mock(MapLayerVisibility.class);
             var toggleAttacherMock = buildAcceptingAttacherMock();
@@ -195,7 +198,7 @@ final class MapLayerToggleUpkeepTest {
                 return shownRow;
             };
 
-            var upkeep = buildUpkeep(
+            var upkeep = new MapLayerToggleUpkeep(
                 SWITCH_OPEN, () -> visibilityMock, resolveShownRow, toggleAttacherMock);
 
             assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
@@ -211,25 +214,28 @@ final class MapLayerToggleUpkeepTest {
         }
     }
 
-    // One filter row, reached the way the running game's is - off a map widget's own accessor - so
-    // each call stands a row of its own, and two of them are the two rows a reopened screen leaves
-    // behind.
-    private static MapFilterRow buildRow() {
+    @Nested
+    class IsDone {
 
-        var mapWidget = new FilteredMapWidgetFake(
-            MapFilterRowFake.createMapScreenStrip("Starscape", "Names"));
-
-        return MapFilterRows.resolveEmbeddedMapFilterRow(new EmbeddedMap(mapWidget, List.of()));
+        @Test
+        void isDoneIsFalseSoThePassRunsForTheSession() {
+            // The row is rebuilt for as long as the player keeps opening map screens, so a pass that
+            // ended would leave every screen opened after it bare.
+            assertThat(new MapLayerToggleUpkeep().isDone())
+                .isFalse();
+        }
     }
 
-    private static MapLayerToggleUpkeep buildUpkeep(
-            BooleanSupplier isToggleEnabled,
-            Supplier<MapLayerVisibility> resolveLiveScreenVisibility,
-            Supplier<MapFilterRow> resolveShownRow,
-            MapLayerToggleAttacher toggleAttacher) {
+    @Nested
+    class RunWhilePaused {
 
-        return new MapLayerToggleUpkeep(
-            isToggleEnabled, resolveLiveScreenVisibility, resolveShownRow, toggleAttacher);
+        @Test
+        void runWhilePausedIsTrueSoTheControlReachesTheScreensThatCarryARow() {
+            // Every screen carrying a filter row pauses the campaign, so a pass that stood down
+            // while paused would run on none of the frames it exists for.
+            assertThat(new MapLayerToggleUpkeep().runWhilePaused())
+                .isTrue();
+        }
     }
 
     // An attachment that succeeds, which is what the cases about remembering rows are posed over.
