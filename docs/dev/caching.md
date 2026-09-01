@@ -385,16 +385,15 @@ the name.
 
 ### Sidebar pickers
 
-`RevisionMemo` is the memo any layer's sidebar holds its resolved picker in, keyed
-on the sector, the scope, and a revision the caller supplies. A body build runs twice
+`RevisionMemo` is the memo any layer's sidebar holds its resolved picker in, keyed on
+the scope and a revision the caller supplies. A body build runs twice
 a frame (render and hit-test), so without a memo every picker would re-resolve its
 list several times a frame. It is KMLib's (`kmlib.starsector.ui.widgets.lists`), like
 the picker it feeds; [KMLib's caching
 notes](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/caching.md) file it as an
-invalidation primitive rather than a cache, since what it holds and when it goes stale
-are entirely the consumer's declaration. How its key handles a save reloaded in the
-same session is documented there too, and is the one part of the memo KMU does not
-decide.
+invalidation primitive rather than a cache, since what it holds, when it goes stale,
+and how long it lives are entirely the consumer's declaration - including the discard
+a consumer calls when whatever the value belonged to is released.
 
 [`SelectableBlocCache`](../../src/main/java/kmu/maplayers/politicalmap/base/sidebar/SelectableBlocCache.java)
 is the political map's use of it: what it adds is the revision, the one thing the

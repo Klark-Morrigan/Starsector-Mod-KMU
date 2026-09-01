@@ -726,10 +726,8 @@ is KMLib's, bound to this mod's save slots there). What stays here is what that 
 know: which blocs are on offer, what makes that list stale, and where each of those blocs was found
 (`SelectableBlocCache`), and the recede toggles the layer pairs with the picker's sort
 (`RecedeControl`). The presence rides the same memo as the rows because it is the same sector walk's
-answer, so a surface lighting a bloc's systems costs no economy read of its own. That memo is one
-sector's and is held by that sector's
-[installed machinery](../base/installation/README.md), so two sectors' sidebars neither read one
-another's rows nor evict one another's entry.
+answer, so a surface lighting a bloc's systems costs no economy read of its own. That memo belongs to
+the sector's [installed machinery](../base/installation/README.md).
 
 The class that names and orders the views is `kmu.maplayers.MapLayers`, also one level up; how a
 layer is picked and what each screen remembers is [map layers](../README.md).

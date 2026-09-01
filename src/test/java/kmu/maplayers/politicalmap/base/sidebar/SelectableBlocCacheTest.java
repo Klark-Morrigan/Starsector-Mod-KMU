@@ -137,11 +137,7 @@ final class SelectableBlocCacheTest {
             // the key saying they came from elsewhere.
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
-            var viewMock = stubViewAnswering(sectorMock, "factions");
-
-            doReturn(OTHER_READ)
-                .when(viewMock)
-                .resolveBlocPickerRead(otherSectorMock);
+            var viewMock = stubViewAnsweringPerSector(sectorMock, otherSectorMock);
 
             assertThat(buildCacheOver(sectorMock).resolveBlocPickerRead(viewMock))
                 .isEqualTo(READ);
@@ -156,13 +152,9 @@ final class SelectableBlocCacheTest {
             // sector's list standing while the other resolves.
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
-            var viewMock = stubViewAnswering(sectorMock, "factions");
+            var viewMock = stubViewAnsweringPerSector(sectorMock, otherSectorMock);
             var cache = buildCacheOver(sectorMock);
             var otherCache = buildCacheOver(otherSectorMock);
-
-            doReturn(OTHER_READ)
-                .when(viewMock)
-                .resolveBlocPickerRead(otherSectorMock);
 
             cache.resolveBlocPickerRead(viewMock);
             otherCache.resolveBlocPickerRead(viewMock);
@@ -262,6 +254,21 @@ final class SelectableBlocCacheTest {
         doReturn(READ)
             .when(viewMock)
             .resolveBlocPickerRead(sectorMock);
+
+        return viewMock;
+    }
+
+    // The same view answering a second sector's walk with a read of its own, which is what lets a
+    // two-sector case tell a cache reading the wrong sector's walk from one that merely walked twice.
+    private static PoliticalMapView stubViewAnsweringPerSector(
+            SectorAPI sectorMock,
+            SectorAPI otherSectorMock) {
+
+        var viewMock = stubViewAnswering(sectorMock, "factions");
+
+        doReturn(OTHER_READ)
+            .when(viewMock)
+            .resolveBlocPickerRead(otherSectorMock);
 
         return viewMock;
     }

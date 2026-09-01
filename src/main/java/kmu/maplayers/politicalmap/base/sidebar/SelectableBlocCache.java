@@ -23,17 +23,8 @@ import java.util.Set;
  * same invalidation - a surface lighting a bloc's systems reads it here rather than re-walking, and
  * cannot end up holding presence from one reading beside rows from another.
  *
- * <p>One sector's, held by that sector's installation rather than for the process. A list is a walk
- * of one sector's economy memoised against that sector's own revisions, so a shared memo would serve
- * one sector's rows under another sector's revision - a wrong list rather than a stale one - and two
- * sectors' sidebars would evict each other's entry and re-walk on every alternation. Held that way
- * it needs no discard of its own: a load disposes the installation and the memoised read goes with
- * it.
- *
- * <p>The economy can drift between rebuild triggers (a colony resized without changing holder leaves
- * the settings and grouping revisions untouched), so a metric can lag until the next settings, view,
- * or alliance-set change forces a recompute - the same cadence the overlay's own full territory
- * rebuild reconciles on, so the picker numbers and the painted map stay in step.
+ * <p>One sector's: a list is a walk of that sector's economy keyed on that sector's revisions, so it
+ * is held by that sector's {@link MapLayerInstallation} and discarded with it.
  */
 public final class SelectableBlocCache implements InstalledMachinery {
 
@@ -48,9 +39,7 @@ public final class SelectableBlocCache implements InstalledMachinery {
     // agree on the view thrash it rather than share it.
     // Held wildcarded because each view's blocs carry that view's own metrics, which is knowledge
     // the memo has no use for - it caches whatever the view answered.
-    // Not final because the memo offers no discard of its own, and disposal has to leave nothing of
-    // the gone sector's rows behind.
-    private RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
+    private final RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
 
     // Reached through resolveBlocCacheIn, so the only caches that exist are ones an installation
     // holds - and so go with the sector they were made for.
@@ -75,16 +64,13 @@ public final class SelectableBlocCache implements InstalledMachinery {
     }
 
     /**
-     * Drops the memoised read, so the next ask walks afresh rather than serving what this sector's
-     * economy last answered.
-     *
-     * <p>Holds nothing a collector would not free, so this is about the answer rather than the
-     * memory: a caller still holding a cache resolved before the disposal must not be served the
-     * gone sector's rows under a revision that never moved.
+     * Drops the memoised read, so a caller still holding this cache is not served the gone sector's
+     * rows - nothing about the key would say they were stale, since a sector going away moves no
+     * revision.
      */
     @Override
     public void disposeMachinery() {
-        blocCache = new RevisionMemo<>();
+        blocCache.discardValue();
     }
 
     /**
@@ -121,7 +107,6 @@ public final class SelectableBlocCache implements InstalledMachinery {
         var sector = installation.resolveSector();
 
         return blocCache.resolveValue(
-            sector,
             view.getId(),
             computeRevision(view),
             () -> view.resolveBlocPickerRead(sector));

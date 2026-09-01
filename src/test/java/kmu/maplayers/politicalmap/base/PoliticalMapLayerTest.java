@@ -10,6 +10,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
@@ -18,6 +19,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -31,6 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -68,6 +71,15 @@ final class PoliticalMapLayerTest {
 
     private final PoliticalMapView viewWithControlsMock = mock(PoliticalMapView.class);
     private final PoliticalMapView viewWithoutControlsMock = mock(PoliticalMapView.class);
+
+    // Loads the installation index before any case stubs Global. The body build resolves the running
+    // sector's machinery through it, and the index resolves its logger once at class initialisation -
+    // so a first load from inside a Global stub would leave it holding a null logger for the rest of
+    // the JVM, and the next suite to install or release machinery would fall over on it.
+    @BeforeAll
+    static void loadTheInstallationIndex() {
+        MapLayerInstallations.resolveInstallationFor(null);
+    }
 
     @Nested
     class ResolveRenderer {
@@ -329,6 +341,61 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any()));
+            }
+        }
+
+        @Test
+        void getBodyControlsReadsThePickerOffTheRunningSectorsMachinery() {
+            // The body build is handed no sector - a vanilla screen names none - so it resolves the
+            // running one's installation itself, and the list it reads is that sector's. Every case
+            // above resolves no sector at all, under which a build reaching any other installation
+            // would answer identically; this is the only one that can tell them apart.
+            registerViewWithOneBloc(viewWithoutControlsMock);
+
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getMemoryWithoutUpdate())
+                .thenReturn(mock(MemoryAPI.class));
+
+            // The recede paired with the sort selector reads the engine's text tone off the live
+            // settings, and it is built as an argument, so even a stubbed picker needs a settings
+            // proxy that answers a colour. Stubbed before the static stubbing opens, since its own
+            // stubbing would otherwise land inside that one.
+            var settingsMock = buildSettingsAnsweringColours();
+
+            // Installed outside the stubbing below, so the index resolves a real logger.
+            MapLayerInstallations.installMachineryOn(sectorMock);
+
+            try (var globalMock = mockStatic(Global.class);
+                    var controlsMock = mockStatic(PoliticalMapBodyControls.class);
+                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(sectorMock);
+
+                globalMock
+                    .when(Global::getSettings)
+                    .thenReturn(settingsMock);
+
+                stubSharedControlsAndSelector(controlsMock);
+                pickerMock
+                    .when(() -> FilterSelectionBinder.buildPicker(
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                    .thenReturn(List.of(PICKER_MARKER));
+
+                PoliticalMapLayer.INSTANCE.getBodyControls();
+
+                // The walk ran against the installed sector, which it can only have done through
+                // that sector's own memo - the machinery of no sector reads no economy at all.
+                verify(viewWithoutControlsMock)
+                    .resolveBlocPickerRead(sectorMock);
+
+            } finally {
+                MapLayerInstallations.uninstallMachineryFrom(sectorMock);
             }
         }
     }

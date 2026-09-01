@@ -334,9 +334,8 @@ carries no fallback mode to land on.
 
 `SelectableBlocCache` (the political map's) is where a layer holds its resolved picker between
 frames, over KMLib's `RevisionMemo`; what invalidates it is the layer's own judgement. It is held
-the way the hover slot above is - by the sector's `MapLayerInstallation`, resolved through
-`SelectableBlocCache.resolveBlocCacheIn` - since a list is a walk of one sector's economy memoised
-against that sector's revisions. [The caching
+the way the hover slot above is, by the sector's `MapLayerInstallation` through
+`SelectableBlocCache.resolveBlocCacheIn`. [The caching
 notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 | Key | Holds |
