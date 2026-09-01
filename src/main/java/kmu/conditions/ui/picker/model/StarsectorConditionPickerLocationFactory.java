@@ -6,13 +6,15 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.factions.FactionCrests;
-import kmlib.starsector.relation.StarsectorPlayerRelationshipFormatter;
+import kmlib.starsector.relation.StarsectorPlayerStandings;
 
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
 import kmu.starsector.StarsectorGravityWellResolver;
 
 import java.util.Objects;
+
+import static kmlib.starsector.relation.StarsectorPlayerStandingFormatter.formatPlayerStanding;
 
 import static kmu.util.KmuValues.normalizeText;
 
@@ -129,15 +131,18 @@ final class StarsectorConditionPickerLocationFactory {
         }
 
         var crestSprite = FactionCrests.resolveCrestPath(faction);
-        var relationship =
-            StarsectorPlayerRelationshipFormatter.formatPlayerRelationship(faction);
+
+        // The row words the standing and paints itself in its colour, so both come off one read;
+        // a faction with no standing to read leaves the row carrying neither.
+        var standing = StarsectorPlayerStandings.readPlayerStanding(faction)
+            .orElse(null);
 
         return new KmuPickerFaction(
             name,
             colour,
             crestSprite,
-            relationship.getDescription(),
-            relationship.getColour());
+            standing == null ? null : formatPlayerStanding(standing),
+            standing == null ? null : standing.colour());
     }
 
     private String starSystemName(MarketAPI market) {
