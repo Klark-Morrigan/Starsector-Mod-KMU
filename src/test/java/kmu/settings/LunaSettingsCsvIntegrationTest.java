@@ -138,10 +138,7 @@ final class LunaSettingsCsvIntegrationTest {
 
     // The escape hatch over the one widget the mod writes into that is not its own, held to shipping
     // on. Its own check for the reason the row above has one: what it pins is a decision rather than
-    // two spellings of a value agreeing. Shipped off, neither map screen is given the control that
-    // shows and hides the layers, and a screen with no control holds its layers shown - which leaves
-    // a fresh player a feature that draws and cannot be put away, indistinguishable from the
-    // attachment having broken. A hatch is reached for after something misbehaves, so it ships open.
+    // two spellings of a value agreeing, which the walk over every switch already holds.
     private static final String FILTER_ROW_TOGGLE_FIELD_ID =
         "kmu_map_dev_mapUi_filters_mapLayersToggle_isEnabled";
 
@@ -433,14 +430,14 @@ final class LunaSettingsCsvIntegrationTest {
     class FilterRowToggleDefaults {
 
         @Test
-        void theFilterRowToggleRowShipsSwitchedOn() {
+        void theFilterRowToggleShipsSwitchedOn() {
 
             assertThat(readColumn(FILTER_ROW_TOGGLE_FIELD_ID, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: shipped off, neither map screen gets the control that shows"
-                        + " and hides the layers, and no screen with no control hides them - so the"
-                        + " feature draws with no way to put it away, which reads as the attachment"
-                        + " having broken rather than as a switch nobody has turned on",
+                        + " and hides the layers, and a screen with no control never hides them - so"
+                        + " the feature draws with no way to put it away, which reads as the"
+                        + " attachment having broken rather than as a switch nobody has turned on",
                     FILTER_ROW_TOGGLE_FIELD_ID,
                     SETTINGS_CSV)
                 .isEqualTo(BOOLEAN_ON_VALUE);
