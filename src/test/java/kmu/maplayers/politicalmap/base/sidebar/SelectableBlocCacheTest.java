@@ -20,6 +20,7 @@ import java.util.List;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -120,7 +121,7 @@ final class SelectableBlocCacheTest {
 
             // A membership change bumps the alliances view's content revision between the two calls,
             // so the memo is stale and must re-resolve. The one case that states a revision at all.
-            when(viewMock.getContentRevision())
+            when(viewMock.getContentRevision(any()))
                 .thenReturn(0, 1);
 
             cache.resolveBlocPickerRead(viewMock);

@@ -476,8 +476,9 @@ final class PoliticalMapCache {
     // rebuilds the territories under whichever view is up, with no view naming it. Those toggles are
     // sector-memory state rather than LunaLib fields, so settingsRevision above does not cover them.
     // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
-    // combine here. The three counters come off this cache's own board, so a signal raised in
-    // another sector cannot restyle these cells - and a signal raised in this one cannot fail to.
+    // combine here. The three counters come off this cache's own board, and the view is handed that
+    // same board to fold its own live inputs from, so a signal raised in another sector cannot
+    // restyle these cells - and a signal raised in this one cannot fail to.
     private int computeContentRevision(PoliticalMapView view) {
 
         var board = installation.resolveRefreshBoard();
@@ -485,7 +486,7 @@ final class PoliticalMapCache {
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
-            view.getContentRevision(),
+            view.getContentRevision(board),
             board.getRevision(MapLayerCommonRefreshSignal.FILTER),
             board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
             board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));

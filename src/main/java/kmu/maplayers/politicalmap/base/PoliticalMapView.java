@@ -7,6 +7,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -70,9 +71,19 @@ public interface PoliticalMapView {
      * rebuild on its own. This is what lets the shared plugin invalidate on a view's live data
      * without naming any concrete view - each view declares its own fingerprint.
      *
-     * @return this view's content fingerprint; a constant for a view with no live inputs
+     * <p>The board arrives as an argument because a view is a stateless strategy every sector's
+     * machinery shares, while the counters it folds are one sector's: a view reading an ambient
+     * board would answer one sector's ask off another sector's revisions, which is a wrong number
+     * rather than a stale one - the cells stay drawn as they were and no signal can ever move the
+     * token that would rebuild them. Both callers already hold the installation they are asking
+     * for, so the board is named at the call rather than resolved again here.
+     *
+     * @param board the refresh board of the sector this ask is about, whose revisions the view
+     *              folds
+     * @return this view's content fingerprint over {@code board}; a constant for a view with no
+     *         live inputs
      */
-    int getContentRevision();
+    int getContentRevision(MapLayerRefreshBoard board);
 
     /**
      * The holder grouping this view resolves its pass under: identity for the

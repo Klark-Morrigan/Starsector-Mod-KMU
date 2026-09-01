@@ -7,7 +7,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -139,11 +139,12 @@ final class FactionsViewTest {
             // against a bloc the painter is not allied with, so a membership change must shift the
             // revision - that is what repaints the bands at their new lengths instead of leaving
             // them stale until an unrelated rebuild.
-            var before = FactionsView.INSTANCE.getContentRevision();
+            var board = new MapLayerRefreshBoard();
+            var before = FactionsView.INSTANCE.getContentRevision(board);
 
-            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(FactionsView.INSTANCE.getContentRevision())
+            assertThat(FactionsView.INSTANCE.getContentRevision(board))
                 .isNotEqualTo(before);
         }
 
@@ -151,12 +152,32 @@ final class FactionsViewTest {
         void getContentRevisionIsInvariantAcrossAnUnrelatedSignal() {
             // Only the alliance set is folded in, so a signal this view renders nothing from - a
             // geometry rebuild here - leaves its contribution fixed rather than churning the view.
-            var before = FactionsView.INSTANCE.getContentRevision();
+            var board = new MapLayerRefreshBoard();
+            var before = FactionsView.INSTANCE.getContentRevision(board);
 
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+            board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
-            assertThat(FactionsView.INSTANCE.getContentRevision())
+            assertThat(FactionsView.INSTANCE.getContentRevision(board))
                 .isEqualTo(before);
+        }
+
+        @Test
+        void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
+            // One stateless view answers for every sector, so the board handed in is the only thing
+            // telling two sectors' asks apart. A membership change in one sector must move that
+            // sector's number and leave the other's exactly where it was - a view folding an ambient
+            // board instead would move both, so neither sector's cells could go stale on their own.
+            var board = new MapLayerRefreshBoard();
+            var otherBoard = new MapLayerRefreshBoard();
+            var before = FactionsView.INSTANCE.getContentRevision(board);
+            var otherBefore = FactionsView.INSTANCE.getContentRevision(otherBoard);
+
+            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+
+            assertThat(FactionsView.INSTANCE.getContentRevision(board))
+                .isNotEqualTo(before);
+            assertThat(FactionsView.INSTANCE.getContentRevision(otherBoard))
+                .isEqualTo(otherBefore);
         }
     }
 

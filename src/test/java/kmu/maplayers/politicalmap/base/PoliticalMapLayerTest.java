@@ -410,7 +410,7 @@ final class PoliticalMapLayerTest {
         when(view.getId())
             .thenReturn(PICKER_VIEW_ID);
 
-        when(view.getContentRevision())
+        when(view.getContentRevision(any()))
             .thenReturn(1);
 
         when(view.getViewBodyControls())
@@ -490,7 +490,7 @@ final class PoliticalMapLayerTest {
 
         when(view.getId())
             .thenReturn("selected-view");
-        when(view.getContentRevision())
+        when(view.getContentRevision(any()))
             .thenReturn(0);
 
         doReturn(BlocPickerRead.empty())

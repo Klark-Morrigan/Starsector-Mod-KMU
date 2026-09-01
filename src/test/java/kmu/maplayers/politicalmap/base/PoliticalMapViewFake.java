@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
@@ -88,8 +89,10 @@ public final class PoliticalMapViewFake implements PoliticalMapView {
         return "fake_label";
     }
 
+    // Samples nothing live, so the board it is handed contributes nothing and the fingerprint holds
+    // constant - the "never forces a rebuild on its own" case the seam allows.
     @Override
-    public int getContentRevision() {
+    public int getContentRevision(MapLayerRefreshBoard board) {
         return 0;
     }
 

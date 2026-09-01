@@ -6,7 +6,7 @@ import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -82,7 +82,7 @@ public final class ClaimsView implements PoliticalMapView {
     }
 
     @Override
-    public int getContentRevision() {
+    public int getContentRevision(MapLayerRefreshBoard board) {
         // The alliance set is this view's one live input. The fills do not move with it - they are
         // pinned to the claiming faction - but the bands over them do: a run is laid at contested
         // length only against a bloc the claimant is not allied with, so membership moving in play
@@ -92,8 +92,11 @@ public final class ClaimsView implements PoliticalMapView {
         // economy, which the shared economy revision already repaints on. A live fingerprint for
         // explicit claim-flag flips is a later concern; until then a flag-only claim change waits for
         // the next economy rebuild.
+        //
+        // Read off the board the caller named, so the alliance revision folded here is the one raised
+        // in the sector whose cells are being asked about.
         return Fingerprints.compute(
-            () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
+            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
     }
 
     @Override

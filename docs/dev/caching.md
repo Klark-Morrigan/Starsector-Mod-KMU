@@ -213,7 +213,12 @@ concrete view: a view folds its own live inputs into one int, so each invalidate
 what it actually reads. All three political views fold the alliance revision, for
 different reasons - the alliances view because membership decides what it paints, the
 faction and claims views because their bands judge a contest against it - while a view
-that samples nothing live folds no sources and never forces a rebuild on its own.
+that samples nothing live folds no sources and never forces a rebuild on its own. The
+board those counters are read off is an argument, since a view is a stateless strategy
+every sector's machinery shares while the counters are one sector's: both callers - the
+overlay cache's own fingerprint and the picker memo's key - already hold the
+installation being asked about, so each names the board it means rather than leaving
+the view to resolve whichever sector is running.
 
 ## Layer 3: the caches
 

@@ -11,7 +11,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.memory.SectorMemoryAccess;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -93,11 +93,12 @@ final class AlliancesViewTest {
             // The alliance set is one of the view's live inputs, so a membership change must shift
             // the revision - that is what folds it into the content token and repaints the view
             // without a reload.
-            var before = AlliancesView.INSTANCE.getContentRevision();
+            var board = new MapLayerRefreshBoard();
+            var before = AlliancesView.INSTANCE.getContentRevision(board);
 
-            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(AlliancesView.INSTANCE.getContentRevision())
+            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
                 .isNotEqualTo(before);
         }
 
@@ -106,12 +107,32 @@ final class AlliancesViewTest {
             // A Mute/Desaturate flip is the view's other live input: those sidebar-only toggles
             // never move settingsRevision, so the recede-style revision must fold in here for a flip
             // to repaint the overlay live.
-            var before = AlliancesView.INSTANCE.getContentRevision();
+            var board = new MapLayerRefreshBoard();
+            var before = AlliancesView.INSTANCE.getContentRevision(board);
 
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
-            assertThat(AlliancesView.INSTANCE.getContentRevision())
+            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
                 .isNotEqualTo(before);
+        }
+
+        @Test
+        void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
+            // One stateless view answers for every sector, so the board handed in is the only thing
+            // telling two sectors' asks apart. A recede flip made under one sector's sidebar must
+            // move that sector's number and leave the other's exactly where it was - a view folding
+            // an ambient board instead would repaint whichever sector happened to be running.
+            var board = new MapLayerRefreshBoard();
+            var otherBoard = new MapLayerRefreshBoard();
+            var before = AlliancesView.INSTANCE.getContentRevision(board);
+            var otherBefore = AlliancesView.INSTANCE.getContentRevision(otherBoard);
+
+            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+
+            assertThat(AlliancesView.INSTANCE.getContentRevision(board))
+                .isNotEqualTo(before);
+            assertThat(AlliancesView.INSTANCE.getContentRevision(otherBoard))
+                .isEqualTo(otherBefore);
         }
     }
 

@@ -10,7 +10,7 @@ import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -154,11 +154,12 @@ final class ClaimsViewTest {
             // The alliance set is this view's one live input: the fills stay per-claimant, but the
             // bands over them lay a contested run only against a bloc the claimant is not allied
             // with, so a membership change must shift the revision and repaint them.
-            var before = ClaimsView.INSTANCE.getContentRevision();
+            var board = new MapLayerRefreshBoard();
+            var before = ClaimsView.INSTANCE.getContentRevision(board);
 
-            MapLayerRefresh.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
-            assertThat(ClaimsView.INSTANCE.getContentRevision())
+            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
                 .isNotEqualTo(before);
         }
 
@@ -167,12 +168,32 @@ final class ClaimsViewTest {
             // Only the alliance set is folded in - the market-inferred claims repaint on the shared
             // economy revision, not here - so a signal this view renders nothing from, a geometry
             // rebuild here, leaves its contribution fixed.
-            var before = ClaimsView.INSTANCE.getContentRevision();
+            var board = new MapLayerRefreshBoard();
+            var before = ClaimsView.INSTANCE.getContentRevision(board);
 
-            MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+            board.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
-            assertThat(ClaimsView.INSTANCE.getContentRevision())
+            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
                 .isEqualTo(before);
+        }
+
+        @Test
+        void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
+            // One stateless view answers for every sector, so the board handed in is the only thing
+            // telling two sectors' asks apart. A membership change in one sector must move that
+            // sector's number and leave the other's exactly where it was - a view folding an ambient
+            // board instead would move both, so neither sector's cells could go stale on their own.
+            var board = new MapLayerRefreshBoard();
+            var otherBoard = new MapLayerRefreshBoard();
+            var before = ClaimsView.INSTANCE.getContentRevision(board);
+            var otherBefore = ClaimsView.INSTANCE.getContentRevision(otherBoard);
+
+            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
+
+            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
+                .isNotEqualTo(before);
+            assertThat(ClaimsView.INSTANCE.getContentRevision(otherBoard))
+                .isEqualTo(otherBefore);
         }
     }
 

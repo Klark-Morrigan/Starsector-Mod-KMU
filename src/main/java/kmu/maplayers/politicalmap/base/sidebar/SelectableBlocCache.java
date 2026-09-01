@@ -4,6 +4,7 @@ import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
 import kmu.maplayers.base.installation.InstalledMachinery;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
@@ -108,7 +109,7 @@ public final class SelectableBlocCache implements InstalledMachinery {
 
         return blocCache.resolveValue(
             view.getId(),
-            computeRevision(view),
+            computeRevision(view, installation.resolveRefreshBoard()),
             () -> view.resolveBlocPickerRead(sector));
     }
 
@@ -116,9 +117,13 @@ public final class SelectableBlocCache implements InstalledMachinery {
     // rules and the visibility settings both move settingsRevision) and the view's own live grouping inputs
     // (the alliance set, for the alliances view; a constant for the faction view). The filter
     // selection is absent by design - it changes which bloc is lit, never which blocs are listed.
-    private static int computeRevision(PoliticalMapView view) {
+    //
+    // The view folds its inputs off this installation's board, the same one the walk below reads its
+    // sector from: keyed on another sector's counters, a list walked here would never be re-walked
+    // when this sector's alliances moved, and would be thrown away when another sector's did.
+    private static int computeRevision(PoliticalMapView view, MapLayerRefreshBoard board) {
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
-            view.getContentRevision());
+            view.getContentRevision(board));
     }
 }

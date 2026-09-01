@@ -7,7 +7,7 @@ import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
+import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.DominancePaintedView;
@@ -66,7 +66,7 @@ public final class AlliancesView implements DominancePaintedView {
     }
 
     @Override
-    public int getContentRevision() {
+    public int getContentRevision(MapLayerRefreshBoard board) {
         // This view's rebuild is driven by two live inputs, composed into one fingerprint the content
         // token reads: the alliance set (the sector watcher bumps its revision when membership moves,
         // repainting on a form/dissolve/transfer) and this view's non-allied recede toggles (their
@@ -76,9 +76,12 @@ public final class AlliancesView implements DominancePaintedView {
         // only recedes the non-allied blocs and simply rebuilds. Composing the two means a third live
         // input later is one more source here, not a wider contract; a change to either forces a
         // rebuild.
+        //
+        // Both come off the board the caller named, so a flip made under one sector's sidebar cannot
+        // repaint another's cells - nor fail to repaint its own.
         return Fingerprints.compute(
-            () -> MapLayerRefresh.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
-            () -> MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));
+            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
+            () -> board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));
     }
 
     @Override
