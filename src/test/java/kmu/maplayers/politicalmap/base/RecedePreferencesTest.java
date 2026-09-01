@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefresh;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuPoliticalMapTerritorySettings;
 
@@ -202,8 +202,7 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                var revisionBefore =
-                    MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+                var revisionBefore = readLiveRecedeStyleRevision();
 
                 TEST_SET.setMuted(true);
 
@@ -212,7 +211,7 @@ final class RecedePreferencesTest {
 
                 // The flip must bump the recede-style revision, since these sidebar-only toggles
                 // never move settingsRevision - that bump is what repaints the overlay live.
-                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                assertThat(readLiveRecedeStyleRevision())
                     .isNotEqualTo(revisionBefore);
             }
         }
@@ -245,12 +244,11 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var revisionBefore =
-                    MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+                var revisionBefore = readLiveRecedeStyleRevision();
 
                 TEST_SET.setMuted(true);
 
-                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                assertThat(readLiveRecedeStyleRevision())
                     .isEqualTo(revisionBefore);
             }
         }
@@ -307,15 +305,14 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                var revisionBefore =
-                    MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+                var revisionBefore = readLiveRecedeStyleRevision();
 
                 TEST_SET.setDesaturated(true);
 
                 verify(memoryMock)
                     .set(TEST_DESATURATE_KEY, true);
 
-                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                assertThat(readLiveRecedeStyleRevision())
                     .isNotEqualTo(revisionBefore);
             }
         }
@@ -347,12 +344,11 @@ final class RecedePreferencesTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var revisionBefore =
-                    MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+                var revisionBefore = readLiveRecedeStyleRevision();
 
                 TEST_SET.setDesaturated(true);
 
-                assertThat(MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                assertThat(readLiveRecedeStyleRevision())
                     .isEqualTo(revisionBefore);
             }
         }
@@ -492,5 +488,17 @@ final class RecedePreferencesTest {
         settingsMock
             .when(KmuPoliticalMapTerritorySettings::getPoliticalMapAllianceMutedOpacityModifier)
             .thenReturn(mutedModifier);
+    }
+
+    // The board a flip is read back off: the live sector's, which is the one the setter raises on.
+    // No sector is loaded under the suite, so both ends land on the detached installation's board -
+    // shared with every other suite raising with no game loaded, which is why each case reads a
+    // step rather than an absolute count.
+    private static int readLiveRecedeStyleRevision() {
+
+        return MapLayerInstallations
+            .resolveInstallationForLiveSector()
+            .resolveRefreshBoard()
+            .getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE);
     }
 }

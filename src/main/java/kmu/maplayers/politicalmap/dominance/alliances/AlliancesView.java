@@ -76,9 +76,6 @@ public final class AlliancesView implements DominancePaintedView {
         // only recedes the non-allied blocs and simply rebuilds. Composing the two means a third live
         // input later is one more source here, not a wider contract; a change to either forces a
         // rebuild.
-        //
-        // Both come off the board the caller named, so a flip made under one sector's sidebar cannot
-        // repaint another's cells - nor fail to repaint its own.
         return Fingerprints.compute(
             () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
             () -> board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));

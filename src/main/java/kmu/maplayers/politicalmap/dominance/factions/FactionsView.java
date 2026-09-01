@@ -56,9 +56,6 @@ public final class FactionsView implements DominancePaintedView {
         // is laid at contested length only against a bloc the painter is not allied with. Without
         // this fold, an alliance formed or dissolved in play leaves every band drawn at the old
         // lengths until an unrelated economy change happens to rebuild the map.
-        //
-        // Read off the board the caller named, so the alliance revision folded here is the one raised
-        // in the sector whose cells are being asked about.
         return Fingerprints.compute(
             () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
     }

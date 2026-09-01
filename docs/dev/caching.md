@@ -182,7 +182,8 @@ A producer or consumer holding a sector - or the installation over one - reaches
 sector's board directly. The one seam vanilla hands no sector is a settings change
 moved on a sidebar control, and it goes through
 [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java),
-which resolves the running sector's.
+which resolves the running sector's. Raising a signal is all that facade offers: a
+reader always holds the installation it means.
 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
@@ -193,7 +194,7 @@ which resolves the running sector's.
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | the pipeline, under any view |
 | `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | the pipeline, under any view |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the territories rebuild |
-| content revision | each `PoliticalMapView` | the view's own live inputs, folded via `Fingerprints` | the territories rebuild |
+| content revision | each `PoliticalMapView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the territories rebuild, and the sidebar picker memo |
 
 Three of those deserve their reason stated.
 

@@ -176,25 +176,6 @@ final class ClaimsViewTest {
             assertThat(ClaimsView.INSTANCE.getContentRevision(board))
                 .isEqualTo(before);
         }
-
-        @Test
-        void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
-            // One stateless view answers for every sector, so the board handed in is the only thing
-            // telling two sectors' asks apart. A membership change in one sector must move that
-            // sector's number and leave the other's exactly where it was - a view folding an ambient
-            // board instead would move both, so neither sector's cells could go stale on their own.
-            var board = new MapLayerRefreshBoard();
-            var otherBoard = new MapLayerRefreshBoard();
-            var before = ClaimsView.INSTANCE.getContentRevision(board);
-            var otherBefore = ClaimsView.INSTANCE.getContentRevision(otherBoard);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(ClaimsView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-            assertThat(ClaimsView.INSTANCE.getContentRevision(otherBoard))
-                .isEqualTo(otherBefore);
-        }
     }
 
     @Nested

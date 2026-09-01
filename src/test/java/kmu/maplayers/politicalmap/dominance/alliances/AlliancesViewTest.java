@@ -122,6 +122,11 @@ final class AlliancesViewTest {
             // telling two sectors' asks apart. A recede flip made under one sector's sidebar must
             // move that sector's number and leave the other's exactly where it was - a view folding
             // an ambient board instead would repaint whichever sector happened to be running.
+            //
+            // Made once, here, for the seam rather than per view: every view's cases above build a
+            // board of their own, so a view resolving one instead of folding the argument already
+            // fails them - a raise on a board nothing else reads would move no number at all. What
+            // this adds is the second board those cases have no way to disagree with.
             var board = new MapLayerRefreshBoard();
             var otherBoard = new MapLayerRefreshBoard();
             var before = AlliancesView.INSTANCE.getContentRevision(board);

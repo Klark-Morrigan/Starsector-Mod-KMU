@@ -17,9 +17,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins what the facade adds over a board, which is the resolution and nothing else: every call
- * lands on the running sector's board rather than on another sector's, and a caller reaching it
- * with no game loaded still has somewhere to raise a signal.
+ * Pins what the facade adds over a board, which is the resolution and nothing else: a raise lands
+ * on the running sector's board rather than on another sector's, and a caller reaching it with no
+ * game loaded still has somewhere to raise a signal.
  *
  * <p>The board's own contract - a counter per signal, a set that drains once - is
  * {@link MapLayerRefreshBoardTest}'s. Everything here is asserted through an installation's board
@@ -49,28 +49,6 @@ class MapLayerRefreshTest {
     }
 
     @Nested
-    class GetRevision {
-
-        @Test
-        void getRevisionReadsTheRunningSectorsBoard() {
-
-            liveInstallation
-                .resolveRefreshBoard()
-                .requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-            otherInstallation
-                .resolveRefreshBoard()
-                .requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-            otherInstallation
-                .resolveRefreshBoard()
-                .requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-
-            assertThat(readThroughLiveSector(() ->
-                    MapLayerRefresh.getRevision(MapLayerCommonRefreshSignal.FILTER)))
-                .isEqualTo(1);
-        }
-    }
-
-    @Nested
     class RequestRefresh {
 
         @Test
@@ -91,71 +69,36 @@ class MapLayerRefreshTest {
                     .getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
                 .isZero();
         }
-    }
-
-    @Nested
-    class MarkSystemGroupingStale {
 
         @Test
-        void markSystemGroupingStaleQueuesTheSystemOnTheRunningSectorsBoardAlone() {
-
-            raiseThroughLiveSector(() -> MapLayerRefresh.markSystemGroupingStale("sys"));
-
-            assertThat(liveInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("sys");
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
-                .isEmpty();
-        }
-
-        @Test
-        void markSystemGroupingStaleQueuesOnTheDetachedBoardWithNoGameLoaded() {
+        void requestRefreshRaisesOnTheDetachedBoardWithNoGameLoaded() {
             // The overlay sits behind a switch a player can leave off, and a settings toggle is
             // reachable with no game at all - so a caller arriving here without a sector has to
             // find a board rather than a fault.
             //
-            // Reached through a sector nothing was installed on, and drained first: the detached
-            // board is nobody's sector and is therefore never replaced, so any other suite driving
-            // a seam with no game loaded has been raising signals on this same one.
+            // Reached through a sector nothing was installed on: the detached board is nobody's
+            // sector and is therefore never replaced, so its count is read as a step rather than as
+            // an absolute - any other suite driving a seam with no game loaded has been raising
+            // signals on this same one.
             var uninstalledSectorMock = mock(SectorAPI.class);
 
             var detachedBoard = MapLayerInstallations
                 .resolveInstallationFor(uninstalledSectorMock)
                 .resolveRefreshBoard();
 
-            detachedBoard.drainStaleGroupingSystemIds();
+            var revisionBefore = detachedBoard.getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
 
-            raiseWithNoGameLoaded(() -> MapLayerRefresh.markSystemGroupingStale("sys"));
+            raiseWithNoGameLoaded(() ->
+                MapLayerRefresh.requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY));
 
-            assertThat(detachedBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(detachedBoard.getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
+                .isEqualTo(revisionBefore + 1);
         }
     }
 
-    @Nested
-    class DrainStaleGroupingSystemIds {
-
-        @Test
-        void drainStaleGroupingSystemIdsTakesTheRunningSectorsQueue() {
-
-            liveInstallation.resolveRefreshBoard().markSystemGroupingStale("live");
-            otherInstallation.resolveRefreshBoard().markSystemGroupingStale("other");
-
-            assertThat(readThroughLiveSector(MapLayerRefresh::drainStaleGroupingSystemIds))
-                .containsExactly("live");
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("other");
-        }
-    }
-
-    // Reads one answer back through the facade as the game would drive it: with a sector loaded,
-    // which is the whole of what this facade adds and the one thing vanilla's own seams cannot
-    // name.
-    private <T> T readThroughLiveSector(Supplier<T> readThroughFacade) {
-
-        return readWithLoadedSector(liveSectorMock, readThroughFacade);
-    }
-
-    // The same, for the calls that answer nothing and are read back off the board instead.
+    // Drives one call through the facade as the game would: with a sector loaded, which is the whole
+    // of what this facade adds and the one thing vanilla's own seams cannot name. The raise answers
+    // nothing, so what it did is read back off the board.
     private void raiseThroughLiveSector(Runnable callThroughFacade) {
 
         readWithLoadedSector(liveSectorMock, () -> {

@@ -160,25 +160,6 @@ final class FactionsViewTest {
             assertThat(FactionsView.INSTANCE.getContentRevision(board))
                 .isEqualTo(before);
         }
-
-        @Test
-        void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
-            // One stateless view answers for every sector, so the board handed in is the only thing
-            // telling two sectors' asks apart. A membership change in one sector must move that
-            // sector's number and leave the other's exactly where it was - a view folding an ambient
-            // board instead would move both, so neither sector's cells could go stale on their own.
-            var board = new MapLayerRefreshBoard();
-            var otherBoard = new MapLayerRefreshBoard();
-            var before = FactionsView.INSTANCE.getContentRevision(board);
-            var otherBefore = FactionsView.INSTANCE.getContentRevision(otherBoard);
-
-            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
-
-            assertThat(FactionsView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
-            assertThat(FactionsView.INSTANCE.getContentRevision(otherBoard))
-                .isEqualTo(otherBefore);
-        }
     }
 
     @Nested

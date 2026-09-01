@@ -149,11 +149,12 @@ nothing to read rather than falling through to whichever sector happens to be lo
 `Global.getSector()`, and it is where that read belongs: vanilla's API offers no other handle, and
 the seams it serves are driven by the engine with no sector named.
 
-One holder is still reached that way from outside: `MapLayerRefresh`'s statics resolve the live
-sector's board, for the producers a settings change drives - a sidebar control is handed no sector.
-Anything that *does* hold one, or holds an installation, goes direct instead, which is why the
-render surfaces, the political map's cache, its staleness poll, its renderers and the cursor read
-name none of these.
+One holder is still reached that way from outside: `MapLayerRefresh.requestRefresh` resolves the
+live sector's board, for the producers a settings change drives - a sidebar control is handed no
+sector. Raising is all it offers. Every consumer folding a revision, and every producer that can
+name the system it marked, holds the installation it means and reads that board directly, which is
+why the render surfaces, the political map's cache, its staleness poll, its renderers, its views
+and the cursor read name none of these.
 
 The hover has no such resolution at all. `MapHoverState` is reached only through the installation
 that holds it, and `kmu.maplayers.base.hover` is gated from importing this package so it stays that
