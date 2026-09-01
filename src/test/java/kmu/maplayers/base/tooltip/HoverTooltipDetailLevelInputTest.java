@@ -22,6 +22,7 @@ import static kmu.maplayers.base.hover.HoverSwitchScopes.runWithHoverTooltipSwit
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -35,12 +36,16 @@ import static org.mockito.Mockito.when;
  * site; here the permission is posed over fixed screen reads, so a vanilla host being up or not up
  * is the whole of what these tests can say.
  *
- * <p>Behind those gates the press is claimed only where the box under the cursor has a second amount
- * of detail to state, which is the other half of the same honesty: the level is one shared fact that
- * holds across hovers, so a press swallowed over a system with nothing to expand would decide how the
- * next system that does differ opens. What the cursor is over is a live chain through the hover state,
- * the layer registry and the sector, so it arrives here stood in for - offering or not offering is the
- * whole of what these tests can say.
+ * <p>Behind those gates the press is claimed only where the box under the cursor would read
+ * differently one press on, which is the other half of the same honesty: the level is one shared fact
+ * that holds across hovers, so a press swallowed over a system with nothing to expand would decide how
+ * the next system that does differ opens. What the cursor is over is a live chain through the hover
+ * state, the layer registry and the sector, so it arrives here stood in for - offering or not offering
+ * is the whole of what these tests can say.
+ *
+ * <p>Which level that question is asked at is pinned here rather than left to the box, since only this
+ * pass holds both the read and the advance: asked after the advance, the gate would answer about a
+ * depth the player has not been shown.
  */
 final class HoverTooltipDetailLevelInputTest {
 
@@ -56,8 +61,8 @@ final class HoverTooltipDetailLevelInputTest {
 
     @BeforeEach
     void standUpABoxWithMoreToState() {
-        // The ordinary case for a case about the gates: something is hovered and it does have a
-        // richer counterpart, so the press turns on the gate under test rather than on the offer.
+        // The ordinary case for a case about the gates: something is hovered and it does read
+        // deeper, so the press turns on the gate under test rather than on the offer.
         hoveredBoxMock = Mockito.mockStatic(HoveredBox.class);
         stubHoveredBoxOffering(true);
     }
@@ -101,6 +106,21 @@ final class HoverTooltipDetailLevelInputTest {
             // Claimed where it acted, so nothing else answers the same press while the map is open.
             verify(eventMock)
                 .consume();
+        }
+
+        @Test
+        void processCampaignInputPreCoreAsksTheBoxAboutTheLevelThePressMovesOnFrom() {
+            // The offer is a question about this press, so it is asked at the level on screen rather
+            // than at the one the advance is about to land on. Read the other way round the gate
+            // would answer about a depth the player has not been shown - and at the deepest level it
+            // would ask about the shallowest, claiming the key over a box that offered nothing.
+            var tooltipMock = stubHoveredBoxOffering(true);
+
+            runWithHoverTooltipSwitchOn(
+                () -> input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1))));
+
+            verify(tooltipMock)
+                .isOfferingExpansionFor(any(), any(), eq(HoverTooltipDetailLevel.FACTIONS));
         }
 
         @Test
@@ -364,10 +384,13 @@ final class HoverTooltipDetailLevelInputTest {
         return eventMock;
     }
 
-    // Stands the cursor over a box that does - or does not - have a second amount of detail to state.
-    // The chain behind the real answer runs through the hover state, the layer registry and the live
+    // Stands the cursor over a box that would - or would not - read differently one press on. The
+    // chain behind the real answer runs through the hover state, the layer registry and the live
     // sector, none of which a unit test can stand up; what the listener acts on is the answer.
-    private void stubHoveredBoxOffering(boolean isOfferingExpansion) {
+    //
+    // The box comes back so a case about what it was asked can read the question rather than only
+    // the answer.
+    private MapHoverTooltip stubHoveredBoxOffering(boolean isOfferingExpansion) {
 
         var tooltipMock = mock(MapHoverTooltip.class);
 
@@ -380,5 +403,7 @@ final class HoverTooltipDetailLevelInputTest {
                 tooltipMock,
                 mock(SectorAPI.class),
                 mock(StarSystemAPI.class))));
+
+        return tooltipMock;
     }
 }
