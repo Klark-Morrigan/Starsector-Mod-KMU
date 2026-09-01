@@ -15,17 +15,20 @@ import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins the contract of {@link HoverHighlightGeometry#resolveHighlightFor}:
- *  - a hovered cell resolves the one candidate loop that encloses it, and never the others,
- *  - nested loops resolve the innermost - the cell's own cluster - rather than the distant
- *    one that also happens to contain it,
+ *  - the cluster the hovered cell belongs to is what haloes, and the cell clamped to it what
+ *    washes,
  *  - a cell no loop encloses still washes, with no halo,
  *  - nothing hovered, or a cell with no drawable shape, resolves nothing,
  *  - a resting cursor resolves once and reuses the answer until the geometry under it changes,
  *    tracked by the identity of what the source handed back rather than of the source itself.
  *
+ * <p>Which loop is the cell's cluster, and what the clamp leaves of it, are
+ * {@link CellFrontierGeometry}'s own rules and are pinned there; what is here is the hover
+ * composing them into a highlight.
+ *
  * <p>The fixtures are hand-built squares standing in for cells and traced border loops: the
- * search reads only the polygons and runs it is handed, so no shaping, styling, or GL is
- * involved in which loop it picks.
+ * resolve reads only the polygons and runs it is handed, so no shaping, styling, or GL is
+ * involved in what it lights up.
  */
 final class HoverHighlightGeometryTest {
 
@@ -48,62 +51,6 @@ final class HoverHighlightGeometryTest {
 
             assertThat(highlight.glowLoops())
                 .containsExactly(loop);
-        }
-
-        @Test
-        void a_distant_candidate_never_glows_for_a_cell_it_does_not_enclose() {
-            // One cluster, two disjoint clusters - the whole reason the loop is searched for
-            // rather than taken as "the cluster's border".
-            var hoveredLoop = buildSquareRun(0, 0, 100);
-            var distantLoop = buildSquareRun(500, 0, 100);
-
-            var sourceFake = readSourceOf(
-                buildSquare(10, 10, 80),
-                List.of(distantLoop, hoveredLoop));
-
-            var highlight = new HoverHighlightGeometry()
-                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
-
-            assertThat(highlight.glowLoops())
-                .containsExactly(hoveredLoop);
-        }
-
-        @Test
-        void nested_loops_resolve_the_innermost_one_around_the_cell() {
-            // A group's enclave, walled inside a rival that is itself walled inside another
-            // cluster of that same group: three of its loops enclose the cell, and only the
-            // tightest is the cluster the cell actually belongs to.
-            var outerCluster = buildSquareRun(0, 0, 1000);
-            var enclaveInsideRival = buildSquareRun(400, 400, 100);
-
-            var sourceFake = readSourceOf(
-                buildSquare(410, 410, 80),
-                List.of(outerCluster, enclaveInsideRival));
-
-            var highlight = new HoverHighlightGeometry()
-                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
-
-            assertThat(highlight.glowLoops())
-                .containsExactly(enclaveInsideRival);
-        }
-
-        @Test
-        void nested_loops_resolve_the_innermost_one_whichever_order_they_arrive_in() {
-            // The same nesting with the tight loop met first: a group hands its loops over in
-            // whatever order it traced them, so the rule has to be "the smallest that encloses"
-            // rather than "the last one found to".
-            var outerCluster = buildSquareRun(0, 0, 1000);
-            var enclaveInsideRival = buildSquareRun(400, 400, 100);
-
-            var sourceFake = readSourceOf(
-                buildSquare(410, 410, 80),
-                List.of(enclaveInsideRival, outerCluster));
-
-            var highlight = new HoverHighlightGeometry()
-                .resolveHighlightFor(sourceFake, hoverOf(CELL_ID));
-
-            assertThat(highlight.glowLoops())
-                .containsExactly(enclaveInsideRival);
         }
 
         @Test

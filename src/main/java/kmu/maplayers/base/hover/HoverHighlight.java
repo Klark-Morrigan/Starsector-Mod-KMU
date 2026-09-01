@@ -5,32 +5,32 @@ import kmlib.opengl.GlVertexRuns;
 import java.util.List;
 
 /**
- * The geometry one hover lights up: the frontier of the cluster the cursor is inside, and
- * the single cell it is actually in.
+ * The geometry one highlight lights up: what to bloom, and what to lift under it.
  *
- * <p>Every run is world-coordinate and GL-ready, resolved from geometry the map already
- * baked. {@code glowLoops} are {@code GL_LINE_LOOP} runs - normally the one loop enclosing
- * the hovered cell, empty when the cell belongs to no cluster (a cell that fuses into nothing
- * has no frontier to bloom). {@code washTriangles} is the hovered cell's painted extent as a
- * {@code GL_TRIANGLES} soup and {@code washOutline} the same extent as {@code GL_LINE_LOOP}
- * rings - one normally, but more where the extent is clipped to the frontier into disjoint
- * pieces.
+ * <p>Every run is world-coordinate and GL-ready, resolved from geometry the map already baked.
+ * {@code washTriangles} is what the highlight covers as a {@code GL_TRIANGLES} soup and
+ * {@code washOutline} the boundary of that same region as {@code GL_LINE_LOOP} rings - more than
+ * one where the region is clipped or joined into disjoint pieces, or where it encloses a hole.
+ * {@code glowLoops} are the {@code GL_LINE_LOOP} runs the halo stacks on, which the two callers
+ * answer differently: a cursor blooms the frontier of the cluster it landed in, saying whose space
+ * that is, while a lit set blooms its own joined outline, saying how far the set reaches. Empty
+ * when there is nothing to bloom at all - a cell that fuses into no cluster has no frontier.
  *
- * <p>Both wash runs are the cell clamped to the frontier it sits inside, not the raw cell:
- * at the cluster edge the shaped cell keeps the sharp mitered corner the border's rounding
- * cut away, so washing it raw would spill the wash past the rounded border. Clipping to the
- * frontier stops the wash exactly where the border strokes.
+ * <p>The wash is always clamped to the frontier it sits inside, not the raw cells: at the cluster
+ * edge a shaped cell keeps the sharp mitered corner the border's rounding cut away, so washing it
+ * raw would spill past the rounded border. Clipping stops the wash exactly where the border
+ * strokes.
  *
- * <p>A triangle soup rather than a fan over the cell's vertices: a cell is not reliably
- * convex - a keep-out pocket bitten out of a frontier cell leaves a concave notch, and a fan
- * would paint straight across it, washing map the cell does not cover.
+ * <p>A triangle soup rather than a fan over the vertices: a cell is not reliably convex - a
+ * keep-out pocket bitten out of a frontier cell leaves a concave notch, and a fan would paint
+ * straight across it, washing map the cell does not cover.
  */
 public record HoverHighlight(
     List<float[]> glowLoops,
     float[] washTriangles,
     List<float[]> washOutline) {
 
-    /** Nothing is hovered, or the hovered cell has no drawable shape, so nothing lights up. */
+    /** Nothing is lit, or nothing lit has a drawable shape, so nothing lights up. */
     public static final HoverHighlight NONE = new HoverHighlight(
         List.of(),
         GlVertexRuns.NO_VERTICES,

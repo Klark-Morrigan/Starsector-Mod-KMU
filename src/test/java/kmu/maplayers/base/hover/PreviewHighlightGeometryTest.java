@@ -3,6 +3,7 @@ package kmu.maplayers.base.hover;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +87,35 @@ final class PreviewHighlightGeometryTest {
 
             assertThat(highlight.washOutline())
                 .hasSize(2);
+        }
+
+        @Test
+        void resolveHighlightForLeavesAHoleWhereLitCellsWallInAnUnlitOne() {
+            // The eight cells around one the set does not reach, all in one cluster: they wash as a
+            // single region with a hole in it, so the halo traces the ring's outer edge and the
+            // edge of the hole - and nothing of the seams between the eight. Filling the hole would
+            // claim a cell the set never reached.
+            var extentsByCellId = Map.of(
+                "system-sw", buildSquare(10, 10, 40),
+                "system-s", buildSquare(50, 10, 40),
+                "system-se", buildSquare(90, 10, 40),
+                "system-w", buildSquare(10, 50, 40),
+                "system-e", buildSquare(90, 50, 40),
+                "system-nw", buildSquare(10, 90, 40),
+                "system-n", buildSquare(50, 90, 40),
+                "system-ne", buildSquare(90, 90, 40));
+
+            var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
+                readSourceSharingOneFrontier(extentsByCellId, buildSquareRun(0, 0, 200)),
+                PREVIEW_KEY,
+                extentsByCellId.keySet());
+
+            assertThat(highlight.washOutline())
+                .hasSize(2);
+
+            // The ring's eight cells, and not the 1600 of the cell walled in by them.
+            assertThat(computeTotalTriangleArea(highlight.washTriangles()))
+                .isCloseTo(12800.0, within(1e-2));
         }
 
         @Test
@@ -262,5 +292,19 @@ final class PreviewHighlightGeometryTest {
                 CELL_A_ID, buildSquare(10, 10, 40),
                 CELL_B_ID, buildSquare(50, 10, 40)),
             frontierLoopsByCellId);
+    }
+
+    // A source drawing the given cells, every one of them enclosed by the same loop instance - the
+    // shape of a cluster whose cells the set reaches several of.
+    private static HoverHighlightSourceFake readSourceSharingOneFrontier(
+            Map<String, List<double[]>> paintedExtentByCellId,
+            float[] frontier) {
+
+        var frontierLoopsByCellId = new LinkedHashMap<String, List<float[]>>();
+
+        for (var cellId : paintedExtentByCellId.keySet()) {
+            frontierLoopsByCellId.put(cellId, List.of(frontier));
+        }
+        return new HoverHighlightSourceFake(paintedExtentByCellId, frontierLoopsByCellId);
     }
 }
