@@ -1,33 +1,27 @@
 package kmu.maplayers.base.layer;
 
-import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
+import kmlib.profiling.Timings;
+import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the per-screen show-or-hide pick: it reads and writes one sector-memory key, defaults to shown,
  * and never touches a second screen's key - the independence the whole per-screen split rests on.
  *
  * <p>The ramp cases are the reason the clock and the pace are injected rather than read: a fade derived
- * from elapsed real time is only checkable at instants a test can name, and a fade the shipped knob paces
+ * from elapsed real time is only checkable at instants a case can name, and a fade the shipped knob paces
  * would be re-tuned by any later pass over the settings screen.
+ *
+ * <p>Each expected fade is stated as the eased value, with the linear position it comes off named beside
+ * it. The two are worth keeping apart in the reading: the linear position is what a flip records and what
+ * a reversal sets off from, while the eased one is all a consumer ever sees.
  */
 final class PersistedMapLayerVisibilityTest {
 
@@ -38,15 +32,12 @@ final class PersistedMapLayerVisibilityTest {
     // reading taken through the injected one.
     private static final double RAMP_SECONDS = 0.4;
 
-    private static final long NANOS_PER_SECOND = 1_000_000_000L;
+    // How close an eased reading has to land. Loose enough to absorb the float arithmetic behind the
+    // curve, tight enough that no two positions in these cases could be confused for each other.
+    private static final float FADE_TOLERANCE = 1e-6f;
 
-    private MockedStatic<Global> globalMock;
-    private MemoryAPI memoryMock;
+    private SectorMemoryFake sectorMemoryFake;
     private PersistedMapLayerVisibility visibility;
-
-    // The one value the mocked memory holds under KEY, null standing for a key never written - the
-    // distinction the pick's default answers to.
-    private Boolean storedPick;
 
     // The instant the injected clock reads, moved by the ramp cases rather than by real time passing.
     private long elapsedNanos;
@@ -55,32 +46,9 @@ final class PersistedMapLayerVisibilityTest {
     private double rampSeconds = RAMP_SECONDS;
 
     @BeforeEach
-    void linkAStubbedSectorMemory() {
+    void openASectorMemory() {
 
-        memoryMock = mock(MemoryAPI.class);
-
-        when(memoryMock.contains(KEY))
-            .thenAnswer(invocation -> storedPick != null);
-        when(memoryMock.getBoolean(KEY))
-            .thenAnswer(invocation -> storedPick);
-
-        doAnswer(
-            invocation -> {
-                storedPick = invocation.getArgument(1);
-                return null;
-            })
-            .when(memoryMock)
-            .set(eq(KEY), any());
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getMemoryWithoutUpdate())
-            .thenReturn(memoryMock);
-
-        globalMock = mockStatic(Global.class);
-        globalMock
-            .when(Global::getSector)
-            .thenReturn(sectorMock);
+        sectorMemoryFake = new SectorMemoryFake();
 
         visibility = new PersistedMapLayerVisibility(
             KEY,
@@ -89,8 +57,8 @@ final class PersistedMapLayerVisibilityTest {
     }
 
     @AfterEach
-    void releaseTheStaticMock() {
-        globalMock.close();
+    void closeTheSectorMemory() {
+        sectorMemoryFake.close();
     }
 
     @Nested
@@ -106,7 +74,7 @@ final class PersistedMapLayerVisibilityTest {
         @Test
         void areLayersShownReadsTheStoredPickUnderItsOwnKey() {
 
-            storedPick = false;
+            sectorMemoryFake.storeValue(KEY, false);
 
             assertThat(visibility.areLayersShown())
                 .isFalse();
@@ -121,8 +89,8 @@ final class PersistedMapLayerVisibilityTest {
 
             visibility.showLayers(false);
 
-            verify(memoryMock)
-                .set(KEY, false);
+            assertThat(sectorMemoryFake.readStoredValue(KEY))
+                .isEqualTo(false);
         }
 
         @Test
@@ -131,33 +99,30 @@ final class PersistedMapLayerVisibilityTest {
             // second screen's key, or the player would lose the layers on a screen they are not on.
             visibility.showLayers(false);
 
-            verify(memoryMock, never())
-                .set(eq(OTHER_KEY), any());
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_KEY))
+                .isFalse();
         }
 
         @Test
         void showLayersWritesNothingForAnUnchangedPick() {
 
-            storedPick = false;
+            sectorMemoryFake.storeValue(KEY, false);
             visibility.showLayers(false);
 
-            verify(memoryMock, never())
-                .set(eq(KEY), any());
+            assertThat(sectorMemoryFake.countWritesTo(KEY))
+                .isZero();
         }
 
         @Test
         void showLayersRecordsNoRampWhenThereIsNoSectorToWriteInto() {
 
-            globalMock
-                .when(Global::getSector)
-                .thenReturn(null);
-
+            sectorMemoryFake.removeSector();
             visibility.showLayers(false);
 
             // The write was dropped, so the pick still reads shown - and a ramp recorded here would
             // dissolve the layers away towards a state nothing stored.
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(1f, within(1e-6f));
+                .isCloseTo(1f, within(FADE_TOLERANCE));
         }
     }
 
@@ -168,17 +133,17 @@ final class PersistedMapLayerVisibilityTest {
         void resolveShownFadeIsFullyShownForAShownPickThatHasNotFlipped() {
 
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(1f, within(1e-6f));
+                .isCloseTo(1f, within(FADE_TOLERANCE));
         }
 
         @Test
         void resolveShownFadeIsFullyHiddenForAStoredHiddenPickThatHasNotFlipped() {
             // What a save loaded with the layers hidden reads on its first frame: already gone, rather
             // than dissolving away a picture the screen never drew.
-            storedPick = false;
+            sectorMemoryFake.storeValue(KEY, false);
 
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0f, within(1e-6f));
+                .isCloseTo(0f, within(FADE_TOLERANCE));
         }
 
         @Test
@@ -187,8 +152,10 @@ final class PersistedMapLayerVisibilityTest {
             visibility.showLayers(false);
             advanceClockBySeconds(0.1);
 
+            // A quarter of the way down, so linearly 0.75 - eased, still 0.84 on screen, the curve
+            // being at its flattest where it leaves an end.
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0.75f, within(1e-6f));
+                .isCloseTo(0.84375f, within(FADE_TOLERANCE));
         }
 
         @Test
@@ -198,18 +165,33 @@ final class PersistedMapLayerVisibilityTest {
             advanceClockBySeconds(0.4);
 
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0f, within(1e-6f));
+                .isCloseTo(0f, within(FADE_TOLERANCE));
         }
 
         @Test
         void resolveShownFadeRidesUpTheRampAfterShowing() {
 
-            storedPick = false;
+            sectorMemoryFake.storeValue(KEY, false);
+
             visibility.showLayers(true);
             advanceClockBySeconds(0.1);
 
+            // Linearly 0.25, eased to 0.15625 - the same flat start the way down has, mirrored.
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0.25f, within(1e-6f));
+                .isCloseTo(0.15625f, within(FADE_TOLERANCE));
+        }
+
+        @Test
+        void resolveShownFadeSettlesFullyShownOnceTheRampIsPast() {
+            // The far end of the ramp, which is the bound a fade left running would climb past: a
+            // consumer multiplying by it would brighten the overlay beyond what it paints at rest.
+            sectorMemoryFake.storeValue(KEY, false);
+
+            visibility.showLayers(true);
+            advanceClockBySeconds(4);
+
+            assertThat(visibility.resolveShownFade())
+                .isCloseTo(1f, within(FADE_TOLERANCE));
         }
 
         @Test
@@ -221,11 +203,11 @@ final class PersistedMapLayerVisibilityTest {
             // Settled on the frame of the flip rather than dividing by the pace the player wound to
             // nothing.
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0f, within(1e-6f));
+                .isCloseTo(0f, within(FADE_TOLERANCE));
         }
 
         @Test
-        void resolveShownFadeReversesFromTheFadeTheFlipCaughtItAt() {
+        void resolveShownFadeReversesFromTheProgressTheFlipCaughtItAt() {
 
             visibility.showLayers(false);
             advanceClockBySeconds(0.1);
@@ -233,15 +215,16 @@ final class PersistedMapLayerVisibilityTest {
             visibility.showLayers(true);
             advanceClockBySeconds(0.05);
 
-            // Set off again from the 0.75 the hide had reached, not from either end of the ramp: a
-            // restart would read 0.125 here and a resume from the far end would already be settled.
+            // Set off again from the 0.75 the hide had linearly reached and an eighth further up, so
+            // 0.875 linearly and 0.957 eased. A restart would read 0.043 here, and a resume from the
+            // far end would already be settled at 1.
             assertThat(visibility.resolveShownFade())
-                .isCloseTo(0.875f, within(1e-6f));
+                .isCloseTo(0.95703125f, within(FADE_TOLERANCE));
         }
     }
 
     // Moves the injected clock on, which is what the ramp cases stand in place of real time passing.
     private void advanceClockBySeconds(double seconds) {
-        elapsedNanos += (long) (seconds * NANOS_PER_SECOND);
+        elapsedNanos += Timings.convertSecondsToNanos(seconds);
     }
 }

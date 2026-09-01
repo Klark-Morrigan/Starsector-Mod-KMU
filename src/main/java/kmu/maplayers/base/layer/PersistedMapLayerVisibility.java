@@ -1,5 +1,6 @@
 package kmu.maplayers.base.layer;
 
+import kmlib.math.easing.Easing;
 import kmlib.math.ranges.Ranges;
 import kmlib.profiling.Timings;
 import kmlib.starsector.memory.SectorMemoryFlag;
@@ -24,9 +25,15 @@ import java.util.function.LongSupplier;
  * <p>Real time rather than campaign time, because this is chrome: the map screen runs while the campaign
  * clock does not, so a fade paced off simulation time would freeze on the very screen it plays on.
  *
- * <p>A flip is measured from the fade the previous one had reached rather than from an end of the ramp,
- * so a pick reversed part-way turns around from where the eye currently sees it instead of jumping to the
- * far end and travelling back over ground it has already covered.
+ * <p>A flip is measured from where the previous ramp had reached rather than from an end of it, so a pick
+ * reversed part-way turns around from where the eye currently sees it instead of jumping to the far end
+ * and travelling back over ground it has already covered.
+ *
+ * <p>The ramp is held linear and eased only when read, which is what keeps that reversal continuous: a
+ * flip records the linear position, and putting the curve over an already-curved value would compound it
+ * and leave the way back running at the wrong rate. The curve itself is {@link Easing}'s, the same one
+ * every other movement in this chrome answers to - the sidebar fold this ramp's default pace is set to
+ * match included, so the two really do agree rather than only starting and finishing together.
  */
 public final class PersistedMapLayerVisibility implements MapLayerVisibility {
 
@@ -34,7 +41,8 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
     // a player who has never reached the control has not asked for them to be gone.
     private static final boolean LAYERS_SHOWN_BY_DEFAULT = true;
 
-    // The two ends of the ramp: none of the layers on the screen, and all of them.
+    // The two ends of the ramp: none of the layers on the screen, and all of them. The curve leaves both
+    // where they are, so they read the same before and after easing.
     private static final float FULLY_HIDDEN = 0f;
     private static final float FULLY_SHOWN = 1f;
 
@@ -53,7 +61,7 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
     // Where the ramp set off from and when, recorded at each flip. Session state rather than saved: a
     // fade is what the eye is in the middle of, and no reload is in the middle of anything.
     private boolean hasRecordedFlip;
-    private float fadeAtLastFlip;
+    private float progressAtLastFlip;
     private long flippedAtNanos;
 
     /**
@@ -93,20 +101,27 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
         if (areLayersShown == areLayersShownFlag.isSet()) {
             return;
         }
-        var fadeBeforeFlip = resolveShownFade();
+        var progressBeforeFlip = resolveLinearProgress();
 
         // A write dropped for want of a sector is not a flip: the pick still reads the old way, so
         // setting off from here would run a fade towards a state nothing stored.
         if (!areLayersShownFlag.set(areLayersShown)) {
             return;
         }
-        fadeAtLastFlip = fadeBeforeFlip;
+        progressAtLastFlip = progressBeforeFlip;
         flippedAtNanos = readElapsedNanos.getAsLong();
         hasRecordedFlip = true;
     }
 
     @Override
     public float resolveShownFade() {
+        return Easing.easeInOut(resolveLinearProgress());
+    }
+
+    // How far the ramp stands between the two ends before the curve is put over it. Kept apart from the
+    // reading above because a flip records this rather than the eased value: the curve laid over a value
+    // already curved would compound, and the way back would leave at the wrong rate.
+    private float resolveLinearProgress() {
 
         var areLayersShown = areLayersShownFlag.isSet();
 
@@ -114,26 +129,29 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
         // what a save loaded with the layers hidden reads on its first frame, rather than dissolving
         // away a picture it never drew.
         if (!hasRecordedFlip) {
-            return resolveSettledFade(areLayersShown);
+            return resolveSettledProgress(areLayersShown);
         }
         var rampSeconds = readRampSeconds.getAsDouble();
 
         // A ramp over no time at all is a cut, and is what the knob wound to nothing asks for. Answered
         // ahead of the division rather than by it.
         if (rampSeconds <= 0) {
-            return resolveSettledFade(areLayersShown);
+            return resolveSettledProgress(areLayersShown);
         }
         var elapsedNanos = readElapsedNanos.getAsLong() - flippedAtNanos;
         var travelled = (float) (Timings.convertNanosToSeconds(elapsedNanos) / rampSeconds);
 
+        // Clamped here rather than left to the curve, which clamps for its own reading only: a flip
+        // records this value, and an unclamped one would put the next ramp's start beyond the end it is
+        // travelling from and leave the reversal to cover ground that is not on screen.
         return Ranges.clampToUnit(areLayersShown
-            ? fadeAtLastFlip + travelled
-            : fadeAtLastFlip - travelled);
+            ? progressAtLastFlip + travelled
+            : progressAtLastFlip - travelled);
     }
 
     // Where the ramp rests for a pick travelling nowhere: the whole of the layers on the screen, or none
     // of them.
-    private static float resolveSettledFade(boolean areLayersShown) {
+    private static float resolveSettledProgress(boolean areLayersShown) {
         return areLayersShown ? FULLY_SHOWN : FULLY_HIDDEN;
     }
 }
