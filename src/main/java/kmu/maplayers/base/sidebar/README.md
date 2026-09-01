@@ -266,8 +266,9 @@ A layer whose body carries a sortable, column-laid list needs somewhere to keep 
 ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSelection` are those
 stores, and `SortSelectionBinder`, `ColumnSelectionBinder`, and `FilterSelectionBinder` are what
 tie each to the widget that changes it. `FilterHoverSlot` stands beside them holding where the
-pointer rests rather than what was picked. Four stores and three binders is the whole of this half
-of the package.
+pointer rests rather than what was picked - not a fourth store, since what it holds belongs to a
+sector rather than to a save. Three stores, three binders and the hover slot is the whole of this
+half of the package.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
@@ -304,9 +305,15 @@ to an expensive source costs nothing on a scope holding no pick.
 rests on instead of the id that was picked, so a reading layer can preview what picking it would
 spotlight. It persists nothing and raises no refresh, and both follow from what a hover is - a place
 the pointer happens to be this frame, previewed over paint that is already on the map, where a pick
-has the reading layer rebuild everything it draws. Clearing it is the caller's at both ends a hover
-stops at, the pointer leaving a row and a panel standing down without a leave ever being reported,
-since neither is visible from a store.
+has the reading layer rebuild everything it draws.
+
+Which is why it is the one thing here that is not stored at all. A hover names a bloc one sector's
+walk surfaced and is read back against that sector's presence, so it is a fact about a sector rather
+than about a save or the process - and it is held by that sector's `MapLayerInstallation`, resolved
+through `FilterHoverSlot.resolveHoverSlotIn`. A load disposes the installation and the hover goes
+with it, so no key has to be healed and no discard written; what stays the caller's is clearing
+within a sector's life, at the pointer leaving a row and at a panel standing down without a leave
+ever being reported, since neither is visible from here.
 
 `FilterSelectionBinder` is the one binder that also builds, because the picker's three ties resolve
 at one point: it reads the scope's spotlighted id and the scope's stored sort on the way in,

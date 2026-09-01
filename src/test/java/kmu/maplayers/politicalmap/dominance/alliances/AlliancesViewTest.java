@@ -34,10 +34,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -459,9 +460,9 @@ final class AlliancesViewTest {
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(new DominanceStatsRead(
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
-                        new BlocPresenceIndex(Map.of(
-                            "rebel_pact", Set.of("corvus"),
-                            "hegemony", Set.of("askonia")))));
+                        buildIndexOf(Map.of(
+                            "rebel_pact", List.of("corvus"),
+                            "hegemony", List.of("askonia")))));
 
                 var read = view.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG);
 

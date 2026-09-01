@@ -9,15 +9,14 @@ import kmu.maplayers.politicalmap.base.DominanceSortMode;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
-import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+
+import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -47,9 +46,7 @@ final class SelectableBlocCacheTest {
                     new SelectableBloc("hegemony", "Hegemony", null),
                     DominanceStats.EMPTY)),
                 DominanceSortMode.MODES),
-            new BlocPresenceIndex(Map.of(
-                "hegemony",
-                new LinkedHashSet<>(List.of("corvus", "askonia")))));
+            buildIndexOf("hegemony", "corvus", "askonia"));
 
     @Nested
     class ResolveBlocPickerRead {

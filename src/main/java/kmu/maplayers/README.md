@@ -215,9 +215,10 @@ about what the overlay means.
 - **`base/hover`** - what the cursor is over, and what the map says back. The values are
   `MapHover` (the hovered cell and the cluster around it), `MapHoverState` (the holder the map
   render pass publishes to and the later UI passes read, since only that pass can invert a cursor
-  pixel to a world point - one per sector, held by that sector's installation, a hover naming its
-  system by bare id, and resolved off the running sector by the passes vanilla drives without naming
-  one), and `HoverHighlight` (the loops and triangles one hover lights up). `MapHoverPublisher` is that pass: it takes the world point KMLib's `MapCursor`
+  pixel to a world point - one per sector, held by [that sector's
+  installation](base/installation/README.md), a hover naming its system by bare id, and resolved off
+  the running sector by the passes vanilla drives without naming one), and `HoverHighlight` (the
+  loops and triangles one hover lights up). `MapHoverPublisher` is that pass: it takes the world point KMLib's `MapCursor`
   resolves, hit-tests it, and widens the hit to its cluster - all over `MapHoverTargets`, one
   frame's drawn cell shapes and the clusters they fuse into. What it owns is the sequencing and the
   parking: a cursor that cannot be trusted must clear the hover rather than leave the last frame's

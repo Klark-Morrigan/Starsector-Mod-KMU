@@ -32,7 +32,9 @@ import java.util.Set;
  * <p>Plain data with no Starsector types, so it is built and asserted on hand-built inputs.
  *
  * @param systemIdsByBlocId the systems each present bloc was found in, keyed by bloc id in walk
- *                          order
+ *                          order. Whatever order the maps and sets handed over iterate in is the
+ *                          order stored and read back, so a caller posing one has to hand over an
+ *                          ordered collection to get an order it can rely on
  */
 public record BlocPresenceIndex(Map<String, Set<String>> systemIdsByBlocId) {
 

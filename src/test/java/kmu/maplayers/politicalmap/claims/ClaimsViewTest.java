@@ -46,6 +46,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
+import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -579,7 +580,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(new ClaimStatsRead(
                         Map.of("hegemony", ANY_CLAIMANT_STATS),
-                        new BlocPresenceIndex(Map.of("hegemony", Set.of("corvus")))));
+                        buildIndexOf("hegemony", "corvus")));
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .presenceIndex()
