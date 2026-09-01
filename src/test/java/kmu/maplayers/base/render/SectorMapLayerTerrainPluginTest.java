@@ -213,6 +213,33 @@ final class SectorMapLayerTerrainPluginTest {
         }
 
         @Test
+        void renderOnMapThinsTheOverlayByTheShowingScreensHideFade() {
+            // Hiding is a dissolve rather than a cut, so the screen's fade is multiplied into the alpha
+            // the map pass already fades the overlay with rather than replacing it: an overlay that
+            // ignored one of the two would either snap out from under the sidebar thinning beside it, or
+            // paint over a map that is itself fading away.
+            var plugin = new SectorMapLayerTerrainPlugin();
+
+            seatSurfacesInAnInstalledSector(plugin);
+
+            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+
+                layerRegistryMock
+                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
+                    .thenReturn(layerRendererMock);
+
+                layerRegistryMock
+                    .when(MapLayerRegistry::resolveShownFadeOnLiveScreen)
+                    .thenReturn(0.5f);
+
+                plugin.renderOnMap(1.5f, 0.25f);
+            }
+
+            verify(layerRendererMock)
+                .renderOnMap(1.5f, 0.125f, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+        }
+
+        @Test
         void renderOnMapPreparesTheFrameOnceBeforeDrawingAnyBand() {
             // The refresh runs once however many passes the frame is painted in - a second one would
             // repeat the whole staleness check for nothing - and so does everything latched behind

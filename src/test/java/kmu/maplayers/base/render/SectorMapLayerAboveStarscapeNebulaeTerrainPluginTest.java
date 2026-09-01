@@ -40,6 +40,10 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     private static final float FACTOR = 1f;
     private static final float ALPHA_MULT = 1f;
 
+    // A screen with the whole of its layers on it, which is the state every case here poses: what the
+    // hide fade does to the pass is the base surface's subject, both halves drawing through the one pass.
+    private static final float FULLY_SHOWN = 1f;
+
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
 
     // The surface reads the compatibility constraint before it draws, and that read reaches LunaLib,
@@ -74,11 +78,19 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
         MapLayerInstallations.disposeEveryInstallation();
     }
 
-    // Puts a renderer behind the active pick, for the cases about what this surface draws through it.
-    private void stubTheActiveLayersRenderer() {
+    // Puts a renderer behind the active pick, on a screen showing its layers in full, for the cases
+    // about what this surface draws through it. The fade is stated rather than left to the stand-in's
+    // own default, which would be a screen with none of its layers on it and would take every alpha
+    // below to nothing - the pass is what these cases are about, not the dissolve.
+    private void stubTheActiveLayersRendererOnAShownScreen() {
+
         layerRegistryMock
             .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
             .thenReturn(layerRendererMock);
+
+        layerRegistryMock
+            .when(MapLayerRegistry::resolveShownFadeOnLiveScreen)
+            .thenReturn(FULLY_SHOWN);
     }
 
     @Nested
@@ -90,7 +102,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
-            stubTheActiveLayersRenderer();
+            stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
@@ -104,7 +116,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
-            stubTheActiveLayersRenderer();
+            stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
@@ -118,7 +130,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
-            stubTheActiveLayersRenderer();
+            stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
 
@@ -134,7 +146,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
             var plugin = new SectorMapLayerAboveStarscapeNebulaeTerrainPlugin(() -> true);
 
             seatSurfacesInAnInstalledSector(plugin);
-            stubTheActiveLayersRenderer();
+            stubTheActiveLayersRendererOnAShownScreen();
 
             plugin.renderOnMap(FACTOR, ALPHA_MULT);
 

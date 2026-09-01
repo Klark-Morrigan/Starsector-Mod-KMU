@@ -322,6 +322,27 @@ final class HoveredBoxTest {
         }
 
         @Test
+        void resolveActiveTooltipIsEmptyTheMomentTheScreensLayersAreSwitchedOff() {
+            // The box takes the crisp pick rather than the dissolve the overlay rides out: it reports
+            // what the cursor is over, and has nothing to report about layers the player has just
+            // switched off. Posed with a renderer still standing behind the pick, so what is pinned is
+            // the box standing down on the pick rather than on the renderer going away with it.
+            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+
+                layerRegistryMock
+                    .when(MapLayerRegistry::areLayersShownOnLiveScreen)
+                    .thenReturn(false);
+
+                layerRegistryMock
+                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
+                    .thenReturn(layerRendererMock);
+
+                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                    .isEmpty();
+            }
+        }
+
+        @Test
         void resolveActiveTooltipIsEmptyWithoutAnActiveLayer() {
             // The pre-registration frame: both passes are installed on game load, so the chain can be
             // asked before any composition root has run rather than dereference a null pick.

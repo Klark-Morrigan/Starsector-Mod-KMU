@@ -5,16 +5,19 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -22,8 +25,9 @@ import static org.mockito.Mockito.when;
  * untouched save resolves to, and the frozen keys each screen's selection reads and writes. The generic
  * persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s, and the show-or-hide pick's is
  * {@link PersistedMapLayerVisibilityTest}'s; this pins only what the registry adds - the four frozen
- * per-screen keys, and how {@link MapLayerRegistry#isActive} resolves which screen's pick is the live
- * one. The screens themselves are stand-in gates here: which concrete screens exist is the composition
+ * per-screen keys, how {@link MapLayerRegistry#isActive} resolves which screen's pick is the live one,
+ * and the show-or-hide answer it folds into that pick so a hidden screen resolves to nothing to draw.
+ * The screens themselves are stand-in gates here: which concrete screens exist is the composition
  * root's business, and this pins only that the showing one wins.
  */
 final class MapLayerRegistryTest {
@@ -38,6 +42,14 @@ final class MapLayerRegistryTest {
     private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
     private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
+    // A hide pace long enough that a reading taken straight after the flip is unmistakably part-way down
+    // the ramp rather than past its end, which is the state the registry must still hand a renderer for.
+    private static final float LONG_HIDE_FADE_SECONDS = 1_000f;
+
+    // The two ends of that ramp, as a consumer reads them.
+    private static final float FULLY_HIDDEN = 0f;
+    private static final float FULLY_SHOWN = 1f;
+
     // The machinery of the sector being drawn, which the registry passes through rather than
     // resolves. One for the class, so a case asserting it reached the layer is comparing against
     // the very object it handed in.
@@ -47,6 +59,13 @@ final class MapLayerRegistryTest {
     private final MapLayer secondLayerMock = mock(MapLayer.class);
 
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
+
+    // The hide ramp is paced by a shipped knob, and that read reaches LunaLib, which no test has. Stood
+    // in for the class so every case names a pace: Mockito's own default answers a pace of nothing, which
+    // makes each fade a cut and leaves these cases describing the settled answers they are about. The
+    // ramp between them is PersistedMapLayerVisibilityTest's subject, and the one case here that wants a
+    // reading from part-way down winds the pace up for itself.
+    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
 
     private SectorMemoryFake sectorMemoryFake;
 
@@ -68,6 +87,16 @@ final class MapLayerRegistryTest {
         MapLayerRegistry.registerIntelScreen(intelScreenFake);
 
         sectorMemoryFake = new SectorMemoryFake();
+    }
+
+    @BeforeEach
+    void stubTheHidePace() {
+        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+    }
+
+    @AfterEach
+    void releaseTheHidePace() {
+        mapLayerSettingsMock.close();
     }
 
     @AfterEach
@@ -152,6 +181,46 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
+    class AreLayersShownOnLiveScreen {
+
+        @Test
+        void areLayersShownOnLiveScreenAnswersFromTheShowingScreensPick() {
+            // Per screen, so hiding on one leaves the other showing: the control sits on each screen's
+            // own chrome, and a shared answer would empty a screen the player is not looking at.
+            sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+            intelScreenFake.setIntelTabOpen(true);
+
+            assertThat(MapLayerRegistry.areLayersShownOnLiveScreen())
+                .isFalse();
+
+            intelScreenFake.setIntelTabOpen(false);
+
+            assertThat(MapLayerRegistry.areLayersShownOnLiveScreen())
+                .isTrue();
+        }
+    }
+
+    @Nested
+    class ResolveShownFadeOnLiveScreen {
+
+        @Test
+        void resolveShownFadeOnLiveScreenAnswersFromTheShowingScreensPick() {
+            // What a pass multiplies into its alpha, and it follows the same screen the pick does - a
+            // fade taken off the other screen would thin an overlay nobody asked to hide.
+            sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+            intelScreenFake.setIntelTabOpen(true);
+
+            assertThat(MapLayerRegistry.resolveShownFadeOnLiveScreen())
+                .isEqualTo(FULLY_HIDDEN);
+
+            intelScreenFake.setIntelTabOpen(false);
+
+            assertThat(MapLayerRegistry.resolveShownFadeOnLiveScreen())
+                .isEqualTo(FULLY_SHOWN);
+        }
+    }
+
+    @Nested
     class GetActiveLayer {
 
         @Test
@@ -162,6 +231,28 @@ final class MapLayerRegistryTest {
 
             assertThat(MapLayerRegistry.getActiveLayer())
                 .isSameAs(firstLayerMock);
+        }
+
+        @Test
+        void getActiveLayerIsNullOnceTheShowingScreensLayersHaveFadedOff() {
+            // The one read hiding hangs off: every pass driven by the active pick already draws nothing
+            // for a null, so this takes the overlay, the labels and the hover box off together.
+            sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+
+            assertThat(MapLayerRegistry.getActiveLayer())
+                .isNull();
+        }
+
+        @Test
+        void getActiveLayerAnswersThePickWhileOnlyTheOtherScreensLayersAreHidden() {
+            // The per-screen half of the same gate: the intel screen hidden must leave the sector map
+            // painting its own pick, which is the whole reason the two picks are kept apart.
+            storeADifferentPickOnEachScreen();
+            sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+            intelScreenFake.setIntelTabOpen(false);
+
+            assertThat(MapLayerRegistry.getActiveLayer())
+                .isSameAs(secondLayerMock);
         }
 
         @Test
@@ -221,6 +312,22 @@ final class MapLayerRegistryTest {
             assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
                 .isNull();
         }
+
+        @Test
+        void resolveActiveMapRendererStillDrawsPartWayThroughTheHide() {
+            // What the fade is for: the pick already reads hidden, and the overlay must go on being
+            // handed a renderer until the dissolve is over, or the picture would blink out from under
+            // the sidebar that is still thinning beside it.
+            var layerRendererMock = mock(MapLayerRenderer.class);
+
+            when(secondLayerMock.resolveRenderer(installation))
+                .thenReturn(layerRendererMock);
+
+            startHidingTheMapScreensLayers();
+
+            assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
+                .isSameAs(layerRendererMock);
+        }
     }
 
     @Nested
@@ -262,6 +369,19 @@ final class MapLayerRegistryTest {
             assertThat(MapLayerRegistry.isActive(firstLayerMock))
                 .isFalse();
         }
+
+        @Test
+        void isActiveIsFalseForEveryLayerOnceTheScreensLayersHaveFadedOff() {
+            // A hidden screen has no layer in play at all, which is what stands each layer's own state
+            // down without a read of its own - the default pick included, since it is the one a layer
+            // would otherwise go on thinking it held.
+            sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+
+            assertThat(MapLayerRegistry.isActive(secondLayerMock))
+                .isFalse();
+            assertThat(MapLayerRegistry.isActive(firstLayerMock))
+                .isFalse();
+        }
     }
 
     // Puts the two screens on different tabs, which is what lets a case tell which key an answer came
@@ -270,5 +390,20 @@ final class MapLayerRegistryTest {
 
         sectorMemoryFake.storeValue(MAP_ACTIVE_LAYER_KEY, "second");
         sectorMemoryFake.storeValue(INTEL_ACTIVE_LAYER_KEY, "first");
+    }
+
+    // Puts the map screen part-way down its hide ramp. The flip is made while the pace still reads as
+    // nothing, so the ramp is recorded as setting off from the settled shown end whatever an earlier case
+    // left on the process-wide visibility; the pace is only then wound long, which leaves a reading taken
+    // straight afterwards a long way short of the end.
+    private void startHidingTheMapScreensLayers() {
+
+        MapLayerRegistry
+            .getMapVisibility()
+            .showLayers(false);
+
+        mapLayerSettingsMock
+            .when(KmuMapLayerSettings::getMapLayerHideFadeSeconds)
+            .thenReturn(LONG_HIDE_FADE_SECONDS);
     }
 }

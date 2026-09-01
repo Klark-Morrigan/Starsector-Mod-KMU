@@ -156,8 +156,14 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // one matrix read per extra pass, deferred rather than stalling under Fast Rendering.
         layerRenderer.publishHoverForPass(factor);
 
+        // The showing screen's dissolve, folded into the alpha the map pass already fades the overlay
+        // with, so hiding thins the picture rather than cutting it - and thins it on the same curve the
+        // rest of the layers' footprint rides. A screen settled hidden never reaches here at all, the
+        // active pick resolving to nothing once the dissolve is over.
+        var shownAlpha = alphaMult * MapLayerRegistry.resolveShownFadeOnLiveScreen();
+
         for (var band : paintedBands) {
-            layerRenderer.renderOnMap(factor, alphaMult, band);
+            layerRenderer.renderOnMap(factor, shownAlpha, band);
         }
     }
 

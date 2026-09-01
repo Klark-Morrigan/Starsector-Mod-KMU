@@ -8,10 +8,10 @@ import java.util.Set;
  * The running sector's {@link MapLayerRefreshBoard}, reached without holding a sector.
  *
  * <p>A board is one sector's, since every signal on it is a fact about one sector - but a producer
- * driven by a settings change, and a consumer driven by vanilla's map hook, are handed no sector to
- * ask for. Each such caller resolves the live sector's installation, which is the one place a global
- * read stands in for a sector nobody passed down; a caller that does hold a sector reaches its board
- * through the installation directly rather than through here, so an event in one sector cannot mark
+ * driven by a settings change is handed no sector to ask for, a control on a screen naming none.
+ * Such a caller resolves the live sector's installation, which is the one place a global read stands
+ * in for a sector nobody passed down; a caller that does hold a sector, or the installation over
+ * one, reaches its board directly rather than through here, so an event in one sector cannot mark
  * another's cache stale.
  *
  * <p>Final class with a private constructor: a resolution, no instances.

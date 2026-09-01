@@ -36,10 +36,11 @@ public final class MapHoverState {
     private volatile boolean hasPassPublishedSinceLastFrame;
 
     /**
-     * @return the running sector's hover holder, for the passes vanilla drives without naming a
-     *         sector: the map render hook is handed a fade factor, and the tooltip listener a frame
-     *         - neither is told which sector is being drawn, so neither has an installation to ask.
-     *         Stands in until each of those passes resolves the installation it is drawing for
+     * @return the running sector's hover holder, for a caller vanilla drives without naming a sector
+     *         and that has no other handle to resolve one from. Every pass the map itself drives now
+     *         has one - a render surface resolves by the location its terrain sits in, and the box
+     *         the tooltip draws by the sector it already reads - so this stands only for a seam that
+     *         turns up holding neither
      */
     public static MapHoverState resolveLiveSectorHoverState() {
         return MapLayerInstallations

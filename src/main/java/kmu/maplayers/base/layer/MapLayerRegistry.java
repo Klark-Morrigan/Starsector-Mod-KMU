@@ -42,6 +42,10 @@ public final class MapLayerRegistry {
     private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
     private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
+    // The end of the hide ramp: none of a screen's layers left on it, which is where the active pick
+    // stops being answered at all.
+    private static final float FULLY_HIDDEN = 0f;
+
     // Each screen's pick, persisted under its own frozen key. The map host draws through the map
     // selection and the overlay follows it; the intel host draws through the intel selection. Held here
     // so both keys sit in one place.
@@ -137,22 +141,49 @@ public final class MapLayerRegistry {
     }
 
     /**
+     * @return whether the layers are picked to show on the screen showing this frame, answered the
+     *         moment the pick flips. The crisp reading, for whatever has to stand down at once rather
+     *         than ride the dissolve out - a control switched off must stop answering the player
+     *         immediately, whatever is still fading off the screen
+     */
+    public static boolean areLayersShownOnLiveScreen() {
+        return resolveLiveVisibility().areLayersShown();
+    }
+
+    /**
+     * @return how much of the showing screen's layers is on it this frame, 0 with them wholly hidden
+     *         and 1 with them wholly shown, for a pass multiplying it into what it paints so the
+     *         whole footprint thins together rather than one part snapping out from under another
+     */
+    public static float resolveShownFadeOnLiveScreen() {
+        return resolveLiveVisibility().resolveShownFade();
+    }
+
+    /**
      * @return the active pick of the screen showing this frame, or null before a composition root has
-     *         registered any layers. This is what the map surface dispatches its render pass through,
-     *         so the paint follows the tab the player is looking at without the surface naming a
-     *         layer; it follows the live screen rather than one fixed screen, so the intel screen's
-     *         own tab governs what paints there while the sector map keeps its own pick
+     *         registered any layers, or once that screen's layers have wholly faded off it. This is
+     *         what the map surface dispatches its render pass through, so the paint follows the tab
+     *         the player is looking at without the surface naming a layer; it follows the live screen
+     *         rather than one fixed screen, so the intel screen's own tab governs what paints there
+     *         while the sector map keeps its own pick
      */
     public static MapLayer getActiveLayer() {
+
+        // Hiding lands here rather than at each consumer, because every pass driven by the active pick
+        // already treats "no pick" as nothing to draw: one read takes the overlay, the labels and the
+        // hover box off the screen together.
+        if (!isAnythingOfTheLayersOnLiveScreen()) {
+            return null;
+        }
         return resolveLiveSelection().getActiveLayer();
     }
 
     /**
      * What draws for the screen showing this frame, over {@code installation}'s sector, or null when
-     * nothing does - either because no layer is picked yet (before a composition root has registered
-     * any) or because the active one draws nothing. The two are one answer on purpose: every pass
-     * driven by the active pick treats them alike, so a switch-only tab needs no case of its own in
-     * any of them.
+     * nothing does - because no layer is picked yet (before a composition root has registered any),
+     * because that screen's layers have faded off it, or because the active one draws nothing. They
+     * are one answer on purpose: every pass driven by the active pick treats them alike, so neither a
+     * switch-only tab nor a hidden screen needs a case of its own in any of them.
      *
      * <p>The installation is passed rather than resolved here because which sector is being drawn is
      * the caller's to know: the roster this registry holds is the process's, while the renderer it
@@ -186,5 +217,29 @@ public final class MapLayerRegistry {
         return intelScreen != null && intelScreen.isIntelTabOpen()
             ? INTEL_SELECTION
             : MAP_SELECTION;
+    }
+
+    // Whether anything of the showing screen's layers is on it at all - the gate the active pick answers
+    // through, and the reason hiding dissolves rather than blinking out: a screen switched off goes on
+    // being drawn until its ramp reaches the end, and only then reads as nothing at all.
+    //
+    // The crisp pick settles a shown screen outright, the fade being asked for only where the answer
+    // could still turn on it. A screen coming back paints from the first frame of its ramp whatever the
+    // fade reads, so consulting it there could only ever agree - at the price of a clock read, and of a
+    // settings read behind it, on every frame the layers are simply on.
+    private static boolean isAnythingOfTheLayersOnLiveScreen() {
+
+        var visibility = resolveLiveVisibility();
+
+        return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
+    }
+
+    // The show-or-hide pick of the screen that is up, resolved the same way and off the same read as the
+    // pick above. Written as its own resolution rather than derived from that one, so the two cannot come
+    // to answer for different screens - which would hide one screen's layers over the other's tab.
+    private static MapLayerVisibility resolveLiveVisibility() {
+        return intelScreen != null && intelScreen.isIntelTabOpen()
+            ? INTEL_VISIBILITY
+            : MAP_VISIBILITY;
     }
 }

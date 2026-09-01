@@ -34,6 +34,12 @@ supplies none - No Layer, or any future switch-only tab - reads as nothing to dr
 same answer the surface gives when no layer is active at all. `base.tooltip`'s dispatcher resolves
 its box the same way, off the same two reads, so neither pass names a layer.
 
+The showing screen's show-or-hide pick arrives through those same two reads rather than as a gate of
+its own: a screen switched off keeps its active layer until its dissolve is over, and the surface
+multiplies that screen's fade into the `alphaMult` the map pass already hands it, so the overlay
+thins on the same curve as the rest of what the layers put on the screen. Once the dissolve is over
+there is no active layer, and the frame costs the surface nothing again.
+
 Which sector that is has to be resolved rather than passed: this hook is handed a fade factor and
 nothing else, and the plugin cannot be handed one either - the engine rebuilds it from the save,
 with no seam to inject through. So it resolves through the one handle it does have, the terrain

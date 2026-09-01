@@ -27,7 +27,7 @@ import java.util.function.LongSupplier;
  *
  * <p>A flip is measured from where the previous ramp had reached rather than from an end of it, so a pick
  * reversed part-way turns around from where the eye currently sees it instead of jumping to the far end
- * and travelling back over ground it has already covered.
+ * and travelling back over a stretch it has already covered.
  *
  * <p>The ramp is held linear and eased only when read, which is what keeps that reversal continuous: a
  * flip records the linear position, and putting the curve over an already-curved value would compound it
@@ -143,7 +143,7 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
 
         // Clamped here rather than left to the curve, which clamps for its own reading only: a flip
         // records this value, and an unclamped one would put the next ramp's start beyond the end it is
-        // travelling from and leave the reversal to cover ground that is not on screen.
+        // travelling from and leave the reversal to cover a stretch that is not on screen.
         return Ranges.clampToUnit(areLayersShown
             ? progressAtLastFlip + travelled
             : progressAtLastFlip - travelled);
