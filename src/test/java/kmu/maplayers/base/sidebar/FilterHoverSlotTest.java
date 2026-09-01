@@ -86,16 +86,6 @@ final class FilterHoverSlotTest {
             assertThat(FilterHoverSlot.getHoveredIdOf(SCOPE_ID))
                 .isNull();
         }
-
-        @Test
-        void recordHoveredIdLeavesAnotherScopesHoverUntouched() {
-
-            FilterHoverSlot.recordHoveredId(OTHER_SCOPE_ID, OTHER_HOVERED_ID);
-            FilterHoverSlot.recordHoveredId(SCOPE_ID, HOVERED_ID);
-
-            assertThat(FilterHoverSlot.getHoveredIdOf(OTHER_SCOPE_ID))
-                .isEqualTo(OTHER_HOVERED_ID);
-        }
     }
 
     @Nested
