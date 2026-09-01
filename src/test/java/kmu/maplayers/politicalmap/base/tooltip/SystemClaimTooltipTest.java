@@ -7,7 +7,9 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.ContestAdmission;
+import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.starsector.systems.claims.PresenceOnlyClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
@@ -21,10 +23,12 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
+import kmu.maplayers.base.tooltip.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.CellTooltipQualifier;
 import kmu.maplayers.base.tooltip.CellTooltipRowReads;
 import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -38,6 +42,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +66,7 @@ import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.MARKET_STATS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
@@ -1126,12 +1132,14 @@ final class SystemClaimTooltipTest {
         }
 
         @Test
-        void composeBodyResolvesNoFactionsMarketsWhereTheLevelNamesTheFactionsAlone() {
+        void composeBodyAsksTheBoxForNoAccountAtAllWhereTheLevelShowsNoLineOfOne() {
             // The other half of the cut, and the half the drawn box cannot show: an account is
             // everything a listed faction is subordinated over, so the shallowest level draws not one
-            // of its lines - and it is therefore never worked out. Cut after the fact, every faction
+            // of its lines - and it is therefore never asked for. Cut after the fact, every faction
             // in every block would have its markets selected, ranked and worded first, over a hover
             // that asked only who claims the system.
+            var accountingTooltip = new AccountingClaimContestTooltip(claimBreakdownReaderFake);
+
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
@@ -1139,12 +1147,30 @@ final class SystemClaimTooltipTest {
                     buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
                     buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
 
-            try (var rowResolverMock = Mockito.mockStatic(ClaimScoreRowResolver.class)) {
+            accountingTooltip.composeBody(sectorMock, systemMock, FACTIONS);
 
-                tooltip.composeBody(sectorMock, systemMock, FACTIONS);
+            assertThat(accountingTooltip.readRequestedLevels())
+                .isEmpty();
+        }
 
-                rowResolverMock.verifyNoInteractions();
-            }
+        @Test
+        void composeBodyAsksTheBoxForTheAccountAtTheLevelItWillBeReadTo() {
+            // The level travels to the box rather than only gating the call, so an account carrying
+            // tiers of its own stops where the cut would. Handed a fixed depth instead, the box would
+            // work its deepest tiers out at every level that shows an account at all - and the cut
+            // would trim the drawn box back to the same lines, so nothing on screen would say so.
+            var accountingTooltip = new AccountingClaimContestTooltip(claimBreakdownReaderFake);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL))));
+
+            accountingTooltip.composeBody(sectorMock, systemMock, SYSTEM_COMPOSITION);
+            accountingTooltip.composeBody(sectorMock, systemMock, MARKET_STATS);
+
+            assertThat(accountingTooltip.readRequestedLevels())
+                .containsExactly(SYSTEM_COMPOSITION, MARKET_STATS);
         }
 
         @Test
@@ -1600,5 +1626,37 @@ final class SystemClaimTooltipTest {
         return (TooltipRow.TableRow) TooltipSection
             .readRowsInOrder(sections)
             .get(rowIndex);
+    }
+
+    /**
+     * A box on the claim shape that records every level it was asked to build an account at, and
+     * hangs nothing.
+     *
+     * <p>Recording is the only way to see what the shape asked for: the cut trims the drawn box back
+     * to the same lines whether the shape withheld the question or the box answered it and had the
+     * answer dropped, so no assertion on what the box says can tell the two apart.
+     */
+    private static final class AccountingClaimContestTooltip extends SystemClaimContestTooltip {
+
+        private final List<HoverTooltipDetailLevel> requestedLevels = new ArrayList<>();
+
+        private AccountingClaimContestTooltip(ClaimBreakdownReader claimBreakdownReader) {
+            super(claimBreakdownReader, HolderGrouping::identity);
+        }
+
+        @Override
+        protected List<CellTooltipEntry> resolveAccountEntries(
+                ListedClaimContest contest,
+                FactionClaimStanding standing,
+                SystemColonyReading colonyReading,
+                HoverTooltipDetailLevel detailLevel) {
+
+            requestedLevels.add(detailLevel);
+            return List.of();
+        }
+
+        private List<HoverTooltipDetailLevel> readRequestedLevels() {
+            return List.copyOf(requestedLevels);
+        }
     }
 }

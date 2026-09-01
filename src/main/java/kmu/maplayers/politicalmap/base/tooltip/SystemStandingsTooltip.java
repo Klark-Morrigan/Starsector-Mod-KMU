@@ -142,19 +142,14 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         HoverTooltipDetailLevel detailLevel);
 
     // The account this paint is to hang beneath its factions, and nothing at all where the level
-    // admits no line of one.
-    //
-    // The gate is here rather than inside each box because it is a fact about the cut rather than
-    // about any one subject matter: the account is everything a listed faction is subordinated over,
-    // so the shallowest level draws not one of its lines however the box would have composed them.
-    // And the read behind it is the most expensive thing a hover makes - resolved and then cut, the
-    // level that shows the least would cost the most.
+    // shows no line of one - which spares the colony walk behind it, the most expensive read a hover
+    // makes. Asked once for the whole box rather than per box, the answer being about the cut.
     private FactionAccountResolver createAdmittedAccountResolver(
             StarSystemAPI system,
             DominancePass pass,
             HoverTooltipDetailLevel detailLevel) {
 
-        return detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.SYSTEM_COMPOSITION)
+        return detailLevel.isAdmittingAccounts()
             ? createFactionAccountResolver(system, pass, detailLevel)
             : FactionAccountResolver.NO_ACCOUNT;
     }

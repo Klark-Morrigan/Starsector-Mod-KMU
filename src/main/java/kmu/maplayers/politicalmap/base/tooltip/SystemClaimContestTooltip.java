@@ -460,19 +460,14 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return entries;
     }
 
-    // The account this paint hangs beneath one faction, and nothing at all where the level admits no
-    // line of one.
-    //
-    // The gate is here rather than inside each box because it is a fact about the cut rather than
-    // about any one subject matter: the account is everything a listed faction is subordinated over,
-    // so the shallowest level draws not one of its lines however the box would have composed them.
-    // Left to the cut alone, every faction the box names would still be selected, ranked and worded
-    // down to its colonies over a system the player only asked who claims.
+    // The account this paint hangs beneath one faction, and nothing at all where the level shows no
+    // line of one - which spares the selecting, ranking and wording of the markets behind every
+    // faction the box names. Asked here rather than per box, the answer being about the cut.
     private List<CellTooltipEntry> resolveAdmittedAccountEntries(
             HoveredClaimReading reading,
             FactionClaimStanding standing) {
 
-        if (!reading.detailLevel().isReadingAtLeast(HoverTooltipDetailLevel.SYSTEM_COMPOSITION)) {
+        if (!reading.detailLevel().isAdmittingAccounts()) {
             return List.of();
         }
         return resolveAccountEntries(

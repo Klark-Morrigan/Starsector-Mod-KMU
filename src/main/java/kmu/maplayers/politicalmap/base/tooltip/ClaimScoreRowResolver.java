@@ -30,25 +30,6 @@ import java.util.Optional;
  * Left as that number, a reader has no way to tell which market it was, nor to resist reading it as the
  * total of what the faction holds, which is exactly what it is not.
  *
- * <p>The markets read in the order the mechanic would settle them - strongest first, a tie falling to
- * the earlier place in the economy's listing - so the one representing the faction comes out on top by
- * that order rather than by being put there, and the list reads as the contest rather than as a ranking
- * laid over it.
- *
- * <p>A faction the mechanic weighed nothing for is accounted for the same way, and that is the case
- * the whole shape has to bend least for: its colonies are listed at nought and nothing else is
- * stated. No market is called out as the claim holder, nothing there having won the system, and no
- * presence term closes the list, no score having been computed for the count to be a term of. What
- * is left is the plain listing of what the faction holds, which is the whole of what the contest has
- * to say about a presence it never reached.
- *
- * <p>A market the mechanic never weighed is listed at nought. Two kinds reach the box that way: one
- * held in concealment, which the walk skips before scoring, and one the economy does not list, which
- * the walk never reaches at all. Either brought nothing to the contest however large it is - and
- * printing the score it would have carried would put a market that took no part above the one that
- * took the system. Both are listed all the same rather than dropped: a colony the player can see on
- * the map, in a faction's colours, has to appear in the account of who holds the system.
- *
  * <p>What a market line says beyond its number is what the box has found out about the place
  * ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. Those are
  * facts about the world rather than about the contest, which is why they are stated on the same
@@ -66,56 +47,27 @@ import java.util.Optional;
  * {@link kmu.maplayers.base.tooltip.CellTooltipMark#resolveMarkForMapIcon}'s.
  *
  * <p>A market the box may not name is listed all the same, with its name blocked out - what such a
- * line looks like and which markets take it are {@link RedactedMarketLines}'s. What is decided here is
- * what the rest of the line then says: it carries a number only where it is the market its faction
- * stands on, that number being the one the faction's own line above already states, so withholding it
- * there would hide nothing while leaving the block's arithmetic unaccountable. Nothing hangs beneath
- * it, its terms being the colony described one at a time. It is ranked on its real score like any
- * other, so its neighbours bound what it scored: the box declines to <em>state</em> a number for a
- * place the player has not found, and does not go on to pretend the contest ran in some other order.
+ * line looks like and which markets take it are {@link RedactedMarketLines}'s.
  *
- * <p>Exactly one market in the whole box is called out as the claim holder: the one that actually took
- * the system. Every faction is represented by its strongest, but only one of those won anything, and a
- * marker on each would read as several holders of a system that can only have one. It goes unsaid
- * entirely over a system held by decree, where nothing any market scored settled the matter.
- *
- * <p>Every market states where the economy lists it. The contest is settled on a strictly greater
- * score, so two markets that tie are parted by nothing but which of them the economy reached first -
- * a rule with no trace anywhere else in the box, and one a reader would otherwise have to take a tied
- * outcome as arbitrary for. The number is the market's place among the system's owned markets, so it
- * counts across factions: a tie between two <em>factions'</em> best markets is settled the same way.
- * Where a tie the mechanic actually consulted is drawn, the place stops being a bare identifier and
- * says which way it went - the market reached first as having won it, the rest as having lost. Which
- * ties those are is {@link ClaimTieOutcomes}'s answer, judged over the whole contest rather than over
- * this faction's list, exactly as the walk it explains compares.
+ * <p>Every market states where the economy lists it, and that place counts across factions: a tie
+ * between two <em>factions'</em> best markets is settled by it exactly as a tie within one faction's
+ * markets is. Which ties the mechanic actually consulted is {@link ClaimTieOutcomes}'s answer, judged
+ * over the whole contest rather than over this faction's list, exactly as the walk it explains
+ * compares.
  *
  * <p>The presence term is the faction's rather than any one market's, so it is stated once beneath the
- * list instead of on each market in it. The mechanic gives every market of a faction a point for each of
- * that faction's others in the system, which is the same number on all of them - repeated per market it
- * reads as several separate findings, and the count could not be checked against anything, whereas at
- * the foot of the very markets it counts it can be. Stated as the working rather than the result for the
- * same reason: the count is checkable, the result alone is not.
- *
- * <p>That count is of what the faction holds rather than of the lines above it, so over a list a market
- * was withheld from it stands all the same and reads as exceeding what is shown. It gives away nothing
- * the list does not: a market's own line carries the whole score the contest weighed it at while the
- * terms beneath it state only its own, so on every line the presence is already the difference between
- * the two. The term names that difference. Withheld, it leaves each market's arithmetic short by an
- * amount the reader can see and hands them nothing to account for it with - which is the one failure a
- * box that exists to say what built a number cannot afford.
- *
- * <p>It is withheld only where the list carries a market the count never included. A colony the economy
- * does not list sits among the very lines the count invites the reader to check it against while being
- * outside it, so the term would read as short by a market on screen: contradicted rather than merely
- * exceeded.
+ * list instead of on each market in it. That count is of what the faction holds rather than of the
+ * lines above it, so over a list a market was withheld from it stands all the same and reads as
+ * exceeding what is shown. It gives away nothing the list does not: a market's own line carries the
+ * whole score the contest weighed it at while the terms beneath it state only its own, so on every
+ * line the presence is already the difference between the two. The term names that difference.
+ * Withheld, it leaves each market's arithmetic short by an amount the reader can see and hands them
+ * nothing to account for it with - which is the one failure a box that exists to say what built a
+ * number cannot afford.
  *
  * <p>A term that earned a market nothing has no line. The box exists to say what built a number, and a
  * market that is no garrison is not one whose garrison came to nothing - it is one where the term never
  * arose.
- *
- * <p>Nor has a market any terms at all where the box was asked only for the colonies behind a faction.
- * The cut would drop them, so they are not worked out - while the markets themselves are never in
- * question, this resolver being reached at all only where they are listed.
  *
  * <p>No rating-to-weight grammar reaches these lines, unlike the dominance side's
  * ({@link MarketFactorText}): a claim score is a small whole number of points with no grid behind it, so

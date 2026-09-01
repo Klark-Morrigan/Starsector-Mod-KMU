@@ -9,6 +9,12 @@ package kmu.maplayers.base.tooltip;
  * depth chosen by the player rather than inferred from what fits, because a box whose depth cannot
  * be predicted cannot be read comparatively.
  *
+ * <p>What is drawn is the cut's alone ({@link CellTooltipBody}), which is what leaves a layer free to
+ * stop composing a tier the level would drop - worth doing wherever a tier is expensive to work out,
+ * since one composed and then cut has already cost whatever it took to read and word, leaving the
+ * level that shows the least costing the most. The two questions below are what a layer asks before
+ * working a tier out at all.
+ *
  * <p>The cycle is declaration order, wrapping from the deepest back to the first - which is what
  * lets one key be both the way into detail and the way out of it.
  */
@@ -47,13 +53,22 @@ public enum HoverTooltipDetailLevel {
     }
 
     /**
-     * Whether the box has been asked to read at least as deep as {@code level} - the question the
-     * composition side asks before working a tier out at all.
+     * Whether this level shows a line standing as the account of one the box lists - what any layer
+     * asks before working an account out, whatever its subject matter.
      *
-     * <p>The cut alone would draw the same box, but it is taken once the tree is built: a tier
-     * composed and then dropped has already cost whatever it took to read and word it, and on this
-     * layer the deepest tiers are the expensive ones. So the tiers a level does not admit are never
-     * composed, and the cut stays as the one thing that decides what is drawn.
+     * <p>Read off what an account <em>is</em> - one step under the box's voice from a listed line -
+     * rather than off the level that happens to be the first to admit one. Named instead, the tier
+     * would be stated here and again in the cut, and a level inserted or a tier moved would leave the
+     * two describing different boxes.
+     *
+     * @return true where an account beneath a listed line is shown
+     */
+    public boolean isAdmittingAccounts() {
+        return CellTooltipEntryLevel.LISTED_LEVEL.subordinatedUnder().isAdmittedBy(this);
+    }
+
+    /**
+     * Whether the box has been asked to read at least as deep as {@code level}.
      *
      * <p>Asked of a level rather than of a depth, because what a composer knows is which tier of its
      * own subject matter it is about to build and each constant here names one. Counted against a

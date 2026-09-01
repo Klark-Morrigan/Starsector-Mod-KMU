@@ -349,10 +349,13 @@ about what the overlay means.
   deep. A level is a cut rather than a choice of body: a layer composes one tree and the blocks lay
   out as much of it as the level admits, so four depths cost no layer a second account of a system
   that could come to disagree with the first. What is *drawn* is the cut's alone, and that is what
-  lets a layer stop composing a tier the level would drop
-  (`HoverTooltipDetailLevel.isReadingAtLeast`) - which the political map does, its deeper tiers being
-  the expensive ones, so the shallowest level walks no colony of the hovered system at all. The cut
-  answers a tier it was never handed exactly as it answers one it declines. The level never decides
+  lets a layer stop composing a tier the level would drop - which the political map does, its deeper
+  tiers being the expensive ones, so the shallowest level walks no colony of the hovered system at
+  all. The level answers two questions for that: `isAdmittingAccounts`, whether anything hangs
+  beneath a listed line at all - read off what an account *is*, one step subordinated, so the tier is
+  never named twice - and `isReadingAtLeast`, asked by a layer about a tier of its own subject
+  matter. The cut answers a tier it was never handed exactly as it answers one it declines. The
+  level never decides
   *which* box draws either - one box per layer, read to four depths - so the choice holds across
   hovers and layer switches without any layer holding a second body. What writes that level is
   `HoverTooltipDetailLevelInput`, a campaign input listener claiming F1 pre-core: each press advances

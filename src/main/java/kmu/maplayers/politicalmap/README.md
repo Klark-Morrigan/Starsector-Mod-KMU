@@ -256,8 +256,9 @@ system at the shallowest, the colonies a tier down, their factors a tier below a
 to four depths rather than four bodies, so no two depths can describe one system differently.
 
 Composition stops where the cut would, this layer's deeper tiers being the expensive ones. The
-account resolver is built only from the composition level down (`SystemStandingsTooltip`), so the
-shallowest level makes no `readWeightBreakdownsByFaction`, no unweighed-colony read and no
+account resolver is built only where the level shows a line of one (`isAdmittingAccounts`, gated in
+`SystemStandingsTooltip`), so the shallowest level makes no `readWeightBreakdownsByFaction`, no
+unweighed-colony read and no
 `SystemColonyReading` walk at all - the walk behind those being the most expensive thing a hover
 does, and not one line off it drawn at that level. Below it the same rule runs on inside
 `MarketWeightRowResolver`: a colony's factors are worked out only from `MARKET_STATS`, its patrol
@@ -491,10 +492,10 @@ and each market into the terms its claim score is built from - one account, read
 was asked for and cut by the blocks, on the same terms as the domination box. It sits on
 `SystemClaimContestTooltip`, which settles the one read behind it, the claimant, the decree marker,
 and the five blocks, and leaves open only what hangs beneath a faction (`resolveAccountEntries`,
-answered by every box on the shape). It is asked at all only from the composition level down, so the
-shallowest level selects, ranks and words no faction's markets; below it `ClaimScoreRowResolver`
-works out a market's terms only from `MARKET_STATS`. That account is handed the whole
-`ListedClaimContest` rather than the scored read alone,
+answered by every box on the shape). It is asked at all only where the level shows a line of one
+(`isAdmittingAccounts`), so the shallowest level selects, ranks and words no faction's markets;
+below it `ClaimScoreRowResolver` works out a market's terms only from `MARKET_STATS`. That account
+is handed the whole `ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to
 answer two factions of one box under two different rules. Both relations to the claim holder travel
