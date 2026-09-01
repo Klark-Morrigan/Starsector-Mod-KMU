@@ -10,6 +10,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
+import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -52,6 +53,11 @@ final class MapSidebarHostTest {
     // The frozen key this screen's active-layer pick is stored under, pinned here so the shortcut is shown
     // writing the sector map's own pick rather than the intel screen's.
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
+
+    // The frozen keys the two screens' show-or-hide picks are stored under, pinned here for the reason the
+    // pick above is: this host has to answer to its own screen's and to no other's.
+    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
+    private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
     // A stand-in layer binding: which layers exist is the composition root's business, so the shortcut is
     // pinned against a registered fake rather than a concrete view's real key.
@@ -112,6 +118,42 @@ final class MapSidebarHostTest {
                 assertThat(new MapSidebarHost(ScreenClaims.createScreenClaimedByAModal())
                     .isOverlayShowing())
                     .isFalse();
+            }
+        }
+
+        @Test
+        void isOverlayShowingIsFalseWhileTheSectorMapsOwnLayersAreHidden() {
+            // The wiring, not the rule: the rule is the base host's and pinned there, so what this case
+            // shows is that this host was handed the sector map's own show-or-hide pick.
+            try (var sectorMemoryFake = new SectorMemoryFake();
+                    var mapViewMock = mockStatic(CampaignMapView.class)) {
+
+                sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+
+                mapViewMock
+                    .when(CampaignMapView::isSectorMapShowing)
+                    .thenReturn(true);
+
+                assertThat(createHostOnAnUnclaimedScreen().isOverlayShowing())
+                    .isFalse();
+            }
+        }
+
+        @Test
+        void isOverlayShowingIsUnmovedByTheIntelScreensHidePick() {
+            // The other half of that wiring: the two screens hide independently, so a host crossed onto
+            // the intel screen's pick would empty the sector map with the case above still green.
+            try (var sectorMemoryFake = new SectorMemoryFake();
+                    var mapViewMock = mockStatic(CampaignMapView.class)) {
+
+                sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+
+                mapViewMock
+                    .when(CampaignMapView::isSectorMapShowing)
+                    .thenReturn(true);
+
+                assertThat(createHostOnAnUnclaimedScreen().isOverlayShowing())
+                    .isTrue();
             }
         }
 

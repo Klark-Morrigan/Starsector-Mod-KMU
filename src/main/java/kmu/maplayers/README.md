@@ -133,6 +133,7 @@ about what the overlay means.
 | State | Scope |
 | --- | --- |
 | Which tab is lit | per screen, persisted |
+| Whether the layers are shown at all | per screen, persisted |
 | Whether the box is folded to its rail | per screen, persisted |
 | How far the body is scrolled | per screen, for the session |
 | Political-map view, bloc spotlight, sort, columns, and every other control value | shared, persisted once |
@@ -145,7 +146,9 @@ about what the overlay means.
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
   beside its tab. The pick is folded into the active-layer answer rather than read by each consumer:
   a hidden screen resolves to no active layer once its fade is out, which every pass driven by that
-  pick already draws nothing for. A layer is
+  pick already draws nothing for. The sidebar is the one part of the footprint outside that answer,
+  since it draws whether or not a layer is picked, so it reads the same pick at
+  [its own gate](base/sidebar/README.md) - two reads for the whole visible footprint. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own.

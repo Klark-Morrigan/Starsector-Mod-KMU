@@ -90,11 +90,13 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     IntelSidebarHost(IntelScreenView intelScreen, ScreenClaim screenClaim) {
         // Opens folded to the rail on a save that has never moved it, so the panel never covers the visor
         // uninvited - the player expands it by the collapse handle when they want the controls. The intel
-        // screen's own pick goes with it: a switch on the map screen leaves it where it was, and reopening
-        // the intel screen returns to this pick rather than inheriting the map's.
+        // screen's own pick and its own show-or-hide state go with it: a switch on the map screen leaves
+        // both where they were, and reopening the intel screen returns to them rather than inheriting the
+        // map's.
         super(
             new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
             MapLayerRegistry.getIntelSelection(),
+            MapLayerRegistry.getIntelVisibility(),
             screenClaim);
         this.intelScreen = intelScreen;
     }
@@ -130,7 +132,7 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     }
 
     @Override
-    public String describeViewState() {
+    protected String describeHostScreenViewState() {
         if (!intelScreen.isIntelTabOpen()) {
             return "intel tab not showing";
         }

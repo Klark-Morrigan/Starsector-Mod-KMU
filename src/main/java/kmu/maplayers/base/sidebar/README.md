@@ -55,19 +55,37 @@ binds to the same key. On the intel screen that matters: item action buttons bin
 and the tag filter uses `Q` and `Ctrl+S`. The defaults (`N`, `P`) avoid all of them, and the
 LunaLib Keycode fields are the way out of any clash a mod's intel item introduces.
 
-Only the *screen* half of that answer is per-host, and there are two answers rather than one.
+Only the *screen* part of that answer is per-host, and there are two answers rather than one.
 `BaseSidebarHost.isOverlayShowing()` is the crisp gate - `!screenClaim.isScreenClaimed() &&
-isHostScreenShowing()` - and it is what input routing and hit-testing read, so a claimant that takes
-the pointer takes it from the panel on the frame it appears. `resolveOverlayFade()` is what the
-*draw* reads, and it is what the claim has not taken yet.
+layerVisibility.areLayersShown() && isHostScreenShowing()` - and it is what input routing and
+hit-testing read, so a claimant that takes the pointer takes it from the panel on the frame it
+appears, and a panel switched off stops answering the pointer on the frame it was switched off.
+`resolveOverlayFade()` is what the *draw* reads: what the claim has not taken, multiplied by how much
+of that screen's layers is still on it.
 
-They part company only while a claimant is fading. A modal takes every event outside its box from the
+They part company only while something is fading. A modal takes every event outside its box from the
 frame it is raised, so input cannot wait for its fade; but the modal darkens the screen over that
 same fade, and a panel cut away at the first frame of it reads as a snap against a backdrop still
 deepening. So the panel keeps painting, thinner each frame, until the modal is fully in. A claimant
 that reports no fade - the console - takes both at once, which is right: a panel should snap with
-whatever snapped over it. Both compositions ask the claim first, so the screen read that walks live
-widgets is skipped while the panel is standing down anyway.
+whatever snapped over it. The show-or-hide ramp splits the pair the same way and for the same reason,
+the panel dissolving with the overlay it drives rather than cutting away from over it. The two
+dissolves multiply rather than one winning, so a modal raised over a panel already thinning darkens
+over what is left of it and neither has to know the other is running. Both compositions ask the claim
+first and the screen last, so the read that walks live widgets is skipped while the panel is standing
+down anyway.
+
+That the panel goes with the layers at all is folded in here rather than at the renderer and the
+input listener separately, for the reason the pick is folded into the active-layer answer rather than
+into each pass driven by it: the sidebar is part of what the layers put on a screen, so it leaves
+with the rest of that footprint on one read taken where the gate already is. Which screen's pick a
+host reads is chosen in its constructor beside its active-layer selection, both being that screen's
+own state under its own frozen key.
+
+`describeViewState()` carries the pick into the view-state log, prefixing the host's own screen state
+with `layers hidden` once the ramp is out and `layers hiding` while it is running - different bug
+reports, so they are worded apart. A host supplies only its screen's half, through
+`describeHostScreenViewState()`.
 
 What can claim the screen, and why any of it stands the panel down rather than being ordered above
 it, is [`ScreenClaim`](runtime/ScreenClaim.java)'s to state. What belongs here is the rest of the

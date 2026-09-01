@@ -11,6 +11,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapLayerSettings;
 
@@ -44,6 +45,11 @@ import static org.mockito.Mockito.when;
  * which is what frees the shortcut keys above to type rather than switch tabs. Which things can claim it
  * is {@link ScreenClaim}'s to pin; what is pinned here is that a claim reaches the gate at all, and that
  * it settles the gate without the screen being read.
+ *
+ * <p>The screen's show-or-hide pick is pinned in the same pair, since it is the second thing to reach both
+ * answers: the gate takes it crisply, so a panel switched off stops routing at once, and the paint takes
+ * its ramp and multiplies it into whatever a claim has left, so two dissolves compose rather than one
+ * winning. The ramp itself is {@link kmu.maplayers.base.layer.PersistedMapLayerVisibility}'s to pin.
  */
 final class BaseSidebarHostTest {
 
@@ -70,6 +76,10 @@ final class BaseSidebarHostTest {
     // The pointer parked well off the panel, so nothing the frame advances can be a hover and a lit tab can
     // only have come from the blink.
     private static final float OFF_PANEL_COORDINATE = 5000f;
+
+    // The two ends of a screen's show-or-hide ramp, as the panel reads them.
+    private static final float FULLY_SHOWN = 1f;
+    private static final float FULLY_HIDDEN = 0f;
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
@@ -283,6 +293,31 @@ final class BaseSidebarHostTest {
         }
 
         @Test
+        void isOverlayShowingIsFalseWhileThisScreensLayersAreSwitchedOff() {
+            // The panel is part of what the layers put on a screen, so it goes with the rest of that
+            // footprint rather than standing on over an emptied map.
+            var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
+
+            assertThat(host.isOverlayShowing())
+                .isFalse();
+        }
+
+        @Test
+        void isOverlayShowingIsFalseFromTheFirstFrameOfALayersRampStillRunning() {
+            // Where the gate and the fade part company again: a panel switched off must stop taking clicks
+            // on the frame the player switched it off, whatever of it is still dissolving. A gate derived
+            // from the ramp would go on routing for every frame of the hide.
+            var host = createHostWithVisibility(mockVisibility(false, 0.6f));
+
+            assertThat(host.isOverlayShowing())
+                .isFalse();
+
+            // Still painting, which is what makes the two answers differ rather than one being wrong.
+            assertThat(host.resolveOverlayFade())
+                .isGreaterThan(FULLY_HIDDEN);
+        }
+
+        @Test
         void isOverlayShowingLeavesTheScreenUnreadWhileItIsClaimed() {
             // A screen read walks live widgets, so the claim is asked first and the walk skipped while the
             // panel is standing down anyway.
@@ -358,21 +393,120 @@ final class BaseSidebarHostTest {
             assertThat(host.screenReadCount)
                 .isZero();
         }
+
+        @Test
+        void resolveOverlayFadeRidesTheLayersOwnRampDown() {
+            // The panel dissolves with the overlay it drives rather than cutting away from over it, which
+            // is the whole reason the pick is read here as a fraction and not as the gate's boolean.
+            var host = createHostWithVisibility(mockVisibility(false, 0.4f));
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(0.4f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeIsNothingOnceTheLayersHaveGoneFromTheScreen() {
+
+            var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(FULLY_HIDDEN, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeComposesTheClaimsDissolveWithTheLayersOwn() {
+            // Two independent dissolves multiply rather than one winning: a modal raised over a panel
+            // already thinning darkens over what is left of it, and neither has to know the other is
+            // running. Whichever were taken alone, the panel would stand too solid under the other.
+            var host = createHost(
+                mock(ActiveLayerSelection.class),
+                mockVisibility(false, 0.4f),
+                ScreenClaims.createScreenClaimedByAModalAt(0.5f),
+                true);
+
+            assertThat(host.resolveOverlayFade())
+                .isCloseTo(0.2f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveOverlayFadeLeavesTheScreenUnreadOnceTheLayersHaveGone() {
+            // The same short-circuit the claim gets, for the same reason: a panel with nothing left to
+            // paint costs no widget walk whichever screen it is on.
+            var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
+
+            host.resolveOverlayFade();
+
+            assertThat(host.screenReadCount)
+                .isZero();
+        }
+    }
+
+    @Nested
+    class DescribeViewState {
+
+        @Test
+        void describeViewStateNamesTheHostsScreenAloneWhileTheLayersAreShown() {
+            // The line a player normally reads: the show-or-hide prefix is worth saying only when it is
+            // the reason the panel is missing.
+            var host = createHostWithVisibility(mockVisibility(true, FULLY_SHOWN));
+
+            assertThat(host.describeViewState())
+                .isEqualTo("fake host");
+        }
+
+        @Test
+        void describeViewStateNamesASettledHiddenScreen() {
+            // What "the sidebar is gone" has to be diagnosable as without a second question to the player.
+            var host = createHostWithVisibility(mockVisibility(false, FULLY_HIDDEN));
+
+            assertThat(host.describeViewState())
+                .isEqualTo("layers hidden; fake host");
+        }
+
+        @Test
+        void describeViewStateNamesARampStillRunningApartFromTheSettledState() {
+            // Different bug reports: a panel that stays away was switched off, one caught part-way was on
+            // its way out when the line was written. One wording for both would lose that.
+            var host = createHostWithVisibility(mockVisibility(false, 0.4f));
+
+            assertThat(host.describeViewState())
+                .isEqualTo("layers hiding; fake host");
+        }
     }
 
     // A host carrying nothing but the plumbing under test: the shared key handling is the base's, so the
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
-        return createHost(layerSelection, ScreenClaims.createUnclaimedScreen(), false);
+        return createHost(
+            layerSelection,
+            mockLayersShown(),
+            ScreenClaims.createUnclaimedScreen(),
+            false);
     }
 
-    // A host whose own screen is up, so what the gate then answers is down to the claim alone.
+    // A host whose own screen is up and whose layers are on it, so what the gate then answers is down to
+    // the claim alone.
     private static SidebarHostFake createHostOnAShowingScreen(ScreenClaim screenClaim) {
-        return createHost(mock(ActiveLayerSelection.class), screenClaim, true);
+        return createHost(
+            mock(ActiveLayerSelection.class),
+            mockLayersShown(),
+            screenClaim,
+            true);
+    }
+
+    // A host on a showing, unclaimed screen carrying the given show-or-hide pick, so what the gate and the
+    // fade then answer is down to that pick alone.
+    private static SidebarHostFake createHostWithVisibility(MapLayerVisibility layerVisibility) {
+        return createHost(
+            mock(ActiveLayerSelection.class),
+            layerVisibility,
+            ScreenClaims.createUnclaimedScreen(),
+            true);
     }
 
     private static SidebarHostFake createHost(
             ActiveLayerSelection layerSelection,
+            MapLayerVisibility layerVisibility,
             ScreenClaim screenClaim,
             boolean isHostScreenShowing) {
 
@@ -384,8 +518,28 @@ final class BaseSidebarHostTest {
         return new SidebarHostFake(
             foldSelectionMock,
             layerSelection,
+            layerVisibility,
             screenClaim,
             isHostScreenShowing);
+    }
+
+    // The layers wholly on the screen, which is what every case not about the show-or-hide pick stands on.
+    private static MapLayerVisibility mockLayersShown() {
+        return mockVisibility(true, FULLY_SHOWN);
+    }
+
+    // A show-or-hide pick posed at both of its readings at once, since the gate takes the crisp one and the
+    // paint the fraction - and the pair parting company is the thing several cases here are about.
+    private static MapLayerVisibility mockVisibility(boolean areLayersShown, float shownFade) {
+
+        var visibilityMock = mock(MapLayerVisibility.class);
+
+        when(visibilityMock.areLayersShown())
+            .thenReturn(areLayersShown);
+        when(visibilityMock.resolveShownFade())
+            .thenReturn(shownFade);
+
+        return visibilityMock;
     }
 
     // Each layer bound to its own default, the state before the player rebinds anything.
@@ -461,10 +615,11 @@ final class BaseSidebarHostTest {
         private SidebarHostFake(
                 SidebarFoldSelection foldSelection,
                 ActiveLayerSelection layerSelection,
+                MapLayerVisibility layerVisibility,
                 ScreenClaim screenClaim,
                 boolean isHostScreenShowing) {
 
-            super(foldSelection, layerSelection, screenClaim);
+            super(foldSelection, layerSelection, layerVisibility, screenClaim);
             this.isHostScreenShowing = isHostScreenShowing;
         }
 
@@ -484,7 +639,7 @@ final class BaseSidebarHostTest {
         }
 
         @Override
-        public String describeViewState() {
+        protected String describeHostScreenViewState() {
             return "fake host";
         }
 
