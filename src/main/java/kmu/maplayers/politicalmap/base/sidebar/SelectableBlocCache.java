@@ -69,11 +69,12 @@ public final class SelectableBlocCache {
      * <p>A per-bloc lookup rather than the whole index, so a surface asking about the one bloc under
      * the pointer never holds every bloc's set to get at it.
      *
-     * @param view   the <em>selected</em> view, the same one the sidebar body asks under - two
-     *               callers alternating under different views evict each other from the one memo
-     *               entry below and re-walk the economy every call. It also decides what being found
-     *               somewhere means: living in a system under the dominance views, claiming it under
-     *               the claims one
+     * <p>Asked under the <em>selected</em> view, the same one the sidebar body asks under: two
+     * callers alternating under different views evict each other from the one memo entry below and
+     * re-walk the economy every call. The view also decides what being found somewhere means -
+     * living in a system under the dominance views, claiming it under the claims one.
+     *
+     * @param view   the selected political-map view the bloc was surfaced by
      * @param sector the sector whose economy the read is taken from; a null sector resolves to the
      *               view's empty read
      * @param blocId the bloc to look up; an id this view never surfaced answers empty

@@ -9,21 +9,9 @@ import java.util.Map;
  * under another. A layer reading it previews what picking that id would spotlight, without picking
  * it.
  *
- * <p>Deliberately not a second {@code FilterSelection}, and the two differences are the whole point
- * of the class:
- *
- * <ul>
- *   <li>Nothing is persisted. A hover is where a pointer happens to be this frame, not a choice
- *       worth carrying into the next session, so there is no save key to freeze and a fresh session
- *       starts with every scope clear.
- *   <li>No refresh signal is raised. {@code FilterSelection}'s signal has the reading layer rebuild
- *       everything it paints, which is far more than pointer motion down a list of rows can carry;
- *       a reader of this slot draws over the paint that is already there.
- * </ul>
- *
- * <p>Like {@code FilterSelection} this holds a bare id and nothing that resolves one: what the id
- * names, and what a preview of it looks like, is the reading layer's concern. The class stays
- * ignorant of what a scope is too, partitioning by an opaque id the caller supplies.
+ * <p>Nothing is persisted and no refresh signal is raised, which is the whole of what separates it
+ * from {@link FilterSelection}: a hover is where a pointer happens to be this frame, previewed over
+ * paint that is already there, where a pick has the reading layer rebuild everything it draws.
  *
  * <p>Clearing is a caller's obligation at both ends a hover can stop at - the pointer leaving the
  * row, and the panel standing down without a leave ever being reported - since neither is visible
