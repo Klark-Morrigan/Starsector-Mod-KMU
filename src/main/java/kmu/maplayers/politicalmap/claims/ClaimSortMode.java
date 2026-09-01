@@ -5,8 +5,10 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
+import kmu.maplayers.politicalmap.base.BlocMarketSizeSortMode;
 import kmu.maplayers.politicalmap.base.BlocSortModeComposer;
 import kmu.maplayers.politicalmap.base.RankedBloc;
+import kmu.maplayers.politicalmap.base.SizedBlocMetrics;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.util.KmuStrings;
 
@@ -32,6 +34,11 @@ import java.util.function.ToIntFunction;
  * only the primary key following the player's chosen direction - is {@link BlocSortModeComposer}'s,
  * so every mode of every vocabulary breaks a tie the same way.
  *
+ * <p>The whole vocabulary is {@link #MODES}, which is these plus {@link #MARKET_SIZE} - a mode
+ * declared outside this enum, because the number it ranks by is measured the same way under every
+ * mechanic and so is stated once rather than per vocabulary. The enum keeps the claim count, which is
+ * this mechanic's own.
+ *
  * <p>{@link #DEFAULT} is claims - the metric the layer is actually painted by, so a fresh save and
  * any unrecognised stored key open on the ranking that matches what the map shows. The list holds
  * blocs that hold colonies while claiming nothing, and this is what places them: under the default
@@ -40,8 +47,9 @@ import java.util.function.ToIntFunction;
  */
 public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
 
-    // Listed in the order the sort selector stacks its rows top to bottom: name first, then the two
-    // numeric metrics. This is the display order, distinct from the tie-break chain below.
+    // Listed in the order the sort selector stacks its rows top to bottom, ahead of the shared market
+    // size mode appended below: name first, then this mechanic's own numeric metric. This is the
+    // display order, distinct from the tie-break chain below.
     NAME(
         "name",
         KmuStrings.POLITICAL_MAP_CTL_SORT_NAME,
@@ -50,17 +58,21 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
     CLAIMS(
         "claims",
         KmuStrings.POLITICAL_MAP_CTL_SORT_CLAIMS,
-        ClaimStats::claims),
+        ClaimStats::claims);
 
-    MARKET_SIZE(
-        "market_size",
-        KmuStrings.POLITICAL_MAP_CTL_SORT_MARKET_SIZE,
-        ClaimStats::marketSize);
-
-    // This vocabulary's numbers in the order ties break down them. Read off the modes' own accessors
-    // rather than named again here, so the chain cannot drift from what the constants above declare.
+    // This vocabulary's numbers in the order ties break down them. Each is read off the accessor its
+    // own mode names - the enum constant above for the claim count, the shared capability for the
+    // size - so the chain cannot drift from what the modes rank by.
     private static final List<ToIntFunction<ClaimStats>> CANONICAL_METRIC_CHAIN =
-        List.of(CLAIMS.metric, MARKET_SIZE.metric);
+        List.of(CLAIMS.metric, SizedBlocMetrics::marketSize);
+
+    /**
+     * The whole-sector colony size ranking, bound to this vocabulary's tie-break chain. Held here so
+     * a caller names it the way it names every other mode of this vocabulary, and so the one instance
+     * {@link #MODES} offers is the one a stored key resolves back to.
+     */
+    public static final ListSortMode<RankedBloc<ClaimStats>> MARKET_SIZE =
+        new BlocMarketSizeSortMode<>(CANONICAL_METRIC_CHAIN);
 
     /** The metric a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
     public static final ClaimSortMode DEFAULT = CLAIMS;
@@ -70,9 +82,14 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
      * {@link #DEFAULT} as the fallback. It is what the view bundles with its bloc list, so the list
      * and the modes that can rank it travel as one value and the stored-sort resolution reads the
      * same pair the selector draws.
+     *
+     * <p>Listed rather than read off {@code values()}, since the vocabulary is wider than the enum:
+     * the shared size mode is a member of it without being a member of this type.
      */
     public static final ListSortModes<RankedBloc<ClaimStats>> MODES =
-        new ListSortModes<>(List.of(values()), DEFAULT);
+        new ListSortModes<>(
+            List.<ListSortMode<RankedBloc<ClaimStats>>>of(NAME, CLAIMS, MARKET_SIZE),
+            DEFAULT);
 
     private final String persistenceKey;
     private final String labelKey;
@@ -89,9 +106,9 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
     }
 
     /**
-     * The name and market-size keys deliberately spell the same as the dominance vocabulary's. Per-scope
-     * sort storage keys each view's stored mode separately, so the two vocabularies never resolve
-     * against the same slot and a shared spelling stays a readability win rather than a collision.
+     * The name key deliberately spells the same as the dominance vocabulary's. Per-scope sort storage
+     * keys each view's stored mode separately, so the two vocabularies never resolve against the same
+     * slot and a shared spelling stays a readability win rather than a collision.
      *
      * @return the save-stable key this mode persists under; frozen once shipped, since renaming it
      *         silently resets every save that stored this mode back to {@link #DEFAULT}
@@ -114,7 +131,7 @@ public enum ClaimSortMode implements ListSortMode<RankedBloc<ClaimStats>> {
     }
 
     /**
-     * The trailing value the picker draws on a bloc's row under this mode. Neither metric carries a
+     * The trailing value the picker draws on a bloc's row under this mode. The claim count carries no
      * colour of its own, so a value here is the plain kind {@link BlocSortModeComposer} draws in the
      * row's own tone.
      *

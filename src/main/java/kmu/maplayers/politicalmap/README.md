@@ -155,6 +155,13 @@ that declaration out into a ranking - the chosen metric first, the rest of the c
 the name and the bloc id - so the numbers stay one layer's while the shape of the ordering, and the
 tail that keeps a fully-level pair from reshuffling, are the same under every view.
 
+One number is not one layer's, though: a bloc's whole-sector colony size is the same sum off the same
+habitation projection whichever mechanic paints the map. So it is stated as a capability the metrics
+opt into, `SizedBlocMetrics`, and ranked by `BlocMarketSizeSortMode`, declared once and constructed
+per vocabulary with that vocabulary's own tie-break chain. A vocabulary whose record does not carry a
+size cannot be handed the mode at all, so sharing it widens nobody. Everything else each enum lists is
+its own mechanic's, and is named nowhere else.
+
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
 faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what

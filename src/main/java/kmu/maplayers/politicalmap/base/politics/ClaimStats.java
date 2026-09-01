@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
+import kmu.maplayers.politicalmap.base.SizedBlocMetrics;
 
 /**
  * The two whole-sector numbers the claims picker sorts and displays a claiming bloc by, computed
@@ -13,7 +14,10 @@ import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
  * this layer paints, so it is the layer's primary metric. Market size answers the separate question
  * "how big is this claimant" and is summed across the <em>whole sector</em> rather than across the
  * systems it claims: a claimed system is usually one the claimant does not hold, so a claim-scoped
- * size would read zero for nearly every faction and rank nothing.
+ * size would read zero for nearly every faction and rank nothing. That whole-sector scoping is the
+ * same one {@link DominanceStats} sums, which is why the size is stated through
+ * {@link SizedBlocMetrics} and ranked by a mode declared once rather than per vocabulary; the claim
+ * count is this mechanic's own and is named nowhere else.
  *
  * <p>Because the two are scoped differently, a bloc with claims and a market size of zero is normal
  * rather than a defect - a faction that claims territory but holds no colony anywhere still paints
@@ -30,7 +34,7 @@ import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
  */
 public record ClaimStats(
     int claims,
-    int marketSize) implements PaintingBlocMetrics {
+    int marketSize) implements PaintingBlocMetrics, SizedBlocMetrics {
 
     /** A bloc claiming nothing and holding nothing; the identity a per-system fold begins from. */
     public static final ClaimStats EMPTY = new ClaimStats(0, 0);

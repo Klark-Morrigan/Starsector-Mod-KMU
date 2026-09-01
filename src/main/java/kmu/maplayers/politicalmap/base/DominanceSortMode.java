@@ -15,13 +15,18 @@ import java.util.function.ToIntFunction;
 
 /**
  * The dominance-painted views' declaration of the framework's {@link ListSortMode} seam: the metrics
- * their filter picker ranks its selectable blocs by, one per row of the sort selector. Four of the
- * five promote one of {@link DominanceStats}'s numbers to the primary sort key; the fifth sorts by
+ * their filter picker ranks its selectable blocs by, one per row of the sort selector. Three of the
+ * four promote one of {@link DominanceStats}'s numbers to the primary sort key; the fourth sorts by
  * name. It ranks {@link RankedBloc} over {@link DominanceStats} alone, so a view painted by some
  * other mechanic cannot be offered a vocabulary that reads numbers its blocs do not carry.
  * Each mode owns what the seam asks of it and nothing else: the save-stable key its choice
  * persists under, the label its selector row draws, its natural direction, the comparator that
  * lays the bloc list out under it, and the trailing value a row shows.
+ *
+ * <p>The whole vocabulary is {@link #MODES}, which is these plus {@link #MARKET_SIZE} - a mode
+ * declared outside this enum, because the number it ranks by is measured the same way under every
+ * mechanic and so is stated once rather than per vocabulary. The enum keeps the metrics that are
+ * this contest's own.
  *
  * <p>What this vocabulary states of itself is its numbers and the order ties break down them:
  * domination, then presence, then score, then market size. Laying that declaration out into a
@@ -35,8 +40,9 @@ import java.util.function.ToIntFunction;
  */
 public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>> {
 
-    // Listed in the order the sort selector stacks its rows top to bottom: name first, then the four
-    // numeric metrics. This is the display order, distinct from the tie-break chain below.
+    // Listed in the order the sort selector stacks its rows top to bottom, ahead of the shared market
+    // size mode appended below: name first, then this contest's own numeric metrics. This is the
+    // display order, distinct from the tie-break chain below.
     NAME(
         "name",
         KmuStrings.POLITICAL_MAP_CTL_SORT_NAME,
@@ -55,17 +61,25 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
     SCORE(
         "score",
         KmuStrings.POLITICAL_MAP_CTL_SORT_SCORE,
-        DominanceStats::score),
+        DominanceStats::score);
 
-    MARKET_SIZE(
-        "market_size",
-        KmuStrings.POLITICAL_MAP_CTL_SORT_MARKET_SIZE,
-        DominanceStats::marketSize);
-
-    // This vocabulary's numbers in the order ties break down them. Read off the modes' own accessors
-    // rather than named again here, so the chain cannot drift from what the constants above declare.
+    // This vocabulary's numbers in the order ties break down them. Each is read off the accessor its
+    // own mode names - the enum constants above for the three the contest owns, the shared capability
+    // for the size - so the chain cannot drift from what the modes rank by.
     private static final List<ToIntFunction<DominanceStats>> CANONICAL_METRIC_CHAIN =
-        List.of(DOMINATION.metric, PRESENCE.metric, SCORE.metric, MARKET_SIZE.metric);
+        List.of(
+            DOMINATION.metric,
+            PRESENCE.metric,
+            SCORE.metric,
+            SizedBlocMetrics::marketSize);
+
+    /**
+     * The whole-sector colony size ranking, bound to this vocabulary's tie-break chain. Held here so
+     * a caller names it the way it names every other mode of this vocabulary, and so the one instance
+     * {@link #MODES} offers is the one a stored key resolves back to.
+     */
+    public static final ListSortMode<RankedBloc<DominanceStats>> MARKET_SIZE =
+        new BlocMarketSizeSortMode<>(CANONICAL_METRIC_CHAIN);
 
     /** The metric a fresh save and any unrecognised stored key fall back to, so an ordering always exists. */
     public static final DominanceSortMode DEFAULT = DOMINATION;
@@ -75,9 +89,19 @@ public enum DominanceSortMode implements ListSortMode<RankedBloc<DominanceStats>
      * with {@link #DEFAULT} as the fallback. It is what a view bundles with its bloc list, so the
      * list and the modes that can rank it travel as one value and the stored-sort resolution reads
      * the same pair the selector draws.
+     *
+     * <p>Listed rather than read off {@code values()}, since the vocabulary is wider than the enum:
+     * the shared size mode is a member of it without being a member of this type.
      */
     public static final ListSortModes<RankedBloc<DominanceStats>> MODES =
-        new ListSortModes<>(List.of(values()), DEFAULT);
+        new ListSortModes<>(
+            List.<ListSortMode<RankedBloc<DominanceStats>>>of(
+                NAME,
+                DOMINATION,
+                PRESENCE,
+                SCORE,
+                MARKET_SIZE),
+            DEFAULT);
 
     private final String persistenceKey;
     private final String labelKey;

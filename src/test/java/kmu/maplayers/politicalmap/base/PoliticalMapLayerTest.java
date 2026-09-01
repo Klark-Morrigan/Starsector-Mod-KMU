@@ -43,6 +43,11 @@ import static org.mockito.Mockito.when;
  * checkboxes) while the tab itself names no concrete view. The shared controls, the selector, and the
  * picker are stubbed to sentinels so this pins the composition order alone, not what those pieces
  * contain.
+ *
+ * <p>Two cases build over a sector with machinery really installed on it, which is what makes the
+ * body's one resolution observable: the composition cases resolve no sector, so a build reaching any
+ * other installation would answer identically. They pin that the picker is read off that sector's
+ * memo, and that every control the body places is handed that installation's own refresh board.
  */
 final class PoliticalMapLayerTest {
 
@@ -297,7 +302,7 @@ final class PoliticalMapLayerTest {
                 assertThat(sortRow.leftColumn())
                     .hasSize(1);
                 assertThat(sortRow.leftColumn().get(0).labels())
-                    .hasSize(DominanceSortMode.values().length);
+                    .hasSize(DominanceSortMode.MODES.modes().size());
 
                 // The right half is the recede: its caption, then the two toggles.
                 assertThat(sortRow.rightColumn().get(0))
@@ -351,55 +356,13 @@ final class PoliticalMapLayerTest {
             // The body build is handed no sector - a vanilla screen names none - so it resolves the
             // running one's installation itself, and the list it reads is that sector's. Every case
             // above resolves no sector at all, under which a build reaching any other installation
-            // would answer identically; this is the only one that can tell them apart.
-            registerViewWithOneBloc(viewWithoutControlsMock);
-
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getMemoryWithoutUpdate())
-                .thenReturn(mock(MemoryAPI.class));
-
-            // The recede paired with the sort selector reads the engine's text tone off the live
-            // settings, and it is built as an argument, so even a stubbed picker needs a settings
-            // proxy that answers a colour. Stubbed before the static stubbing opens, since its own
-            // stubbing would otherwise land inside that one.
-            var settingsMock = buildSettingsAnsweringColours();
-
-            // Installed outside the stubbing below, so the index resolves a real logger.
-            MapLayerInstallations.installMachineryOn(sectorMock);
-
-            try (var globalMock = mockStatic(Global.class);
-                    var controlsMock = mockStatic(PoliticalMapBodyControls.class);
-                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                globalMock
-                    .when(Global::getSettings)
-                    .thenReturn(settingsMock);
-
-                stubSharedControlsAndSelector(controlsMock);
-                pickerMock
-                    .when(() -> FilterSelectionBinder.buildPicker(
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any()))
-                    .thenReturn(List.of(PICKER_MARKER));
-
-                PoliticalMapLayer.INSTANCE.getBodyControls();
-
+            // would answer identically; only a build over a really installed sector can tell them
+            // apart.
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock) ->
                 // The walk ran against the installed sector, which it can only have done through
                 // that sector's own memo - the machinery of no sector reads no economy at all.
                 verify(viewWithoutControlsMock)
-                    .resolveBlocPickerRead(sectorMock);
-
-            } finally {
-                MapLayerInstallations.uninstallMachineryFrom(sectorMock);
-            }
+                    .resolveBlocPickerRead(sector));
         }
 
         @Test
@@ -408,43 +371,9 @@ final class PoliticalMapLayerTest {
             // raising a signal rather than by moving settingsRevision - so each is handed the board
             // of the machinery this build resolved. Handed any other, a flip would repaint a map the
             // player is not looking at and leave the one they are as it was.
-            registerViewWithOneBloc(viewWithoutControlsMock);
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock) -> {
 
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getMemoryWithoutUpdate())
-                .thenReturn(mock(MemoryAPI.class));
-
-            var settingsMock = buildSettingsAnsweringColours();
-
-            // Installed outside the stubbing below, so the index resolves a real logger.
-            var installedBoard = MapLayerInstallations
-                .installMachineryOn(sectorMock)
-                .resolveRefreshBoard();
-
-            try (var globalMock = mockStatic(Global.class);
-                    var controlsMock = mockStatic(PoliticalMapBodyControls.class);
-                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                globalMock
-                    .when(Global::getSettings)
-                    .thenReturn(settingsMock);
-
-                stubSharedControlsAndSelector(controlsMock);
-                pickerMock
-                    .when(() -> FilterSelectionBinder.buildPicker(
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any()))
-                    .thenReturn(List.of(PICKER_MARKER));
-
-                PoliticalMapLayer.INSTANCE.getBodyControls();
+                var installedBoard = installation.resolveRefreshBoard();
 
                 // The three seams the body hands a board to: the shared sub-options, the spotlight
                 // picker, and the selected view's own controls.
@@ -459,10 +388,65 @@ final class PoliticalMapLayerTest {
                         eq(installedBoard)));
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(installedBoard);
+            });
+        }
+    }
 
-            } finally {
-                MapLayerInstallations.uninstallMachineryFrom(sectorMock);
-            }
+    // Builds the body once against machinery really installed on a sector, then hands the caller
+    // that sector, its installation, and the two stubbed seams to make its claim over - before the
+    // static stubbing closes, since a MockedStatic cannot be verified after it does.
+    //
+    // The arrangement is the wide part of the cases that use it and none of what they assert: a real
+    // install (made outside the stubbing, so the index resolves a real logger rather than one taken
+    // from a stubbed Global), the sector the running game answers with, a settings proxy the recede's
+    // text tone is read off, and the two view-agnostic pieces stubbed to their sentinels. Written
+    // once so the two cases cannot drift into arranging different builds and reading the difference
+    // as a finding.
+    private void buildBodyOverInstalledSector(BodyBuildAssertion assertion) {
+
+        registerViewWithOneBloc(viewWithoutControlsMock);
+
+        var sectorMock = mock(SectorAPI.class);
+
+        when(sectorMock.getMemoryWithoutUpdate())
+            .thenReturn(mock(MemoryAPI.class));
+
+        // The recede paired with the sort selector reads the engine's text tone off the live
+        // settings, and it is built as an argument, so even a stubbed picker needs a settings proxy
+        // that answers a colour. Built before the static stubbing opens, since its own stubbing
+        // would otherwise land inside that one.
+        var settingsMock = buildSettingsAnsweringColours();
+
+        var installation = MapLayerInstallations.installMachineryOn(sectorMock);
+
+        try (var globalMock = mockStatic(Global.class);
+                var controlsMock = mockStatic(PoliticalMapBodyControls.class);
+                var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+
+            globalMock
+                .when(Global::getSector)
+                .thenReturn(sectorMock);
+
+            globalMock
+                .when(Global::getSettings)
+                .thenReturn(settingsMock);
+
+            stubSharedControlsAndSelector(controlsMock);
+            pickerMock
+                .when(() -> FilterSelectionBinder.buildPicker(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any()))
+                .thenReturn(List.of(PICKER_MARKER));
+
+            PoliticalMapLayer.INSTANCE.getBodyControls();
+
+            assertion.assertOverBodyBuild(sectorMock, installation, controlsMock, pickerMock);
+
+        } finally {
+            MapLayerInstallations.uninstallMachineryFrom(sectorMock);
         }
     }
 
@@ -570,5 +554,18 @@ final class PoliticalMapLayerTest {
 
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
         MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
+    }
+
+    // What a case makes of a body built over a really installed sector. It takes the sector and its
+    // installation because the claims are about which of the two the build reached, and the two
+    // stubbed seams because a MockedStatic can only be verified while it is still open.
+    @FunctionalInterface
+    private interface BodyBuildAssertion {
+
+        void assertOverBodyBuild(
+                SectorAPI sector,
+                MapLayerInstallation installation,
+                MockedStatic<PoliticalMapBodyControls> controlsMock,
+                MockedStatic<FilterSelectionBinder> pickerMock);
     }
 }

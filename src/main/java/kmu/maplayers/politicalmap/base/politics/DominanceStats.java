@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import kmu.maplayers.politicalmap.base.PaintingBlocMetrics;
+import kmu.maplayers.politicalmap.base.SizedBlocMetrics;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 
 /**
@@ -17,6 +18,10 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  * carries), and market size is the summed raw {@code MarketAPI.getSize()}, so a heavily-weighted bloc
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.
+ *
+ * <p>Of the four, market size is the only one measured the same way outside this layer's mechanic, so
+ * it is stated through {@link SizedBlocMetrics} and ranked by a mode declared once rather than per
+ * vocabulary. The other three are the contest's own and are named nowhere else.
  *
  * <p>The two halves are scoped differently on purpose, and that is what lets a bloc be listed at
  * nought. Domination and score answer what the contest made of the bloc, so they count only the
@@ -44,7 +49,7 @@ public record DominanceStats(
     int domination,
     int presence,
     int score,
-    int marketSize) implements PaintingBlocMetrics {
+    int marketSize) implements PaintingBlocMetrics, SizedBlocMetrics {
 
     /** A bloc present in no system; the identity a per-system accumulation folds into. */
     public static final DominanceStats EMPTY = new DominanceStats(0, 0, 0, 0);
