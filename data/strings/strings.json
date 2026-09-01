@@ -22,8 +22,10 @@
 
     "map_layer_tab_no_layer": "No Layer",
     "map_layer_ctl_columns_caption": "Columns",
-    "map_layer_tooltip_footer_show": "show %s",
-    "map_layer_tooltip_footer_hide": "hide %s",
+    "map_layer_tooltip_footer_collapse_factions": "collapse to factions",
+    "map_layer_tooltip_footer_expand_system_composition": "expand system composition",
+    "map_layer_tooltip_footer_expand_market_stats": "expand market stats",
+    "map_layer_tooltip_footer_expand_patrol_details": "expand patrol details",
 
     "political_map_tab_political_map": "Political Map",
 
@@ -57,7 +59,6 @@
     "political_map_tooltip_claim_sibling_working": "(%s markets) - 1 =",
     "political_map_tooltip_claim_military": "Military",
     "political_map_tooltip_claim_bonus": "+%s",
-    "political_map_tooltip_detail_contributions": "score contributions",
 
     "political_map_tooltip_qualifier_separator": ", ",
     "political_map_tooltip_qualifier_abandoned": "abandoned",

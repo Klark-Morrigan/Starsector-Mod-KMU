@@ -84,9 +84,18 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE, "Hidden");
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
-        stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW, "show %s");
-        stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE, "hide %s");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS, "score contributions");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS,
+            "collapse to factions");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION,
+            "expand system composition");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS,
+            "expand market stats");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS,
+            "expand patrol details");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN, "last seen %s (%s)");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY, "today");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO, "a day ago");

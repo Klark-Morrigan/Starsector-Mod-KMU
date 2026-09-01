@@ -99,12 +99,12 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return readRankedStandings(sector, system)
             .map(ranking -> new ComposedCellBody(
                 buildSectionsFrom(sector, system, ranking, detailLevel),
-                nameAccountDetail(hasAnyStanding(ranking))))
+                hasAnyStanding(ranking)))
             .orElse(ComposedCellBody.NOTHING);
     }
 
     @Override
-    protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
+    protected final boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
         // The press-time path, which composes nothing and so has to rank the system for itself. A
         // paint reaches the same judgement above, off the ranking it already holds.
         return readRankedStandings(sector, system)

@@ -1506,24 +1506,24 @@ final class SystemClaimTooltipTest {
     }
 
     @Nested
-    class ResolveExpandedDetailName {
+    class HasDeeperDetailFor {
 
         @Test
-        void resolveExpandedDetailNameOffersTheAccountBehindAScoredStanding() {
-            // What the key at the foot of the box offers the player, in their words. Answered for
-            // the whole cycle at once because it is the one thing its levels agree on - the deeper
-            // tiers account for the very scores the shallowest states.
+        void hasDeeperDetailForOffersTheAccountBehindAScoredStanding() {
+            // What the key at the foot of the box would reach. Answered for the whole cycle at once
+            // because it is the one thing its levels agree on - the deeper tiers account for the very
+            // scores the shallowest states.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .contains("score contributions");
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isTrue();
         }
 
         @Test
-        void resolveExpandedDetailNameOffersTheAccountBehindAPresenceTheContestNeverWeighed() {
+        void hasDeeperDetailForOffersTheAccountBehindAPresenceTheContestNeverWeighed() {
             // Such a faction's colonies are exactly what the player can read nowhere else in the box,
             // its line stating a nought and nothing more - so the key has something to open even
             // where the mechanic weighed the whole system at nothing.
@@ -1532,12 +1532,12 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .contains("score contributions");
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isTrue();
         }
 
         @Test
-        void resolveExpandedDetailNameOffersNothingWhereTheProjectionListsNobody() {
+        void hasDeeperDetailForOffersNothingWhereTheProjectionListsNobody() {
             // The deeper tiers account for the factions this box lists, and the fog has left it
             // listing none. Every level would state the same claim line, so the key would do nothing
             // the player could see - and a hint over it would advertise that it would.
@@ -1546,8 +1546,8 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .isEmpty();
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isFalse();
         }
     }
 

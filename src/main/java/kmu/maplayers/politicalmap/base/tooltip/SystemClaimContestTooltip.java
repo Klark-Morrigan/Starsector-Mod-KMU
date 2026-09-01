@@ -176,9 +176,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // The offer goes back beside the blocks, judged on the very contest they were drawn from: a
         // box listing nobody has nothing for a deeper level to account for, and asking again would
         // read the system a second time to settle what this one already knows.
-        return new ComposedCellBody(
-            body.readSections(),
-            nameAccountDetail(contest.hasListedStanding()));
+        return new ComposedCellBody(body.readSections(), contest.hasListedStanding());
     }
 
     @Override
@@ -190,7 +188,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     @Override
-    protected final boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system) {
+    protected final boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
         // The deeper tiers account for the colonies behind the factions this box lists, so a box
         // listing none has nothing for them to account for: every level would state the same claim
         // line and the key would do nothing the player could see.

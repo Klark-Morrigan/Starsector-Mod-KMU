@@ -34,25 +34,37 @@ public interface MapHoverTooltip {
     void renderFor(SectorAPI sector, StarSystemAPI system, HoverTooltipDetailLevel detailLevel);
 
     /**
-     * Whether switching detail levels over {@code system} would show the player anything this box does
-     * not - the question the pass claiming the cycle key asks before acting on a press.
+     * Whether the press that moves on from {@code detailLevel} would change what the player sees over
+     * {@code system} - the question the pass claiming the cycle key asks before acting on a press.
      *
-     * <p>Asked of the box rather than read off the level, because a level admitting a deeper tier is
-     * not the same as this box having anything at that tier: a box may compose a tree that, for this
-     * particular system, runs no deeper than the shallowest level already shows. Pressing the key
-     * there would advance a level the player sees no result from, and - since the level is shared and
-     * holds across hovers - would leave the next system that <em>does</em> differ opening at a depth
-     * they did not choose.
+     * <p>Asked of the box rather than read off the level alone, because a level admitting a deeper
+     * tier is not the same as this box having anything at that tier: a box may compose a tree that,
+     * for this particular system, runs no deeper than the shallowest level already shows. Pressing
+     * the key there would advance a level the player sees no result from, and - since the level is
+     * shared and holds across hovers - would leave the next system that <em>does</em> differ opening
+     * at a depth they did not choose.
      *
-     * <p>Asked per system rather than once per box because that is where the answer lives: whether
-     * there is anything more to show turns on what the cursor is over - a system a box lists nothing
-     * for has nothing to open up - and not on which box is drawing.
+     * <p>The level is handed in rather than left out because the answer turns on where the press
+     * lands as much as on what the box holds: the cycle wraps, so from the deepest level the press
+     * collapses the box, which acts whatever the system holds.
      *
-     * @param sector the live sector, whose economy the answer may read
-     * @param system the star system under the cursor
+     * <p>Asked per system rather than once per box because that is where the rest of the answer
+     * lives: whether there is anything more to show turns on what the cursor is over - a system a box
+     * lists nothing for has nothing to open up - and not on which box is drawing.
+     *
+     * <p>A box taking no part in the detail cycle answers no at every level, the default here: it
+     * draws no hint, so a press it swallowed would be one the player was never told about.
+     *
+     * @param sector      the live sector, whose economy the answer may read
+     * @param system      the star system under the cursor
+     * @param detailLevel how deep the box is being read now, which the press moves on from
      * @return true when the key would change what the player sees for this system
      */
-    default boolean isOfferingExpansionFor(SectorAPI sector, StarSystemAPI system) {
+    default boolean isOfferingExpansionFor(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
         return false;
     }
 }

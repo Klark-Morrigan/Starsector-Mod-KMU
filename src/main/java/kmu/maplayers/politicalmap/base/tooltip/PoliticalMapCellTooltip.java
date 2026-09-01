@@ -7,10 +7,8 @@ import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.SystemCellTooltip;
-import kmu.util.KmuStrings;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * What every political-map view's hover box is beneath the framework's shape: a cell tooltip that may
@@ -71,39 +69,6 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
             isStatingCoreClaimInBody());
     }
 
-    @Override
-    protected final Optional<String> resolveExpandedDetailName(
-            SectorAPI sector,
-            StarSystemAPI system) {
-
-        // The press-time path, where nothing has been composed, so the question costs a read of its
-        // own. A paint answers it through the wording below off the reading its body already made.
-        return nameAccountDetail(hasExpandableAccountFor(sector, system));
-    }
-
-    /**
-     * Puts the layer's words to an answer a body has already worked out - what the deeper levels add,
-     * or nothing at all.
-     *
-     * <p>What they add is the same subject for every box of this layer - the account behind the
-     * numbers on screen - so the layer names it once rather than each body naming it. Two bodies
-     * wording it separately could offer the player different names for one account, and the hint
-     * would then describe the key rather than what pressing it shows.
-     *
-     * <p>Held apart from {@link #hasExpandableAccountFor} so a body composing its blocks can word its
-     * own offer without reading the system a second time to be asked whether it has one. Whether
-     * there is anything to expand into stays each body's question either way, that being a fact about
-     * what this box drew for this system rather than about the layer.
-     *
-     * @param hasExpandableAccount whether a deeper level would state anything more about the system
-     * @return the words for what it would add, or empty where it would add nothing
-     */
-    protected static Optional<String> nameAccountDetail(boolean hasExpandableAccount) {
-        return hasExpandableAccount
-            ? Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_DETAIL_CONTRIBUTIONS))
-            : Optional.empty();
-    }
-
     /**
      * Whether the deeper detail levels would state anything more about the system than the shallowest
      * already does.
@@ -117,15 +82,17 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * listing it is about to draw as empty - which the fog alone can produce, a faction present only
      * through colonies the player has not found leaving nothing this box may state.
      *
-     * <p>Asked of every box of this layer rather than defaulted, because there is no honest default:
-     * a box that answered false out of inheritance would silently withhold the hint over a system it
-     * has plenty more to say about, and nothing on screen would say the key was worth pressing.
+     * <p>Re-declared abstract rather than left at the inherited false, because there is no honest
+     * default here: a box of this layer that answered false out of inheritance would silently withhold
+     * the hint over a system it has plenty more to say about, and nothing on screen would say the key
+     * was worth pressing.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
      * @return true where a deeper level would show the player something the shallowest does not
      */
-    protected abstract boolean hasExpandableAccountFor(SectorAPI sector, StarSystemAPI system);
+    @Override
+    protected abstract boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system);
 
     /**
      * Whether this box's own body names the faction holding the system by decree. A box that does goes

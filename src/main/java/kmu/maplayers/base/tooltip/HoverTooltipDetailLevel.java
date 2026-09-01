@@ -1,5 +1,7 @@
 package kmu.maplayers.base.tooltip;
 
+import kmu.util.KmuStrings;
+
 /**
  * How deep the hover box reads the one tree a layer composes for a system: four ordered depths,
  * cycled on one key, each admitting one more tier of the same account.
@@ -21,23 +23,33 @@ package kmu.maplayers.base.tooltip;
 public enum HoverTooltipDetailLevel {
 
     /** Who holds the system: the groups holding it, and the factions gathered inside one. */
-    FACTIONS(0),
+    FACTIONS(0, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS),
 
     /** Adds the markets each faction holds the system with. */
-    SYSTEM_COMPOSITION(1),
+    SYSTEM_COMPOSITION(1, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION),
 
     /** Adds stability, size and the patrol total per market. */
-    MARKET_STATS(2),
+    MARKET_STATS(2, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS),
 
     /** Adds the small/medium/large split behind each patrol total. */
-    PATROL_DETAILS(3);
+    PATROL_DETAILS(3, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS);
 
     // Stated per constant rather than derived from position, so what a level admits is read off the
     // constant that names it instead of counted from wherever it happens to sit in the cycle.
     private final int maximumSubordination;
 
-    HoverTooltipDetailLevel(int maximumSubordination) {
+    // What arriving at this level does, in the player's words - "expand market stats" for the level
+    // that adds them. Held by the level being arrived at rather than by the one being left, so a
+    // level added or reordered carries its own wording with it instead of leaving a phrase behind
+    // describing a step that no longer lands here.
+    //
+    // The shallowest is worded as a collapse because that is the only way the cycle reaches it: it
+    // is where the box opens, and a press arrives there only by wrapping from the deepest.
+    private final String arrivalPhraseKey;
+
+    HoverTooltipDetailLevel(int maximumSubordination, String arrivalPhraseKey) {
         this.maximumSubordination = maximumSubordination;
+        this.arrivalPhraseKey = arrivalPhraseKey;
     }
 
     /**
@@ -50,6 +62,32 @@ public enum HoverTooltipDetailLevel {
         var levels = values();
 
         return levels[(ordinal() + 1) % levels.length];
+    }
+
+    /**
+     * What the next press does to a box drawn at this level, in the player's words - the whole of
+     * what the hint at its foot says beside the key.
+     *
+     * <p>Stated as the action rather than as the level the box is at, because a number or a name
+     * tells the player nothing about what they would gain by pressing: the hint exists to say what
+     * the key is for. Read off the level being moved to, so the phrase and the press it describes
+     * cannot come apart.
+     *
+     * @return the phrase for the step one press takes from here
+     */
+    public String resolveNextActionPhrase() {
+        return KmuStrings.get(getNextLevel().arrivalPhraseKey);
+    }
+
+    /**
+     * Whether the next press takes the box back to the shallowest level rather than one tier deeper.
+     * The cycle wraps, so this holds at the deepest level alone - the one place the key collapses the
+     * box instead of opening it further.
+     *
+     * @return true where one press collapses the box
+     */
+    public boolean isCollapsingOnNextPress() {
+        return getNextLevel() == FACTIONS;
     }
 
     /**

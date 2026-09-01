@@ -79,13 +79,18 @@ record HoveredBox(
     }
 
     /**
-     * Whether the box under the cursor would read any deeper for this system - the one question the
-     * key that cycles the detail level has to answer before acting.
+     * Whether moving on from {@code detailLevel} would change what the box under the cursor shows for
+     * this system - the one question the key that cycles the detail level has to answer before acting.
      *
+     * <p>The level is taken rather than read here: it is the shared holder's, and this value is
+     * resolved by both the pass that reads the key and the pass that draws the box, neither of which
+     * this should be reaching past to a state of its own.
+     *
+     * @param detailLevel how deep the box is being read now, which the press moves on from
      * @return true when advancing the level would show the player something the drawn box does not
      */
-    boolean isOfferingExpansion() {
-        return tooltip.isOfferingExpansionFor(sector, system);
+    boolean isOfferingExpansion(HoverTooltipDetailLevel detailLevel) {
+        return tooltip.isOfferingExpansionFor(sector, system, detailLevel);
     }
 
     /**

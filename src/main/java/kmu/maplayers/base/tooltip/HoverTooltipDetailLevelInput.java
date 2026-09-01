@@ -29,7 +29,7 @@ import java.util.List;
  * everywhere else.
  *
  * <p>Behind that gate the press is claimed only where it would do something the player can see - the
- * box under the cursor has a second amount of detail to state ({@link HoveredBox}). A level that
+ * box under the cursor would read differently one press on ({@link HoveredBox}). A level that
  * advanced over anything at all would be the more forgiving rule if the level were per hover, but it
  * is not: it is one shared fact that holds across hovers and layer switches, so a press swallowed
  * over a system with nothing to expand would silently decide how the next system that <em>does</em>
@@ -92,15 +92,21 @@ public final class HoverTooltipDetailLevelInput implements CampaignInputListener
             if (!isDetailLevelCycleKey(event)) {
                 continue;
             }
-            // Nothing under the cursor has a second amount of detail to state, so there is nothing
-            // for the key to switch. Left alone rather than advanced invisibly: the level is shared
-            // and holds across hovers, so a press swallowed here would open the next system that does
+            // Nothing under the cursor would read differently one press on, so there is nothing for
+            // the key to switch. Left alone rather than advanced invisibly: the level is shared and
+            // holds across hovers, so a press swallowed here would open the next system that does
             // differ at a level the player never chose - the one place a press with no visible result
             // is not harmless.
-            if (!isAnyBoxOfferingExpansion()) {
+            //
+            // Judged against the level the box is being drawn at, since that is what the press moves
+            // on from: read against anything else, the key could be claimed on a frame whose box
+            // offered nothing, or fall through on one whose box offered to collapse.
+            var detailLevelState = HoverTooltipDetailLevelState.getInstance();
+
+            if (!isAnyBoxOfferingExpansion(detailLevelState.getLevel())) {
                 continue;
             }
-            HoverTooltipDetailLevelState.getInstance().advanceLevel();
+            detailLevelState.advanceLevel();
             // Consumed only where it acted, so nothing else claims the key while the map is open
             // and the rest of the game keeps it.
             event.consume();
@@ -125,14 +131,14 @@ public final class HoverTooltipDetailLevelInput implements CampaignInputListener
         return event.isKeyDownEvent() && event.getEventValue() == CYCLE_KEY;
     }
 
-    // Whether the box under the cursor would show the player anything more at another level.
+    // Whether the box under the cursor would show the player anything different one press on.
     // Asked of the same chain the drawing pass resolves its box through, so the key is claimed on
     // exactly the frames a box would answer it - and of the box itself, since only the layer knows
     // whether its own tree runs any deeper for the system being hovered.
-    private static boolean isAnyBoxOfferingExpansion() {
+    private static boolean isAnyBoxOfferingExpansion(HoverTooltipDetailLevel detailLevel) {
         return HoveredBox
             .resolveHoveredBox()
-            .filter(HoveredBox::isOfferingExpansion)
+            .filter(hoveredBox -> hoveredBox.isOfferingExpansion(detailLevel))
             .isPresent();
     }
 }

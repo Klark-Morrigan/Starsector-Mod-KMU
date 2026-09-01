@@ -18,11 +18,11 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
 import kmu.settings.KmuMapLayerSettings;
-import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
@@ -104,21 +104,25 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // Drawn from what the composition above already found rather than from a read of its own: the
         // hint answers a fact about the body beside it, and a second read would charge the whole
         // layer's economy walk to a line of fine print - once per frame the cursor rests on the cell.
-        buildFooterSection(body.deeperDetailName(), detailLevel).ifPresent(sections::add);
+        buildFooterSection(detailLevel, body.hasDeeperDetail()).ifPresent(sections::add);
 
         CursorTooltipRenderer.render(sections, buildStyle());
     }
 
     @Override
-    public final boolean isOfferingExpansionFor(SectorAPI sector, StarSystemAPI system) {
+    public final boolean isOfferingExpansionFor(
+            SectorAPI sector,
+            StarSystemAPI system,
+            HoverTooltipDetailLevel detailLevel) {
+
         // The press-time entry to the same question the paint answers off its own composition, and
         // the one place a read is unavoidable: a key press composes nothing, so there is no body to
-        // take the answer from. Asked through the one seam either way, so the key acts exactly where
-        // the box says it would rather than under a second rule that could drift from it.
+        // take the answer from. Judged by the one rule either way, so the key acts exactly where the
+        // box says it would rather than under a second rule that could drift from it.
         //
         // Once per press rather than once per frame, so the read it costs is one the player asked
-        // for.
-        return resolveExpandedDetailName(sector, system).isPresent();
+        // for - and skipped outright where the level already settles the answer.
+        return isOfferingExpansionAt(detailLevel, () -> hasDeeperDetailFor(sector, system));
     }
 
     /**
@@ -143,10 +147,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
 
     /**
      * Composes this layer's contribution to one paint: the content blocks drawn top to bottom under
-     * the heading, and what the deeper detail levels would add beyond the one asked for. Called once
-     * per paint with the live sector, after the economy precondition holds. The seam the whole class
-     * exists around: the box is framed here and its content is the layer's, so this shape can be
-     * shared by layers it names none of.
+     * the heading, and whether the deeper detail levels hold anything beyond the one asked for.
+     * Called once per paint with the live sector, after the economy precondition holds. The seam the
+     * whole class exists around: the box is framed here and its content is the layer's, so this shape
+     * can be shared by layers it names none of.
      *
      * <p>Stated as blocks rather than as lines because how far apart the box's content stands follows
      * from how it is grouped: a layer says which of its lines belong together, and every parting in the
@@ -173,18 +177,9 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         HoverTooltipDetailLevel detailLevel);
 
     /**
-     * Names what the deeper levels state beyond the shallowest, in the player's words - "score
-     * contributions" for a box whose deeper tiers account for the numbers it shows. Supplied by a box
-     * taking part in the detail cycle, and empty for one that does not, which is the ordinary case.
-     *
-     * <p>What it buys is the line at the foot of the box naming the key and what pressing it would do.
-     * That line has to say what the player would actually gain, and only the box knows: the framework
-     * knows the tree runs deeper but not what is down there, so a hint written here would either be
-     * vague or would carry one layer's subject matter into the shape every layer shares.
-     *
-     * <p>Answered for the whole cycle at once, by whatever its levels have in common, since a player
-     * pressing the key at any depth is being told about the one richer account. Which direction the
-     * hint reads is not asked of a box at all - see {@link #buildFooterSection}.
+     * Whether the deeper detail levels hold anything more about {@code system} than the level being
+     * read already shows. Answered by a box taking part in the detail cycle, and false for one that
+     * does not, which is the ordinary case.
      *
      * <p>This is the <em>press-time</em> entry to that question, reached when the key is struck and
      * nothing has been composed to take the answer from. A paint gets the same answer out of
@@ -193,14 +188,18 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      *
      * <p>Asked per hovered system rather than once per box, because whether there is anything to expand
      * into is a fact about the system: a box whose deeper tiers would state nothing more for this one
-     * answers empty, and the hint is dropped rather than offering a key press that changes nothing.
+     * answers false, and the hint is dropped rather than offering a key press that changes nothing.
+     *
+     * <p>What that press would then be called is not asked of a box at all: the phrase is the level's
+     * ({@link HoverTooltipDetailLevel#resolveNextActionPhrase}), so every layer names one step the
+     * same way.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
-     * @return what the deeper levels add for this system, or empty where they would add nothing
+     * @return true where a deeper level would state something this one does not
      */
-    protected Optional<String> resolveExpandedDetailName(SectorAPI sector, StarSystemAPI system) {
-        return Optional.empty();
+    protected boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
+        return false;
     }
 
     // The line the box ends on, or none at all: the cycle key and what pressing it would do to this
@@ -209,29 +208,31 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // list.
     //
     // Takes the offer the body came back with rather than asking for one, so the line is drawn from
-    // the very reading it describes.
-    //
-    // Which way it reads follows from where the drawn level sits in the cycle rather than from
-    // anything the box holds: every press but the last opens the account further, and the last wraps
-    // back to the shallowest, which collapses it. Read off the level this paint was handed, so the
-    // hint and the press it describes cannot come from two different reads of it.
+    // the very reading it describes, and drawn under the same rule the key is claimed by - a hint
+    // and a press settled separately are one edit away from advertising a key that does nothing.
     private static Optional<TooltipSection> buildFooterSection(
-            Optional<String> deeperDetailName,
-            HoverTooltipDetailLevel detailLevel) {
+            HoverTooltipDetailLevel detailLevel,
+            boolean hasDeeperDetail) {
 
-        return deeperDetailName.map(detailName -> TooltipSection.createSection(
-            List.of(buildFooterRow(KmuStrings.format(
-                isCollapsingOnNextPress(detailLevel)
-                    ? KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_HIDE
-                    : KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_SHOW,
-                detailName)))));
+        if (!isOfferingExpansionAt(detailLevel, () -> hasDeeperDetail)) {
+            return Optional.empty();
+        }
+        return Optional.of(TooltipSection.createSection(
+            List.of(buildFooterRow(detailLevel.resolveNextActionPhrase()))));
     }
 
-    // Whether the next press takes the box back to the shallowest level rather than one tier deeper.
-    // The cycle wraps, so that holds at the deepest level alone - the one place the key collapses the
-    // box instead of opening it further.
-    private static boolean isCollapsingOnNextPress(HoverTooltipDetailLevel detailLevel) {
-        return detailLevel.getNextLevel() == HoverTooltipDetailLevel.FACTIONS;
+    // Whether one press would change what the player sees: the one rule behind both the hint the box
+    // draws and the key the input pass claims.
+    //
+    // The level settles it first, and at the deepest level settles it outright - the cycle wraps, so
+    // the press there collapses the box, which acts over any system at all. Only below that does the
+    // answer turn on the box having something deeper for this system, which is why the read behind it
+    // is deferred: at the deepest level it is never taken.
+    private static boolean isOfferingExpansionAt(
+            HoverTooltipDetailLevel detailLevel,
+            BooleanSupplier hasDeeperDetail) {
+
+        return detailLevel.isCollapsingOnNextPress() || hasDeeperDetail.getAsBoolean();
     }
 
     // The box's heading as one block: the hovered system's name, and any lines the layer heads its box

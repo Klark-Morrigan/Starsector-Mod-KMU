@@ -129,22 +129,21 @@ final class SystemStandingsTooltipTest {
     }
 
     @Nested
-    class ResolveExpandedDetailName {
+    class HasDeeperDetailFor {
 
         @Test
-        void resolveExpandedDetailNameOffersTheAccountBehindTheScoresRanked() {
-            // What the key at the foot of the box offers the player, in their words. Answered for the
-            // whole cycle at once because it is the one thing its levels agree on - the deeper tiers
-            // account for the very scores the shallowest ranks by, so every press offers the same
-            // account.
+        void hasDeeperDetailForOffersTheAccountBehindTheScoresRanked() {
+            // What the key at the foot of the box would reach. Answered for the whole cycle at once
+            // because it is the one thing its levels agree on - the deeper tiers account for the very
+            // scores the shallowest ranks by, so every press reaches the same account.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .contains("score contributions");
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isTrue();
         }
 
         @Test
-        void resolveExpandedDetailNameOffersTheAccountBehindAStandingOverACollapsedSystem() {
+        void hasDeeperDetailForOffersTheAccountBehindAStandingOverACollapsedSystem() {
             // The status line and the standings answer different questions of the one pass: a system
             // whose colonies have all collapsed is headed Decivilised and still ranks whoever holds
             // them, and those colonies are exactly what a deeper level opens up. Judged off the
@@ -153,27 +152,27 @@ final class SystemStandingsTooltipTest {
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
             StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
 
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .contains("score contributions");
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isTrue();
         }
 
         @Test
-        void resolveExpandedDetailNameOffersNothingForASystemRankingNobody() {
+        void hasDeeperDetailForOffersNothingForASystemRankingNobody() {
             // Nobody ranks, so there is no score for a deeper tier to account for and every level
             // would state the same banner - a key press the player could not see the result of. The
             // hint goes with it rather than advertising one.
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .isEmpty();
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isFalse();
         }
 
         @Test
-        void resolveExpandedDetailNameOffersNothingWhileNoViewIsPainting() {
+        void hasDeeperDetailForOffersNothingWhileNoViewIsPainting() {
             // The tab is switched away, so there is no pass to judge the system under and no body being
             // drawn for the hint to sit beneath.
             StandingsTooltipSeamsFake.stubNoActiveView();
 
-            assertThat(tooltip.resolveExpandedDetailName(sectorMock, systemMock))
-                .isEmpty();
+            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
+                .isFalse();
         }
     }
 

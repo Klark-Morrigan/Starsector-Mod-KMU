@@ -358,10 +358,12 @@ about what the overlay means.
   settings tiers above any layer, and a map on screen - rather than a copy each, so the key is
   claimed when and only when a box could be drawn and a condition added later reaches both passes.
   Behind that seam the press is claimed only where it would do something the player can see: the box
-  under the cursor answers `MapHoverTooltip.isOfferingExpansionFor` for the hovered system, and a
-  system with nothing more to state leaves the key alone. Asked per system rather than per box
-  because that is where the answer lives - an unpopulated system has no colonies for a deeper tier
-  to account for. Left unclaimed rather than advanced invisibly because the level is one shared fact:
+  under the cursor answers `MapHoverTooltip.isOfferingExpansionFor` for the hovered system at the
+  level being drawn, and a system with nothing more to state leaves the key alone. Asked per system
+  rather than per box because that is where most of the answer lives - an unpopulated system has no
+  colonies for a deeper tier to account for; asked at a level because the rest of it lives there -
+  the cycle wraps, so at the deepest level the press collapses the box, which acts over any system.
+  Left unclaimed rather than advanced invisibly because the level is one shared fact:
   a press swallowed over a system with nothing to expand would silently decide how the next system
   that *does* differ opens. What the cursor is over is resolved once, by `HoveredBox`, and read by
   both passes - a chain spelled out twice is one edit away from the key acting on a frame the box
@@ -381,16 +383,20 @@ about what the overlay means.
   box taking part in the detail cycle ends on one more block: the key and what pressing it would do,
   drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights
   a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What
-  the deeper levels add is named by the layer, since only the layer knows what is down there, and it
-  comes back beside the blocks rather than being asked for (`ComposedCellBody`): whether anything
-  deeper is there turns on what the body found, so a layer that read its system to compose the blocks
-  already holds the answer. Asked separately, the box would pay for that read a second time every
-  frame the cursor rests on the cell - and the hint could describe a reading the body beside it no
-  longer agrees with. The key handler asks through `resolveExpandedDetailName` instead, that being the
-  one caller with nothing composed to take the answer from, and it asks once per press. Which way the
-  offer reads is asked of nobody and follows from where the drawn level sits in the cycle - every
-  press but the last opens the account further, and the last wraps back to the shallowest, which
-  collapses it. The hint is not content: a box with nothing to say about the system stays undrawn
+  it says is the step the *next* press takes - "expand market stats", and "collapse to factions" from
+  the deepest - rather than which level is current, a number or a name telling the player nothing
+  about what they would gain. The phrase is the level's
+  (`HoverTooltipDetailLevel.resolveNextActionPhrase`), carried by the level being arrived at, so
+  every layer names one step the same way and a level added brings its own wording with it. What a
+  layer answers is only whether it has anything down there at all, and it comes back beside the
+  blocks rather than being asked for (`ComposedCellBody`): that turns on what the body found, so a
+  layer that read its system to compose the blocks already holds the answer. Asked separately, the
+  box would pay for that read a second time every frame the cursor rests on the cell - and the hint
+  could describe a reading the body beside it no longer agrees with. The key handler asks through
+  `hasDeeperDetailFor` instead, that being the one caller with nothing composed to take the answer
+  from, and it asks once per press - and not at all at the deepest level, where the collapse settles
+  it. Hint and press run off that one rule, so the box cannot advertise a key that does nothing. The
+  hint is not content: a box with nothing to say about the system stays undrawn
   rather than appearing as a lone offer to expand into nothing. How
   far apart those blocks stand is never a line's own request: KMLib parts one block from the next by
   one measurement, and a listing nested inside a block by a narrower one, so what sets two things

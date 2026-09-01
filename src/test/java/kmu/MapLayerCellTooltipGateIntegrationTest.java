@@ -93,7 +93,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         // The hovered box has a second amount of detail to state, so the key's own offer test is open
         // and a case below turns on the map gate it is about rather than on what the box holds.
-        when(tooltipMock.isOfferingExpansionFor(any(), any()))
+        when(tooltipMock.isOfferingExpansionFor(any(), any(), any()))
             .thenReturn(true);
 
         when(systemMock.getId())
@@ -216,7 +216,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             // detail to state. The level is shared and holds across hovers, so swallowing the press
             // here would decide how the next system that does differ opens - which is why the offer
             // is asked of the box rather than assumed from the map being up.
-            when(tooltipMock.isOfferingExpansionFor(any(), any()))
+            when(tooltipMock.isOfferingExpansionFor(any(), any(), any()))
                 .thenReturn(false);
 
             var eventMock = pressCycleKeyOnInstalledInput(SectorMapState.SHOWING_WITH_STARSCAPE_OFF);

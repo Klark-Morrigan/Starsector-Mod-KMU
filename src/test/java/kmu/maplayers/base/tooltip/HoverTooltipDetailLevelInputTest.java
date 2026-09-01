@@ -371,7 +371,7 @@ final class HoverTooltipDetailLevelInputTest {
 
         var tooltipMock = mock(MapHoverTooltip.class);
 
-        when(tooltipMock.isOfferingExpansionFor(any(), any()))
+        when(tooltipMock.isOfferingExpansionFor(any(), any(), any()))
             .thenReturn(isOfferingExpansion);
 
         hoveredBoxMock
