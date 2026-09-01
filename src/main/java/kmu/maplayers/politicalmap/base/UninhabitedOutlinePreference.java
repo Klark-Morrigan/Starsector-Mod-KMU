@@ -53,10 +53,6 @@ public final class UninhabitedOutlinePreference {
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which this sidebar-only toggle never moves since it is not a LunaLib
         // field.
-        //
-        // The board is the checkbox's rather than one resolved here: the control was built against
-        // one sector's installed machinery, and a board picked up at the click would be whichever
-        // sector is running instead.
         if (isOutlineDrawn.set(shouldDrawOutline)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }

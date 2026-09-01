@@ -179,11 +179,13 @@ systems by bare id. Why that has to be a sector's rather than the process's, and
 installation holding it is made and released, are
 [the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md).
 A producer or consumer holding a sector - or the installation over one - reaches that
-sector's board directly. The one seam vanilla hands no sector is a settings change
-moved on a sidebar control, and it goes through
-[`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java),
-which resolves the running sector's. Raising a signal is all that facade offers: a
-reader always holds the installation it means.
+sector's board directly, and every one of them does. A sidebar control looks like the
+exception, a settings change naming no sector, but the tab's body build resolves an
+installation once and hands its board to each control it places, so a flip repaints the
+map that control was placed over.
+[`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java)
+is the resolution left for a producer the engine drives with no sector named; raising a
+signal is all it offers, since a reader always holds the installation it means.
 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |

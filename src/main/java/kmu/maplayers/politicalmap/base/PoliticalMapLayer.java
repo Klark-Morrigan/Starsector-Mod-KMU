@@ -58,9 +58,11 @@ public final class PoliticalMapLayer implements MapLayer {
     public List<ControlSpec> getBodyControls() {
 
         // Which sector this body is being built for has to be read from the running game here: a
-        // body build is an adapter onto a vanilla screen, which hands it none. Resolved once for the
-        // whole build so every control on the tab writes and repaints through the same installed
-        // machinery - a second resolve mid-build could name a different sector.
+        // body build is an adapter onto a vanilla screen, which hands it none. This is the one
+        // resolution the whole build makes, and every control below is handed its board rather than
+        // resolving one when it is clicked - a control writes a sidebar-only preference, which
+        // repaints by raising a signal, so a board found at the click would repaint whichever sector
+        // was running by then instead of the map the control was placed over.
         var installation = MapLayerInstallations.resolveInstallationFor(Global.getSector());
         var board = installation.resolveRefreshBoard();
 
@@ -128,9 +130,8 @@ public final class PoliticalMapLayer implements MapLayer {
         // the map is open.
         var blocCache = SelectableBlocCache.resolveBlocCacheIn(installation);
 
-        // The same installation's board goes into both halves: a spotlight pick and a recede flip
-        // each repaint the map this body was built over, so neither may raise on a sector resolved
-        // afresh when the click lands.
+        // The installation's own board, taken from it rather than passed beside it, so the memo
+        // above and the two writers below cannot end up naming two different sectors.
         var board = installation.resolveRefreshBoard();
 
         return FilterSelectionBinder.buildPicker(

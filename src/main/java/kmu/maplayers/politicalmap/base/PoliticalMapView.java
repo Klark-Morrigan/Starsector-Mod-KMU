@@ -329,9 +329,7 @@ public interface PoliticalMapView {
      *
      * <p>The board arrives as an argument for the reason it does on {@link #getContentRevision}: a
      * view is a stateless strategy every sector's machinery shares, so a control it builds has no
-     * sector of its own to raise on. Handed the board of the machinery the tab is being drawn for,
-     * a control the view contributes repaints the map the player is looking at rather than whichever
-     * sector is running.
+     * sector of its own to raise on.
      *
      * @param board the refresh board of the sector this tab is being built for, carried into
      *              whatever controls the view contributes so their writes repaint that sector

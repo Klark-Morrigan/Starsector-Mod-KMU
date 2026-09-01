@@ -93,10 +93,6 @@ public final class RecedePreferences {
         // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
         // fields. The revision is one coarse signal every set shares, so a consumer only draws the
         // backdrop it owns even though any set's flip advances it.
-        //
-        // The board is the checkbox's rather than one resolved here: the control was built against
-        // one sector's installed machinery, and a board picked up at the click would be whichever
-        // sector is running instead.
         if (muteFlag.set(isMuted)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }

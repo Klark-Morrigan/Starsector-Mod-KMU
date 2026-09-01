@@ -28,9 +28,9 @@ import java.util.List;
  * snaps each control to its measured text and the renderer draws each in its current state; they
  * are rebuilt per call so a flipped toggle shows immediately.
  *
- * <p>The sub-options are handed the refresh board of the sector they are built for, so a flip
- * repaints the map the sidebar is over rather than whichever sector is running. The selector takes
- * none: switching views writes a selection the overlay reads directly and raises no signal.
+ * <p>The sub-options are handed the refresh board of the sector they are built for, since each
+ * repaints by raising a signal. The selector takes none: switching views writes a selection the
+ * overlay reads directly and raises nothing.
  */
 public final class PoliticalMapBodyControls {
 
@@ -112,8 +112,7 @@ public final class PoliticalMapBodyControls {
     }
 
     // Flips the uninhabited-systems outline on or off: if it currently draws, hide it; otherwise draw
-    // it. The preference persists the flip in this save and raises on the board this control was
-    // built with, so the map that repaints is the one whose sidebar the click came from.
+    // it. The preference persists the flip in this save and repaints through the board it is handed.
     private static void toggleUninhabitedSystems(MapLayerRefreshBoard board) {
         UninhabitedOutlinePreference.setOutlineDrawn(
             !UninhabitedOutlinePreference.isOutlineDrawn(),

@@ -149,12 +149,16 @@ nothing to read rather than falling through to whichever sector happens to be lo
 `Global.getSector()`, and it is where that read belongs: vanilla's API offers no other handle, and
 the seams it serves are driven by the engine with no sector named.
 
-One holder is still reached that way from outside: `MapLayerRefresh.requestRefresh` resolves the
-live sector's board, for the producers a settings change drives - a sidebar control is handed no
-sector. Raising is all it offers. Every consumer folding a revision, and every producer that can
-name the system it marked, holds the installation it means and reads that board directly, which is
-why the render surfaces, the political map's cache, its staleness poll, its renderers, its views
-and the cursor read name none of these.
+Nothing outside this package reaches a holder that way. `MapLayerRefresh.requestRefresh` stands
+ready to raise on the live sector's board for a producer the engine drives with no sector named, but
+every producer there is holds the installation it means: the render surfaces resolve theirs from the
+terrain entity they ride, and the political map's cache, its staleness poll, its renderers, its
+views, its sidebar controls and the cursor read are each handed one.
+
+The sidebar controls are the ones worth naming, because a settings change looks like the seam that
+could not be handed a sector. It can: the tab's body build resolves an installation once, and every
+control it places carries that board to the preference it writes - so a flip repaints the map the
+control was placed over rather than whichever sector is running when the click lands.
 
 The hover has no such resolution at all. `MapHoverState` is reached only through the installation
 that holds it, and `kmu.maplayers.base.hover` is gated from importing this package so it stays that

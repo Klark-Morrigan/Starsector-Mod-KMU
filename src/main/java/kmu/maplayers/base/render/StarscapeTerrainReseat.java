@@ -84,10 +84,8 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         // repointed at the other surface.
         //
         // Read afresh per call rather than resolved here, since a save load replaces the entity and
-        // the script outlives no load anyway. The lookup closes over the sector this reseat is being
-        // installed on rather than reading the running one: this holder belongs to one sector's
-        // installation, so a running-sector read would have it lift another sector's terrain - and
-        // leave the sector it was installed for fogged.
+        // the script outlives no load anyway - but asked about the sector being installed on, which
+        // is the one whose terrain this reseat exists to lift.
         Supplier<SectorEntityToken> findAboveNebulaeTerrain =
             () -> MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(sector);
 

@@ -19,9 +19,7 @@ import java.util.List;
  * <p>The caller supplies the target preferences set - what its context recedes - the caption naming
  * it, and the board a flip repaints through, while the two checkbox labels and their toggle wiring
  * are fixed here, so the recede reads and behaves identically wherever it is placed and only the set
- * it drives differs. The board comes from the caller because it is the sidebar build that knows
- * which sector's machinery the control is being placed for; this class only carries it to the
- * setters. Each
+ * it drives differs. Each
  * checkbox reads its lit state live from the passed set when the spec is built (specs are rebuilt each
  * frame), so a flip - from this checkbox or a reload of the save's stored choice - shows at once.
  */
@@ -62,9 +60,11 @@ public final class RecedeControl {
     }
 
     // Flips the set's Mute toggle to the opposite of its current state, so the checkbox is a plain
-    // on/off. The setter persists the choice and raises on the board this control was built with, so
-    // the repaint lands on the sector whose sidebar the click came from.
-    private static void toggleMuted(RecedePreferences preferences, MapLayerRefreshBoard board) {
+    // on/off. The setter persists the choice and repaints through the board it is handed.
+    private static void toggleMuted(
+            RecedePreferences preferences,
+            MapLayerRefreshBoard board) {
+
         preferences.setMuted(!preferences.isMuted(), board);
     }
 
