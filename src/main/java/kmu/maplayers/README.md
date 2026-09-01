@@ -145,21 +145,13 @@ about what the overlay means.
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own.
-- **`base/installation`** - one sector's map machinery as a thing a caller can hold, since
-  everything the layers draw is derived from one sector. `MapLayerInstallation` is that holder: the
-  refresh board, the motion tracker and the hover holder, plus the sector itself, for the stages
-  that read the sector rather than a holder over it. What a *layer* derives from the sector - its
-  renderer and the caches behind it - goes in through `InstalledMachinery` rather than being named
-  here, so an installation owns those lifetimes without this package pointing at the layers
-  downstream of it, and releasing one frees the GL buffers a cached label holds.
-  `MapLayerInstallations` indexes one per sector, replaces a sector's on a second install, releases
-  it on removal, and discards every one on load - the only point at which a previous save's can be
-  stopped from outliving it. It answers three ways, because the seams do: by sector, by the
-  hyperspace a render surface's terrain sits in, and - for a seam vanilla hands no sector - by the
-  live sector, which is where the global read standing in for a sector nobody passed down belongs.
-  Only the location resolution answers null; an uninstalled sector gets a detached installation over
-  no sector at all, the overlay being behind a switch a player can leave off. Each class's Javadoc
-  carries the reasoning.
+- **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
+  caller can hold, since everything the layers draw is derived from one sector and everything under
+  that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
+  motion tracker, the hover holder and the sector itself; what a *layer* derives from the sector
+  goes in through `InstalledMachinery`, so an installation owns those lifetimes without naming the
+  packages downstream of it. `MapLayerInstallations` indexes one per sector and settles the
+  lifetime - replace on reinstall, release on removal, discard every one on load.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
   render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;

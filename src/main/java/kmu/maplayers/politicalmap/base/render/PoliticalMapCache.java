@@ -212,14 +212,24 @@ final class PoliticalMapCache {
         }
     }
 
-    // Rebuilds only the stale half of the cache, advancing each cached revision only after its
-    // rebuild completes so a thrown rebuild is retried next frame. Builds under the active view's
-    // rules, so a view switch (folded into the content revision) rebuilds the territories under
-    // the newly-selected view.
-    //
-    // A rebuild is a pass, and is read as one: whichever stages run, they run against one reading
-    // of the sector, opened below and handed to each. What that buys is stated where it is opened.
+    // Asks what this frame owes and then either patches the standing map or rebuilds it. The two
+    // are separate steps with the gate between them, because the rebuild opens a reading of the
+    // sector and nearly every frame must open none: the decision is answerable from revisions and
+    // settings alone, so it runs first and most frames stop at it.
     private void rebuildStaleHalves(PoliticalMapView view) {
+
+        var staleHalves = decideWhatIsStale(view);
+
+        if (!staleHalves.isContentStale()) {
+            applyStandingMapUpdates();
+            return;
+        }
+        rebuildWhatIsStale(staleHalves, view);
+    }
+
+    // What this frame owes, decided off revisions and settings alone so it costs nothing on a frame
+    // that owes nothing - which is nearly all of them.
+    private StaleHalves decideWhatIsStale(PoliticalMapView view) {
 
         // What the cells would be cut from right now. The reachable-set revision alone does not
         // answer that: the frontier resolution, the cell reach and the two visibility overrides
@@ -245,19 +255,24 @@ final class PoliticalMapCache {
         // applyStalePoliticsUpdates.
 
         // Both views null means neither has been built for this sector, so the first frame forces
-        // the build even if the content revision happens to match its unbuilt seed. Asked ahead of
-        // the cut rather than after it because the reading of the sector below is opened for whichever
-        // stages will run, and a frame where none will must not open one at all - which is nearly
-        // every frame.
+        // the build even if the content revision happens to match its unbuilt seed.
         var contentRevision = computeContentRevision(view);
         var isContentStale = isCellCutStale
             || (territories == null && borderStageOverlay == null)
             || contentRevision != lastContentRevision;
 
-        if (!isContentStale) {
-            applyStandingMapUpdates();
-            return;
-        }
+        return new StaleHalves(cellCut, isCellCutStale, contentRevision, isContentStale);
+    }
+
+    // The rebuild itself, run only where the decision above found something stale. Advances each
+    // cached revision only after its rebuild completes, so a thrown rebuild is retried next frame.
+    // Builds under the active view's rules, so a view switch (folded into the content revision)
+    // rebuilds the territories under the newly-selected view.
+    //
+    // A rebuild is a pass, and is read as one: whichever stages run, they run against one reading
+    // of the sector, opened here and handed to each.
+    private void rebuildWhatIsStale(StaleHalves staleHalves, PoliticalMapView view) {
+
         // The sector this rebuild draws, read once. Every stage below is answered from this one
         // reference, so a rebuild cannot name one sector to its cut and another to its fills.
         var sector = installation.resolveSector();
@@ -271,26 +286,8 @@ final class PoliticalMapCache {
         // one saw, which is the change a rebuild exists to show.
         var colonies = new SystemColoniesIndex(sector);
 
-        if (isCellCutStale) {
-
-            // Transition trace: a stale cell or one left behind after an access change can be tied
-            // to the revision step - or the seed inputs or toggle flip - that drove it.
-            LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
-                + " from " + lastCellCut + " to " + cellCut);
-
-            rebuildGeometry(
-                new MapVisibilityPass(
-                    colonies,
-                    VisibleStars.scan(sector),
-                    cellCut.visibilityRules()),
-                cellCut.seedInputs());
-
-            // A fresh cut number the moment the cells are recut, whichever of the four inputs
-            // drove it - so work derived from the previous cut can never read as derived from
-            // this one. Counted rather than taken from the reachable-set revision, which stands
-            // still through a seed-input or dev-toggle recut.
-            cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
-            lastCellCut = cellCut;
+        if (staleHalves.isCellCutStale()) {
+            rebuildGeometry(staleHalves.cellCut(), sector, colonies);
         }
         var drawablesStart = System.nanoTime();
 
@@ -309,7 +306,7 @@ final class PoliticalMapCache {
             rebuildTerritoriesAndBands(
                 new HolderPass(
                     view.resolveGrouping(),
-                    cellCut.visibilityRules().colonyVisibility(),
+                    staleHalves.cellCut().visibilityRules().colonyVisibility(),
                     colonies),
                 view);
         }
@@ -323,13 +320,17 @@ final class PoliticalMapCache {
             standingAnchors.getAnchors(),
             NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
 
-        lastContentRevision = contentRevision;
+        lastContentRevision = staleHalves.contentRevision();
 
         // A full rebuild re-derives every system, so any pending per-system staleness is
         // already reflected - drain and discard it rather than re-processing the same systems
         // immediately after.
         MapLayerRefresh.drainStaleGroupingSystemIds();
-        logContentRebuild(isCellCutStale, contentRevision, drawablesStart);
+
+        logContentRebuild(
+            staleHalves.isCellCutStale(),
+            staleHalves.contentRevision(),
+            drawablesStart);
     }
 
     // The debug border-tracing view, which replaces the production draw lists outright. It reads
@@ -482,8 +483,19 @@ final class PoliticalMapCache {
     // and clip no neighbour), and the rebuild's reading of the sector, whose visibility rules put
     // a forced or undiscovered-colony system on the drawn set.
     private void rebuildGeometry(
-            MapVisibilityPass pass,
-            CellSeedInputs seedInputs) {
+            CellCutInputs cellCut,
+            SectorAPI sector,
+            SystemColoniesIndex colonies) {
+
+        // Transition trace: a stale cell or one left behind after an access change can be tied
+        // to the revision step - or the seed inputs or toggle flip - that drove it.
+        LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
+            + " from " + lastCellCut + " to " + cellCut);
+
+        var pass = new MapVisibilityPass(
+            colonies,
+            VisibleStars.scan(sector),
+            cellCut.visibilityRules());
 
         var movingSystemIds = installation.resolveMovingSystems().getMovingSystemIds();
         KmuProfiling
@@ -493,6 +505,39 @@ final class PoliticalMapCache {
                 () -> cellGeometry.cells().updateFromSector(
                     pass,
                     movingSystemIds,
-                    seedInputs));
+                    cellCut.seedInputs()));
+
+        // A fresh cut number the moment the cells are recut, whichever of the four inputs
+        // drove it - so work derived from the previous cut can never read as derived from
+        // this one. Counted rather than taken from the reachable-set revision, which stands
+        // still through a seed-input or dev-toggle recut.
+        cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
+        lastCellCut = cellCut;
+    }
+
+    /**
+     * What one frame's staleness question answered: which of the cache's two halves are stale, and
+     * the two values a rebuild would carry forward - the inputs its cells would be cut under, and
+     * the content revision it would advance to.
+     *
+     * <p>A value crossing between two steps rather than four more fields on the cache, because the
+     * question is asked before a reading of the sector is opened and answered after. Nearly every
+     * frame answers "nothing stale" and must open no reading at all, so the two cannot be one step -
+     * and what the decision found has to reach the rebuild without being re-derived, or the rebuild
+     * would sample the settings a second time and could cut under one reading while the decision
+     * was taken under another.
+     *
+     * @param cellCut         what the cells would be cut from now: the reachable-set revision, the
+     *                        seed knobs and the visibility rules, sampled once
+     * @param isCellCutStale  whether those differ from what the standing cells were cut from
+     * @param contentRevision the fold of every input the territories are styled under
+     * @param isContentStale  whether anything at all is owed, the cut included - false is the frame
+     *                        that stops at the decision
+     */
+    private record StaleHalves(
+        CellCutInputs cellCut,
+        boolean isCellCutStale,
+        int contentRevision,
+        boolean isContentStale) {
     }
 }
