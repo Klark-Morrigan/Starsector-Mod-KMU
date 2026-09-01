@@ -10,6 +10,7 @@ import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
+import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
@@ -151,13 +152,11 @@ public final class ContinentCoastOverlay {
         // links would be judged against a map missing every wall the inlet search put down, and
         // switching the inlet spans on would silently change which links survive.
         inletWater = findSpanWater(
-            fixture,
             CoastFrontages.Shore.EXTERIOR,
             settings.showContinentBridges || isAnyLinkLayerShown(),
             settings.showContinentInletFill);
 
         lakeWater = findSpanWater(
-            fixture,
             CoastFrontages.Shore.INTERIOR,
             settings.showContinentLakeBridges,
             settings.showContinentLakePocketFill);
@@ -362,7 +361,6 @@ public final class ContinentCoastOverlay {
     // edge stands off at each reach and runs flush along the cell arcs between them - which
     // reads as a notched coastline rather than a filled sea.
     private SpanWater findSpanWater(
-            SectorFixture fixture,
             CoastFrontages.Shore shore,
             boolean isSpanLayerShown,
             boolean isFillLayerShown) {
@@ -381,8 +379,10 @@ public final class ContinentCoastOverlay {
             return new SpanWater(spans, List.of());
         }
 
+        // The sites off the trace rather than off the fixture beside it. The same list either
+        // way here, and only one of the two is the list these spans name their cells by.
         return new SpanWater(spans, VoidBridgePockets.findBridgeWalledPockets(
-            fixture.getSites(),
+            coast.getTrace().union().sites(),
             spans,
             settings.parameters,
             settings.resolvePocketShaping()));
@@ -418,8 +418,8 @@ public final class ContinentCoastOverlay {
             coast.getTrace(),
             links,
             inletWater.spans(),
-            settings.parameters,
-            settings.resolvePocketShaping()));
+            new VoidPockets.PocketRules(
+                settings.parameters, settings.resolvePocketShaping())));
     }
 
     // The stretches a span was allowed to anchor on, read off the same trace the spans are
@@ -494,10 +494,11 @@ public final class ContinentCoastOverlay {
             paintSpans(g2, puddleBridges);
         }
 
-        // In their own colour, because they are the one set doing something else: the three
-        // above hold water between cells of one shape, while a link joins two shapes over void
-        // it holds nothing of. Drawn in the same colour they would read as more of the same,
-        // which is the one thing worth being able to tell at a glance here.
+        // In their own colour, because they are the one set doing something else: each of the
+        // three above holds water between cells of one shape, while a link joins two shapes and
+        // holds nothing until another link joins the same pair. Drawn in the same colour they
+        // would read as more of the same, which is the one thing worth being able to tell at a
+        // glance here.
         if (settings.showIntercontinentalBridges) {
 
             g2.setColor(MapPainting.applyAlpha(

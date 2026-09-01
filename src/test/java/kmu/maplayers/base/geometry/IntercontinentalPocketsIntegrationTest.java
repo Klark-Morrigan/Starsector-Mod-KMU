@@ -134,9 +134,10 @@ class IntercontinentalPocketsIntegrationTest {
             // covering the layer above. At the drawn shaping this is also the channel: the walk
             // is run one channel out from the cells, so a point closer than that is a fill
             // touching the border it is supposed to stand off.
+            var sites = traceCoastOf(sector).union().sites();
+
             for (var shaping : VoidPockets.PocketShaping.values()) {
 
-                var sites = traceCoastOf(sector).union().sites();
                 var reach = measureReachAt(shaping);
                 var covered = new ArrayList<String>();
 
@@ -168,10 +169,10 @@ class IntercontinentalPocketsIntegrationTest {
             // water ringed by cells of ONE shape is a bay or a lake, and those have layers of
             // their own that would then paint it a second time.
             var shapeOf = Coastlines.mapCellsToShapes(traceCoastOf(sector));
+            var sites = traceCoastOf(sector).union().sites();
 
             for (var shaping : VoidPockets.PocketShaping.values()) {
 
-                var sites = traceCoastOf(sector).union().sites();
                 var enclosed = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
@@ -241,8 +242,7 @@ class IntercontinentalPocketsIntegrationTest {
                 traceCoastOf(sector),
                 linkContinentsOf(sector),
                 layInletSpansOn(sector),
-                PARAMETERS,
-                shaping));
+                new VoidPockets.PocketRules(PARAMETERS, shaping)));
     }
 
     private static List<CellGap> linkContinentsOf(String sector) {

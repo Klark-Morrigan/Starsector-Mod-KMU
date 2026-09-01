@@ -213,15 +213,11 @@ public final class VoidBridgePockets {
         // The same chord instances the walk was handed, so a hole's walls are asked about by
         // the walls themselves rather than by a set built to look like them.
         var walls = buildBridgeWalls(bridges, parameters);
-        var walled = new ArrayList<VoidHole>();
 
-        for (var hole : WalledVoid.traceVoidAcrossWalls(sites, walls, parameters, shaping)) {
-
-            if (!WalledVoid.findClosingWalls(hole, walls.chords()).isEmpty()) {
-                walled.add(hole);
-            }
-        }
-        return walled;
+        // Everything laid is also what is kept on: the bridges are the only walls here, so a
+        // hole no bridge closed is one the cells closed unaided.
+        return WalledVoid.traceVoidWalledBy(
+            sites, walls, walls.chords(), parameters, shaping);
     }
 
     /**

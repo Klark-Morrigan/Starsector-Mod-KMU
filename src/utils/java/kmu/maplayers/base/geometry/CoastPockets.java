@@ -86,16 +86,15 @@ public final class CoastPockets {
         // do not correspond, and the match silently drops the ones that fail.
         var pockets = new ArrayList<WalledPocket>();
 
-        for (var hole : WalledVoid.traceVoidAcrossWalls(
-                sites, walls, parameters, rules.shaping())) {
+        // Only what the coast's own reaches closed. A hole a bridge holds is the other
+        // construction's to report, and one the cells closed unaided is neither's - so the
+        // bridges are laid, to divide the void, and not kept on.
+        for (var hole : WalledVoid.traceVoidWalledBy(
+                sites, walls, reaches, parameters, rules.shaping())) {
 
-            // Only what the coast's own reaches closed. A hole a bridge holds is the other
-            // construction's to report, and one the cells closed unaided is neither's.
+            // Which of them, asked again of the hole that survived. The walk's own record, so
+            // this cannot disagree with the answer that kept it.
             var walling = WalledVoid.findClosingWalls(hole, reaches);
-
-            if (walling.isEmpty()) {
-                continue;
-            }
 
             // What the trace hands back is what gets drawn. Nothing is cut afterwards.
             //

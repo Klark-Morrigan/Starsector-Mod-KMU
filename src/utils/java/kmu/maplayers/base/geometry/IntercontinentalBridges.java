@@ -60,9 +60,12 @@ import java.util.Set;
  * {@link CrowdedAnchors}.
  *
  * <p><b>Not thinned.</b> The formation pass drops spans that share an anchor and hold no water
- * back, which is right for a set tidying one outline and wrong for a set of links: what a link
- * holds is not water but the sector together, and two links leaving one crowded anchor are two
- * routes rather than a fan over one bay. It is also a rule about spans that share an anchor,
+ * back, which is right for a set tidying one outline and wrong for a set of links: what makes a
+ * link worth keeping is the route it makes, and two links leaving one crowded anchor are two
+ * routes rather than a fan over one bay. A run of them does shut a sea in - see
+ * {@link IntercontinentalPockets} - but that is what several of them do together, so weighing
+ * each one by the water it holds alone would drop the very links that ring it. It is also a rule
+ * about spans that share an anchor,
  * and a link shares its anchors with the inlet spans already down - so a thinning of this set
  * alone would judge a formation with half of it missing.
  */

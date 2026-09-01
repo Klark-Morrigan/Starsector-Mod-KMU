@@ -54,21 +54,20 @@ public final class IntercontinentalPockets {
      * @param traced     the continent coasts, which carry the sites everything here is measured
      *                   against. Taken off the trace rather than handed in beside it, so the
      *                   cells a link names are the cells the walk is walked over
-     * @param links      the links, as {@link IntercontinentalBridges} laid them
-     * @param standing   the spans already down that a sea can come to rest against, which are the
-     *                   inlet spans the links were themselves judged against
-     * @param parameters the knobs the cells are built under, which are also what the arcs are
-     *                   flattened onto
-     * @param shaping    how much of the channel each pocket gives up against the cells
+     * @param links    the links, as {@link IntercontinentalBridges} laid them
+     * @param standing the spans already down that a sea can come to rest against, which are the
+     *                 inlet spans the links were themselves judged against
+     * @param rules    the knobs one pocket is built under
      * @return one outline per pocket a link helped close
      */
     public static List<List<double[]>> findLinkWalledPockets(
             Coastlines.TracedCoasts traced,
             List<CellGap> links,
             List<CellGap> standing,
-            SectorGeometryParameters parameters,
-            VoidPockets.PocketShaping shaping) {
+            VoidPockets.PocketRules rules) {
 
+        // Nothing to keep on, so nothing can be kept: the walk would run over the whole sector
+        // and discard every hole it found.
         if (links.isEmpty()) {
             return List.of();
         }
@@ -80,15 +79,16 @@ public final class IntercontinentalPockets {
 
         laid.addAll(DiscUnionBoundary.buildChordsFrom(standing));
 
-        var walls = new DiscUnionBoundary.Walls(laid, parameters.borderInset());
         var outlines = new ArrayList<List<double[]>>();
 
-        for (var hole : WalledVoid.traceVoidAcrossWalls(
-                traced.union().sites(), walls, parameters, shaping)) {
+        for (var hole : WalledVoid.traceVoidWalledBy(
+                traced.union().sites(),
+                new DiscUnionBoundary.Walls(laid, rules.parameters().borderInset()),
+                linkWalls,
+                rules.parameters(),
+                rules.shaping())) {
 
-            if (!WalledVoid.findClosingWalls(hole, linkWalls).isEmpty()) {
-                outlines.add(hole.boundary());
-            }
+            outlines.add(hole.boundary());
         }
         return List.copyOf(outlines);
     }

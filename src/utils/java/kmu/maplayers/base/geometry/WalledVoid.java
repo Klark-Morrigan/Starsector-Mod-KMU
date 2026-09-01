@@ -28,7 +28,8 @@ import java.util.List;
  * caller's to draw anyway - the settled bridges fill the void the cells enclose unaided as
  * readily as the bays they span - or it may belong to another layer entirely, which is the
  * continent construction's answer for the same holes. Neither is more correct, so neither is
- * decided here.
+ * decided here. {@link #traceVoidWalledBy} only APPLIES the rule a caller states, by taking the
+ * walls it means to keep on as an argument.
  */
 final class WalledVoid {
 
@@ -57,6 +58,41 @@ final class WalledVoid {
             VoidPockets.buildUnionFor(sites, parameters, shaping),
             walls,
             parameters.boundSegments());
+    }
+
+    /**
+     * Every hole that came to rest against a wall the caller means to keep on.
+     *
+     * <p>The walls LAID are not the walls kept on. A construction lays everything that divides
+     * the void - its own lines, and whatever another layer already put down - so that its shapes
+     * stop where the map says they stop, and then keeps only the holes its own lines closed.
+     * Handed one list for both, a caller either loses the divisions or claims the other layer's
+     * water.
+     *
+     * @param sites      the sites the void lies between
+     * @param walls      every wall to lay, at the channel each keeps
+     * @param keepOn     those of them a hole has to close on to be the caller's, which are the
+     *                   caller's own lines
+     * @param parameters the knobs the cells are built under
+     * @param shaping    how much of the channel each hole gives up against the cells
+     * @return the holes at least one of {@code keepOn} closed, in walk order
+     */
+    static List<VoidHole> traceVoidWalledBy(
+            List<double[]> sites,
+            DiscUnionBoundary.Walls walls,
+            List<DiscUnionBoundary.Chord> keepOn,
+            SectorGeometryParameters parameters,
+            VoidPockets.PocketShaping shaping) {
+
+        var walled = new ArrayList<VoidHole>();
+
+        for (var hole : traceVoidAcrossWalls(sites, walls, parameters, shaping)) {
+
+            if (!findClosingWalls(hole, keepOn).isEmpty()) {
+                walled.add(hole);
+            }
+        }
+        return walled;
     }
 
     /**
