@@ -25,7 +25,7 @@ public final class KmuMapLayerSettings {
     // rather than visuals: what it governs is a reach into another party's widget, so it is the hatch
     // a player opens when that reach misbehaves, not a knob they set to taste.
     private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
-        "kmu_map_dev_mapUi_filters_mapLayersToggle_isEnabled";
+        "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
 
     private static final String SIDEBAR_PADDING_TOP_FIELD =
         "kmu_map_visuals_sidebar_paddingTop";

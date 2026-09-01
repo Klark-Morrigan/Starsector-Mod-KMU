@@ -140,7 +140,7 @@ final class LunaSettingsCsvIntegrationTest {
     // on. Its own check for the reason the row above has one: what it pins is a decision rather than
     // two spellings of a value agreeing, which the walk over every switch already holds.
     private static final String FILTER_ROW_TOGGLE_FIELD_ID =
-        "kmu_map_dev_mapUi_filters_mapLayersToggle_isEnabled";
+        "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
