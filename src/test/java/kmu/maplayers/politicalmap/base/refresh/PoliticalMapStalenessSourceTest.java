@@ -69,7 +69,7 @@ final class PoliticalMapStalenessSourceTest {
                     takeSnapshot(1, "a", "hegemony")),
                 1);
 
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isZero();
             assertThat(outcome.staleSystemIds())
                 .isEmpty();
@@ -85,7 +85,7 @@ final class PoliticalMapStalenessSourceTest {
                     takeSnapshot(9, "a", "hegemony")),
                 2);
 
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isEqualTo(1);
             assertThat(outcome.staleSystemIds())
                 .isEmpty();
@@ -101,7 +101,7 @@ final class PoliticalMapStalenessSourceTest {
                     takeSnapshot(1, "a", "tritachyon")),
                 2);
 
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isZero();
             assertThat(outcome.staleSystemIds())
                 .containsExactly("a");
@@ -143,7 +143,7 @@ final class PoliticalMapStalenessSourceTest {
                     takeSnapshot(9, "a", "tritachyon")),
                 2);
 
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isEqualTo(1);
             assertThat(outcome.staleSystemIds())
                 .containsExactly("a");
@@ -158,7 +158,7 @@ final class PoliticalMapStalenessSourceTest {
                 PollInputs.buildForMovingSetChange(true),
                 2);
 
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isEqualTo(1);
             assertThat(outcome.staleSystemIds())
                 .isEmpty();
@@ -172,7 +172,7 @@ final class PoliticalMapStalenessSourceTest {
                 PollInputs.buildForMovingSetChange(false),
                 2);
 
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isZero();
             assertThat(outcome.staleSystemIds())
                 .isEmpty();
@@ -186,9 +186,9 @@ final class PoliticalMapStalenessSourceTest {
                 PollInputs.buildForAllianceChange(11, 22),
                 2);
 
-            assertThat(outcome.allianceDelta())
+            assertThat(outcome.allianceRevision())
                 .isEqualTo(1);
-            assertThat(outcome.geometryDelta())
+            assertThat(outcome.geometryRevision())
                 .isZero();
             assertThat(outcome.staleSystemIds())
                 .isEmpty();
@@ -202,7 +202,7 @@ final class PoliticalMapStalenessSourceTest {
                 PollInputs.buildForAllianceChange(11, 11),
                 2);
 
-            assertThat(outcome.allianceDelta())
+            assertThat(outcome.allianceRevision())
                 .isZero();
         }
 
@@ -214,7 +214,7 @@ final class PoliticalMapStalenessSourceTest {
                 PollInputs.buildForAllianceChange(11, 22),
                 1);
 
-            assertThat(outcome.allianceDelta())
+            assertThat(outcome.allianceRevision())
                 .isZero();
         }
 
@@ -351,6 +351,10 @@ final class PoliticalMapStalenessSourceTest {
     // off it, the running game answering the source nothing.
     private static MapLayerInstallation buildInstallationPolledUnder(PollInputs inputs) {
 
+        // Both collaborators are finished before either is handed over, so Mockito never sees one
+        // stubbing opened inside another - which is what building the sector inside the sector
+        // stub's own thenReturn would be.
+        var sector = buildOneSystemSector();
         var movingSystemsMock = mock(MovingSystems.class);
 
         when(movingSystemsMock.updateMovingSystems(any(MapVisibilityPass.class)))
@@ -361,7 +365,7 @@ final class PoliticalMapStalenessSourceTest {
         when(installationMock.resolveMovingSystems())
             .thenReturn(movingSystemsMock);
         when(installationMock.resolveSector())
-            .thenReturn(buildOneSystemSector());
+            .thenReturn(sector);
         when(installationMock.resolveRefreshBoard())
             .thenReturn(new MapLayerRefreshBoard());
 
@@ -492,8 +496,8 @@ final class PoliticalMapStalenessSourceTest {
     }
 
     private record RefreshOutcome(
-        int geometryDelta,
-        int allianceDelta,
+        int geometryRevision,
+        int allianceRevision,
         Set<String> staleSystemIds) {
     }
 }

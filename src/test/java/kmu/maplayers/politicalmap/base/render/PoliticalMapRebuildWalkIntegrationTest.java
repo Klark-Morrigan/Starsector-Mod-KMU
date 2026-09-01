@@ -324,6 +324,26 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
+        void refreshDrainsItsOwnInstallationsStaleSystemsAndLeavesAnothersStanding() {
+            // The board's half of the same claim. A full rebuild re-derives every system, so it
+            // drains the marks it has just accounted for - and the marks are bare system ids, so a
+            // rebuild draining a shared board would swallow another sector's pending re-shape and
+            // leave that sector drawing a holder that has already moved, with nothing on either map
+            // to say a mark went missing.
+            buildContestedSectorWithASettledNeighbour();
+
+            installation.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
+            otherInstallation.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
+
+            new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE);
+
+            assertThat(installation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+                .isEmpty();
+            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+                .containsExactly(ALPHA_ID);
+        }
+
+        @Test
         void refreshCutsTheSectorItsInstallationWasMadeForRatherThanTheRunningOne() {
             // The question this whole rework was for. Vanilla's map hook names no sector, so a
             // rebuild used to ask the running game which one it was drawing - which is right only

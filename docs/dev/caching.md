@@ -179,8 +179,8 @@ systems by bare id. Why that has to be a sector's rather than the process's, and
 installation holding it is made and released, are
 [the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md).
 A producer or consumer holding a sector - or the installation over one - reaches that
-sector's board directly; one driven by a seam vanilla hands no sector, which is a
-settings change moved on a sidebar control, goes through
+sector's board directly. The one seam vanilla hands no sector is a settings change
+moved on a sidebar control, and it goes through
 [`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java),
 which resolves the running sector's.
 
