@@ -46,6 +46,12 @@ import java.util.function.Supplier;
  * another party's widget, so every way of failing - a row that cannot be resolved, a shape that no
  * longer builds a drivable button, a read that throws outright - resolves to no control, one line
  * in the log, and a map that behaves as it did before the box existed.
+ *
+ * <p>This pass is also the only thing that can say a screen has a control at all, which is what a
+ * stored hide is honoured against. So the half of failing open that no log line covers is here: a
+ * screen this never manages to write to goes on showing its layers whatever the save holds, and a
+ * reach that stops working cannot leave a player with them switched off and nothing to switch them
+ * back on.
  */
 public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
@@ -59,8 +65,15 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
     // The show-or-hide pick of the screen showing this frame, which is the pick a box on that
     // screen's row drives. Asked per frame rather than held, since which screen is up is a
-    // per-frame question.
+    // per-frame question. The player's stored choice rather than the reading the mod acts on: a box
+    // is what lifts the rule below rather than something subject to it.
     private final Supplier<MapLayerVisibility> resolveLiveScreenVisibility;
+
+    // Says that the screen showing this frame now has a control able to take a hide back, which is
+    // what the mod's reading of that screen's pick is gated on: until it is said, the layers show
+    // whatever the save holds, so a reach that stops working cannot strand a player with them off
+    // and nothing on screen to bring them back.
+    private final Runnable recordControlAttachedOnLiveScreen;
 
     // The filter row of the map on screen, or nothing on every screen that shows no map - which is
     // most of them, and is the ordinary answer rather than a failure.
@@ -84,7 +97,8 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     public MapLayerToggleUpkeep() {
         this(
             KmuMapLayerSettings::getMapFilterRowToggleEnabled,
-            MapLayerRegistry::resolveLayerVisibilityOfLiveScreen,
+            MapLayerRegistry::resolveStoredLayerVisibilityOfLiveScreen,
+            MapLayerRegistry::recordLayerControlAttachedOnLiveScreen,
             MapFilterRows::resolveShownMapFilterRow,
             new VanillaMapLayerToggleAttacher());
     }
@@ -92,11 +106,13 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     MapLayerToggleUpkeep(
             BooleanSupplier isToggleEnabled,
             Supplier<MapLayerVisibility> resolveLiveScreenVisibility,
+            Runnable recordControlAttachedOnLiveScreen,
             Supplier<MapFilterRow> resolveShownFilterRow,
             MapLayerToggleAttacher toggleAttacher) {
 
         this.isToggleEnabled = isToggleEnabled;
         this.resolveLiveScreenVisibility = resolveLiveScreenVisibility;
+        this.recordControlAttachedOnLiveScreen = recordControlAttachedOnLiveScreen;
         this.resolveShownFilterRow = resolveShownFilterRow;
         this.toggleAttacher = toggleAttacher;
     }
@@ -157,8 +173,14 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
         // Remembered only where a box actually went up, so a refusal is retried on the next frame
         // rather than recorded as an attachment that never happened.
-        if (toggleAttacher.attachToggleTo(shownRow, layerVisibility)) {
-            attachedRowsByScreenPick.put(layerVisibility, shownRow);
+        if (!toggleAttacher.attachToggleTo(shownRow, layerVisibility)) {
+            return;
         }
+        attachedRowsByScreenPick.put(layerVisibility, shownRow);
+
+        // Said after the box is standing, and so after it has been seeded from the pick: a screen
+        // told it has a control before one is up would honour a stored hide against a box that read
+        // the layers as shown, and the two would stay at odds until it was clicked twice.
+        recordControlAttachedOnLiveScreen.run();
     }
 }

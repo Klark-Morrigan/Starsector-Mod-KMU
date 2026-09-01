@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -26,6 +27,10 @@ import static org.mockito.Mockito.when;
  * Pins when the pass writes into the game's filter row and when it leaves it alone: once per row per
  * screen, again as soon as a screen rebuilds its row, never while the switch is closed or no map is
  * up, and never in a way that lets a broken read out.
+ *
+ * <p>And when it says the screen has a control at all, which is what a stored hide is honoured
+ * against: after a box is standing, never after a row that refused one. That word is the half of
+ * failing open no log line covers, so the cases pinning it are here beside the ones pinning the write.
  *
  * <p>Also the two answers that are not decisions of its own but which the whole control rests on:
  * that it goes on running for the session, and that it runs while the campaign is paused. Every
@@ -41,6 +46,11 @@ final class MapLayerToggleUpkeepTest {
     private static final BooleanSupplier SWITCH_OPEN = () -> true;
     private static final BooleanSupplier SWITCH_CLOSED = () -> false;
 
+    // What the cases about rows hand in for the word that a screen now has a control: when that word
+    // is said is its own cases' subject, and these are about when the row is written to.
+    private static final Runnable RECORD_NOTHING = () -> {
+    };
+
     @Nested
     class Advance {
 
@@ -52,7 +62,7 @@ final class MapLayerToggleUpkeepTest {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock)
+                SWITCH_OPEN, () -> visibilityMock, RECORD_NOTHING, () -> shownRow, toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
             // Bound to the pick of the screen the row belongs to, which is what stops a control on
@@ -68,7 +78,7 @@ final class MapLayerToggleUpkeepTest {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock);
+                SWITCH_OPEN, () -> visibilityMock, RECORD_NOTHING, () -> shownRow, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
             upkeep.advance(PAUSED_FRAME);
@@ -88,7 +98,7 @@ final class MapLayerToggleUpkeepTest {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> visibilityMock, shownRow::get, toggleAttacherMock);
+                SWITCH_OPEN, () -> visibilityMock, RECORD_NOTHING, shownRow::get, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
             shownRow.set(rebuiltRow);
@@ -112,7 +122,11 @@ final class MapLayerToggleUpkeepTest {
             var toggleAttacherMock = buildAcceptingAttacherMock();
 
             var upkeep = new MapLayerToggleUpkeep(
-                SWITCH_OPEN, liveScreenVisibility::get, shownRow::get, toggleAttacherMock);
+                SWITCH_OPEN,
+                liveScreenVisibility::get,
+                RECORD_NOTHING,
+                shownRow::get,
+                toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
 
@@ -139,6 +153,7 @@ final class MapLayerToggleUpkeepTest {
             new MapLayerToggleUpkeep(
                 SWITCH_CLOSED,
                 () -> visibilityMock,
+                RECORD_NOTHING,
                 ShownFilterRows::createRowWithRoomToSpare,
                 toggleAttacherMock)
                 .advance(PAUSED_FRAME);
@@ -154,7 +169,7 @@ final class MapLayerToggleUpkeepTest {
             var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
             new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> visibilityMock, () -> null, toggleAttacherMock)
+                SWITCH_OPEN, () -> visibilityMock, RECORD_NOTHING, () -> null, toggleAttacherMock)
                 .advance(PAUSED_FRAME);
 
             // Every screen showing no map, which is most of them - the ordinary answer rather than
@@ -173,7 +188,7 @@ final class MapLayerToggleUpkeepTest {
                 .thenReturn(false);
 
             var upkeep = new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> visibilityMock, () -> shownRow, toggleAttacherMock);
+                SWITCH_OPEN, () -> visibilityMock, RECORD_NOTHING, () -> shownRow, toggleAttacherMock);
 
             upkeep.advance(PAUSED_FRAME);
             upkeep.advance(PAUSED_FRAME);
@@ -181,6 +196,59 @@ final class MapLayerToggleUpkeepTest {
             // A refusal is not an attachment, so nothing is remembered - which is what lets a row
             // the layout had not placed yet take a control on a later frame.
             verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any());
+        }
+
+        @Test
+        void advanceSaysTheScreenHasAControlOnceOneIsStanding() {
+
+            var shownRow = ShownFilterRows.createRowWithRoomToSpare();
+            var visibilityMock = mock(MapLayerVisibility.class);
+            var toggleAttacherMock = buildAcceptingAttacherMock();
+            var recordControlAttachedMock = mock(Runnable.class);
+
+            new MapLayerToggleUpkeep(
+                SWITCH_OPEN,
+                () -> visibilityMock,
+                recordControlAttachedMock,
+                () -> shownRow,
+                toggleAttacherMock)
+                .advance(PAUSED_FRAME);
+
+            // Said after the box is standing rather than before it, since the box is seeded from the
+            // stored pick: a screen told it has a control first would honour a stored hide against a
+            // box that had just read the layers as shown.
+            var attachmentThenTheWord = inOrder(toggleAttacherMock, recordControlAttachedMock);
+
+            attachmentThenTheWord
+                .verify(toggleAttacherMock)
+                .attachToggleTo(shownRow, visibilityMock);
+            attachmentThenTheWord
+                .verify(recordControlAttachedMock)
+                .run();
+        }
+
+        @Test
+        void advanceSaysNothingAboutAControlAfterARowRefusesOne() {
+
+            var visibilityMock = mock(MapLayerVisibility.class);
+            var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
+            var recordControlAttachedMock = mock(Runnable.class);
+
+            when(toggleAttacherMock.attachToggleTo(any(), any()))
+                .thenReturn(false);
+
+            new MapLayerToggleUpkeep(
+                SWITCH_OPEN,
+                () -> visibilityMock,
+                recordControlAttachedMock,
+                ShownFilterRows::createRowWithRoomToSpare,
+                toggleAttacherMock)
+                .advance(PAUSED_FRAME);
+
+            // The whole point of the word being said here: a screen that never got a control goes on
+            // showing its layers whatever the save holds, so a reach that stops working cannot leave
+            // a player with them switched off and nothing to switch them back on.
+            verifyNoInteractions(recordControlAttachedMock);
         }
 
         @Test
@@ -199,7 +267,7 @@ final class MapLayerToggleUpkeepTest {
             };
 
             var upkeep = new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> visibilityMock, resolveShownRow, toggleAttacherMock);
+                SWITCH_OPEN, () -> visibilityMock, RECORD_NOTHING, resolveShownRow, toggleAttacherMock);
 
             assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
                 .doesNotThrowAnyException();

@@ -15,7 +15,10 @@ import java.util.List;
  * without sharing state directly. Each screen's picks are its own {@link PersistedActiveLayerSelection}
  * and {@link PersistedMapLayerVisibility} under its own keys, so a switch or a hide on one screen
  * survives reload without moving the other's; the registry holds both pairs so all four save keys and
- * the one-time legacy migration live in a single place.
+ * the one-time legacy migration live in a single place. Each screen's hide is handed out through
+ * {@link ControlBackedMapLayerVisibility}, so a stored hide is acted on only while that screen has a
+ * control able to reverse it - which is the difference between an optional decoration on the game's own
+ * chrome and a load-bearing one.
  *
  * <p>Because the picks are per-screen, "whose picks are live" is a per-frame question rather than a
  * fixed answer: the same map widget draws on the sector map and inside the intel screen's visor, so an
@@ -46,16 +49,25 @@ public final class MapLayerRegistry {
     // stops being answered at all.
     private static final float FULLY_HIDDEN = 0f;
 
+    // Each screen's show-or-hide pick as the rest of the mod reads it: the stored pick behind the rule
+    // that a hide is honoured only while that screen has a control able to reverse it. Held as that
+    // reading rather than as the stored pick, so no consumer can be handed the raw choice by accident -
+    // the one caller entitled to it is named below.
+    private static final ControlBackedMapLayerVisibility MAP_LAYER_VISIBILITY =
+        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY));
+    private static final ControlBackedMapLayerVisibility INTEL_LAYER_VISIBILITY =
+        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY));
+
     // Each screen's pair of picks, persisted under that screen's own frozen keys. The map host draws
     // through the map pair and the overlay follows it; the intel host draws through the intel pair. Held
     // here so all four keys sit in one place, and paired so a screen is chosen once rather than at each
     // site that wants one of its two picks.
     private static final ScreenLayerPicks MAP_PICKS = new ScreenLayerPicks(
         new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY),
-        new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY));
+        MAP_LAYER_VISIBILITY);
     private static final ScreenLayerPicks INTEL_PICKS = new ScreenLayerPicks(
         new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY),
-        new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY));
+        INTEL_LAYER_VISIBILITY);
 
     // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
     // until a composition root registers them at startup, before any sector map can open.
@@ -132,13 +144,25 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return the show-or-hide pick of the screen showing this frame, for a control standing on that
-     *         screen's own chrome to show and to move. The pick itself rather than a reading of it,
+     * @return the stored show-or-hide pick of the screen showing this frame, for a control standing on
+     *         that screen's own chrome to show and to move. The pick itself rather than a reading of it,
      *         since such a control both reports what it holds and writes to it; which screen it
-     *         belongs to is settled here so the control never has to ask
+     *         belongs to is settled here so the control never has to ask. The player's stored choice
+     *         rather than what the mod acts on, since a control is what lifts the
+     *         no-control-no-hiding rule rather than something subject to it
      */
-    public static MapLayerVisibility resolveLayerVisibilityOfLiveScreen() {
-        return resolveLivePicks().layerVisibility();
+    public static MapLayerVisibility resolveStoredLayerVisibilityOfLiveScreen() {
+        return resolveLiveLayerVisibility().getStoredVisibility();
+    }
+
+    /**
+     * Records that the screen showing this frame now carries a control able to reverse a hide, from
+     * which point that screen's stored pick is what the mod acts on. Said by whatever stands the
+     * control up, once it is actually standing - a screen told this without getting one would honour a
+     * stored hide with nothing on it to undo that.
+     */
+    public static void recordLayerControlAttachedOnLiveScreen() {
+        resolveLiveLayerVisibility().recordControlAttached();
     }
 
     /**
@@ -213,6 +237,16 @@ public final class MapLayerRegistry {
     // settings read behind it, on every frame the layers are simply on.
     private static boolean isAnythingOfTheLayersOn(MapLayerVisibility visibility) {
         return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
+    }
+
+    // The show-or-hide state of the screen that is up, for the two callers that want it as more than a
+    // reading: the control bound to that screen's stored choice, and the word that such a control now
+    // stands there. The very object the pair above holds, so a reading taken through the pair and a
+    // write made through this cannot describe different screens.
+    private static ControlBackedMapLayerVisibility resolveLiveLayerVisibility() {
+        return isIntelScreenLive()
+            ? INTEL_LAYER_VISIBILITY
+            : MAP_LAYER_VISIBILITY;
     }
 
     // The picks of the screen that is up. One resolution for the pair, so no reading can answer for a

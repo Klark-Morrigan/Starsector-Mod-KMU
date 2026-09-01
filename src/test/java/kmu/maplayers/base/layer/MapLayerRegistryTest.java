@@ -29,6 +29,10 @@ import static org.mockito.Mockito.when;
  * and the show-or-hide answer it folds into that pick so a hidden screen resolves to nothing to draw.
  * The screens themselves are stand-in gates here: which concrete screens exist is the composition
  * root's business, and this pins only that the showing one wins.
+ *
+ * <p>A hide is acted on only for a screen that has a control able to reverse it, so every case posing
+ * hidden layers poses that control too. The rule behind it, and what a screen without one reads, are
+ * {@link ControlBackedMapLayerVisibilityTest}'s: these cases are about which screen an answer comes off.
  */
 final class MapLayerRegistryTest {
 
@@ -218,10 +222,10 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
-    class ResolveLayerVisibilityOfLiveScreen {
+    class ResolveStoredLayerVisibilityOfLiveScreen {
 
         @Test
-        void resolveLayerVisibilityOfLiveScreenHandsBackTheShowingScreensOwnPick() {
+        void resolveStoredLayerVisibilityOfLiveScreenHandsBackTheShowingScreensOwnPick() {
             // The pick itself rather than a reading of it, since what asks is a control that both
             // shows it and moves it. Written through, it must move the screen that was up and leave
             // the other where it was - which is the whole of what a control on one screen's own
@@ -229,7 +233,7 @@ final class MapLayerRegistryTest {
             intelScreenFake.setIntelTabOpen(true);
 
             MapLayerRegistry
-                .resolveLayerVisibilityOfLiveScreen()
+                .resolveStoredLayerVisibilityOfLiveScreen()
                 .showLayers(false);
 
             assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
@@ -427,12 +431,29 @@ final class MapLayerRegistryTest {
 
     // Poses a save in which one screen's layers were switched off and their ramp has long since run out.
     // Seeded rather than flipped, so the reading is the settled one whatever the pace reads.
+    //
+    // The control that switched them off is posed with it, since the registry acts on a stored hide only
+    // for a screen that has one - a case seeding the hide alone would be posing a screen whose layers are
+    // still shown, and would pass for saying so.
     private void hideTheMapScreensLayers() {
+
         sectorMemoryFake.storeValue(MAP_LAYERS_SHOWN_KEY, false);
+        recordAControlOnTheShowingScreen(false);
     }
 
     private void hideTheIntelScreensLayers() {
+
         sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
+        recordAControlOnTheShowingScreen(true);
+    }
+
+    // Says a control stands on one of the two screens. The registry records against the screen that is
+    // up, which is all a control on a screen's own chrome could ever mean, so the tab is put there for
+    // the recording; every case that cares which screen is up sets it for itself afterwards.
+    private void recordAControlOnTheShowingScreen(boolean isIntelTabOpen) {
+
+        intelScreenFake.setIntelTabOpen(isIntelTabOpen);
+        MapLayerRegistry.recordLayerControlAttachedOnLiveScreen();
     }
 
     // Puts the map screen part-way down its hide ramp. The flip is made while the pace still reads as
@@ -440,6 +461,8 @@ final class MapLayerRegistryTest {
     // left on the process-wide visibility; the pace is only then wound long, which leaves a reading taken
     // straight afterwards a long way short of the end.
     private void startHidingTheMapScreensLayers() {
+
+        recordAControlOnTheShowingScreen(false);
 
         MapLayerRegistry
             .getMapPicks()
