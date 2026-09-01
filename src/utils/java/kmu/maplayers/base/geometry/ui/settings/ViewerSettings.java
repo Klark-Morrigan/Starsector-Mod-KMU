@@ -99,6 +99,8 @@ public final class ViewerSettings {
 
     public static final Color CONTINENT_BRIDGE_DEFAULT = MapLook.CONTINENT_BRIDGE;
 
+    public static final Color INTERCONTINENTAL_BRIDGE_DEFAULT = MapLook.INTERCONTINENTAL_BRIDGE;
+
     public static final Color DROPPED_STRETCH_DEFAULT = MapLook.DROPPED_STRETCH;
 
     public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
@@ -229,6 +231,20 @@ public final class ViewerSettings {
     public boolean showContinentBridges;
     public boolean showContinentInletFill;
 
+    // The links between the continents: the same range the settled bridges are offered under,
+    // asked of pairs on DIFFERENT continents and anchored on the coastlines rather than run rim
+    // to rim. What they are for is seeing whether the construction can be made whole again -
+    // the trace splits a run of cells a bridge would have joined into several shapes, and these
+    // are what puts them back in touch.
+    //
+    // Its own switch and apart from the inlet spans', because the two are opposite acts: an
+    // inlet span rounds one outline up, a link joins two that have nothing to do with each
+    // other. A reader judging either wants the other out of the way.
+    //
+    // Laid against the inlet spans whether or not those are drawn, so what survives here does
+    // not depend on which layers happen to be on.
+    public boolean showIntercontinentalBridges;
+
     // The same spans laid over the interior coastlines instead - across water the cells closed
     // around unaided rather than across the void between continents. One search over two shores
     // rather than two searches, so the sets differ only by what the shore decides: where a span
@@ -306,6 +322,7 @@ public final class ViewerSettings {
     public double continentBridgeCoastSlack = CONTINENT_BRIDGE_COAST_SLACK_DEFAULT;
 
     public Color continentBridgeColour = CONTINENT_BRIDGE_DEFAULT;
+    public Color intercontinentalBridgeColour = INTERCONTINENTAL_BRIDGE_DEFAULT;
     public Color bridgeFrontageColour = BRIDGE_FRONTAGE_DEFAULT;
     public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
@@ -406,7 +423,8 @@ public final class ViewerSettings {
                 || showContinentBridges
                 || showContinentInletFill
                 || showContinentLakeBridges
-                || showContinentLakePocketFill);
+                || showContinentLakePocketFill
+                || showIntercontinentalBridges);
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with

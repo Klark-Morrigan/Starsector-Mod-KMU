@@ -289,6 +289,10 @@ public final class ContinentExposure {
     // facing captured water belongs to that water's cycle, while a side facing the open void
     // belongs to no cycle at all, the unbounded outside being no hole. So the number of
     // captured pieces naming a span is the number of its sides that face inward.
+    //
+    // Matched back to the span by the cells it joins. A chord carries its two cells and nothing
+    // else of the span it was built from, so matching by identity would mean building the chords
+    // a second time and trusting two constructions of one line to come out equal.
     private static List<CellGap> findEdgeSpans(List<CellGap> spans, List<VoidHole> captured) {
 
         var closedSides = new LinkedHashMap<SpannedCells, Integer>();
@@ -355,30 +359,6 @@ public final class ContinentExposure {
     }
 
     /**
-     * The pair of cells a wall joins, in a settled order.
-     *
-     * <p>What ties the walk's answer back to the span it came from. A chord carries its two
-     * cells and nothing else of the span it was built from, and building the chords a second
-     * time to match them by identity would be two constructions of one line trusted to come
-     * out equal.
-     *
-     * <p>Ordered on the way in, because the walk records a wall's cells in whichever order it
-     * met them while the span names them one way only.
-     *
-     * @param lower  the lower-numbered of the two cells
-     * @param higher the other
-     */
-    private record SpannedCells(
-        int lower,
-        int higher) {
-
-        static SpannedCells buildFromCells(int one, int other) {
-
-            return new SpannedCells(Math.min(one, other), Math.max(one, other));
-        }
-    }
-
-    /**
      * A stretch of one cell's border that no longer faces the void.
      *
      * <p>Either water a span shut in runs along it or a span's own mouth attaches there. One
@@ -393,5 +373,4 @@ public final class ContinentExposure {
         double fromAngle,
         double toAngle) {
     }
-
 }

@@ -93,6 +93,12 @@ public final class MapLook {
     // difference being looked at.
     public static final Color CONTINENT_BRIDGE = new Color(0x40, 0xd0, 0xff);
 
+    // A span joining two continents rather than tidying one. Its own colour because the two
+    // sets are laid under opposite rules and are on screen together: what a reader is looking
+    // for is which links the sector gains, and a colour shared with the spans that round a
+    // single outline up would make the two acts look like one.
+    public static final Color INTERCONTINENTAL_BRIDGE = new Color(0xa0, 0xff, 0x40);
+
     // A stretch of frontage the smoothing decided not to pass through, drawn on the border it
     // sits on. Diagnostic rather than decorative, and unlike either coast colour: what it is
     // for is being seen NEXT TO the line that replaced it, so the eye can judge what the drop

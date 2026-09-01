@@ -80,6 +80,7 @@ public final class ViewerSettingsPanel {
     private static final String INLET_FILL = "showContinentInletFill";
     private static final String LAKE_BRIDGES = "showContinentLakeBridges";
     private static final String LAKE_POCKET_FILL = "showContinentLakePocketFill";
+    private static final String INTERCONTINENTAL_BRIDGES = "showIntercontinentalBridges";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -739,6 +740,7 @@ public final class ViewerSettingsPanel {
 
         addContinentCoastRows(controls);
         addInletBridgeRows(controls);
+        addIntercontinentalBridgeRows(controls);
     }
 
     // What there is to see of the continent construction, in the order water gets smaller:
@@ -765,7 +767,8 @@ public final class ViewerSettingsPanel {
             LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES,
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
             LAKE_BRIDGES, LAKE_POCKET_FILL,
-            CONTINENT_BRIDGES, INLET_FILL));
+            CONTINENT_BRIDGES, INLET_FILL,
+            INTERCONTINENTAL_BRIDGES));
 
         rows.addAll(buildContinentBranchRows());
         rows.addAll(buildContinentGlobalRows());
@@ -825,7 +828,14 @@ public final class ViewerSettingsPanel {
                 on -> settings.showContinentBridges = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INLET_FILL, "Fill", false,
-                on -> settings.showContinentInletFill = on)));
+                on -> settings.showContinentInletFill = on)),
+
+            // A branch of one, and no roll-up over it: a link holds nothing, so there is no
+            // fill to see of it and nothing for a roll-up to gather. Last, because it is the
+            // only set laid against everything above rather than against the coasts alone.
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                INTERCONTINENTAL_BRIDGES, "Intercontinental bridges", false,
+                on -> settings.showIntercontinentalBridges = on)));
     }
 
     // The globals: one per KIND of thing, cutting across every branch above. No switches of
@@ -838,12 +848,15 @@ public final class ViewerSettingsPanel {
                 1,
                 "Walls",
                 LAKE_COASTLINE, CONTINENT_COASTLINE,
-                LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES),
+                LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES,
+                INTERCONTINENTAL_BRIDGES),
             ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
             ToggleTree.Row.ofRollUp(
                 1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofRollUp(
-                1, "Bridges", PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES),
+                1,
+                "Bridges",
+                PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES, INTERCONTINENTAL_BRIDGES),
             ToggleTree.Row.ofRollUp(
                 1,
                 "Fill",
@@ -944,6 +957,20 @@ public final class ViewerSettingsPanel {
                 settings.shouldThinSpanFormations = on;
                 refreshes.refreshCoastlines();
             }));
+    }
+
+    // The links between the continents. A colour and nothing else: they are offered under the
+    // reach and judged under the slack the inlet spans are, which is deliberate - the two sets
+    // are laid over one sector and read together, so a second reach here would turn a
+    // difference between them into a difference between two sliders.
+    private void addIntercontinentalBridgeRows(JPanel controls) {
+
+        controls.add(ColourRows.buildColour(
+            "intercontinentalBridgeColour",
+            "Intercontinental bridges",
+            ViewerSettings.INTERCONTINENTAL_BRIDGE_DEFAULT,
+            colour -> settings.intercontinentalBridgeColour = colour,
+            refreshes::repaintMap));
     }
 
     // Everything there is to see of the void, under one head.

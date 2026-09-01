@@ -4,6 +4,7 @@ import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
+import kmu.maplayers.base.geometry.IntercontinentalBridges;
 import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
@@ -24,8 +25,8 @@ import java.util.Map;
  * <b>The continent coast (v3), orchestrated.</b> Each touching-connected run of cells traced as
  * its own closed coast, and everything that reading of the sector then produces: the outer
  * shores and the void behind them, the lake shores round the water the cells closed unaided,
- * the puddles too small for a shore, the spans laid across both the inlets and the puddles,
- * and the water those spans shut in.
+ * the puddles too small for a shore, the spans laid across the inlets and the puddles and the
+ * water those spans shut in, and the links laid between one continent and the next.
  *
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
@@ -79,6 +80,11 @@ public final class ContinentCoastOverlay {
     // than as what a span shut in.
     private List<CellGap> puddleBridges = List.of();
 
+    // The links between the continents, held beside the trace and the inlet spans they were
+    // judged against. No fill either: a link joins two shapes rather than closing water in, so
+    // there is nothing behind it to draw.
+    private List<CellGap> intercontinentalBridges = List.of();
+
     // The settled bridge search, shared with the construction that also asks it. Handed in
     // rather than made here: two overlays asking one question of one sector have to be one
     // search, and a cache each would be exactly the second answer it exists to prevent.
@@ -113,6 +119,7 @@ public final class ContinentCoastOverlay {
         inletWater = SpanWater.NONE;
         lakeWater = SpanWater.NONE;
         puddleBridges = List.of();
+        intercontinentalBridges = List.of();
         frontages = List.of();
 
         // The coasts are traced while any of them is wanted, because each is built on them:
@@ -136,10 +143,14 @@ public final class ContinentCoastOverlay {
         // because the two are laid independently: a formation is thinned among the spans it
         // shares an anchor with, and a span across a lake shares no anchor with one across
         // the void outside the continent.
+        // The links are laid against the inlet spans, so those have to exist whenever the links
+        // are wanted - drawn or not. Found only while their own layer is on, the links would be
+        // judged against a map missing every wall the inlet search put down, and switching the
+        // inlet spans on would silently change which links survive.
         inletWater = findSpanWater(
             fixture,
             CoastFrontages.Shore.EXTERIOR,
-            settings.showContinentBridges,
+            settings.showContinentBridges || settings.showIntercontinentalBridges,
             settings.showContinentInletFill);
 
         lakeWater = findSpanWater(
@@ -169,6 +180,22 @@ public final class ContinentCoastOverlay {
                     fixture.getSites(),
                     settings.parameters.cellRadius(),
                     settings.parameters.cellRadius() * settings.bridgeReachMultiple));
+        }
+
+        // Last, because it is the one search laid against what the others left down rather than
+        // against the coasts alone.
+        //
+        // Handed the inlet spans and no others. Those are the spans anchored on the same shore
+        // and over the same open void, so they are the ones a link can double or cross; a lake
+        // span and a puddle span both stand over water the cells have already closed around,
+        // which a line running between two continents cannot reach without crossing a cell.
+        if (settings.showIntercontinentalBridges) {
+
+            intercontinentalBridges = IntercontinentalBridges.findIntercontinentalBridges(
+                coast.getTrace(),
+                inletWater.spans(),
+                settings.parameters,
+                settings.resolveContinentBridgeRules());
         }
     }
 
@@ -404,7 +431,8 @@ public final class ContinentCoastOverlay {
 
         if (!settings.showContinentBridges
                 && !settings.showContinentLakeBridges
-                && !settings.showContinentPuddleBridges) {
+                && !settings.showContinentPuddleBridges
+                && !settings.showIntercontinentalBridges) {
 
             return;
         }
@@ -414,7 +442,7 @@ public final class ContinentCoastOverlay {
             settings.continentBridgeColour,
             MapLook.OPAQUE_ALPHA));
 
-        // All three sets in the same stroke and colour, because they are the same kind of
+        // The first three sets in the same stroke and colour, because they are the same kind of
         // claim - "this much water is held between these cells" - told apart by the water each
         // sits over rather than by how it is drawn.
         //
@@ -429,6 +457,18 @@ public final class ContinentCoastOverlay {
         }
         if (settings.showContinentPuddleBridges) {
             paintSpans(g2, puddleBridges);
+        }
+
+        // In their own colour, because they are the one set doing something else: the three
+        // above hold water between cells of one shape, while a link joins two shapes over void
+        // it holds nothing of. Drawn in the same colour they would read as more of the same,
+        // which is the one thing worth being able to tell at a glance here.
+        if (settings.showIntercontinentalBridges) {
+
+            g2.setColor(MapPainting.applyAlpha(
+                settings.intercontinentalBridgeColour, MapLook.OPAQUE_ALPHA));
+
+            paintSpans(g2, intercontinentalBridges);
         }
     }
 
