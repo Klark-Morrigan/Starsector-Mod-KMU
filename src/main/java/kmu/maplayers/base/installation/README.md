@@ -27,10 +27,9 @@ Two sectors sharing one holder is not merely unsupported, it is wrong and quiet.
 Everything under the drawing is keyed by **bare system id**. The stale set names systems by id, the
 motion tracker keys observations by id, and [the geometry cache](../geometry/README.md) reconciles
 cells by id. Nothing forbids two sectors from generating a system under the same one. So a shared
-holder means one
-sector's colony change marks the other's system stale; one sector's drift reads as the other's; and
-a system present in both at different positions is not seen to have moved, so each sector keeps the
-cells the other cut rather than overwriting them.
+holder means one sector's colony change marks the other's system stale; one sector's drift reads as
+the other's; and a system present in both at different positions is not seen to have moved, so each
+sector keeps the cells the other cut rather than overwriting them.
 
 The revisions make it worse rather than better: shared counters leave neither sector able to be
 stale on its own, since either one's change rebuilds both.
@@ -58,8 +57,8 @@ factor and nothing else, and a render surface is terrain, which reaches a `Locat
 `SectorAPI`. A stage under either would otherwise ask the running game which sector it is looking
 at - correct only while the sector it holds cells for and the sector that is loaded are the same
 one. Taking it off the installation rather than passing it alongside is what stops a rebuild cutting
-cells from one sector while reading holders out of another; [the political
-map](../../politicalmap/README.md)'s draw cache and its staleness poll both do exactly that.
+cells from one sector while reading holders out of another - which the draw cache and staleness poll
+of [the political map](../../politicalmap/README.md) both rely on.
 
 ## How a layer's own machinery gets in
 
