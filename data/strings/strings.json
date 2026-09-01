@@ -22,6 +22,7 @@
 
     "map_layer_tab_no_layer": "No Layer",
     "map_layer_ctl_columns_caption": "Columns",
+    "map_layer_ctl_filter_row_toggle": "Map layers",
     "map_layer_tooltip_footer_collapse_factions": "collapse to factions",
     "map_layer_tooltip_footer_expand_system_composition": "expand system composition",
     "map_layer_tooltip_footer_expand_market_stats": "expand market stats",

@@ -584,6 +584,26 @@ about what the overlay means.
   [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
+- **`base/chrome`** - what the mod puts on the game's own map chrome rather than over it. One tick
+  box appended to the vanilla filter row - the strip carrying Starscape, Names and the rest - which
+  shows and moves that screen's show-or-hide pick, so hiding the layers is where a player already
+  looks for "show or hide this map furniture" and takes the sidebar with it. `MapLayerToggleUpkeep`
+  is the standing pass that keeps it there: the map widget builds its row inside its own
+  constructor, so every open of a screen produces a fresh row and the box put on the last one is
+  attached to a widget nobody can see. It compares the row on screen against the row it last wrote
+  to, one remembered per screen against that screen's own pick, and appends again when they part
+  company - by row identity rather than by what the row holds, since another mod's button on the
+  same row would otherwise read as ours having gone missing. A script rather than a render pass, for
+  the reason the hover expirer is one: the sidebar's pass runs only while the sidebar is showing,
+  and this control has to bring the layers back from the frames where nothing of them is drawn.
+  `MapLayerToggleAttacher` is the write itself, held behind a seam because standing a control on
+  another party's widget is a reach into the running game's tree; `VanillaMapLayerToggleAttacher`
+  is that reach, over KMLib's `MapFilterToggle`, and the one place the control's own wording is
+  read. Everything here fails open: no row, no room, a shape that no longer builds a drivable
+  button, or a read that throws all resolve to no control, one line in the log, and a map behaving
+  as it did before the box existed. Whether it is attempted at all is
+  `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev hatch rather than an appearance knob,
+  since what it governs is the reach and not the look.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
   draw pipeline behind them.
 - **`MapLayers`** - the composition root, the single place every concrete layer, political-map view,

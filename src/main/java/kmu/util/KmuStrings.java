@@ -33,6 +33,7 @@ public final class KmuStrings {
     public static final String DIALOG_CLOSE = "dialog_close";
     public static final String MAP_LAYER_TAB_NO_LAYER = "map_layer_tab_no_layer";
     public static final String MAP_LAYER_CTL_COLUMNS_CAPTION = "map_layer_ctl_columns_caption";
+    public static final String MAP_LAYER_CTL_FILTER_ROW_TOGGLE = "map_layer_ctl_filter_row_toggle";
     public static final String MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS =
         "map_layer_tooltip_footer_collapse_factions";
     public static final String MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION =

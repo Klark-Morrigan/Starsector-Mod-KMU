@@ -132,6 +132,16 @@ public final class MapLayerRegistry {
     }
 
     /**
+     * @return the show-or-hide pick of the screen showing this frame, for a control standing on that
+     *         screen's own chrome to show and to move. The pick itself rather than a reading of it,
+     *         since such a control both reports what it holds and writes to it; which screen it
+     *         belongs to is settled here so the control never has to ask
+     */
+    public static MapLayerVisibility resolveLayerVisibilityOfLiveScreen() {
+        return resolveLivePicks().layerVisibility();
+    }
+
+    /**
      * @return how much of the showing screen's layers is on it this frame, 0 with them wholly hidden
      *         and 1 with them wholly shown, for a pass multiplying it into what it paints so the
      *         whole footprint thins together rather than one part snapping out from under another
