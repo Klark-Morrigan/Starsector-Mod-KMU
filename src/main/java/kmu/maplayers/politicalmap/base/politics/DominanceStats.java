@@ -19,10 +19,6 @@ import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
  * and a merely-large one are told apart. Market size is kept here rather than in {@link
  * MarketFootprint}, which stays scoped to the dominance-weight quantities the rule compares.
  *
- * <p>Of the four, market size is the only one measured the same way outside this layer's mechanic, so
- * it is stated through {@link SizedBlocMetrics} and ranked by a mode declared once rather than per
- * vocabulary. The other three are the contest's own and are named nowhere else.
- *
  * <p>The two halves are scoped differently on purpose, and that is what lets a bloc be listed at
  * nought. Domination and score answer what the contest made of the bloc, so they count only the
  * colonies it weighed; presence and market size answer how much of the sector the bloc lives in, so

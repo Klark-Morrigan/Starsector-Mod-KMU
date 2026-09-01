@@ -27,6 +27,11 @@ import java.util.function.ToIntFunction;
  * ranks by the bloc's label, lets the whole numeric chain follow, and draws no value. That is a
  * property of the ranking rather than of a vocabulary, so it is stated once here too.
  *
+ * <p>Instances are compared by identity, deliberately: a declared mode carries no value equality, so a
+ * vocabulary must publish each of its modes as a single constant and offer that same instance. Keying
+ * equality on the persistence key instead would make two vocabularies' same-named modes equal, and it
+ * is precisely that comparison which stops a sort built from one vocabulary's mode and another's set.
+ *
  * @param <S> the vocabulary's metrics record, whose numbers this mode ranks over
  */
 public final class BlocMetricSortMode<S extends BlocMetrics> implements ListSortMode<RankedBloc<S>> {

@@ -7,11 +7,12 @@ import kmlib.starsector.ui.widgets.lists.SortDirection;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildStandInBloc;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -32,11 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * than what one layer's numbers happen to produce.
  */
 final class BlocMetricSortModeTest {
-
-    // The tone the picker offers a mode with no colour opinion of its own. Arbitrary and distinct from
-    // any engine shade, since what the value cases read off it is only that the offered tone came back
-    // on the run rather than one the mode chose.
-    private static final Color ROW_COLOUR = Color.ORANGE;
 
     // The stand-in vocabulary's chain: severity first, volatility behind it.
     private static final List<ToIntFunction<HazardRating>> CANONICAL_CHAIN =
@@ -94,7 +90,7 @@ final class BlocMetricSortModeTest {
 
             // One bloc, two modes: each draws the number it was declared over, so the value follows the
             // mode rather than the payload's first number or the chain's leading one.
-            var bloc = buildBloc("hazard", "Hazard", 7, 2);
+            var bloc = buildStandInBloc("hazard", "Hazard", 7, 2);
 
             assertThat(BY_SEVERITY.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("7", ROW_COLOUR));
@@ -106,7 +102,7 @@ final class BlocMetricSortModeTest {
         void resolveTrailingRunsIsNoRunsWhenTheModeNamesNoMetric() {
 
             // A by-name ranking has no number to show, so the row's value column stays unfilled.
-            assertThat(BY_NAME.resolveTrailingRuns(buildBloc("hazard", "Hazard", 7, 2), ROW_COLOUR))
+            assertThat(BY_NAME.resolveTrailingRuns(buildStandInBloc("hazard", "Hazard", 7, 2), ROW_COLOUR))
                 .isEmpty();
         }
     }
@@ -135,12 +131,12 @@ final class BlocMetricSortModeTest {
             // The same pair under two modes over the same chain: the severe bloc leads one ranking and
             // the volatile bloc leads the other, so the primary key is the mode's metric rather than
             // the chain's first entry.
-            var severe = buildBloc("severe", "Severe", 9, 1);
-            var unstable = buildBloc("unstable", "Unstable", 1, 8);
+            var severe = buildStandInBloc("severe", "Severe", 9, 1);
+            var unstable = buildStandInBloc("unstable", "Unstable", 1, 8);
 
-            assertThat(listIdsSortedBy(BY_SEVERITY, severe, unstable))
+            assertThat(listIdsInModeOrder(BY_SEVERITY, severe, unstable))
                 .containsExactly("severe", "unstable");
-            assertThat(listIdsSortedBy(BY_VOLATILITY, severe, unstable))
+            assertThat(listIdsInModeOrder(BY_VOLATILITY, severe, unstable))
                 .containsExactly("unstable", "severe");
         }
 
@@ -149,41 +145,12 @@ final class BlocMetricSortModeTest {
 
             // The more severe bloc would lead either numeric ranking, so a by-name ranking putting
             // Alpha first says the label led rather than a number.
-            var zeta = buildBloc("z", "Zeta", 9, 9);
-            var alpha = buildBloc("a", "Alpha", 1, 1);
+            var zeta = buildStandInBloc("z", "Zeta", 9, 9);
+            var alpha = buildStandInBloc("a", "Alpha", 1, 1);
 
-            assertThat(listIdsSortedBy(BY_NAME, zeta, alpha))
+            assertThat(listIdsInModeOrder(BY_NAME, zeta, alpha))
                 .containsExactly("a", "z");
         }
     }
 
-    // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
-    // ids in the resulting order, so an assertion reads the arrangement without the blocs' other fields
-    // getting in the way. The flipped direction belongs to the shared assembly and is pinned where that
-    // lives.
-    @SafeVarargs
-    private static List<String> listIdsSortedBy(
-            ListSortMode<RankedBloc<HazardRating>> mode,
-            RankedBloc<HazardRating>... blocs) {
-
-        var sorted = new ArrayList<>(List.of(blocs));
-        sorted.sort(mode.comparator(mode.defaultDirection()));
-
-        var ids = new ArrayList<String>(sorted.size());
-        for (var bloc : sorted) {
-            ids.add(bloc.itemId());
-        }
-        return ids;
-    }
-
-    private static RankedBloc<HazardRating> buildBloc(
-            String id,
-            String name,
-            int severity,
-            int volatility) {
-
-        return new RankedBloc<>(
-            new SelectableBloc(id, name, null),
-            new HazardRating(severity, volatility));
-    }
 }

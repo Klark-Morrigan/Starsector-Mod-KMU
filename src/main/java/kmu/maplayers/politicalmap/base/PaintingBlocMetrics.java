@@ -10,10 +10,9 @@ package kmu.maplayers.politicalmap.base;
  * the numbers and the fold has already computed them. A ranked bloc holds its payload opaquely, so it
  * has nothing to judge by, and a view answering instead would re-derive the total the metrics carry.
  *
- * <p>Its own interface rather than a default on {@link BlocMetrics}, because not every picker lists
- * painters: one choosing what the map is measured <em>against</em> has no bloc that paints nothing,
- * so a default would hand it an inherited answer to a question it cannot be asked. Opting in is what
- * leaves a payload with no answer to give unable to be asked for one.
+ * <p>What opting into it rather than inheriting it buys here: not every picker lists painters. One
+ * choosing what the map is measured <em>against</em> has no bloc that paints nothing, so it declares
+ * nothing and cannot be asked a question it has no answer to.
  *
  * <p>Stating it does not decide what a row then looks like: the metrics say the bloc paints nothing,
  * {@link RankedBloc} turns that into the picker's "reads back", and the picker owns how far back that

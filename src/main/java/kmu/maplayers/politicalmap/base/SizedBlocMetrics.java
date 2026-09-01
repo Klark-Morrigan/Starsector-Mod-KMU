@@ -6,11 +6,9 @@ package kmu.maplayers.politicalmap.base;
  * One number with one meaning, so the size ranking a player picks under one view is the same reading
  * of "size" under every other.
  *
- * <p>Its own interface rather than a field on {@link BlocMetrics}, for the reason
- * {@link PaintingBlocMetrics} is one too: not every fold computes a whole-sector size, and a default
- * would hand a payload that never summed one an inherited answer of nought - which ranks as the
- * smallest bloc in the sector rather than as a number nobody measured. Opting in is what leaves a
- * vocabulary whose record does not carry the size unable to be offered a ranking over it at all.
+ * <p>What opting into it rather than inheriting it buys here: a vocabulary whose fold never summed a
+ * size cannot be offered a ranking over one at all, where an inherited nought would rank every one of
+ * its blocs as the smallest in the sector.
  *
  * <p>Because the number is shared, so is the mode that ranks by it: {@link SharedBlocSortModes}
  * declares it once over this capability rather than once per vocabulary. What stays per-vocabulary is

@@ -9,10 +9,11 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildBloc;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -25,10 +26,43 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class DominanceSortModeTest {
 
-    // The tone the picker offers a mode with no colour opinion of its own. Arbitrary and distinct from
-    // any engine shade, since what the value cases read off it is only that the offered tone came back
-    // on the run rather than one the mode chose.
-    private static final Color ROW_COLOUR = Color.ORANGE;
+    @Nested
+    class Modes {
+
+        @Test
+        void modesListsEveryModeInSelectorDisplayOrder() {
+
+            // This list is the order the sort selector stacks its rows top to bottom, so it is a drawn
+            // arrangement rather than an implementation detail: name first, then the numeric metrics.
+            // Pinned separately from the tie-break chain, which orders the same modes differently and
+            // for a different reason.
+            // It is also what catches a mode declared and then not offered: the vocabulary is written
+            // out by hand rather than read off the type, since the shared size mode belongs to it
+            // without being declared here.
+            // Copied to the seam's own element type first: the bundle declares its modes as
+            // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
+            // against it directly.
+            var modes = List.<ListSortMode<RankedBloc<DominanceStats>>>copyOf(
+                DominanceSortMode.MODES.modes());
+
+            assertThat(modes)
+                .containsExactly(
+                    DominanceSortMode.NAME,
+                    DominanceSortMode.DOMINATION,
+                    DominanceSortMode.PRESENCE,
+                    DominanceSortMode.SCORE,
+                    DominanceSortMode.MARKET_SIZE);
+        }
+
+        @Test
+        void modesFallsBackToDominationAsTheDefault() {
+
+            // Domination is what these layers are painted by, so a fresh save and any unrecognised
+            // stored key open on the ranking that matches what the map shows.
+            assertThat(DominanceSortMode.MODES.defaultMode())
+                .isEqualTo(DominanceSortMode.DOMINATION);
+        }
+    }
 
     @Nested
     class PersistenceKey {
@@ -126,7 +160,7 @@ final class DominanceSortModeTest {
                 "High",
                 new DominanceStats(9, 0, 0, 0));
 
-            assertThat(listIdsSortedBy(DominanceSortMode.DOMINATION, low, high))
+            assertThat(listIdsInModeOrder(DominanceSortMode.DOMINATION, low, high))
                 .containsExactly("high", "low");
         }
 
@@ -136,19 +170,19 @@ final class DominanceSortModeTest {
             // The order this vocabulary declares behind its numbers: domination, then presence, then
             // score, then market size. Each pair below is level on every metric ahead of the one it
             // differs on, so which bloc leads names the number the chain reaches next.
-            assertThat(listIdsSortedBy(
+            assertThat(listIdsInModeOrder(
                     DominanceSortMode.DOMINATION,
                     buildBloc("lower", "A", new DominanceStats(5, 2, 0, 0)),
                     buildBloc("higher", "B", new DominanceStats(5, 7, 0, 0))))
                 .containsExactly("higher", "lower");
 
-            assertThat(listIdsSortedBy(
+            assertThat(listIdsInModeOrder(
                     DominanceSortMode.DOMINATION,
                     buildBloc("lower", "A", new DominanceStats(5, 5, 10, 0)),
                     buildBloc("higher", "B", new DominanceStats(5, 5, 40, 0))))
                 .containsExactly("higher", "lower");
 
-            assertThat(listIdsSortedBy(
+            assertThat(listIdsInModeOrder(
                     DominanceSortMode.DOMINATION,
                     buildBloc("lower", "A", new DominanceStats(5, 5, 10, 3)),
                     buildBloc("higher", "B", new DominanceStats(5, 5, 10, 9))))
@@ -156,29 +190,4 @@ final class DominanceSortModeTest {
         }
     }
 
-    // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
-    // ids in the resulting order, so an assertion reads the arrangement without the blocs' other
-    // fields getting in the way. The flipped direction belongs to the shared assembly and is pinned
-    // where that lives.
-    @SafeVarargs
-    private static List<String> listIdsSortedBy(
-            ListSortMode<RankedBloc<DominanceStats>> mode,
-            RankedBloc<DominanceStats>... blocs) {
-
-        var sorted = new ArrayList<>(List.of(blocs));
-        sorted.sort(mode.comparator(mode.defaultDirection()));
-
-        var ids = new ArrayList<String>(sorted.size());
-        for (var bloc : sorted) {
-            ids.add(bloc.itemId());
-        }
-        return ids;
-    }
-
-    private static RankedBloc<DominanceStats> buildBloc(
-            String id,
-            String name,
-            DominanceStats stats) {
-        return new RankedBloc<>(new SelectableBloc(id, name, null), stats);
-    }
 }

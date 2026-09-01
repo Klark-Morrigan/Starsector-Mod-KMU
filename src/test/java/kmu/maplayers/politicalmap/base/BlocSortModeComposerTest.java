@@ -6,11 +6,12 @@ import kmlib.starsector.ui.widgets.lists.SortDirection;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildStandInBloc;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -23,11 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ordering and value cases, which is what shows they are laid out by this.
  */
 final class BlocSortModeComposerTest {
-
-    // The tone the picker offers a mode with no colour opinion of its own. Arbitrary and distinct from
-    // any engine shade, since what the value cases read off it is only that the offered tone came back
-    // on the run rather than one the assembly chose.
-    private static final Color ROW_COLOUR = Color.ORANGE;
 
     // The stand-in vocabulary's two numbers, named once so a case can promote either one and read the
     // same accessor back out of the chain.
@@ -48,8 +44,8 @@ final class BlocSortModeComposerTest {
         @Test
         void assembleComparatorRanksByThePrimaryMetricHighToLow() {
 
-            var low = buildBloc("low", "Low", 1, 0);
-            var high = buildBloc("high", "High", 9, 0);
+            var low = buildStandInBloc("low", "Low", 1, 0);
+            var high = buildStandInBloc("high", "High", 9, 0);
 
             assertThat(listIdsSortedBy(SEVERITY, low, high))
                 .containsExactly("high", "low");
@@ -60,8 +56,8 @@ final class BlocSortModeComposerTest {
 
             // Level on severity, so the tie falls to volatility next in the chain: the higher one leads
             // even though the key being sorted is severity.
-            var lowerVolatility = buildBloc("a", "A", 5, 2);
-            var higherVolatility = buildBloc("b", "B", 5, 7);
+            var lowerVolatility = buildStandInBloc("a", "A", 5, 2);
+            var higherVolatility = buildStandInBloc("b", "B", 5, 7);
 
             assertThat(listIdsSortedBy(SEVERITY, lowerVolatility, higherVolatility))
                 .containsExactly("b", "a");
@@ -72,8 +68,8 @@ final class BlocSortModeComposerTest {
 
             // Under volatility, the less severe but more volatile bloc leads: the primary key is
             // promoted ahead of severity, which sits first in the chain and would otherwise win.
-            var severe = buildBloc("severe", "Severe", 9, 1);
-            var unstable = buildBloc("unstable", "Unstable", 1, 8);
+            var severe = buildStandInBloc("severe", "Severe", 9, 1);
+            var unstable = buildStandInBloc("unstable", "Unstable", 1, 8);
 
             assertThat(listIdsSortedBy(VOLATILITY, severe, unstable))
                 .containsExactly("unstable", "severe");
@@ -82,8 +78,8 @@ final class BlocSortModeComposerTest {
         @Test
         void assembleComparatorRanksByNameWhenNoMetricIsNamed() {
 
-            var zeta = buildBloc("z", "Zeta", 0, 0);
-            var alpha = buildBloc("a", "Alpha", 0, 0);
+            var zeta = buildStandInBloc("z", "Zeta", 0, 0);
+            var alpha = buildStandInBloc("a", "Alpha", 0, 0);
 
             assertThat(listIdsSortedBy(NO_METRIC, zeta, alpha))
                 .containsExactly("a", "z");
@@ -94,8 +90,8 @@ final class BlocSortModeComposerTest {
 
             // Two blocs share a name, so a by-name ranking falls through to the numeric chain and the
             // more severe one leads.
-            var milder = buildBloc("milder", "Same", 1, 0);
-            var harsher = buildBloc("harsher", "Same", 8, 0);
+            var milder = buildStandInBloc("milder", "Same", 1, 0);
+            var harsher = buildStandInBloc("harsher", "Same", 8, 0);
 
             assertThat(listIdsSortedBy(NO_METRIC, milder, harsher))
                 .containsExactly("harsher", "milder");
@@ -106,8 +102,8 @@ final class BlocSortModeComposerTest {
 
             // Level on every number, so a numeric ranking falls to the name, which reads A-to-Z behind
             // the chain whichever number led it.
-            var zeta = buildBloc("z", "Zeta", 3, 3);
-            var alpha = buildBloc("a", "Alpha", 3, 3);
+            var zeta = buildStandInBloc("z", "Zeta", 3, 3);
+            var alpha = buildStandInBloc("a", "Alpha", 3, 3);
 
             assertThat(listIdsSortedBy(SEVERITY, zeta, alpha))
                 .containsExactly("a", "z");
@@ -118,8 +114,8 @@ final class BlocSortModeComposerTest {
 
             // Ascending reverses the primary metric, so the less severe bloc leads while the key is
             // still severity - only its direction changed.
-            var low = buildBloc("low", "Low", 1, 0);
-            var high = buildBloc("high", "High", 9, 0);
+            var low = buildStandInBloc("low", "Low", 1, 0);
+            var high = buildStandInBloc("high", "High", 9, 0);
 
             assertThat(listIdsSortedBy(SEVERITY, SortDirection.ASCENDING, low, high))
                 .containsExactly("low", "high");
@@ -130,8 +126,8 @@ final class BlocSortModeComposerTest {
 
             // With the primary key ascending, a tie on it still breaks down the chain the same way:
             // level on severity, the higher volatility leads regardless of direction.
-            var lowerVolatility = buildBloc("a", "A", 5, 2);
-            var higherVolatility = buildBloc("b", "B", 5, 7);
+            var lowerVolatility = buildStandInBloc("a", "A", 5, 2);
+            var higherVolatility = buildStandInBloc("b", "B", 5, 7);
 
             assertThat(listIdsSortedBy(
                     SEVERITY,
@@ -145,8 +141,8 @@ final class BlocSortModeComposerTest {
         void assembleComparatorFlipsTheNameKeyWhenTheDirectionIsDescending() {
 
             // A by-name ranking's natural order is ascending, so descending reverses it to Z-to-A.
-            var zeta = buildBloc("z", "Zeta", 0, 0);
-            var alpha = buildBloc("a", "Alpha", 0, 0);
+            var zeta = buildStandInBloc("z", "Zeta", 0, 0);
+            var alpha = buildStandInBloc("a", "Alpha", 0, 0);
 
             assertThat(listIdsSortedBy(NO_METRIC, SortDirection.DESCENDING, zeta, alpha))
                 .containsExactly("z", "a");
@@ -157,8 +153,8 @@ final class BlocSortModeComposerTest {
 
             // Same name and identical numbers, so every visible key is level; the by-id key gives a
             // total order so the pair holds a fixed position rather than reshuffling frame to frame.
-            var second = buildBloc("bbb", "Same", 3, 3);
-            var first = buildBloc("aaa", "Same", 3, 3);
+            var second = buildStandInBloc("bbb", "Same", 3, 3);
+            var first = buildStandInBloc("aaa", "Same", 3, 3);
 
             assertThat(listIdsSortedBy(SEVERITY, second, first))
                 .containsExactly("aaa", "bbb");
@@ -169,10 +165,8 @@ final class BlocSortModeComposerTest {
 
             // A bloc no name resolved for sorts as though its label were empty rather than throwing
             // when the ranking reaches the name.
-            var named = buildBloc("named", "Alpha", 0, 0);
-            var unlabelled = new RankedBloc<>(
-                new SelectableBloc("unlabelled", null, null),
-                new HazardRating(0, 0));
+            var named = buildStandInBloc("named", "Alpha", 0, 0);
+            var unlabelled = buildStandInBloc("unlabelled", null, 0, 0);
 
             assertThat(listIdsSortedBy(NO_METRIC, named, unlabelled))
                 .containsExactly("unlabelled", "named");
@@ -209,7 +203,7 @@ final class BlocSortModeComposerTest {
             // the value matches the name beside it.
             assertThat(BlocSortModeComposer.resolveMetricRuns(
                     SEVERITY,
-                    buildBloc("hazard", "Hazard", 7, 2),
+                    buildStandInBloc("hazard", "Hazard", 7, 2),
                     ROW_COLOUR))
                 .containsExactly(new TextSpan("7", ROW_COLOUR));
         }
@@ -220,14 +214,14 @@ final class BlocSortModeComposerTest {
             // A by-name ranking has no number to show, so the row's value column stays unfilled.
             assertThat(BlocSortModeComposer.resolveMetricRuns(
                     NO_METRIC,
-                    buildBloc("hazard", "Hazard", 7, 2),
+                    buildStandInBloc("hazard", "Hazard", 7, 2),
                     ROW_COLOUR))
                 .isEmpty();
         }
     }
 
-    // Sorts the blocs by the assembled comparator in the primary key's own natural direction and
-    // returns their ids in the resulting order, so an assertion reads the default arrangement without
+    // Assembles the comparator for a mode promoting this metric and reads the blocs' ids off it, in the
+    // primary key's own natural direction, so an assertion reads the default arrangement without
     // spelling out the direction. The flip cases use the direction overload.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
@@ -240,35 +234,15 @@ final class BlocSortModeComposerTest {
             blocs);
     }
 
-    // Sorts the blocs by the assembled comparator in the given direction and returns their ids in
-    // order, so an assertion reads the arrangement without the blocs' other fields getting in the way.
+    // The same in a named direction, which is what the flip cases ask for.
     @SafeVarargs
     private static List<String> listIdsSortedBy(
             ToIntFunction<HazardRating> primaryMetric,
             SortDirection direction,
             RankedBloc<HazardRating>... blocs) {
 
-        var sorted = new ArrayList<>(List.of(blocs));
-        sorted.sort(BlocSortModeComposer.assembleComparator(
-            primaryMetric,
-            CANONICAL_CHAIN,
-            direction));
-
-        var ids = new ArrayList<String>(sorted.size());
-        for (var bloc : sorted) {
-            ids.add(bloc.itemId());
-        }
-        return ids;
-    }
-
-    private static RankedBloc<HazardRating> buildBloc(
-            String id,
-            String name,
-            int severity,
-            int volatility) {
-
-        return new RankedBloc<>(
-            new SelectableBloc(id, name, null),
-            new HazardRating(severity, volatility));
+        return listIdsInOrder(
+            BlocSortModeComposer.assembleComparator(primaryMetric, CANONICAL_CHAIN, direction),
+            blocs);
     }
 }

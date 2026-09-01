@@ -5,16 +5,16 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.SelectableBloc;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildBloc;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -27,11 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class ClaimSortModeTest {
 
-    // The tone the picker offers a mode with no colour opinion of its own. Arbitrary and distinct from
-    // any engine shade, since what the value cases read off it is only that the offered tone came back
-    // on the run rather than one the mode chose.
-    private static final Color ROW_COLOUR = Color.ORANGE;
-
     @Nested
     class Modes {
 
@@ -42,9 +37,12 @@ final class ClaimSortModeTest {
             // arrangement rather than an implementation detail: name first, then the two numeric
             // metrics. Pinned separately from the tie-break chain, which orders the same modes
             // differently and for a different reason.
+            // It is also what catches a mode declared and then not offered: the vocabulary is written
+            // out by hand rather than read off the type, since the shared size mode belongs to it
+            // without being declared here.
             // Copied to the seam's own element type first: the bundle declares its modes as
-            // "? extends ListSortMode", so a capture reaches the assertion and no enum constant can be
-            // named against it directly.
+            // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
+            // against it directly.
             var modes = List.<ListSortMode<RankedBloc<ClaimStats>>>copyOf(ClaimSortMode.MODES.modes());
 
             assertThat(modes)
@@ -141,7 +139,7 @@ final class ClaimSortModeTest {
             var low = buildBloc("low", "Low", new ClaimStats(1, 0));
             var high = buildBloc("high", "High", new ClaimStats(9, 0));
 
-            assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, low, high))
+            assertThat(listIdsInModeOrder(ClaimSortMode.CLAIMS, low, high))
                 .containsExactly("high", "low");
         }
 
@@ -153,7 +151,7 @@ final class ClaimSortModeTest {
             var smaller = buildBloc("a", "A", new ClaimStats(5, 2));
             var bigger = buildBloc("b", "B", new ClaimStats(5, 7));
 
-            assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, smaller, bigger))
+            assertThat(listIdsInModeOrder(ClaimSortMode.CLAIMS, smaller, bigger))
                 .containsExactly("b", "a");
         }
 
@@ -166,7 +164,7 @@ final class ClaimSortModeTest {
             var claimant = buildBloc("claimant", "Claimant", new ClaimStats(1, 0));
             var holder = buildBloc("holder", "Holder", new ClaimStats(0, 90));
 
-            assertThat(listIdsSortedBy(ClaimSortMode.CLAIMS, holder, claimant))
+            assertThat(listIdsInModeOrder(ClaimSortMode.CLAIMS, holder, claimant))
                 .containsExactly("claimant", "holder");
         }
 
@@ -177,31 +175,9 @@ final class ClaimSortModeTest {
             var claimant = buildBloc("b", "Beta", new ClaimStats(4, 0));
             var holder = buildBloc("a", "Alpha", new ClaimStats(0, 90));
 
-            assertThat(listIdsSortedBy(ClaimSortMode.NAME, claimant, holder))
+            assertThat(listIdsInModeOrder(ClaimSortMode.NAME, claimant, holder))
                 .containsExactly("a", "b");
         }
     }
 
-    // Sorts the blocs by the mode's comparator in the mode's own default direction and returns their
-    // ids in the resulting order, so an assertion reads the arrangement without the blocs' other
-    // fields getting in the way. The flipped direction belongs to the shared assembly and is pinned
-    // where that lives.
-    @SafeVarargs
-    private static List<String> listIdsSortedBy(
-            ListSortMode<RankedBloc<ClaimStats>> mode,
-            RankedBloc<ClaimStats>... blocs) {
-
-        var sorted = new ArrayList<>(List.of(blocs));
-        sorted.sort(mode.comparator(mode.defaultDirection()));
-
-        var ids = new ArrayList<String>(sorted.size());
-        for (var bloc : sorted) {
-            ids.add(bloc.itemId());
-        }
-        return ids;
-    }
-
-    private static RankedBloc<ClaimStats> buildBloc(String id, String name, ClaimStats stats) {
-        return new RankedBloc<>(new SelectableBloc(id, name, null), stats);
-    }
 }

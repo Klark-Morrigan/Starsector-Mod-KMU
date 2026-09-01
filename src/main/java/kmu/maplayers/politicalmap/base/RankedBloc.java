@@ -22,8 +22,9 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
  * <p>The payload is bounded by {@link BlocMetrics} rather than left open, so a row's second half is
  * some layer's metrics for the bloc and not any value at all. The bound asks nothing further of it:
  * the one seam value the identity cannot answer - whether the row reads back - is a fact about the
- * numbers, so it comes from the payload wherever that opted into stating it, rather than from a flag
- * every layer's option would then have to carry.
+ * numbers, so it comes from the payload wherever that opted into {@link PaintingBlocMetrics}, rather
+ * than from a flag every layer's option would then have to carry. The other capabilities a payload
+ * may state are read by that layer's sort vocabulary rather than by anything here.
  *
  * @param <S>      the ranking metrics this view's picker sorts and labels by - one stats record per
  *                 sort vocabulary, never shared between vocabularies
