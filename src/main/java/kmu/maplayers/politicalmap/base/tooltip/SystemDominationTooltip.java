@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -31,7 +31,7 @@ import java.util.List;
  * read to four depths rather than four bodies, so no two depths can describe one system differently.
  *
  * <p>What is drawn is settled by the cut the listing is laid out under
- * ({@link kmu.maplayers.base.tooltip.CellTooltipBody}); what is composed stops at the same place, the
+ * ({@link kmu.maplayers.base.tooltip.layout.CellTooltipBody}); what is composed stops at the same place, the
  * tiers here being the expensive ones. So the shallowest level pays for no colony read at all, and the
  * level that ranks the groups costs no more than the ranking it draws.
  *

@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
-import kmu.maplayers.base.tooltip.SystemCellTooltip;
+import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
 
 import java.util.List;
 

@@ -3,6 +3,8 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+
 /**
  * A map layer's hover tooltip: the box a layer draws for the star system under the cursor. A layer
  * injects one - or none - through {@code MapLayerRenderer.resolveHoverTooltip}, and the shared hover

@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.text.KmlibStrings;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.util.KmuStrings;
 

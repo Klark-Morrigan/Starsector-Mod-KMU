@@ -6,12 +6,11 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibNumbers;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
-import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ import java.util.Optional;
  * <p>Every market line leads with the glyph the sector map marks that market's entity with, scored or
  * not. The term lines beneath a market carry no mark at all: a size or a garrison bonus has nothing on
  * the map to point at. What a mark off the map is for and how it is coloured are
- * {@link kmu.maplayers.base.tooltip.CellTooltipMark#resolveMarkForMapIcon}'s.
+ * {@link kmu.maplayers.base.tooltip.content.CellTooltipMark#resolveMarkForMapIcon}'s.
  *
  * <p>A market the box may not name is listed all the same, with its name blocked out - what such a
  * line looks like and which markets take it are {@link RedactedMarketLines}'s.
@@ -377,7 +376,7 @@ public final class ClaimScoreRowResolver {
 
         var line = isStatingBlockedOutScore(market, isCarryingTheStanding)
             ? RedactedMarketLines.createCountedRedactedLine(market, resolveContestScore(market))
-            : RedactedMarketLines.createRedactedLine(market, CellTooltipRows.NO_SCORE);
+            : RedactedMarketLines.createRedactedLine(market, CellTooltipEntryLine.NO_SCORE);
 
         return market.isScoredOnItsOwnAccount() ? line : line.statesUncountedValue();
     }

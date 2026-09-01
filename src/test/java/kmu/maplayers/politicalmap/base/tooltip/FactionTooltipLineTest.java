@@ -2,9 +2,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -50,7 +49,7 @@ final class FactionTooltipLineTest {
             var line = FactionTooltipLine.buildFactionLine(
                 buildEmptySector(),
                 "ghost_faction",
-                CellTooltipRows.NO_SCORE);
+                CellTooltipEntryLine.NO_SCORE);
 
             assertThat(line.labelText())
                 .isEqualTo("ghost_faction");

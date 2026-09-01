@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.politicalmap.base.dominance.FactionStanding;
 
 import java.util.List;

@@ -3,9 +3,9 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
@@ -24,7 +24,7 @@ import java.util.List;
  * read to four depths rather than four bodies, so no two depths can describe one system differently.
  *
  * <p>What is drawn is settled by the cut the listing is laid out under
- * ({@link kmu.maplayers.base.tooltip.CellTooltipBody}); what is composed stops at the same place, so a
+ * ({@link kmu.maplayers.base.tooltip.layout.CellTooltipBody}); what is composed stops at the same place, so a
  * hover asking only who claims the system selects, ranks and words no faction's colonies at all.
  *
  * <p>Every faction the box names takes an account, including one the mechanic weighed nothing for: its

@@ -13,9 +13,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.TEXT;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARKED_LABEL_RUN;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.MARK_RUN;
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelRun;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.MARKED_LABEL_RUN;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.MARK_RUN;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.buildEmptySector;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 

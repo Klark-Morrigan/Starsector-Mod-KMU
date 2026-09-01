@@ -19,12 +19,12 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelState;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

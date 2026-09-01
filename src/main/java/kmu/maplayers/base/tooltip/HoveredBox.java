@@ -10,6 +10,7 @@ import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 
 import java.util.Optional;
 
@@ -17,8 +18,9 @@ import java.util.Optional;
  * The hover box that would draw this frame, together with what it would draw for: the active layer's
  * injected tooltip, the live sector, and the star system under the cursor.
  *
- * <p>Held as one value because the three are resolved by one chain of conditions - a cell is hovered, a
- * layer injected a box, a sector is live, and the hovered id still resolves to a system - and two passes
+ * <p>Held as one value because the three are resolved by one chain of conditions - a cell is hovered, the
+ * screen's layers are on, a layer injected a box, a sector is live, and the hovered id still resolves to
+ * a system - and two passes
  * need the answer: the pass that draws the box, and the pass that claims the key which switches it. A
  * chain spelled out twice is one edit away from the key acting on a frame the box does not draw, or
  * falling through on one it does.
@@ -38,8 +40,8 @@ record HoveredBox(
 
     /**
      * Resolves what the cursor is over into the box that would draw for it, or empty where nothing
-     * would: no cell hovered, no layer showing a box, no live sector, or an id that no longer names a
-     * system.
+     * would: no cell hovered, the screen's layers switched off, no layer showing a box, no live sector,
+     * or an id that no longer names a system.
      *
      * <p>Reads the hover, the layer registry, and the sector live rather than taking them, because both
      * callers are passes the engine drives with nothing but a frame - neither is handed the state it

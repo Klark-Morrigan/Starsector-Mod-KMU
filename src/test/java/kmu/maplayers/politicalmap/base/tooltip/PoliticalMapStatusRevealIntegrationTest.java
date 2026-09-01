@@ -35,8 +35,8 @@ import org.mockito.Mockito;
 import java.util.List;
 import java.util.Set;
 
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readLabelTextRun;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTextRun;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

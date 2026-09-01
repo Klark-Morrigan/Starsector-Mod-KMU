@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHolderPassOver;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;

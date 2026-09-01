@@ -22,8 +22,8 @@ import org.mockito.Mockito;
 
 import java.util.List;
 
-import static kmu.maplayers.base.tooltip.CellTooltipRowReads.readSectionOpeningWords;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
+import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildHiddenMarket;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;

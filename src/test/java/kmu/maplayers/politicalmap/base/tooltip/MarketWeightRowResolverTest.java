@@ -3,9 +3,9 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipQualifier;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.politicalmap.base.dominance.BaseSizeFactor;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
@@ -30,10 +30,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.MARKET_STATS;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.MARKET_STATS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;

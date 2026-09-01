@@ -3,6 +3,8 @@ package kmu.maplayers.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+
 /**
  * A layer's hover box stood in for the real ones, drawing nothing. A real box could not be stood up
  * here in any case, since drawing one needs a live GL context - so what a case reads of this is that

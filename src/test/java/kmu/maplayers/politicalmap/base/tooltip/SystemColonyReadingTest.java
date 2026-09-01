@@ -4,8 +4,8 @@ import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipQualifier;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;

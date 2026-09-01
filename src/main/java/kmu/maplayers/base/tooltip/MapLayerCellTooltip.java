@@ -6,6 +6,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.base.hover.MapHoverPermission;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
 
 /**
  * The map's hover-tooltip dispatcher: a render listener that draws whichever {@link MapHoverTooltip}

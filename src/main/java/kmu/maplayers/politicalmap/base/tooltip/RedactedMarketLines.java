@@ -4,8 +4,8 @@ import kmlib.starsector.entities.EntityNameplate;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.text.KmlibStrings;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipMark;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 
 import java.util.List;
 import java.util.Objects;
@@ -77,7 +77,7 @@ final class RedactedMarketLines {
      *
      * @param market    the market whose name is withheld
      * @param valueText what the block counts this line in, or
-     *                  {@link kmu.maplayers.base.tooltip.CellTooltipRows#NO_SCORE} where the row
+     *                  {@link kmu.maplayers.base.tooltip.layout.CellTooltipEntryLine#NO_SCORE} where the row
      *                  carries no number
      * @return the line, its name blocked out
      */

@@ -2,10 +2,10 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.entities.EntityNameplate;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.MarketWeightBreakdown;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
@@ -44,7 +44,7 @@ import java.util.List;
  * a level up, a system's stations being told apart on the map by their glyph as much as by their name.
  * Every other line beneath a colony carries no mark at all: a stability or a size has nothing on the
  * map to point at, so a glyph there would stand in for a number. What a mark off the map is for and
- * how it is coloured are {@link kmu.maplayers.base.tooltip.CellTooltipMark#resolveMarkForMapIcon}'s.
+ * how it is coloured are {@link kmu.maplayers.base.tooltip.content.CellTooltipMark#resolveMarkForMapIcon}'s.
  *
  * <p>Where that station shares its colony's name - which only a colony on a station can - the line
  * says which of the two it is about. The economy holds a station colony as two entities vanilla

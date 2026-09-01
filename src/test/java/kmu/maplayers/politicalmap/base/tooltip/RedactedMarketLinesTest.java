@@ -6,8 +6,7 @@ import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -177,9 +176,9 @@ final class RedactedMarketLinesTest {
             // The ordinary reading: the column collapses rather than showing a figure for a place the
             // player has not found.
             assertThat(RedactedMarketLines
-                    .createRedactedLine(buildWithheldMarket(), CellTooltipRows.NO_SCORE)
+                    .createRedactedLine(buildWithheldMarket(), CellTooltipEntryLine.NO_SCORE)
                     .valueText())
-                .isEqualTo(CellTooltipRows.NO_SCORE);
+                .isEqualTo(CellTooltipEntryLine.NO_SCORE);
         }
 
         @Test

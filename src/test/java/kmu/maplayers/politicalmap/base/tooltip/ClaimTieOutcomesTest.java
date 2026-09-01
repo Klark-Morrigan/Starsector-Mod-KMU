@@ -6,7 +6,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
-import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

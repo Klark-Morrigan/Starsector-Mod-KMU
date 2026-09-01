@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmu.maplayers.base.hover.MapHoverPermission;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
 
 import org.lwjgl.input.Keyboard;
 

@@ -32,6 +32,16 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3',
                  of: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2'
 
+    forbidImport under: 'kmu.maplayers.base.tooltip.content',
+                 of: 'kmu.maplayers.base.tooltip.layout'
+    forbidImport under: 'kmu.maplayers.base.tooltip.content',
+                 of: 'kmu.maplayers.base.tooltip.detail'
+
+    forbidImport under: 'kmu.maplayers.base.tooltip.detail',
+                 of: 'kmu.maplayers.base.tooltip.content'
+    forbidImport under: 'kmu.maplayers.base.tooltip.detail',
+                 of: 'kmu.maplayers.base.tooltip.layout'
+
     forbidImport under: 'kmu.maplayers.base.visibility.colonies',
                  of: 'kmu.maplayers.base.visibility.systems'
 
@@ -57,4 +67,12 @@ enforcePackageLayering {
 
     forbidImport exactly: 'kmu.maplayers.base.geometry.ui.settings',
                  of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport exactly: 'kmu.maplayers.base.hover',
+                 of: 'kmu.maplayers.base.installation'
+
+    forbidImport exactly: 'kmu.maplayers.base.tooltip',
+                 of: 'kmu.maplayers.base.tooltip.layout'
+    forbidImport exactly: 'kmu.maplayers.base.tooltip',
+                 of: 'kmu.maplayers.base.tooltip.content'
 }

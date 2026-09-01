@@ -6,7 +6,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibStrings;
 
-import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 
 /**
  * What a market's place in the economy's listing decided, judged the way the mechanic itself

@@ -6,10 +6,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.relation.StarsectorFactionRelations;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
-import kmu.maplayers.base.tooltip.CellTooltipBlocks;
-import kmu.maplayers.base.tooltip.CellTooltipBody;
-import kmu.maplayers.base.tooltip.ComposedCellBody;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.layout.CellTooltipBlocks;
+import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
+import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;

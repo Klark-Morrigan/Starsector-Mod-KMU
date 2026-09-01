@@ -10,10 +10,10 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.tooltip.CellTooltipIndexOutcome;
-import kmu.maplayers.base.tooltip.CellTooltipQualifier;
-import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
+import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;
 import kmu.maplayers.base.visibility.colonies.ColonyDiscoveryLookup;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKindLookup;
@@ -32,10 +32,10 @@ import java.util.Optional;
 
 import static kmlib.testfixtures.starsector.systems.claims.ClaimMarketFixture.nameMarketId;
 
-import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.NO_NAME_STATED;
-import static kmu.maplayers.base.tooltip.CellTooltipEntryReads.readLabelTexts;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.PATROL_DETAILS;
-import static kmu.maplayers.base.tooltip.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.NO_NAME_STATED;
+import static kmu.maplayers.base.tooltip.content.CellTooltipEntryReads.readLabelTexts;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.LAST_SEEN;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingRemarkingOn;
 import static kmu.maplayers.politicalmap.base.tooltip.SystemColonyReadingFixture.buildReadingWithOpenlyKnown;
@@ -719,7 +719,7 @@ final class ClaimScoreRowResolverTest {
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, NO_NAME_STATED, "Eventide", PRESENCE_LINE);
             assertThat(rows.get(1).line().valueText())
-                .isEqualTo(CellTooltipRows.NO_SCORE);
+                .isEqualTo(CellTooltipEntryLine.NO_SCORE);
         }
 
         @Test

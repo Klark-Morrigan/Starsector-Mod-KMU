@@ -347,6 +347,15 @@ about what the overlay means.
   many frames. Named for the mod because the switch is - nothing it reads names one, `EmbeddedMap`
   being found structurally.
 - **`base/tooltip`** - the box floating beside the cursor, in a later UI pass than the map's own.
+  It divides in the order a box is arrived at, and the divisions are gated
+  ([package-layering.gradle](../../../../../gradle/package-layering.gradle)) rather than left to
+  review: **`content`** is what a layer states - a line, its mark, its status, its place in an
+  ordering - and imports none of the rest, so what a line says can be stated without knowing which
+  tier it lands at, what colour that tier speaks in, or whether the box has room for it;
+  **`detail`** is how deep the player asked the box to read, as a value and the held choice behind
+  it, and knows nothing of either; **`layout`** is how a statement becomes a box - the blocks, the
+  line vocabulary, the cut, the fit and the box itself; and the root is the plumbing that decides
+  which box is drawn at all, which reaches into neither of the two ends.
   That pass is `CampaignUIRenderingListener`'s, which the engine drives for the whole campaign UI
   rather than for a map screen - so the box has a host wherever the campaign is drawn, game space
   included, and reaching a docked map surface cost a gate rather than a render host.
@@ -366,9 +375,10 @@ about what the overlay means.
   lets a layer stop composing a tier the level would drop - which the political map does, its deeper
   tiers being the expensive ones, so the shallowest level walks no colony of the hovered system at
   all. The level answers two questions for that: `isAdmittingAccounts`, whether anything hangs
-  beneath a listed line at all - read off what an account *is*, one step subordinated, so the tier is
-  never named twice - and `isReadingAtLeast`, asked by a layer about a tier of its own subject
-  matter. The cut answers a tier it was never handed exactly as it answers one it declines. The
+  beneath a listed line at all - answered off what an account *is*, one step under the box's own
+  voice, rather than off the level that happens to be the first to admit one, so a level inserted
+  between two of these keeps answering about the right thing - and `isReadingAtLeast`, asked by a
+  layer about a tier of its own subject matter. The cut answers a tier it was never handed exactly as it answers one it declines. The
   level never decides
   *which* box draws either - one box per layer, read to four depths - so the choice holds across
   hovers and layer switches without any layer holding a second body. What writes that level is

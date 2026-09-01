@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
-import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 
 /**
  * A faction as a verdict about the hovered system as a whole: its crest and its name centred under the

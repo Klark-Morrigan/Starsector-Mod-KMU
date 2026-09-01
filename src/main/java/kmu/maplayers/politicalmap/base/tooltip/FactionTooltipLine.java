@@ -2,9 +2,8 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.tooltip.CellTooltipRows;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 
 /**
  * A faction as something a hovered system's breakdown lists: its crest, its name, and whatever the block
@@ -30,7 +29,7 @@ public final class FactionTooltipLine {
      * @param sector    the sector the faction's name and crest are read from
      * @param factionId the id of the faction the line names; an id the sector no longer knows is shown
      *                  as itself rather than leaving the line nameless
-     * @param valueText what the block counts this line in, or {@link CellTooltipRows#NO_SCORE} for a
+     * @param valueText what the block counts this line in, or {@link CellTooltipEntryLine#NO_SCORE} for a
      *                  line carrying no number
      * @return the line, ready to be listed or nested
      */

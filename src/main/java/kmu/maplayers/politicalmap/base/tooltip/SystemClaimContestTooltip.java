@@ -11,13 +11,12 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibStrings;
 
-import kmu.maplayers.base.tooltip.CellTooltipBody;
-import kmu.maplayers.base.tooltip.CellTooltipEntry;
-import kmu.maplayers.base.tooltip.CellTooltipEntryLine;
-import kmu.maplayers.base.tooltip.CellTooltipMark;
-import kmu.maplayers.base.tooltip.CellTooltipRows;
-import kmu.maplayers.base.tooltip.ComposedCellBody;
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
+import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -348,7 +347,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                 CellTooltipMark.NO_MARK,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
-                CellTooltipRows.NO_SCORE));
+                CellTooltipEntryLine.NO_SCORE));
         }
         // The claimant's own standing, or none at all when it holds nothing the box may list. Two
         // states arrive here, both of them decreed, a claim won by score always resting on a market
@@ -365,7 +364,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             .orElseGet(() -> FactionTooltipLine.buildFactionLine(
                 sector,
                 claimantFactionId,
-                CellTooltipRows.NO_SCORE));
+                CellTooltipEntryLine.NO_SCORE));
 
         // A core is held by decree rather than won, so the claim is qualified on the very line it is
         // made - it is why that line outranks a higher-scoring one beneath it, which the banner heading
