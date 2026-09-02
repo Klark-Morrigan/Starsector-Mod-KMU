@@ -91,7 +91,7 @@ final class FilterSelectionHealTest {
                             List.of(new RankedBloc<>(
                                 new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
                                 DominanceStats.EMPTY)),
-                            DominanceSortMode.MODES),
+                            DominanceSortModes.MODES),
                         BlocPresenceIndex.EMPTY))
                     .when(viewMock)
                     .resolveBlocPickerRead(sectorMock);
@@ -129,7 +129,7 @@ final class FilterSelectionHealTest {
                     .thenReturn("factions");
 
                 doReturn(new BlocPickerRead<>(
-                        new ListPicker<>(List.of(), DominanceSortMode.MODES),
+                        new ListPicker<>(List.of(), DominanceSortModes.MODES),
                         BlocPresenceIndex.EMPTY))
                     .when(viewMock)
                     .resolveBlocPickerRead(sectorMock);

@@ -17,9 +17,10 @@ import java.util.function.ToIntFunction;
  * So each vocabulary asks here for its own binding, and what it gets back is spelled the same
  * everywhere.
  *
- * <p>A vocabulary's own numbers are declared where that vocabulary lives, as {@link BlocMetricSortMode}
- * values over its own accessors. Only a number two layers measure identically belongs here - anything
- * else would put one mechanic's vocabulary in front of the other.
+ * <p>The third mode holder beside the two vocabularies, and named the same way for that reason: a
+ * vocabulary's own numbers are declared where that vocabulary lives, as {@link BlocMetricSortMode}
+ * values over its own accessors, and only a number two layers measure identically belongs here.
+ * Anything else would put one mechanic's vocabulary in front of the other.
  */
 public final class SharedBlocSortModes {
 

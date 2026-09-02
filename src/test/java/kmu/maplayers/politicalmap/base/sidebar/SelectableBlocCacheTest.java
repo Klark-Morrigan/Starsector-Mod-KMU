@@ -6,7 +6,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.politicalmap.base.BlocPickerRead;
-import kmu.maplayers.politicalmap.base.DominanceSortMode;
+import kmu.maplayers.politicalmap.base.DominanceSortModes;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -47,7 +47,7 @@ final class SelectableBlocCacheTest {
                 List.of(new RankedBloc<>(
                     new SelectableBloc("hegemony", "Hegemony", null),
                     DominanceStats.EMPTY)),
-                DominanceSortMode.MODES),
+                DominanceSortModes.MODES),
             buildIndexOf("hegemony", "corvus", "askonia"));
 
     // A second sector's read, so a cache answering the wrong sector's walk is visible as the wrong
@@ -58,7 +58,7 @@ final class SelectableBlocCacheTest {
                 List.of(new RankedBloc<>(
                     new SelectableBloc("tritachyon", "Tri-Tachyon", null),
                     DominanceStats.EMPTY)),
-                DominanceSortMode.MODES),
+                DominanceSortModes.MODES),
             buildIndexOf("tritachyon", "eos"));
 
     @Nested

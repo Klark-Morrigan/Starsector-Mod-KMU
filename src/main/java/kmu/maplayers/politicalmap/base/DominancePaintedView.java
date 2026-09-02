@@ -72,7 +72,7 @@ public interface DominancePaintedView extends PoliticalMapView {
     /**
      * That same picker under a stated weighting rule: the blocs present under this view's own
      * grouping that its gate accepts, each carrying that bloc's whole-sector
-     * {@link DominanceStats}, paired with {@link DominanceSortMode}'s vocabulary.
+     * {@link DominanceStats}, paired with the {@link DominanceSortModes} vocabulary.
      *
      * <p>The pairing is fixed rather than a per-view choice on purpose - these are the metrics such
      * a view's blocs carry, so offering any other vocabulary would rank rows by numbers they do not
@@ -111,7 +111,7 @@ public interface DominancePaintedView extends PoliticalMapView {
             sector,
             grouping,
             DominanceStatsAggregator.aggregateDominanceStats(pass),
-            DominanceSortMode.MODES);
+            DominanceSortModes.MODES);
     }
 
     /**

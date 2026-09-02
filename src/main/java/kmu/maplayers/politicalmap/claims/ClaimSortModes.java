@@ -39,7 +39,7 @@ import java.util.function.ToIntFunction;
  * to a tail below every claimant, so the list still opens on what the layer paints, while the name mode
  * interleaves them alphabetically.
  */
-public final class ClaimSortMode {
+public final class ClaimSortModes {
 
     // The accessors this vocabulary ranks by, named once each so the mode that promotes a number and
     // the chain that falls through to it cannot end up reading different ones.
@@ -88,6 +88,6 @@ public final class ClaimSortMode {
             List.of(NAME, CLAIMS, MARKET_SIZE),
             DEFAULT);
 
-    private ClaimSortMode() {
+    private ClaimSortModes() {
     }
 }

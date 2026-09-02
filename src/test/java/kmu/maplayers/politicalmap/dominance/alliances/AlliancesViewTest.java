@@ -14,7 +14,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.politicalmap.base.DominanceSortMode;
+import kmu.maplayers.politicalmap.base.DominanceSortModes;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -490,7 +490,7 @@ final class AlliancesViewTest {
                 assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
                         .picker()
                         .sortModes())
-                    .isEqualTo(DominanceSortMode.MODES);
+                    .isEqualTo(DominanceSortModes.MODES);
             }
         }
 

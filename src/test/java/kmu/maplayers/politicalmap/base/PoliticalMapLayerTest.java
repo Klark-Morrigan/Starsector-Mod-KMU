@@ -302,7 +302,7 @@ final class PoliticalMapLayerTest {
                 assertThat(sortRow.leftColumn())
                     .hasSize(1);
                 assertThat(sortRow.leftColumn().get(0).labels())
-                    .hasSize(DominanceSortMode.MODES.modes().size());
+                    .hasSize(DominanceSortModes.MODES.modes().size());
 
                 // The right half is the recede: its caption, then the two toggles.
                 assertThat(sortRow.rightColumn().get(0))
@@ -475,7 +475,7 @@ final class PoliticalMapLayerTest {
                     List.of(new RankedBloc<>(
                         new SelectableBloc("hegemony", "Hegemony", null),
                         DominanceStats.EMPTY)),
-                    DominanceSortMode.MODES),
+                    DominanceSortModes.MODES),
                 BlocPresenceIndex.EMPTY))
             .when(view)
             .resolveBlocPickerRead(any());

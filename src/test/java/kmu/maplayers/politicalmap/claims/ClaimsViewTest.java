@@ -537,7 +537,7 @@ final class ClaimsViewTest {
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
                         .sortModes())
-                    .isEqualTo(ClaimSortMode.MODES);
+                    .isEqualTo(ClaimSortModes.MODES);
             }
         }
 

@@ -28,7 +28,7 @@ import java.util.function.ToIntFunction;
  * <p>{@link #DEFAULT} is domination, the metric a fresh save and any unrecognised stored key fall back
  * to, so the picker always has a live ordering even before the player picks one.
  */
-public final class DominanceSortMode {
+public final class DominanceSortModes {
 
     // The accessors this vocabulary ranks by, named once each so the mode that promotes a number and
     // the chain that falls through to it cannot end up reading different ones.
@@ -99,6 +99,6 @@ public final class DominanceSortMode {
                 MARKET_SIZE),
             DEFAULT);
 
-    private DominanceSortMode() {
+    private DominanceSortModes() {
     }
 }

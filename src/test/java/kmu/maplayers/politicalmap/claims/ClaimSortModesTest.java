@@ -15,17 +15,18 @@ import java.util.List;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildBloc;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
  * number each mode reads, the direction that follows from it, the order ties break down the canonical
- * chain, and where the blocs that claim nowhere land. The shape the ranking is then laid out in - the
- * promoted key, the flip, the name and by-id tail - is the shared assembly's and is pinned in its own
- * suite, so a case here fails only when this vocabulary's own declaration changes. All exercised on
- * hand-built blocs, since the mode carries no Starsector types.
+ * chain, and where the blocs that claim nowhere land. What a declared mode answers at all, and the
+ * shape the ranking is then laid out in - the promoted key, the flip, the name and by-id tail - are
+ * both shared and are pinned in their own suites, so a case here fails only when this vocabulary's own
+ * declaration changes. All exercised on hand-built blocs, since the mode carries no Starsector types.
  */
-final class ClaimSortModeTest {
+final class ClaimSortModesTest {
 
     @Nested
     class Modes {
@@ -43,13 +44,13 @@ final class ClaimSortModeTest {
             // Copied to the seam's own element type first: the bundle declares its modes as
             // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
             // against it directly.
-            var modes = List.<ListSortMode<RankedBloc<ClaimStats>>>copyOf(ClaimSortMode.MODES.modes());
+            var modes = List.<ListSortMode<RankedBloc<ClaimStats>>>copyOf(ClaimSortModes.MODES.modes());
 
             assertThat(modes)
                 .containsExactly(
-                    ClaimSortMode.NAME,
-                    ClaimSortMode.CLAIMS,
-                    ClaimSortMode.MARKET_SIZE);
+                    ClaimSortModes.NAME,
+                    ClaimSortModes.CLAIMS,
+                    ClaimSortModes.MARKET_SIZE);
         }
 
         @Test
@@ -58,8 +59,8 @@ final class ClaimSortModeTest {
             // Claims is the metric this layer is actually painted by, so a fresh save and any
             // unrecognised stored key open on the ranking that matches what the map shows - rather
             // than on the market-size ranking, which describes a claimant but not its territory.
-            assertThat(ClaimSortMode.MODES.defaultMode())
-                .isEqualTo(ClaimSortMode.CLAIMS);
+            assertThat(ClaimSortModes.MODES.defaultMode())
+                .isEqualTo(ClaimSortModes.CLAIMS);
         }
     }
 
@@ -71,11 +72,11 @@ final class ClaimSortModeTest {
 
             // Pinned as literals: renaming a key silently resets every save that stored that mode back
             // to the default, so a change must break this test before it ships.
-            assertThat(ClaimSortMode.NAME.persistenceKey())
+            assertThat(ClaimSortModes.NAME.persistenceKey())
                 .isEqualTo("name");
-            assertThat(ClaimSortMode.CLAIMS.persistenceKey())
+            assertThat(ClaimSortModes.CLAIMS.persistenceKey())
                 .isEqualTo("claims");
-            assertThat(ClaimSortMode.MARKET_SIZE.persistenceKey())
+            assertThat(ClaimSortModes.MARKET_SIZE.persistenceKey())
                 .isEqualTo("market_size");
         }
     }
@@ -90,9 +91,9 @@ final class ClaimSortModeTest {
 
             // One run apiece, in the tone the picker offered: neither metric carries a colour of its
             // own, so each value matches the name beside it.
-            assertThat(ClaimSortMode.CLAIMS.resolveTrailingRuns(bloc, ROW_COLOUR))
+            assertThat(ClaimSortModes.CLAIMS.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("4", ROW_COLOUR));
-            assertThat(ClaimSortMode.MARKET_SIZE.resolveTrailingRuns(bloc, ROW_COLOUR))
+            assertThat(ClaimSortModes.MARKET_SIZE.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("26", ROW_COLOUR));
         }
 
@@ -101,7 +102,7 @@ final class ClaimSortModeTest {
 
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
-            assertThat(ClaimSortMode.NAME.resolveTrailingRuns(
+            assertThat(ClaimSortModes.NAME.resolveTrailingRuns(
                     buildBloc("hegemony", "Hegemony", new ClaimStats(4, 26)),
                     ROW_COLOUR))
                 .isEmpty();
@@ -115,9 +116,9 @@ final class ClaimSortModeTest {
         void defaultDirectionIsDescendingForANumericMode() {
 
             // A numeric mode leads with the bigger claimant, so its natural order runs high-to-low.
-            assertThat(ClaimSortMode.CLAIMS.defaultDirection())
+            assertThat(ClaimSortModes.CLAIMS.defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
-            assertThat(ClaimSortMode.MARKET_SIZE.defaultDirection())
+            assertThat(ClaimSortModes.MARKET_SIZE.defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
         }
 
@@ -125,7 +126,7 @@ final class ClaimSortModeTest {
         void defaultDirectionIsAscendingForTheNameMode() {
 
             // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(ClaimSortMode.NAME.defaultDirection())
+            assertThat(ClaimSortModes.NAME.defaultDirection())
                 .isEqualTo(SortDirection.ASCENDING);
         }
     }
@@ -139,7 +140,7 @@ final class ClaimSortModeTest {
             var low = buildBloc("low", "Low", new ClaimStats(1, 0));
             var high = buildBloc("high", "High", new ClaimStats(9, 0));
 
-            assertThat(listIdsInModeOrder(ClaimSortMode.CLAIMS, low, high))
+            assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, low, high))
                 .containsExactly("high", "low");
         }
 
@@ -151,7 +152,7 @@ final class ClaimSortModeTest {
             var smaller = buildBloc("a", "A", new ClaimStats(5, 2));
             var bigger = buildBloc("b", "B", new ClaimStats(5, 7));
 
-            assertThat(listIdsInModeOrder(ClaimSortMode.CLAIMS, smaller, bigger))
+            assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, smaller, bigger))
                 .containsExactly("b", "a");
         }
 
@@ -164,7 +165,7 @@ final class ClaimSortModeTest {
             var claimant = buildBloc("claimant", "Claimant", new ClaimStats(1, 0));
             var holder = buildBloc("holder", "Holder", new ClaimStats(0, 90));
 
-            assertThat(listIdsInModeOrder(ClaimSortMode.CLAIMS, holder, claimant))
+            assertThat(listIdsInModeOrder(ClaimSortModes.CLAIMS, holder, claimant))
                 .containsExactly("claimant", "holder");
         }
 
@@ -175,7 +176,7 @@ final class ClaimSortModeTest {
             var claimant = buildBloc("b", "Beta", new ClaimStats(4, 0));
             var holder = buildBloc("a", "Alpha", new ClaimStats(0, 90));
 
-            assertThat(listIdsInModeOrder(ClaimSortMode.NAME, claimant, holder))
+            assertThat(listIdsInModeOrder(ClaimSortModes.NAME, claimant, holder))
                 .containsExactly("a", "b");
         }
     }

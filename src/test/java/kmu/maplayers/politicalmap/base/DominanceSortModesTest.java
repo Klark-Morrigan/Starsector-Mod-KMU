@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * suites, so a case here fails only when this vocabulary's own declaration changes. All exercised on
  * hand-built blocs, since the mode carries no Starsector types.
  */
-final class DominanceSortModeTest {
+final class DominanceSortModesTest {
 
     @Nested
     class Modes {
@@ -44,15 +44,15 @@ final class DominanceSortModeTest {
             // "? extends ListSortMode", so a capture reaches the assertion and no constant can be named
             // against it directly.
             var modes = List.<ListSortMode<RankedBloc<DominanceStats>>>copyOf(
-                DominanceSortMode.MODES.modes());
+                DominanceSortModes.MODES.modes());
 
             assertThat(modes)
                 .containsExactly(
-                    DominanceSortMode.NAME,
-                    DominanceSortMode.DOMINATION,
-                    DominanceSortMode.PRESENCE,
-                    DominanceSortMode.SCORE,
-                    DominanceSortMode.MARKET_SIZE);
+                    DominanceSortModes.NAME,
+                    DominanceSortModes.DOMINATION,
+                    DominanceSortModes.PRESENCE,
+                    DominanceSortModes.SCORE,
+                    DominanceSortModes.MARKET_SIZE);
         }
 
         @Test
@@ -60,8 +60,8 @@ final class DominanceSortModeTest {
 
             // Domination is what these layers are painted by, so a fresh save and any unrecognised
             // stored key open on the ranking that matches what the map shows.
-            assertThat(DominanceSortMode.MODES.defaultMode())
-                .isEqualTo(DominanceSortMode.DOMINATION);
+            assertThat(DominanceSortModes.MODES.defaultMode())
+                .isEqualTo(DominanceSortModes.DOMINATION);
         }
     }
 
@@ -73,15 +73,15 @@ final class DominanceSortModeTest {
 
             // Pinned as literals: renaming a key silently resets every save that stored that mode back
             // to the default, so a change must break this test before it ships.
-            assertThat(DominanceSortMode.NAME.persistenceKey())
+            assertThat(DominanceSortModes.NAME.persistenceKey())
                 .isEqualTo("name");
-            assertThat(DominanceSortMode.DOMINATION.persistenceKey())
+            assertThat(DominanceSortModes.DOMINATION.persistenceKey())
                 .isEqualTo("domination");
-            assertThat(DominanceSortMode.PRESENCE.persistenceKey())
+            assertThat(DominanceSortModes.PRESENCE.persistenceKey())
                 .isEqualTo("presence");
-            assertThat(DominanceSortMode.SCORE.persistenceKey())
+            assertThat(DominanceSortModes.SCORE.persistenceKey())
                 .isEqualTo("score");
-            assertThat(DominanceSortMode.MARKET_SIZE.persistenceKey())
+            assertThat(DominanceSortModes.MARKET_SIZE.persistenceKey())
                 .isEqualTo("market_size");
         }
     }
@@ -99,13 +99,13 @@ final class DominanceSortModeTest {
 
             // One run apiece, in the tone the picker offered: none of these metrics carries a colour
             // of its own, so each value matches the name beside it.
-            assertThat(DominanceSortMode.DOMINATION.resolveTrailingRuns(bloc, ROW_COLOUR))
+            assertThat(DominanceSortModes.DOMINATION.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("5", ROW_COLOUR));
-            assertThat(DominanceSortMode.PRESENCE.resolveTrailingRuns(bloc, ROW_COLOUR))
+            assertThat(DominanceSortModes.PRESENCE.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("8", ROW_COLOUR));
-            assertThat(DominanceSortMode.SCORE.resolveTrailingRuns(bloc, ROW_COLOUR))
+            assertThat(DominanceSortModes.SCORE.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("40", ROW_COLOUR));
-            assertThat(DominanceSortMode.MARKET_SIZE.resolveTrailingRuns(bloc, ROW_COLOUR))
+            assertThat(DominanceSortModes.MARKET_SIZE.resolveTrailingRuns(bloc, ROW_COLOUR))
                 .containsExactly(new TextSpan("12", ROW_COLOUR));
         }
 
@@ -114,7 +114,7 @@ final class DominanceSortModeTest {
 
             // The name mode ranks on the label, so there is no number to show and the row's value
             // column stays unfilled.
-            assertThat(DominanceSortMode.NAME.resolveTrailingRuns(
+            assertThat(DominanceSortModes.NAME.resolveTrailingRuns(
                     buildBloc(
                         "hegemony",
                         "Hegemony",
@@ -131,9 +131,9 @@ final class DominanceSortModeTest {
         void defaultDirectionIsDescendingForANumericMode() {
 
             // A numeric mode leads with the bigger bloc, so its natural order runs high-to-low.
-            assertThat(DominanceSortMode.DOMINATION.defaultDirection())
+            assertThat(DominanceSortModes.DOMINATION.defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
-            assertThat(DominanceSortMode.MARKET_SIZE.defaultDirection())
+            assertThat(DominanceSortModes.MARKET_SIZE.defaultDirection())
                 .isEqualTo(SortDirection.DESCENDING);
         }
 
@@ -141,7 +141,7 @@ final class DominanceSortModeTest {
         void defaultDirectionIsAscendingForTheNameMode() {
 
             // The name mode reads A-to-Z, so its natural order runs ascending.
-            assertThat(DominanceSortMode.NAME.defaultDirection())
+            assertThat(DominanceSortModes.NAME.defaultDirection())
                 .isEqualTo(SortDirection.ASCENDING);
         }
     }
@@ -161,7 +161,7 @@ final class DominanceSortModeTest {
                 "High",
                 new DominanceStats(9, 0, 0, 0));
 
-            assertThat(listIdsInModeOrder(DominanceSortMode.DOMINATION, low, high))
+            assertThat(listIdsInModeOrder(DominanceSortModes.DOMINATION, low, high))
                 .containsExactly("high", "low");
         }
 
@@ -172,19 +172,19 @@ final class DominanceSortModeTest {
             // score, then market size. Each pair below is level on every metric ahead of the one it
             // differs on, so which bloc leads names the number the chain reaches next.
             assertThat(listIdsInModeOrder(
-                    DominanceSortMode.DOMINATION,
+                    DominanceSortModes.DOMINATION,
                     buildBloc("lower", "A", new DominanceStats(5, 2, 0, 0)),
                     buildBloc("higher", "B", new DominanceStats(5, 7, 0, 0))))
                 .containsExactly("higher", "lower");
 
             assertThat(listIdsInModeOrder(
-                    DominanceSortMode.DOMINATION,
+                    DominanceSortModes.DOMINATION,
                     buildBloc("lower", "A", new DominanceStats(5, 5, 10, 0)),
                     buildBloc("higher", "B", new DominanceStats(5, 5, 40, 0))))
                 .containsExactly("higher", "lower");
 
             assertThat(listIdsInModeOrder(
-                    DominanceSortMode.DOMINATION,
+                    DominanceSortModes.DOMINATION,
                     buildBloc("lower", "A", new DominanceStats(5, 5, 10, 3)),
                     buildBloc("higher", "B", new DominanceStats(5, 5, 10, 9))))
                 .containsExactly("higher", "lower");

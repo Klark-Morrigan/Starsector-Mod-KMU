@@ -171,9 +171,9 @@ final class PoliticalMapViewTest {
                     mock(SectorAPI.class),
                     HolderGrouping.identity(),
                     BlocStatsReadFake.createRowsOnlyFake(Map.<String, DominanceStats>of()),
-                    DominanceSortMode.MODES)
+                    DominanceSortModes.MODES)
                 .picker().sortModes())
-                .isEqualTo(DominanceSortMode.MODES);
+                .isEqualTo(DominanceSortModes.MODES);
         }
 
         @Test

@@ -9,7 +9,7 @@ import kmlib.starsector.systems.SystemColoniesIndex;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.politicalmap.base.DominanceSortMode;
+import kmu.maplayers.politicalmap.base.DominanceSortModes;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -409,7 +409,7 @@ final class FactionsViewTest {
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
                         .sortModes())
-                    .isEqualTo(DominanceSortMode.MODES);
+                    .isEqualTo(DominanceSortModes.MODES);
             }
         }
 
