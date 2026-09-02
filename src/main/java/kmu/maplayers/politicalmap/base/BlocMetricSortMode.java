@@ -66,8 +66,7 @@ public final class BlocMetricSortMode<S extends BlocMetrics> implements ListSort
     }
 
     /**
-     * @return the save-stable key this mode persists under; frozen once shipped, since renaming it
-     *         silently resets every save that stored this mode back to its vocabulary's default
+     * @return the key this mode was declared under
      */
     @Override
     public String persistenceKey() {
@@ -75,11 +74,7 @@ public final class BlocMetricSortMode<S extends BlocMetrics> implements ListSort
     }
 
     /**
-     * The text this mode's selector row draws. The seam hands drawn text over rather than a string
-     * key, since it cannot look a key up against this mod's own strings category, so the lookup
-     * happens here.
-     *
-     * @return the drawn label for this mode's selector row
+     * @return the drawn label for this mode's selector row, looked up against this mod's own strings
      */
     @Override
     public String resolveLabelText() {
@@ -101,10 +96,8 @@ public final class BlocMetricSortMode<S extends BlocMetrics> implements ListSort
     }
 
     /**
-     * The direction this mode ranks in until the player flips it. A fresh save and a mode the player
-     * has just switched to both start here.
-     *
-     * @return this mode's natural sort direction
+     * @return the direction this mode's own metric naturally runs in - a number high-to-low, a name
+     *         A-to-Z
      */
     @Override
     public SortDirection defaultDirection() {

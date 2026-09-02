@@ -166,6 +166,21 @@ final class BlocStandingSortModeTest {
         }
 
         @Test
+        void comparatorBreaksAPairOfBlankStandingsBySharedTail() {
+
+            // Neither bloc holds a number at all, so the ranking separates nothing before the tail and
+            // the labels decide. The payload numbers point the other way, which is what shows the mode
+            // reads no vocabulary's chain on the way there.
+            var mode = buildMode(HolderGrouping.identity(), Map.of());
+
+            assertThat(listIdsInModeOrder(
+                    mode,
+                    buildStandInBloc("zeta", "Zeta", 9, 9),
+                    buildStandInBloc("alpha", "Alpha", 1, 1)))
+                .containsExactly("alpha", "zeta");
+        }
+
+        @Test
         void comparatorBreaksAPairHoldingTheSameStandingBySharedTail() {
 
             // Identical standings, so the ranking falls straight to the shared tail and the labels

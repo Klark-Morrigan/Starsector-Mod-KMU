@@ -37,9 +37,9 @@ import java.util.Objects;
 public final class BlocStandingSortMode<S extends BlocMetrics>
     implements ListSortMode<RankedBloc<S>> {
 
-    // Frozen once shipped: renaming it silently resets every save that stored the standing ranking
-    // back to the storing vocabulary's default. One key across all three views, so the choice survives
-    // a view switch the way every other mode's does.
+    // Frozen once shipped: renaming it silently resets every save that stored this ranking. One key
+    // across all three views rather than one per vocabulary, so the choice survives a view switch the
+    // way every other mode's does.
     private static final String PERSISTENCE_KEY = "player_standing";
 
     // Friendliest first, so the blocs a player deals with lead the list.
@@ -70,8 +70,7 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
     }
 
     /**
-     * @return the save-stable key this mode persists under; frozen once shipped, since renaming it
-     *         silently resets every save that stored this mode back to its vocabulary's default
+     * @return the one key every view stores this ranking under
      */
     @Override
     public String persistenceKey() {
@@ -79,11 +78,7 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
     }
 
     /**
-     * The text this mode's selector row draws. The seam hands drawn text over rather than a string
-     * key, since it cannot look a key up against this mod's own strings category, so the lookup
-     * happens here.
-     *
-     * @return the drawn label for this mode's selector row
+     * @return the drawn label for this mode's selector row, looked up against this mod's own strings
      */
     @Override
     public String resolveLabelText() {
@@ -115,9 +110,6 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
     }
 
     /**
-     * The direction this mode ranks in until the player flips it. A fresh save and a mode the player
-     * has just switched to both start here.
-     *
      * @return descending, so the friendliest bloc leads
      */
     @Override
