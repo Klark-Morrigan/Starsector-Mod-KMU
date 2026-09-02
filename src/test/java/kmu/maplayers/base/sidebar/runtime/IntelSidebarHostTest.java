@@ -16,6 +16,8 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreenControls;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
@@ -158,9 +160,24 @@ final class IntelSidebarHostTest {
 
                 sectorMemoryFake.storeValue(INTEL_LAYERS_SHOWN_KEY, false);
 
+                // A stored hide is only acted on where a control able to reverse it stands, so the case
+                // has to put one on the screen it poses before the hide means anything at all. Recorded
+                // against the intel screen by posing that screen as the one up, this fake being open
+                // already - which is also what the host under test is being read on.
+                MapLayerScreens.registerIntelScreen(intelScreenFake);
+                MapLayerScreenControls.standAControlOnTheShownScreen();
+
                 assertThat(createHostOnAnUnclaimedScreen(intelScreenFake).isOverlayShowing())
                     .isFalse();
             }
+        }
+
+        @AfterEach
+        void forgetTheControlThisCaseStood() {
+            // The screens are held for the process and the record never clears itself, so a case that
+            // stood a control would leave later ones acting on stored hides where a run with no control
+            // reads shown.
+            MapLayerScreenControls.forgetControlsAttached();
         }
     }
 

@@ -11,9 +11,12 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
+import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreenControls;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
@@ -134,9 +137,22 @@ final class MapSidebarHostTest {
                     .when(CampaignMapView::isSectorMapShowing)
                     .thenReturn(true);
 
+                // A stored hide is only acted on where a control able to reverse it stands, so the case
+                // has to put one on the screen it poses before the hide means anything at all. Stated
+                // here rather than inherited, the record being the run's and not this case's.
+                standAControlOnTheSectorMap();
+
                 assertThat(createHostOnAnUnclaimedScreen().isOverlayShowing())
                     .isFalse();
             }
+        }
+
+        @AfterEach
+        void forgetTheControlThisCaseStood() {
+            // The screens are held for the process and the record never clears itself, so a case that
+            // stood a control would leave later ones acting on stored hides where a run with no control
+            // reads shown.
+            MapLayerScreenControls.forgetControlsAttached();
         }
 
         // The host on a screen nothing has claimed, which is the state every case but the claim's own asks
@@ -144,6 +160,20 @@ final class MapSidebarHostTest {
         // test states rather than against the running game, which no test JVM has.
         private static MapSidebarHost createHostOnAnUnclaimedScreen() {
             return new MapSidebarHost(ScreenClaims.createUnclaimedScreen());
+        }
+
+        // Says a control able to reverse a hide stands on the sector map, which is what a stored hide is
+        // acted on against. Which screen the record lands on is settled by which one is up, so the intel
+        // screen is posed closed rather than left wherever the run last put it - a control recorded
+        // against the intel screen would leave the sector map's hide unacted on and the case failing for
+        // a reason nothing on screen would explain.
+        private static void standAControlOnTheSectorMap() {
+
+            var intelScreenFake = new IntelScreenViewFake();
+            intelScreenFake.setIntelTabOpen(false);
+            MapLayerScreens.registerIntelScreen(intelScreenFake);
+
+            MapLayerScreenControls.standAControlOnTheShownScreen();
         }
     }
 

@@ -133,6 +133,20 @@ public final class MapLayerScreens {
             : MAP_LAYER_VISIBILITY;
     }
 
+    /**
+     * Returns both screens to the reading a run that has never put a control up gives, whatever their
+     * saves hold.
+     *
+     * <p>Both together, because the thing being unwound is a fact about the run rather than about
+     * either screen: a caller unwinding one and not the other would leave an arrangement no session can
+     * actually be in, one screen acting on its stored hide and the other refusing to.
+     */
+    static void forgetControlsAttached() {
+
+        MAP_LAYER_VISIBILITY.forgetControlAttached();
+        INTEL_LAYER_VISIBILITY.forgetControlAttached();
+    }
+
     // Whether the intel screen is the one up, which is what "live screen" means above.
     private static boolean isIntelScreenLive() {
         return intelScreen != null && intelScreen.isIntelTabOpen();

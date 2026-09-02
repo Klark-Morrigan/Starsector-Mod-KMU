@@ -86,6 +86,14 @@ final class MapLayerScreensTest {
         sectorMemoryFake.close();
     }
 
+    @AfterEach
+    void forgetTheControlsThisCaseStood() {
+        // The two screens are held for the process and the latch saying one has a control never clears
+        // itself, so a case that stood one would leave every later case acting on stored hides where a
+        // run with no control reads shown - a difference that shows up as whichever case ran next.
+        MapLayerScreenControls.forgetControlsAttached();
+    }
+
     @Nested
     class GetMapPicks {
 

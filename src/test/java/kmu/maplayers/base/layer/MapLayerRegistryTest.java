@@ -104,6 +104,15 @@ final class MapLayerRegistryTest {
     }
 
     @AfterEach
+    void forgetTheControlsThisCaseStood() {
+        // The screens are process-wide and the latch saying one of them has a control never clears
+        // itself, so a case that stood one would leave every later case acting on stored hides where a
+        // run with no control reads shown - a difference that shows up as whichever case happened to
+        // run next.
+        MapLayerScreenControls.forgetControlsAttached();
+    }
+
+    @AfterEach
     void closeTheSectorMemory() {
         sectorMemoryFake.close();
     }

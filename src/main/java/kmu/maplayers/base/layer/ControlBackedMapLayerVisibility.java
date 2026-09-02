@@ -87,4 +87,19 @@ public final class ControlBackedMapLayerVisibility implements MapLayerVisibility
     public MapLayerVisibility getStoredVisibility() {
         return storedVisibility;
     }
+
+    /**
+     * Returns this screen to the reading a run that has never put a control up gives, whatever it has
+     * stored.
+     *
+     * <p>The latch is the one thing here a run accumulates and never lets go of, and it outlives
+     * everything around it: the picks it decorates belong to a sector, while the screens holding them
+     * are the process's. So an unwinding is owed for the same reason the latch is session-scoped in the
+     * first place - a record of what some earlier arrangement managed to attach describes nothing about
+     * the current one. The stored pick is untouched, this being about whether the rule acts on it
+     * rather than about what it holds.
+     */
+    void forgetControlAttached() {
+        hasControlBeenAttached = false;
+    }
 }
