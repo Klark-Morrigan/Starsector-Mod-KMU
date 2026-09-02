@@ -45,6 +45,11 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base.visibility.colonies',
                  of: 'kmu.maplayers.base.visibility.systems'
 
+    forbidImport under: 'kmu.maplayers.base.visibility.observations',
+                 of: 'kmu.maplayers.base.visibility.colonies'
+    forbidImport under: 'kmu.maplayers.base.visibility.observations',
+                 of: 'kmu.maplayers.base.visibility.systems'
+
     forbidImport under: 'kmu.svg',
                  of: 'kmu.maplayers'
 

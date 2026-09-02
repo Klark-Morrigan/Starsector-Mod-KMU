@@ -52,6 +52,11 @@ second composed out of the first. The reverse import is what would make "may thi
 on whether anything is being drawn, so each half is a package of its own - the gate closes a
 package root, and a parent root closes its own children with it.
 
+A third package sits *under* both: `observations` states how old the news about a concealed fact is,
+in the same words whatever the fact is about. It is gated against importing either of the other two,
+which is what keeps it from learning what a colony is - a shared rule that named one family would
+be that family's rule with extra callers.
+
 ## The vocabulary
 
 `base` and a layer deliberately use different words for the same thing, and the translation
@@ -219,6 +224,16 @@ about what the overlay means.
   `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
   political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
   stands both up on load.
+- **`base/visibility/observations`** - how old the news about one concealed fact is, stated once for
+  every family that conceals one. `ObservationRecency` is the triad it can be in - something is
+  revealing it now, the record recalls it from a moment, or nothing ever established it - sealed so
+  a fourth state cannot be added without every reader being asked about it, and folded rather than
+  switched over since the mod targets Java 17. `ObservationRecency.resolveRecency` is the one place
+  a live reading is ranked above a record and a record above nothing. `RevealedFact` pairs that
+  state with the value an axis conceals, where it conceals one; a fact nobody ever established
+  cannot be built holding a value, so the words for an unknown are the reader's to supply. What
+  counts as observing something, and what a stored observation means, stay with the family that
+  owns them - nothing here knows what any of them are about.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
