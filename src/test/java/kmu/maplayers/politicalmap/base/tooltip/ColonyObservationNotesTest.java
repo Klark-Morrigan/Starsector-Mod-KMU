@@ -19,8 +19,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -136,6 +140,34 @@ final class ColonyObservationNotesTest {
                 .contains("last seen a day ago (c206.05.12)");
         }
 
+        @ParameterizedTest
+        @MethodSource("kmu.maplayers.politicalmap.base.tooltip.ColonyObservationNotesTest"
+            + "#listSpansStandingOnAWordingThreshold")
+        void remarksTheOlderWordingOnASpanStandingExactlyOnAThreshold(
+                float elapsedDays,
+                String expectedNote) {
+
+            // Both thresholds are compared with a strict less-than, and every other case here sits
+            // well clear of them - so the boundary itself is the one place the comparison could be
+            // loosened without a single assertion noticing. A day that has fully elapsed is a day
+            // ago, not today.
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(elapsedDays));
+
+            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
+                .contains(expectedNote);
+        }
+
+        @Test
+        void remarksWholeDaysOnASpanCarryingPartOfAnother() {
+            // The clock reports a fraction, and every other case hands over a span that happens to
+            // be whole. Part of a day is not another day: rounding here would report a colony seen
+            // this morning as seen tomorrow.
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.9f));
+
+            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
+                .contains("last seen 34 days ago (c206.05.12)");
+        }
+
         @Test
         void remarksNothingOnAColonyWhoseObservationCarriesNoTime() {
             // Every value recorded before observations were timed. The colony goes on being shown
@@ -179,6 +211,16 @@ final class ColonyObservationNotesTest {
                     .resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
         }
+    }
+
+    // The two spans the wording turns on, each stated exactly rather than either side of it: a
+    // span of one whole day is the first that is no longer today, and one of two whole days the
+    // first that is no longer the day before. Paired with the remark each is due, so a threshold
+    // loosened by one comparison names the case it broke.
+    static Stream<Arguments> listSpansStandingOnAWordingThreshold() {
+        return Stream.of(
+            Arguments.of(1.0f, "last seen a day ago (c206.05.12)"),
+            Arguments.of(2.0f, "last seen 2 days ago (c206.05.12)"));
     }
 
     // The notes a box over the one system reads, the player's fleet being elsewhere unless a case
