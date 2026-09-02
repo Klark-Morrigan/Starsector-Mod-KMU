@@ -13,7 +13,6 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
@@ -21,6 +20,7 @@ import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
+import kmu.maplayers.base.tooltip.MapHoverFixtures;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.MapLayerCellTooltip;
@@ -75,6 +75,10 @@ import static org.mockito.Mockito.when;
  */
 class MapLayerCellTooltipGateIntegrationTest {
 
+    // The system under the cursor, named once so the hover, the sector's roster and the assertions
+    // cannot drift onto three different ids.
+    private static final String SYSTEM_ID = "system";
+
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
@@ -98,7 +102,7 @@ class MapLayerCellTooltipGateIntegrationTest {
             .thenReturn(true);
 
         when(systemMock.getId())
-            .thenReturn("system");
+            .thenReturn(SYSTEM_ID);
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systemMock));
 
@@ -109,14 +113,9 @@ class MapLayerCellTooltipGateIntegrationTest {
         MapLayerScreens.registerIntelScreen(new IntelScreenViewFake());
 
         // Everything below the map gate is open, so what the box does is the gate's answer alone.
-        //
-        // Published onto the machinery of the sector every case runs as the live one: the box reads
-        // its hover and its sector off one installation, so a hover parked anywhere else would leave
-        // the gate answering over nothing to draw.
-        MapLayerInstallations
-            .installMachineryOn(sectorMock)
-            .resolveHoverState()
-            .publishHover(new MapHover("system", List.of("system")));
+        // Hovered on the sector every case runs as the live one, that being the machinery both
+        // listeners resolve.
+        MapHoverFixtures.hoverASystemOnAnInstalledSector(sectorMock, SYSTEM_ID);
     }
 
     @AfterEach

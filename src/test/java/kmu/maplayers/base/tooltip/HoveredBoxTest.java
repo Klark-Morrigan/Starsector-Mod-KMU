@@ -48,6 +48,10 @@ final class HoveredBoxTest {
 
     private static final String SYSTEM_ID = "system";
 
+    // An id the sector holds no system under, which is what a hover left behind by a system dropped
+    // since the publish looks like.
+    private static final String DROPPED_SYSTEM_ID = "gone";
+
     // Machinery over no sector, for the cases that hand an installation in rather than have the
     // chain resolve one. One for the class, since those cases are about which box a layer injects
     // and not about whose map it is: a fresh one per assertion would suggest the sector turned
@@ -172,22 +176,30 @@ final class HoveredBoxTest {
         }
 
         @Test
-        void resolveHoveredBoxIsEmptyForAHoverBelongingToNoSector() {
-            // The box names its sector off the installation it read the hover from rather than off a
-            // second read of the running game, so the two cannot disagree. Posed against machinery
-            // over no sector - what a seam reached with the overlay switched off resolves - which
-            // holds a hover nobody's map published: a box built for the running sector out of that
-            // hover would describe a cell of a map that was never drawn.
-            MapLayerInstallations
-                .resolveInstallationFor(null)
-                .resolveHoverState()
-                .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));
+        void resolveHoveredBoxIsEmptyForARunningSectorNothingIsInstalledOn() {
+            // The one case that can tell where the box gets its sector, and so the only thing
+            // holding the box to the installation it read the hover from. Everywhere else the two
+            // agree by construction: an installed sector is the running one, so a box that read the
+            // running game directly would answer identically.
+            //
+            // Here they part. The overlay is switched off on the running sector, so what resolves is
+            // the machinery over no sector - and a hover is parked on it, as any sector-less seam
+            // leaves one. The running sector is stood up complete, holding the very system that
+            // hover names, so a box built off a second read of the game would find everything it
+            // needs and describe a cell of a map that was never drawn.
+            var uninstalledLiveSectorMock = mock(SectorAPI.class);
+
+            when(uninstalledLiveSectorMock.getStarSystems())
+                .thenReturn(List.of(systemMock));
+
+            MapHoverFixtures.hoverASystemIn(
+                MapLayerInstallations.resolveInstallationFor(null), SYSTEM_ID);
 
             try (var globalMock = mockStatic(Global.class)) {
 
                 globalMock
                     .when(Global::getSector)
-                    .thenReturn(mock(SectorAPI.class));
+                    .thenReturn(uninstalledLiveSectorMock);
 
                 assertThat(HoveredBox.resolveHoveredBox())
                     .isEmpty();
@@ -198,10 +210,8 @@ final class HoveredBoxTest {
         void resolveHoveredBoxIsEmptyWhenTheHoveredIdNoLongerNamesASystem() {
             // A system dropped between the hover being published and this frame reading it. Tolerated
             // rather than dereferenced, since the hover is a value the map pass left behind.
-            MapLayerInstallations
-                .resolveInstallationFor(sectorMock)
-                .resolveHoverState()
-                .publishHover(new MapHover("gone", List.of("gone")));
+            MapHoverFixtures.hoverASystemIn(
+                MapLayerInstallations.resolveInstallationFor(sectorMock), DROPPED_SYSTEM_ID);
 
             try (var globalMock = mockStatic(Global.class)) {
 
@@ -421,10 +431,7 @@ final class HoveredBoxTest {
     // Puts the cursor over the registered system, on the machinery of the sector that system is in -
     // which is the only installation the chain would read it back off.
     private void hoverTheSystem() {
-
-        MapLayerInstallations
-            .resolveInstallationFor(sectorMock)
-            .resolveHoverState()
-            .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));
+        MapHoverFixtures.hoverASystemIn(
+            MapLayerInstallations.resolveInstallationFor(sectorMock), SYSTEM_ID);
     }
 }

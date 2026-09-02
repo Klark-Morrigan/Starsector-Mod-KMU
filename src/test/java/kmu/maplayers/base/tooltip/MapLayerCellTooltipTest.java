@@ -8,7 +8,6 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverPermissionFixture;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
@@ -56,6 +55,10 @@ import static org.mockito.Mockito.when;
  */
 final class MapLayerCellTooltipTest {
 
+    // The system under the cursor, named once so the hover, the sector's roster and the assertions
+    // cannot drift onto three different ids.
+    private static final String SYSTEM_ID = "system";
+
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
     private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
@@ -98,19 +101,12 @@ final class MapLayerCellTooltipTest {
         void hoverACell() {
             // Every case here is about what the gates do around a live hover, so the hover is the
             // group's fixture rather than each test's opening lines.
-            //
-            // Published onto the machinery installed on this sector, since the dispatcher resolves
-            // the running sector's installation and reads both the hover and the sector off it - a
-            // hover parked anywhere else is a hover of no sector, which draws nothing.
             when(systemMock.getId())
-                .thenReturn("system");
+                .thenReturn(SYSTEM_ID);
             when(sectorMock.getStarSystems())
                 .thenReturn(List.of(systemMock));
 
-            MapLayerInstallations
-                .installMachineryOn(sectorMock)
-                .resolveHoverState()
-                .publishHover(new MapHover("system", List.of("system")));
+            MapHoverFixtures.hoverASystemOnAnInstalledSector(sectorMock, SYSTEM_ID);
         }
 
         @AfterEach
