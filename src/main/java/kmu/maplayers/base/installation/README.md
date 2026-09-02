@@ -151,8 +151,8 @@ the seams it serves are driven by the engine with no sector named.
 
 Its callers are the screen-side adapters and nothing else: the tab body build and the hover box the
 cursor read draws, each handed a frame and nothing more. They spell the resolution by that name
-rather than `resolveInstallationFor(Global.getSector())` so every such adapter is findable by one
-grep - which is what the gate over this read counts.
+rather than `resolveInstallationFor(Global.getSector())`, so every such adapter is findable by one
+grep and the global read stays inside this package where `enforceRestrictedCalls` contains it.
 
 Nothing else reaches a holder that way. Every producer and consumer there is holds the installation
 it means: the render surfaces resolve theirs from the terrain entity they ride, and the political

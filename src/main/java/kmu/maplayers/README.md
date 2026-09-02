@@ -586,8 +586,8 @@ about what the overlay means.
   it. `MapLayerRefreshBoard` is what a signal is raised on, one per sector held by [that sector's
   installation](base/installation/README.md), since the stale set names systems by bare id;
   every producer is handed the board it means, and this package is gated from importing the
-  installation one so none can resolve a board of its own. The signals themselves, who declares which, and
-  the four rebuild paths they drive are
+  installation one so none can resolve a board of its own. The signals themselves, who declares
+  which, and the four rebuild paths they drive are
   [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.

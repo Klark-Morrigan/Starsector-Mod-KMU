@@ -30,7 +30,7 @@ import java.util.Optional;
  * questions. Which is exactly why they are asked here instead of at each caller.
  *
  * @param tooltip the box the active layer injected for the hovered cell
- * @param sector  the live sector the box reads its content from
+ * @param sector  the sector whose map is being drawn, which the box reads its content from
  * @param system  the star system under the cursor
  */
 record HoveredBox(
@@ -43,28 +43,22 @@ record HoveredBox(
      * would: no cell hovered, the screen's layers switched off, no layer showing a box, no live sector,
      * or an id that no longer names a system.
      *
-     * <p>Reads the hover, the layer registry, and the sector live rather than taking them, because both
-     * callers are passes the engine drives with nothing but a frame - neither is handed the state it
-     * would otherwise pass along.
+     * <p>Resolves the running sector's machinery rather than taking it, because both callers are
+     * passes the engine drives with nothing but a frame - neither is handed the state it would
+     * otherwise pass along.
      *
      * @return the box and what it would draw for, or empty when no box would draw at all
      */
     static Optional<HoveredBox> resolveHoveredBox() {
 
         // One resolution for everything below: the sector the box describes, the hover it published,
-        // and the renderer that would say something about what that hover names. Two resolutions
-        // could only ever agree, and the trio is what the box is - a cell of one sector's map,
-        // described by that sector's map.
-        //
-        // Resolved off the running sector rather than off one passed in, because this is a
-        // screen-side adapter: both callers are passes the engine drives with a frame and nothing
-        // else. Spelled through the index's own live-sector resolution so every such adapter is
-        // findable by one name.
+        // and the renderer that would say something about what that hover names. Taken off one
+        // installation rather than read apart, so the box cannot describe one sector out of another
+        // sector's hover - the trio is what the box is, a cell of one sector's map described by that
+        // sector's map.
         var installation = MapLayerInstallations.resolveInstallationForLiveSector();
 
-        // The sector comes off the installation rather than from a second global read, so the box
-        // cannot describe a sector other than the one whose hover and draw lists it reads. Absent
-        // where no game is loaded, which is the detached installation answering for no sector.
+        // Absent where no game is loaded, which is the machinery over no sector answering.
         var sector = installation.resolveSector();
         if (sector == null) {
             return Optional.empty();
