@@ -64,7 +64,7 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
 
         // Last, and unchecked: the hover is what the box says rather than part of what it does, so
         // a substrate that declines to hang one costs the words and leaves a working control.
-        toggle.attachTooltip(MapLayerToggleTooltip.TOOLTIP_WIDTH, toggleTooltip::describeToggle);
+        toggleTooltip.attachTo(toggle);
 
         return true;
     }

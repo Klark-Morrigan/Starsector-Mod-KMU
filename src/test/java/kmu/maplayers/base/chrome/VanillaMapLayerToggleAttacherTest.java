@@ -1,23 +1,29 @@
 package kmu.maplayers.base.chrome;
 
+import com.fs.starfarer.api.ui.TooltipMakerAPI;
+
 import kmlib.testfixtures.starsector.ui.map.controls.MapFilterButtonFake;
 import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the two things the live attachment owes the pick it is handed: the box opens showing what
- * that screen already holds, and a click on it writes back what the box now shows. Both are what
- * make the control read as the state of the layers rather than as a switch of its own.
+ * Pins the three things the live attachment owes the box it stands: it opens showing what that
+ * screen already holds, a click on it writes back what it now shows, and it carries the hover its
+ * neighbours on the row do. The first two are what make the control read as the state of the
+ * layers rather than as a switch of its own; the third is what makes it read as one of the row's.
  */
 final class VanillaMapLayerToggleAttacherTest {
 
@@ -72,6 +78,30 @@ final class VanillaMapLayerToggleAttacherTest {
             // since the button flips its own state before reporting.
             verify(visibilityMock)
                 .showLayers(true);
+        }
+
+        @Test
+        void attachToggleToGivesTheBoxTheHoverItsNeighboursCarry() {
+
+            var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
+            var elementMock = mock(TooltipMakerAPI.class);
+
+            StarsectorSettingsFake.installSettings(() -> elementMock);
+            try {
+                new VanillaMapLayerToggleAttacher()
+                    .attachToggleTo(ShownFilterRows.createRowOver(rowFake), mockVisibility(true));
+            } finally {
+                StarsectorSettingsFake.clearSettings();
+            }
+
+            // Six of the row's own eight buttons carry one, so a seventh without is the one thing
+            // on the strip that does not behave like the rest. Pinned here rather than left to the
+            // two suites either side of it: those cover hanging a hover and what it says, and this
+            // is the only place that says the box gets one at all.
+            verify(elementMock).addTooltipTo(
+                any(TooltipMakerAPI.TooltipCreator.class),
+                eq(readAppendedButton(rowFake)),
+                eq(TooltipMakerAPI.TooltipLocation.ABOVE));
         }
 
         @Test

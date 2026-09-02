@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
@@ -29,7 +30,9 @@ import static org.mockito.Mockito.when;
  *
  * <p>The alliances clause is held on both sides of its condition. It names a view the political map
  * only offers where the mod that keeps alliances is installed, so an install without it must be
- * told about the two views it has rather than the three it does not.
+ * told about the two views it has rather than the three it does not. Held on both sides of a
+ * <em>change</em> too: the engine rebuilds a body while the tooltip is up, so what the sentence
+ * lists has to be a read rather than something settled when the box went up.
  */
 final class MapLayerToggleTooltipTest {
 
@@ -132,6 +135,33 @@ final class MapLayerToggleTooltipTest {
                     HIGHLIGHT,
                     HIGHLIGHT,
                     HIGHLIGHT);
+        }
+
+        @Test
+        void describeToggleAsksWhichViewsAreOfferedAfreshOnEveryHover() {
+
+            var isAllianceViewOffered = new AtomicBoolean(false);
+            var tooltip = new MapLayerToggleTooltip(isAllianceViewOffered::get);
+
+            var firstTooltipMock = mock(TooltipMakerAPI.class);
+            mockLabelOn(firstTooltipMock);
+            tooltip.describeToggle(firstTooltipMock);
+
+            isAllianceViewOffered.set(true);
+
+            var secondTooltipMock = mock(TooltipMakerAPI.class);
+            mockLabelOn(secondTooltipMock);
+            tooltip.describeToggle(secondTooltipMock);
+
+            // The engine rebuilds a body while the tooltip is up, so anything read once at
+            // construction would go on describing the roster as it stood when the box was hung -
+            // and a mod loaded into a running game is exactly when that would be wrong.
+            verify(secondTooltipMock)
+                .addPara(
+                    eq("Shows Sector Map Layers (supplied by KMU) that draw a political map of the "
+                        + "sector (factions, alliances, system claims)."),
+                    any(Color.class),
+                    anyFloat());
         }
     }
 

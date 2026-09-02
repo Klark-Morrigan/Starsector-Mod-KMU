@@ -5,6 +5,7 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
+import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.util.KmuStrings;
 
@@ -36,8 +37,10 @@ import java.util.function.BooleanSupplier;
  */
 final class MapLayerToggleTooltip {
 
-    /** What the game's own six use, so the box's hover is the width of its neighbours'. */
-    static final float TOOLTIP_WIDTH = 300f;
+    // What the game's own six use, so the box's hover is the width of its neighbours'. Private
+    // because the width is part of what this says rather than something a caller chooses: the
+    // hanging happens here too, so nothing outside has to hold a number it cannot judge.
+    private static final float TOOLTIP_WIDTH = 300f;
 
     // The gap vanilla leaves above a tooltip's first paragraph, matched so the one box that is not
     // the game's does not sit its text differently from the six that are.
@@ -57,55 +60,38 @@ final class MapLayerToggleTooltip {
     }
 
     /**
+     * Hangs this on a box standing on the game's filter row.
+     *
+     * @param toggle the box to give a hover to
+     */
+    void attachTo(MapFilterToggle toggle) {
+
+        toggle.attachTooltip(TOOLTIP_WIDTH, this::describeToggle);
+    }
+
+    /**
      * Writes the box's one paragraph into a tooltip the engine has opened.
      *
      * @param tooltip the surface to paint into, supplied afresh on every hover
      */
     void describeToggle(TooltipMakerAPI tooltip) {
 
-        var layersName = KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS);
-        var supplierAside = KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER);
-        var mapName = KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP);
+        var parts = readSentenceParts();
 
-        var viewNames = listOfferedViewNames();
-        var sentence = KmuStrings.format(
-            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
-            layersName,
-            supplierAside,
-            mapName,
-            String.join(
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR),
-                viewNames));
-
-        new HighlightedParagraph(
-                sentence,
-                listRunHighlights(layersName, supplierAside, mapName, viewNames))
+        new HighlightedParagraph(parts.composeSentence(), parts.listRunHighlights())
             .addTo(tooltip, PARAGRAPH_PAD);
     }
 
-    // Each run bound to the colour it takes, rather than the two travelling as parallel arrays to
-    // be matched up by position at the end.
-    private static Highlight[] listRunHighlights(
-            String layersName,
-            String supplierAside,
-            String mapName,
-            List<String> viewNames) {
+    // The pieces the sentence is made of, read once. The same four settle both what the text says
+    // and which of its runs are tinted, so they travel as one value rather than being handed
+    // separately to two calls that must agree about them.
+    private SentenceParts readSentenceParts() {
 
-        var highlightColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
-        var highlights = new ArrayList<Highlight>();
-
-        highlights.add(Highlight.of(layersName, highlightColour));
-
-        // The one run that recedes: naming the mod is what the aside is for, and a mod's name said
-        // in the same colour as the feature would read as part of it.
-        highlights.add(Highlight.of(supplierAside, StarsectorUiColour.VANILLA_GRAY.resolve()));
-        highlights.add(Highlight.of(mapName, highlightColour));
-
-        for (var viewName : viewNames) {
-            highlights.add(Highlight.of(viewName, highlightColour));
-        }
-
-        return highlights.toArray(new Highlight[0]);
+        return new SentenceParts(
+            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS),
+            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP),
+            listOfferedViewNames());
     }
 
     // The views the political map draws, in the order its own selector offers them. Held as
@@ -126,5 +112,53 @@ final class MapLayerToggleTooltip {
         viewNames.add(KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS));
 
         return viewNames;
+    }
+
+    /**
+     * The wording the sentence is built from, and the source of every run tinted inside it.
+     *
+     * @param layersName    what the feature is called
+     * @param supplierAside the parenthetical naming the mod that supplies it
+     * @param mapName       what the layers draw
+     * @param viewNames     the views that map offers, in the order its own selector offers them
+     */
+    private record SentenceParts(
+        String layersName,
+        String supplierAside,
+        String mapName,
+        List<String> viewNames) {
+
+        /** @return the whole sentence, with the views joined into its closing list */
+        String composeSentence() {
+
+            return KmuStrings.format(
+                KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
+                layersName,
+                supplierAside,
+                mapName,
+                String.join(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR),
+                    viewNames));
+        }
+
+        /** @return each run bound to the colour it takes, in the order the sentence reads them */
+        Highlight[] listRunHighlights() {
+
+            var highlightColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+            var highlights = new ArrayList<Highlight>();
+
+            highlights.add(Highlight.of(layersName, highlightColour));
+
+            // The one run that recedes: naming the mod is what the aside is for, and a mod's name
+            // said in the same colour as the feature would read as part of it.
+            highlights.add(Highlight.of(supplierAside, StarsectorUiColour.VANILLA_GRAY.resolve()));
+            highlights.add(Highlight.of(mapName, highlightColour));
+
+            for (var viewName : viewNames) {
+                highlights.add(Highlight.of(viewName, highlightColour));
+            }
+
+            return highlights.toArray(new Highlight[0]);
+        }
     }
 }
