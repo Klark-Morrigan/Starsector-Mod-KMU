@@ -2,10 +2,16 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
 
+import kmu.maplayers.base.layer.MapLayer;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the intel overlay's anchor math: the box hangs from the visor's top-left corner (UI origin
@@ -13,6 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the visor's left, and capped to the visor's bottom - all expressed as screen padding for the
  * top-left-anchored layout. The anchor is the whole of what this class decides per screen; the tab band
  * each panel stands its row in is its host's, and pinned there.
+ *
+ * <p>Also pins where the tab row's letters come from: each layer's own answer, taken as drawn text, so a
+ * layer shipped by another mod letters its tab out of its own bundle.
  */
 final class LiveSidebarPlacementTest {
 
@@ -59,6 +68,44 @@ final class LiveSidebarPlacementTest {
 
             assertThat(padding.bottom())
                 .isEqualTo(50);
+        }
+    }
+
+    @Nested
+    class ResolveTabLabels {
+
+        @Test
+        void resolveTabLabelsLettersEachTabFromItsOwnLayersAnswer() {
+            // The inversion this pins: the bar draws what the layer hands back and resolves no key of its
+            // own, which is what lets a layer from another mod letter its tab out of a bundle KMU has no
+            // reader for. Two layers, so a bar reading one fixed source would show one of them twice.
+            var firstLayerMock = mock(MapLayer.class);
+            var secondLayerMock = mock(MapLayer.class);
+
+            when(firstLayerMock.resolveTabLabelText())
+                .thenReturn("No Layer");
+            when(secondLayerMock.resolveTabLabelText())
+                .thenReturn("Trade Routes");
+
+            assertThat(LiveSidebarPlacement.resolveTabLabels(List.of(firstLayerMock, secondLayerMock)))
+                .containsExactly("No Layer", "Trade Routes");
+        }
+
+        @Test
+        void resolveTabLabelsKeepsATabForALayerAnsweringABlankLabel() {
+            // A layer whose text resolves to nothing - a missing bundle entry, or a player-set name
+            // cleared - keeps its place in the row. Dropping it would take the tab away with it, leaving
+            // the player no way back to a layer they can still be holding as their pick.
+            var blankLabelLayerMock = mock(MapLayer.class);
+            var labelledLayerMock = mock(MapLayer.class);
+
+            when(blankLabelLayerMock.resolveTabLabelText())
+                .thenReturn("");
+            when(labelledLayerMock.resolveTabLabelText())
+                .thenReturn("Political Map");
+
+            assertThat(LiveSidebarPlacement.resolveTabLabels(List.of(blankLabelLayerMock, labelledLayerMock)))
+                .containsExactly("", "Political Map");
         }
     }
 }

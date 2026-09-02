@@ -165,7 +165,9 @@ about what the overlay means.
   answer below, and the session's rather than the save's. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
-  installation through rather than resolving one of its own.
+  installation through rather than resolving one of its own. A layer also letters its own tab:
+  `resolveTabLabelText` hands the bar drawn text rather than a strings key, since only the mod that
+  declares a layer holds the bundle its name lives in, and the bar carries whatever is registered.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

@@ -19,7 +19,6 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
 
@@ -126,6 +125,19 @@ public final class LiveSidebarPlacement {
             Math.round(mapVisorRect.x()));
     }
 
+    // The row's labels, one per layer in registry order, each layer asked for its own drawn text rather
+    // than for a key this class then looks up: the bar carries layers from any mod, and only the mod that
+    // declares a layer can resolve that layer's strings. A blank answer still contributes an entry, so a
+    // layer with nothing to say costs its tab its letters and not its place in the row.
+    static List<String> resolveTabLabels(List<MapLayer> layers) {
+
+        var labels = new ArrayList<String>(layers.size());
+        for (var layer : layers) {
+            labels.add(layer.resolveTabLabelText());
+        }
+        return labels;
+    }
+
     // Lays the panel out for the given anchor, tab style, and controller - the one path both host entry
     // points share, so the map and intel panels are the same layout differing only in where they anchor and
     // how tall they stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs
@@ -205,14 +217,12 @@ public final class LiveSidebarPlacement {
             MapLayer activeLayer,
             ActiveLayerSelection selection) {
 
-        var labels = new ArrayList<String>(layers.size());
         var shortcuts = new ArrayList<String>(layers.size());
         for (var layer : layers) {
-            labels.add(KmuStrings.get(layer.getTabLabelKey()));
             shortcuts.add(resolveShortcutName(layer));
         }
         return new ControlSpec.Tabs(
-            labels,
+            resolveTabLabels(layers),
             shortcuts,
             layers.indexOf(activeLayer),
             cell -> selection.selectLayer(layers.get(cell)));

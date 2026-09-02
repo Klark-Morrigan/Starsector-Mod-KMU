@@ -33,8 +33,10 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
-    public String getTabLabelKey() {
-        return KmuStrings.MAP_LAYER_TAB_NO_LAYER;
+    public String resolveTabLabelText() {
+        // The bundle read is this layer's own: KMU declares the layer, so KMU is the only mod that can
+        // resolve its key. The bar takes the text it hands back and looks nothing up.
+        return KmuStrings.get(KmuStrings.MAP_LAYER_TAB_NO_LAYER);
     }
 
     @Override

@@ -32,8 +32,19 @@ public interface MapLayer {
      */
     String getId();
 
-    /** @return the strings.json key for this layer's tab label. */
-    String getTabLabelKey();
+    /**
+     * The text drawn on this layer's tab, resolved rather than keyed: a strings key is only meaningful
+     * to the bundle holding it, and the framework holds one bundle while a layer may come from any mod.
+     * An implementation looks its own key up, returns a literal, or reads a name the player set - none
+     * of which the bar needs to know about.
+     *
+     * <p>Asked for per read rather than taken once, matching how the shortcut hint is already resolved:
+     * the tabs are rebuilt from the roster each frame, so a label that follows a setting or a save
+     * follows it, instead of being frozen at whatever it said when the layer registered.
+     *
+     * @return this layer's tab label; blank leaves a drawable but unlettered tab rather than no tab
+     */
+    String resolveTabLabelText();
 
     /**
      * @return the control specs this layer's tab opens in its body once selected, top to
