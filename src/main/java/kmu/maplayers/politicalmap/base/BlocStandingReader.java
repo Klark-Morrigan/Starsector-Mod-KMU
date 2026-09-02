@@ -9,6 +9,9 @@ import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -27,15 +30,17 @@ import java.util.Optional;
  * on the same reasoning every other bloc-level rule reads it whole - a range over whichever subset
  * happened to be present is not the fact it claims to be.
  *
- * <p>The ends are folded on the reputation rather than on the level the game names, that being the
- * finer of the two: two members a level apart in name and a point apart in fact still order, and
- * the level rides along on the standing that won either end.
- *
  * <p>The sector reads bind behind {@link PlayerStandingSource}, so the fold itself is arithmetic
  * over hand-built standings. Stateless past that seam and the grouping - both are read afresh on
  * every call, so a reader outlives the reputations it is asked about.
  */
 public final class BlocStandingReader {
+
+    // The scale the two ends are picked off: the signed reputation, rather than the level the game
+    // names it, that being the finer of the two - two members a level apart in name and a point
+    // apart in fact still order, and the level rides along on whichever standing won an end.
+    private static final Comparator<PlayerStanding> REPUTATION_ORDER =
+        Comparator.comparingInt(PlayerStanding::reputation);
 
     private final HolderGrouping grouping;
     private final PlayerStandingSource standingSource;
@@ -62,9 +67,9 @@ public final class BlocStandingReader {
      */
     public static BlocStandingReader createForSector(SectorAPI sector, HolderGrouping grouping) {
 
-        return new BlocStandingReader(
-            grouping,
-            new SectorPlayerStandingSource(Objects.requireNonNull(sector, "sector")));
+        Objects.requireNonNull(sector, "sector");
+
+        return new BlocStandingReader(grouping, new SectorPlayerStandingSource(sector));
     }
 
     /**
@@ -112,43 +117,17 @@ public final class BlocStandingReader {
     // about.
     private BlocStanding foldMemberStandings(String blocId) {
 
-        PlayerStanding lowest = null;
-        PlayerStanding highest = null;
+        var memberStandings = new ArrayList<PlayerStanding>();
 
         for (var memberFactionId : grouping.resolveMemberFactionIds(blocId)) {
-
-            var memberStanding = standingSource.readStandingWithPlayer(memberFactionId);
-
-            if (memberStanding.isPresent()) {
-                lowest = selectLowerStanding(lowest, memberStanding.get());
-                highest = selectHigherStanding(highest, memberStanding.get());
-            }
+            standingSource.readStandingWithPlayer(memberFactionId).ifPresent(memberStandings::add);
         }
-        return lowest == null
-            ? BlocStanding.UNREADABLE
-            : new BlocStanding.Measured(lowest, highest);
-    }
-
-    // The lower of the range's near end so far and one more member's standing, the member's own
-    // where no end has been set yet - so the first member answering sets both ends and every later
-    // one only widens them.
-    private static PlayerStanding selectLowerStanding(
-            PlayerStanding lowest,
-            PlayerStanding memberStanding) {
-
-        return lowest == null || memberStanding.reputation() < lowest.reputation()
-            ? memberStanding
-            : lowest;
-    }
-
-    // The far end's counterpart, read the same way off the same walk.
-    private static PlayerStanding selectHigherStanding(
-            PlayerStanding highest,
-            PlayerStanding memberStanding) {
-
-        return highest == null || memberStanding.reputation() > highest.reputation()
-            ? memberStanding
-            : highest;
+        if (memberStandings.isEmpty()) {
+            return BlocStanding.UNREADABLE;
+        }
+        return new BlocStanding.Measured(
+            Collections.min(memberStandings, REPUTATION_ORDER),
+            Collections.max(memberStandings, REPUTATION_ORDER));
     }
 
     /**
