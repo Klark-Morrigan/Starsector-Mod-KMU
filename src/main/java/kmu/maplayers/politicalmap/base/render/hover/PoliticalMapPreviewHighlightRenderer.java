@@ -6,8 +6,8 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.ribbon.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
 
 import java.awt.Color;
@@ -24,9 +24,9 @@ import java.awt.Color;
  * from the cursor's highlight beside it. A previewed bloc lights cells that rivals hold and cells a
  * spotlight has sunk to grey, and both would answer in someone else's colour - or in none - if the
  * shade were read off what the cell was painted as. It comes through
- * {@link SectorBlocPalettes}, the same reader the presence bands colour a bloc by, so the two
- * surfaces cannot come to disagree about what colour a bloc is - including on the bloc whose
- * colour faction has gone from the sector, which both of them decline to paint.
+ * {@link SectorBlocPalettes}, the shared reader of what colour a bloc is, so no two surfaces
+ * painting for a bloc can come to disagree - including on the bloc whose colour faction has gone
+ * from the sector, which none of them paints.
  *
  * <p>It cannot collide with the cursor's highlight: the sidebar parks the map hover while the
  * pointer is over it, so the cursor's is already dark on every frame this one could draw.

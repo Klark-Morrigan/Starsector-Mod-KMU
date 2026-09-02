@@ -7,6 +7,8 @@ import kmlib.starsector.colonies.Colony;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.render.style.BlocPaletteReader;
+import kmu.maplayers.politicalmap.base.render.style.SectorBlocPalettes;
 
 import java.util.List;
 

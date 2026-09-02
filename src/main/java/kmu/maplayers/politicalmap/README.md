@@ -246,8 +246,9 @@ the framework's `PreviewHighlightGeometry`, so no paint state moves for it; `Pre
 is the decision the frame acts on, the shapes lit paired with the one shade they burn in.
 
 Two things about it are not the cursor highlight's, and both follow from its subject being a bloc
-rather than a cell. Its shade comes from [`SectorBlocPalettes`](base/ribbon/README.md), the bands'
-own reader, since the cells it lights need not be cells the bloc holds. And
+rather than a cell. Its shade comes from
+[`SectorBlocPalettes`](base/render/style/README.md), the shared reader the bands colour by, since
+the cells it lights need not be cells the bloc holds. And
 `PoliticalMapHoverGates` does not gate it - those switch the map's answer to the *cursor* - so its
 style tier is where it is turned down. The two highlights cannot collide: the sidebar parks the map
 hover while the pointer is over it.

@@ -92,15 +92,23 @@ duplicate that control on the settings screen. Its opacity and width stay LunaLi
 
 ## The resolvers: choices into colours
 
-Pure rules that both the fills and the cluster-name labels read, so a name can never drift from
-the space it labels:
+Rules that both the fills and the cluster-name labels read, so a name can never drift from the
+space it labels. All but the palette port below are pure, and the port is why: the one thing they
+cannot work out for themselves is what colour a bloc is, so it is inverted rather than reached for,
+and every rule here stays exercisable on hand-built shades.
 
 - `MapPalettes` - resolves a paint selection plus a recede into concrete shades: which palette,
   which slot, and what a desaturated subject recolours to. Stated over a palette rather than over
   an owner, so an ownerless cell recolours by the same rule a bloc does - and an ownerless cell gets
   that palette from `resolveNeutralPalette`, the one statement of "no holder means the neutral
-  colour in both slots". An element keyed on a bloc rather than on a cell gets its palette from
-  [`SectorBlocPalettes`](../../ribbon/README.md) instead and brings it here to pick a slot.
+  colour in both slots".
+- `BlocPaletteReader` - the one live read among these, and a port rather than a rule: the two
+  shades a bloc paints in, which the sector alone can answer. Everything else here works over a
+  palette it is handed, so anything keyed on a bloc rather than on a cell reads through this and
+  brings the pair to `MapPalettes` to pick a slot. `SectorBlocPalettes` is the live implementation,
+  naming the bloc's colour faction through the pass's grouping - an alliance bloc's id is synthetic
+  and answers to no faction - and returning null for a bloc the sector can no longer name at all,
+  which is what has a caller drop the bloc rather than paint it in a stand-in shade.
 - `BlocStyleResolver` - resolves the shared per-bloc decision (independent-vs-faction style and
   the adjustment a bloc draws under) into a `BlocStyleDecision`.
 - `FactionlessStyleResolver` - the counterpart for a cell with no owner, which has no bloc to carry

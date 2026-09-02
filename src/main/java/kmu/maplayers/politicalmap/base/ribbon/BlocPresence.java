@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import kmlib.starsector.factions.FactionPalette;
 
+import kmu.maplayers.politicalmap.base.render.style.BlocPaletteReader;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -12,7 +12,7 @@ Part of [the political map](../../README.md), in Klark Morrigan's Utilities; see
 
 - [The plan](#the-plan)
 - [One count for both mechanics](#one-count-for-both-mechanics)
-- [The two ports](#the-two-ports)
+- [The ports it reads through](#the-ports-it-reads-through)
 - [Which cells band, and how loudly](#which-cells-band-and-how-loudly)
 - [What is not here](#what-is-not-here)
 
@@ -75,19 +75,17 @@ differ - whose fill the band sits inside, and the order that fill decided. A blo
 ranked draws behind the ranked ones in id order, since any place among them would claim it took part
 in a contest it never entered.
 
-## The two ports
+## The ports it reads through
 
-Both live reads the rule would otherwise make are inverted here, so every case above turns on
-hand-built values:
+Both live reads the rule would otherwise make are inverted, so every case above turns on hand-built
+values:
 
-- `BlocPaletteReader` - a bloc's bright and dark shades. `SectorBlocPalettes` is the live
-  implementation, resolving them off the sector's factions through the grouping's colour faction,
-  and answering null for a bloc the sector can no longer name. It has outgrown the bands: the
-  [picker preview](../../README.md#render-orchestration-baserender-baserenderhover) reads a bloc's
-  shade through it too, so "a bloc's colour is its colour faction's colour" is stated once rather
-  than once per surface that paints one.
 - `SystemRibbonPlanner` - the counting itself, one system in, one plan out. The seam each painting
-  mechanic implements.
+  mechanic implements, and this package's own.
+- `BlocPaletteReader` - a bloc's bright and dark shades, with `SectorBlocPalettes` as the live
+  implementation. It is [`base.render.style`](../render/style/README.md)'s rather than this
+  package's: what colour a bloc is turned out not to be a question about bands, and the picker
+  preview asks it too.
 
 ## Which cells band, and how loudly
 

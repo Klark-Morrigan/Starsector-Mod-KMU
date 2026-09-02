@@ -1,4 +1,4 @@
-package kmu.maplayers.politicalmap.base.ribbon;
+package kmu.maplayers.politicalmap.base.render.style;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -24,8 +24,8 @@ import static org.mockito.Mockito.when;
  * <p>Both matter because a bloc is not always a faction. An alliance bloc carries a synthetic id
  * no {@code FactionAPI} answers to, so asking the sector for it directly would leave every
  * alliance colourless on a view where the fills are perfectly well coloured; and a bloc the sector
- * cannot name at all has to come back null, since that null is what makes the counting rules drop
- * it instead of painting a run in a stand-in shade.
+ * cannot name at all has to come back null, since that null is what has a caller drop the bloc
+ * rather than paint it in a stand-in shade.
  */
 final class SectorBlocPalettesTest {
 
