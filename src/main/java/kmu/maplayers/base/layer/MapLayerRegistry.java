@@ -144,25 +144,16 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return the stored show-or-hide pick of the screen showing this frame, for a control standing on
-     *         that screen's own chrome to show and to move. The pick itself rather than a reading of it,
-     *         since such a control both reports what it holds and writes to it; which screen it
-     *         belongs to is settled here so the control never has to ask. The player's stored choice
-     *         rather than what the mod acts on, since a control is what lifts the
-     *         no-control-no-hiding rule rather than something subject to it
+     * @return the show-or-hide state of the screen showing this frame, for whatever stands a control on
+     *         that screen's own chrome: the stored pick such a control shows and moves, and the word
+     *         that one now stands there. One object for both halves, so a control cannot be bound to
+     *         one screen and recorded against the other; which screen it belongs to is settled here, so
+     *         the caller never has to ask
      */
-    public static MapLayerVisibility resolveStoredLayerVisibilityOfLiveScreen() {
-        return resolveLiveLayerVisibility().getStoredVisibility();
-    }
-
-    /**
-     * Records that the screen showing this frame now carries a control able to reverse a hide, from
-     * which point that screen's stored pick is what the mod acts on. Said by whatever stands the
-     * control up, once it is actually standing - a screen told this without getting one would honour a
-     * stored hide with nothing on it to undo that.
-     */
-    public static void recordLayerControlAttachedOnLiveScreen() {
-        resolveLiveLayerVisibility().recordControlAttached();
+    public static ControlBackedMapLayerVisibility resolveLayerControlOfLiveScreen() {
+        return isIntelScreenLive()
+            ? INTEL_LAYER_VISIBILITY
+            : MAP_LAYER_VISIBILITY;
     }
 
     /**
@@ -237,16 +228,6 @@ public final class MapLayerRegistry {
     // settings read behind it, on every frame the layers are simply on.
     private static boolean isAnythingOfTheLayersOn(MapLayerVisibility visibility) {
         return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
-    }
-
-    // The show-or-hide state of the screen that is up, for the two callers that want it as more than a
-    // reading: the control bound to that screen's stored choice, and the word that such a control now
-    // stands there. The very object the pair above holds, so a reading taken through the pair and a
-    // write made through this cannot describe different screens.
-    private static ControlBackedMapLayerVisibility resolveLiveLayerVisibility() {
-        return isIntelScreenLive()
-            ? INTEL_LAYER_VISIBILITY
-            : MAP_LAYER_VISIBILITY;
     }
 
     // The picks of the screen that is up. One resolution for the pair, so no reading can answer for a

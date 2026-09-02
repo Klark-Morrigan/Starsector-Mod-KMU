@@ -4,12 +4,11 @@ package kmu.maplayers.base.layer;
  * A screen's show-or-hide pick as the rest of the mod reads it: honoured only while that screen has a
  * control able to take a hide back, and read as shown until it has one.
  *
- * <p>What makes that rule necessary is where the control comes from. It is appended to the game's own
- * filter row by a reach into another party's widget, and every way that reach can stop working - a
- * shape that moved in a game update, a row another mod filled, a hatch the player closed - ends in no
- * control on the screen. Without this, a player who hid the layers before any of those happened would
- * be left with the feature switched off and nothing on screen to switch it back on, recoverable only
- * by editing a save.
+ * <p>What makes that rule necessary is where the control comes from: it is a decoration on chrome this
+ * mod does not own, so whether a screen gets one is settled afresh each session and can be settled no.
+ * Without the rule, a player who hid the layers in a session that had a control would be left, in one
+ * that does not, with the feature switched off and nothing on screen to switch it back on -
+ * recoverable only by editing a save.
  *
  * <p>The stored pick itself is never touched by the rule. Hiding is still the player's choice, kept as
  * they left it and honoured again the moment a control exists to reverse it - so a session that could
@@ -81,9 +80,9 @@ public final class ControlBackedMapLayerVisibility implements MapLayerVisibility
 
     /**
      * @return the pick underneath, for a control to show and to move. A control is what lifts the rule
-     *         above rather than something subject to it, so it is bound to the player's own choice: a
-     *         box seeded from the reading would come up ticked over a save holding the layers hidden,
-     *         and stay wrong until it was clicked twice
+     *         above rather than something subject to it, so it is bound to the player's own choice: one
+     *         seeded from the reading would report the layers as shown over a save that holds them
+     *         hidden, and stay at odds with them until it was used twice
      */
     public MapLayerVisibility getStoredVisibility() {
         return storedVisibility;

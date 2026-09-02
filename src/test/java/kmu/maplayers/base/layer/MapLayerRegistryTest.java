@@ -222,18 +222,19 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
-    class ResolveStoredLayerVisibilityOfLiveScreen {
+    class ResolveLayerControlOfLiveScreen {
 
         @Test
-        void resolveStoredLayerVisibilityOfLiveScreenHandsBackTheShowingScreensOwnPick() {
-            // The pick itself rather than a reading of it, since what asks is a control that both
+        void resolveLayerControlOfLiveScreenHandsBackTheShowingScreensOwnStoredPick() {
+            // The stored pick rather than a reading of it, since what asks is a control that both
             // shows it and moves it. Written through, it must move the screen that was up and leave
             // the other where it was - which is the whole of what a control on one screen's own
             // chrome may do.
             intelScreenFake.setIntelTabOpen(true);
 
             MapLayerRegistry
-                .resolveStoredLayerVisibilityOfLiveScreen()
+                .resolveLayerControlOfLiveScreen()
+                .getStoredVisibility()
                 .showLayers(false);
 
             assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
@@ -241,6 +242,22 @@ final class MapLayerRegistryTest {
 
             assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
                 .isNull();
+        }
+
+        @Test
+        void resolveLayerControlOfLiveScreenHandsBackTheStateInTheShowingScreensPair() {
+            // The one object per screen, not a second alongside the pair: a control recorded against
+            // one instance while the hosts and the overlay read another would leave a hide the player
+            // made through the box unacted on, with nothing to say which of the two was wrong.
+            intelScreenFake.setIntelTabOpen(true);
+
+            assertThat(MapLayerRegistry.resolveLayerControlOfLiveScreen())
+                .isSameAs(MapLayerRegistry.getIntelPicks().layerVisibility());
+
+            intelScreenFake.setIntelTabOpen(false);
+
+            assertThat(MapLayerRegistry.resolveLayerControlOfLiveScreen())
+                .isSameAs(MapLayerRegistry.getMapPicks().layerVisibility());
         }
     }
 
@@ -453,7 +470,10 @@ final class MapLayerRegistryTest {
     private void recordAControlOnTheShowingScreen(boolean isIntelTabOpen) {
 
         intelScreenFake.setIntelTabOpen(isIntelTabOpen);
-        MapLayerRegistry.recordLayerControlAttachedOnLiveScreen();
+
+        MapLayerRegistry
+            .resolveLayerControlOfLiveScreen()
+            .recordControlAttached();
     }
 
     // Puts the map screen part-way down its hide ramp. The flip is made while the pace still reads as

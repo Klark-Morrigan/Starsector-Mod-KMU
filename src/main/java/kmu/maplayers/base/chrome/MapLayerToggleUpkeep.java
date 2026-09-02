@@ -7,8 +7,8 @@ import kmlib.logging.SessionWarning;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
 
+import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.apache.log4j.Logger;
@@ -63,17 +63,11 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // is - the row offers no way to take one off again - and the row the next open builds is bare.
     private final BooleanSupplier isToggleEnabled;
 
-    // The show-or-hide pick of the screen showing this frame, which is the pick a box on that
-    // screen's row drives. Asked per frame rather than held, since which screen is up is a
-    // per-frame question. The player's stored choice rather than the reading the mod acts on: a box
-    // is what lifts the rule below rather than something subject to it.
-    private final Supplier<MapLayerVisibility> resolveLiveScreenVisibility;
-
-    // Says that the screen showing this frame now has a control able to take a hide back, which is
-    // what the mod's reading of that screen's pick is gated on: until it is said, the layers show
-    // whatever the save holds, so a reach that stops working cannot strand a player with them off
-    // and nothing on screen to bring them back.
-    private final Runnable recordControlAttachedOnLiveScreen;
+    // The show-or-hide state of the screen showing this frame: the pick a box on that screen's row
+    // drives, and the word that a box now stands there. Asked per frame rather than held, since
+    // which screen is up is a per-frame question, and asked as one object rather than two, so a box
+    // cannot be bound to one screen while the other is told it has one.
+    private final Supplier<ControlBackedMapLayerVisibility> resolveLiveScreenLayerControl;
 
     // The filter row of the map on screen, or nothing on every screen that shows no map - which is
     // most of them, and is the ordinary answer rather than a failure.
@@ -87,32 +81,29 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // same piece of news: there is no control on the row.
     private final SessionWarning warning = new SessionWarning(LOG);
 
-    // The row each screen's box was last put on, held against that screen's own pick since the pick
-    // is what a box is bound to and what says which screen it belongs to. By identity, because a
-    // row is the widget itself rather than anything describable about it.
-    private final Map<MapLayerVisibility, MapFilterRow> attachedRowsByScreenPick =
+    // The row each screen's box was last put on, held against that screen's own show-or-hide state,
+    // since that state is what a box is bound to and what says which screen it belongs to. By
+    // identity, because a row is the widget itself rather than anything describable about it.
+    private final Map<ControlBackedMapLayerVisibility, MapFilterRow> attachedRowsByScreenState =
         new IdentityHashMap<>();
 
     /** Reads the live settings, screens and widget tree - the pairing a running game gets. */
     public MapLayerToggleUpkeep() {
         this(
             KmuMapLayerSettings::getMapFilterRowToggleEnabled,
-            MapLayerRegistry::resolveStoredLayerVisibilityOfLiveScreen,
-            MapLayerRegistry::recordLayerControlAttachedOnLiveScreen,
+            MapLayerRegistry::resolveLayerControlOfLiveScreen,
             MapFilterRows::resolveShownMapFilterRow,
             new VanillaMapLayerToggleAttacher());
     }
 
     MapLayerToggleUpkeep(
             BooleanSupplier isToggleEnabled,
-            Supplier<MapLayerVisibility> resolveLiveScreenVisibility,
-            Runnable recordControlAttachedOnLiveScreen,
+            Supplier<ControlBackedMapLayerVisibility> resolveLiveScreenLayerControl,
             Supplier<MapFilterRow> resolveShownFilterRow,
             MapLayerToggleAttacher toggleAttacher) {
 
         this.isToggleEnabled = isToggleEnabled;
-        this.resolveLiveScreenVisibility = resolveLiveScreenVisibility;
-        this.recordControlAttachedOnLiveScreen = recordControlAttachedOnLiveScreen;
+        this.resolveLiveScreenLayerControl = resolveLiveScreenLayerControl;
         this.resolveShownFilterRow = resolveShownFilterRow;
         this.toggleAttacher = toggleAttacher;
     }
@@ -164,23 +155,20 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
             return;
         }
 
-        var layerVisibility = resolveLiveScreenVisibility.get();
+        var screenLayerControl = resolveLiveScreenLayerControl.get();
 
-        var attachedRow = attachedRowsByScreenPick.get(layerVisibility);
+        var attachedRow = attachedRowsByScreenState.get(screenLayerControl);
         if (attachedRow != null && attachedRow.isSameRowAs(shownRow)) {
             return;
         }
 
-        // Remembered only where a box actually went up, so a refusal is retried on the next frame
-        // rather than recorded as an attachment that never happened.
-        if (!toggleAttacher.attachToggleTo(shownRow, layerVisibility)) {
+        // Both said only where a box actually went up: a refusal is retried on the next frame rather
+        // than remembered as an attachment that never happened, and a screen told it has a control it
+        // never got would act on a stored hide with nothing on the row to reverse it.
+        if (!toggleAttacher.attachToggleTo(shownRow, screenLayerControl.getStoredVisibility())) {
             return;
         }
-        attachedRowsByScreenPick.put(layerVisibility, shownRow);
-
-        // Said after the box is standing, and so after it has been seeded from the pick: a screen
-        // told it has a control before one is up would honour a stored hide against a box that read
-        // the layers as shown, and the two would stay at odds until it was clicked twice.
-        recordControlAttachedOnLiveScreen.run();
+        attachedRowsByScreenState.put(screenLayerControl, shownRow);
+        screenLayerControl.recordControlAttached();
     }
 }
