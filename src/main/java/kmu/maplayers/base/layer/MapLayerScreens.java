@@ -140,8 +140,14 @@ public final class MapLayerScreens {
      * <p>Both together, because the thing being unwound is a fact about the run rather than about
      * either screen: a caller unwinding one and not the other would leave an arrangement no session can
      * actually be in, one screen acting on its stored hide and the other refusing to.
+     *
+     * <p>Owed on every campaign load, which is what makes this the running game's business rather than
+     * only a test's. These two are held for the process while the picks beneath them read the loaded
+     * sector's memory, so a campaign hidden with a box standing would otherwise lend its word to the
+     * next campaign loaded in the same session - which has no box on any row yet, and may turn out to
+     * be unable to take one.
      */
-    static void forgetControlsAttached() {
+    public static void forgetControlsAttached() {
 
         MAP_LAYER_VISIBILITY.forgetControlAttached();
         INTEL_LAYER_VISIBILITY.forgetControlAttached();

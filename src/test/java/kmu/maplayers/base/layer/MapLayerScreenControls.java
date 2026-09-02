@@ -8,12 +8,11 @@ package kmu.maplayers.base.layer;
  * hides where a run with no control reads the layers shown. Whether that showed up at all would then
  * depend on which class happened to run first, which is the failure this exists to remove.
  *
- * <p>Reached through here rather than off {@link MapLayerScreens} directly, because taking the
- * record back is not something the running game ever asks for: no event ends a run, so a game that
- * could unwind the latch would be answering a question nothing puts to it. Sitting at this package's
- * own name is what lets that stay shut away from the mod while every class that needs it, wherever
- * it lives, can still reach it - the arrangement {@link MapLayerRosters} already uses for the roster
- * beside it.
+ * <p>Reached through here rather than off {@link MapLayerScreens} directly so that a suite states the
+ * unwinding in its own terms, beside the standing it pairs with. The running game asks for the same
+ * thing on every campaign load - the screens outlive a sector while the picks they govern do not - so
+ * this is a convenience over a live seam rather than a way in to one the mod never uses. The same
+ * arrangement {@link MapLayerRosters} uses for the roster beside it.
  *
  * <p>Which screen a control lands on is deliberately not settled here. It follows whichever screen
  * is showing, exactly as it does in play, so a caller states that arrangement itself rather than

@@ -2,6 +2,8 @@ package kmu.maplayers.base.chrome;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.maplayers.base.layer.MapLayerScreens;
+
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
@@ -59,7 +61,17 @@ public final class MapChromeInstaller {
     // already registered first: two of them would each find the row bare of their own box and append
     // one, leaving the player two controls over a single pick. Removed by class, which is safe
     // because the script is this mod's own - no sibling mod runs one to be taken out with it.
+    //
+    // The same start-clean rule reaches past the script to what the screens believe, below.
     static void installMapLayerToggleUpkeep(SectorAPI sector) {
+
+        // A campaign just loaded has no box standing on any row, whatever an earlier one in this
+        // session managed to attach. The word that a screen has one is held for the process while the
+        // pick it governs reads the loaded sector's memory, so nothing else takes it back - and this
+        // campaign's stored hide would otherwise be acted on from the first frame, on the strength of
+        // a control the previous campaign put up. Before the null check, since a load with no sector
+        // to install into is a load with no box either.
+        MapLayerScreens.forgetControlsAttached();
 
         if (sector == null) {
             return;
