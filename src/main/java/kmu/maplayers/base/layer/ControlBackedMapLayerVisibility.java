@@ -92,14 +92,17 @@ public final class ControlBackedMapLayerVisibility implements MapLayerVisibility
      * Returns this screen to the reading a run that has never put a control up gives, whatever it has
      * stored.
      *
-     * <p>The latch is the one thing here a run accumulates and never lets go of, and it outlives
-     * everything around it: the picks it decorates belong to a sector, while the screens holding them
-     * are the process's. So an unwinding is owed for the same reason the latch is session-scoped in the
-     * first place - a record of what some earlier arrangement managed to attach describes nothing about
-     * the current one. The stored pick is untouched, this being about whether the rule acts on it
-     * rather than about what it holds.
+     * <p>The latch is the one thing here a run accumulates, and on its own it only ever goes one way.
+     * That is wrong wherever a control can be taken away again, and it can be taken away by two
+     * different things: the arrangement holding the picks being torn down under it - the picks belong
+     * to a sector while the screens holding them are the process's - and the player closing the switch
+     * that permits the reach at all. Both leave a screen with no way to reverse a hide, which is
+     * exactly what the rule above exists to keep from happening, so both owe this.
+     *
+     * <p>The stored pick is untouched, this being about whether the rule acts on it rather than about
+     * what it holds.
      */
-    void forgetControlAttached() {
+    public void forgetControlAttached() {
         hasControlBeenAttached = false;
     }
 }

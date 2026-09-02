@@ -21,69 +21,51 @@ import java.util.function.Supplier;
 /**
  * Keeps the map layers' tick box standing on whichever filter row the player is looking at.
  *
- * <p>A standing pass rather than a one-time install, because the row is not furniture: the map
- * widget builds its own row inside its constructor, so every open of a map screen produces a fresh
- * row while the box put on the last one goes on existing, attached to a widget nobody can see.
- * There is no event for that, and nothing else to notice it by - so the row on screen is compared
- * against the row the box was put on, and they part company exactly when the screen was reopened.
+ * <p>A standing pass rather than a one-time install: the map widget builds its row inside its own
+ * constructor, so every open of a screen produces a fresh row while the box put on the last one
+ * goes on existing, attached to a widget nobody can see. Nothing announces that, so the row on
+ * screen is compared against the row the box was put on.
  *
- * <p>Row identity rather than what the row holds. A row another mod has appended to carries a
- * button this mod never put there, and counting children would read that as our own box having gone
- * missing - and then append a second one beside it on every frame.
+ * <p>Compared by identity, and one row remembered per screen. Counting the row's children instead
+ * would read another mod's button as our own having gone missing, and append a second box every
+ * frame; a single remembered row would have nothing to compare against once the player moved
+ * between the two screens and back.
  *
- * <p>One row remembered per screen rather than one for the pass. The two screens are never up
- * together, so a single slot would be replaced each time the player moved between them and would
- * have nothing to compare against on the way back; whether that is harmless rests on the game
- * building a fresh row every time, which is exactly the assumption a duplicated control would be
- * the punishment for.
+ * <p>A script rather than a render pass, the sidebar's own pass running only while the sidebar is
+ * showing - and this control has to work its way out of exactly the state where nothing of the
+ * feature is drawn. It runs while paused, every screen carrying a filter row pausing the campaign.
  *
- * <p>A script rather than a render pass, for the reason the hover expirer is one: the sidebar's own
- * pass runs only while the sidebar is showing, and a control that has to bring the layers back is
- * needed precisely on the frames where nothing of them is drawn. It runs while paused because every
- * screen it works on pauses the campaign.
- *
- * <p>Nothing here can take the whole feature down with it. The reach it drives is a write into
- * another party's widget, so every way of failing - a row that cannot be resolved, a shape that no
- * longer builds a drivable button, a read that throws outright - resolves to no control, one line
- * in the log, and a map that behaves as it did before the box existed.
- *
- * <p>This pass is also the only thing that can say a screen has a control at all, which is what a
- * stored hide is honoured against. So the half of failing open that no log line covers is here: a
- * screen this never manages to write to goes on showing its layers whatever the save holds, and a
- * reach that stops working cannot leave a player with them switched off and nothing to switch them
- * back on.
+ * <p>Nothing here can take the feature down with it: every way of failing resolves to no control,
+ * one line in the log, and a map that behaves as it did before the box existed. This pass is also
+ * the only thing that can say a screen has a control, which is what a stored hide is acted on - so
+ * a screen it never writes to shows its layers whatever the save holds, and neither a broken reach
+ * nor a closed hatch can leave a player in front of a blank map with nothing to reverse it.
  */
 public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
     private static final Logger LOG = Global.getLogger(MapLayerToggleUpkeep.class);
 
-    // Whether to reach for the row at all: the hatch a player closes when the reach misbehaves.
-    // Read per frame like the rest of the mod's switches, so closing it takes effect on the next
-    // screen the player opens rather than on the next load. A box already standing stays where it
-    // is - the row offers no way to take one off again - and the row the next open builds is bare.
+    // Whether to reach for the row at all. Read per frame, so closing the hatch takes effect on the
+    // next screen opened rather than at the next load.
     private final BooleanSupplier isToggleEnabled;
 
-    // The show-or-hide state of the screen showing this frame: the pick a box on that screen's row
-    // drives, and the word that a box now stands there. Asked per frame rather than held, since
-    // which screen is up is a per-frame question, and asked as one object rather than two, so a box
-    // cannot be bound to one screen while the other is told it has one.
+    // The show-or-hide state of the screen showing this frame: the pick a box drives, and the word
+    // that a box stands there. One object for both, so a box cannot be bound to one screen while
+    // the other is told it has one.
     private final Supplier<ControlBackedMapLayerVisibility> resolveLiveScreenLayerControl;
 
-    // The filter row of the map on screen, or nothing on every screen that shows no map - which is
-    // most of them, and is the ordinary answer rather than a failure.
+    // The filter row of the map on screen, or nothing on the many screens that show no map.
     private final Supplier<MapFilterRow> resolveShownFilterRow;
 
     // Stands the box on a row and binds it to a pick.
     private final MapLayerToggleAttacher toggleAttacher;
 
-    // Says once per session that the box could not be put up, rather than on every frame the pass
-    // reaches a row it cannot write to. One holder for every way of failing, all of them being the
-    // same piece of news: there is no control on the row.
+    // Says once per session that the box could not be put up, rather than on every frame. One
+    // holder for every way of failing, all of them the same news: there is no control on the row.
     private final SessionWarning warning = new SessionWarning(LOG);
 
-    // The row each screen's box was last put on, held against that screen's own show-or-hide state,
-    // since that state is what a box is bound to and what says which screen it belongs to. By
-    // identity, because a row is the widget itself rather than anything describable about it.
+    // The row each screen's box was last put on, keyed by that screen's own state - which is what a
+    // box is bound to. By identity: a row is the widget itself, not anything describable about it.
     private final Map<ControlBackedMapLayerVisibility, MapFilterRow> attachedRowsByScreenState =
         new IdentityHashMap<>();
 
@@ -111,9 +93,8 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     @Override
     public void advance(float amount) {
 
-        // The whole pass is inside the boundary, the switch read included: it reaches the settings
-        // substrate, which is as able to throw on an install this mod has not met as the widget
-        // walk below it.
+        // The switch read is inside the boundary too: it reaches the settings substrate, as able to
+        // throw on an unfamiliar install as the widget walk below it.
         try {
             attachToggleWhereMissing();
 
@@ -129,24 +110,23 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
     @Override
     public boolean isDone() {
-        // Nothing ends this: the row it maintains is rebuilt for as long as the player keeps
-        // opening map screens.
+        // The row it maintains is rebuilt for as long as the player keeps opening map screens.
         return false;
     }
 
     @Override
     public boolean runWhilePaused() {
-        // Every screen carrying a filter row pauses the campaign, so a pass that stood down while
-        // paused would run on none of the frames it exists for.
+        // Every screen carrying a filter row pauses the campaign, so a pass standing down while
+        // paused would never run on a frame with a row to write to.
         return true;
     }
 
-    // The pass itself, inside the failure boundary above. Ordered cheapest-first: a switch read,
-    // then one hop into the widget on screen, then a reference compare - so the common frame, where
-    // the box is already where it belongs, costs the hop and nothing more.
+    // Ordered cheapest-first: a switch read, one hop into the widget on screen, then a reference
+    // compare - so the common frame, the box already where it belongs, costs the hop alone.
     private void attachToggleWhereMissing() {
 
         if (!isToggleEnabled.getAsBoolean()) {
+            forgetEveryControlAttached();
             return;
         }
 
@@ -159,16 +139,33 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
         var attachedRow = attachedRowsByScreenState.get(screenLayerControl);
         if (attachedRow != null && attachedRow.isSameRowAs(shownRow)) {
+
+            // Re-asserted rather than assumed: a closed hatch takes the word back, and this is the
+            // only frame that sees a standing row again, the append below being skipped.
+            screenLayerControl.recordControlAttached();
             return;
         }
 
-        // Both said only where a box actually went up: a refusal is retried on the next frame rather
-        // than remembered as an attachment that never happened, and a screen told it has a control it
-        // never got would act on a stored hide with nothing on the row to reverse it.
+        // Recorded only where a box actually went up: a refusal is retried next frame, and a screen
+        // told it has a control it never got would act on a stored hide it cannot reverse.
         if (!toggleAttacher.attachToggleTo(shownRow, screenLayerControl.getStoredVisibility())) {
             return;
         }
         attachedRowsByScreenState.put(screenLayerControl, shownRow);
         screenLayerControl.recordControlAttached();
+    }
+
+    // What closing the hatch means beyond attempting nothing further. The word is a latch, so one
+    // set earlier in the session would outlive the control it describes and leave a player who hid
+    // the layers holding a blank map with no box to reverse it.
+    //
+    // Every screen attached to rather than the live one, since which screen is up is not what
+    // changed. The rows are kept, so reopening the hatch over a standing row restores the word
+    // instead of appending a second box beside the first.
+    private void forgetEveryControlAttached() {
+
+        for (var screenLayerControl : attachedRowsByScreenState.keySet()) {
+            screenLayerControl.forgetControlAttached();
+        }
     }
 }

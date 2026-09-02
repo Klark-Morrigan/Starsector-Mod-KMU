@@ -8,6 +8,7 @@ import kmu.maplayers.base.layer.MapLayerVisibility;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -29,10 +30,15 @@ import static org.mockito.Mockito.when;
  * up, and never in a way that lets a broken read out.
  *
  * <p>And when it says the screen has a control at all, which is what a stored hide is acted on: after
- * a box is standing, never after a row that refused one. That word is the half of failing open no log
- * line covers, so the cases pinning it are here beside the ones pinning the write - and they read it
- * back off a real screen state rather than off a stand-in, since what it is worth is exactly what the
- * screen's layers then do.
+ * a box is standing, never after a row that refused one, and no longer once the switch that permits
+ * the reach is closed. That word is the half of failing open no log line covers, so the cases pinning
+ * it are here beside the ones pinning the write - and they read it back off a real screen state rather
+ * than off a stand-in, since what it is worth is exactly what the screen's layers then do.
+ *
+ * <p>The closed switch is held on both sides, because taking the word back has a cost of its own if
+ * it is done carelessly: the box it describes is still standing on the row, the row offering no way
+ * to remove one, so reopening the switch has to restore the word rather than stand a second box
+ * beside the first.
  *
  * <p>Also the two answers that are not decisions of its own but which the whole control rests on:
  * that it goes on running for the session, and that it runs while the campaign is paused. Every
@@ -228,6 +234,54 @@ final class MapLayerToggleUpkeepTest {
             // back on.
             assertThat(screenLayerControl.areLayersShown())
                 .isTrue();
+        }
+
+        @Test
+        void advanceStopsActingOnAStoredHideOnceTheSwitchIsClosed() {
+
+            var screenLayerControl = buildScreenLayerControlOverAHiddenSave();
+            var isSwitchOpen = new AtomicBoolean(true);
+
+            var upkeep = new MapLayerToggleUpkeep(
+                isSwitchOpen::get,
+                () -> screenLayerControl,
+                ShownFilterRows::createRowWithRoomToSpare,
+                buildAcceptingAttacherMock());
+
+            upkeep.advance(PAUSED_FRAME);
+            isSwitchOpen.set(false);
+            upkeep.advance(PAUSED_FRAME);
+
+            // Closing the hatch takes the control away, so it has to take the word with it. Left
+            // standing, the word would hold the layers hidden with no box on any row to reverse
+            // them - the switch would have become a way to hide the layers permanently, which is
+            // the opposite of what it is for.
+            assertThat(screenLayerControl.areLayersShown())
+                .isTrue();
+        }
+
+        @Test
+        void advanceActsOnAStoredHideAgainOnceTheSwitchIsReopenedOverTheStandingRow() {
+
+            var shownRow = ShownFilterRows.createRowWithRoomToSpare();
+            var screenLayerControl = buildScreenLayerControlOverAHiddenSave();
+            var isSwitchOpen = new AtomicBoolean(true);
+            var toggleAttacherMock = buildAcceptingAttacherMock();
+
+            var upkeep = new MapLayerToggleUpkeep(
+                isSwitchOpen::get, () -> screenLayerControl, () -> shownRow, toggleAttacherMock);
+
+            upkeep.advance(PAUSED_FRAME);
+            isSwitchOpen.set(false);
+            upkeep.advance(PAUSED_FRAME);
+            isSwitchOpen.set(true);
+            upkeep.advance(PAUSED_FRAME);
+
+            // The box never left the row - the row offers no way to take one off - so reopening the
+            // hatch restores the word rather than appending a second box beside the first.
+            assertThat(screenLayerControl.areLayersShown())
+                .isFalse();
+            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any());
         }
 
         @Test
