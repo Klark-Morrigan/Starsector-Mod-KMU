@@ -4,9 +4,13 @@ import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.PreviewHighlightGeometry;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.ribbon.SectorBlocPalettes;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
+
+import java.awt.Color;
 
 /**
  * Lights every system the bloc under the sidebar picker's pointer is present in, over the map that
@@ -19,7 +23,10 @@ import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
  * <p>The shade is keyed on the bloc rather than on any cell of it, which is what separates this
  * from the cursor's highlight beside it. A previewed bloc lights cells that rivals hold and cells a
  * spotlight has sunk to grey, and both would answer in someone else's colour - or in none - if the
- * shade were read off what the cell was painted as.
+ * shade were read off what the cell was painted as. It comes through
+ * {@link SectorBlocPalettes}, the same reader the presence bands colour a bloc by, so the two
+ * surfaces cannot come to disagree about what colour a bloc is - including on the bloc whose
+ * colour faction has gone from the sector, which both of them decline to paint.
  *
  * <p>It cannot collide with the cursor's highlight: the sidebar parks the map hover while the
  * pointer is over it, so the cursor's is already dark on every frame this one could draw.
@@ -64,7 +71,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
         HoverHighlightRenderer.renderHighlightOnMap(
             paint.highlight(),
             paint.colour(),
-            territories.getGlobalStyle().previewHighlight(),
+            readPreviewTierOf(territories),
             factor,
             alphaMult);
     }
@@ -90,11 +97,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
         // Resolved before the geometry for the reason the cursor's entry resolves its own colour
         // first: a shade the player has switched off ("No color") stands every frame the map is
         // open, and it is what says whether the assembly is worth running at all.
-        var colour = MapPalettes.pickBlocPaletteColour(
-            territories.getGlobalStyle().previewHighlight().colour(),
-            installation.resolveSector(),
-            territories.getGrouping(),
-            previewedBlocId);
+        var colour = resolveShadeOf(territories, previewedBlocId);
 
         if (colour == null) {
             return PreviewHighlightPaint.NONE;
@@ -112,5 +115,28 @@ public final class PoliticalMapPreviewHighlightRenderer {
                 previewedBlocId,
                 presentSystemIds),
             colour);
+    }
+
+    // The tier a previewed set is lit to. One reader for both the slot the shade is picked from
+    // and the weights the pass burns, so the decision and the emission cannot come off two
+    // different readings of the theme.
+    private static HoverHighlightStyle readPreviewTierOf(PoliticalMapTerritories territories) {
+        return territories.getGlobalStyle().previewHighlight();
+    }
+
+    // The one shade the whole previewed set burns in, or null when it has none to burn - the
+    // player having pointed the tier at no shade, or the bloc's colour faction having gone from
+    // the sector. The second is the band rule's own answer, inherited rather than restated: a bloc
+    // the map cannot name is one neither surface paints.
+    private Color resolveShadeOf(PoliticalMapTerritories territories, String blocId) {
+
+        var palette = new SectorBlocPalettes(
+                installation.resolveSector(),
+                territories.getGrouping())
+            .readBlocPalette(blocId);
+
+        return palette == null
+            ? null
+            : MapPalettes.pickPaletteColour(readPreviewTierOf(territories).colour(), palette);
     }
 }

@@ -9,7 +9,6 @@ import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import java.awt.Color;
@@ -121,37 +120,6 @@ public final class MapPalettes {
             holder == null
                 ? resolveNeutralPalette(neutralColour)
                 : holder.resolvePalette());
-    }
-
-    /**
-     * Picks the palette shade a whole bloc paints in, keyed on the bloc itself rather than on any
-     * one cell of it, so an element covering a scatter of that bloc's cells burns in one shade.
-     * Null for a NONE ("No color") choice, so the caller skips the element.
-     *
-     * <p>Read off the sector rather than off a holder, because a bloc need not hold anything the
-     * frame painted. It can be present in systems it never dominates, and a spotlit pass rekeys
-     * the holders it does have to the filter's synthetic keys - so a holder-derived shade would be
-     * missing in the first case and someone else's in the second, where an element whose whole job
-     * is to name the bloc must answer in the bloc's own colour whatever the map is doing around it.
-     *
-     * @param paintSelection which of the two shades the element points at
-     * @param sector         the sector the colour faction's authored shades are read from
-     * @param grouping       the pass's grouping, which names the faction a bloc borrows its
-     *                       palette from - an alliance's lead member, and a faction bloc itself
-     * @param blocId         the bloc to paint in
-     * @return that bloc's shade, or null when the selection paints nothing
-     */
-    public static Color pickBlocPaletteColour(
-            ElementPaintSelection paintSelection,
-            SectorAPI sector,
-            HolderGrouping grouping,
-            String blocId) {
-
-        return pickPaletteColour(
-            paintSelection,
-            StarsectorFactionColours.resolvePalette(
-                sector,
-                grouping.resolveColourFactionId(blocId)));
     }
 
     /**

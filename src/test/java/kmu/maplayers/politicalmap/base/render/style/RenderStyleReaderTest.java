@@ -6,6 +6,7 @@ import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
+import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
@@ -299,7 +300,7 @@ final class RenderStyleReaderTest {
         // both styles it gathers and carries them the right way round; ReadHoverHighlightStyle and
         // ReadPreviewHighlightStyle pin the rest of each bundle's threading.
         private static final double HOVER_GLOW_OPACITY = 0.65;
-        private static final double PREVIEW_GLOW_OPACITY = 0.45;
+        private static final double PREVIEW_WASH_OPACITY = 0.45;
 
         @Test
         void readGlobalStyleGathersEverySectorWideKnobIntoOneTier() {
@@ -312,8 +313,8 @@ final class RenderStyleReaderTest {
                     .when(KmuPoliticalMapHighlightSettings::getPoliticalMapHoverGlowOpacity)
                     .thenReturn(HOVER_GLOW_OPACITY);
                 highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewGlowOpacity)
-                    .thenReturn(PREVIEW_GLOW_OPACITY);
+                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewWashOpacity)
+                    .thenReturn(PREVIEW_WASH_OPACITY);
 
                 geometrySettingsMock
                     .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchSpacing)
@@ -394,9 +395,10 @@ final class RenderStyleReaderTest {
 
                 // Distinct from the cursor tier's for the reason the two strengths above are
                 // distinct from each other: the two tiers are the same record in adjacent slots,
-                // so equal stand-ins would let a transposed pair read as correct.
-                assertThat(global.previewHighlight().glow().opacity())
-                    .isEqualTo(PREVIEW_GLOW_OPACITY);
+                // so equal stand-ins would let a transposed pair read as correct. Read off the
+                // wash rather than the halo, the preview tier carrying no halo of its own.
+                assertThat(global.previewHighlight().wash().fillOpacity())
+                    .isEqualTo(PREVIEW_WASH_OPACITY);
             }
         }
 
@@ -565,16 +567,9 @@ final class RenderStyleReaderTest {
     @Nested
     class ReadPreviewHighlightStyle {
 
-        // Distinct per knob for the reason the cursor tier's stand-ins are, and distinct from
-        // those as well, so a preview slot fed by its cursor counterpart fails by value.
-        private static final double GLOW_OPACITY = 0.55;
-        private static final double GLOW_WIDTH = 7.0;
-        private static final int GLOW_LAYERS = 2;
-        private static final double GLOW_PULSE_STRENGTH = 0.7;
-        private static final double GLOW_PULSE_PERIOD = 1.25;
+        // Distinct from the cursor tier's stand-in for the same knob, so a preview slot fed by its
+        // cursor counterpart fails by value.
         private static final double WASH_OPACITY = 0.45;
-        private static final double WASH_OUTLINE_OPACITY = 0.95;
-        private static final double WASH_OUTLINE_WIDTH = 4.5;
 
         @Test
         void readPreviewHighlightStyleThreadsEachPreviewSettingIntoItsMatchingSlot() {
@@ -585,52 +580,47 @@ final class RenderStyleReaderTest {
                     .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewHighlightColour)
                     .thenReturn(FactionPaletteChoice.PRIMARY);
                 highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewGlowOpacity)
-                    .thenReturn(GLOW_OPACITY);
-                highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewGlowWidth)
-                    .thenReturn(GLOW_WIDTH);
-                highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewGlowLayers)
-                    .thenReturn(GLOW_LAYERS);
-                highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewGlowPulseStrength)
-                    .thenReturn(GLOW_PULSE_STRENGTH);
-                highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewGlowPulsePeriod)
-                    .thenReturn(GLOW_PULSE_PERIOD);
-                highlightSettingsMock
                     .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewWashOpacity)
                     .thenReturn(WASH_OPACITY);
-                highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewWashOutlineOpacity)
-                    .thenReturn(WASH_OUTLINE_OPACITY);
-                highlightSettingsMock
-                    .when(KmuPoliticalMapHighlightSettings::getPoliticalMapPreviewWashOutlineWidth)
-                    .thenReturn(WASH_OUTLINE_WIDTH);
 
                 var preview = RenderStyleReader.readPreviewHighlightStyle();
 
                 assertThat(preview.colour())
                     .isEqualTo(FactionPaletteSlot.PRIMARY);
 
-                assertThat(preview.glow().opacity())
-                    .isEqualTo(GLOW_OPACITY);
-                assertThat(preview.glow().width())
-                    .isEqualTo(GLOW_WIDTH);
-                assertThat(preview.glow().layers())
-                    .isEqualTo(GLOW_LAYERS);
-                assertThat(preview.glow().pulseStrength())
-                    .isEqualTo(GLOW_PULSE_STRENGTH);
-                assertThat(preview.glow().pulsePeriodSeconds())
-                    .isEqualTo(GLOW_PULSE_PERIOD);
-
                 assertThat(preview.wash().fillOpacity())
                     .isEqualTo(WASH_OPACITY);
+            }
+        }
+
+        // The tier's two fixed weights, asserted against literals rather than against the reader's
+        // own constants: a value the player can no longer move is one a test has to pin, or a
+        // future edit to it passes unnoticed.
+        @Test
+        void readPreviewHighlightStyleTracesLitRegionsAtItsOwnFixedWeights() {
+
+            try (var highlightSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
+
+                var preview = RenderStyleReader.readPreviewHighlightStyle();
+
                 assertThat(preview.wash().outlineOpacity())
-                    .isEqualTo(WASH_OUTLINE_OPACITY);
+                    .isEqualTo(0.9);
                 assertThat(preview.wash().outlineWidth())
-                    .isEqualTo(WASH_OUTLINE_WIDTH);
+                    .isEqualTo(0.5);
+            }
+        }
+
+        // The halo the tier declines. Its own case rather than an assertion beside the weights,
+        // since "draws no halo" is a decision about the tier rather than a weight it carries.
+        @Test
+        void readPreviewHighlightStyleCarriesNoHalo() {
+
+            try (var highlightSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
+
+                var preview = RenderStyleReader.readPreviewHighlightStyle();
+
+                assertThat(preview.glow())
+                    .isEqualTo(HoverGlowStyle.NO_GLOW);
             }
         }
     }

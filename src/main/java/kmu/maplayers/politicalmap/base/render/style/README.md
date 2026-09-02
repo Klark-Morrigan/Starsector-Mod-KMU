@@ -99,12 +99,8 @@ the space it labels:
   which slot, and what a desaturated subject recolours to. Stated over a palette rather than over
   an owner, so an ownerless cell recolours by the same rule a bloc does - and an ownerless cell gets
   that palette from `resolveNeutralPalette`, the one statement of "no holder means the neutral
-  colour in both slots". Two of its picks name the two things a shade can be keyed on:
-  `pickHolderPaletteColour` answers "whose cell is this", off the holder the frame painted, while
-  `pickBlocPaletteColour` answers "whose bloc is this", off the sector through the pass's grouping.
-  The second exists because an element covering a whole bloc cannot read a cell: a bloc is present
-  in systems it never dominates, and a spotlit pass rekeys the holders it does have, so a
-  cell-keyed shade would come back as a rival's or as none.
+  colour in both slots". An element keyed on a bloc rather than on a cell gets its palette from
+  [`SectorBlocPalettes`](../../ribbon/README.md) instead and brings it here to pick a slot.
 - `BlocStyleResolver` - resolves the shared per-bloc decision (independent-vs-faction style and
   the adjustment a bloc draws under) into a `BlocStyleDecision`.
 - `FactionlessStyleResolver` - the counterpart for a cell with no owner, which has no bloc to carry

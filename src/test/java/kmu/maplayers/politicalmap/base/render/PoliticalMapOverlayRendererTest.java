@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
@@ -11,7 +10,6 @@ import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
@@ -67,6 +65,12 @@ final class PoliticalMapOverlayRendererTest {
     // The hover holder of the sector this compositor's draw lists belong to. Made per case, since a
     // compositor is built with the holder of its own installed machinery.
     private final MapHoverState hoverState = new MapHoverState();
+
+    // The picker preview, stood in for. It is the one sub-layer the compositor is handed rather
+    // than builds, so it is also the one whose band can be read straight off the seam instead of
+    // through the pass it would emit. Declared above the compositor, which is built from it.
+    private final PoliticalMapPreviewHighlightRenderer previewHighlightRendererMock =
+        mock(PoliticalMapPreviewHighlightRenderer.class);
 
     private final PoliticalMapOverlayRenderer overlayRenderer = buildOverlayRenderer();
 
@@ -193,8 +197,9 @@ final class PoliticalMapOverlayRendererTest {
                 NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
                 openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
 
-                // Built inside the construction mock, since the highlight renderer is a field this
-                // compositor creates for itself - there is no seam to inject one through.
+                // Built inside the construction mock, since the cursor's highlight renderer is a
+                // field this compositor creates for itself - unlike the picker preview beside it,
+                // there is no seam to inject one through.
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
                     FACTOR,
@@ -277,6 +282,57 @@ final class PoliticalMapOverlayRendererTest {
         }
 
         @Test
+        void renderOnMapEmitsThePickerPreviewForTheBandBeneathTheNebulae() {
+            // The preview brightens the fills for a whole bloc, so it rides with them for the
+            // reason the cursor's highlight does: left beneath while the fills went above, it
+            // would be painted over and light nothing.
+            //
+            // Both hover switches are silenced, which is the half of this that the cursor's
+            // highlight cannot state: the preview answers a pointer on the sidebar rather than one
+            // on the map, so a gate borrowed from the cursor would take it dark with the map's own
+            // feedback switched off.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var drawOrderSettingsMock = mockStatic(KmuPoliticalMapDrawOrderSettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
+
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
+                silenceTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
+
+                buildOverlayRenderer().renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+
+                verify(previewHighlightRendererMock)
+                    .renderPreviewOnMap(any(), anyFloat(), anyFloat());
+            }
+        }
+
+        @Test
+        void renderOnMapLeavesThePickerPreviewOutOfTheBandAboveTheNebulae() {
+            // The other half of that pinning: the preview reaches the upper band only if it were
+            // promoted out of the fills it brightens, which no frame's own output would show.
+            try (var clusterRendererMock = mockStatic(ClusterRenderer.class);
+                    var hoverGatesMock = mockStatic(PoliticalMapHoverGates.class);
+                    var drawOrderSettingsMock = mockStatic(KmuPoliticalMapDrawOrderSettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
+
+                NebulaDrawOrderFixtures.stubGeometryBelowAndReadoutsAbove(drawOrderSettingsMock);
+                openTheTogglesTheBandsDoNotDecide(hoverGatesMock, diagnosticsSettingsMock);
+
+                buildOverlayRenderer().renderOnMap(
+                    buildCacheMock(),
+                    FACTOR,
+                    ALPHA_MULT,
+                    MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
+
+                verifyNoInteractions(previewHighlightRendererMock);
+            }
+        }
+
+        @Test
         void renderOnMapEmitsTheDebugBorderStageForTheBandBeneathTheNebulae() {
             // The debug overlay replaces the territories rather than layering over them, so it sits
             // in the band they would have occupied - a swap inside one band, not a band of its own.
@@ -300,6 +356,10 @@ final class PoliticalMapOverlayRendererTest {
 
                 clusterRendererMock
                     .verifyNoInteractions();
+
+                // The preview stands down with them: the overlay replaced the very draw lists it
+                // would have traced, so there is no painted cell for a lit set to be clipped to.
+                verifyNoInteractions(previewHighlightRendererMock);
             }
         }
 
@@ -637,31 +697,20 @@ final class PoliticalMapOverlayRendererTest {
             .thenReturn(false);
     }
 
+    // The compositor under test, over this case's own hover holder and its own preview seam.
+    private PoliticalMapOverlayRenderer buildOverlayRenderer() {
+        return new PoliticalMapOverlayRenderer(hoverState, previewHighlightRendererMock);
+    }
+
     // A cache holding a built, non-debug frame with nothing in it. The bands are decided on the band
     // alone, so an empty frame exercises the split without any geometry having to exist - the styled
     // cells are stubbed only because the compositor's one-shot debug line counts them.
-    // The compositor under test, over this case's own hover holder and a picker preview with no row
-    // hovered on it - so the preview contributes to no band here, and which band it would paint in
-    // stays this suite's to state through the fills it rides with. What it draws once a row is
-    // hovered is its own decision and is pinned where that lives.
-    private PoliticalMapOverlayRenderer buildOverlayRenderer() {
-        return new PoliticalMapOverlayRenderer(
-            hoverState,
-            new PoliticalMapPreviewHighlightRenderer(new MapLayerInstallation(null)));
-    }
-
     private static PoliticalMapCache buildCacheMock() {
 
         var territoriesMock = mock(PoliticalMapTerritories.class);
 
         when(territoriesMock.getStyledCellByCellId())
             .thenReturn(Map.of());
-
-        // The view the frame painted, which the picker preview reads its hover under. Answered
-        // rather than left to the mock's default for the reason the maps below are: it stands
-        // between a compositor that reaches the preview at all and one that does not.
-        when(territoriesMock.getView())
-            .thenReturn(mock(PoliticalMapView.class));
 
         // Stated rather than left to the default a mock would answer with, since the upper band is
         // asserted to have reached the band pass at all - and a stub that resolves by accident is

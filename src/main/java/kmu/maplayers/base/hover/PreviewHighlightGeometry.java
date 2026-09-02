@@ -22,10 +22,10 @@ import java.util.List;
  * the map itself draws. A cell no loop encloses is its own group, so cells fusing into nothing
  * never join anything.
  *
- * <p>The halo traces those joined outlines rather than any cluster frontier: what a lit set says is
- * the reach of the set, not the shape of whoever holds the cells under it. A cell walled in by lit
- * neighbours of its own cluster therefore contributes no outline at all, which is the point of
- * joining - the halo follows the edge of a lit region instead of every seam inside it.
+ * <p>The trace follows those joined outlines rather than any cluster frontier: what a lit set says
+ * is the reach of the set, not the shape of whoever holds the cells under it. A cell walled in by
+ * lit neighbours of its own cluster therefore contributes no outline at all, which is the point of
+ * joining - the trace follows the edge of a lit region instead of every seam inside it.
  */
 public final class PreviewHighlightGeometry {
 

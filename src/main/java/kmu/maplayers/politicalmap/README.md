@@ -238,23 +238,19 @@ frame's painted shapes it hands the framework unchanged. `PoliticalMapHoverGates
 layer answers the cursor at all, its own two switches ANDed with the framework's, plus whether
 either kind of feedback still needs the cursor read.
 
-`PoliticalMapPreviewHighlightRenderer` is the other highlight, answering a pointer on the sidebar
-rather than one on the map: hovering a row of the spotlight picker lights every system that bloc is
-present in, showing what picking it would spotlight without picking it. Nothing about the paint
-moves for it - no rebuild, no refilter, no re-clustering, no border re-trace - because it reads a
-set the picker's own walk already resolved (`SelectableBlocCache.readPresentSystemIds`) and traces
-it over the frame's own draw lists through the framework's `PreviewHighlightGeometry`. Its
-`PreviewHighlightPaint` is the decision the frame acts on: the shapes lit and the one shade they
-burn in, either half absent meaning nothing is drawn.
+`PoliticalMapPreviewHighlightRenderer` is the other highlight, and it answers a pointer on the
+sidebar rather than one on the map: hovering a row of the spotlight picker lights every system that
+bloc is present in. It reads a set the picker's own walk already resolved
+(`SelectableBlocCache.readPresentSystemIds`) and traces it over the frame's own draw lists through
+the framework's `PreviewHighlightGeometry`, so no paint state moves for it; `PreviewHighlightPaint`
+is the decision the frame acts on, the shapes lit paired with the one shade they burn in.
 
-The shade is the previewed bloc's own, keyed on the bloc rather than on any cell of it
-(`MapPalettes.pickBlocPaletteColour`), which is what separates it from the cursor's highlight: a
-previewed bloc lights cells rivals hold and cells a spotlight has sunk to grey, and a shade read
-off those cells would answer in someone else's colour. It has no gate of its own beside
-`PoliticalMapHoverGates` - those switch the map's answer to the *cursor* - so the preview's own
-style tier is where it is turned down, and it draws whether or not the cursor feedback is on. The
-two cannot collide: the sidebar parks the map hover while the pointer is over it, so the cursor's
-highlight is already dark on every frame a preview could show.
+Two things about it are not the cursor highlight's, and both follow from its subject being a bloc
+rather than a cell. Its shade comes from [`SectorBlocPalettes`](base/ribbon/README.md), the bands'
+own reader, since the cells it lights need not be cells the bloc holds. And
+`PoliticalMapHoverGates` does not gate it - those switch the map's answer to the *cursor* - so its
+style tier is where it is turned down. The two highlights cannot collide: the sidebar parks the map
+hover while the pointer is over it.
 ### Hover tooltips (`base/tooltip`)
 
 What this layer says about the hovered system, each view injecting the explanation of the mechanic

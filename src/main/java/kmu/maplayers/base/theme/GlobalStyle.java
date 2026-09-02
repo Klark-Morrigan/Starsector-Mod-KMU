@@ -15,11 +15,12 @@ package kmu.maplayers.base.theme;
  * build baked in.
  *
  * <p>The two highlights are separate tiers rather than one tier with a multiplier over it because
- * they answer different problems. The cursor lights one cell the pointer is already on; a preview
- * lights a scatter of cells the eye has to find at arm's length, where brightness alone competes
- * with the map's own fills - so a preview leads on the pulse, many cells breathing in unison being
- * the cue that carries at that distance, and its halo is set against the smallest cells the map
- * draws rather than against a cluster frontier.
+ * they answer different problems, and the shapes they light differ enough that one tier can decline
+ * an element the other leads on. The cursor lights one cell the pointer is already on, its halo
+ * blooming off the frontier of the cluster around it. A preview lights a scatter of cells the eye
+ * has to find at arm's length, and any one of them can be a single system's cell: a halo centred on
+ * that cell's own edge spills inward across it and reads as a lump, so the preview carries no halo
+ * and leans wholly on its wash.
  *
  * <p>The two strengths are the pair a spotlight separates its subject from its backdrop with,
  * which is why they sit together. One alone cannot do it: both the receded clusters and the spared

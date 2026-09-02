@@ -1,6 +1,5 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListPicker;
@@ -18,6 +17,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
+import kmu.starsector.StarsectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,8 +35,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the decision behind the picker preview: what the pointer resting on a row puts on the map,
- * and the three ways that comes to nothing. The emission itself is a static GL pass covered where
- * it lives; what is decided here is whether it is reached at all, and in whose colour.
+ * and the ways that comes to nothing. The emission itself is a static GL pass covered where it
+ * lives; what is decided here is whether it is reached at all, and in whose colour.
  *
  * <p>The shade is asserted against the previewed bloc's own faction rather than against anything
  * the frame painted, which is the whole of what separates this from the cursor's highlight: the
@@ -53,8 +53,8 @@ final class PoliticalMapPreviewHighlightRendererTest {
     private static final String BLOC_ID = "hegemony";
     private static final String PRESENT_SYSTEM_ID = "corvus";
 
-    // The previewed bloc's own two authored shades, so a case can tell the shade of the bloc from
-    // the neutral grey an unresolved faction falls back to.
+    // The previewed bloc's own two authored shades, distinct so a case can say which slot the tier
+    // pointed at rather than only that some colour came back.
     private static final Color BLOC_BRIGHT_COLOUR = Color.RED;
     private static final Color BLOC_DARK_COLOUR = Color.BLUE;
 
@@ -63,12 +63,16 @@ final class PoliticalMapPreviewHighlightRendererTest {
     // emission they shape being no part of this decision.
     private static final HoverHighlightStyle PAINTING_TIER = new HoverHighlightStyle(
         FactionPaletteSlot.PRIMARY,
-        new HoverGlowStyle(0, 0, 0, 0, 0),
+        HoverGlowStyle.NO_GLOW,
         new HoverWashStyle(0, 0, 0));
 
     // The sector the previewed bloc's shade is read from, and the machinery installed on it - the
     // one sector every case here previews over, since a preview is one sector's throughout.
-    private final SectorAPI sectorMock = buildSectorColouring(BLOC_ID);
+    private final SectorAPI sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
+        BLOC_ID,
+        BLOC_BRIGHT_COLOUR,
+        BLOC_DARK_COLOUR);
+
     private final MapLayerInstallation installation = new MapLayerInstallation(sectorMock);
 
     @Nested
@@ -110,6 +114,44 @@ final class PoliticalMapPreviewHighlightRendererTest {
             hover(BLOC_ID);
 
             var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+                .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
+
+            assertThat(paint.isPainting())
+                .isFalse();
+        }
+
+        @Test
+        void resolvePreviewPaintLightsNothingForAHoverReportedUnderAnotherViewsScope() {
+            // The hover is read under the view the frame painted, not under whichever scope last
+            // reported one. A bloc id means what the view that surfaced it says it means, and the
+            // systems behind it are that view's answer - so a preview crossing a view switch would
+            // light one view's set over another view's map.
+            var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
+
+            FilterHoverSlot
+                .resolveHoverSlotIn(installation)
+                .recordHoveredId("alliances", BLOC_ID);
+
+            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+                .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
+
+            assertThat(paint.isPainting())
+                .isFalse();
+        }
+
+        @Test
+        void resolvePreviewPaintLightsNothingWhenTheHoveredBlocsColourFactionIsGone() {
+            // The same answer the presence bands give such a bloc, and for the same reason: a bloc
+            // the sector can no longer name has no shade, and lighting its cells in a stand-in one
+            // would put colour on the map for something the map cannot name.
+            var installationWithoutTheFaction = new MapLayerInstallation(mock(SectorAPI.class));
+            var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
+
+            FilterHoverSlot
+                .resolveHoverSlotIn(installationWithoutTheFaction)
+                .recordHoveredId(VIEW_ID, BLOC_ID);
+
+            var paint = new PoliticalMapPreviewHighlightRenderer(installationWithoutTheFaction)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -164,23 +206,6 @@ final class PoliticalMapPreviewHighlightRendererTest {
                 buildSquare());
         }
         return territories;
-    }
-
-    // A sector whose one faction carries the two shades a previewed bloc is expected to paint in;
-    // every other id reads back as absent and so falls to the neutral grey.
-    private static SectorAPI buildSectorColouring(String factionId) {
-
-        var factionMock = mock(FactionAPI.class);
-        when(factionMock.getBrightUIColor())
-            .thenReturn(BLOC_BRIGHT_COLOUR);
-        when(factionMock.getDarkUIColor())
-            .thenReturn(BLOC_DARK_COLOUR);
-
-        var sectorMock = mock(SectorAPI.class);
-        when(sectorMock.getFaction(factionId))
-            .thenReturn(factionMock);
-
-        return sectorMock;
     }
 
     // A square standing in for a cell's painted extent, counter-clockwise. Any shape with an area

@@ -60,8 +60,9 @@ only its own half, so a sanding number cannot reach the rounding pass and back a
 
 Two of those sub-records are the same type, the one place the tier carries a record twice: a
 highlight is a halo plus a wash whatever resolved the shapes under it, so the cursor's and the
-preview's differ only in the weights they are read at. `GlobalStyle` carries why they are two
-tiers rather than one and a multiplier.
+preview's differ only in the weights they are read at - the preview's halo being
+`HoverGlowStyle.NO_GLOW`, a weight of nothing rather than a slot it lacks. `GlobalStyle` carries
+why they are two tiers rather than one and a multiplier, and why only one of them blooms.
 
 `HatchStyle` splits along the same line, by *when* each part is decided rather than by which pass
 reads it: `spacing`, `angleRadians` and `joinToleranceFraction` shape the clipped line geometry and

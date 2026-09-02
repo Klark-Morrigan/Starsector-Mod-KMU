@@ -1,11 +1,11 @@
 package kmu.maplayers.politicalmap.base.ribbon;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.starsector.StarsectorFactionFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,13 +42,10 @@ final class SectorBlocPalettesTest {
         void readsTheShadesOfTheFactionTheGroupingColoursTheBlocBy() {
             // The alliance case: the bloc's own id names no faction, and its lead member's authored
             // pair is what the map paints it in.
-            // Built before the stubbing rather than inside it: the faction is itself a mock, and
-            // building one while another stubbing is open reads to Mockito as an unfinished stub.
-            var factionMock = buildFactionShaded(BRIGHT, DARK);
-            var sectorMock = mock(SectorAPI.class);
-
-            when(sectorMock.getFaction(LEAD_MEMBER))
-                .thenReturn(factionMock);
+            var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
+                LEAD_MEMBER,
+                BRIGHT,
+                DARK);
 
             assertThat(readPaletteFrom(sectorMock, ALLIANCE_BLOC))
                 .isEqualTo(new FactionPalette(BRIGHT, DARK));
@@ -85,17 +82,5 @@ final class SectorBlocPalettesTest {
 
         return new SectorBlocPalettes(sector, grouping)
             .readBlocPalette(blocId);
-    }
-
-    private static FactionAPI buildFactionShaded(Color bright, Color dark) {
-
-        var factionMock = mock(FactionAPI.class);
-
-        when(factionMock.getBrightUIColor())
-            .thenReturn(bright);
-        when(factionMock.getDarkUIColor())
-            .thenReturn(dark);
-
-        return factionMock;
     }
 }

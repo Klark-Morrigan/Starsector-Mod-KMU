@@ -23,7 +23,7 @@ public final class ThemeFixtures {
      */
     public static final HoverHighlightStyle NO_HIGHLIGHT = new HoverHighlightStyle(
         null,
-        new HoverGlowStyle(0, 0, 0, 0, 0),
+        HoverGlowStyle.NO_GLOW,
         new HoverWashStyle(0, 0, 0));
 
     // The two values the inert tier does not zero. A desaturating build reads the darkening to

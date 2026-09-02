@@ -26,6 +26,13 @@ public record HoverGlowStyle(
     double pulsePeriodSeconds) {
 
     /**
+     * A halo that never draws, for a highlight tier answering with its wash alone. Stated once
+     * here rather than spelled out as zeroes wherever a tier declines the halo, so a reader
+     * meets the intent instead of five knobs that happen to sum to nothing.
+     */
+    public static final HoverGlowStyle NO_GLOW = new HoverGlowStyle(0, 0, 0, 0, 0);
+
+    /**
      * How wide one layer of the stack strokes, in pixels - the innermost layer thinnest and
      * the outermost spanning the halo's full {@link #width}, spread evenly between.
      *

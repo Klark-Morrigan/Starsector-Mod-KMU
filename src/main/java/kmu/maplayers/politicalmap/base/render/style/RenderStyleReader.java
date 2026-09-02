@@ -44,6 +44,11 @@ import java.util.Map;
  */
 public final class RenderStyleReader {
 
+    // The weights the preview tier traces a lit region's edge at, held here rather than offered as
+    // settings - see readPreviewHighlightStyle for why they are not the player's to move.
+    private static final double PREVIEW_WASH_OUTLINE_OPACITY = 0.9;
+    private static final double PREVIEW_WASH_OUTLINE_WIDTH = 0.5;
+
     // Reads only settings; never instantiated.
     private RenderStyleReader() {
     }
@@ -127,25 +132,24 @@ public final class RenderStyleReader {
                 KmuPoliticalMapHighlightSettings.getPoliticalMapHoverWashOutlineWidth()));
     }
 
-    // Reads the second highlight tier - the one a whole set of cells lights up in - in the same
-    // shape as the cursor's, since what it draws is the same halo and wash over geometry resolved
-    // some other way. Its own knobs rather than a multiplier over the cursor's, because a scatter
-    // of cells read at arm's length and one cell under the pointer want different weights: the
-    // knobs that differ are named on the tier itself.
+    // Reads the second highlight tier - the one a whole set of cells lights up in. It answers with
+    // the wash alone: a halo is centred on the edge it blooms off, and a lit region here can be a
+    // single system's cell, so the bloom spills inward across the cell and reads as a lump rather
+    // than a lit rim, while two lit cells sitting close pile their halos into one bright patch.
+    // Neither defect has a weight that resolves it, so the tier declines the halo outright.
+    //
+    // The trace's weights are fixed for the same reason rather than being offered as knobs: only a
+    // thin, near-solid line reads as the edge of a lit region instead of as a second border laid
+    // over the territory's own.
     public static HoverHighlightStyle readPreviewHighlightStyle() {
         return new HoverHighlightStyle(
             FactionPaletteSlot.resolvePaintSelectionOf(
                 KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewHighlightColour()),
-            new HoverGlowStyle(
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowOpacity(),
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowWidth(),
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowLayers(),
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowPulseStrength(),
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewGlowPulsePeriod()),
+            HoverGlowStyle.NO_GLOW,
             new HoverWashStyle(
                 KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewWashOpacity(),
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewWashOutlineOpacity(),
-                KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewWashOutlineWidth()));
+                PREVIEW_WASH_OUTLINE_OPACITY,
+                PREVIEW_WASH_OUTLINE_WIDTH));
     }
 
     // Reads each owned category's eight style settings into one bundle, so the build

@@ -81,7 +81,11 @@ Both live reads the rule would otherwise make are inverted here, so every case a
 hand-built values:
 
 - `BlocPaletteReader` - a bloc's bright and dark shades. `SectorBlocPalettes` is the live
-  implementation, resolving them off the sector's factions.
+  implementation, resolving them off the sector's factions through the grouping's colour faction,
+  and answering null for a bloc the sector can no longer name. It has outgrown the bands: the
+  [picker preview](../../README.md#render-orchestration-baserender-baserenderhover) reads a bloc's
+  shade through it too, so "a bloc's colour is its colour faction's colour" is stated once rather
+  than once per surface that paints one.
 - `SystemRibbonPlanner` - the counting itself, one system in, one plan out. The seam each painting
   mechanic implements.
 
