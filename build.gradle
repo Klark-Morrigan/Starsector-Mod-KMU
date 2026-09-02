@@ -181,6 +181,14 @@ def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['
 def obfJars = fileTree(dir: "${starsectorRoot}/starsector-core",
     include: ['starfarer_obf.jar', 'fs.common_obf.jar'])
 
+// MagicLib backs KMLib's CoreUiTree, the reflection bypass every read of the live core-UI widget
+// tree goes through. KMU names it nowhere and compiles without it - the coupling is KMLib's, declared
+// and gated there - but this suite needs it on its runtime classpath, because the map-chrome tests
+// drive that read over KMLib's own fakes rather than around it: a row reached off a map widget's own
+// accessor is what a row on screen is, and a fixture handing one over directly would stand for a
+// state no screen is ever in. Located by jar name since the install folder is version-stamped.
+def magicLibJars = findModJars('MagicLib.jar')
+
 // LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
 // The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
 // needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
@@ -218,6 +226,7 @@ dependencies {
     testRuntimeOnly kmlibDependency
     testRuntimeOnly testFixtures(kmlibDependency)
     testRuntimeOnly files(lazyLibJarFile)
+    testRuntimeOnly magicLibJars
 
     // The utils tooling needs the same jars at RUNTIME as well as to compile, for the same
     // reason the tests do: compileOnly is enough for the mod itself because Starsector's mod
