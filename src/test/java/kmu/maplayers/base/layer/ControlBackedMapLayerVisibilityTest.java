@@ -72,6 +72,42 @@ final class ControlBackedMapLayerVisibilityTest {
     }
 
     @Nested
+    class ForgetControlAttached {
+
+        @Test
+        void forgetControlAttachedReturnsTheScreenToTheReadingItHadBeforeAControl() {
+            // A control can be taken away as well as never obtained - a campaign unloaded under the
+            // screens, or the player closing the switch that permits the reach at all. Either leaves
+            // the screen with no way to reverse a hide, so either has to put the rule back in force;
+            // a word that only ever went one way would strand a player exactly as a broken reach does.
+            hideTheStoredPick();
+            visibility.recordControlAttached();
+
+            visibility.forgetControlAttached();
+
+            assertThat(visibility.areLayersShown())
+                .isTrue();
+            assertThat(visibility.resolveShownFade())
+                .isEqualTo(FULLY_SHOWN);
+        }
+
+        @Test
+        void forgetControlAttachedLeavesTheStoredPickAsThePlayerLeftIt() {
+            // The rule is about whether the mod acts on the choice, never about the choice: honoured
+            // again the moment a control exists to reverse it, so a session that lost one costs the
+            // player nothing beyond that session.
+            hideTheStoredPick();
+            visibility.recordControlAttached();
+
+            visibility.forgetControlAttached();
+            visibility.recordControlAttached();
+
+            assertThat(visibility.areLayersShown())
+                .isFalse();
+        }
+    }
+
+    @Nested
     class ResolveShownFade {
 
         @Test
