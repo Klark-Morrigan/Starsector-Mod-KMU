@@ -4,6 +4,7 @@ import kmlib.starsector.relation.PlayerStanding;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
+import kmlib.text.KmlibNumbers;
 
 import kmu.util.KmuStrings;
 
@@ -31,6 +32,15 @@ import java.util.Objects;
  * rows were built: the picker read is memoised against settings and grouping, not reputation, so a
  * snapshot would hold the ranking still until some unrelated knob moved.
  *
+ * <p>An instance is built per picker read rather than published as a constant, which the metric modes
+ * cannot do: it holds a reader bound to one sector and one grouping, and a constant would answer one
+ * sector's ask off another's relations. That is safe only because the instance and the vocabulary it
+ * is appended to are built together and never travel apart - a {@link
+ * kmlib.starsector.ui.widgets.lists.ListSort} rejects a mode its own vocabulary does not hold, and
+ * modes here are matched by identity. So a sort resolved against one read's vocabulary must not
+ * outlive it: memoising a resolved sort across reads would fail on the next one, where re-resolving
+ * against the read's own vocabulary always holds.
+ *
  * @param <S> the calling vocabulary's metrics record, which this mode never reads - it ranks the same
  *            way whichever mechanic painted the map
  */
@@ -53,12 +63,23 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
     private static final int MEASURED_POSITION = 1;
     private static final int UNREADABLE_POSITION = 0;
 
+    // What the two ends of a key read as for a case that holds no range. Never compared against a
+    // real reputation: only two keys level on the scale position reach the ends, and the two cases
+    // filled this way each sit alone at their end of that scale.
+    private static final int NO_REPUTATION = 0;
+
+    // The whole ranking, friendliest first: the scale position, then the low end of the range, then
+    // the high end - every key descending, so a higher position and a higher reputation both lead.
+    // The low end leads the high because a bloc is only as friendly as its least friendly member: an
+    // alliance holding one hostile is not ranked as though it were the ally inside it.
+    private static final Comparator<StandingRankKey> FRIENDLIEST_FIRST_ORDER =
+        Comparator.comparingInt(StandingRankKey::scalePosition)
+            .thenComparingInt(StandingRankKey::lowestReputation)
+            .thenComparingInt(StandingRankKey::highestReputation)
+            .reversed();
+
     // What a case with no number to show draws: the picker leaves the row's value column empty.
     private static final List<TextSpan> NO_RUNS = List.of();
-
-    // How a positive reputation shows that it is one. Negatives already carry a minus, and neutral is
-    // drawn plain - a signed nought would claim a direction the standing does not have.
-    private static final String POSITIVE_SIGN = "+";
 
     private final BlocStandingReader standingReader;
 
@@ -78,7 +99,16 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
     }
 
     /**
-     * @return the drawn label for this mode's selector row, looked up against this mod's own strings
+     * The drawn label for this mode's selector row, looked up against this mod's own strings.
+     *
+     * <p>It reads "Attitude" because that is the word the game itself puts in front of this exact
+     * reading: the intel screen's faction panel draws the reputation level and number as
+     * {@code "Attitude: Friendly (35 / 100)"}. Vanilla keeps "relationship" for the prose that
+     * reports a change, so a column showing the number is an attitude and a line reporting a move in
+     * it is a relationship. The code around this says "standing" throughout, which is the
+     * mod-neutral noun for the value; the label is the player's word for it.
+     *
+     * @return the drawn label for this mode's selector row
      */
     @Override
     public String resolveLabelText() {
@@ -140,42 +170,19 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
         return BlocSortModeComposer.appendSharedTail(standingOrder);
     }
 
-    // Where a standing sits on the one scale the three cases share. This is the ranking's exhaustive
-    // gate: a fourth case joining the set breaks here rather than quietly landing on some other
-    // position, and the number test below only ever sees pairs this placed together.
-    private static int resolveScalePosition(BlocStanding standing) {
+    // A standing as the three numbers it ranks by. The sealed fold is the ranking's exhaustive gate:
+    // a fourth case joining the set breaks here rather than quietly landing on some other position -
+    // and folding once per standing is what keeps the comparison plain arithmetic over two keys,
+    // instead of asking a second time which case each side turned out to be.
+    private static StandingRankKey resolveRankKey(BlocStanding standing) {
 
         return standing.selectByCase(
-            measured -> MEASURED_POSITION,
-            () -> PLAYERS_OWN_POSITION,
-            () -> UNREADABLE_POSITION);
-    }
-
-    // Two standings, friendliest first: the case first, then the low end of the range, then the high
-    // end. The low end leads because a bloc is only as friendly as its least friendly member - an
-    // alliance holding one hostile is not ranked as though it were the ally inside it.
-    private static int compareStandingsFriendliestFirst(BlocStanding left, BlocStanding right) {
-
-        var casePosition = Integer.compare(
-            resolveScalePosition(right),
-            resolveScalePosition(left));
-
-        if (casePosition != 0) {
-            return casePosition;
-        }
-        // Only two measured standings have numbers to go on; the other two cases carry none, so a pair
-        // sharing one of them is level here and falls to the shared tail.
-        if (!(left instanceof BlocStanding.Measured leftRange)
-            || !(right instanceof BlocStanding.Measured rightRange)) {
-            return 0;
-        }
-        var lowEnd = Integer.compare(
-            rightRange.lowest().reputation(),
-            leftRange.lowest().reputation());
-
-        return lowEnd != 0
-            ? lowEnd
-            : Integer.compare(rightRange.highest().reputation(), leftRange.highest().reputation());
+            measured -> new StandingRankKey(
+                MEASURED_POSITION,
+                measured.lowest().reputation(),
+                measured.highest().reputation()),
+            () -> new StandingRankKey(PLAYERS_OWN_POSITION, NO_REPUTATION, NO_REPUTATION),
+            () -> new StandingRankKey(UNREADABLE_POSITION, NO_REPUTATION, NO_REPUTATION));
     }
 
     // A measured range as the runs it draws: one number where the ends coincide, both ends around the
@@ -198,27 +205,43 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
             resolveStandingRun(range.highest()).joinsPreviousRun());
     }
 
-    // One end of a range as its drawn run: the signed reputation in that relation's own colour.
+    // One end of a range as its drawn run: the reputation in that relation's own colour, with its
+    // sign shown so a friendly bloc's value reads as a positive standing rather than as a bare number
+    // sitting beside negative ones. Neutral draws unsigned, this being a reading on a scale rather
+    // than a movement along one.
     private static TextSpan resolveStandingRun(PlayerStanding standing) {
 
-        return new TextSpan(resolveSignedReputationText(standing.reputation()), standing.colour());
-    }
-
-    // The reputation with its sign shown, so a friendly bloc's value reads as a positive standing
-    // rather than as a bare number sitting beside negative ones.
-    private static String resolveSignedReputationText(int reputation) {
-
-        return reputation > 0
-            ? POSITIVE_SIGN + reputation
-            : String.valueOf(reputation);
+        return new TextSpan(
+            KmlibNumbers.formatSignedNonZero(standing.reputation()),
+            standing.colour());
     }
 
     // Two blocs by the standings they hold right now, read at comparison time for the reason the
     // class Javadoc states.
     private int compareBlocsFriendliestFirst(RankedBloc<S> leftBloc, RankedBloc<S> rightBloc) {
 
-        return compareStandingsFriendliestFirst(
-            standingReader.readBlocStanding(leftBloc.itemId()),
-            standingReader.readBlocStanding(rightBloc.itemId()));
+        return FRIENDLIEST_FIRST_ORDER.compare(
+            resolveRankKey(standingReader.readBlocStanding(leftBloc.itemId())),
+            resolveRankKey(standingReader.readBlocStanding(rightBloc.itemId())));
+    }
+
+    /**
+     * One standing flattened to the numbers that rank it: where it sits on the scale the three cases
+     * share, and the two ends of its range.
+     *
+     * <p>It exists so the sealed set is asked about once per standing rather than once per standing
+     * per comparison - the ordering is then three plain integer keys, and there is no second place
+     * that has to re-establish which case a side was.
+     *
+     * @param scalePosition     the case's position on the shared scale, ranked before either end
+     * @param lowestReputation  the least friendly member's reputation, or a filler for a case with no
+     *                          range - never compared against a real one, since the scale position
+     *                          separates such a case from every measured bloc first
+     * @param highestReputation the most friendly member's reputation, on the same terms
+     */
+    private record StandingRankKey(
+        int scalePosition,
+        int lowestReputation,
+        int highestReputation) {
     }
 }

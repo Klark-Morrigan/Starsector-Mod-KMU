@@ -168,8 +168,8 @@ public final class ClaimsView implements PoliticalMapView {
 
     /**
      * The claims picker: every bloc the sector walk surfaced - each one that claims a system or
-     * lives in one - carrying its whole-sector {@link ClaimStats}, paired with the
-     * {@link ClaimSortModes} vocabulary.
+     * lives in one - carrying its whole-sector {@link ClaimStats}, ranked by the
+     * {@link ClaimSortModes} vocabulary and whatever the shared assembly offers behind it.
      *
      * <p>No gate of its own, so the list is whoever paints or lives somewhere. A faction that claims
      * a system but holds no colony anywhere is listed because it paints territory here; a faction

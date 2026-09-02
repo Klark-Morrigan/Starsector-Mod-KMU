@@ -143,9 +143,10 @@ front of every view, including the ones that mechanic does not paint. The contes
 answer it once between them on `DominancePaintedView`, and the claims view answers with its own.
 
 The spotlight list runs on the same principle one level down. `PoliticalMapView` asks a view for its
-whole picker - the blocs on offer *and* the vocabulary that ranks them - so the metrics a view's rows
-carry can never drift from the modes offered to sort them by, and the sidebar above passes the pair
-on without naming either. Factions and Alliances are painted by the same contest, so
+picker - the blocs on offer *and* its mechanic's vocabulary for ranking them - so the metrics a view's
+rows carry can never drift from the modes offered to sort them by, and the sidebar above passes the
+pair on without naming either. The shared assembly then widens that vocabulary by one, which the
+standing ranking below covers. Factions and Alliances are painted by the same contest, so
 `DominancePaintedView` answers that once for both and leaves them only the one thing they differ on,
 which is the Spotlight targets column above. A view painted by another mechanic implements the seam
 directly and pairs its own list with its own vocabulary rather than widening theirs.

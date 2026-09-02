@@ -1,8 +1,11 @@
 package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
+import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.characters.RelationshipAPI;
 
+import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
@@ -15,12 +18,14 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -41,6 +46,19 @@ final class PoliticalMapViewTest {
     private static final DominanceStats ANY_STATS = new DominanceStats(3, 2, 5000, 7);
 
     private static final DominanceStats OTHER_STATS = new DominanceStats(1, 1, 400, 2);
+
+    // The shades two relations resolve to, distinct so an end drawn from the wrong member shows as a
+    // colour rather than only as a number.
+    private static final Color GREEN = new Color(60, 180, 60);
+    private static final Color RED = new Color(200, 50, 50);
+
+    // An alliance of two, which is the smallest grouping in which a bloc's membership is anything
+    // other than the bloc's own id - so a standing read against it can only come from the grouping
+    // the read was handed.
+    private static final HolderGrouping PACT_GROUPING = new HolderGrouping(
+        Map.of("hegemony", "pact", "tritachyon", "pact"),
+        Map.of("pact", "hegemony"),
+        Map.of("pact", "Persean Pact"));
 
     // The vocabulary a case is not about. The assembly bundles whatever it is handed, so a case
     // reading only the rows or the presence pairs them with a set that ranks nothing.
@@ -217,6 +235,45 @@ final class PoliticalMapViewTest {
         }
 
         @Test
+        void buildBlocPickerReadBindsTheStandingModeToTheHandedSectorAndGrouping() {
+            // The appended mode is only right if it reads the very sector and grouping this read was
+            // folded under - bound to anything else it would rank a bloc by a membership the map
+            // never painted. An alliance whose two members disagree is what shows the binding: the
+            // ends come back in their own members' shades, which a mode reading the bloc id against
+            // some other fold could not produce.
+            // Both factions are built before either is handed over: stubbing a fresh mock inside an
+            // open when(...) leaves Mockito holding an unfinished stubbing.
+            var hostileMember = stubFactionAtStanding(RepLevel.HOSTILE, -40, RED);
+            var friendlyMember = stubFactionAtStanding(RepLevel.FRIENDLY, 60, GREEN);
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getFaction("hegemony")).thenReturn(hostileMember);
+            when(sectorMock.getFaction("tritachyon")).thenReturn(friendlyMember);
+
+            var viewFake = new PoliticalMapViewFake(Map.of("pact", "Persean Pact"));
+
+            var read = viewFake.buildBlocPickerRead(
+                sectorMock,
+                PACT_GROUPING,
+                BlocStatsReadFake.createRowsOnlyFake(Map.of("pact", ANY_STATS)),
+                DominanceSortModes.MODES);
+
+            var standingRuns = resolveStandingMode(read.picker().sortModes())
+                .resolveTrailingRuns(read.picker().items().get(0), ROW_COLOUR);
+
+            // The separator's text goes through the live settings, which the test JVM has none of, so
+            // only the tone it takes and where it sits are read.
+            assertThat(standingRuns)
+                .extracting(TextSpan::colour)
+                .containsExactly(RED, ROW_COLOUR, GREEN);
+
+            assertThat(standingRuns)
+                .extracting(TextSpan::text)
+                .startsWith("-40")
+                .endsWith("+60");
+        }
+
+        @Test
         void buildBlocPickerReadOffersNoStandingModeWithoutASectorToReadOneFrom() {
             // A read over no sector lists nothing and has no relations behind it, so the vocabulary
             // stands as its layer declared it rather than offering a ranking with nothing to rank by.
@@ -310,5 +367,37 @@ final class PoliticalMapViewTest {
                     .readPresentSystemIds("hegemony"))
                 .isEmpty();
         }
+    }
+
+    // A faction the sector answers with, standing where the case wants it. Stubbed through the live
+    // relationship object, which is the tier the standing read takes first, so the colour comes back
+    // as this shade rather than out of the engine palette the test JVM cannot reach.
+    private static FactionAPI stubFactionAtStanding(RepLevel level, int reputation, Color colour) {
+
+        var relationshipMock = mock(RelationshipAPI.class);
+
+        when(relationshipMock.getLevel()).thenReturn(level);
+        when(relationshipMock.getRepInt()).thenReturn(reputation);
+        when(relationshipMock.getRelColor()).thenReturn(colour);
+
+        var factionMock = mock(FactionAPI.class);
+
+        when(factionMock.getRelToPlayer()).thenReturn(relationshipMock);
+
+        return factionMock;
+    }
+
+    // The appended mode picked out of the offered vocabulary by its key. By key rather than by
+    // position, so a case about what the mode draws does not also fail when the selector's row order
+    // changes - which the ordering case above is what pins.
+    private static <S extends BlocMetrics> ListSortMode<RankedBloc<S>> resolveStandingMode(
+            ListSortModes<RankedBloc<S>> offeredModes) {
+
+        for (var mode : offeredModes.modes()) {
+            if ("player_standing".equals(mode.persistenceKey())) {
+                return mode;
+            }
+        }
+        throw new AssertionError("the offered vocabulary holds no standing mode");
     }
 }

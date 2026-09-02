@@ -84,10 +84,14 @@ public final class DominanceSortModes {
     public static final ListSortMode<RankedBloc<DominanceStats>> DEFAULT = DOMINATION;
 
     /**
-     * The dominance-painted views' whole sort vocabulary - every mode in selector display order with
-     * {@link #DEFAULT} as the fallback. It is what a view bundles with its bloc list, so the list and
-     * the modes that can rank it travel as one value and the stored-sort resolution reads the same
-     * pair the selector draws.
+     * This contest's half of the dominance-painted views' sort vocabulary - every mode declared here
+     * in selector display order, with {@link #DEFAULT} as the fallback. A view hands it to
+     * {@link PoliticalMapView#buildBlocPickerRead}, which offers it with the standing ranking behind
+     * it, so the selector draws these numbers plus the one criterion no vocabulary declares.
+     *
+     * <p>It travels with the bloc list from there on, which is what keeps the rows and the modes that
+     * can rank them one value and has the stored-sort resolution read the same pair the selector
+     * draws.
      */
     public static final ListSortModes<RankedBloc<DominanceStats>> MODES =
         new ListSortModes<>(

@@ -201,11 +201,16 @@ public interface PoliticalMapView {
      * runs for the numbers, which is what lets a surface light a bloc's systems without a second read
      * of the sector - and without the two readings being able to disagree.
      *
-     * <p>The list and the vocabulary are answered together because a view owns its picker end to
-     * end: which blocs it offers, what numbers those blocs carry, and which metrics rank them are
-     * one decision, and a view painted by one mechanic must never be handed a vocabulary reading
-     * numbers its blocs do not carry. That is why the return type is wildcarded - the metrics a
-     * view's blocs carry are its own, so the layer above passes the picker on without naming them.
+     * <p>The list and the vocabulary are answered together because which blocs a view offers, what
+     * numbers those blocs carry, and which of its mechanic's metrics rank them are one decision: a
+     * view painted by one mechanic must never be handed a vocabulary reading numbers its blocs do not
+     * carry. That is why the return type is wildcarded - the metrics a view's blocs carry are its
+     * own, so the layer above passes the picker on without naming them.
+     *
+     * <p>What a view declares is that mechanic's half. {@link #buildBlocPickerRead} appends the one
+     * ranking no vocabulary can declare - where a bloc stands with the player, read off the sector
+     * rather than off any fold - so the vocabulary the picker carries is wider than the one the view
+     * handed over.
      *
      * <p>There is no new per-bloc seam behind the list: a view says which of its blocs are targets
      * (every faction, or only the alliance blocs) through {@link #resolveSelectableBlocGate}, and

@@ -5,6 +5,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.politicalmap.base.BlocMetricSortMode;
 import kmu.maplayers.politicalmap.base.BlocSortModeComposer;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SharedBlocSortModes;
 import kmu.maplayers.politicalmap.base.SizedBlocMetrics;
@@ -78,10 +79,14 @@ public final class ClaimSortModes {
     public static final ListSortMode<RankedBloc<ClaimStats>> DEFAULT = CLAIMS;
 
     /**
-     * The claims view's whole sort vocabulary - every mode in selector display order with
-     * {@link #DEFAULT} as the fallback. It is what the view bundles with its bloc list, so the list and
-     * the modes that can rank it travel as one value and the stored-sort resolution reads the same pair
-     * the selector draws.
+     * This mechanic's half of the claims view's sort vocabulary - every mode declared here in selector
+     * display order, with {@link #DEFAULT} as the fallback. The view hands it to
+     * {@link PoliticalMapView#buildBlocPickerRead}, which offers it with the standing ranking behind
+     * it, so the selector draws these numbers plus the one criterion no vocabulary declares.
+     *
+     * <p>It travels with the bloc list from there on, which is what keeps the rows and the modes that
+     * can rank them one value and has the stored-sort resolution read the same pair the selector
+     * draws.
      */
     public static final ListSortModes<RankedBloc<ClaimStats>> MODES =
         new ListSortModes<>(
