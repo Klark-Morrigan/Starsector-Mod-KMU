@@ -151,9 +151,8 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     @Nested
     class ApplyStalePoliticsUpdates {
 
-        // Closed in reverse on the way out, so a seam opened over another is never left standing
-        // when the inner one is already gone.
-        private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
+        // The classes this arrangement stands in for, closed on the way out.
+        private final StaticSeams seams = new StaticSeams();
 
         // The four cells, hand-built rather than partitioned from the sector: the comparison is
         // about which path produced the map, so the partition has to be the one thing that cannot
@@ -177,7 +176,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         @BeforeEach
         void openSeamsAndSettleTheSector() {
 
-            var globalMock = openSeam(Global.class);
+            var globalMock = seams.openSeam(Global.class);
 
             // The builders below log through static fields initialised on first touch, which
             // happens inside this block; without this the logger would come back null and the
@@ -223,45 +222,42 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // The dev reveal and the map-anchor tuning, both LunaLib-backed: no case turns on
             // either, so the seam's own answers stand for them. The cell seed inputs and the dev
             // overlays are seamed for the same reason, a rebuild reaching both on its way through.
-            openSeam(KmuMapLayerSettings.class);
-            openSeam(KmuPoliticalMapGeometrySettings.class);
-            openSeam(KmuPoliticalMapDiagnosticsSettings.class);
+            seams.openSeam(KmuMapLayerSettings.class);
+            seams.openSeam(KmuPoliticalMapGeometrySettings.class);
+            seams.openSeam(KmuPoliticalMapDiagnosticsSettings.class);
 
-            var settingsMock = openSeam(KmuPoliticalMapRibbonSettings.class);
+            var settingsMock = seams.openSeam(KmuPoliticalMapRibbonSettings.class);
 
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
             // The weighting rule the fills and the bands are both resolved under. Read live off
             // LunaLib in production, so it is answered here rather than left to the settings seam,
             // whose zeroes would weigh every colony at nothing and leave the sector unheld.
-            var rulesMock = openSeam(DominanceRules.class);
+            var rulesMock = seams.openSeam(DominanceRules.class);
             rulesMock
                 .when(DominanceRules::readFromLunaSettings)
                 .thenReturn(SectorPoliticsFixtures.buildStabilityWeightedRules());
 
-            var renderStyleMock = openSeam(RenderStyleReader.class);
+            var renderStyleMock = seams.openSeam(RenderStyleReader.class);
             renderStyleMock
                 .when(RenderStyleReader::readRenderStyle)
                 .thenReturn(buildThemePaintingEachCategoryApart());
 
             // The names off, which is what leaves the bands a function of the map alone; the
             // choice is sector-memory state no test JVM has, so it comes off a seam.
-            var nameFormatMock = openSeam(NameFormatPreference.class);
+            var nameFormatMock = seams.openSeam(NameFormatPreference.class);
             nameFormatMock
                 .when(NameFormatPreference::getSelectedNameFormat)
                 .thenReturn(FactionNameFormatChoice.NONE);
 
             // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory
             // state as well.
-            openSeam(FilterSelection.class);
+            seams.openSeam(FilterSelection.class);
         }
 
         @AfterEach
         void closeSeams() {
-            for (var index = openStaticSeams.size() - 1; index >= 0; index--) {
-                openStaticSeams.get(index).close();
-            }
-            openStaticSeams.clear();
+            seams.closeEverySeam();
         }
 
         @Test
@@ -518,7 +514,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
         // Opens a static seam and registers it for closing, so a case names what it needs rather
         // than repeating the open-and-remember pair for each.
-        private <T> MockedStatic<T> openSeam(Class<T> seamType) {
+        private <T> MockedStatic<T> seams.openSeam(Class<T> seamType) {
             MockedStatic<T> staticMock = mockStatic(seamType);
             openStaticSeams.add(staticMock);
             return staticMock;

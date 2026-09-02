@@ -62,9 +62,8 @@ final class MarkedSystemRederiveTest {
     @Nested
     class RederiveMarkedSystems {
 
-        // Closed in reverse on the way out, so a seam opened over another is never left standing
-        // when the inner one is already gone.
-        private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
+        // The classes this arrangement stands in for, closed on the way out.
+        private final StaticSeams seams = new StaticSeams();
 
         // The two adjacent cells every case poses over, built once so the neighbours a flip
         // disturbs are read off one arrangement.
@@ -87,19 +86,19 @@ final class MarkedSystemRederiveTest {
                 NEIGHBOUR_SYSTEM,
                 DISTANT_SYSTEM));
 
-            politicsMock = openSeam(SectorPolitics.class);
+            politicsMock = seams.openSeam(SectorPolitics.class);
 
             // Every fixture below marks systems its territories already count as settled, so the
             // seam answers "still settled" and a case about inhabitation says so by re-stubbing it.
             // That keeps the holder cases free of a second fact moving underneath them.
-            inhabitationMock = openSeam(PoliticalMapInhabitation.class);
+            inhabitationMock = seams.openSeam(PoliticalMapInhabitation.class);
             inhabitationMock
                 .when(() -> PoliticalMapInhabitation.isSystemInhabited(any(), any()))
                 .thenReturn(true);
 
             // Off filter the presence read answers empty, which is what the seam's own default
             // gives; a spotlight case stubs where the pick lives.
-            presenceMock = openSeam(FilteredPolitics.class);
+            presenceMock = seams.openSeam(FilteredPolitics.class);
             presenceMock
                 .when(() -> FilteredPolitics.findPresentSystemIds(
                     any(HolderPass.class),
@@ -110,10 +109,7 @@ final class MarkedSystemRederiveTest {
 
         @AfterEach
         void closeSeams() {
-            for (var index = openStaticSeams.size() - 1; index >= 0; index--) {
-                openStaticSeams.get(index).close();
-            }
-            openStaticSeams.clear();
+            seams.closeEverySeam();
         }
 
         @Test
@@ -288,7 +284,7 @@ final class MarkedSystemRederiveTest {
 
         // Opens a static seam and registers it for closing, so a case names what it needs rather
         // than repeating the open-and-remember pair for each.
-        private <T> MockedStatic<T> openSeam(Class<T> seamType) {
+        private <T> MockedStatic<T> seams.openSeam(Class<T> seamType) {
             MockedStatic<T> staticMock = mockStatic(seamType);
             openStaticSeams.add(staticMock);
             return staticMock;

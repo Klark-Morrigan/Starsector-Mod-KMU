@@ -7,66 +7,43 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
-import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.base.theme.CategoryStyle;
-import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
-import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
-import kmu.settings.KmuPoliticalMapGeometrySettings;
-import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.starsector.listeners.RecordingListenerManager;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Pins that two sectors with the map machinery really installed on both keep nothing in common: a
- * colony change in one marks only its own system stale, a rebuild cuts only its own cells, and the
- * other sector's draw lists, movers and hover are left exactly as they were - including where both
- * sectors hold a system under the same id, which is the case every part of the machinery keys on and
- * none of them can tell apart on its own.
+ * colony change in one marks only its own system stale, rebuilds only its own cells, and leaves the
+ * other's draw lists, movers and hover exactly as they were - including where both sectors hold a
+ * system under the same id, which is the case every part of the machinery keys on and none of them
+ * can tell apart on its own.
  *
  * <p>No unit can make this claim. Isolation is a fact about the composition: each part, handed its
  * own installation, behaves correctly whether or not the parts share one underneath, so a shared
  * holder reintroduced below any of them passes every suite but this. So the installations, the
  * listeners, the watcher, the poll and the rebuild are all real here, and only what no test JVM
- * answers is stood in for - the logger and the live LunaLib reads the rebuild's stages are
- * configured by.
+ * answers is stood in for.
  *
  * <p>It carries the installers' own wiring besides, which no suite either side of them reaches.
  * Which installation an installer builds a listener or a watcher against is invisible to the
@@ -89,6 +66,11 @@ final class MapLayerInstallationIsolationIntegrationTest {
     private static final String HEGEMONY_ID = "hegemony";
     private static final String TRITACHYON_ID = "tritachyon";
 
+    // A third faction, for the one case that hands a system over between two rebuilds: the sector
+    // that changes has to end up holding somebody neither sector started with, or a holder read back
+    // off the other sector could not be told from the one it always had.
+    private static final String PERSEAN_ID = "persean";
+
     // The system id both sectors hold, which is the whole point of the pairing: every holder below
     // keys on a bare system id and nothing forbids two sectors from generating one alike, so this is
     // the id under which a shared holder would have one sector answer for the other.
@@ -107,10 +89,6 @@ final class MapLayerInstallationIsolationIntegrationTest {
     // what the listener acts on is the seat.
     private static final int PREVIOUS_COLONY_SIZE = 3;
 
-    // The cells' seed knobs, wide enough that a cell holds clear of its own inset border.
-    private static final int CELL_BOUND_SEGMENTS = 16;
-    private static final double CELL_RADIUS = 4000.0;
-
     // Comfortably past the watcher's 4-5s poll interval, so each advance drives exactly one poll.
     private static final float ADVANCE_PAST_POLL_INTERVAL = 6f;
 
@@ -123,9 +101,7 @@ final class MapLayerInstallationIsolationIntegrationTest {
     private static final MapHover HOVERED_SHARED_CELL =
         new MapHover(SHARED_SYSTEM_ID, List.of(SHARED_SYSTEM_ID));
 
-    // Closed in reverse on the way out, so a seam opened over another is never left standing when
-    // the inner one is already gone.
-    private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
+    private PoliticalMapRebuildSeams seams;
 
     @BeforeEach
     void discardEveryInstallationAndOpenSeams() {
@@ -135,73 +111,21 @@ final class MapLayerInstallationIsolationIntegrationTest {
         // the index holds a logger taken from Global at class load.
         MapLayerInstallations.disposeEveryInstallation();
 
-        var globalMock = openSeam(Global.class);
-        globalMock
-            .when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(Logger.getLogger(MapLayerInstallationIsolationIntegrationTest.class));
+        seams = PoliticalMapRebuildSeams.openEverySeamARebuildNeeds();
 
         // A sector neither installation was made over, staged as the one the game is running. Any
         // stage that asked the running game which sector it was working on would then find a sector
         // with nothing in it, rather than quietly agreeing with whichever of the two happened to be
         // loaded last.
-        globalMock
+        seams.resolveGlobalSeam()
             .when(Global::getSector)
             .thenReturn(mock(SectorAPI.class));
-
-        // The dev reveal and the anchor tuning, both LunaLib-backed: no case turns on either, so the
-        // seam's own answers stand for them. The ribbon and diagnostics knobs likewise, whose
-        // defaults leave the bands and the debug overlay off.
-        openSeam(KmuMapLayerSettings.class);
-        openSeam(KmuLunaSettings.class);
-        openSeam(KmuPoliticalMapRibbonSettings.class);
-        openSeam(KmuPoliticalMapDiagnosticsSettings.class);
-
-        // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
-        // no test JVM has.
-        openSeam(FilterSelection.class);
-
-        var geometrySettingsMock = openSeam(KmuPoliticalMapGeometrySettings.class);
-        geometrySettingsMock
-            .when(KmuPoliticalMapGeometrySettings::getPoliticalMapCellBoundSegments)
-            .thenReturn(CELL_BOUND_SEGMENTS);
-        geometrySettingsMock
-            .when(KmuPoliticalMapGeometrySettings::getPoliticalMapCellRadius)
-            .thenReturn(CELL_RADIUS);
-
-        var visibilityRulesMock = openSeam(MapVisibilityRules.class);
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
-
-        // The weighting rule the fills are resolved under, read live off LunaLib in production -
-        // left to the settings seam it would weigh every colony at nothing and leave both sectors
-        // unheld, which is the one state that would make every holder assertion below vacuous.
-        var dominanceRulesMock = openSeam(DominanceRules.class);
-        dominanceRulesMock
-            .when(DominanceRules::readFromLunaSettings)
-            .thenReturn(SectorPoliticsFixtures.buildStabilityWeightedRules());
-
-        var renderStyleMock = openSeam(RenderStyleReader.class);
-        renderStyleMock
-            .when(RenderStyleReader::readRenderStyle)
-            .thenReturn(PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(
-                buildInertCategoryStyle()));
-
-        // The names off, which keeps the label mint and the anchor fit off a rebuild that has no
-        // font to measure with; the choice is sector-memory state as well.
-        var nameFormatMock = openSeam(NameFormatPreference.class);
-        nameFormatMock
-            .when(NameFormatPreference::getSelectedNameFormat)
-            .thenReturn(FactionNameFormatChoice.NONE);
     }
 
     @AfterEach
     void closeSeamsAndDiscardEveryInstallation() {
 
-        for (var index = openStaticSeams.size() - 1; index >= 0; index--) {
-            openStaticSeams.get(index).close();
-        }
-        openStaticSeams.clear();
+        seams.closeEverySeam();
 
         MapLayerInstallations.disposeEveryInstallation();
     }
@@ -216,19 +140,21 @@ final class MapLayerInstallationIsolationIntegrationTest {
             // nothing on either map to say where the mark came from. Driven through the listener the
             // installer actually registered, which is also what says that listener was built against
             // the sector it was installed on.
-            var firstSector = installMachineryOnASectorHeldBy(
-                HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
-            var secondSector = installMachineryOnASectorHeldBy(
-                TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            var firstSector = installMachineryOnAFirstSector();
+            var secondSector = installMachineryOnASecondSector();
 
             findInstalledListenerOn(firstSector, PoliticalMapColonySizeListener.class)
                 .reportColonySizeChanged(
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(readRefreshBoardOf(firstSector).drainStaleGroupingSystemIds())
+            assertThat(resolveInstallationOf(firstSector)
+                    .resolveRefreshBoard()
+                    .drainStaleGroupingSystemIds())
                 .containsExactly(SHARED_SYSTEM_ID);
-            assertThat(readRefreshBoardOf(secondSector).drainStaleGroupingSystemIds())
+            assertThat(resolveInstallationOf(secondSector)
+                    .resolveRefreshBoard()
+                    .drainStaleGroupingSystemIds())
                 .isEmpty();
         }
 
@@ -237,13 +163,11 @@ final class MapLayerInstallationIsolationIntegrationTest {
             // The drawing itself. The geometry cache reconciles by system id, so a cache serving two
             // sectors would not overwrite one sector's cell with the other's - it would keep the
             // first cut and leave the second sector drawing a cell around a place it does not hold.
-            var firstSector = installMachineryOnASectorHeldBy(
-                HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
-            var secondSector = installMachineryOnASectorHeldBy(
-                TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            var firstSector = installMachineryOnAFirstSector();
+            var secondSector = installMachineryOnASecondSector();
 
-            var firstTerritories = rebuildTerritoriesOf(firstSector);
-            var secondTerritories = rebuildTerritoriesOf(secondSector);
+            var firstTerritories = new PoliticalMapCacheDriver(firstSector).rebuild();
+            var secondTerritories = new PoliticalMapCacheDriver(secondSector).rebuild();
 
             assertThat(firstTerritories.getStyledCellByCellId())
                 .containsKeys(SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID)
@@ -261,22 +185,58 @@ final class MapLayerInstallationIsolationIntegrationTest {
         }
 
         @Test
+        void leavesTheOtherSectorsDrawnHoldersStandingWhenAChangeRebuildsOne() {
+            // The three halves joined, which is what neither of the two cases above does on its own:
+            // a change marks one sector, that sector re-derives the system it marked, and the sector
+            // nobody touched still draws what it drew. The re-derive is the targeted path rather
+            // than a whole rebuild, which is the one that used to ask the running game which sector
+            // it was folding - so a leak here reads as the other sector's cell changing hands to a
+            // faction it never held.
+            var firstSector = installMachineryOnAFirstSector();
+            var secondSector = installMachineryOnASecondSector();
+
+            var firstMap = new PoliticalMapCacheDriver(firstSector);
+            var secondMap = new PoliticalMapCacheDriver(secondSector);
+
+            firstMap.rebuild();
+            secondMap.rebuild();
+
+            handTheSharedSystemOf(firstSector, PERSEAN_ID);
+            findInstalledListenerOn(firstSector, PoliticalMapColonySizeListener.class)
+                .reportColonySizeChanged(
+                    mockMarketInSystem(SHARED_SYSTEM_ID),
+                    PREVIOUS_COLONY_SIZE);
+
+            assertThat(firstMap.rebuild().getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
+                .isEqualTo(PERSEAN_ID);
+
+            var untouchedTerritories = secondMap.readTerritories();
+
+            assertThat(untouchedTerritories.getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
+                .isEqualTo(TRITACHYON_ID);
+            assertThat(untouchedTerritories.getStyledCellByCellId())
+                .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+        }
+
+        @Test
         void observesEachSectorsPositionsIntoTheTrackerOfTheInstallationItsWatcherWasBuiltWith() {
             // The installer's own wiring, which nothing else reads back. The watcher is built with
             // the installation resolved for the sector it is added to, and that argument is
             // invisible either side of the install - so a watcher handed the other sector's
             // installation would observe these positions into that sector's tracker, and the cut
             // over there would drop a system for a drift it never made.
-            var firstSector = installMachineryOnASectorHeldBy(
-                HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
-            var secondSector = installMachineryOnASectorHeldBy(
-                TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            var firstSector = installMachineryOnAFirstSector();
+            var secondSector = installMachineryOnASecondSector();
 
             driftTheSharedSystemPastTwoPollsOf(firstSector);
 
-            assertThat(readMovingSystemsOf(firstSector).getMovingSystemIds())
+            assertThat(resolveInstallationOf(firstSector)
+                    .resolveMovingSystems()
+                    .getMovingSystemIds())
                 .containsExactly(SHARED_SYSTEM_ID);
-            assertThat(readMovingSystemsOf(secondSector).getMovingSystemIds())
+            assertThat(resolveInstallationOf(secondSector)
+                    .resolveMovingSystems()
+                    .getMovingSystemIds())
                 .isEmpty();
         }
 
@@ -286,10 +246,8 @@ final class MapLayerInstallationIsolationIntegrationTest {
             // the other sector's map and name that system in its box. Both ends go through the index
             // rather than through the handle the install returned, since what a render pass has is a
             // sector to resolve from.
-            var firstSector = installMachineryOnASectorHeldBy(
-                HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
-            var secondSector = installMachineryOnASectorHeldBy(
-                TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            var firstSector = installMachineryOnAFirstSector();
+            var secondSector = installMachineryOnASecondSector();
 
             resolveInstallationOf(firstSector).resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
@@ -309,10 +267,8 @@ final class MapLayerInstallationIsolationIntegrationTest {
             // another is still installed. What must survive is the other sector's drawing; what must
             // not is any route back to the removed sector's holders, which would otherwise go on
             // answering for a sector nothing draws.
-            var firstSector = installMachineryOnASectorHeldBy(
-                HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
-            var secondSector = installMachineryOnASectorHeldBy(
-                TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            var firstSector = installMachineryOnAFirstSector();
+            var secondSector = installMachineryOnASecondSector();
 
             var removedInstallation = resolveInstallationOf(firstSector);
 
@@ -321,8 +277,8 @@ final class MapLayerInstallationIsolationIntegrationTest {
 
             MapLayerInstallations.uninstallMachineryFrom(firstSector);
 
-            assertThat(rebuildTerritoriesOf(secondSector).getStyledCellByCellId())
-                .containsKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            assertThat(new PoliticalMapCacheDriver(secondSector).rebuild().getStyledCellByCellId())
+                .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
 
             assertThat(removedInstallation.isDisposed())
                 .isTrue();
@@ -341,8 +297,7 @@ final class MapLayerInstallationIsolationIntegrationTest {
             // so a discard that missed one shows up as that sector's state answering for the loaded
             // one, and the drift shows up twice over: a tracker carried across would drop the shared
             // system from the loaded sector's cut for a move the previous sector made.
-            var previousSector = installMachineryOnASectorHeldBy(
-                HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
+            var previousSector = installMachineryOnAFirstSector();
             var previousInstallation = resolveInstallationOf(previousSector);
 
             previousInstallation.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
@@ -351,13 +306,11 @@ final class MapLayerInstallationIsolationIntegrationTest {
 
             MapLayerInstallations.disposeEveryInstallation();
 
-            var loadedSector = installMachineryOnASectorHeldBy(
-                TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            var loadedSector = installMachineryOnASecondSector();
             var loadedInstallation = resolveInstallationOf(loadedSector);
 
-            assertThat(rebuildTerritoriesOf(loadedSector).getStyledCellByCellId())
-                .containsKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID)
-                .doesNotContainKey(FIRST_SECTOR_SYSTEM_ID);
+            assertThat(new PoliticalMapCacheDriver(loadedSector).rebuild().getStyledCellByCellId())
+                .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
 
             assertThat(loadedInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
@@ -370,14 +323,25 @@ final class MapLayerInstallationIsolationIntegrationTest {
         }
     }
 
+    // The two sectors every case pairs, named rather than parameterised at the call so a case reads
+    // as "one sector and another" instead of restating which faction holds which system - facts that
+    // only have to differ, and differ the same way in every case.
+    private static SectorAPI installMachineryOnAFirstSector() {
+        return installMachineryOnASectorHeldBy(
+            HEGEMONY_ID, SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID);
+    }
+
+    private static SectorAPI installMachineryOnASecondSector() {
+        return installMachineryOnASectorHeldBy(
+            TRITACHYON_ID, SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+    }
+
     // A sector whose systems are each settled by one faction, with the map machinery installed on it
     // and the political map's own listeners and watcher registered against it - which is what makes
     // this real machinery rather than a pair of hand-built holders.
     //
-    // The holder differs per sector so the cell both sectors have an id for is still told apart by
-    // what it paints, and every system is placed in hyperspace: an unplaced one is skipped before the
-    // drawn-set rule is ever asked about it, so it would seed no cell and the cut would have nothing
-    // to be wrong about.
+    // Every system is placed in hyperspace: an unplaced one is skipped before the drawn-set rule is
+    // ever asked about it, so it would seed no cell and the cut would have nothing to be wrong about.
     private static SectorAPI installMachineryOnASectorHeldBy(
             String holderFactionId,
             String... systemIds) {
@@ -405,14 +369,24 @@ final class MapLayerInstallationIsolationIntegrationTest {
         return sector;
     }
 
-    // One rebuild of this sector's own cache, over the installation the index hands back for it.
-    private static PoliticalMapTerritories rebuildTerritoriesOf(SectorAPI sector) {
+    // Hands the system both sectors have an id for to another faction, by re-listing its economy
+    // under a colony that faction holds - the change a resize event announces, staged as the
+    // economy would answer it on the next read.
+    private static void handTheSharedSystemOf(SectorAPI sector, String factionId) {
 
-        var cache = new PoliticalMapCache(resolveInstallationOf(sector));
+        // Both are built out fully before either stubbing opens: each stubs internally, so nesting
+        // one inside when(...) would trip Mockito's unfinished-stubbing guard.
+        var faction = SectorPoliticsFixtures.buildFaction(factionId);
+        var colony = SectorPoliticsFixtures.buildVisibleMarket(faction, HOLDING_COLONY_SIZE);
+        var system = SectorPoliticsFixtures.findSystemIn(sector, SHARED_SYSTEM_ID);
 
-        cache.refresh(FactionsView.INSTANCE);
+        when(sector.getEconomy().getMarkets(system))
+            .thenReturn(List.of(colony));
 
-        return cache.getTerritories();
+        // Resolvable by id besides, which is how the fills reach the new holder's palette; a faction
+        // the sector cannot name paints as nobody.
+        when(sector.getFaction(factionId))
+            .thenReturn(faction);
     }
 
     // Drives the sector's own installed watcher twice with a drift between, which is the only way a
@@ -472,29 +446,28 @@ final class MapLayerInstallationIsolationIntegrationTest {
         return MapLayerInstallations.resolveInstallationFor(sector);
     }
 
-    private static MapLayerRefreshBoard readRefreshBoardOf(SectorAPI sector) {
-        return resolveInstallationOf(sector).resolveRefreshBoard();
-    }
+    // One sector's cache, kept across the rebuilds a case drives so the second reads the state the
+    // first left. A case holding only the territories could not tell a cache that rebuilt from one
+    // that was never asked again, the draw lists being replaced wholesale by a rebuild.
+    private static final class PoliticalMapCacheDriver {
 
-    private static MovingSystems readMovingSystemsOf(SectorAPI sector) {
-        return resolveInstallationOf(sector).resolveMovingSystems();
-    }
+        private final PoliticalMapCache cache;
 
-    // One style bundle for every category: nothing here turns on how a cell paints, only on which
-    // sector's cells were cut and who each is painted for.
-    private static CategoryStyle buildInertCategoryStyle() {
+        private PoliticalMapCacheDriver(SectorAPI sector) {
+            cache = new PoliticalMapCache(resolveInstallationOf(sector));
+        }
 
-        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0);
-        return new CategoryStyle(element, element, 1.0, element, 1.0);
-    }
+        // What the cache last drew, without asking it to draw again - for a case claiming a sector
+        // nobody touched still holds what it held.
+        private PoliticalMapTerritories readTerritories() {
+            return cache.getTerritories();
+        }
 
-    // Opens a static seam and registers it for closing, so the arrangement names what it needs
-    // rather than repeating the open-and-remember pair for each.
-    private <T> MockedStatic<T> openSeam(Class<T> seamedClass) {
+        private PoliticalMapTerritories rebuild() {
 
-        var seamMock = mockStatic(seamedClass);
-        openStaticSeams.add(seamMock);
+            cache.refresh(FactionsView.INSTANCE);
 
-        return seamMock;
+            return cache.getTerritories();
+        }
     }
 }

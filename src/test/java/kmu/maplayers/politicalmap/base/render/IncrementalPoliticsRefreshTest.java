@@ -119,9 +119,8 @@ final class IncrementalPoliticsRefreshTest {
     @Nested
     class ApplyStalePoliticsUpdates {
 
-        // Closed in reverse on the way out, so a seam opened over another is never left
-        // standing when the inner one is already gone.
-        private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
+        // The classes this arrangement stands in for, closed on the way out.
+        private final StaticSeams seams = new StaticSeams();
 
         // The placements the caller holds across frames, standing at what a previous pass
         // fitted them under. Empty of placements because the re-fit is neutralised here and
@@ -154,7 +153,7 @@ final class IncrementalPoliticsRefreshTest {
         @BeforeEach
         void openSeamsAndClearTheStaleSet() {
 
-            globalMock = openSeam(Global.class);
+            globalMock = seams.openSeam(Global.class);
             // The class logs through a static field initialised on first touch, which may
             // happen inside this block; without this the logger would come back null and
             // the debug lines below would fault before the assertion was reached.
@@ -171,18 +170,18 @@ final class IncrementalPoliticsRefreshTest {
                 .when(Global::getSector)
                 .thenReturn(sectorMock);
 
-            politicsMock = openSeam(SectorPolitics.class);
+            politicsMock = seams.openSeam(SectorPolitics.class);
 
             // What still stands in a marked system, which the fold reads beside the holder. Every
             // fixture below marks systems its territories already count as settled, so the seam
             // answers "still settled" and a case about inhabitation says so by re-stubbing it -
             // which keeps the holder cases free of a second fact moving underneath them.
-            inhabitationMock = openSeam(PoliticalMapInhabitation.class);
+            inhabitationMock = seams.openSeam(PoliticalMapInhabitation.class);
             inhabitationMock
                 .when(() -> PoliticalMapInhabitation.isSystemInhabited(any(), any()))
                 .thenReturn(true);
 
-            styledCellsMock = openSeam(StyledCellBuilder.class);
+            styledCellsMock = seams.openSeam(StyledCellBuilder.class);
             styledCellsMock
                 .when(() -> StyledCellBuilder.buildStyledCellForSystem(
                     any(),
@@ -190,7 +189,7 @@ final class IncrementalPoliticsRefreshTest {
                     any()))
                 .thenReturn(PoliticalMapTerritoryFixtures.createPlaceholderStyledCell());
 
-            territoriesMock = openSeam(FactionTerritoryBuilder.class);
+            territoriesMock = seams.openSeam(FactionTerritoryBuilder.class);
             territoriesMock
                 .when(() -> FactionTerritoryBuilder.buildFactionTerritory(
                     any(),
@@ -203,7 +202,7 @@ final class IncrementalPoliticsRefreshTest {
             // leaves each a no-op, so a case here asserts the fold and not their output. The
             // re-fit writes the pair it is handed, which is exactly what a neutralised seam does
             // not do - so a case reads whether the fold called it, not what it left behind.
-            anchorsMock = openSeam(ClusterAnchorsBuilder.class);
+            anchorsMock = seams.openSeam(ClusterAnchorsBuilder.class);
 
             // What the re-fit reports about the names it moved decides which bands are re-baked,
             // so the neutralised seam has to answer something: no name moved, which is the
@@ -216,13 +215,13 @@ final class IncrementalPoliticsRefreshTest {
                     any()))
                 .thenReturn(ClusterNameDisturbance.NONE);
 
-            openSeam(LabelsBuilder.class);
+            seams.openSeam(LabelsBuilder.class);
 
             // Read as an argument to the label rebuild, so it evaluates even with that
             // rebuild neutralised - and it reads save-backed memory no test JVM has. Held as a
             // field because a band's re-bake reads it too: the room a name takes is reserved only
             // while the names are drawing, so a case about that re-stubs this.
-            nameFormatMock = openSeam(NameFormatPreference.class);
+            nameFormatMock = seams.openSeam(NameFormatPreference.class);
             nameFormatMock
                 .when(NameFormatPreference::getSelectedNameFormat)
                 .thenReturn(FactionNameFormatChoice.NONE);
@@ -237,7 +236,7 @@ final class IncrementalPoliticsRefreshTest {
             // what a band is sized at. Held as a field for the reason the name choice above is:
             // whether a band keeps clear of the names is one of these knobs, so the case about
             // that answer re-stubs it.
-            settingsMock = openSeam(KmuPoliticalMapRibbonSettings.class);
+            settingsMock = seams.openSeam(KmuPoliticalMapRibbonSettings.class);
 
             RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
 
@@ -245,17 +244,14 @@ final class IncrementalPoliticsRefreshTest {
             // knobs - LunaLib again. No case here turns on the reveal, so the seam's own false is
             // the answer. The same for the band-path overlay and the weighting a re-fold resolves
             // its holders under: reached on the way through, turning no case here, LunaLib-backed.
-            openSeam(KmuMapLayerSettings.class);
-            openSeam(KmuPoliticalMapDiagnosticsSettings.class);
-            openSeam(KmuPoliticalMapDominanceSettings.class);
+            seams.openSeam(KmuMapLayerSettings.class);
+            seams.openSeam(KmuPoliticalMapDiagnosticsSettings.class);
+            seams.openSeam(KmuPoliticalMapDominanceSettings.class);
         }
 
         @AfterEach
         void closeSeams() {
-            for (var index = openStaticSeams.size() - 1; index >= 0; index--) {
-                openStaticSeams.get(index).close();
-            }
-            openStaticSeams.clear();
+            seams.closeEverySeam();
         }
 
         @Test
@@ -392,8 +388,8 @@ final class IncrementalPoliticsRefreshTest {
             // to is pinned by each reading's own suite, and measuring the words for real would
             // need the label face, which no test JVM loads. What belongs here is which of the two
             // the choice reaches for.
-            var fittedBoxesMock = openSeam(ClusterNameBoxes.class);
-            var wordBoxesMock = openSeam(LabelLineBoxes.class);
+            var fittedBoxesMock = seams.openSeam(ClusterNameBoxes.class);
+            var wordBoxesMock = seams.openSeam(LabelLineBoxes.class);
 
             wordBoxesMock
                 .when(() -> LabelLineBoxes.listLineBoxes(anyList()))
@@ -551,7 +547,7 @@ final class IncrementalPoliticsRefreshTest {
                 sectorMock,
                 HolderGrouping.identity());
 
-            var passMock = openSeam(DominancePass.class);
+            var passMock = seams.openSeam(DominancePass.class);
             passMock
                 .when(() -> DominancePass.readFromLunaSettings(any(), any(HolderGrouping.class)))
                 .thenReturn(batchPass);
@@ -584,7 +580,7 @@ final class IncrementalPoliticsRefreshTest {
 
             var sectorTheFoldRead = new AtomicReference<SectorAPI>();
 
-            var passMock = openSeam(DominancePass.class);
+            var passMock = seams.openSeam(DominancePass.class);
             passMock
                 .when(() -> DominancePass.readFromLunaSettings(any(), any(HolderGrouping.class)))
                 .thenAnswer(read -> {
@@ -629,7 +625,7 @@ final class IncrementalPoliticsRefreshTest {
                 sectorMock,
                 HolderGrouping.identity());
 
-            var holdingMock = openSeam(HolderPass.class);
+            var holdingMock = seams.openSeam(HolderPass.class);
             holdingMock
                 .when(() -> HolderPass.readFromLunaSettings(any(), any(HolderGrouping.class)))
                 .thenReturn(batchHolding);
@@ -908,14 +904,6 @@ final class IncrementalPoliticsRefreshTest {
             anchorsMock.verifyNoInteractions();
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(STANDING_FIT);
-        }
-
-        // Opens a static seam and registers it for closing, so a case names what it needs
-        // rather than repeating the open-and-remember pair for each.
-        private <T> MockedStatic<T> openSeam(Class<T> seamType) {
-            MockedStatic<T> staticMock = mockStatic(seamType);
-            openStaticSeams.add(staticMock);
-            return staticMock;
         }
 
         // What the re-derive answers for one system this pass. Every case stubs the systems

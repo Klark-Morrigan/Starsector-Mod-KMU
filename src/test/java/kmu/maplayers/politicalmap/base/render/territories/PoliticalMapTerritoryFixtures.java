@@ -7,6 +7,7 @@ import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
+import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
@@ -15,6 +16,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import java.awt.Color;
@@ -195,6 +197,22 @@ public final class PoliticalMapTerritoryFixtures {
             categories.put(category, style);
         }
         return new RenderStyle(ThemeFixtures.createInertGlobalStyle(), categories);
+    }
+
+    /**
+     * The bundle {@link #createRenderStyleForEveryCategory} is almost always handed: one element
+     * style in every slot, at the primary palette shade and full weight.
+     *
+     * <p>Paired with {@code ThemeFixtures.createInertGlobalStyle} rather than left to each suite,
+     * because a bundle whose slots differed between suites would let two tests of the same build
+     * disagree over which slot a difference came from.
+     *
+     * @return a live bundle painting fill, border and seam alike
+     */
+    public static CategoryStyle createInertCategoryStyle() {
+
+        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0);
+        return new CategoryStyle(element, element, 1.0, element, 1.0);
     }
 
     /**

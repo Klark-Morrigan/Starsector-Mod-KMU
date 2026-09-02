@@ -10,44 +10,25 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.base.theme.CategoryStyle;
-import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.render.ribbon.RibbonSettingsFixtures;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
-import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuMapLayerSettings;
-import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
-import kmu.settings.KmuPoliticalMapGeometrySettings;
-import kmu.settings.KmuPoliticalMapRibbonSettings;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -100,10 +81,6 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     private static final int HOLDING_COLONY_SIZE = 5;
     private static final int RIVAL_COLONY_SIZE = 3;
 
-    // The cells' seed knobs, wide enough that a cell holds a band clear of its own inset border.
-    private static final int CELL_BOUND_SEGMENTS = 16;
-    private static final double CELL_RADIUS = 4000.0;
-
     // The dev reveal lifted, for the case that flips a rule between two rebuilds: it admits an
     // undiscovered colony, which moves the drawn set, the fills and the counts together.
     private static final MapVisibilityRules UNDISCOVERED_REVEALED = new MapVisibilityRules(
@@ -113,10 +90,6 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // Comfortably past the motion tracker's one-unit noise floor, so a staged drift is unambiguous
     // motion rather than something that could read as float jitter.
     private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
-
-    // Closed in reverse on the way out, so a seam opened over another is never left standing when
-    // the inner one is already gone.
-    private final List<MockedStatic<?>> openStaticSeams = new ArrayList<>();
 
     // A second sector's machinery, standing beside the one the cache under test is built against.
     // Its own sector reaches nothing here - what a case wants of it is its tracker, so that a claim
@@ -128,71 +101,21 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // which is the sector its rebuild reads, and so has to exist before the installation does.
     private MapLayerInstallation installation;
 
-    private MockedStatic<Global> globalMock;
-    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
+    private PoliticalMapRebuildSeams seams;
 
     @BeforeEach
     void openSeams() {
 
-        globalMock = openSeam(Global.class);
-        globalMock
-            .when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(Logger.getLogger(PoliticalMapRebuildWalkIntegrationTest.class));
+        seams = PoliticalMapRebuildSeams.openEverySeamARebuildNeeds();
 
-        // The dev reveal and the anchor tuning, both LunaLib-backed: no case turns on either, so
-        // the seam's own answers stand for them.
-        openSeam(KmuMapLayerSettings.class);
-        openSeam(KmuLunaSettings.class);
-
-        // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
-        // no test JVM has.
-        openSeam(FilterSelection.class);
-
-        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(openSeam(KmuPoliticalMapRibbonSettings.class));
-        openSeam(KmuPoliticalMapDiagnosticsSettings.class);
-
-        var settingsMock = openSeam(KmuPoliticalMapGeometrySettings.class);
-        settingsMock
-            .when(KmuPoliticalMapGeometrySettings::getPoliticalMapCellBoundSegments)
-            .thenReturn(CELL_BOUND_SEGMENTS);
-        settingsMock
-            .when(KmuPoliticalMapGeometrySettings::getPoliticalMapCellRadius)
-            .thenReturn(CELL_RADIUS);
-
-        visibilityRulesMock = openSeam(MapVisibilityRules.class);
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
-
-        // The weighting rule the fills and the bands are both resolved under, read live off
-        // LunaLib in production - left to the settings seam it would weigh every colony at
-        // nothing and leave the sector unheld.
-        var rulesMock = openSeam(DominanceRules.class);
-        rulesMock
-            .when(DominanceRules::readFromLunaSettings)
-            .thenReturn(SectorPoliticsFixtures.buildStabilityWeightedRules());
-
-        var renderStyleMock = openSeam(RenderStyleReader.class);
-        renderStyleMock
-            .when(RenderStyleReader::readRenderStyle)
-            .thenReturn(PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(
-                buildInertCategoryStyle()));
-
-        // The names off, which keeps the label mint and the anchor fit off a rebuild that has no
-        // font to measure with; the choice is sector-memory state as well.
-        var nameFormatMock = openSeam(NameFormatPreference.class);
-        nameFormatMock
-            .when(NameFormatPreference::getSelectedNameFormat)
-            .thenReturn(FactionNameFormatChoice.NONE);
+        // The one seam this suite wants answered differently: the bands on at sizes that draw, so a
+        // contested system's cell carries runs and the bake has a reason to ask who lives there.
+        RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(seams.resolveRibbonSettingsSeam());
     }
 
     @AfterEach
     void closeSeams() {
-
-        for (var index = openStaticSeams.size() - 1; index >= 0; index--) {
-            openStaticSeams.get(index).close();
-        }
-        openStaticSeams.clear();
+        seams.closeEverySeam();
     }
 
     @Nested
@@ -239,7 +162,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             runOneRebuild();
 
-            visibilityRulesMock.verify(MapVisibilityRules::readFromLunaSettings, times(1));
+            seams.resolveVisibilityRulesSeam().verify(MapVisibilityRules::readFromLunaSettings, times(1));
         }
 
         @Test
@@ -269,7 +192,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             var cache = new PoliticalMapCache(installation);
 
             cache.refresh(FactionsView.INSTANCE);
-            visibilityRulesMock
+            seams.resolveVisibilityRulesSeam()
                 .when(MapVisibilityRules::readFromLunaSettings)
                 .thenReturn(UNDISCOVERED_REVEALED);
             requestTheNextRebuild();
@@ -444,7 +367,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
         installation = new MapLayerInstallation(sector);
 
-        globalMock
+        seams.resolveGlobalSeam()
             .when(Global::getSector)
             .thenReturn(sector);
 
@@ -465,7 +388,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
                 SectorPoliticsFixtures.buildVisibleMarket(tritachyon, HOLDING_COLONY_SIZE)));
 
         SectorPoliticsFixtures.placeEverySystemInHyperspace(runningSector);
-        globalMock
+        seams.resolveGlobalSeam()
             .when(Global::getSector)
             .thenReturn(runningSector);
     }
@@ -489,23 +412,5 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     @FunctionalInterface
     private interface ColonyStaging {
         MarketAPI stageColony(FactionAPI faction, int size);
-    }
-
-    // One style bundle for every category: nothing here turns on how a cell paints, only on what
-    // the rebuild read before it painted anything.
-    private static CategoryStyle buildInertCategoryStyle() {
-
-        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0);
-        return new CategoryStyle(element, element, 1.0, element, 1.0);
-    }
-
-    // Opens a static seam and registers it for closing, so a case names what it needs rather than
-    // repeating the open-and-remember pair for each.
-    private <T> MockedStatic<T> openSeam(Class<T> seamedClass) {
-
-        var seamMock = mockStatic(seamedClass);
-        openStaticSeams.add(seamMock);
-
-        return seamMock;
     }
 }
