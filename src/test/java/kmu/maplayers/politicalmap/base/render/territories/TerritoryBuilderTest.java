@@ -6,8 +6,6 @@ import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.base.theme.CategoryStyle;
-import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
@@ -15,7 +13,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
-import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -31,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createInertCategoryStyle;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,7 +92,7 @@ final class TerritoryBuilderTest {
             });
         styleReaderMock
             .when(RenderStyleReader::readRenderStyle)
-            .thenReturn(createRenderStyleForEveryCategory(buildInertCategoryStyle()));
+            .thenReturn(createRenderStyleForEveryCategory(createInertCategoryStyle()));
         factionColoursMock
             .when(() -> StarsectorFactionColours.resolveNeutralColour(any()))
             .thenReturn(NEUTRAL);
@@ -117,14 +115,6 @@ final class TerritoryBuilderTest {
         filteredPoliticsMock.close();
         inhabitationMock.close();
         filterSelectionMock.close();
-    }
-
-    // One style bundle for every category: nothing here turns on how a cell paints, only on what
-    // the build read before it painted anything.
-    private static CategoryStyle buildInertCategoryStyle() {
-
-        var element = new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0);
-        return new CategoryStyle(element, element, 1.0, element, 1.0);
     }
 
     @Nested

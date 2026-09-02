@@ -39,9 +39,9 @@ final class StaticSeams {
      */
     <T> MockedStatic<T> openSeam(Class<T> seamedClass) {
 
-        var seam = mockStatic(seamedClass);
-        openSeams.add(seam);
+        var seamMock = mockStatic(seamedClass);
+        openSeams.add(seamMock);
 
-        return seam;
+        return seamMock;
     }
 }

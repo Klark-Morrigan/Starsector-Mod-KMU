@@ -17,8 +17,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,7 +34,6 @@ import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.match
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what a drained batch reads back into the built map, and what it records that as having
@@ -280,14 +277,6 @@ final class MarkedSystemRederiveTest {
                 any(HolderPass.class),
                 eq(SPOTLIT_BLOC),
                 eq(Set.of())));
-        }
-
-        // Opens a static seam and registers it for closing, so a case names what it needs rather
-        // than repeating the open-and-remember pair for each.
-        private <T> MockedStatic<T> seams.openSeam(Class<T> seamType) {
-            MockedStatic<T> staticMock = mockStatic(seamType);
-            openStaticSeams.add(staticMock);
-            return staticMock;
         }
 
         // Runs the re-derive over the two-cell geometry every case shares.

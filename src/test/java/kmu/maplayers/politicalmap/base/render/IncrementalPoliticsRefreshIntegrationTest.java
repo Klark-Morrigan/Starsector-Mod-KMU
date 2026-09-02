@@ -49,7 +49,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +61,6 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -510,14 +508,6 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         private void placeColoniesIn(String systemId, MarketAPI... marketMocks) {
             when(economyMock.getMarkets(systemMocksById.get(systemId)))
                 .thenReturn(List.of(marketMocks));
-        }
-
-        // Opens a static seam and registers it for closing, so a case names what it needs rather
-        // than repeating the open-and-remember pair for each.
-        private <T> MockedStatic<T> seams.openSeam(Class<T> seamType) {
-            MockedStatic<T> staticMock = mockStatic(seamType);
-            openStaticSeams.add(staticMock);
-            return staticMock;
         }
     }
 
