@@ -161,6 +161,20 @@ habitation projection whichever mechanic paints the map. It is stated as a capab
 into, `SizedBlocMetrics`, and its mode is asked for from `SharedBlocSortModes` rather than declared
 twice.
 
+Where a bloc stands with the player is not a metric at all. It is read off the sector rather than
+folded over systems, it is the same fact under every view, and a bloc is one faction or several - so
+it is a *range*, the lowest and the highest of its members' standings, with each end in the shade the
+game itself paints that relation. `BlocStanding` names the three positions a bloc can hold: measured
+between those two ends, the player's own bloc - the point the scale is measured from, so it holds the
+top of it and draws no number - and unreadable, a bloc whose every member is an id the sector cannot
+look up, which belongs past everything that was read rather than ranked as though it were neutral.
+Sealed over the three, because the two that draw nothing sit at opposite ends and one value standing
+for both would have to be asked a second question to learn which end it meant. `BlocStandingReader`
+is the fold: it recognises the player's own bloc through the painting grouping - so a player faction
+inside an alliance is recognised as that alliance - and otherwise folds the membership that grouping
+names, passing over any member the sector cannot answer for. Its sector reads sit behind one seam, so
+the fold is arithmetic over hand-built standings.
+
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
 faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what
