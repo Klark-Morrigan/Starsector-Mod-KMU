@@ -9,6 +9,7 @@ import kmlib.starsector.ui.widgets.lists.ListPickerStore;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
+import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.util.KmuStrings;
 
@@ -27,6 +28,12 @@ import java.util.List;
  * unscoped - a layout preference over a list means the same thing under every scope. A layer that
  * composed the picker itself would have to name all three, which is exactly the knowledge the
  * binders exist to hold.
+ *
+ * <p>The row the pointer rests on routes the same way, into {@link FilterHoverSlot} under that same
+ * scope, and it is the one report that neither persists nor raises: a hover is a preview over paint
+ * already on the map. It is why the sector arrives as its whole {@link MapLayerInstallation} rather
+ * than as the board alone - the slot and the board are both that sector's, and handed over side by
+ * side they would be two chances to name two sectors.
  *
  * <p>It is also where the wildcard a layer's picker travels under is captured, once for the mod
  * rather than in each layer: every picker-owning layer would otherwise write the same capture
@@ -49,16 +56,15 @@ public final class FilterSelectionBinder {
      * rather than passed in - resolving it needs the vocabulary, which only arrives inside the
      * bundle.
      *
-     * @param scopeId          the scope a pick or clear is read from and written into, so the
-     *                         choice is remembered against this scope alone
+     * @param scopeId          the scope a pick, clear or hover is read from and written into, so
+     *                         the choice is remembered against this scope alone
      * @param picker           the layer's selectable items and the vocabulary that ranks them
      * @param columns          how many columns the item list wraps its rows across
      * @param trailingControls the controls filling the right half of the sort row; empty leaves the
      *                         sort selector alone on the row
-     * @param board            the refresh board of the sector this picker was built for, carried
-     *                         into the item picks so a spotlight change repaints that sector's map
-     * @param hoverSlot        the hover slot of that same sector, told which row the pointer is on
-     *                         so a layer can preview what picking it would spotlight
+     * @param installation     the machinery of the sector this picker was built over, holding both
+     *                         the board an item pick repaints through and the slot a hovered row is
+     *                         previewed from
      * @return the picker controls, top to bottom; empty when the picker offers no items
      */
     public static List<ControlSpec> buildPicker(
@@ -66,10 +72,9 @@ public final class FilterSelectionBinder {
             ListPicker<?> picker,
             ListColumns columns,
             List<ControlSpec> trailingControls,
-            MapLayerRefreshBoard board,
-            FilterHoverSlot hoverSlot) {
+            MapLayerInstallation installation) {
 
-        return buildCapturedPicker(scopeId, picker, columns, trailingControls, board, hoverSlot);
+        return buildCapturedPicker(scopeId, picker, columns, trailingControls, installation);
     }
 
     // The picker built under a captured item type, which is what lets the items and their
@@ -84,8 +89,7 @@ public final class FilterSelectionBinder {
             ListPicker<T> picker,
             ListColumns columns,
             List<ControlSpec> trailingControls,
-            MapLayerRefreshBoard board,
-            FilterHoverSlot hoverSlot) {
+            MapLayerInstallation installation) {
 
         if (picker.items().isEmpty()) {
             return List.of();
@@ -104,13 +108,23 @@ public final class FilterSelectionBinder {
             activePicks,
             KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,
-            new ScopedPickerStore(scopeId, board, hoverSlot));
+            // Both writers taken off the one installation here, rather than resolved when a pick or
+            // a hover lands: a build runs while the sector is live, where a report can arrive after
+            // a load has disposed it - and asking a disposed installation for machinery makes a
+            // second copy that answers for a sector nothing draws and is never released.
+            new ScopedPickerStore(
+                scopeId,
+                installation.resolveRefreshBoard(),
+                FilterHoverSlot.resolveHoverSlotIn(installation)));
     }
 
     // The slots one picker writes into, bound to the scope its item and sort picks belong to, to the
     // board its item picks repaint through, and to the hover slot its pointer reports into. A value
     // rather than loose callbacks so the three are captured once, where they are read, rather than
     // threaded into each write separately.
+    //
+    // The board and the slot are derived from one installation rather than handed over side by
+    // side, so no caller can pair one sector's board with another sector's hover.
     private record ScopedPickerStore(
         String scopeId,
         MapLayerRefreshBoard board,

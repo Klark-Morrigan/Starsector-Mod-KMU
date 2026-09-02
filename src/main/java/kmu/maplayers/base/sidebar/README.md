@@ -345,6 +345,14 @@ the picker itself would have to name all three slots, which is exactly the knowl
 exist to hold, so a calling layer hands over its `ListPicker`, its column count, and whatever it
 pairs beside the sort selector, and names no store at all.
 
+The sector arrives as the whole `MapLayerInstallation` rather than as the refresh board alone,
+because two of those writers are that sector's: the board an item pick repaints through, and the
+hover slot a previewed row is recorded in. Handed over side by side they would be two chances to
+pair one sector's board with another's slot; derived from one installation at the build they cannot
+disagree. Both are taken *at the build* rather than when a report lands, since a build runs while
+the sector is live and a report can arrive after a load has disposed it - and asking a disposed
+installation for machinery quietly makes a second copy that answers for a sector nothing draws.
+
 The picker arrives wildcarded (`ListPicker<?>`), because what a layer ranks its rows by is that
 layer's own, and this is where the wildcard is captured - once for the mod, rather than in each
 layer, since the capture needs both the selection slot and the sort binder to finish the job. The
