@@ -2,13 +2,18 @@ package kmu.maplayers.base.layer;
 
 /**
  * A screen's show-or-hide pick as the rest of the mod reads it: honoured only while that screen has a
- * control able to take a hide back, and read as shown until it has one.
+ * control able to take a hide back, and read as shown whenever it has none.
  *
  * <p>What makes that rule necessary is where the control comes from: it is a decoration on chrome this
  * mod does not own, so whether a screen gets one is settled afresh each session and can be settled no.
  * Without the rule, a player who hid the layers in a session that had a control would be left, in one
  * that does not, with the feature switched off and nothing on screen to switch it back on -
  * recoverable only by editing a save.
+ *
+ * <p>Not having one is the state a screen can return to, rather than only start in. The reach can fail
+ * from the outset, the player can close the switch that permits it mid-session, and a campaign can be
+ * unloaded out from under screens that outlive it - so the word travels in both directions, and every
+ * way of losing a control has to reach {@link #forgetControlAttached()}.
  *
  * <p>The stored pick itself is never touched by the rule. Hiding is still the player's choice, kept as
  * they left it and honoured again the moment a control exists to reverse it - so a session that could
