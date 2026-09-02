@@ -596,7 +596,9 @@ about what the overlay means.
   and moving that screen's show-or-hide pick. So hiding the layers - the sidebar with them - is
   where a player already looks for "show or hide this map furniture". `MapLayerToggleUpkeep` is the
   standing pass that keeps the box on whichever row is up, the game rebuilding its row on every
-  open; `MapLayerToggleAttacher` is the write, held behind a seam because standing a control on
+  open - stood up per sector by `MapChromeInstaller` behind the feature switch the rest of the
+  overlay is behind, and transient like the rest of it, two passes being two boxes over one pick;
+  `MapLayerToggleAttacher` is the write, held behind a seam because standing a control on
   another party's widget is a reach into the running game's tree, and
   `VanillaMapLayerToggleAttacher` is that reach, over KMLib's `MapFilterToggle`. Everything here
   fails open - no row, no room, a shape that no longer builds a drivable button, a read that throws

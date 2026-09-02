@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
@@ -184,19 +185,27 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         SidebarInstaller.installAll(sector);
         MapHoverInstaller.installAll(sector);
+
+        // Last, and waited on by none of the above: the control it maintains goes on the game's own
+        // filter row rather than on anything this mod draws, and the pick it moves is held apart
+        // from the sector. It is also the only thing that says a screen has a control able to
+        // reverse a hide, so it has to be stood up wherever the layers are - which is here, rather
+        // than beside the sidebar it can switch off.
+        MapChromeInstaller.installAll(sector);
     }
 
-    // Everything those four stand up, taken back. All of them and not only the surfaces: across a
+    // Everything those five stand up, taken back. All of them and not only the surfaces: across a
     // load their listeners and scripts would be gone by themselves, being transient, but a player
     // switching the overlay off mid-campaign is still running every one of them.
     static void uninstallMapLayers(SectorAPI sector) {
 
+        MapChromeInstaller.uninstallAll(sector);
         MapHoverInstaller.uninstallAll(sector);
         SidebarInstaller.uninstallAll(sector);
         MapSurfaceInstaller.uninstallAll(sector);
         PoliticalMapInstaller.uninstallAll(sector);
 
-        // Last, mirroring the install: the four above are taken back through the state this holds,
+        // Last, mirroring the install: the five above are taken back through the state this holds,
         // so releasing it first would leave them undoing their work against nothing. Reached with a
         // sector nothing was ever installed on too, since a load with the overlay switched off
         // takes it back rather than declining to stand it up.

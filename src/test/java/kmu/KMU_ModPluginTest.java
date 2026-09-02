@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.MapLayers;
+import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
@@ -203,6 +204,8 @@ class KMU_ModPluginTest {
             mockStatic(SidebarInstaller.class);
         private final MockedStatic<MapHoverInstaller> hoverMock =
             mockStatic(MapHoverInstaller.class);
+        private final MockedStatic<MapChromeInstaller> chromeMock =
+            mockStatic(MapChromeInstaller.class);
 
         // Each half of the composition is listed once, with how often it was expected handed in.
         // A second copy of either list per expectation is how an entry comes to be asserted on in
@@ -216,6 +219,7 @@ class KMU_ModPluginTest {
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
             hoverMock.verify(() -> MapHoverInstaller.installAll(sector), howOften);
+            chromeMock.verify(() -> MapChromeInstaller.installAll(sector), howOften);
         }
 
         private void verifyEveryTakeBackFor(SectorAPI sector, VerificationMode howOften) {
@@ -226,11 +230,13 @@ class KMU_ModPluginTest {
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), howOften);
             hoverMock.verify(() -> MapHoverInstaller.uninstallAll(sector), howOften);
+            chromeMock.verify(() -> MapChromeInstaller.uninstallAll(sector), howOften);
         }
 
         @Override
         public void close() {
 
+            chromeMock.close();
             hoverMock.close();
             sidebarMock.close();
             surfaceMock.close();
