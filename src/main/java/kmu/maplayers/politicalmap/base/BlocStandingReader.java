@@ -184,10 +184,10 @@ public final class BlocStandingReader {
         @Override
         public Optional<String> resolveEstablishedPlayerFactionId() {
 
-            // Whether an identity has been finalised is asked of the running game, KMLib offering
-            // no sector-bound form of the test. Which faction it is comes off the handed-in sector,
-            // so the standings measured from it are that sector's own.
-            if (!StarsectorPlayerFactionResolver.isPlayerFactionEstablished()) {
+            // Both halves are asked of the handed-in sector - whether an identity is finalised
+            // there, and which faction holds it - so a map drawn over a second sector recognises
+            // that sector's player rather than the running game's.
+            if (!StarsectorPlayerFactionResolver.isPlayerFactionEstablished(sector)) {
                 return Optional.empty();
             }
             var playerFaction = sector.getPlayerFaction();
