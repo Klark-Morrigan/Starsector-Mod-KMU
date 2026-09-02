@@ -189,6 +189,13 @@ def obfJars = fileTree(dir: "${starsectorRoot}/starsector-core",
 // state no screen is ever in. Located by jar name since the install folder is version-stamped.
 def magicLibJars = findModJars('MagicLib.jar')
 
+// That bypass is written in Kotlin, so its class initialiser calls into the Kotlin runtime LazyLib
+// ships beside its own jar. In game the classloader has both loaded; under test the class fails to
+// initialise without it, which surfaces as a NoClassDefFoundError on kotlin/jvm/internal/Intrinsics
+// from whatever first walked the widget tree. Test runtime only, like the jar it serves.
+def lazyLibKotlinRuntimeJarFile = file(
+    "${starsectorRoot}/mods/lw_lazylib/jars/internal/Kotlin-Runtime.jar")
+
 // LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
 // The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
 // needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
@@ -227,6 +234,7 @@ dependencies {
     testRuntimeOnly testFixtures(kmlibDependency)
     testRuntimeOnly files(lazyLibJarFile)
     testRuntimeOnly magicLibJars
+    testRuntimeOnly files(lazyLibKotlinRuntimeJarFile)
 
     // The utils tooling needs the same jars at RUNTIME as well as to compile, for the same
     // reason the tests do: compileOnly is enough for the mod itself because Starsector's mod
