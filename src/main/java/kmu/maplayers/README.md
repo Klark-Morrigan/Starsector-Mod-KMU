@@ -231,9 +231,7 @@ about what the overlay means.
   switched over since the mod targets Java 17. `ObservationRecency.resolveRecency` is the one place
   a live reading is ranked above a record and a record above nothing. `RevealedFact` pairs that
   state with the value an axis conceals, where it conceals one; a fact nobody ever established
-  cannot be built holding a value, so the words for an unknown are the reader's to supply. What
-  counts as observing something, and what a stored observation means, stay with the family that
-  owns them - nothing here knows what any of them are about.
+  cannot be built holding a value, so the words for an unknown are the reader's to supply.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and

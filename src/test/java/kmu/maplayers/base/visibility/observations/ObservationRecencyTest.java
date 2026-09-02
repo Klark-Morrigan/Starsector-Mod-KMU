@@ -28,6 +28,15 @@ final class ObservationRecencyTest {
     private static final String RECALLED_ANSWER = "recalled";
     private static final String NEVER_OBSERVED_ANSWER = "never observed";
 
+    // Which arm a state reaches, named, so a fold landing in the wrong one says which one it was.
+    private static String foldToAnswer(ObservationRecency recency) {
+
+        return recency.selectByCase(
+            () -> OBSERVED_NOW_ANSWER,
+            recalled -> RECALLED_ANSWER,
+            () -> NEVER_OBSERVED_ANSWER);
+    }
+
     @Nested
     class ResolveRecency {
 
@@ -38,6 +47,16 @@ final class ObservationRecencyTest {
             var recency = ObservationRecency.resolveRecency(
                 SOMETHING_IS_LOOKING,
                 Optional.of(new RecalledObservation(Optional.of(OBSERVED_AT))));
+
+            assertThat(recency)
+                .isEqualTo(ObservationRecency.OBSERVED_NOW);
+        }
+
+        @Test
+        void reports_a_fact_being_revealed_now_where_the_record_holds_nothing() {
+            // A first sighting: the live reading is the whole of the news, and a rule that reached
+            // for the record first would call it unobserved while somebody was looking at it.
+            var recency = ObservationRecency.resolveRecency(SOMETHING_IS_LOOKING, Optional.empty());
 
             assertThat(recency)
                 .isEqualTo(ObservationRecency.OBSERVED_NOW);
@@ -114,14 +133,5 @@ final class ObservationRecencyTest {
             assertThat(new RecalledObservation(null).observedTimestamp())
                 .isEmpty();
         }
-    }
-
-    // Which arm a state reaches, named, so a fold landing in the wrong one says which one it was.
-    private static String foldToAnswer(ObservationRecency recency) {
-
-        return recency.selectByCase(
-            () -> OBSERVED_NOW_ANSWER,
-            recalled -> RECALLED_ANSWER,
-            () -> NEVER_OBSERVED_ANSWER);
     }
 }

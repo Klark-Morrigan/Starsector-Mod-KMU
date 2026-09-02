@@ -10,13 +10,17 @@ import java.util.Optional;
  * age of somebody's news.
  *
  * <p>{@link ObservationRecency} answers only how old the news is. Where the concealed thing is a
- * value - who holds a place, who is stationed there - that value has to travel with the state
- * saying whether it may be stated at all. Kept apart, a reader would join a value to a moment
- * nothing had ever joined, and state this morning's holder beside last cycle's date.
+ * value - a place's owner, the force posted at it - that value has to travel with the state saying
+ * whether it may be stated at all. Kept apart, a reader would join a value to a moment nothing had
+ * ever joined, and state this morning's owner beside last cycle's date.
  *
  * <p>The two are separate types rather than one carrying a payload nobody reads, because an axis
  * concealing nothing but the age of its own news is common enough to be worth not paying for: it
  * spends the bare state, and a value rides on top only where a family conceals one.
+ *
+ * <p>Which of the three a fact is in is still settled by
+ * {@link ObservationRecency#resolveRecency}, folded into one of the factories below. Branching to
+ * them directly would be a second copy of the order a live reading, a record and nothing stand in.
  *
  * <p>A fact nothing has ever established cannot be built holding a value, so a reader is made to
  * decide what to say in its place - the "unknown" wording each family supplies - rather than being

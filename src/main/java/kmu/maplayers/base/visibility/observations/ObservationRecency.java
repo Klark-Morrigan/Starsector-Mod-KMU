@@ -13,10 +13,6 @@ import java.util.function.Supplier;
  * construction - and a fact never observed has no date to be stale, being absent rather than old.
  * Only the recalled state carries a moment, so neither of the other two has a field to get wrong.
  *
- * <p>Sealed rather than stated as one record carrying a flag, because the three differ in what they
- * hold rather than in a setting. One value standing for all of them would have to be asked a second
- * question to learn which it was, and nothing would keep the two answers agreeing.
- *
  * <p>What the fact <em>states</em> rides on top of this rather than inside it, in
  * {@link RevealedFact}: whether a date is due is one question, and what is being dated is another.
  * An axis concealing nothing but the age of its own news spends this alone.

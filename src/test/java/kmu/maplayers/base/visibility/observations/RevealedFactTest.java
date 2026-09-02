@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 final class RevealedFactTest {
 
     private static final long OBSERVED_AT = 4_200L;
-    private static final String HOLDER = "hegemony";
-    private static final String OTHER_HOLDER = "tritachyon";
+    private static final String OWNER = "hegemony";
+    private static final String OTHER_OWNER = "tritachyon";
 
     private static final RecalledObservation RECORDED_OBSERVATION =
         new RecalledObservation(Optional.of(OBSERVED_AT));
@@ -45,12 +45,12 @@ final class RevealedFactTest {
         @Test
         void states_what_the_live_reading_says_and_is_due_no_date() {
 
-            var fact = RevealedFact.createObservedNowFact(HOLDER);
+            var fact = RevealedFact.createObservedNowFact(OWNER);
 
             assertThat(fact.readRecency())
                 .isEqualTo(ObservationRecency.OBSERVED_NOW);
             assertThat(fact.resolveValue())
-                .contains(HOLDER);
+                .contains(OWNER);
         }
 
         @Test
@@ -68,12 +68,12 @@ final class RevealedFactTest {
         @Test
         void states_what_was_recorded_and_the_observation_it_came_from() {
 
-            var fact = RevealedFact.createRecalledFact(RECORDED_OBSERVATION, HOLDER);
+            var fact = RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER);
 
             assertThat(fact.readRecency())
                 .isEqualTo(new RecalledObservation(Optional.of(OBSERVED_AT)));
             assertThat(fact.resolveValue())
-                .contains(HOLDER);
+                .contains(OWNER);
         }
 
         @Test
@@ -81,7 +81,7 @@ final class RevealedFactTest {
             // What is recalled and when it was seen are one event. A value with no observation
             // behind it is a claim about the world nothing ever made.
             assertThatNullPointerException()
-                .isThrownBy(() -> RevealedFact.createRecalledFact(null, HOLDER));
+                .isThrownBy(() -> RevealedFact.createRecalledFact(null, OWNER));
         }
 
         @Test
@@ -99,10 +99,10 @@ final class RevealedFactTest {
             // The invariant the placeholder wording hangs off: exactly one of the three answers
             // empty, so a reader that handles the empty case has handled the only case with no
             // value in it.
-            assertThat(RevealedFact.createObservedNowFact(HOLDER).resolveValue())
-                .contains(HOLDER);
-            assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, HOLDER).resolveValue())
-                .contains(HOLDER);
+            assertThat(RevealedFact.createObservedNowFact(OWNER).resolveValue())
+                .contains(OWNER);
+            assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER).resolveValue())
+                .contains(OWNER);
             assertThat(RevealedFact.createNeverObservedFact().resolveValue())
                 .isEmpty();
         }
@@ -114,23 +114,35 @@ final class RevealedFactTest {
         @Test
         void reports_facts_alike_where_the_state_and_the_value_agree() {
 
-            assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, HOLDER))
-                .isEqualTo(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, HOLDER));
+            assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER))
+                .isEqualTo(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER));
         }
 
         @Test
         void reports_facts_apart_where_they_state_different_things() {
 
-            assertThat(RevealedFact.createObservedNowFact(HOLDER))
-                .isNotEqualTo(RevealedFact.createObservedNowFact(OTHER_HOLDER));
+            assertThat(RevealedFact.createObservedNowFact(OWNER))
+                .isNotEqualTo(RevealedFact.createObservedNowFact(OTHER_OWNER));
         }
 
         @Test
         void reports_facts_apart_where_the_same_value_reached_them_by_different_routes() {
-            // The same holder seen now and recalled from a record are different news, and a reader
+            // The same owner seen now and recalled from a record are different news, and a reader
             // caching by value alone would otherwise drop the date off one of them.
-            assertThat(RevealedFact.createObservedNowFact(HOLDER))
-                .isNotEqualTo(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, HOLDER));
+            assertThat(RevealedFact.createObservedNowFact(OWNER))
+                .isNotEqualTo(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER));
+        }
+    }
+
+    @Nested
+    class HashCode {
+
+        @Test
+        void reports_one_hash_for_facts_that_are_alike() {
+            // Hand-written beside a hand-written equals, so the pair can drift: a hash reading
+            // fewer fields than the comparison sends alike facts to different buckets.
+            assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER).hashCode())
+                .isEqualTo(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER).hashCode());
         }
     }
 }
