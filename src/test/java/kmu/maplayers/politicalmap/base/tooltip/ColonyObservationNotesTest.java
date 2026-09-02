@@ -26,6 +26,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static kmu.maplayers.politicalmap.base.tooltip.ColonyObservationFixture.OBSERVED_AT;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,12 +50,6 @@ final class ColonyObservationNotesTest {
     private static final String NEIGHBOUR_ID = "jangala";
     private static final String SYSTEM_ID = "kumari_kandam";
 
-    // When the observation the cases read was made, and the date the clock reports for it. The
-    // elapsed span is stubbed apart from the stamp, that being what the game's own clock does with
-    // it - so a case states the span it is about rather than arithmetic over two timestamps.
-    private static final long OBSERVED_AT = 4_200L;
-    private static final String OBSERVED_DATE = "c206.05.12";
-
     private CampaignClockAPI clockMock;
     private SectorAPI sectorMock;
     private StarSystemAPI systemMock;
@@ -61,18 +57,11 @@ final class ColonyObservationNotesTest {
     @BeforeEach
     void openSector() {
 
-        clockMock = mock(CampaignClockAPI.class);
         sectorMock = mock(SectorAPI.class);
         systemMock = mock(StarSystemAPI.class);
 
-        var observedClockMock = mock(CampaignClockAPI.class);
+        clockMock = ColonyObservationFixture.installObservedClock(sectorMock);
 
-        when(observedClockMock.getDateString())
-            .thenReturn(OBSERVED_DATE);
-        when(clockMock.createClock(OBSERVED_AT))
-            .thenReturn(observedClockMock);
-        when(sectorMock.getClock())
-            .thenReturn(clockMock);
         when(systemMock.getId())
             .thenReturn(SYSTEM_ID);
 

@@ -6,26 +6,15 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
-import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
-import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
 
-import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -33,15 +22,16 @@ import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildStabilityWeightedRules;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
+import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.buildClaimBreakdownReaderOver;
+import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.buildDominanceBox;
+import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.readClaimSections;
+import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.readDominanceSections;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -80,38 +70,14 @@ final class DerelictReadoutIntegrationTest {
     // rather than for what it is, so the word the boxes call out cannot have come from the name.
     private static final String DERELICT_NAME = "Sentinel Gantries";
 
-    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
-    private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
-    private MockedStatic<DominanceRules> rulesMock;
-
     @BeforeEach
-    void installColoursAndTheSettingsSeams() {
-
-        CellTooltipPaletteFake.installPalette();
-
-        // The colony rule is a live LunaLib read, unreachable from the test JVM; stood in as the
-        // fog alone, which is the state each case is posed under - every market staged here is one
-        // the player has found.
-        visibilityRulesMock = Mockito.mockStatic(MapVisibilityRules.class);
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
-
-        rulesMock = Mockito.mockStatic(DominanceRules.class);
-        rulesMock
-            .when(DominanceRules::readFromLunaSettings)
-            .thenReturn(buildStabilityWeightedRules());
-
-        installFactionView();
+    void installBoxSeams() {
+        PoliticalMapBoxSeamsFake.installSeams();
     }
 
     @AfterEach
-    void clearColoursAndTheSettingsSeams() {
-
-        rulesMock.close();
-        viewRegistryMock.close();
-        visibilityRulesMock.close();
-        CellTooltipPaletteFake.clearPalette();
+    void clearBoxSeams() {
+        PoliticalMapBoxSeamsFake.clearSeams();
     }
 
     @Nested
@@ -139,9 +105,11 @@ final class DerelictReadoutIntegrationTest {
             // nothing beneath one and so never draws a colony's line at all.
             var sector = buildSectorHoldingANamedDerelict();
 
-            assertThat(readSpokenWords(readExpandedDominationSections(sector)))
+            var system = buildOnlySystem(sector);
+
+            assertThat(readSpokenWords(readDominanceSections(sector, system, PATROL_DETAILS)))
                 .contains(DERELICT_NAME, "abandoned");
-            assertThat(readSpokenWords(readExpandedClaimSections(sector)))
+            assertThat(readSpokenWords(readClaimSections(sector, system, PATROL_DETAILS)))
                 .contains(DERELICT_NAME, "abandoned");
         }
 
@@ -205,21 +173,6 @@ final class DerelictReadoutIntegrationTest {
         }
     }
 
-    // The active view, standing in for the tab the player is on: the plain faction view, whose
-    // identity grouping makes every faction its own bloc.
-    private void installFactionView() {
-
-        var viewMock = mock(PoliticalMapView.class);
-
-        when(viewMock.resolveGrouping())
-            .thenReturn(HolderGrouping.identity());
-
-        viewRegistryMock = Mockito.mockStatic(PoliticalMapViewRegistry.class);
-        viewRegistryMock
-            .when(PoliticalMapViewRegistry::getActiveView)
-            .thenReturn(viewMock);
-    }
-
     // The dominance box over the sector's one system, read top to bottom as the words a player
     // sees - the status line included, since what this suite is about is the pairing of that line
     // with the listing beneath it.
@@ -230,15 +183,14 @@ final class DerelictReadoutIntegrationTest {
     private static List<String> readDominationLabels(SectorAPI sector) {
 
         return readSectionOpeningWords(
-            new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-                .composeBody(sector, buildOnlySystem(sector), FACTIONS).blocks().readSections());
+            readDominanceSections(sector, buildOnlySystem(sector), FACTIONS));
     }
 
     // Whether the dominance box has anything deeper to state over the sector's one system, which is
     // what the key at its foot is offered for - read through the same box the labels above come from.
     private static boolean hasDominationDeeperDetail(SectorAPI sector) {
 
-        return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
+        return buildDominanceBox()
             .hasDeeperDetailFor(sector, buildOnlySystem(sector));
     }
 
@@ -246,9 +198,7 @@ final class DerelictReadoutIntegrationTest {
     // - a hand-built breakdown would assert the boundary by construction rather than testing it.
     private static SystemClaimBreakdown readClaimBreakdown(SectorAPI sector) {
 
-        var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
-
-        return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies())
+        return buildClaimBreakdownReaderOver(sector)
             .readBreakdown(buildOnlySystem(sector));
     }
 
@@ -306,27 +256,6 @@ final class DerelictReadoutIntegrationTest {
         stubFaction(sector, Factions.NEUTRAL, "Neutral", NO_CREST);
 
         return sector;
-    }
-
-    // The dominance box over the sector's one system read to its deepest level: the same contest the
-    // shallowest level states, opened down to the colonies each faction holds it with.
-    private static List<TooltipSection> readExpandedDominationSections(SectorAPI sector) {
-
-        return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity)
-            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).blocks().readSections();
-    }
-
-    // The claims box over the same system at that same depth, read through the real mechanic: a
-    // stubbed contest would hold whatever markets the stub was handed, and what the case turns on is
-    // the derelict reaching the list the way the game puts it there.
-    private static List<TooltipSection> readExpandedClaimSections(SectorAPI sector) {
-
-        var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
-
-        return new SystemClaimTooltip(
-                new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies()),
-                HolderGrouping::identity)
-            .composeBody(sector, buildOnlySystem(sector), PATROL_DETAILS).blocks().readSections();
     }
 
     // Every word the box says anywhere in it, in draw order. Read as a flat bag rather than by run

@@ -2,15 +2,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.testfixtures.starsector.systems.claims.ClaimBreakdownReaderFake;
-
-import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
@@ -20,8 +12,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
@@ -37,11 +27,10 @@ import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.buildInputsFor;
+import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.readDominanceSections;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubFaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the agreement on the faction and alliance views that the claims layer's own suite pins for
@@ -83,40 +72,14 @@ final class DominancePresenceReadoutIntegrationTest {
     private static final int COLONY_RUN = 3;
     private static final int PARTING_RUN = 1;
 
-    private MockedStatic<MapVisibilityRules> visibilityRulesMock;
-    private MockedStatic<PoliticalMapViewRegistry> viewRegistryMock;
-    private MockedStatic<DominanceRules> rulesMock;
-
     @BeforeEach
-    void installColoursAndTheSettingsSeams() {
-
-        CellTooltipPaletteFake.installPalette();
-
-        // The reveal is a live LunaLib read, unreachable from the test JVM; stood in as off, which
-        // is the state the case is posed under - both colonies here are ones the player has found.
-        visibilityRulesMock = Mockito.mockStatic(MapVisibilityRules.class);
-        visibilityRulesMock
-            .when(MapVisibilityRules::readFromLunaSettings)
-            .thenReturn(MapVisibilityRules.BASE);
-
-        // The weighting rule is the box's other live settings read, stood in as the shared
-        // stability-only rule the band beside it is planned under - the two have to weigh alike or
-        // the case would be comparing two different maps.
-        rulesMock = Mockito.mockStatic(DominanceRules.class);
-        rulesMock
-            .when(DominanceRules::readFromLunaSettings)
-            .thenReturn(buildStabilityWeightedRules());
-
-        installFactionView();
+    void installBoxSeams() {
+        PoliticalMapBoxSeamsFake.installSeams();
     }
 
     @AfterEach
-    void clearColoursAndTheSettingsSeams() {
-
-        rulesMock.close();
-        viewRegistryMock.close();
-        visibilityRulesMock.close();
-        CellTooltipPaletteFake.clearPalette();
+    void clearBoxSeams() {
+        PoliticalMapBoxSeamsFake.clearSeams();
     }
 
     @Nested
@@ -136,10 +99,7 @@ final class DominancePresenceReadoutIntegrationTest {
                     buildInputsFor(holding))
                 .planSystemRibbon(system);
 
-            var sections = new SystemDominationTooltip(
-                    new ClaimBreakdownReaderFake(),
-                    HolderGrouping::identity)
-                .composeBody(sector, system, FACTIONS).blocks().readSections();
+            var sections = readDominanceSections(sector, system, FACTIONS);
 
             assertThat(band.segments())
                 .containsExactly(
@@ -184,22 +144,6 @@ final class DominancePresenceReadoutIntegrationTest {
                 .statsByBlocId())
                 .containsOnlyKeys(HEGEMONY, TRITACHYON);
         }
-    }
-
-    // The active view, standing in for the tab the player is on: the plain faction view, whose
-    // identity grouping makes every faction its own bloc - the same grouping the band is counted
-    // under, so the two surfaces cannot fold the system's factions up differently.
-    private void installFactionView() {
-
-        var viewMock = mock(PoliticalMapView.class);
-
-        when(viewMock.resolveGrouping())
-            .thenReturn(HolderGrouping.identity());
-
-        viewRegistryMock = Mockito.mockStatic(PoliticalMapViewRegistry.class);
-        viewRegistryMock
-            .when(PoliticalMapViewRegistry::getActiveView)
-            .thenReturn(viewMock);
     }
 
     // The Galatia shape: a system one faction holds a registered colony in and another is present in
