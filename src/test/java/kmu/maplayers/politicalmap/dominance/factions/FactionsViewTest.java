@@ -5,11 +5,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.politicalmap.base.DominanceSortModes;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
@@ -395,10 +395,11 @@ final class FactionsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabulary() {
+        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
             // The view answers the list and the modes together, so the numbers its blocs carry and
             // the metrics the sort selector offers can never drift apart - this layer is painted by
-            // domination, so domination is what the picker ranks by.
+            // domination, so domination is what the picker ranks by. Behind them sits the standing
+            // ranking, which is not this layer's number but the one fact every view offers.
             var sectorMock = mock(SectorAPI.class);
 
             try (var aggregatorMock = mockStatic(DominanceStatsAggregator.class)) {
@@ -408,8 +409,11 @@ final class FactionsViewTest {
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .picker()
-                        .sortModes())
-                    .isEqualTo(DominanceSortModes.MODES);
+                        .sortModes()
+                        .modes())
+                    .extracting(ListSortMode::persistenceKey)
+                    .containsExactly(
+                        "name", "domination", "presence", "score", "market_size", "player_standing");
             }
         }
 

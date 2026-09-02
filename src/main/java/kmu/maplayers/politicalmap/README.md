@@ -187,6 +187,13 @@ relation's colour. The standing is read live at comparison and draw time: the pi
 against settings and grouping, not reputation, so a snapshot would hold the ranking still until some
 unrelated knob moved.
 
+It is offered from the shared assembly rather than from either vocabulary, which is the same boundary
+one layer up: a vocabulary declares the numbers its own fold computed, and the assembly is the one
+point every view's read passes through holding both the sector the standing is read off and the
+grouping a bloc's membership is named by. So each enum stays the layer's own half, the standing joins
+it behind those numbers on every view, and a save that stored it reopens on it whichever view is
+active - the key being one across all three, the way every other mode's survives a view switch.
+
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
 faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what

@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.ui.widgets.lists.ListSort;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -29,7 +31,8 @@ import static org.mockito.Mockito.when;
  * surviving one is turned into a row, and what rides beside those rows. The two concrete views pin
  * their own gates; this pins what the shared default owns whichever view calls it - the stats-walk
  * order, the crest read off the bloc's colour faction, a row surviving a crest that will not
- * resolve, the vocabulary and the whole walk's presence being carried through, and the metrics
+ * resolve, the caller's vocabulary composed with the shared standing mode, the whole walk's
+ * presence being carried through, and the metrics
  * riding through untouched whatever their type, which is what lets a layer ranked by other numbers
  * reuse the assembly.
  */
@@ -162,13 +165,65 @@ final class PoliticalMapViewTest {
         }
 
         @Test
-        void buildBlocPickerReadBundlesTheVocabularyItWasHanded() {
+        void buildBlocPickerReadOffersTheHandedVocabularyAheadOfTheStandingMode() {
             // The rows and the modes are bundled here rather than by each view, so a view states its
-            // vocabulary once and cannot end up handing its rows on beside another layer's.
+            // vocabulary once and cannot end up handing its rows on beside another layer's. The
+            // standing mode joins it here for the opposite reason: it reads one fact off the sector
+            // that is the same under every view, so neither vocabulary declares a copy of it.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
             assertThat(viewFake.buildBlocPickerRead(
                     mock(SectorAPI.class),
+                    HolderGrouping.identity(),
+                    BlocStatsReadFake.createRowsOnlyFake(Map.<String, DominanceStats>of()),
+                    DominanceSortModes.MODES)
+                .picker().sortModes().modes())
+                .extracting(ListSortMode::persistenceKey)
+                .containsExactly("name", "domination", "presence", "score", "market_size",
+                    "player_standing");
+        }
+
+        @Test
+        void buildBlocPickerReadKeepsTheHandedVocabularysOwnFallbackMode() {
+            // Appending a mode must not move what a fresh save opens on: the standing is a criterion
+            // the player picks, while the fallback stays the number the layer is painted by.
+            var viewFake = new PoliticalMapViewFake(Map.of());
+
+            assertThat(viewFake.buildBlocPickerRead(
+                    mock(SectorAPI.class),
+                    HolderGrouping.identity(),
+                    BlocStatsReadFake.createRowsOnlyFake(Map.<String, DominanceStats>of()),
+                    DominanceSortModes.MODES)
+                .picker().sortModes().defaultMode())
+                .isEqualTo(DominanceSortModes.DEFAULT);
+        }
+
+        @Test
+        void buildBlocPickerReadComposesAVocabularyAStoredStandingKeyResolvesAgainst() {
+            // A stored key is resolved against the vocabulary the picker carries, so a mode appended
+            // outside that set would leave a save that stored the standing ranking silently reopening
+            // on the layer's default.
+            var viewFake = new PoliticalMapViewFake(Map.of());
+
+            var offeredModes = viewFake.buildBlocPickerRead(
+                    mock(SectorAPI.class),
+                    HolderGrouping.identity(),
+                    BlocStatsReadFake.createRowsOnlyFake(Map.<String, DominanceStats>of()),
+                    DominanceSortModes.MODES)
+                .picker().sortModes();
+
+            assertThat(ListSort.resolveStored("player_standing", null, offeredModes).mode())
+                .isInstanceOf(BlocStandingSortMode.class);
+        }
+
+        @Test
+        void buildBlocPickerReadOffersNoStandingModeWithoutASectorToReadOneFrom() {
+            // A read over no sector lists nothing and has no relations behind it, so the vocabulary
+            // stands as its layer declared it rather than offering a ranking with nothing to rank by.
+            var viewFake = new PoliticalMapViewFake(Map.of());
+
+            assertThat(viewFake.buildBlocPickerRead(
+                    null,
                     HolderGrouping.identity(),
                     BlocStatsReadFake.createRowsOnlyFake(Map.<String, DominanceStats>of()),
                     DominanceSortModes.MODES)

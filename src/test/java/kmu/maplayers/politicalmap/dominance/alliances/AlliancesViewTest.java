@@ -10,11 +10,11 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.politicalmap.base.DominanceSortModes;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SelectableBloc;
@@ -470,11 +470,12 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabulary() {
+        void resolveBlocPickerReadRanksItsBlocsByTheDominanceVocabularyThenTheirStanding() {
             // This view's blocs are folded sets of factions, but they carry the same metrics a lone
             // faction's do, so it ranks by the same vocabulary the factions view offers. Asserted
             // per view rather than once on the shared assembly, since which vocabulary a view's rows
-            // can be read by is the view's own choice of what paints it.
+            // can be read by is the view's own choice of what paints it. The standing ranking behind
+            // them is not a choice - it reads one fact off the sector that holds under every view.
             var view = spy(AlliancesView.INSTANCE);
 
             doReturn(ALLIANCE_GROUPING)
@@ -489,8 +490,11 @@ final class AlliancesViewTest {
 
                 assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
                         .picker()
-                        .sortModes())
-                    .isEqualTo(DominanceSortModes.MODES);
+                        .sortModes()
+                        .modes())
+                    .extracting(ListSortMode::persistenceKey)
+                    .containsExactly(
+                        "name", "domination", "presence", "score", "market_size", "player_standing");
             }
         }
 

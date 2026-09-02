@@ -8,6 +8,7 @@ import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -523,10 +524,12 @@ final class ClaimsViewTest {
         }
 
         @Test
-        void resolveBlocPickerReadRanksItsBlocsByTheClaimVocabulary() {
+        void resolveBlocPickerReadRanksItsBlocsByTheClaimVocabularyThenTheirStanding() {
             // The view answers the list and the modes together, so the numbers its blocs carry and the
             // metrics the sort selector offers can never drift apart - this layer is painted by the
-            // claim mechanic, so claims is what the picker ranks by rather than domination.
+            // claim mechanic, so claims is what the picker ranks by rather than domination. The
+            // standing ranking behind them is the one criterion this view shares with the held ones,
+            // being read off the sector rather than off either mechanic's fold.
             var sectorMock = mock(SectorAPI.class);
 
             try (var aggregatorMock = mockStatic(ClaimStatsAggregator.class)) {
@@ -536,8 +539,10 @@ final class ClaimsViewTest {
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .picker()
-                        .sortModes())
-                    .isEqualTo(ClaimSortModes.MODES);
+                        .sortModes()
+                        .modes())
+                    .extracting(ListSortMode::persistenceKey)
+                    .containsExactly("name", "claims", "market_size", "player_standing");
             }
         }
 

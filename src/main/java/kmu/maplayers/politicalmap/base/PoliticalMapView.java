@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
+import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -277,28 +278,38 @@ public interface PoliticalMapView {
      * also keeps this a default method rather than a static - the label is <em>this</em> view's
      * {@link #resolveName}, so no view has to reach into a sibling for a name.
      *
-     * @param <S>       the calling view's own metrics type, ranked by that view's vocabulary;
-     *                  bounded only by what every option must answer of its metrics, never by one
-     *                  layer's numbers
-     * @param sector    the sector a bloc's colour faction is read from
-     * @param grouping  the grouping the walk folded under, so the colour faction, the name, and the
-     *                  gate all resolve against the same snapshot the numbers came from
-     * @param statsRead the walk's totals and the systems behind them, in the order it surfaced them,
-     *                  which the returned rows preserve
-     * @param sortModes the vocabulary ranking this view's rows, bundled with them so a row can only
-     *                  ever be sorted by numbers it carries
-     * @return the rows this view offers paired with that vocabulary, beside the whole walk's presence
+     * <p>The vocabulary it bundles is the caller's own modes with {@link BlocStandingSortMode} behind
+     * them, which is why the sector and the grouping are read here for more than the crest. Where a
+     * bloc stands with the player is one fact read off the sector rather than a number either
+     * mechanic's fold computes, so it is offered from the single point every view's read passes
+     * through instead of being declared into each vocabulary - which would copy one fact into both
+     * and leave each enum naming a sector it has no access to.
+     *
+     * @param <S>             the calling view's own metrics type, ranked by that view's vocabulary;
+     *                        bounded only by what every option must answer of its metrics, never by
+     *                        one layer's numbers
+     * @param sector          the sector a bloc's colour faction and its standing with the player are
+     *                        read from
+     * @param grouping        the grouping the walk folded under, so the colour faction, the name, the
+     *                        gate, and a bloc's membership all resolve against the same snapshot the
+     *                        numbers came from
+     * @param statsRead       the walk's totals and the systems behind them, in the order it surfaced
+     *                        them, which the returned rows preserve
+     * @param vocabularyModes the calling layer's own modes - the numbers its rows carry - bundled
+     *                        with those rows so a row can only ever be sorted by numbers it carries
+     * @return the rows this view offers paired with the vocabulary that ranks them, beside the whole
+     *         walk's presence
      */
     default <S extends BlocMetrics> BlocPickerRead<RankedBloc<S>> buildBlocPickerRead(
             SectorAPI sector,
             HolderGrouping grouping,
             BlocStatsRead<S> statsRead,
-            ListSortModes<RankedBloc<S>> sortModes) {
+            ListSortModes<RankedBloc<S>> vocabularyModes) {
 
         return new BlocPickerRead<>(
             new ListPicker<>(
                 buildSelectableBlocs(sector, grouping, statsRead.statsByBlocId()),
-                sortModes),
+                composeOfferedSortModes(sector, grouping, vocabularyModes)),
             statsRead.presenceIndex());
     }
 
@@ -355,6 +366,29 @@ public interface PoliticalMapView {
      */
     default Optional<MapHoverTooltip> resolveHoverTooltip() {
         return Optional.empty();
+    }
+
+    // The whole vocabulary the picker is offered: the calling layer's own modes, then the standing
+    // mode shared by every view. Appended last, so it takes the bottom row of the sort selector
+    // beneath the numbers the layer is painted by; the fallback mode is the layer's own, since the
+    // standing is a criterion a player picks rather than one a fresh save should open on.
+    private static <S extends BlocMetrics> ListSortModes<RankedBloc<S>> composeOfferedSortModes(
+            SectorAPI sector,
+            HolderGrouping grouping,
+            ListSortModes<RankedBloc<S>> vocabularyModes) {
+
+        // No sector is no relations to read and no rows to rank - the read this builds is empty -
+        // so the vocabulary stands as its layer declared it rather than gaining a mode with nothing
+        // behind it to read.
+        if (sector == null) {
+            return vocabularyModes;
+        }
+        var offeredModes = new ArrayList<ListSortMode<RankedBloc<S>>>(vocabularyModes.modes());
+
+        offeredModes.add(
+            new BlocStandingSortMode<>(BlocStandingReader.createForSector(sector, grouping)));
+
+        return new ListSortModes<>(offeredModes, vocabularyModes.defaultMode());
     }
 
     // The row half of the assembly: each gated bloc paired with its metrics, in walk order. Private
