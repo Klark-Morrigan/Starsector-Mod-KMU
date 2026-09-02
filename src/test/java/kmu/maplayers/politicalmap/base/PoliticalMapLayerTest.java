@@ -13,7 +13,6 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -192,7 +191,6 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
-                        any(),
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
@@ -349,7 +347,6 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
-                        any(),
                         any()));
             }
         }
@@ -378,8 +375,9 @@ final class PoliticalMapLayerTest {
 
                 var installedBoard = installation.resolveRefreshBoard();
 
-                // The three seams the body hands a board to: the shared sub-options, the spotlight
-                // picker, and the selected view's own controls.
+                // The two seams the body hands a board to - the shared sub-options and the selected
+                // view's own controls - and the picker, which takes the machinery whole: both of
+                // its writers are that sector's, so it derives them rather than being handed them.
                 controlsMock.verify(
                     () -> PoliticalMapBodyControls.buildSharedControls(installedBoard));
                 pickerMock.verify(
@@ -388,10 +386,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
-                        eq(installedBoard),
-                        // The hover slot travels from the same installation, so the row the pointer
-                        // rests on previews over the map the picker was listed for.
-                        eq(FilterHoverSlot.resolveHoverSlotIn(installation))));
+                        eq(installation)));
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(installedBoard);
             });
@@ -440,7 +435,6 @@ final class PoliticalMapLayerTest {
             stubSharedControlsAndSelector(controlsMock);
             pickerMock
                 .when(() -> FilterSelectionBinder.buildPicker(
-                    any(),
                     any(),
                     any(),
                     any(),

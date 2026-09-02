@@ -149,21 +149,26 @@ nothing to read rather than falling through to whichever sector happens to be lo
 `Global.getSector()`, and it is where that read belongs: vanilla's API offers no other handle, and
 the seams it serves are driven by the engine with no sector named.
 
-Nothing outside this package reaches a holder that way. `MapLayerRefresh.requestRefresh` stands
-ready to raise on the live sector's board for a producer the engine drives with no sector named, but
-every producer there is holds the installation it means: the render surfaces resolve theirs from the
-terrain entity they ride, and the political map's cache, its staleness poll, its renderers, its
-views, its sidebar controls and the cursor read are each handed one.
+Its callers are the screen-side adapters and nothing else: the tab body build and the hover box the
+cursor read draws, each handed a frame and nothing more. They spell the resolution by that name
+rather than `resolveInstallationFor(Global.getSector())` so every such adapter is findable by one
+grep - which is what the gate over this read counts.
+
+Nothing else reaches a holder that way. Every producer and consumer there is holds the installation
+it means: the render surfaces resolve theirs from the terrain entity they ride, and the political
+map's cache, its staleness poll, its renderers, its views and its sidebar controls are each handed
+one.
 
 The sidebar controls are the ones worth naming, because a settings change looks like the seam that
 could not be handed a sector. It can: the tab's body build resolves an installation once, and every
 control it places carries that board to the preference it writes - so a flip repaints the map the
 control was placed over rather than whichever sector is running when the click lands.
 
-The hover has no such resolution at all. `MapHoverState` is reached only through the installation
-that holds it, and `kmu.maplayers.base.hover` is gated from importing this package so it stays that
-way: a holder that could resolve an installation of its own could only resolve the running game's,
-which is the one sector a caller drawing another's map is not looking at.
+The board and the hover have no such resolution at all. `MapLayerRefreshBoard` and `MapHoverState`
+are reached only through the installation that holds them, and `kmu.maplayers.base.refresh` and
+`kmu.maplayers.base.hover` are both gated from importing this package so it stays that way: a holder
+that could resolve an installation of its own could only resolve the running game's, which is the
+one sector a caller drawing another's map is not looking at.
 
 ## What is not one sector's
 

@@ -182,10 +182,9 @@ A producer or consumer holding a sector - or the installation over one - reaches
 sector's board directly, and every one of them does. A sidebar control looks like the
 exception, a settings change naming no sector, but the tab's body build resolves an
 installation once and hands its board to each control it places, so a flip repaints the
-map that control was placed over.
-[`MapLayerRefresh`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerRefresh.java)
-is the resolution left for a producer the engine drives with no sector named; raising a
-signal is all it offers, since a reader always holds the installation it means.
+map that control was placed over. Nothing resolves a board off the running sector any
+more: a producer reaching one it was not handed is a producer that can raise on a map
+nobody is looking at.
 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |

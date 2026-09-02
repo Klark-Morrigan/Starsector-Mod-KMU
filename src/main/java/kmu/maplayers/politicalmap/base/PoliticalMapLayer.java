@@ -1,7 +1,5 @@
 package kmu.maplayers.politicalmap.base;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
@@ -9,7 +7,6 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
-import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
@@ -58,13 +55,13 @@ public final class PoliticalMapLayer implements MapLayer {
     @Override
     public List<ControlSpec> getBodyControls() {
 
-        // Which sector this body is being built for has to be read from the running game here: a
+        // Which sector this body is being built for has to be resolved off the running game here: a
         // body build is an adapter onto a vanilla screen, which hands it none. This is the one
         // resolution the whole build makes, and every control below is handed its board rather than
         // resolving one when it is clicked - a control writes a sidebar-only preference, which
         // repaints by raising a signal, so a board found at the click would repaint whichever sector
         // was running by then instead of the map the control was placed over.
-        var installation = MapLayerInstallations.resolveInstallationFor(Global.getSector());
+        var installation = MapLayerInstallations.resolveInstallationForLiveSector();
         var board = installation.resolveRefreshBoard();
 
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
@@ -132,7 +129,10 @@ public final class PoliticalMapLayer implements MapLayer {
         var blocCache = SelectableBlocCache.resolveBlocCacheIn(installation);
 
         // The installation's own board, taken from it rather than passed beside it, so the memo
-        // above and the two writers below cannot end up naming two different sectors.
+        // above and the recede control below cannot end up naming two different sectors. The
+        // picker's own writers come off the same installation, which it takes whole for that
+        // reason - a board and a hover slot handed over side by side are two chances to name two
+        // sectors.
         var board = installation.resolveRefreshBoard();
 
         return FilterSelectionBinder.buildPicker(
@@ -145,9 +145,6 @@ public final class PoliticalMapLayer implements MapLayer {
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
                 board),
-            board,
-            // The same installation's hover slot, so the row the pointer rests on is previewed
-            // against the map it was drawn over rather than against whichever sector is running.
-            FilterHoverSlot.resolveHoverSlotIn(installation));
+            installation);
     }
 }
