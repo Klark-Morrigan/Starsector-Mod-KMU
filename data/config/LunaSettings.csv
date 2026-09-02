@@ -161,9 +161,11 @@ kmu_map_sound_map_arrival_cell,,,,Cursor on a map cell,,Double,0.5,,,,"How loudl
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_keybinds_rebindNote,,,,,,Text,"Rebind any shortcut on this tab by clicking its button and pressing a key. Press [Escape] while rebinding to leave it unbound.",,,,,,,,,Map - Keybinds
+,,,,,,,,,,,,,,,,
 kmu_map_keybinds_layers_header,,,,Map Sidebar,,Header,Map Sidebar,,,,,,,,,Map - Keybinds
-kmu_map_keybinds_layers_noLayer,,,,No Layer tab key,,Keycode,49,,,,"Keyboard shortcut that jumps the political-map overlay's layer bar to the No Layer view, painting nothing. Rebind by clicking the button and pressing a key; press Escape while rebinding to clear it, leaving the view with no shortcut. [Default: N].",,,,,Map - Keybinds
-kmu_map_keybinds_layers_factions,,,,Factions tab key,,Keycode,25,,,,"Keyboard shortcut that jumps the political-map overlay's layer bar to the Factions view, painting faction territory. Rebind by clicking the button and pressing a key; press Escape while rebinding to clear it, leaving the view with no shortcut. [Default: P].",,,,,Map - Keybinds
+kmu_map_keybinds_layers_noLayer,,,,No Layer tab key,,Keycode,49,,,,"Keyboard shortcut that jumps the political-map overlay's layer bar to the No Layer view, painting nothing. [Default: N].",,,,,Map - Keybinds
+kmu_map_keybinds_layers_factions,,,,Factions tab key,,Keycode,25,,,,"Keyboard shortcut that jumps the political-map overlay's layer bar to the Factions view, painting faction territory. [Default: P].",,,,,Map - Keybinds
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
