@@ -286,9 +286,12 @@ final class LunaSettingsCsvIntegrationTest {
 
     private static final String BOOLEAN_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(true|false)\\s*;";
 
-    // Section captions carry an id so LunaLib can place them, but store nothing, so no source reads
-    // one. Every other row holds a value.
+    // The two row types that carry an id so LunaLib can place them but store nothing, so no source
+    // reads either: a section caption, and a run of prose standing among the knobs. Every other row
+    // holds a value. They are told apart below as well as together - a caption owns the rows under
+    // it, while prose owns nothing and is free to stand ahead of every caption on its tab.
     private static final String HEADER_FIELD_TYPE = "Header";
+    private static final String TEXT_FIELD_TYPE = "Text";
 
     // KMU's field ids all carry the mod's prefix, which is also what tells a field row from the
     // file's own column-header line.
@@ -593,6 +596,22 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
+    @Nested
+    class TextNotes {
+
+        @Test
+        void everyTextRowCarriesItsWordsInTheDrawnColumn() {
+
+            assertThat(findTextRowsWhoseWordsAreNotDrawn())
+                .as(
+                    "prose rows in %s whose words are not where LunaLib reads them: a Text row is"
+                        + " drawn from its default-value column alone and shows no name column, so"
+                        + " words put beside it appear nowhere and an empty one draws a blank",
+                    SETTINGS_CSV)
+                .isEmpty();
+        }
+    }
+
     // The same table's field ids alone, read off the record rather than back out of the arguments
     // the cases are handed, so the id stays a String the compiler knows about.
     private static List<String> listChoiceBackedRadioFieldIds() {
@@ -661,11 +680,21 @@ final class LunaSettingsCsvIntegrationTest {
         for (var row : readFieldRows()) {
             if (HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN))) {
                 sectionTab = row.get(TAB_COLUMN);
-            } else if (!sectionTab.equals(row.get(TAB_COLUMN))) {
+            } else if (isStoredValueRow(row) && !sectionTab.equals(row.get(TAB_COLUMN))) {
                 strandedFieldIds.add(row.get(FIELD_ID_COLUMN));
             }
         }
         return strandedFieldIds;
+    }
+
+    // Whether a row is one the screen stores a value for, as against the caption and prose rows that
+    // only draw. Both of those carry an id and neither belongs to any section, so the walks that ask
+    // what a field is worth, and the one that asks which caption owns it, have to leave them out.
+    private static boolean isStoredValueRow(List<String> row) {
+
+        var fieldType = row.get(FIELD_TYPE_COLUMN);
+
+        return !HEADER_FIELD_TYPE.equals(fieldType) && !TEXT_FIELD_TYPE.equals(fieldType);
     }
 
     // The section captions whose two caption cells hold different text. A Header is drawn through
@@ -678,6 +707,20 @@ final class LunaSettingsCsvIntegrationTest {
             .stream()
             .filter(row -> HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
             .filter(row -> !row.get(FIELD_NAME_COLUMN).equals(row.get(DEFAULT_VALUE_COLUMN)))
+            .map(row -> row.get(FIELD_ID_COLUMN))
+            .toList();
+    }
+
+    // The prose rows whose words would not reach the screen. LunaLib draws a Text row through
+    // addPara(defaultValue) and shows no name column for it, so words authored beside it are
+    // invisible and an empty drawn column is a blank note taking up space. Neither shows as an
+    // error anywhere - the row loads, it simply says nothing - which is why it is asked here.
+    private static List<String> findTextRowsWhoseWordsAreNotDrawn() {
+        return readFieldRows()
+            .stream()
+            .filter(row -> TEXT_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
+            .filter(row -> !row.get(FIELD_NAME_COLUMN).isEmpty()
+                    || row.get(DEFAULT_VALUE_COLUMN).isEmpty())
             .map(row -> row.get(FIELD_ID_COLUMN))
             .toList();
     }
@@ -697,7 +740,7 @@ final class LunaSettingsCsvIntegrationTest {
     private static List<String> readValueFieldIds() {
         return readFieldRows()
             .stream()
-            .filter(row -> !HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
+            .filter(LunaSettingsCsvIntegrationTest::isStoredValueRow)
             .map(row -> row.get(FIELD_ID_COLUMN))
             .toList();
     }

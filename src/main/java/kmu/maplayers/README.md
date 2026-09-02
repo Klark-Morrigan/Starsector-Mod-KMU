@@ -624,7 +624,12 @@ about what the overlay means.
   `ControlBackedMapLayerVisibility` acts on, and a box is bound to the stored pick underneath it, so
   it shows the choice the player made rather than the reading that rule gives everything else.
   Whether it is attempted at all is `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev hatch
-  rather than an appearance knob, since what it governs is the reach and not the look.
+  rather than an appearance knob, since what it governs is the reach and not the look. Which key
+  ticks it is `kmu_map_keybinds_filters_mapLayersToggle`, default M, read afresh at each attachment
+  the way the box's words are - so a rebind reaches the next screen the player opens rather than
+  waiting for the next load - and cleared with Escape leaves the box answering no key at all. Not a
+  digit, the row's own six being digits and nothing in the game able to say which of them a screen
+  has already taken.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
   draw pipeline behind them.
 - **`MapLayers`** - the composition root, the single place every concrete layer, political-map view,
