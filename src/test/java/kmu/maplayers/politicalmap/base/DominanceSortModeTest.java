@@ -14,15 +14,16 @@ import java.util.List;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildBloc;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins what this vocabulary declares: the frozen persistence keys a save round-trips through, which
  * number each mode reads, the direction that follows from it, and the order ties break down the
- * canonical chain. The shape the ranking is then laid out in - the promoted key, the flip, the name
- * and by-id tail - is the shared assembly's and is pinned in its own suite, so a case here fails only
- * when this vocabulary's own declaration changes. All exercised on hand-built blocs, since the mode
- * carries no Starsector types.
+ * canonical chain. What a declared mode answers at all, and the shape the ranking is then laid out in
+ * - the promoted key, the flip, the name and by-id tail - are both shared and are pinned in their own
+ * suites, so a case here fails only when this vocabulary's own declaration changes. All exercised on
+ * hand-built blocs, since the mode carries no Starsector types.
  */
 final class DominanceSortModeTest {
 

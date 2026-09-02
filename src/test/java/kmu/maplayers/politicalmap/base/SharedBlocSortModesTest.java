@@ -16,6 +16,7 @@ import java.util.function.ToIntFunction;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.buildBloc;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.listIdsInModeOrder;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
