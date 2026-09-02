@@ -6,6 +6,7 @@ import kmlib.starsector.ui.widgets.lists.SortDirection;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.ToIntFunction;
 
@@ -18,7 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins the shape every political-map sort vocabulary gets by declaring its numbers: where the mode's
  * own key sits, how a tie falls down the canonical chain and then to the name and the id, which key
- * the player's direction reaches, and what a plain numeric value draws.
+ * the player's direction reaches, and what a plain numeric value draws. The tail is pinned twice
+ * over: as the end of that shape, and on its own, which is how a mode ranking by something no
+ * vocabulary declares reaches it.
  *
  * <p>Run over a payload no view declares, so the cases say what the assembly does for any vocabulary
  * rather than what one layer's numbers happen to produce. The two real vocabularies keep their own
@@ -38,6 +41,11 @@ final class BlocSortModeComposerTest {
     // Severity first, volatility behind it - the order this stand-in vocabulary breaks ties down.
     private static final List<ToIntFunction<HazardRating>> CANONICAL_CHAIN =
         List.of(SEVERITY, VOLATILITY);
+
+    // A caller's own order that separates nothing, so a case over the tail reads what the tail did
+    // rather than what the order in front of it did.
+    private static final Comparator<RankedBloc<HazardRating>> LEVEL_ORDER =
+        (leftBloc, rightBloc) -> 0;
 
     @Nested
     class AssembleComparator {
@@ -175,6 +183,49 @@ final class BlocSortModeComposerTest {
     }
 
     @Nested
+    class AppendSharedTail {
+
+        @Test
+        void appendSharedTailBreaksAPairTheCallersOwnOrderLeftLevelByName() {
+
+            // The caller's order separates nothing, so what arranges the pair is the tail alone: the
+            // label, A-to-Z.
+            var zeta = buildStandInBloc("z", "Zeta", 9, 9);
+            var alpha = buildStandInBloc("a", "Alpha", 1, 1);
+
+            assertThat(listIdsWithSharedTailBehind(LEVEL_ORDER, zeta, alpha))
+                .containsExactly("a", "z");
+        }
+
+        @Test
+        void appendSharedTailBreaksAPairTheNameLeavesLevelById() {
+
+            // Level under the caller's order and sharing a label, so only the by-id key behind the name
+            // separates them - which is what keeps such a pair from reshuffling frame to frame.
+            var second = buildStandInBloc("bbb", "Same", 0, 0);
+            var first = buildStandInBloc("aaa", "Same", 0, 0);
+
+            assertThat(listIdsWithSharedTailBehind(LEVEL_ORDER, second, first))
+                .containsExactly("aaa", "bbb");
+        }
+
+        @Test
+        void appendSharedTailLeavesTheCallersOwnOrderLeading() {
+
+            // The caller's order decides the pair, so the tail never reaches the name - the bloc that
+            // would lead A-to-Z comes second.
+            var zeta = buildStandInBloc("z", "Zeta", 9, 0);
+            var alpha = buildStandInBloc("a", "Alpha", 1, 0);
+
+            assertThat(listIdsWithSharedTailBehind(
+                    Comparator.comparingInt(bloc -> -bloc.stats().severity()),
+                    zeta,
+                    alpha))
+                .containsExactly("z", "a");
+        }
+    }
+
+    @Nested
     class ResolveDefaultDirection {
 
         @Test
@@ -233,6 +284,16 @@ final class BlocSortModeComposerTest {
             primaryMetric,
             BlocSortModeComposer.resolveDefaultDirection(primaryMetric),
             blocs);
+    }
+
+    // Puts the shared tail behind a caller's own order and reads the blocs' ids off the result, which
+    // is how a mode outside the two vocabularies reaches the tail.
+    @SafeVarargs
+    private static List<String> listIdsWithSharedTailBehind(
+            Comparator<RankedBloc<HazardRating>> callersOrder,
+            RankedBloc<HazardRating>... blocs) {
+
+        return listIdsInOrder(BlocSortModeComposer.appendSharedTail(callersOrder), blocs);
     }
 
     // The same in a named direction, which is what the flip cases ask for.

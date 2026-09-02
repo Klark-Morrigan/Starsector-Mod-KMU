@@ -59,6 +59,8 @@
     "political_map_ctl_sort_score": "Score",
     "political_map_ctl_sort_market_size": "Market size",
     "political_map_ctl_sort_claims": "Claims",
+    "political_map_ctl_sort_attitude": "Attitude",
+    "political_map_ctl_sort_attitude_range_separator": "..",
 
     "political_map_tooltip_decivilised": "Decivilised",
     "political_map_tooltip_unpopulated": "Unpopulated",

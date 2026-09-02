@@ -175,6 +175,18 @@ inside an alliance is recognised as that alliance - and otherwise folds the memb
 names, passing over any member the sector cannot answer for. Its sector reads sit behind one seam, so
 the fold is arithmetic over hand-built standings.
 
+`BlocStandingSortMode` ranks by that, and being outside both vocabularies is what shapes it. It has
+no numeric chain of its own to fall through, so it leads with the three positions as one scale - the
+player's own bloc above everything measured, an unreadable one below - then the low end of the range,
+then the high, and then goes straight to `BlocSortModeComposer.appendSharedTail`, which exists for a
+primary key the metric assembly cannot express. The case ordering is part of that primary key, so the
+player's bloc leads under the default direction and trails under the flip rather than being the one
+row the direction control does not govern. Its row draws the signed reputation, one number where a
+bloc's members agree and both ends joined around a separator where they do not, each in its own
+relation's colour. The standing is read live at comparison and draw time: the picker read is memoised
+against settings and grouping, not reputation, so a snapshot would hold the ranking still until some
+unrelated knob moved.
+
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
 faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what

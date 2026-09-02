@@ -2,6 +2,9 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.relation.PlayerStanding;
 
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 /**
  * Where a bloc stands with the player - the three positions a bloc can hold on that scale, named.
  *
@@ -35,6 +38,27 @@ public sealed interface BlocStanding {
     BlocStanding UNREADABLE = new Unreadable();
 
     /**
+     * Hands this standing to whichever of the three the caller wrote for it, and answers what that
+     * one produced.
+     *
+     * <p>The fold is how the sealed set is actually spent: a caller states all three cases or does
+     * not compile, and a fourth case joining the set breaks every caller at once rather than being
+     * silently swallowed by whichever branch happened to be last. The language's own exhaustive
+     * switch would say the same thing, but only from Java 21 - the mod targets 17, which is the
+     * runtime the game supplies.
+     *
+     * @param <R>            what the caller produces for a standing
+     * @param measuredCase   what a bloc whose members answered produces, given the range they hold
+     * @param playersOwnCase what the player's own bloc produces
+     * @param unreadableCase what a bloc nothing could be read for produces
+     * @return the answer of the case this standing is
+     */
+    <R> R selectByCase(
+        Function<Measured, R> measuredCase,
+        Supplier<R> playersOwnCase,
+        Supplier<R> unreadableCase);
+
+    /**
      * A bloc whose members answered: the two ends of the range they hold, each carrying the colour
      * its own relation resolves to, so the ends are drawn in the shades the game itself paints them.
      *
@@ -47,13 +71,40 @@ public sealed interface BlocStanding {
     record Measured(
         PlayerStanding lowest,
         PlayerStanding highest) implements BlocStanding {
+
+        @Override
+        public <R> R selectByCase(
+                Function<Measured, R> measuredCase,
+                Supplier<R> playersOwnCase,
+                Supplier<R> unreadableCase) {
+
+            return measuredCase.apply(this);
+        }
     }
 
     /** The shape behind {@link #PLAYERS_OWN}, carrying nothing beyond being that case. */
     record PlayersOwn() implements BlocStanding {
+
+        @Override
+        public <R> R selectByCase(
+                Function<Measured, R> measuredCase,
+                Supplier<R> playersOwnCase,
+                Supplier<R> unreadableCase) {
+
+            return playersOwnCase.get();
+        }
     }
 
     /** The shape behind {@link #UNREADABLE}, carrying nothing beyond being that case. */
     record Unreadable() implements BlocStanding {
+
+        @Override
+        public <R> R selectByCase(
+                Function<Measured, R> measuredCase,
+                Supplier<R> playersOwnCase,
+                Supplier<R> unreadableCase) {
+
+            return unreadableCase.get();
+        }
     }
 }

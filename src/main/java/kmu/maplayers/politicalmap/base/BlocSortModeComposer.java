@@ -21,7 +21,8 @@ import java.util.function.ToIntFunction;
  * tie-break chain, then the name, then the bloc id. Sharing the tail is the point - two blocs a
  * player cannot tell apart break the same way under every mode of every vocabulary, and no mode can
  * be written that forgets the by-id key which keeps a fully-level pair from reshuffling between
- * frames.
+ * frames. The tail is reachable on its own ({@link #appendSharedTail}) for a mode whose primary key
+ * is not one of the metrics, so that promise holds for those too.
  *
  * <p>A mode that ranks by name rather than by a number names no metric, which is the one distinction
  * the shape turns on: it leads with the label, lets the whole numeric chain follow, and draws no
@@ -58,13 +59,36 @@ public final class BlocSortModeComposer {
         for (var metric : canonicalMetricChain) {
             order = order.thenComparing(compareByMetricDescending(metric));
         }
-        if (primaryMetric != null) {
-            // A numeric mode breaks a chain-level pair by name; the name mode has already led with it.
-            order = order.thenComparing(compareByNameAscending());
-        }
-        // A final by-id key gives a total order, so two blocs level on every visible key keep a fixed
-        // position rather than reshuffling as the per-frame sort re-runs.
-        return order.thenComparing(RankedBloc::itemId);
+        // The tail follows for a by-name mode too, on the same reasoning the chain does: a pair that
+        // reached it is level on the primary key, so a name mode's leading key answers identically
+        // when the tail reads it again and the by-id key decides.
+        return appendSharedTail(order);
+    }
+
+    /**
+     * The tail every political-map ranking ends in, appended to an order the caller assembled itself:
+     * the bloc's name, then its id.
+     *
+     * <p>The entry point exists for a mode whose primary key is not a number off the metrics, which
+     * {@link #assembleComparator} has no way to accept. Such a mode still has to break a level pair
+     * the way every other mode does - two blocs a player cannot tell apart reading the same way under
+     * every mode of every vocabulary is the whole point of the tail being shared - and rolling it by
+     * hand at each such mode is exactly the duplication this class exists to close.
+     *
+     * <p>The by-id key behind the name is what gives a total order, so two blocs level on every
+     * visible key keep a fixed position rather than reshuffling as the per-frame sort re-runs.
+     *
+     * @param <S>   the vocabulary's metrics record
+     * @param order the caller's own keys, in the direction the player asked for - the tail behind them
+     *              stays canonical, so a level pair breaks the same way whichever direction shows
+     * @return that order with the shared tail behind it
+     */
+    public static <S extends BlocMetrics> Comparator<RankedBloc<S>> appendSharedTail(
+            Comparator<RankedBloc<S>> order) {
+
+        return order
+            .thenComparing(compareByNameAscending())
+            .thenComparing(RankedBloc::itemId);
     }
 
     /**
