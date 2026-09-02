@@ -97,6 +97,28 @@ enforcePackageVocabulary {
             inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
 }
 
+// The map layers derive everything they draw from one sector, and each holds the
+// machinery of the sector it was handed. Reading the running game's sector
+// instead is how a pass ends up drawing, marking stale or previewing a map
+// nobody is looking at - which no compiler can see, since the tenth such read
+// compiles exactly like the first.
+//
+// So the reads are contained at the seams vanilla drives with no sector named,
+// and those seams are named here. Three of the four resolve a *sector* for a
+// screen that hands them none - the pause cover, the filter self-heal and the
+// live claim reader; the fourth is the installation index, which is where a
+// sector-less caller resolves the machinery it should draw through, and is the
+// one read the whole arrangement rests on.
+enforceRestrictedCalls {
+    restrictCall call: 'Global.getSector()',
+        under: 'kmu.maplayers',
+        toTypes: [
+            'FilterSelectionHeal',
+            'LiveVisibilityClaimBreakdownReader',
+            'MapLayerInstallations',
+            'PauseMenuMapCover']
+}
+
 // On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
 // sets above because the shared script formats
 // whichever ones exist when it runs; utils is KMU's own code, so it is styled
@@ -107,6 +129,7 @@ apply from: "${rootDir}/../Common-Java/gradle/spotless-java.gradle"
 // its own extra dependencies without re-deriving the path.
 def starsectorRoot = project.ext.starsectorRoot
 def consoleCommandsJars = findModJars('lw_Console.jar')
+
 // KMLib hosts shared helpers (palette, localisation lookups). Named by its
 // coordinates rather than by a path: settings.gradle includes the sibling
 // checkout as a build, so Gradle substitutes this notation with that project
@@ -115,18 +138,21 @@ def consoleCommandsJars = findModJars('lw_Console.jar')
 // produces, so pinning one here would only be a second place to update on
 // every KMLib release.
 def kmlibDependency = 'kmlib:KMLib'
+
 // LazyLib is a hard dependency in mod_info.json (its LazyFont/DrawableString draw
 // the political-map faction names - there is no vanilla font API). The mod
 // classloader supplies the jar at runtime, so compiling against it is enough.
 // Resolved via the install root because LazyLib always lives at
 // <starsector>/mods/lw_lazylib, the launcher's expected layout.
 def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
+
 // Nexerelin is an optional runtime dependency. KMU compiles against its
 // InvasionListener so the political map can repaint a colony that changes hands
 // in a Nex war; the mod classloader supplies the jar at runtime when Nex is
 // installed, and NexerelinInvasionListenerInstaller gates the listener behind a
 // mod-enabled check so a Nex-free install never resolves the type.
 def nexJars = findModJars('ExerelinCore.jar')
+
 // XStream backs Starsector's save serialisation. KMU compiles against it to
 // override configureXStream and alias the map-layer terrain plugin's former
 // class names, so saves written before each rename still resolve. It ships inside
@@ -137,6 +163,7 @@ def nexJars = findModJars('ExerelinCore.jar')
 // class present to stand in for. Globbed so a version bump does not break the
 // path.
 def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
+
 // The obfuscated core, carrying the concrete campaign classes the published API only exposes as
 // interfaces. KMU compiles against one of them: CampaignTerrain, which the map layers' Starscape
 // terrain entity subclasses so it can report the terrain type the sector map draws in Starscape
@@ -152,14 +179,15 @@ def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['
 // fs.common_obf.jar has the DoNotObfuscate and LayeredRenderable its supertype chain reaches -
 // javac resolves the whole chain of anything it is asked to subclass.
 def obfJars = fileTree(dir: "${starsectorRoot}/starsector-core",
-        include: ['starfarer_obf.jar', 'fs.common_obf.jar'])
+    include: ['starfarer_obf.jar', 'fs.common_obf.jar'])
+
 // LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
 // The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
 // needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
 // it succeeds and the tool then dies on NoClassDefFoundError, which is exactly the trap the
 // source-set comment above warns about.
 def lwjglJars = fileTree(dir: "${starsectorRoot}/starsector-core",
-        include: ['lwjgl.jar', 'lwjgl_util.jar'])
+    include: ['lwjgl.jar', 'lwjgl_util.jar'])
 
 dependencies {
     compileOnly consoleCommandsJars
