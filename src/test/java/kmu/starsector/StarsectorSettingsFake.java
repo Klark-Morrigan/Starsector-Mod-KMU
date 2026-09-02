@@ -2,6 +2,7 @@ package kmu.starsector;
 
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsColourSource;
 import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.SettingsStringSource;
+import kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.UiElementSource;
 
 import kmu.util.KmuStrings;
 
@@ -35,6 +36,17 @@ public final class StarsectorSettingsFake {
      */
     public static void installSettings(SettingsColourSource colourSource) {
         kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS, colourSource);
+    }
+
+    /**
+     * Installs the proxy with KMU's strings and panels that build one known element, for a subject
+     * that makes its own tooltip surface. The surface never reaches the caller, so that element is
+     * where an assertion about the attachment is made.
+     *
+     * @param uiElementSource the element every panel this settings makes hands back
+     */
+    public static void installSettingsWithUiElements(UiElementSource uiElementSource) {
+        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS, uiElementSource);
     }
 
     public static void clearSettings() {

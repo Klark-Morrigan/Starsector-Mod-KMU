@@ -86,7 +86,7 @@ final class VanillaMapLayerToggleAttacherTest {
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
             var elementMock = mock(TooltipMakerAPI.class);
 
-            StarsectorSettingsFake.installSettings(() -> elementMock);
+            StarsectorSettingsFake.installSettingsWithUiElements(() -> elementMock);
             try {
                 new VanillaMapLayerToggleAttacher()
                     .attachToggleTo(ShownFilterRows.createRowOver(rowFake), mockVisibility(true));
