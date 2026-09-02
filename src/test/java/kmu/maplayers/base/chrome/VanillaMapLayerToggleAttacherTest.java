@@ -36,8 +36,10 @@ final class VanillaMapLayerToggleAttacherTest {
             var isAttached = new VanillaMapLayerToggleAttacher()
                 .attachToggleTo(ShownFilterRows.createRowOver(rowFake), visibilityMock);
 
-            assertThat(isAttached).isTrue();
-            assertThat(readAppendedButton(rowFake).isChecked()).isTrue();
+            assertThat(isAttached)
+                .isTrue();
+            assertThat(readAppendedButton(rowFake).isChecked())
+                .isTrue();
         }
 
         @Test
@@ -51,7 +53,8 @@ final class VanillaMapLayerToggleAttacherTest {
 
             // Seeded from the save rather than left at whatever a fresh button starts at, which
             // would show a ticked box over an empty map.
-            assertThat(readAppendedButton(rowFake).isChecked()).isFalse();
+            assertThat(readAppendedButton(rowFake).isChecked())
+                .isFalse();
         }
 
         @Test
@@ -67,7 +70,8 @@ final class VanillaMapLayerToggleAttacherTest {
 
             // What the box now shows, read back off the button rather than assumed from the click,
             // since the button flips its own state before reporting.
-            verify(visibilityMock).showLayers(true);
+            verify(visibilityMock)
+                .showLayers(true);
         }
 
         @Test
@@ -81,9 +85,11 @@ final class VanillaMapLayerToggleAttacherTest {
 
             // First come: a row somebody else has filled is left as it was found, and the pick is
             // not even read, there being no box to open at it.
-            assertThat(isAttached).isFalse();
+            assertThat(isAttached)
+                .isFalse();
             assertThat(rowFake.getChildrenCopy())
                 .hasSize(ShownFilterRows.VANILLA_BUTTON_COUNT);
+
             verifyNoInteractions(visibilityMock);
         }
     }

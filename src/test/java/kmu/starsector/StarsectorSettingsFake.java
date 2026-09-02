@@ -85,6 +85,30 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
         stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
+            "Shows %s %s that draw a %s of the sector (%s).");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS,
+            "Sector Map Layers");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER,
+            "(supplied by KMU)");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP,
+            "political map");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS,
+            "factions");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES,
+            "alliances");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS,
+            "system claims");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR,
+            ", ");
+        stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS,
             "collapse to factions");
         stringsByKey.put(

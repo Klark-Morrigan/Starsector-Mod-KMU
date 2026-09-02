@@ -4,6 +4,7 @@ import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
 /**
@@ -16,8 +17,25 @@ import kmu.util.KmuStrings;
  *
  * <p>Read at each attachment rather than once, so a control built after the player switches
  * language is labelled in the language they switched to.
+ *
+ * <p>The same reasoning puts the presence check here rather than deeper: this is the concrete end
+ * of the port, so it is where naming what is installed belongs, and everything under it goes on
+ * knowing only that a box has words and a hover.
  */
 public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttacher {
+
+    // What the box says on hover. One instance rather than one per attachment: it holds no state
+    // about any particular box, and reads everything it says at the moment it is asked.
+    private final MapLayerToggleTooltip toggleTooltip;
+
+    /** Reads the live install - the pairing a running game gets. */
+    public VanillaMapLayerToggleAttacher() {
+        this(new MapLayerToggleTooltip(NexerelinAlliances::isAvailable));
+    }
+
+    VanillaMapLayerToggleAttacher(MapLayerToggleTooltip toggleTooltip) {
+        this.toggleTooltip = toggleTooltip;
+    }
 
     @Override
     public boolean attachToggleTo(MapFilterRow row, MapLayerVisibility layerVisibility) {
@@ -43,6 +61,10 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
         // Seeded rather than left at whatever a fresh button starts at: a screen reopened with its
         // layers hidden would otherwise show a ticked box over an empty map.
         toggle.setChecked(layerVisibility.areLayersShown());
+
+        // Last, and unchecked: the hover is what the box says rather than part of what it does, so
+        // a substrate that declines to hang one costs the words and leaves a working control.
+        toggle.attachTooltip(MapLayerToggleTooltip.TOOLTIP_WIDTH, toggleTooltip::describeToggle);
 
         return true;
     }
