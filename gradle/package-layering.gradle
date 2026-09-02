@@ -71,6 +71,9 @@ enforcePackageLayering {
     forbidImport exactly: 'kmu.maplayers.base.hover',
                  of: 'kmu.maplayers.base.installation'
 
+    forbidImport exactly: 'kmu.maplayers.base.refresh',
+                 of: 'kmu.maplayers.base.installation'
+
     forbidImport exactly: 'kmu.maplayers.base.tooltip',
                  of: 'kmu.maplayers.base.tooltip.layout'
     forbidImport exactly: 'kmu.maplayers.base.tooltip',
