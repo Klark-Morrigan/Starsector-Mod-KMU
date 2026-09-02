@@ -1,6 +1,5 @@
 package kmu.maplayers.base.tooltip;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
@@ -10,6 +9,7 @@ import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 
 import java.util.Optional;
@@ -51,16 +51,24 @@ record HoveredBox(
      */
     static Optional<HoveredBox> resolveHoveredBox() {
 
-        // Read first, since the hover is that sector's: the box names a system by bare id, so one
-        // resolved off any other sector would name whatever holds that id here.
-        var sector = Global.getSector();
+        // One resolution for everything below: the sector the box describes, the hover it published,
+        // and the renderer that would say something about what that hover names. Two resolutions
+        // could only ever agree, and the trio is what the box is - a cell of one sector's map,
+        // described by that sector's map.
+        //
+        // Resolved off the running sector rather than off one passed in, because this is a
+        // screen-side adapter: both callers are passes the engine drives with a frame and nothing
+        // else. Spelled through the index's own live-sector resolution so every such adapter is
+        // findable by one name.
+        var installation = MapLayerInstallations.resolveInstallationForLiveSector();
+
+        // The sector comes off the installation rather than from a second global read, so the box
+        // cannot describe a sector other than the one whose hover and draw lists it reads. Absent
+        // where no game is loaded, which is the detached installation answering for no sector.
+        var sector = installation.resolveSector();
         if (sector == null) {
             return Optional.empty();
         }
-        // One resolution for both reads below: the hover this sector published, and the renderer
-        // that would say something about what it names. Two resolutions could only ever agree, and
-        // the pair is what the box is - a cell of one sector's map, described by that sector's map.
-        var installation = MapLayerInstallations.resolveInstallationFor(sector);
         var hover = installation.resolveHoverState().getHover();
 
         if (!shouldDrawTooltipFor(hover)) {
@@ -109,7 +117,7 @@ record HoveredBox(
         // The crisp pick rather than the dissolve the overlay rides out. A box reporting what the cursor
         // is over has nothing left to report the moment the player switches the layers off, and it reads
         // the pick rather than painting through the pass that carries the fade.
-        if (!MapLayerRegistry.areLayersShownOnLiveScreen()) {
+        if (!MapLayerScreens.areLayersShownOnLiveScreen()) {
             return Optional.empty();
         }
         var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer(installation);

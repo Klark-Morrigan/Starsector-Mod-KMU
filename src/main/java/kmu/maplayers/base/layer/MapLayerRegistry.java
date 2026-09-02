@@ -1,83 +1,37 @@
 package kmu.maplayers.base.layer;
 
-import kmlib.starsector.ui.intel.IntelScreenView;
-
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import java.util.List;
 
 /**
- * The map-layer registry and the holder of each screen's picks. The layer bar composes its tabs from
- * {@link #getLayers()}, a screen's own pair ({@link #getMapPicks()} or {@link #getIntelPicks()}) stores
- * which layer is active there and whether that screen's layers show at all, and each layer's own state
- * reads {@link #isActive} to decide whether it is the one to draw - so all agree on the live selection
- * without sharing state directly. Each screen's picks are its own {@link PersistedActiveLayerSelection}
- * and {@link PersistedMapLayerVisibility} under its own keys, so a switch or a hide on one screen
- * survives reload without moving the other's; the registry holds both pairs so all four save keys and
- * the one-time legacy migration live in a single place. Each screen's hide is handed out through
- * {@link ControlBackedMapLayerVisibility}, so a stored hide is acted on only while that screen has a
- * control able to reverse it - which is the difference between an optional decoration on the game's own
- * chrome and a load-bearing one.
+ * The roster of map layers, and the one answer everything that paints hangs off: which of them is in
+ * play on the screen showing this frame. The layer bar composes its tabs from {@link #getLayers()},
+ * each layer's own state reads {@link #isActive} to decide whether it is the one to draw, and the map
+ * surface dispatches through {@link #resolveActiveMapRenderer} - so all agree on one selection without
+ * sharing state directly.
  *
- * <p>Because the picks are per-screen, "whose picks are live" is a per-frame question rather than a
- * fixed answer: the same map widget draws on the sector map and inside the intel screen's visor, so an
- * overlay reading one fixed screen's pick would paint the sector map's choice onto the intel screen
- * and ignore the tab the player is looking at. {@link #isActive} settles it by reading which screen is
- * up, through the intel-screen seam {@link #registerIntelScreen} supplies, and settles it once for the
- * pair - which is what {@link ScreenLayerPicks} is for.
+ * <p>The player's own state is not here: which layer each screen is set to, and whether that screen
+ * shows its layers at all, belong to {@link MapLayerScreens}, whose live pair this reads. Two classes
+ * because the roster is settled once at startup for the whole process while the picks move with every
+ * click and ride in the save.
  *
- * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer.
- * The set of layers and the default pick are supplied once at startup by a composition root
- * through {@link #registerLayers}, so a new view is added by registering it rather than by
- * editing this class. Each pick lives in sector memory under a stable key, so it serialises into
- * the save and survives reload; an untouched save resolves to the registered default, as does one
- * holding an id no longer registered.
+ * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer. The set of
+ * layers and the default pick are supplied once at startup by a composition root through
+ * {@link #registerLayers}, so a new view is added by registering it rather than by editing this class.
+ * An untouched save resolves to the registered default, as does one holding an id no longer registered.
  */
 public final class MapLayerRegistry {
-
-    // Save-serialised identity of each screen's active pick; frozen once shipped, since renaming one
-    // silently resets every existing save under it to the default.
-    private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
-    private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
-
-    // The same for each screen's show-or-hide pick, and frozen for the same reason.
-    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
-    private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
     // The end of the hide ramp: none of a screen's layers left on it, which is where the active pick
     // stops being answered at all.
     private static final float FULLY_HIDDEN = 0f;
 
-    // Each screen's show-or-hide pick as the rest of the mod reads it: the stored pick behind the rule
-    // that a hide is honoured only while that screen has a control able to reverse it. Held as that
-    // reading rather than as the stored pick, so no consumer can be handed the raw choice by accident -
-    // the one caller entitled to it is named below.
-    private static final ControlBackedMapLayerVisibility MAP_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY));
-    private static final ControlBackedMapLayerVisibility INTEL_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY));
-
-    // Each screen's pair of picks, persisted under that screen's own frozen keys. The map host draws
-    // through the map pair and the overlay follows it; the intel host draws through the intel pair. Held
-    // here so all four keys sit in one place, and paired so a screen is chosen once rather than at each
-    // site that wants one of its two picks.
-    private static final ScreenLayerPicks MAP_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY),
-        MAP_LAYER_VISIBILITY);
-    private static final ScreenLayerPicks INTEL_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY),
-        INTEL_LAYER_VISIBILITY);
-
     // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
     // until a composition root registers them at startup, before any sector map can open.
     private static List<MapLayer> orderedLayers = List.of();
     private static MapLayer defaultLayer;
-
-    // Reads whether the intel screen is the one up, which is what decides whose pick is live. Null
-    // until the composition root supplies it, which resolves every read to the map screen's pick - the
-    // answer a registry with no screen wired yet should give, since the sector map is the overlay's home.
-    private static IntelScreenView intelScreen;
 
     private MapLayerRegistry() {
     }
@@ -95,18 +49,6 @@ public final class MapLayerRegistry {
         MapLayerRegistry.defaultLayer = defaultLayer;
     }
 
-    /**
-     * Records the intel-screen seam that tells the registry which screen is up, so {@link #isActive}
-     * can answer from the pick belonging to the screen the player is looking at. Called by the
-     * composition root, the one place a concrete screen binding is named. Only the intel screen is
-     * asked: the two screens are never up together, so "not the intel screen" is the sector map.
-     *
-     * @param intelScreen reads whether the intel screen is the one showing
-     */
-    public static void registerIntelScreen(IntelScreenView intelScreen) {
-        MapLayerRegistry.intelScreen = intelScreen;
-    }
-
     /** @return the registered layers in tab order, left to right. */
     public static List<MapLayer> getLayers() {
         return orderedLayers;
@@ -115,54 +57,6 @@ public final class MapLayerRegistry {
     /** @return the pick an untouched save resolves to, the fallback for an absent or stale stored pick. */
     public static MapLayer getDefaultLayer() {
         return defaultLayer;
-    }
-
-    /**
-     * @return the map screen's picks, for the map host to draw through, switch and flip, so the host and
-     *         the overlay read one pair rather than each resolving their own
-     */
-    public static ScreenLayerPicks getMapPicks() {
-        return MAP_PICKS;
-    }
-
-    /**
-     * @return the intel screen's picks, its own under its own keys, so the intel sidebar's tab and its
-     *         show-or-hide state are independent of the map screen's and survive reload on their own
-     */
-    public static ScreenLayerPicks getIntelPicks() {
-        return INTEL_PICKS;
-    }
-
-    /**
-     * @return whether the layers are picked to show on the screen showing this frame, answered the
-     *         moment the pick flips. The crisp reading, for whatever has to stand down at once rather
-     *         than ride the dissolve out - a control switched off must stop answering the player
-     *         immediately, whatever is still fading off the screen
-     */
-    public static boolean areLayersShownOnLiveScreen() {
-        return resolveLivePicks().layerVisibility().areLayersShown();
-    }
-
-    /**
-     * @return the show-or-hide state of the screen showing this frame, for whatever stands a control on
-     *         that screen's own chrome: the stored pick such a control shows and moves, and the word
-     *         that one now stands there. One object for both halves, so a control cannot be bound to
-     *         one screen and recorded against the other; which screen it belongs to is settled here, so
-     *         the caller never has to ask
-     */
-    public static ControlBackedMapLayerVisibility resolveLayerControlOfLiveScreen() {
-        return isIntelScreenLive()
-            ? INTEL_LAYER_VISIBILITY
-            : MAP_LAYER_VISIBILITY;
-    }
-
-    /**
-     * @return how much of the showing screen's layers is on it this frame, 0 with them wholly hidden
-     *         and 1 with them wholly shown, for a pass multiplying it into what it paints so the
-     *         whole footprint thins together rather than one part snapping out from under another
-     */
-    public static float resolveShownFadeOnLiveScreen() {
-        return resolveLivePicks().layerVisibility().resolveShownFade();
     }
 
     /**
@@ -177,7 +71,7 @@ public final class MapLayerRegistry {
 
         // One resolution for both readings, so the pick answered and the show-or-hide state gating it
         // cannot come off different screens.
-        var livePicks = resolveLivePicks();
+        var livePicks = MapLayerScreens.resolveLivePicks();
 
         // Hiding lands here rather than at each consumer, because every pass driven by the active pick
         // already treats "no pick" as nothing to draw: one read takes the overlay, the labels and the
@@ -228,18 +122,5 @@ public final class MapLayerRegistry {
     // settings read behind it, on every frame the layers are simply on.
     private static boolean isAnythingOfTheLayersOn(MapLayerVisibility visibility) {
         return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
-    }
-
-    // The picks of the screen that is up. One resolution for the pair, so no reading can answer for a
-    // screen another reading has already left - which would hide one screen's layers over the other's tab.
-    private static ScreenLayerPicks resolveLivePicks() {
-        return isIntelScreenLive()
-            ? INTEL_PICKS
-            : MAP_PICKS;
-    }
-
-    // Whether the intel screen is the one up, which is what "live screen" means above.
-    private static boolean isIntelScreenLive() {
-        return intelScreen != null && intelScreen.isIntelTabOpen();
     }
 }

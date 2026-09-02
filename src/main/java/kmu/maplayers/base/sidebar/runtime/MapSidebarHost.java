@@ -6,7 +6,7 @@ import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
@@ -59,7 +59,7 @@ public final class MapSidebarHost extends BaseSidebarHost {
         // the intel screen.
         super(
             new PersistedSidebarFold(MAP_SIDEBAR_DOCKED_KEY, false),
-            MapLayerRegistry.getMapPicks(),
+            MapLayerScreens.getMapPicks(),
             screenClaim);
     }
 

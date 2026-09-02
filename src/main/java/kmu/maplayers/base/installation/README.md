@@ -169,7 +169,8 @@ which is the one sector a caller drawing another's map is not looking at.
 
 Kept out of here on purpose, so a reader does not go looking:
 
-- **The rosters.** `MapLayerRegistry`'s ordered layers, default and intel screen, and
+- **The rosters.** `MapLayerRegistry`'s ordered layers and default, `MapLayerScreens`' intel screen,
+  and
   `PoliticalMapViewRegistry`'s ordered views, default and host tab, are mod-load facts written once
   by `MapLayers.registerAll` before any sector exists. Which layers *exist* is the process's; which
   is *picked* is the sector's, and that half lives in sector memory.

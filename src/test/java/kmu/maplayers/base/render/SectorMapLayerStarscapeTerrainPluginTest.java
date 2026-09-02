@@ -2,6 +2,7 @@ package kmu.maplayers.base.render;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -52,16 +53,22 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
     // the registry was never reached at all, which a stubbing set up for every case would spend.
     private MockedStatic<MapLayerRegistry> layerRegistryMock;
 
+    // The screens' own stand-in, opened beside it: the surface asks the registry what draws and the
+    // screens how far through a hide the showing one stands, and a case posing one poses both.
+    private MockedStatic<MapLayerScreens> layerScreensMock;
+
     @BeforeEach
     void standInForTheLayerRegistryAndSettings() {
 
         mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
         layerRegistryMock = mockStatic(MapLayerRegistry.class);
+        layerScreensMock = mockStatic(MapLayerScreens.class);
     }
 
     @AfterEach
     void releaseTheLayerRegistryAndSettings() {
 
+        layerScreensMock.close();
         layerRegistryMock.close();
         mapLayerSettingsMock.close();
     }
@@ -84,8 +91,8 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
             .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
             .thenReturn(layerRendererMock);
 
-        layerRegistryMock
-            .when(MapLayerRegistry::resolveShownFadeOnLiveScreen)
+        layerScreensMock
+            .when(MapLayerScreens::resolveShownFadeOnLiveScreen)
             .thenReturn(FULLY_SHOWN);
     }
 

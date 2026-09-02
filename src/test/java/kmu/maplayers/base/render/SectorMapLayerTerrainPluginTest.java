@@ -9,6 +9,7 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -113,7 +114,7 @@ final class SectorMapLayerTerrainPluginTest {
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerRegistry.registerIntelScreen(intelScreenFake);
+        MapLayerScreens.registerIntelScreen(intelScreenFake);
     }
 
     @AfterEach
@@ -222,14 +223,15 @@ final class SectorMapLayerTerrainPluginTest {
 
             seatSurfacesInAnInstalledSector(plugin);
 
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class);
+                 var layerScreensMock = mockStatic(MapLayerScreens.class)) {
 
                 layerRegistryMock
                     .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
-                layerRegistryMock
-                    .when(MapLayerRegistry::resolveShownFadeOnLiveScreen)
+                layerScreensMock
+                    .when(MapLayerScreens::resolveShownFadeOnLiveScreen)
                     .thenReturn(0.5f);
 
                 plugin.renderOnMap(1.5f, 0.25f);

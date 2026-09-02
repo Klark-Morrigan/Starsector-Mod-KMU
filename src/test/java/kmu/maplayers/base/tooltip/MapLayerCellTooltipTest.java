@@ -14,6 +14,7 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
@@ -75,7 +76,7 @@ final class MapLayerCellTooltipTest {
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerRegistry.registerIntelScreen(intelScreenFake);
+        MapLayerScreens.registerIntelScreen(intelScreenFake);
     }
 
     @AfterEach
@@ -86,21 +87,37 @@ final class MapLayerCellTooltipTest {
     @Nested
     class RenderInUICoordsAboveUIAndTooltips {
 
+        // The sector the box would be drawn over, and the system under the cursor in it. Fields
+        // rather than locals because the hover is published against this sector's machinery in the
+        // group's fixture, and a case standing the sector up for itself could hover a system of one
+        // sector while the dispatcher read another's.
+        private final SectorAPI sectorMock = mock(SectorAPI.class);
+        private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
+
         @BeforeEach
         void hoverACell() {
             // Every case here is about what the gates do around a live hover, so the hover is the
             // group's fixture rather than each test's opening lines.
+            //
+            // Published onto the machinery installed on this sector, since the dispatcher resolves
+            // the running sector's installation and reads both the hover and the sector off it - a
+            // hover parked anywhere else is a hover of no sector, which draws nothing.
+            when(systemMock.getId())
+                .thenReturn("system");
+            when(sectorMock.getStarSystems())
+                .thenReturn(List.of(systemMock));
+
             MapLayerInstallations
-                .resolveInstallationForLiveSector()
+                .installMachineryOn(sectorMock)
                 .resolveHoverState()
                 .publishHover(new MapHover("system", List.of("system")));
         }
 
         @AfterEach
-        void clearTheHover() {
-            // The hover state is a process-wide singleton, so one left published would reach the
-            // next test as a hover it never asked for.
-            MapLayerInstallations.resolveInstallationForLiveSector().resolveHoverState().clearHover();
+        void discardTheInstalledMachinery() {
+            // The index is process-wide, so a sector left installed would reach the next test as a
+            // hover - and a drawing - it never asked for.
+            MapLayerInstallations.disposeEveryInstallation();
         }
 
         @AfterEach
@@ -158,13 +175,6 @@ final class MapLayerCellTooltipTest {
             // live read behind it is the union covering Starscape is pinned against the real
             // composition in MapLayerCellTooltipGateIntegrationTest.
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
-            var sectorMock = mock(SectorAPI.class);
-            var systemMock = mock(StarSystemAPI.class);
-
-            when(systemMock.getId())
-                .thenReturn("system");
-            when(sectorMock.getStarSystems())
-                .thenReturn(List.of(systemMock));
 
             runWithHoverTooltipSwitchOn(() -> {
                 try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
@@ -192,13 +202,6 @@ final class MapLayerCellTooltipTest {
             // than injected, since the holder is what the live key writes and the dispatcher reads
             // it the same way it reads the hover.
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
-            var sectorMock = mock(SectorAPI.class);
-            var systemMock = mock(StarSystemAPI.class);
-
-            when(systemMock.getId())
-                .thenReturn("system");
-            when(sectorMock.getStarSystems())
-                .thenReturn(List.of(systemMock));
 
             HoverTooltipDetailLevelState.getInstance().advanceLevel();
 

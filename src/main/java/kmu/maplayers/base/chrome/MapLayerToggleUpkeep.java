@@ -8,7 +8,7 @@ import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
 
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.apache.log4j.Logger;
@@ -91,7 +91,7 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     public MapLayerToggleUpkeep() {
         this(
             KmuMapLayerSettings::getMapFilterRowToggleEnabled,
-            MapLayerRegistry::resolveLayerControlOfLiveScreen,
+            MapLayerScreens::resolveLayerControlOfLiveScreen,
             MapFilterRows::resolveShownMapFilterRow,
             new VanillaMapLayerToggleAttacher());
     }

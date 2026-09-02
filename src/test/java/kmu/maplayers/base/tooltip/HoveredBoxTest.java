@@ -12,6 +12,7 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.junit.jupiter.api.AfterEach;
@@ -47,10 +48,11 @@ final class HoveredBoxTest {
 
     private static final String SYSTEM_ID = "system";
 
-    // The machinery of the sector the box would describe. One for the class, since every case here
-    // is about one sector's box: which sector it is turns nothing, and a fresh one per assertion
-    // would suggest it did.
-    private final MapLayerInstallation installation = new MapLayerInstallation(null);
+    // Machinery over no sector, for the cases that hand an installation in rather than have the
+    // chain resolve one. One for the class, since those cases are about which box a layer injects
+    // and not about whose map it is: a fresh one per assertion would suggest the sector turned
+    // something.
+    private final MapLayerInstallation detachedInstallation = new MapLayerInstallation(null);
 
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
@@ -78,14 +80,26 @@ final class HoveredBoxTest {
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerRegistry.registerIntelScreen(new IntelScreenViewFake());
+        MapLayerScreens.registerIntelScreen(new IntelScreenViewFake());
+
+        // The chain reads the hover and the sector off one installation, so the box can only be
+        // about a sector the machinery is actually installed on - a hover parked on machinery
+        // belonging to no sector describes no map and draws nothing.
+        MapLayerInstallations.installMachineryOn(sectorMock);
     }
 
     @AfterEach
     void restoreTheSharedState() {
 
         MapLayerRosters.restoreNonEmptyRoster();
-        MapLayerInstallations.resolveInstallationForLiveSector().resolveHoverState().clearHover();
+
+        // The index is process-wide, so a sector left installed would carry this test's hover into
+        // the next one.
+        MapLayerInstallations.disposeEveryInstallation();
+
+        // The machinery over no sector is shared and never disposed, being nobody's to release - so
+        // the one case that publishes onto it has to put it back itself.
+        MapLayerInstallations.resolveInstallationFor(null).resolveHoverState().clearHover();
     }
 
     @Nested
@@ -158,11 +172,34 @@ final class HoveredBoxTest {
         }
 
         @Test
+        void resolveHoveredBoxIsEmptyForAHoverBelongingToNoSector() {
+            // The box names its sector off the installation it read the hover from rather than off a
+            // second read of the running game, so the two cannot disagree. Posed against machinery
+            // over no sector - what a seam reached with the overlay switched off resolves - which
+            // holds a hover nobody's map published: a box built for the running sector out of that
+            // hover would describe a cell of a map that was never drawn.
+            MapLayerInstallations
+                .resolveInstallationFor(null)
+                .resolveHoverState()
+                .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));
+
+            try (var globalMock = mockStatic(Global.class)) {
+
+                globalMock
+                    .when(Global::getSector)
+                    .thenReturn(mock(SectorAPI.class));
+
+                assertThat(HoveredBox.resolveHoveredBox())
+                    .isEmpty();
+            }
+        }
+
+        @Test
         void resolveHoveredBoxIsEmptyWhenTheHoveredIdNoLongerNamesASystem() {
             // A system dropped between the hover being published and this frame reading it. Tolerated
             // rather than dereferenced, since the hover is a value the map pass left behind.
             MapLayerInstallations
-                .resolveInstallationForLiveSector()
+                .resolveInstallationFor(sectorMock)
                 .resolveHoverState()
                 .publishHover(new MapHover("gone", List.of("gone")));
 
@@ -246,7 +283,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
                     .contains(tooltipMock);
             }
         }
@@ -263,7 +300,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
                     .isEmpty();
             }
         }
@@ -295,7 +332,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
                     .contains(tooltipMock);
             }
         }
@@ -317,7 +354,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
                     .isEmpty();
             }
         }
@@ -328,17 +365,18 @@ final class HoveredBoxTest {
             // what the cursor is over, and has nothing to report about layers the player has just
             // switched off. Posed with a renderer still standing behind the pick, so what is pinned is
             // the box standing down on the pick rather than on the renderer going away with it.
-            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class)) {
+            try (var layerRegistryMock = mockStatic(MapLayerRegistry.class);
+                 var layerScreensMock = mockStatic(MapLayerScreens.class)) {
 
-                layerRegistryMock
-                    .when(MapLayerRegistry::areLayersShownOnLiveScreen)
+                layerScreensMock
+                    .when(MapLayerScreens::areLayersShownOnLiveScreen)
                     .thenReturn(false);
 
                 layerRegistryMock
                     .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
-                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
                     .isEmpty();
             }
         }
@@ -355,7 +393,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(installation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
                     .isEmpty();
             }
         }
@@ -380,11 +418,12 @@ final class HoveredBoxTest {
         }
     }
 
-    // Puts the cursor over the registered system, which the chain resolves the hovered id against.
+    // Puts the cursor over the registered system, on the machinery of the sector that system is in -
+    // which is the only installation the chain would read it back off.
     private void hoverTheSystem() {
 
         MapLayerInstallations
-            .resolveInstallationForLiveSector()
+            .resolveInstallationFor(sectorMock)
             .resolveHoverState()
             .publishHover(new MapHover(SYSTEM_ID, List.of(SYSTEM_ID)));
     }

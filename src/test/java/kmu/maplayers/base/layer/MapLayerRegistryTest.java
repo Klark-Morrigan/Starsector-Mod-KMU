@@ -22,37 +22,32 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the framework registry's contract with fake layers: the tab order it hands back, the pick an
- * untouched save resolves to, and the frozen keys each screen's pair of picks reads and writes. The generic
- * persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s, and the show-or-hide pick's is
- * {@link PersistedMapLayerVisibilityTest}'s; this pins only what the registry adds - the four frozen
- * per-screen keys, how {@link MapLayerRegistry#isActive} resolves which screen's pick is the live one,
- * and the show-or-hide answer it folds into that pick so a hidden screen resolves to nothing to draw.
- * The screens themselves are stand-in gates here: which concrete screens exist is the composition
- * root's business, and this pins only that the showing one wins.
+ * untouched save resolves to, and the one answer everything that paints hangs off - which layer is in
+ * play on the screen showing this frame, and the show-or-hide state folded into it so a hidden screen
+ * resolves to nothing to draw.
+ *
+ * <p>Where those picks live, and the keys they ride in the save under, are {@link MapLayerScreensTest}'s;
+ * the generic persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s and
+ * {@link PersistedMapLayerVisibilityTest}'s. What is left here is the composition: the roster, the fold,
+ * and that both follow the screen the player is looking at.
  *
  * <p>A hide is acted on only for a screen that has a control able to reverse it, so every case posing
- * hidden layers poses that control too. The rule behind it, and what a screen without one reads, are
- * {@link ControlBackedMapLayerVisibilityTest}'s: these cases are about which screen an answer comes off.
+ * hidden layers poses that control too. The rule behind it is
+ * {@link ControlBackedMapLayerVisibilityTest}'s.
  */
 final class MapLayerRegistryTest {
 
-    // The frozen sector-memory keys, pinned as literals so a rename - which would silently reset every
-    // existing save - fails this test rather than shipping. One per screen, so the two picks stay
-    // independent.
+    // The frozen sector-memory keys the cases pose picks through. Pinned as literals in
+    // MapLayerScreensTest, which is what a rename fails against; named here to seed a state, not to
+    // assert one.
     private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
     private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
-
-    // The same for each screen's show-or-hide pick, pinned for the same reason.
     private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
     private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
 
     // A hide pace long enough that a reading taken straight after the flip is unmistakably part-way down
     // the ramp rather than past its end, which is the state the registry must still hand a renderer for.
     private static final float LONG_HIDE_FADE_SECONDS = 1_000f;
-
-    // The two ends of that ramp, as a consumer reads them.
-    private static final float FULLY_HIDDEN = 0f;
-    private static final float FULLY_SHOWN = 1f;
 
     // The machinery of the sector being drawn, which the registry passes through rather than
     // resolves. One for the class, so a case asserting it reached the layer is comparing against
@@ -85,10 +80,10 @@ final class MapLayerRegistryTest {
         // composition root uses (a non-leading default pick).
         MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), secondLayerMock);
 
-        // The registry is static, so a screen left wired would outlive its test. Handing it a fresh
-        // fake per test starts each from the intel screen closed rather than wherever a neighbour left
-        // it - and keeps the live binding, which reaches into a running game, out of the suite.
-        MapLayerRegistry.registerIntelScreen(intelScreenFake);
+        // The screens are static, so one left wired would outlive its test. Handing a fresh fake per
+        // test starts each from the intel screen closed rather than wherever a neighbour left it - and
+        // keeps the live binding, which reaches into a running game, out of the suite.
+        MapLayerScreens.registerIntelScreen(intelScreenFake);
 
         sectorMemoryFake = new SectorMemoryFake();
     }
@@ -121,143 +116,6 @@ final class MapLayerRegistryTest {
 
             assertThat(MapLayerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock);
-        }
-    }
-
-    @Nested
-    class GetMapPicks {
-
-        @Test
-        void getMapPicksSelectsThroughTheFrozenMapKey() {
-
-            MapLayerRegistry
-                .getMapPicks()
-                .layerSelection()
-                .selectLayer(firstLayerMock);
-
-            assertThat(sectorMemoryFake.readStoredValue(MAP_ACTIVE_LAYER_KEY))
-                .isEqualTo("first");
-        }
-
-        @Test
-        void getMapPicksHidesThroughTheFrozenMapKey() {
-            // The pair's second key, pinned beside the first: both are this screen's, so a pair built
-            // from one screen's tab and the other's hiding fails here rather than in play.
-            MapLayerRegistry
-                .getMapPicks()
-                .layerVisibility()
-                .showLayers(false);
-
-            assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
-                .isEqualTo(false);
-        }
-    }
-
-    @Nested
-    class GetIntelPicks {
-
-        @Test
-        void getIntelPicksSelectsThroughTheFrozenIntelKey() {
-
-            MapLayerRegistry
-                .getIntelPicks()
-                .layerSelection()
-                .selectLayer(firstLayerMock);
-
-            assertThat(sectorMemoryFake.readStoredValue(INTEL_ACTIVE_LAYER_KEY))
-                .isEqualTo("first");
-        }
-
-        @Test
-        void getIntelPicksHidesThroughTheFrozenIntelKey() {
-
-            MapLayerRegistry
-                .getIntelPicks()
-                .layerVisibility()
-                .showLayers(false);
-
-            assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
-                .isEqualTo(false);
-        }
-    }
-
-    @Nested
-    class AreLayersShownOnLiveScreen {
-
-        @Test
-        void areLayersShownOnLiveScreenAnswersFromTheShowingScreensPick() {
-            // Per screen, so hiding on one leaves the other showing: the control sits on each screen's
-            // own chrome, and a shared answer would empty a screen the player is not looking at.
-            hideTheIntelScreensLayers();
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.areLayersShownOnLiveScreen())
-                .isFalse();
-
-            intelScreenFake.setIntelTabOpen(false);
-
-            assertThat(MapLayerRegistry.areLayersShownOnLiveScreen())
-                .isTrue();
-        }
-    }
-
-    @Nested
-    class ResolveShownFadeOnLiveScreen {
-
-        @Test
-        void resolveShownFadeOnLiveScreenAnswersFromTheShowingScreensPick() {
-            // What a pass multiplies into its alpha, and it follows the same screen the pick does - a
-            // fade taken off the other screen would thin an overlay nobody asked to hide.
-            hideTheIntelScreensLayers();
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.resolveShownFadeOnLiveScreen())
-                .isEqualTo(FULLY_HIDDEN);
-
-            intelScreenFake.setIntelTabOpen(false);
-
-            assertThat(MapLayerRegistry.resolveShownFadeOnLiveScreen())
-                .isEqualTo(FULLY_SHOWN);
-        }
-    }
-
-    @Nested
-    class ResolveLayerControlOfLiveScreen {
-
-        @Test
-        void resolveLayerControlOfLiveScreenHandsBackTheShowingScreensOwnStoredPick() {
-            // The stored pick rather than a reading of it, since what asks is a control that both
-            // shows it and moves it. Written through, it must move the screen that was up and leave
-            // the other where it was - which is the whole of what a control on one screen's own
-            // chrome may do.
-            intelScreenFake.setIntelTabOpen(true);
-
-            MapLayerRegistry
-                .resolveLayerControlOfLiveScreen()
-                .getStoredVisibility()
-                .showLayers(false);
-
-            assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
-                .isEqualTo(false);
-
-            assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
-                .isNull();
-        }
-
-        @Test
-        void resolveLayerControlOfLiveScreenHandsBackTheStateInTheShowingScreensPair() {
-            // The one object per screen, not a second alongside the pair: a control recorded against
-            // one instance while the hosts and the overlay read another would leave a hide the player
-            // made through the box unacted on, with nothing to say which of the two was wrong.
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.resolveLayerControlOfLiveScreen())
-                .isSameAs(MapLayerRegistry.getIntelPicks().layerVisibility());
-
-            intelScreenFake.setIntelTabOpen(false);
-
-            assertThat(MapLayerRegistry.resolveLayerControlOfLiveScreen())
-                .isSameAs(MapLayerRegistry.getMapPicks().layerVisibility());
         }
     }
 
@@ -449,8 +307,8 @@ final class MapLayerRegistryTest {
     // Poses a save in which one screen's layers were switched off and their ramp has long since run out.
     // Seeded rather than flipped, so the reading is the settled one whatever the pace reads.
     //
-    // The control that switched them off is posed with it, since the registry acts on a stored hide only
-    // for a screen that has one - a case seeding the hide alone would be posing a screen whose layers are
+    // The control that switched them off is posed with it, since a stored hide is acted on only for a
+    // screen that has one - a case seeding the hide alone would be posing a screen whose layers are
     // still shown, and would pass for saying so.
     private void hideTheMapScreensLayers() {
 
@@ -464,14 +322,14 @@ final class MapLayerRegistryTest {
         recordAControlOnTheShowingScreen(true);
     }
 
-    // Says a control stands on one of the two screens. The registry records against the screen that is
-    // up, which is all a control on a screen's own chrome could ever mean, so the tab is put there for
-    // the recording; every case that cares which screen is up sets it for itself afterwards.
+    // Says a control stands on one of the two screens. It is recorded against the screen that is up,
+    // which is all a control on a screen's own chrome could ever mean, so the tab is put there for the
+    // recording; every case that cares which screen is up sets it for itself afterwards.
     private void recordAControlOnTheShowingScreen(boolean isIntelTabOpen) {
 
         intelScreenFake.setIntelTabOpen(isIntelTabOpen);
 
-        MapLayerRegistry
+        MapLayerScreens
             .resolveLayerControlOfLiveScreen()
             .recordControlAttached();
     }
@@ -484,7 +342,7 @@ final class MapLayerRegistryTest {
 
         recordAControlOnTheShowingScreen(false);
 
-        MapLayerRegistry
+        MapLayerScreens
             .getMapPicks()
             .layerVisibility()
             .showLayers(false);

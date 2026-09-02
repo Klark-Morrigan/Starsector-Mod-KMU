@@ -18,6 +18,7 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
@@ -105,11 +106,15 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
-        MapLayerRegistry.registerIntelScreen(new IntelScreenViewFake());
+        MapLayerScreens.registerIntelScreen(new IntelScreenViewFake());
 
         // Everything below the map gate is open, so what the box does is the gate's answer alone.
+        //
+        // Published onto the machinery of the sector every case runs as the live one: the box reads
+        // its hover and its sector off one installation, so a hover parked anywhere else would leave
+        // the gate answering over nothing to draw.
         MapLayerInstallations
-            .resolveInstallationForLiveSector()
+            .installMachineryOn(sectorMock)
             .resolveHoverState()
             .publishHover(new MapHover("system", List.of("system")));
     }
@@ -118,7 +123,10 @@ class MapLayerCellTooltipGateIntegrationTest {
     void restoreTheSharedState() {
 
         MapLayerRosters.restoreNonEmptyRoster();
-        MapLayerInstallations.resolveInstallationForLiveSector().resolveHoverState().clearHover();
+
+        // The index is process-wide, so a sector left installed would carry this test's hover into
+        // the next one.
+        MapLayerInstallations.disposeEveryInstallation();
 
         // The level holder is a process-wide singleton like the hover, so an advance left standing
         // would reach the next test as a detail level it never asked for.

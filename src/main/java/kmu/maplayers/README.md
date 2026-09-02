@@ -110,7 +110,8 @@ Two words that are **not** synonyms, despite looking alike:
 The same map widget draws on the sector map and inside the visor, so "which layer is active" cannot
 be one shared value: it would paint the sector map's pick onto the intel screen and ignore the tab
 the player is looking at. Each screen holds its own `PersistedActiveLayerSelection` under its own
-key, and `MapLayerRegistry.isActive` resolves which is live per frame from which screen is up.
+key in `MapLayerScreens`, and `MapLayerRegistry.isActive` resolves which is live per frame from
+which screen is up.
 
 ```mermaid
 flowchart TD
@@ -142,7 +143,9 @@ about what the overlay means.
 ## Where each part lives
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
-  shortcut), `MapLayerRegistry` (roster, both screens' picks, save migrations), `NoLayer`, and
+  shortcut), `MapLayerRegistry` (the roster, and what is in play on the screen showing this frame),
+  `MapLayerScreens` (both screens' picks under their frozen keys, and which screen is up), `NoLayer`,
+  and
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
   beside its tab and handed out with it as one `ScreenLayerPicks`, so nothing can read one screen's
   tab against another's hiding. The pick is folded into the active-layer answer rather than read by

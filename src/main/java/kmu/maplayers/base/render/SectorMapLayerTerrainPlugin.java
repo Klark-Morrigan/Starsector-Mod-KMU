@@ -11,6 +11,7 @@ import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapLayerSettings;
 
 import java.util.EnumSet;
@@ -160,7 +161,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // with, so hiding thins the picture rather than cutting it - and thins it on the same curve the
         // rest of the layers' footprint rides. A screen settled hidden never reaches here at all, the
         // active pick resolving to nothing once the dissolve is over.
-        var shownAlpha = alphaMult * MapLayerRegistry.resolveShownFadeOnLiveScreen();
+        var shownAlpha = alphaMult * MapLayerScreens.resolveShownFadeOnLiveScreen();
 
         for (var band : paintedBands) {
             layerRenderer.renderOnMap(factor, shownAlpha, band);

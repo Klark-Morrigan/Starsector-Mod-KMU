@@ -686,7 +686,7 @@ The *panel widget itself* - frame, tab strip, scrollbar, collapse handle, contro
 seam, its sort and column model, and the list memo behind it (`.widgets.lists`, see
 [Picker state](#picker-state)); this package supplies only the wiring KMLib cannot know. The *layer
 roster and each screen's active pick*, including the save migrations
-behind them, are `base/layer`'s (`MapLayerRegistry`), summarised in
+behind them, are `base/layer`'s (`MapLayerRegistry` and `MapLayerScreens`), summarised in
 [map layers](../../README.md). The *body composition* the panel lays out belongs to whichever
 layer is active - for the political map, [`politicalmap`](../../politicalmap/README.md) and its
 `base/sidebar` controls - though it is here that KMLib's picker is bound to the save (see
