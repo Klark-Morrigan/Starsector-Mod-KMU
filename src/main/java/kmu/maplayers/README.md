@@ -150,7 +150,11 @@ about what the overlay means.
   a hidden screen resolves to no active layer once its fade is out, which every pass driven by that
   pick already draws nothing for. The sidebar is the one part of the footprint outside that answer,
   since it draws whether or not a layer is picked, so it reads the same pick at
-  [its own gate](base/sidebar/README.md) - two reads for the whole visible footprint. A layer is
+  [its own gate](base/sidebar/README.md) - two reads for the whole visible footprint. What either read
+  gets is `ControlBackedMapLayerVisibility`: a stored hide is acted on only while that screen has a
+  control able to take it back, and read as shown until it has one, the stored choice untouched and
+  honoured again the moment there is a control for it. Which screens have one is `base/chrome`'s
+  answer below, and the session's rather than the save's. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own.
@@ -593,7 +597,12 @@ about what the overlay means.
   another party's widget is a reach into the running game's tree, and
   `VanillaMapLayerToggleAttacher` is that reach, over KMLib's `MapFilterToggle`. Everything here
   fails open - no row, no room, a shape that no longer builds a drivable button, a read that throws
-  - to no control, one line in the log, and a map behaving as it did before the box existed.
+  - to no control, one line in the log, and a map behaving as it did before the box existed. Failing
+  open has a second half no log line covers: the upkeep is also the only thing that says a screen has
+  a control, said once a box is actually standing rather than when one is attempted, so a screen it
+  never writes to goes on showing its layers whatever the save holds. That word is what
+  `ControlBackedMapLayerVisibility` acts on, and a box is bound to the stored pick underneath it, so
+  it shows the choice the player made rather than the reading that rule gives everything else.
   Whether it is attempted at all is `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev hatch
   rather than an appearance knob, since what it governs is the reach and not the look.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
