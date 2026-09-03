@@ -56,16 +56,23 @@ final class ObservationNotesTest {
 
         clockMock = mock(CampaignClockAPI.class);
 
-        ObservationClockFixture
-            .stubMomentOnClock(clockMock, OBSERVED_LONG_AGO, LONG_AGO_ELAPSED_DAYS, LONG_AGO_DATE);
-        ObservationClockFixture
-            .stubMomentOnClock(clockMock, OBSERVED_RECENTLY, RECENTLY_ELAPSED_DAYS, RECENTLY_DATE);
+        ObservationClockFixture.stubMomentOnClock(
+            clockMock,
+            OBSERVED_LONG_AGO,
+            LONG_AGO_ELAPSED_DAYS,
+            LONG_AGO_DATE);
+        ObservationClockFixture.stubMomentOnClock(
+            clockMock,
+            OBSERVED_RECENTLY,
+            RECENTLY_ELAPSED_DAYS,
+            RECENTLY_DATE);
 
         StarsectorSettingsFake.installSettings();
     }
 
     @AfterEach
     void clearStrings() {
+
         StarsectorSettingsFake.clearSettings();
     }
 

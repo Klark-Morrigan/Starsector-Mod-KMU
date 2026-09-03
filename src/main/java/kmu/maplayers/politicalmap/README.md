@@ -465,9 +465,7 @@ being the two routes an observation is ever made by: the player's fleet is in th
 system's own inhabitants can see the colony - the owner-aware reading the visibility rule itself
 uses. The notes pose that live reading and the register's recall in the shared triad's terms
 (`ObservationRecency.resolveRecency`) and hand one axis, under the colony's own `last seen` lead-in,
-to the shared `ObservationNotes` - which dates the line only where the axis is recalled with a
-moment, composing the span and the date off `CampaignClockAPI` in the span words every axis shares.
-That
+to the shared `ObservationNotes`, which owns when a date is due and what it reads as. The remark
 matters most for the colonies a revelation gate admitted on the strength of an observation - a
 derelict, a concealed base - which would otherwise be listed exactly as a colony the player is
 standing over. No visibility rule reads the time: the moment being shown turned on how recent an

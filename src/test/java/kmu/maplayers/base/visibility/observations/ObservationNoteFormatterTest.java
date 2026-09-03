@@ -47,6 +47,7 @@ final class ObservationNoteFormatterTest {
 
     @AfterEach
     void clearStrings() {
+
         StarsectorSettingsFake.clearSettings();
     }
 
@@ -108,8 +109,11 @@ final class ObservationNoteFormatterTest {
             // What the split is for. The lead-in is the axis's own and the span words are not, so
             // one axis cannot come to phrase an age differently from another - which is the drift
             // the shared formatter exists to close.
-            ObservationClockFixture
-                .stubMomentOnClock(clockMock, OBSERVED_AT, 34.0f, OBSERVED_DATE);
+            ObservationClockFixture.stubMomentOnClock(
+                clockMock,
+                OBSERVED_AT,
+                34.0f,
+                OBSERVED_DATE);
 
             assertThat(ObservationNoteFormatter
                     .formatObservationNote(clockMock, leadInKey, OBSERVED_AT))
@@ -122,6 +126,7 @@ final class ObservationNoteFormatterTest {
     // that is no longer the day before. Paired with the remark each is due, so a threshold loosened
     // by one comparison names the case it broke.
     static Stream<Arguments> listSpansStandingOnAWordingThreshold() {
+
         return Stream.of(
             Arguments.of(1.0f, "last seen a day ago (c206.05.12)"),
             Arguments.of(2.0f, "last seen 2 days ago (c206.05.12)"));
@@ -132,6 +137,7 @@ final class ObservationNoteFormatterTest {
     // being one axis in hand today and the point being that the class holds no opinion about which
     // words introduce it. The span reads the same in both.
     static Stream<Arguments> listLeadInsTheSameSpanIsComposedUnder() {
+
         return Stream.of(
             Arguments.of(
                 KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
@@ -145,8 +151,11 @@ final class ObservationNoteFormatterTest {
     // sighting states.
     private String formatNoteObservedDaysAgo(float elapsedDays) {
 
-        ObservationClockFixture
-            .stubMomentOnClock(clockMock, OBSERVED_AT, elapsedDays, OBSERVED_DATE);
+        ObservationClockFixture.stubMomentOnClock(
+            clockMock,
+            OBSERVED_AT,
+            elapsedDays,
+            OBSERVED_DATE);
 
         return ObservationNoteFormatter.formatObservationNote(
             clockMock,

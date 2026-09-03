@@ -130,7 +130,8 @@ public final class ColonyObservationNotes {
      *
      * @param colonyId the colony's market id, as the account listing it carries
      * @return the remark, or empty where the colony is being observed now, where nothing was ever
-     *         observed of it, or where what was observed carries no time
+     *         observed of it, where what was observed carries no time, or where there is no clock
+     *         to date it by
      */
     Optional<String> resolveLastSeenNote(String colonyId) {
 

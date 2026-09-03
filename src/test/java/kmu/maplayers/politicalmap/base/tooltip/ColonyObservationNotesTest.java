@@ -11,6 +11,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 
+import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
+import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.visibility.colonies.ColonyObservation;
 import kmu.maplayers.base.visibility.colonies.ColonySightings;
 import kmu.starsector.StarsectorSettingsFake;
@@ -44,7 +46,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>How an age is worded - the span words, their thresholds, the truncation - is pinned once,
  * beside the code that composes it. What is pinned here is the colony's side: when a remark is due
- * at all, and one composed sentence proving the route from register to remark.
+ * at all, one composed sentence proving the route from register to remark, and that the remark
+ * reaches the colony's own line.
  */
 final class ColonyObservationNotesTest {
 
@@ -106,22 +109,14 @@ final class ColonyObservationNotesTest {
         void remarksHowLongAgoAndOnWhatDateAColonyNobodyIsLookingAtWasSeen() {
             // The whole of what the time decides. Both halves are stated: the span is what a
             // reader judges the news by, and the date is what they hold it against.
+            //
+            // The opening words are the colony's own last-seen key, resolved through the settings
+            // mirror of it - so an axis handed over under a lead-in minted beside the shared rule
+            // fails here rather than in game.
             var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
                 .contains("last seen 34 days ago (c206.05.12)");
-        }
-
-        @Test
-        void remarksUnderTheColonysOwnLastSeenLeadIn() {
-            // What the handover to the shared rule must not have moved: the axis travels under the
-            // colony's shipped last-seen key, not a lead-in minted beside the rule. The words come
-            // back through the settings mirror of that key, so a swapped key changes the opening
-            // words and fails here rather than in game.
-            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
-
-            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .hasValueSatisfying(note -> assertThat(note).startsWith("last seen "));
         }
 
         @Test
@@ -167,6 +162,39 @@ final class ColonyObservationNotesTest {
                     .resolveLastSeenNote(DERELICT_ID))
                 .isEmpty();
         }
+    }
+
+    @Nested
+    class RemarkOnColony {
+
+        @Test
+        void laysTheRemarkOnTheColonysOwnLine() {
+
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
+
+            assertThat(notes.remarkOnColony(buildColonyLine(), DERELICT_ID).noteText())
+                .isEqualTo("last seen 34 days ago (c206.05.12)");
+        }
+
+        @Test
+        void handsBackTheSameLineWhereNoRemarkIsDue() {
+            // A colony in plain sight. The line must come back as its account built it: a remark
+            // that is not due must leave the line alone rather than lay an empty one on it, which
+            // would part the name from what qualifies it over a note with nothing in it.
+            when(sectorMock.getCurrentLocation())
+                .thenReturn(systemMock);
+
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
+            var line = buildColonyLine();
+
+            assertThat(notes.remarkOnColony(line, DERELICT_ID))
+                .isSameAs(line);
+        }
+    }
+
+    // One colony's line as its account hands it over, carrying no remark of its own.
+    private static CellTooltipEntryLine buildColonyLine() {
+        return CellTooltipEntryLine.createLine(CellTooltipMark.NO_MARK, "Sentinel Gantries", "0");
     }
 
     // The notes a box over the one system reads, the player's fleet being elsewhere unless a case
