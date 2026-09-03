@@ -131,7 +131,7 @@ public final class ColonyObservationNotes {
      * @return the remark, or empty where the colony is being observed now, where nothing was ever
      *         observed of it, or where what was observed carries no time
      */
-    public Optional<String> resolveLastSeenNote(String colonyId) {
+    Optional<String> resolveLastSeenNote(String colonyId) {
 
         if (isPlayerPresent || readColonyIdsObservedByInhabitants().contains(colonyId)) {
             return NO_NOTE;
