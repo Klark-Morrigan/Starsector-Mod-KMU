@@ -49,8 +49,6 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public String resolveTabLabelText() {
-        // Resolved here rather than handed to the bar as a key: the bundle belongs to the mod that
-        // declares the layer, and this tab is KMU's.
         return KmuStrings.get(KmuStrings.POLITICAL_MAP_TAB_POLITICAL_MAP);
     }
 

@@ -18,6 +18,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
+import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -48,6 +49,9 @@ import static org.mockito.Mockito.when;
  * body's one resolution observable: the composition cases resolve no sector, so a build reaching any
  * other installation would answer identically. They pin that the picker is read off that sector's
  * memo, and that every control the body places is handed that installation's own refresh board.
+ *
+ * <p>Also the key this tab letters itself from, which the bar takes as drawn text rather than looking
+ * up: swapped for another tab's, it is a wrong label on screen and nothing else catches it.
  */
 final class PoliticalMapLayerTest {
 
@@ -390,6 +394,24 @@ final class PoliticalMapLayerTest {
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(installedBoard);
             });
+        }
+    }
+
+    @Nested
+    class ResolveTabLabelText {
+
+        @Test
+        void resolveTabLabelTextLettersTheTabFromThePoliticalMapsOwnKey() {
+
+            try (var stringsMock = mockStatic(KmuStrings.class)) {
+
+                stringsMock
+                    .when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_TAB_POLITICAL_MAP))
+                    .thenReturn("Political Map");
+
+                assertThat(PoliticalMapLayer.INSTANCE.resolveTabLabelText())
+                    .isEqualTo("Political Map");
+            }
         }
     }
 

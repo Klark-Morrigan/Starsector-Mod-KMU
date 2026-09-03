@@ -1,39 +1,36 @@
 package kmu.maplayers.base.layer;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the empty view's two defining answers: the id a save stores for it, frozen because renaming
- * it silently resets every save holding that pick, and its lack of a renderer - the whole way "show
- * nothing" is expressed to the map surface, rather than a flag the surface tests for.
+ * Pins the one text the empty view resolves for itself. The bar draws what a layer hands back and looks
+ * nothing up, so the key a layer reaches for is now the layer's own fact: swapped for another tab's, it
+ * is a wrong label on screen and nothing else catches it. What the key is worded as in the shipped
+ * bundle is pinned against the strings file elsewhere.
  */
 final class NoLayerTest {
 
     @Nested
-    class GetId {
+    class ResolveTabLabelText {
 
         @Test
-        void getIdReturnsTheFrozenSavedId() {
+        void resolveTabLabelTextLettersTheTabFromTheEmptyViewsOwnKey() {
 
-            assertThat(NoLayer.INSTANCE.getId())
-                .isEqualTo("no_layer");
-        }
-    }
+            try (var stringsMock = mockStatic(KmuStrings.class)) {
 
-    @Nested
-    class ResolveRenderer {
+                stringsMock
+                    .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_TAB_NO_LAYER))
+                    .thenReturn("No Layer");
 
-        @Test
-        void resolveRendererIsNullBecauseThisLayerDrawsNothing() {
-            // Whichever sector is asked about: there is nothing here for a sector to differ in, so
-            // the installation goes unread and every sector gets the same answer.
-            assertThat(NoLayer.INSTANCE.resolveRenderer(new MapLayerInstallation(null)))
-                .isNull();
+                assertThat(NoLayer.INSTANCE.resolveTabLabelText())
+                    .isEqualTo("No Layer");
+            }
         }
     }
 }

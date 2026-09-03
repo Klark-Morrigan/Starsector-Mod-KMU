@@ -17,11 +17,10 @@ import static org.mockito.Mockito.when;
  * Pins the intel overlay's anchor math: the box hangs from the visor's top-left corner (UI origin
  * bottom-left, so the visor's top edge is its y plus its height), pushed down by the top padding, flush to
  * the visor's left, and capped to the visor's bottom - all expressed as screen padding for the
- * top-left-anchored layout. The anchor is the whole of what this class decides per screen; the tab band
- * each panel stands its row in is its host's, and pinned there.
+ * top-left-anchored layout. The tab band each panel stands its row in is its host's, and pinned there.
  *
- * <p>Also pins where the tab row's letters come from: each layer's own answer, taken as drawn text, so a
- * layer shipped by another mod letters its tab out of its own bundle.
+ * <p>And where the tab row's letters come from: each layer's own answer, taken as drawn text, so a layer
+ * shipped by another mod letters its tab out of its own bundle.
  */
 final class LiveSidebarPlacementTest {
 
