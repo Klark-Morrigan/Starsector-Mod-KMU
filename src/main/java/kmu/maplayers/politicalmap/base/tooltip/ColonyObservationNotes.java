@@ -9,6 +9,7 @@ import kmlib.starsector.colonies.Colonies;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonySightings;
+import kmu.maplayers.base.visibility.observations.ObservationNoteFormatter;
 import kmu.util.KmuStrings;
 
 import java.util.HashSet;
@@ -44,11 +45,6 @@ public final class ColonyObservationNotes {
     // What the player is being shown right now needs no date beside it, whichever route is doing
     // the observing.
     private static final Optional<String> NO_NOTE = Optional.empty();
-
-    // The two spans the wording turns on. The clock reports elapsed days as a fraction, so short
-    // of one whole day the colony was seen today, and short of two it was seen the day before.
-    private static final float A_DAY = 1.0f;
-    private static final float TWO_DAYS = 2.0f;
 
     // What a box with no world to read answers about every colony: nobody standing anywhere, and
     // no clock, so nothing can be said about when anything was last seen.
@@ -145,9 +141,15 @@ public final class ColonyObservationNotes {
         if (observation == null || clock == null) {
             return NO_NOTE;
         }
+        // The lead-in is the colony's own: what the box states of a colony is that somebody had
+        // eyes on it, which is the only route a colony is ever observed by. The span and the date
+        // are composed in the words every axis shares.
         return observation
             .observedTimestamp()
-            .map(this::formatLastSeenNote);
+            .map(observedTimestamp -> ObservationNoteFormatter.formatObservationNote(
+                clock,
+                KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
+                observedTimestamp));
     }
 
     /**
@@ -207,34 +209,5 @@ public final class ColonyObservationNotes {
             colonyIds.add(colony.market().getId());
         }
         return colonyIds;
-    }
-
-    // When the colony was last seen, said twice over: how long ago, and on what date. The span is
-    // what a reader judges the news by, and the date is what they can hold against anything else
-    // they know - neither answers for the other.
-    //
-    // The clock the date is read on is built from the stamp and discarded with the line, this
-    // being the only way the game turns a moment into a date.
-    private String formatLastSeenNote(long observedTimestamp) {
-
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-            formatElapsedSpan(clock.getElapsedDaysSince(observedTimestamp)),
-            clock.createClock(observedTimestamp).getDateString());
-    }
-
-    // How long ago, in whole days. A span short of a day is named rather than rounded to nought:
-    // "0 days ago" reads as a fault in the box, and the reader is being told the news is fresh.
-    private static String formatElapsedSpan(float elapsedDays) {
-
-        if (elapsedDays < A_DAY) {
-            return KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY);
-        }
-        if (elapsedDays < TWO_DAYS) {
-            return KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO);
-        }
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO,
-            (int) elapsedDays);
     }
 }

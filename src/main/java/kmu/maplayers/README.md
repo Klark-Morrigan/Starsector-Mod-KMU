@@ -234,6 +234,9 @@ about what the overlay means.
   a live reading is ranked above a record and a record above nothing. `RevealedFact` pairs that
   state with the value an axis conceals, where it conceals one; a fact nobody ever established
   cannot be built holding a value, so the words for an unknown are the reader's to supply.
+  `ObservationNoteFormatter` puts an age into words - how long ago, and on what date - in the three
+  span words every axis shares, taking the lead-in that introduces them as a key from its caller.
+  Which words introduce a date belong to the axis; how long a day is does not.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
