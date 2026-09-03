@@ -11,9 +11,8 @@ import kmu.util.KmuStrings;
  * the news by - a cycle-old reading is worth less than a morning-old one whatever the calendar says
  * - and the date is what they hold against anything else they know.
  *
- * <p>Stated once for every axis that dates itself, so no two surfaces can arrive at two phrasings
- * for the same age. That is the whole reason this is not composed where it is drawn: two remarks
- * disagreeing about how long a day is would be read as two different claims.
+ * <p>Stated once for every axis that dates itself rather than composed where it is drawn, because
+ * two remarks disagreeing about how long a day is would be read as two different claims.
  *
  * <p>The lead-in is the caller's and the span is not. Which words introduce a date belong to the
  * axis, a direct sighting and a reading taken at a distance not being the same claim; the three span
@@ -47,7 +46,7 @@ public final class ObservationNoteFormatter {
             String leadInKey,
             long observedTimestamp) {
 
-        // The clock the date is read on is built from the stamp and discarded with the line, this
+        // The clock the date is read on is built from the stamp and discarded with the remark, this
         // being the only way the game turns a moment into a date.
         return KmuStrings.format(
             leadInKey,
@@ -56,7 +55,7 @@ public final class ObservationNoteFormatter {
     }
 
     // How long ago, in whole days. A span short of a day is named rather than rounded to nought:
-    // "0 days ago" reads as a fault in the box, and the reader is being told the news is fresh.
+    // "0 days ago" reads as a fault in the surface, and the reader is being told the news is fresh.
     private static String formatElapsedSpan(float elapsedDays) {
 
         if (elapsedDays < A_DAY) {
