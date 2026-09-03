@@ -44,8 +44,8 @@ final class SettingsLayeringIntegrationTest {
         void mapLayerFrameworkSourcesNameNoFeatureSettingsClass(String featureSettingsClass) {
             assertThat(findFrameworkSourcesNaming(featureSettingsClass))
                 .as(
-                    "%s is one feature's settings; the map-layer framework reads only"
-                        + " KmuMapLayerSettings, so a file under %s naming it has reached across"
+                    "%s is one feature's settings; the map-layer framework reads only its own"
+                        + " settings classes, so a file under %s naming it has reached across"
                         + " the split",
                     featureSettingsClass,
                     MAP_LAYER_FRAMEWORK_ROOT)

@@ -18,7 +18,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreenControls;
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapKeybindSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
 
@@ -385,7 +385,7 @@ final class IntelSidebarHostTest {
                 .thenReturn(SHORTCUT_KEYCODE);
 
             try (var globalMock = mockStatic(Global.class);
-                    var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+                    var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
@@ -397,7 +397,7 @@ final class IntelSidebarHostTest {
                     when(Global::getSector)
                     .thenReturn(sectorMock);
                 settingsMock
-                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE))
+                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_KEY, SHORTCUT_KEYCODE))
                     .thenReturn(SHORTCUT_KEYCODE);
 
                 createHostOnAnUnclaimedScreen(new IntelScreenViewFake()).handleKeyPress(eventMock);

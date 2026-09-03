@@ -18,6 +18,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.settings.KmuMapKeybindSettings;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.lwjgl.input.Keyboard;
@@ -125,9 +126,7 @@ public final class LiveSidebarPlacement {
             Math.round(mapVisorRect.x()));
     }
 
-    // The row's labels, one per layer in registry order, each layer asked for its own drawn text rather
-    // than for a key this class then looks up: the bar carries layers from any mod, and only the mod that
-    // declares a layer can resolve that layer's strings. A blank answer still contributes an entry, so a
+    // The row's labels, one per layer in registry order. A blank answer still contributes an entry, so a
     // layer with nothing to say costs its tab its letters and not its place in the row.
     static List<String> resolveTabLabels(List<MapLayer> layers) {
 
@@ -217,15 +216,22 @@ public final class LiveSidebarPlacement {
             MapLayer activeLayer,
             ActiveLayerSelection selection) {
 
+        return new ControlSpec.Tabs(
+            resolveTabLabels(layers),
+            resolveTabShortcuts(layers),
+            layers.indexOf(activeLayer),
+            cell -> selection.selectLayer(layers.get(cell)));
+    }
+
+    // The row's shortcut hints, built to run parallel to the labels above - same order, same length, one
+    // entry per layer whether or not it has a key to print, since the control pairs the two by index.
+    private static List<String> resolveTabShortcuts(List<MapLayer> layers) {
+
         var shortcuts = new ArrayList<String>(layers.size());
         for (var layer : layers) {
             shortcuts.add(resolveShortcutName(layer));
         }
-        return new ControlSpec.Tabs(
-            resolveTabLabels(layers),
-            shortcuts,
-            layers.indexOf(activeLayer),
-            cell -> selection.selectLayer(layers.get(cell)));
+        return shortcuts;
     }
 
     // The display name of a layer's shortcut key, or null when it has none - an unbound keycode (0,
@@ -233,7 +239,7 @@ public final class LiveSidebarPlacement {
     // shortcut leaves the tab label alone.
     private static String resolveShortcutName(MapLayer layer) {
 
-        var keycode = KmuMapLayerSettings.getMapLayerShortcut(
+        var keycode = KmuMapKeybindSettings.getMapLayerShortcut(
             layer.getShortcutSettingKey(),
             layer.getDefaultShortcutKeycode());
 

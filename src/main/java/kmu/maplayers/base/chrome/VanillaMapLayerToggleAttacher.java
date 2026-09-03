@@ -4,7 +4,7 @@ import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapKeybindSettings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
@@ -42,7 +42,7 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
     /** Reads the live install - the pairing a running game gets. */
     public VanillaMapLayerToggleAttacher() {
         this(
-            KmuMapLayerSettings::getMapFilterRowToggleShortcut,
+            KmuMapKeybindSettings::getMapFilterRowToggleShortcut,
             new MapLayerToggleTooltip(NexerelinAlliances::isAvailable));
     }
 

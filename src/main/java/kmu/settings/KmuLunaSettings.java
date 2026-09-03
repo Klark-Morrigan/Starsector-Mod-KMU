@@ -19,9 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the mod id every read is scoped by.
  *
  * <p>The knobs sit in classes beside this one, split first by which package reads them:
- * {@link KmuMapLayerSettings} for what the map-layer framework's own chrome and geometry
- * need, {@link KmuMarketConditionSettings} for the condition picker, and the political map
- * layer's own set. Splitting on the reader rather than on the settings tab is what keeps a
+ * {@link KmuMapLayerSettings} and {@link KmuMapKeybindSettings} for what the map-layer
+ * framework's own chrome, geometry and keys need, {@link KmuMarketConditionSettings} for the
+ * condition picker, and the political map layer's own set. Splitting on the reader rather than
+ * on the settings tab is what keeps a
  * layer's knobs out of reach of the framework: a class no framework code imports cannot leak a
  * feature's vocabulary into it, which a tab-shaped split could not promise. {@code Map - Dev}
  * is where the two part company - it carries the tuning of geometry every layer shares, but
@@ -39,6 +40,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * section rather than by reader because within one feature every knob has the same reader:
  * what a class named for a section buys is that nothing imports more of the layer's settings
  * surface than the part it actually reads.
+ *
+ * <p>{@link KmuMapKeybindSettings} is the framework's one such section, and is named for its tab
+ * because the tab is what it holds - every key the overlay answers to and nothing else. It buys no
+ * isolation, the framework reading both halves; what it buys is that one screen of the settings
+ * dialog has one class behind it, so a key added to that tab has an obvious home.
  *
  * <p>All of them hold field ids, fallbacks and accessors only. The mod id, the revision and
  * the reads stay here because they are mod-wide - a second layer's settings would want the

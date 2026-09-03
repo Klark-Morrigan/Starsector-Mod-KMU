@@ -14,7 +14,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapKeybindSettings;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -111,7 +111,7 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(SECOND_KEYCODE);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -130,7 +130,7 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -149,9 +149,9 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNBOUND);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
                 settingsMock
-                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(anyString(), anyInt()))
+                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(anyString(), anyInt()))
                     .thenReturn(UNBOUND);
 
                 host.handleKeyPress(eventMock);
@@ -170,13 +170,13 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
                 settingsMock
-                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
+                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
                     .thenReturn(UNBOUND);
                 settingsMock
-                    .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
+                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
                     .thenReturn(UNRELATED_KEYCODE);
 
                 host.handleKeyPress(eventMock);
@@ -196,7 +196,7 @@ final class BaseSidebarHostTest {
             var host = createHost(mock(ActiveLayerSelection.class));
             var eventMock = mockKeyPress(SECOND_KEYCODE);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -215,7 +215,7 @@ final class BaseSidebarHostTest {
             var host = createHost(mock(ActiveLayerSelection.class));
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -238,7 +238,7 @@ final class BaseSidebarHostTest {
 
             var eventMock = mockKeyPress(FIRST_KEYCODE);
 
-            try (MockedStatic<KmuMapLayerSettings> settingsMock = mockDefaultBindings()) {
+            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
                 host.handleKeyPress(eventMock);
             }
 
@@ -557,15 +557,15 @@ final class BaseSidebarHostTest {
     }
 
     // Each layer bound to its own default, the state before the player rebinds anything.
-    private static MockedStatic<KmuMapLayerSettings> mockDefaultBindings() {
+    private static MockedStatic<KmuMapKeybindSettings> mockDefaultBindings() {
 
-        var settingsMock = mockStatic(KmuMapLayerSettings.class);
+        var settingsMock = mockStatic(KmuMapKeybindSettings.class);
 
         settingsMock
-            .when(() -> KmuMapLayerSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
+            .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
             .thenReturn(FIRST_KEYCODE);
         settingsMock
-            .when(() -> KmuMapLayerSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
+            .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
             .thenReturn(SECOND_KEYCODE);
 
         return settingsMock;

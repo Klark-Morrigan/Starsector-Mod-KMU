@@ -77,11 +77,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * holds every row's placement against the set the screen is laid out into, which is why the layout is
  * spelled out here rather than left implicit in the file.
  *
- * <p>A section caption is the one row whose displayed text is free to change - it is drawn and forgotten
- * rather than stored - but it is carried in two columns and LunaLib draws only one of them, so the walk
- * over captions holds the pair together. Editing the column that reads like the caption while the other
- * one draws is a change that lands nowhere: the build stays green, the screen is unchanged, and nothing
- * says why.
+ * <p>Two row types are drawn and forgotten rather than stored, so their displayed text is the one thing
+ * here free to change: a section caption, and a note carrying in one place what every description under
+ * it would otherwise repeat. Both are drawn from the default-value column and the columns beside it are
+ * inert, so an edit to one of those lands nowhere: the build stays green, the screen is unchanged, and
+ * nothing says why. A caption carries its text in two columns and is held to keeping them equal; a note
+ * draws from one of them alone, and is held to filling that one and leaving the other empty.
  */
 final class LunaSettingsCsvIntegrationTest {
 

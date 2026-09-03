@@ -2,8 +2,6 @@ package kmu.settings;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 
-import org.lwjgl.input.Keyboard;
-
 /**
  * The map-layer framework's own LunaLib knobs: the chrome and the geometry every map layer
  * shares, whichever layer is drawing.
@@ -28,11 +26,6 @@ public final class KmuMapLayerSettings {
     // a player opens when that reach misbehaves, not a knob they set to taste.
     private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
         "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
-
-    // Which key ticks that same box. A keybind rather than a dev knob, so it is declared on the tab
-    // a player looks for keys on rather than beside the hatch that decides the box exists at all.
-    private static final String FILTER_ROW_TOGGLE_SHORTCUT_FIELD =
-        "kmu_map_keybinds_filters_mapLayersToggle";
 
     private static final String SIDEBAR_PADDING_TOP_FIELD =
         "kmu_map_visuals_sidebar_paddingTop";
@@ -243,11 +236,6 @@ public final class KmuMapLayerSettings {
     // shown - so a player who never opens the settings would get a feature that draws with no way to
     // put it away. An escape hatch is reached for after something misbehaves, so it ships open.
     private static final boolean DEFAULT_FILTER_ROW_TOGGLE_ENABLED = true;
-
-    // M for map, and free on both screens the box stands on. Not a digit: the vanilla row's own six
-    // buttons are keyed to digits, and nothing in the game can be asked which of them a screen has
-    // already taken - a shortcut lives on the individual widget, with no table of them to read.
-    private static final int DEFAULT_FILTER_ROW_TOGGLE_SHORTCUT = Keyboard.KEY_M;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette
     // whatever faction the player flies, so a panel following the faction is the one thing on the
@@ -908,19 +896,6 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return the LWJGL keycode that ticks and unticks the map layers' box on the vanilla filter
-     *         row; M by default, and 0 (LWJGL's {@code KEY_NONE}) where the player has cleared the
-     *         binding with Escape, which callers treat as no key rather than as a real one. Read
-     *         afresh each time a box is stood on a row, so a rebind reaches the next screen the
-     *         player opens rather than waiting for the next load
-     */
-    public static int getMapFilterRowToggleShortcut() {
-        return KmuLunaSettings.readInt(
-            FILTER_ROW_TOGGLE_SHORTCUT_FIELD,
-            DEFAULT_FILTER_ROW_TOGGLE_SHORTCUT);
-    }
-
-    /**
      * @return which palette the overlay sidebar's frame, control accents, and tab-row chrome are
      *         coloured from: the fixed UI palette (the default), the neutral chrome greys, or the
      *         player faction's own accents. One answer for all three reads, since a panel framed in
@@ -941,25 +916,6 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readChoice(
             SIDEBAR_CHEVRON_COLOR_FIELD,
             DEFAULT_SIDEBAR_CHEVRON_COLOUR);
-    }
-
-    /**
-     * Resolves a layer tab's shortcut keycode from its LunaLib Keycode field, so the player can
-     * rebind which key jumps to that layer.
-     *
-     * <p>The field id is the caller's rather than a constant here: each layer owns the id its own
-     * shortcut is stored under, so the framework can read a shortcut for a layer it does not know
-     * about.
-     *
-     * <p>A keycode of 0 (LWJGL's {@code KEY_NONE}) means the player cleared the binding with
-     * Escape, so the layer has no shortcut; callers treat that as unbound rather than a real key.
-     *
-     * @param settingKey     the LunaLib field id holding the rebound keycode
-     * @param defaultKeycode the LWJGL keycode used when the field is unset or unreadable
-     * @return the LWJGL keycode the layer's tab jumps to, or 0 when the shortcut is unbound
-     */
-    public static int getMapLayerShortcut(String settingKey, int defaultKeycode) {
-        return KmuLunaSettings.readInt(settingKey, defaultKeycode);
     }
 
     /**

@@ -14,7 +14,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapKeybindSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -284,7 +284,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
     private static List<Integer> layerKeycodes(List<MapLayer> layers) {
         var keycodes = new ArrayList<Integer>(layers.size());
         for (var layer : layers) {
-            keycodes.add(KmuMapLayerSettings.getMapLayerShortcut(
+            keycodes.add(KmuMapKeybindSettings.getMapLayerShortcut(
                 layer.getShortcutSettingKey(),
                 layer.getDefaultShortcutKeycode()));
         }
