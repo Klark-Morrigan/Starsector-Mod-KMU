@@ -198,6 +198,21 @@ final class ObservationNotesTest {
         }
 
         @Test
+        void statesTheDatedFactBesideOneRecalledWithoutAMoment() {
+            // The undated fact must contribute nothing rather than an assumed moment: taken as
+            // zero it would be the oldest news on every row and never win, which reads correctly
+            // here and would start dating rows the moment the winner were sought the other way.
+            var note = ObservationNotes.resolveNoteForAxes(
+                clockMock,
+                List.of(
+                    buildUndatedRecalledAxis(JOINED_LEAD_IN),
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
+
+            assertThat(note)
+                .contains("last seen 34 days ago (c206.05.12)");
+        }
+
+        @Test
         void statesNothingForARowCarryingNoFactsAtAll() {
 
             assertThat(ObservationNotes.resolveNoteForAxes(clockMock, List.of()))
