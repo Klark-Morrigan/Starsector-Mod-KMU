@@ -62,6 +62,9 @@ public final class KmuStrings {
         "map_layer_tooltip_footer_withheld";
     public static final String MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES =
         "map_layer_tooltip_withheld_entries";
+    public static final String OBSERVATION_SPAN_TODAY = "observation_span_today";
+    public static final String OBSERVATION_SPAN_A_DAY_AGO = "observation_span_a_day_ago";
+    public static final String OBSERVATION_SPAN_DAYS_AGO = "observation_span_days_ago";
     public static final String POLITICAL_MAP_TAB_POLITICAL_MAP = "political_map_tab_political_map";
     public static final String POLITICAL_MAP_CTL_UNINHABITED = "political_map_ctl_uninhabited";
     public static final String POLITICAL_MAP_CTL_NAME_FULL = "political_map_ctl_name_full";
@@ -115,12 +118,6 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION =
         "political_map_tooltip_qualifier_fraction";
     public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN = "political_map_tooltip_last_seen";
-    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY =
-        "political_map_tooltip_last_seen_today";
-    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO =
-        "political_map_tooltip_last_seen_a_day_ago";
-    public static final String POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO =
-        "political_map_tooltip_last_seen_days_ago";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_CLAIM = "political_map_tooltip_section_claim";
     public static final String POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER =
         "political_map_tooltip_section_allied_with_holder";

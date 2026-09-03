@@ -134,10 +134,10 @@ public final class StarsectorSettingsFake {
             "expand patrol details");
         stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_WITHHELD, "%d not shown");
         stringsByKey.put(KmuStrings.MAP_LAYER_TOOLTIP_WITHHELD_ENTRIES, "+ %d more");
+        stringsByKey.put(KmuStrings.OBSERVATION_SPAN_TODAY, "today");
+        stringsByKey.put(KmuStrings.OBSERVATION_SPAN_A_DAY_AGO, "a day ago");
+        stringsByKey.put(KmuStrings.OBSERVATION_SPAN_DAYS_AGO, "%d days ago");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN, "last seen %s (%s)");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY, "today");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO, "a day ago");
-        stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO, "%d days ago");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED, "Decivilised");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED, "Unpopulated");
         stringsByKey.put(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY, "core territory");

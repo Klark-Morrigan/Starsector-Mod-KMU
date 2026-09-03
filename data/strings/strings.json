@@ -39,6 +39,10 @@
     "map_layer_tooltip_footer_withheld": "%d not shown",
     "map_layer_tooltip_withheld_entries": "+ %d more",
 
+    "observation_span_today": "today",
+    "observation_span_a_day_ago": "a day ago",
+    "observation_span_days_ago": "%d days ago",
+
     "political_map_tab_political_map": "Political Map",
 
     "political_map_ctl_uninhabited": "Uninhabited systems",
@@ -84,9 +88,6 @@
     "political_map_tooltip_qualifier_fraction": "(%d/%d)",
 
     "political_map_tooltip_last_seen": "last seen %s (%s)",
-    "political_map_tooltip_last_seen_today": "today",
-    "political_map_tooltip_last_seen_a_day_ago": "a day ago",
-    "political_map_tooltip_last_seen_days_ago": "%d days ago",
 
     "political_map_tooltip_section_claim": "Claim:",
     "political_map_tooltip_section_allied_with_holder": "Allied with the claim holder:",

@@ -59,13 +59,11 @@ public final class ObservationNoteFormatter {
     private static String formatElapsedSpan(float elapsedDays) {
 
         if (elapsedDays < A_DAY) {
-            return KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_TODAY);
+            return KmuStrings.get(KmuStrings.OBSERVATION_SPAN_TODAY);
         }
         if (elapsedDays < TWO_DAYS) {
-            return KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_A_DAY_AGO);
+            return KmuStrings.get(KmuStrings.OBSERVATION_SPAN_A_DAY_AGO);
         }
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN_DAYS_AGO,
-            (int) elapsedDays);
+        return KmuStrings.format(KmuStrings.OBSERVATION_SPAN_DAYS_AGO, (int) elapsedDays);
     }
 }
