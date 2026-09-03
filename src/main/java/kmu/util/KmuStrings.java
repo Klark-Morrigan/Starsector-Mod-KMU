@@ -40,6 +40,18 @@ public final class KmuStrings {
         "map_layer_tooltip_filter_row_toggle_layers";
     public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER =
         "map_layer_tooltip_filter_row_toggle_supplier";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL =
+        "map_layer_tooltip_filter_row_toggle_uninstall";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION =
+        "map_layer_tooltip_filter_row_toggle_uninstall_action";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE =
+        "map_layer_tooltip_filter_row_toggle_uninstall_disable";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE =
+        "map_layer_tooltip_filter_row_toggle_uninstall_save";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD =
+        "map_layer_tooltip_filter_row_toggle_settings_mod";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS_QUALIFIED =
+        "map_layer_tooltip_filter_row_toggle_view_claims_qualified";
     public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP =
         "map_layer_tooltip_filter_row_toggle_view_political_map";
     public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS =

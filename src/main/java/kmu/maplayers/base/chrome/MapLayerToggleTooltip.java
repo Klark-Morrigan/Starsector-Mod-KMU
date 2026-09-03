@@ -80,6 +80,12 @@ final class MapLayerToggleTooltip {
 
         new HighlightedParagraph(parts.composeSentence(), parts.listRunHighlights())
             .addTo(tooltip, PARAGRAPH_PAD);
+
+        // Its own paragraph rather than a third sentence: the first says what the box does, this
+        // says who is answerable for it and how to be rid of it, and a player looking for the second
+        // should not have to read the first to find it.
+        new HighlightedParagraph(parts.composeUninstallNote(), parts.listUninstallHighlights())
+            .addTo(tooltip, PARAGRAPH_PAD);
     }
 
     // The pieces the sentence is made of, read once. The same four settle both what the text says
@@ -89,29 +95,56 @@ final class MapLayerToggleTooltip {
 
         return new SentenceParts(
             KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS),
-            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
             KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP),
-            listOfferedViewNames());
+            listOfferedViews());
     }
 
     // The views the political map draws, in the order its own selector offers them. Held as
     // literals rather than read off the roster, which is what keeps this a lookup a per-frame
     // rebuild can afford; the day the roster is something a tooltip can name, this list goes.
-    private List<String> listOfferedViewNames() {
+    private List<ViewMention> listOfferedViews() {
 
-        var viewNames = new ArrayList<String>();
+        var views = new ArrayList<ViewMention>();
 
-        viewNames.add(KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS));
+        views.add(ViewMention.named(
+            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS)));
 
         if (isAllianceViewOffered.getAsBoolean()) {
 
-            viewNames.add(
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES));
+            views.add(ViewMention.named(
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES)));
         }
 
-        viewNames.add(KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS));
+        // The one view whose name needs a word in front of it to read as English, and that word is
+        // not part of the name - so the phrase and the run tinted inside it part company here.
+        var claimsName = KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS);
 
-        return viewNames;
+        views.add(new ViewMention(
+            KmuStrings.format(
+                KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS_QUALIFIED,
+                claimsName),
+            claimsName));
+
+        return views;
+    }
+
+    /**
+     * One view as the sentence mentions it: the words it takes up, and the run of them that is the
+     * view's own name.
+     *
+     * <p>The two are apart because a name is not always the whole mention - a view the sentence has
+     * to qualify carries a word the name does not own, and tinting that word would say the
+     * qualifier were part of what the view is called.
+     *
+     * @param phrase        what the sentence reads at this point in its list
+     * @param highlightedName the view's name inside that phrase, which is what is tinted
+     */
+    private record ViewMention(String phrase, String highlightedName) {
+
+        /** A view whose whole mention is its name, which is every view but the qualified one. */
+        static ViewMention named(String name) {
+            return new ViewMention(name, name);
+        }
     }
 
     /**
@@ -122,11 +155,7 @@ final class MapLayerToggleTooltip {
      * @param mapName       what the layers draw
      * @param viewNames     the views that map offers, in the order its own selector offers them
      */
-    private record SentenceParts(
-        String layersName,
-        String supplierAside,
-        String mapName,
-        List<String> viewNames) {
+    private record SentenceParts(String layersName, String mapName, List<ViewMention> views) {
 
         /** @return the whole sentence, with the views joined into its closing list */
         String composeSentence() {
@@ -134,31 +163,72 @@ final class MapLayerToggleTooltip {
             return KmuStrings.format(
                 KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
                 layersName,
-                supplierAside,
                 mapName,
                 String.join(
                     KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR),
-                    viewNames));
+                    views.stream().map(ViewMention::phrase).toList()));
+        }
+
+        /**
+         * @return the second paragraph: who supplies the feature, and the one order of operations
+         *         that takes it back out of a save without leaving anything behind in it
+         */
+        String composeUninstallNote() {
+
+            return KmuStrings.format(
+                KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL,
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION),
+                layersName,
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE));
         }
 
         /** @return each run bound to the colour it takes, in the order the sentence reads them */
         Highlight[] listRunHighlights() {
 
-            var highlightColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+            var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
             var highlights = new ArrayList<Highlight>();
 
-            highlights.add(Highlight.of(layersName, highlightColour));
+            highlights.add(Highlight.of(layersName, namedColour));
+            highlights.add(Highlight.of(mapName, namedColour));
 
-            // The one run that recedes: naming the mod is what the aside is for, and a mod's name
-            // said in the same colour as the feature would read as part of it.
-            highlights.add(Highlight.of(supplierAside, StarsectorUiColour.VANILLA_GRAY.resolve()));
-            highlights.add(Highlight.of(mapName, highlightColour));
-
-            for (var viewName : viewNames) {
-                highlights.add(Highlight.of(viewName, highlightColour));
+            for (var view : views) {
+                highlights.add(Highlight.of(view.highlightedName(), namedColour));
             }
 
             return highlights.toArray(new Highlight[0]);
+        }
+
+        /**
+         * @return the second paragraph's runs, in reading order. The things that have names take the
+         *         naming colour and the things the player is being told to do take the positive one,
+         *         so the steps stand out from the mods they are carried out in
+         */
+        Highlight[] listUninstallHighlights() {
+
+            var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+            var stepColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
+
+            return new Highlight[] {
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                    namedColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION),
+                    stepColour),
+                Highlight.of(layersName, namedColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                    stepColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                    namedColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
+                    stepColour),
+            };
         }
     }
 }

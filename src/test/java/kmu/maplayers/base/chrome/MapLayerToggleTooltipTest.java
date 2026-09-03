@@ -33,26 +33,31 @@ import static org.mockito.Mockito.when;
  * told about the two views it has rather than the three it does not. Held on both sides of a
  * <em>change</em> too: the engine rebuilds a body while the tooltip is up, so what the sentence
  * lists has to be a read rather than something settled when the box went up.
+ *
+ * <p>The second paragraph is held for its two colours rather than its wording alone. What it tells a
+ * player is an order of operations for getting the feature back out of a save, and the steps of that
+ * order are what the positive shade marks - so a step tinted like the mods it is carried out in
+ * would leave the instruction reading as a list of names.
  */
 final class MapLayerToggleTooltipTest {
 
-    // Two shades a failing assertion can tell apart, standing in for the engine's own. Named here
-    // because what the sentence turns on is which run recedes, and every unnamed key answers with
-    // one default shade that would make the aside and its neighbours indistinguishable.
+    // Shades a failing assertion can tell apart, standing in for the engine's own. Named here
+    // because what the paragraphs turn on is which runs are named things and which are steps, and
+    // every unnamed key answers with one default shade that would make the two indistinguishable.
     private static final Color HIGHLIGHT = new Color(255, 220, 80);
-    private static final Color GRAY = new Color(155, 155, 155);
+    private static final Color POSITIVE = new Color(120, 220, 120);
 
-    // The engine's own keys for the two roles: the shade a highlighted run takes, and the shade
-    // vanilla writes an aside in.
+    // The engine's own keys for the two roles: the shade a highlighted run takes, and the shade it
+    // writes something favourable in.
     private static final String HIGHLIGHT_COLOUR_KEY = "buttonShortcut";
-    private static final String GRAY_COLOUR_KEY = "textGrayColor";
+    private static final String POSITIVE_COLOUR_KEY = "textFriendColor";
 
     @BeforeEach
     void installStarsectorSettings() {
 
         StarsectorSettingsFake.installSettings(key -> switch (key) {
             case HIGHLIGHT_COLOUR_KEY -> HIGHLIGHT;
-            case GRAY_COLOUR_KEY -> GRAY;
+            case POSITIVE_COLOUR_KEY -> POSITIVE;
             default -> null;
         });
     }
@@ -67,7 +72,7 @@ final class MapLayerToggleTooltipTest {
     class DescribeToggle {
 
         @Test
-        void describeToggleHighlightsEveryRunButTheAsideNamingTheMod() {
+        void describeToggleNamesTheLayersTheMapAndEveryViewItOffers() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = mockLabelOn(tooltipMock);
@@ -76,31 +81,54 @@ final class MapLayerToggleTooltipTest {
 
             verify(tooltipMock)
                 .addPara(
-                    eq("Shows Sector Map Layers (supplied by KMU) that draw a political map of the "
-                        + "sector (factions, alliances, system claims)."),
+                    eq("Shows Sector Map Layers that draw a Political Map (Factions, Alliances, "
+                        + "system Claims) over the sector map."),
+                    any(Color.class),
+                    anyFloat());
+
+            // "system" is not part of what the view is called, so the qualifier stays untinted while
+            // the name inside it does not.
+            verify(labelMock)
+                .setHighlight(
+                    "Sector Map Layers",
+                    "Political Map",
+                    "Factions",
+                    "Alliances",
+                    "Claims");
+
+            verify(labelMock)
+                .setHighlightColors(HIGHLIGHT, HIGHLIGHT, HIGHLIGHT, HIGHLIGHT, HIGHLIGHT);
+        }
+
+        @Test
+        void describeToggleMarksTheUninstallStepsApartFromTheModsTheyAreCarriedOutIn() {
+
+            var tooltipMock = mock(TooltipMakerAPI.class);
+            var labelMock = mockLabelOn(tooltipMock);
+
+            new MapLayerToggleTooltip(() -> true).describeToggle(tooltipMock);
+
+            verify(tooltipMock)
+                .addPara(
+                    eq("This feature is provided by the KMU mod. To safely uninstall Sector Map "
+                        + "Layers from your save game, disable this feature in LunaLib mod settings "
+                        + "and save your game."),
                     any(Color.class),
                     anyFloat());
 
             verify(labelMock)
                 .setHighlight(
+                    "KMU",
+                    "safely uninstall",
                     "Sector Map Layers",
-                    "(supplied by KMU)",
-                    "political map",
-                    "factions",
-                    "alliances",
-                    "system claims");
+                    "disable this feature",
+                    "LunaLib",
+                    "save your game");
 
-            // The aside is the one run in gray: the box is dressed as the game's own furniture, so
-            // the only place it can say who put it there is here, and saying it in the colour the
-            // feature's own words take would read as part of the feature's name.
+            // Three named things and three things to do, alternating. A player skimming for what to
+            // do reads the positive runs and gets the whole procedure in order.
             verify(labelMock)
-                .setHighlightColors(
-                    HIGHLIGHT,
-                    GRAY,
-                    HIGHLIGHT,
-                    HIGHLIGHT,
-                    HIGHLIGHT,
-                    HIGHLIGHT);
+                .setHighlightColors(HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE);
         }
 
         @Test
@@ -112,29 +140,19 @@ final class MapLayerToggleTooltipTest {
             new MapLayerToggleTooltip(() -> false).describeToggle(tooltipMock);
 
             // One clause and one run fewer, and the colours shorten with them - a colour list still
-            // sized for six would tint the closing bracket of a five-run sentence.
+            // sized for five would tint the closing bracket of a four-run sentence.
             verify(tooltipMock)
                 .addPara(
-                    eq("Shows Sector Map Layers (supplied by KMU) that draw a political map of the "
-                        + "sector (factions, system claims)."),
+                    eq("Shows Sector Map Layers that draw a Political Map (Factions, system Claims) "
+                        + "over the sector map."),
                     any(Color.class),
                     anyFloat());
 
             verify(labelMock)
-                .setHighlight(
-                    "Sector Map Layers",
-                    "(supplied by KMU)",
-                    "political map",
-                    "factions",
-                    "system claims");
+                .setHighlight("Sector Map Layers", "Political Map", "Factions", "Claims");
 
             verify(labelMock)
-                .setHighlightColors(
-                    HIGHLIGHT,
-                    GRAY,
-                    HIGHLIGHT,
-                    HIGHLIGHT,
-                    HIGHLIGHT);
+                .setHighlightColors(HIGHLIGHT, HIGHLIGHT, HIGHLIGHT, HIGHLIGHT);
         }
 
         @Test
@@ -158,8 +176,8 @@ final class MapLayerToggleTooltipTest {
             // and a mod loaded into a running game is exactly when that would be wrong.
             verify(secondTooltipMock)
                 .addPara(
-                    eq("Shows Sector Map Layers (supplied by KMU) that draw a political map of the "
-                        + "sector (factions, alliances, system claims)."),
+                    eq("Shows Sector Map Layers that draw a Political Map (Factions, Alliances, "
+                        + "system Claims) over the sector map."),
                     any(Color.class),
                     anyFloat());
         }

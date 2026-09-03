@@ -98,25 +98,44 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
-            "Shows %s %s that draw a %s of the sector (%s).");
+            "Shows %s that draw a %s (%s) over the sector map.");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL,
+            "This feature is provided by the %s mod. To %s %s from your save game, %s in %s mod "
+                + "settings and %s.");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS,
             "Sector Map Layers");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER,
-            "(supplied by KMU)");
+            "KMU");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD,
+            "LunaLib");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION,
+            "safely uninstall");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE,
+            "disable this feature");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE,
+            "save your game");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP,
-            "political map");
+            "Political Map");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_FACTIONS,
-            "factions");
+            "Factions");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_ALLIANCES,
-            "alliances");
+            "Alliances");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS,
-            "system claims");
+            "Claims");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_CLAIMS_QUALIFIED,
+            "system %s");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_SEPARATOR,
             ", ");
