@@ -40,6 +40,13 @@ final class ObservationNotesTest {
     private static final float RECENTLY_ELAPSED_DAYS = 3.0f;
     private static final String RECENTLY_DATE = "c206.06.20";
 
+    // The words two facts introduce their dates by. The second is borrowed from elsewhere in the
+    // shipped strings purely for its shape - two slots, in the order a lead-in takes them - there
+    // being one axis in the mod today. What matters is that the two compose visibly differently,
+    // so the remark a case asserts names the fact it came off.
+    private static final String LAST_SEEN_LEAD_IN = KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN;
+    private static final String JOINED_LEAD_IN = KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED;
+
     // What a row with no world to read is dated against: nothing, so nothing can be said.
     private static final CampaignClockAPI NO_CLOCK = null;
 
@@ -69,9 +76,7 @@ final class ObservationNotesTest {
 
             var note = ObservationNotes.resolveNoteForAxes(
                 clockMock,
-                List.of(buildRecalledAxis(
-                    KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                    OBSERVED_LONG_AGO)));
+                List.of(buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(note)
                 .contains("last seen 34 days ago (c206.05.12)");
@@ -84,12 +89,8 @@ final class ObservationNotesTest {
             var laterFactSecond = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                        OBSERVED_LONG_AGO),
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
-                        OBSERVED_RECENTLY)));
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO),
+                    buildRecalledAxis(JOINED_LEAD_IN, OBSERVED_RECENTLY)));
 
             assertThat(laterFactSecond)
                 .contains("3 days ago c206.06.20");
@@ -98,12 +99,8 @@ final class ObservationNotesTest {
             var laterFactFirst = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
-                        OBSERVED_RECENTLY),
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                        OBSERVED_LONG_AGO)));
+                    buildRecalledAxis(JOINED_LEAD_IN, OBSERVED_RECENTLY),
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(laterFactFirst)
                 .contains("3 days ago c206.06.20");
@@ -117,12 +114,8 @@ final class ObservationNotesTest {
             var lastSeenFirst = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                        OBSERVED_LONG_AGO),
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
-                        OBSERVED_LONG_AGO)));
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO),
+                    buildRecalledAxis(JOINED_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(lastSeenFirst)
                 .contains("last seen 34 days ago (c206.05.12)");
@@ -130,12 +123,8 @@ final class ObservationNotesTest {
             var joinedFirst = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
-                        OBSERVED_LONG_AGO),
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                        OBSERVED_LONG_AGO)));
+                    buildRecalledAxis(JOINED_LEAD_IN, OBSERVED_LONG_AGO),
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(joinedFirst)
                 .contains("34 days ago c206.05.12");
@@ -148,10 +137,8 @@ final class ObservationNotesTest {
             var note = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildObservedNowAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED),
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                        OBSERVED_LONG_AGO)));
+                    buildObservedNowAxis(JOINED_LEAD_IN),
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(note)
                 .contains("last seen 34 days ago (c206.05.12)");
@@ -165,10 +152,8 @@ final class ObservationNotesTest {
             var note = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildNeverObservedAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED),
-                    buildRecalledAxis(
-                        KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                        OBSERVED_LONG_AGO)));
+                    buildNeverObservedAxis(JOINED_LEAD_IN),
+                    buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(note)
                 .contains("last seen 34 days ago (c206.05.12)");
@@ -180,8 +165,8 @@ final class ObservationNotesTest {
             var note = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildObservedNowAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN),
-                    buildObservedNowAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED)));
+                    buildObservedNowAxis(LAST_SEEN_LEAD_IN),
+                    buildObservedNowAxis(JOINED_LEAD_IN)));
 
             assertThat(note)
                 .isEmpty();
@@ -193,8 +178,8 @@ final class ObservationNotesTest {
             var note = ObservationNotes.resolveNoteForAxes(
                 clockMock,
                 List.of(
-                    buildNeverObservedAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN),
-                    buildNeverObservedAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED)));
+                    buildNeverObservedAxis(LAST_SEEN_LEAD_IN),
+                    buildNeverObservedAxis(JOINED_LEAD_IN)));
 
             assertThat(note)
                 .isEmpty();
@@ -206,7 +191,7 @@ final class ObservationNotesTest {
             // datable - so it contributes nothing rather than a moment invented for it.
             var note = ObservationNotes.resolveNoteForAxes(
                 clockMock,
-                List.of(buildUndatedRecalledAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN)));
+                List.of(buildUndatedRecalledAxis(LAST_SEEN_LEAD_IN)));
 
             assertThat(note)
                 .isEmpty();
@@ -225,9 +210,7 @@ final class ObservationNotesTest {
             // them against, and must say nothing rather than fail on the way to saying it.
             var note = ObservationNotes.resolveNoteForAxes(
                 NO_CLOCK,
-                List.of(buildRecalledAxis(
-                    KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                    OBSERVED_LONG_AGO)));
+                List.of(buildRecalledAxis(LAST_SEEN_LEAD_IN, OBSERVED_LONG_AGO)));
 
             assertThat(note)
                 .isEmpty();
