@@ -9,10 +9,14 @@ import kmlib.starsector.colonies.Colonies;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonySightings;
-import kmu.maplayers.base.visibility.observations.ObservationNoteFormatter;
+import kmu.maplayers.base.visibility.observations.ObservationAxis;
+import kmu.maplayers.base.visibility.observations.ObservationNotes;
+import kmu.maplayers.base.visibility.observations.ObservationRecency;
+import kmu.maplayers.base.visibility.observations.ObservationRecency.RecalledObservation;
 import kmu.util.KmuStrings;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -28,8 +32,9 @@ import java.util.Set;
  *
  * <p>The remark is due only where nobody is observing the colony now. A colony in plain sight
  * needs no date beside it, and a date beside a thing the player is looking at would be stale by
- * construction - so the live reading is asked first and the recorded one is reached for only when
- * it fails.
+ * construction. Ranking the live reading above the recorded one is the shared triad's one rule
+ * ({@link ObservationRecency#resolveRecency}); what is made here is only the two readings
+ * themselves.
  *
  * <p>Two things count as looking at it, being the two routes an observation is ever made by: the
  * player's fleet is in the system, or the system's own inhabitants can see the colony - the
@@ -41,10 +46,6 @@ import java.util.Set;
  * box the player had been reading it in.
  */
 public final class ColonyObservationNotes {
-
-    // What the player is being shown right now needs no date beside it, whichever route is doing
-    // the observing.
-    private static final Optional<String> NO_NOTE = Optional.empty();
 
     // What a box with no world to read answers about every colony: nobody standing anywhere, and
     // no clock, so nothing can be said about when anything was last seen.
@@ -133,23 +134,19 @@ public final class ColonyObservationNotes {
      */
     Optional<String> resolveLastSeenNote(String colonyId) {
 
-        if (isPlayerPresent || readColonyIdsObservedByInhabitants().contains(colonyId)) {
-            return NO_NOTE;
-        }
-        var observation = sightings.readObservation(colonyId);
+        // The colony's own routes, posed in the shared triad's terms: whether anybody is observing
+        // the colony now, and what the register recalls of it. Which of the two readings answers -
+        // live over recalled over nothing - is the triad's rule, not a comparison made here.
+        var recency = ObservationRecency.resolveRecency(
+            isPlayerPresent || readColonyIdsObservedByInhabitants().contains(colonyId),
+            readRecordedObservation(colonyId));
 
-        if (observation == null || clock == null) {
-            return NO_NOTE;
-        }
-        // The lead-in is the colony's own: what the box states of a colony is that somebody had
-        // eyes on it, which is the only route a colony is ever observed by. The span and the date
-        // are composed in the words every axis shares.
-        return observation
-            .observedTimestamp()
-            .map(observedTimestamp -> ObservationNoteFormatter.formatObservationNote(
-                clock,
-                KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
-                observedTimestamp));
+        // One axis, under the colony's own lead-in: what the box states of a colony is that
+        // somebody had eyes on it, which is the only route a colony is ever observed by. The span
+        // and the date are composed in the words every axis shares.
+        return ObservationNotes.resolveNoteForAxes(
+            clock,
+            List.of(new ObservationAxis(KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN, recency)));
     }
 
     /**
@@ -174,6 +171,16 @@ public final class ColonyObservationNotes {
         return resolveLastSeenNote(colonyId)
             .map(line::notedWith)
             .orElse(line);
+    }
+
+    // What the register recalls of one colony, in the triad's recalled shape. The place the
+    // observation names is the visibility rule's to spend; a remark dates the news wherever it was
+    // made, so only the moment travels.
+    private Optional<RecalledObservation> readRecordedObservation(String colonyId) {
+
+        return Optional
+            .ofNullable(sightings.readObservation(colonyId))
+            .map(observation -> new RecalledObservation(observation.observedTimestamp()));
     }
 
     // The gated colonies the system's own people can see, folded once and kept.

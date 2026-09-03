@@ -20,8 +20,10 @@ import java.util.List;
 import static kmu.maplayers.SectorScenarioFixtures.placeDerelictIn;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.visibility.observations.ObservationClockFixture.stubMomentOnClock;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.tooltip.ColonyObservationFixture.OBSERVED_AT;
+import static kmu.maplayers.politicalmap.base.tooltip.ColonyObservationFixture.OBSERVED_DATE;
 import static kmu.maplayers.politicalmap.base.tooltip.ColonyObservationFixture.installObservedClock;
 import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.readClaimSections;
 import static kmu.maplayers.politicalmap.base.tooltip.PoliticalMapBoxReads.readDominanceSections;
@@ -154,12 +156,9 @@ final class ColonyObservationReadoutIntegrationTest {
 
         stubFaction(sector, Factions.NEUTRAL, "Neutral", NO_CREST);
 
-        // The clock is stood up before its span is stated: a call on a mock made inside when(...)
-        // lands in the middle of an unfinished stubbing and fails the next interaction instead.
-        var clockMock = installObservedClock(sector);
-
-        when(clockMock.getElapsedDaysSince(OBSERVED_AT))
-            .thenReturn(ELAPSED_DAYS);
+        // The clock is stood up first, then what it reports for the visit's moment - the span
+        // since, and the date - is stated in the shared fixture's terms.
+        stubMomentOnClock(installObservedClock(sector), OBSERVED_AT, ELAPSED_DAYS, OBSERVED_DATE);
 
         SectorPoliticsFixtures.markSystemAsVisitedByPlayer(sector, system);
 

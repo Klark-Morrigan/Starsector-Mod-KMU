@@ -19,14 +19,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
-import java.util.stream.Stream;
 
+import static kmu.maplayers.base.visibility.observations.ObservationClockFixture.stubMomentOnClock;
 import static kmu.maplayers.politicalmap.base.tooltip.ColonyObservationFixture.OBSERVED_AT;
+import static kmu.maplayers.politicalmap.base.tooltip.ColonyObservationFixture.OBSERVED_DATE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -43,6 +41,10 @@ import static org.mockito.Mockito.when;
  * <p>The colonies are posed as a {@link Colonies} set rather than through a walk of a stubbed
  * sector, because what the notes read off the set - which gated colonies its inhabitants can see -
  * is the set's own answer, and a case that built one by walking would be pinning the walk.
+ *
+ * <p>How an age is worded - the span words, their thresholds, the truncation - is pinned once,
+ * beside the code that composes it. What is pinned here is the colony's side: when a remark is due
+ * at all, and one composed sentence proving the route from register to remark.
  */
 final class ColonyObservationNotesTest {
 
@@ -111,50 +113,15 @@ final class ColonyObservationNotesTest {
         }
 
         @Test
-        void remarksTodayOnAColonySeenWithinTheDay() {
-            // A span short of a day named rather than rounded to nought: "0 days ago" reads as a
-            // fault in the box, and the reader is being told the news is fresh.
-            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(0.4f));
+        void remarksUnderTheColonysOwnLastSeenLeadIn() {
+            // What the handover to the shared rule must not have moved: the axis travels under the
+            // colony's shipped last-seen key, not a lead-in minted beside the rule. The words come
+            // back through the settings mirror of that key, so a swapped key changes the opening
+            // words and fails here rather than in game.
+            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.0f));
 
             assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains("last seen today (c206.05.12)");
-        }
-
-        @Test
-        void remarksADayAgoOnAColonySeenTheDayBefore() {
-
-            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(1.5f));
-
-            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains("last seen a day ago (c206.05.12)");
-        }
-
-        @ParameterizedTest
-        @MethodSource("kmu.maplayers.politicalmap.base.tooltip.ColonyObservationNotesTest"
-            + "#listSpansStandingOnAWordingThreshold")
-        void remarksTheOlderWordingOnASpanStandingExactlyOnAThreshold(
-                float elapsedDays,
-                String expectedNote) {
-
-            // Both thresholds are compared with a strict less-than, and every other case here sits
-            // well clear of them - so the boundary itself is the one place the comparison could be
-            // loosened without a single assertion noticing. A day that has fully elapsed is a day
-            // ago, not today.
-            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(elapsedDays));
-
-            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains(expectedNote);
-        }
-
-        @Test
-        void remarksWholeDaysOnASpanCarryingPartOfAnother() {
-            // The clock reports a fraction, and every other case hands over a span that happens to
-            // be whole. Part of a day is not another day: rounding here would report a colony seen
-            // this morning as seen tomorrow.
-            var notes = readNotesOver(buildDerelictSet(), observedDaysAgo(34.9f));
-
-            assertThat(notes.resolveLastSeenNote(DERELICT_ID))
-                .contains("last seen 34 days ago (c206.05.12)");
+                .hasValueSatisfying(note -> assertThat(note).startsWith("last seen "));
         }
 
         @Test
@@ -202,16 +169,6 @@ final class ColonyObservationNotesTest {
         }
     }
 
-    // The two spans the wording turns on, each stated exactly rather than either side of it: a
-    // span of one whole day is the first that is no longer today, and one of two whole days the
-    // first that is no longer the day before. Paired with the remark each is due, so a threshold
-    // loosened by one comparison names the case it broke.
-    static Stream<Arguments> listSpansStandingOnAWordingThreshold() {
-        return Stream.of(
-            Arguments.of(1.0f, "last seen a day ago (c206.05.12)"),
-            Arguments.of(2.0f, "last seen 2 days ago (c206.05.12)"));
-    }
-
     // The notes a box over the one system reads, the player's fleet being elsewhere unless a case
     // has said otherwise. The register travels beside the set, as the box's own pass hands the
     // pair over.
@@ -252,12 +209,11 @@ final class ColonyObservationNotesTest {
     }
 
     // A register holding one dated observation of the derelict where it stands, the clock
-    // reporting the given span since. The two are stubbed apart because the game's clock is what
-    // turns a stamp into a span, and a case is about the span.
+    // reporting the given span since. What the clock says of the moment is stubbed in the shared
+    // fixture's terms, so a case states the age it is about rather than arithmetic over stamps.
     private ColonySightings observedDaysAgo(float elapsedDays) {
 
-        when(clockMock.getElapsedDaysSince(OBSERVED_AT))
-            .thenReturn(elapsedDays);
+        stubMomentOnClock(clockMock, OBSERVED_AT, elapsedDays, OBSERVED_DATE);
 
         return colonyId -> DERELICT_ID.equals(colonyId)
             ? ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_AT)

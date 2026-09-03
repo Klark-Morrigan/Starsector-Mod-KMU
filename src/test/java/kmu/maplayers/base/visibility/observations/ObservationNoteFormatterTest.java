@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the words a remark about the age of somebody's news is composed of.
@@ -26,8 +25,9 @@ import static org.mockito.Mockito.when;
  * arguments the lead-in takes are both strings and a pair swapped for each other would compose
  * something that still reads like a remark.
  *
- * <p>The span and the date are stubbed apart, the game's own clock being what turns a stamp into
- * each of them - so a case states the age it is about rather than arithmetic over two moments.
+ * <p>The clock's two reads of the moment are stubbed in the shared fixture's terms, the game's own
+ * clock being what turns a stamp into a span and into a date - so a case states the age it is
+ * about rather than arithmetic over two moments.
  */
 final class ObservationNoteFormatterTest {
 
@@ -40,15 +40,7 @@ final class ObservationNoteFormatterTest {
     @BeforeEach
     void openClock() {
 
-        var observedClockMock = mock(CampaignClockAPI.class);
-
-        when(observedClockMock.getDateString())
-            .thenReturn(OBSERVED_DATE);
-
         clockMock = mock(CampaignClockAPI.class);
-
-        when(clockMock.createClock(OBSERVED_AT))
-            .thenReturn(observedClockMock);
 
         StarsectorSettingsFake.installSettings();
     }
@@ -116,8 +108,8 @@ final class ObservationNoteFormatterTest {
             // What the split is for. The lead-in is the axis's own and the span words are not, so
             // one axis cannot come to phrase an age differently from another - which is the drift
             // the shared formatter exists to close.
-            when(clockMock.getElapsedDaysSince(OBSERVED_AT))
-                .thenReturn(34.0f);
+            ObservationClockFixture
+                .stubMomentOnClock(clockMock, OBSERVED_AT, 34.0f, OBSERVED_DATE);
 
             assertThat(ObservationNoteFormatter
                     .formatObservationNote(clockMock, leadInKey, OBSERVED_AT))
@@ -153,8 +145,8 @@ final class ObservationNoteFormatterTest {
     // sighting states.
     private String formatNoteObservedDaysAgo(float elapsedDays) {
 
-        when(clockMock.getElapsedDaysSince(OBSERVED_AT))
-            .thenReturn(elapsedDays);
+        ObservationClockFixture
+            .stubMomentOnClock(clockMock, OBSERVED_AT, elapsedDays, OBSERVED_DATE);
 
         return ObservationNoteFormatter.formatObservationNote(
             clockMock,

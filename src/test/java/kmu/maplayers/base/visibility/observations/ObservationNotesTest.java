@@ -16,7 +16,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins which of a row's concealed facts dates it, and in whose words.
@@ -57,8 +56,10 @@ final class ObservationNotesTest {
 
         clockMock = mock(CampaignClockAPI.class);
 
-        stubMomentOnClock(OBSERVED_LONG_AGO, LONG_AGO_ELAPSED_DAYS, LONG_AGO_DATE);
-        stubMomentOnClock(OBSERVED_RECENTLY, RECENTLY_ELAPSED_DAYS, RECENTLY_DATE);
+        ObservationClockFixture
+            .stubMomentOnClock(clockMock, OBSERVED_LONG_AGO, LONG_AGO_ELAPSED_DAYS, LONG_AGO_DATE);
+        ObservationClockFixture
+            .stubMomentOnClock(clockMock, OBSERVED_RECENTLY, RECENTLY_ELAPSED_DAYS, RECENTLY_DATE);
 
         StarsectorSettingsFake.installSettings();
     }
@@ -255,18 +256,4 @@ final class ObservationNotesTest {
         return new ObservationAxis(leadInKey, ObservationRecency.NEVER_OBSERVED);
     }
 
-    // What the game's clock reports for one recorded moment: how long ago it was, and the date it
-    // falls on. Stubbed rather than computed, so a case states the age it is about.
-    private void stubMomentOnClock(long observedTimestamp, float elapsedDays, String date) {
-
-        var observedClockMock = mock(CampaignClockAPI.class);
-
-        when(observedClockMock.getDateString())
-            .thenReturn(date);
-
-        when(clockMock.createClock(observedTimestamp))
-            .thenReturn(observedClockMock);
-        when(clockMock.getElapsedDaysSince(observedTimestamp))
-            .thenReturn(elapsedDays);
-    }
 }

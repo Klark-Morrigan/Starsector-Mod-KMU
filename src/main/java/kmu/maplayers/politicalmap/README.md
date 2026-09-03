@@ -463,9 +463,11 @@ remark is about the box's account rather than about the colony, and set ahead of
 break a word like `abandoned` away from the name it qualifies. Two things count as looking at it,
 being the two routes an observation is ever made by: the player's fleet is in the system, or the
 system's own inhabitants can see the colony - the owner-aware reading the visibility rule itself
-uses. Only then is the
-sighting register reached for, so the ordinary case costs a location comparison and an owner-set
-read, and the elapsed span and the date are built off `CampaignClockAPI` per remarked line. That
+uses. The notes pose that live reading and the register's recall in the shared triad's terms
+(`ObservationRecency.resolveRecency`) and hand one axis, under the colony's own `last seen` lead-in,
+to the shared `ObservationNotes` - which dates the line only where the axis is recalled with a
+moment, composing the span and the date off `CampaignClockAPI` in the span words every axis shares.
+That
 matters most for the colonies a revelation gate admitted on the strength of an observation - a
 derelict, a concealed base - which would otherwise be listed exactly as a colony the player is
 standing over. No visibility rule reads the time: the moment being shown turned on how recent an
