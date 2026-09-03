@@ -42,6 +42,15 @@ final class ObservationAxisTest {
         }
 
         @Test
+        void refusesAnAxisWhoseWordsResolveToNothing() {
+            // A blank id is the failure a null one would be caught for and a present one would not:
+            // it composes a remark with nothing in front of the date, which reads as a fault in the
+            // surface rather than as the missing string it is.
+            assertThatThrownBy(() -> new ObservationAxis("   ", ObservationRecency.OBSERVED_NOW))
+                .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
         void refusesAnAxisInNoneOfTheThreeStates() {
 
             assertThatThrownBy(() -> new ObservationAxis(LEAD_IN_KEY, null))
