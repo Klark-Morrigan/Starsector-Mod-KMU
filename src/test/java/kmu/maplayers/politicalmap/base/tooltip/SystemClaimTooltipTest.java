@@ -1563,6 +1563,44 @@ final class SystemClaimTooltipTest {
             assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
+
+        @Test
+        void resolveDeepestHeldLevelForAgreesWithTheDepthThePaintReports() {
+            // The invariant the two-path design rests on, and the one place this box can break it: the
+            // press asks here while the paint takes the depth off the body it just composed, and the
+            // two run through separate reads of the system. Drifting, the hint would name a step the
+            // key does not take - or the key would act where the box said it would not.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
+
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(readComposedDepth());
+        }
+
+        @Test
+        void resolveDeepestHeldLevelForAgreesWithThePaintOverASystemListingNobody() {
+            // The same agreement at the other end, which is the half that would strand a player: a box
+            // the fog left listing nobody must report the shallowest through both paths, or the key
+            // would act over a box drawing no hint at all.
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                null,
+                List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
+
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(readComposedDepth());
+        }
+    }
+
+    // How deep the paint says the box goes, off the body it composed - the counterpart to the
+    // press-time read, taken at the shallowest level since the depth reported is a fact about the
+    // system rather than about how deep this particular paint was asked to read.
+    private HoverTooltipDetailLevel readComposedDepth() {
+        return tooltip
+            .composeBody(sectorMock, systemMock, HoverTooltipDetailLevel.FACTIONS)
+            .deepestHeldLevel();
     }
 
     // Hands the tooltip the contest it is about, standing in for the market walk that would otherwise

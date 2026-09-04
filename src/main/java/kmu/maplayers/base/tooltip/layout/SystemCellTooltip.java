@@ -220,11 +220,6 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
      * screen. Answered by a box taking part in the detail cycle, and left at the shallowest level for
      * one that does not, which is the ordinary case.
      *
-     * <p>Stated as a level rather than as "there is more", because the cycle's own deepest constant is
-     * not every box's: the levels name tiers of one particular account and a box built on a different
-     * mechanic simply has none of the deeper ones. A box that could only say yes or no would keep
-     * saying yes at a level it cannot fill, and the key would advertise a step that changes nothing.
-     *
      * <p>This is the <em>press-time</em> entry to that question, reached when the key is struck and
      * nothing has been composed to take the answer from. A paint gets the same answer out of
      * {@link #composeBody} instead, off the read the body was built from, so the box never pays for

@@ -4,7 +4,8 @@ import kmu.util.KmuStrings;
 
 /**
  * How deep the hover box reads the one tree a layer composes for a system: four ordered depths,
- * cycled on one key, each admitting one more tier of the same account.
+ * cycled on one key, each admitting one more tier of the same account. How many of them a given box
+ * cycles through is that box's own, for the reason the cycle below sets out.
  *
  * <p>A level is a cut, not a variant: it states the deepest subordination the box may show, so every
  * level draws the same tree to a different depth and two systems can be compared at any of them. A
@@ -84,10 +85,6 @@ public enum HoverTooltipDetailLevel {
      * The level one press moves to, given how deep the box being read actually goes: the next deeper
      * level, or the shallowest again once {@code deepestHeldLevel} has been reached - so a press
      * always acts and any box can be collapsed from wherever its own tree ends.
-     *
-     * <p>Bounded by the box rather than by the cycle, because the two are not the same depth. A box
-     * whose tree ends above the last constant would otherwise be offered levels that redraw what is
-     * already on screen, and the player would press through them to reach the collapse.
      *
      * <p>Wrapping is judged at or past the bound rather than exactly at it, since the level is one
      * shared fact held across layer switches: a box reached at a level deeper than it holds anything

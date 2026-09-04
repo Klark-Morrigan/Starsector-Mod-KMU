@@ -43,17 +43,14 @@ public interface MapHoverTooltip {
      * the hint at the box's foot is worded from.
      *
      * <p>Answered as the destination rather than as a yes or no, because the pass that claims the key
-     * has to set the level it lands on and no other party can work it out: the cycle wraps at the
-     * deepest level the box itself holds anything at, not at the deepest the level enum declares. A
-     * box asked only whether it had more would leave the stepping to a caller that cannot see where
-     * its tree ends.
+     * has to set the level it lands on and only the box can say where that is - the cycle wrapping
+     * where this box's own tree ends rather than where the levels do
+     * ({@link HoverTooltipDetailLevel}). A box asked only whether it had more would leave the
+     * stepping to a caller that cannot see that.
      *
-     * <p>Asked of the box rather than read off the level alone, because a level admitting a deeper
-     * tier is not the same as this box having anything at that tier: a claim is settled over colonies
-     * with no patrol entering it anywhere, so the level naming patrol tiers is one that box can never
-     * fill. Offered it regardless, the player presses the key and sees the same box again - and,
-     * since the level is shared and holds across hovers, the next system that <em>does</em> differ
-     * then opens at a depth they did not choose.
+     * <p>Offering nowhere matters as much as offering somewhere: the level is shared and holds across
+     * hovers, so a press swallowed here would silently decide how the next system that <em>does</em>
+     * differ opens.
      *
      * <p>Asked per system rather than once per box because part of the answer lives there: what a box
      * holds turns on what the cursor is over, and a system it lists nothing for has nothing to open

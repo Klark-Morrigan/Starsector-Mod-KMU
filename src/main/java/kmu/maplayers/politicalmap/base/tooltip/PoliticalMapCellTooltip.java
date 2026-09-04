@@ -97,6 +97,37 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         StarSystemAPI system);
 
     /**
+     * The deepest level this box's account of one listed faction reaches, over a system it names
+     * somebody in.
+     *
+     * <p>Asked of the box that supplies the account rather than settled here, because it is a fact
+     * about that account's own subject matter and a constant of it: what tiers an account carries
+     * follows from what it explains, not from what one system happened to yield.
+     *
+     * @return the deepest level this box's account ever puts a line at
+     */
+    protected abstract HoverTooltipDetailLevel resolveDeepestAccountLevel();
+
+    /**
+     * How deep the box goes over one hovered system: as deep as its account reaches where the read
+     * behind it named somebody to account for, and no deeper than the box's own voice where it did
+     * not.
+     *
+     * <p>The one place the two halves are joined, so a shape cannot combine them one way for the
+     * paint and another for the press - the drift that would put the hint and the key at odds over
+     * one system. Taken by the shape from the read it already holds rather than reading the system
+     * again, which is why the halves arrive here separately.
+     *
+     * @param isNamingAnybody whether the read behind the box left it a faction to account for
+     * @return the level the cycle wraps at for this box over this system
+     */
+    protected final HoverTooltipDetailLevel resolveDeepestHeldLevel(boolean isNamingAnybody) {
+        return isNamingAnybody
+            ? resolveDeepestAccountLevel()
+            : HoverTooltipDetailLevel.FACTIONS;
+    }
+
+    /**
      * Whether this box's own body names the faction holding the system by decree. A box that does goes
      * without the heading, since one hover stating the same decree twice reads as two separate facts
      * about the system rather than as one said over.

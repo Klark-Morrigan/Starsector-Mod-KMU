@@ -334,10 +334,11 @@ are both in hand, so no faction's colonies can be listed under another's name. E
 shape answers it rather than inheriting an empty one: a box that hung nothing would draw the same
 thing at every level while `F1` went on offering to open it up.
 
-Beside it every box on the shape states how far that account reaches
-(`resolveDeepestAccountLevel`), which is where the cycle wraps for this box: the domination one fills
-the levels out at `PATROL_DETAILS`, and the claims box beside it stops a tier higher. The shape joins
-that constant with what the ranking found for the hovered system, so a box states only the first.
+Beside it every box states how far that account reaches (`resolveDeepestAccountLevel`), which is
+where the cycle wraps for this box: the domination one fills the levels out at `PATROL_DETAILS`, and
+the claims box beside it stops a tier higher. `PoliticalMapCellTooltip` joins that constant with
+whatever its shape's own read found for the hovered system, so a box states only the first and both
+shapes combine them the one way.
 
 Where each ranked group is listed is `StandingBlockRouting`'s one answer, taken per hover over the
 closed set of blocks `StandingBlock` names - which carries each block's heading too, so the order

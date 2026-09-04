@@ -115,25 +115,6 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     }
 
     /**
-     * The deepest level this box's account of one listed faction reaches, over a system it ranks
-     * somebody in. What bounds the cycle, so the press after that level collapses the box rather than
-     * offering a tier the account has nothing to put in.
-     *
-     * <p>Asked of the box that supplies the account rather than settled here, because it is a fact
-     * about that account's own subject matter: the levels name tiers of one particular reading of a
-     * system, and a box explaining a different mechanic simply has no line at some of them.
-     *
-     * <p>A constant of the box rather than a read of the system, unlike the level actually reported
-     * above: what tiers an account carries follows from what it explains, while whether any of them
-     * has content for one hovered system follows from what the ranking found. The two are combined
-     * here so a box states the first alone.
-     *
-     * @return the deepest level the resolver from {@link #createFactionAccountResolver} ever puts a
-     *         line at
-     */
-    protected abstract HoverTooltipDetailLevel resolveDeepestAccountLevel();
-
-    /**
      * Resolves what hangs beneath each faction the box lists, as the account of where that faction's
      * score came from. The seam the whole class exists around: which groups are listed, under which
      * heading, above what, and how each presents are all settled by the time this is called, so what
@@ -173,17 +154,6 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return detailLevel.isAdmittingAccounts()
             ? createFactionAccountResolver(system, pass, detailLevel)
             : FactionAccountResolver.NO_ACCOUNT;
-    }
-
-    // How deep the box goes over one hovered system: as deep as its account reaches where the ranking
-    // left it somebody to account for, and no deeper than the box's own voice where it did not.
-    //
-    // The one place the two halves are joined, so the paint and the press cannot combine them
-    // differently - the failure that would put the hint and the key at odds over one system.
-    private HoverTooltipDetailLevel resolveDeepestHeldLevel(boolean hasAnyStanding) {
-        return hasAnyStanding
-            ? resolveDeepestAccountLevel()
-            : HoverTooltipDetailLevel.FACTIONS;
     }
 
     // Whether the ranking found anybody the box may name - the one judgement behind both the hint at

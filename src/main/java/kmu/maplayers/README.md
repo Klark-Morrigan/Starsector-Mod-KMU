@@ -440,11 +440,9 @@ about what the overlay means.
   hovers and layer switches without any layer holding a second body. What writes that level is
   `HoverTooltipDetailLevelInput`, a campaign input listener claiming F1 pre-core: each press moves
   one level deeper, wrapping back to the first, so the key that leads into detail also
-  leads out of it. Where it wraps is the *box's* depth rather than the last constant: the levels name
-  tiers of one particular account and a box built on another mechanic simply has none of the deeper
-  ones - a claim is settled over colonies with no patrol entering it anywhere - so a cycle wrapping
-  at the last constant regardless would offer such a box a level that redraws exactly what is on
-  screen, and the player would press through it to reach the collapse. A render pass is
+  leads out of it. Where it wraps is the *box's* depth rather than the last constant, for the reason
+  `HoverTooltipDetailLevel` sets out: the levels name tiers of one particular account, and a box
+  built on another mechanic has none of the deeper ones to fill. A render pass is
   handed no events and so can consume none, which is why reading the key and drawing its result
   are two passes agreeing through the holder. Both read one gate seam, `HoverTooltipGates` - the
   settings tiers above any layer, and a map on screen - rather than a copy each, so the key is
@@ -491,9 +489,9 @@ about what the overlay means.
   `resolveDeepestHeldLevelFor` instead, that being the one caller with nothing composed to take the
   answer from, and it asks once per press - and not at all at the deepest level the levels declare,
   where no box can hold anything further and the collapse settles it whatever this one holds. The
-  bound is two facts joined once per layer shape: how far the box's *account* reaches, a constant of
-  what it explains, and whether this system left it anything to account for at all. Hint and press
-  run off that one rule, so the box cannot advertise a key that does nothing. The
+  bound is two facts, and a layer joins them in one place: how far the box's *account* reaches, a
+  constant of what it explains, and whether this system left it anything to account for at all. Hint
+  and press run off that one rule, so the box cannot advertise a key that does nothing. The
   hint is not content: a box with nothing to say about the system stays undrawn
   rather than appearing as a lone offer to expand into nothing. That same line carries one more run
   where the box had less room than its content needed: how many entries it could not show, in the
