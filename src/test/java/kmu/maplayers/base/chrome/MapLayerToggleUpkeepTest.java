@@ -357,7 +357,7 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceMovesSuchAPickOnceRatherThanAtEveryStand() {
+        void advanceMovesAWithheldPickOnceRatherThanAtEveryStand() {
 
             var shownRow = new AtomicReference<>(ShownFilterRows.createRowWithRoomToSpare());
             var screenPicks = buildScreenPicksOnTheEmptyView();
