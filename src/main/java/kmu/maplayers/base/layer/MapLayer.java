@@ -53,14 +53,18 @@ public interface MapLayer {
     List<ControlSpec> getBodyControls();
 
     /**
-     * @return the LWJGL keycode this layer's tab jumps to before the player rebinds it in
-     *         LunaLib; also the "[N]" / "[P]" hint the tab prints. Mirrors the matching
-     *         Keycode default in data/config/LunaSettings.csv.
+     * The keycode this layer's tab jumps to and prints as its hint, resolved rather than described by
+     * a rebinding field: a settings field id is only meaningful to the settings file holding it, and
+     * the framework reads one file while a layer may come from any mod. A layer offering no rebinding
+     * at all answers a constant rather than inventing a field id it has no reader for.
+     *
+     * <p>Asked for per read, like the label above: the tab hints and the key claim are both rebuilt
+     * from the roster each frame, so a rebind reaches the next frame rather than the next load.
+     *
+     * @return the LWJGL keycode in force; non-positive for a binding the player cleared, which the
+     *         framework prints no hint for and matches no press against
      */
-    int getDefaultShortcutKeycode();
-
-    /** @return the LunaLib field id holding the player's rebound shortcut keycode. */
-    String getShortcutSettingKey();
+    int resolveShortcutKeycode();
 
     /**
      * What draws this layer's overlay for one sector while it is the active pick, or null for a

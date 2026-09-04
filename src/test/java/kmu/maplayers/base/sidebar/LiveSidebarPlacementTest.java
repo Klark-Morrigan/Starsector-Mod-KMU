@@ -19,13 +19,27 @@ import static org.mockito.Mockito.when;
  * the visor's left, and capped to the visor's bottom - all expressed as screen padding for the
  * top-left-anchored layout. The tab band each panel stands its row in is its host's, and pinned there.
  *
- * <p>And where the tab row's letters come from: each layer's own answer, taken as drawn text, so a layer
- * shipped by another mod letters its tab out of its own bundle.
+ * <p>And where the tab row's letters and key hints come from: each layer's own answer, taken as drawn text
+ * and as the keycode in force, so a layer shipped by another mod letters and binds its tab out of its own
+ * bundle and its own settings.
  */
 final class LiveSidebarPlacementTest {
 
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
+
+    // LWJGL's KEY_P and KEY_N, the two keys the shipped tabs answer to.
+    private static final int POLITICAL_MAP_KEYCODE = 25;
+    private static final int NO_LAYER_KEYCODE = 49;
+
+    // What the player leaves behind by clearing a binding with Escape.
+    private static final int UNBOUND_KEYCODE = 0;
+
+    // Inside LWJGL's name table but not one of its keys, so it names nothing.
+    private static final int UNNAMED_KEYCODE = 84;
+
+    // Past the end of that table, which is indexed by keycode with no range check of its own.
+    private static final int OFF_THE_KEYBOARD_KEYCODE = 9999;
 
     @Nested
     class ComputeIntelPadding {
@@ -105,6 +119,72 @@ final class LiveSidebarPlacementTest {
 
             assertThat(LiveSidebarPlacement.resolveTabLabels(List.of(blankLabelLayerMock, labelledLayerMock)))
                 .containsExactly("", "Political Map");
+        }
+    }
+
+    @Nested
+    class ResolveTabShortcuts {
+
+        @Test
+        void resolveTabShortcutsHintsEachTabWithTheKeyItsOwnLayerAnswersTo() {
+            // The inversion this pins: the bar prints the key the layer hands back and reads no settings
+            // field of its own, which is what lets a layer from another mod bind its tab in a settings file
+            // KMU has no reader for. Two layers, so a bar reading one fixed source would hint one of them
+            // twice.
+            var firstLayerMock = mock(MapLayer.class);
+            var secondLayerMock = mock(MapLayer.class);
+
+            when(firstLayerMock.resolveShortcutKeycode())
+                .thenReturn(NO_LAYER_KEYCODE);
+            when(secondLayerMock.resolveShortcutKeycode())
+                .thenReturn(POLITICAL_MAP_KEYCODE);
+
+            assertThat(LiveSidebarPlacement.resolveTabShortcuts(List.of(firstLayerMock, secondLayerMock)))
+                .containsExactly("N", "P");
+        }
+
+        @Test
+        void resolveTabShortcutsHintsNoKeyForALayerThePlayerLeftUnbound() {
+            // A cleared binding is a key the tab must stop advertising: LWJGL still names 0 "NONE", so an
+            // ungated read would print a key the player cannot press. The entry stays, since the control
+            // pairs hints to labels by index.
+            var unboundLayerMock = mock(MapLayer.class);
+            var boundLayerMock = mock(MapLayer.class);
+
+            when(unboundLayerMock.resolveShortcutKeycode())
+                .thenReturn(UNBOUND_KEYCODE);
+            when(boundLayerMock.resolveShortcutKeycode())
+                .thenReturn(POLITICAL_MAP_KEYCODE);
+
+            assertThat(LiveSidebarPlacement.resolveTabShortcuts(List.of(unboundLayerMock, boundLayerMock)))
+                .containsExactly(null, "P");
+        }
+
+        @Test
+        void resolveTabShortcutsHintsNoKeyForACodeLwjglCannotName() {
+            // A real keycode LWJGL holds no name for. The tab keeps its label and simply says nothing about
+            // what presses it, rather than printing a blank bracket beside the name.
+            var unnamedLayerMock = mock(MapLayer.class);
+
+            when(unnamedLayerMock.resolveShortcutKeycode())
+                .thenReturn(UNNAMED_KEYCODE);
+
+            assertThat(LiveSidebarPlacement.resolveTabShortcuts(List.of(unnamedLayerMock)))
+                .containsExactly((String) null);
+        }
+
+        @Test
+        void resolveTabShortcutsHintsNoKeyForACodePastTheKeyboard() {
+            // The bound test earns its place here: the keycode is now an arbitrary mod's number and LWJGL
+            // indexes its name table by it unchecked, so without the gate one layer answering nonsense
+            // would take the whole tab row down instead of costing itself a hint.
+            var offTheKeyboardLayerMock = mock(MapLayer.class);
+
+            when(offTheKeyboardLayerMock.resolveShortcutKeycode())
+                .thenReturn(OFF_THE_KEYBOARD_KEYCODE);
+
+            assertThat(LiveSidebarPlacement.resolveTabShortcuts(List.of(offTheKeyboardLayerMock)))
+                .containsExactly((String) null);
         }
     }
 }

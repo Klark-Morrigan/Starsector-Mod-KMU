@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
+import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
@@ -35,6 +36,10 @@ public final class PoliticalMapLayer implements MapLayer {
     // The tab's save-serialised layer id: the political map, not a specific view. The value stored
     // in the active-tab memory key.
     private static final String LAYER_ID = "political_map";
+
+    // P for "political", and what the tab prints until the player rebinds it. Mirrors the matching
+    // Keycode default in data/config/LunaSettings.csv.
+    private static final int DEFAULT_SHORTCUT_KEYCODE = Keyboard.KEY_P;
 
     // LunaLib stores a rebound key under the field id.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
@@ -86,13 +91,13 @@ public final class PoliticalMapLayer implements MapLayer {
     }
 
     @Override
-    public int getDefaultShortcutKeycode() {
-        return Keyboard.KEY_P;
-    }
-
-    @Override
-    public String getShortcutSettingKey() {
-        return SHORTCUT_SETTING_FIELD;
+    public int resolveShortcutKeycode() {
+        // The framework asks for the key in force rather than for a field to read, so the LunaLib
+        // lookup is this tab's own: the field id is a row in KMU's settings file, which is a fact
+        // about this mod rather than about the bar the tab stands in.
+        return KmuMapKeybindSettings.getMapLayerShortcut(
+            SHORTCUT_SETTING_FIELD,
+            DEFAULT_SHORTCUT_KEYCODE);
     }
 
     @Override

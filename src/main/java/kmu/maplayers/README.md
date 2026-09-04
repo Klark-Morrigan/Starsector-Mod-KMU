@@ -147,8 +147,8 @@ about what the overlay means.
 
 ## Where each part lives
 
-- **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, default
-  shortcut), `MapLayerRegistry` (the roster, and what is in play on the screen showing this frame),
+- **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, shortcut key),
+  `MapLayerRegistry` (the roster, and what is in play on the screen showing this frame),
   `MapLayerScreens` (both screens' picks under their frozen keys, and which screen is up), `NoLayer`,
   and
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
@@ -165,9 +165,13 @@ about what the overlay means.
   answer below, and the session's rather than the save's. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
-  installation through rather than resolving one of its own. A layer also letters its own tab:
-  `resolveTabLabelText` hands the bar drawn text rather than a strings key, since only the mod that
-  declares a layer holds the bundle its name lives in, and the bar carries whatever is registered.
+  installation through rather than resolving one of its own. A layer also letters and binds its own
+  tab: `resolveTabLabelText` hands the bar drawn text rather than a strings key and
+  `resolveShortcutKeycode` hands it the key in force rather than a settings field to read, since only
+  the mod that declares a layer holds the bundle its name lives in and the file its rebinding is
+  stored in, and the bar carries whatever is registered. Both are asked per frame, so a rename or a
+  rebind shows on the next one; KMU's own two layers answer out of `KmuStrings` and the
+  `Map - Keybinds` settings tab themselves.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

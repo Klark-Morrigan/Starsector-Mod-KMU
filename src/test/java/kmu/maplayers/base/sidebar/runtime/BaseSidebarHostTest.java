@@ -14,20 +14,16 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
-import kmu.settings.KmuMapKeybindSettings;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -37,10 +33,12 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the shortcut key that jumps to a layer, which every host shares because the panel offers the same
- * tabs on whichever screen it draws. The jump reads the player's rebound keycode rather than the layer's
- * default, so a clash with a screen's own bindings is settled by rebinding; it writes only the host's own
- * pick, so a press on one screen leaves the other screen's tab where it was; and it consumes only a press
- * it acted on, so every other key reaches the screen underneath.
+ * tabs on whichever screen it draws. The jump reads the keycode each layer answers with and no settings
+ * field of its own, so a layer from another mod claims a key through whatever that mod stores bindings in;
+ * it writes only the host's own pick, so a press on one screen leaves the other screen's tab where it was;
+ * and it consumes only a press it acted on, so every other key reaches the screen underneath. Where a KMU
+ * layer's number comes from - its LunaLib row, so a clash with a screen's own bindings is settled by
+ * rebinding - is that layer's own case to make.
  *
  * <p>Pins the shared "is the sidebar live" gate with it: a claim on the screen stands every host down,
  * which is what frees the shortcut keys above to type rather than switch tabs. Which things can claim it
@@ -58,9 +56,6 @@ final class BaseSidebarHostTest {
     private static final int FIRST_KEYCODE = 49;
     private static final int SECOND_KEYCODE = 25;
     private static final int UNRELATED_KEYCODE = 30;
-
-    private static final String FIRST_SETTING_KEY = "kmu_testFirstLayerKey";
-    private static final String SECOND_SETTING_KEY = "kmu_testSecondLayerKey";
 
     // Where each registered layer's tab sits in the row, the panel building its tabs from the same registry
     // in the same order - so these are the indices a blink has to land on.
@@ -88,13 +83,11 @@ final class BaseSidebarHostTest {
     @BeforeEach
     void registerTwoBoundLayers() {
 
-        when(firstLayerMock.getShortcutSettingKey())
-            .thenReturn(FIRST_SETTING_KEY);
-        when(firstLayerMock.getDefaultShortcutKeycode())
+        // Each layer answers the key it is in force with; where that number comes from is the layer's own
+        // business, and the host reads nothing but the answer.
+        when(firstLayerMock.resolveShortcutKeycode())
             .thenReturn(FIRST_KEYCODE);
-        when(secondLayerMock.getShortcutSettingKey())
-            .thenReturn(SECOND_SETTING_KEY);
-        when(secondLayerMock.getDefaultShortcutKeycode())
+        when(secondLayerMock.resolveShortcutKeycode())
             .thenReturn(SECOND_KEYCODE);
 
         // The registry is static, so a neighbour's layers would otherwise outlive their test.
@@ -111,9 +104,7 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(SECOND_KEYCODE);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             verify(layerSelectionMock)
                 .selectLayer(secondLayerMock);
@@ -130,9 +121,7 @@ final class BaseSidebarHostTest {
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             verifyNoInteractions(layerSelectionMock);
 
@@ -143,19 +132,18 @@ final class BaseSidebarHostTest {
 
         @Test
         void handleKeyPressSkipsALayerWhoseShortcutThePlayerCleared() {
-            // A cleared binding stores 0 (LWJGL's KEY_NONE), so a stray zero-valued press must match no
+            // A cleared binding answers 0 (LWJGL's KEY_NONE), so a stray zero-valued press must match no
             // layer rather than falling onto the first cleared one.
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNBOUND);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
-                settingsMock
-                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(anyString(), anyInt()))
-                    .thenReturn(UNBOUND);
+            when(firstLayerMock.resolveShortcutKeycode())
+                .thenReturn(UNBOUND);
+            when(secondLayerMock.resolveShortcutKeycode())
+                .thenReturn(UNBOUND);
 
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             verifyNoInteractions(layerSelectionMock);
             verify(eventMock, never())
@@ -163,24 +151,18 @@ final class BaseSidebarHostTest {
         }
 
         @Test
-        void handleKeyPressFollowsTheReboundKeycodeRatherThanTheLayerDefault() {
-            // Rebinding is the way out of a clash with a screen's own bindings, so the jump must follow the
-            // player's keycode and stop answering to the default.
+        void handleKeyPressFollowsTheKeycodeTheLayerAnswersOnThisPress() {
+            // The claim is rebuilt from the layers' answers at every press, so a rebind between two presses
+            // lands on the second one. A host that took a layer's key once - at registration, or into a
+            // field - would go on answering to the key the player has already moved off.
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
+            when(secondLayerMock.resolveShortcutKeycode())
+                .thenReturn(UNRELATED_KEYCODE);
 
-                settingsMock
-                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
-                    .thenReturn(UNBOUND);
-                settingsMock
-                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
-                    .thenReturn(UNRELATED_KEYCODE);
-
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             verify(layerSelectionMock)
                 .selectLayer(secondLayerMock);
@@ -196,9 +178,7 @@ final class BaseSidebarHostTest {
             var host = createHost(mock(ActiveLayerSelection.class));
             var eventMock = mockKeyPress(SECOND_KEYCODE);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             advanceAWholeTraverse(host);
 
@@ -215,9 +195,7 @@ final class BaseSidebarHostTest {
             var host = createHost(mock(ActiveLayerSelection.class));
             var eventMock = mockKeyPress(UNRELATED_KEYCODE);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             advanceAWholeTraverse(host);
 
@@ -238,9 +216,7 @@ final class BaseSidebarHostTest {
 
             var eventMock = mockKeyPress(FIRST_KEYCODE);
 
-            try (MockedStatic<KmuMapKeybindSettings> settingsMock = mockDefaultBindings()) {
-                host.handleKeyPress(eventMock);
-            }
+            host.handleKeyPress(eventMock);
 
             verify(layerSelectionMock)
                 .selectLayer(firstLayerMock);
@@ -554,21 +530,6 @@ final class BaseSidebarHostTest {
             .thenReturn(shownFade);
 
         return visibilityMock;
-    }
-
-    // Each layer bound to its own default, the state before the player rebinds anything.
-    private static MockedStatic<KmuMapKeybindSettings> mockDefaultBindings() {
-
-        var settingsMock = mockStatic(KmuMapKeybindSettings.class);
-
-        settingsMock
-            .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(FIRST_SETTING_KEY, FIRST_KEYCODE))
-            .thenReturn(FIRST_KEYCODE);
-        settingsMock
-            .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SECOND_SETTING_KEY, SECOND_KEYCODE))
-            .thenReturn(SECOND_KEYCODE);
-
-        return settingsMock;
     }
 
     // Charges the host's panel one whole traverse of animation with the pointer off it, which is all a

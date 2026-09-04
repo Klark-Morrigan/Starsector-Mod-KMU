@@ -14,7 +14,6 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
-import kmu.settings.KmuMapKeybindSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -156,7 +155,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
         var layers = MapLayerRegistry.getLayers();
         var tabIndex = TabPanelHotkeys.findTabForKey(
             event.getEventValue(),
-            layerKeycodes(layers));
+            resolveLayerKeycodes(layers));
 
         if (tabIndex == TabStrip.NO_TAB) {
             return;
@@ -278,15 +277,14 @@ public abstract class BaseSidebarHost implements SidebarHost {
             : new TabPanelController(soundPlayer, soundScheme);
     }
 
-    // Each layer's bound keycode in registry order, so a matched index maps back to its layer. A cleared
-    // shortcut reads as 0 (LWJGL's KEY_NONE); the binder treats a non-positive keycode as unbound and never
-    // matches it.
-    private static List<Integer> layerKeycodes(List<MapLayer> layers) {
+    // Each layer's bound keycode in registry order, so a matched index maps back to its layer. Taken from
+    // the layer rather than read out of KMU's settings here, so a layer from another mod claims a key
+    // through whatever its own mod stores bindings in. A cleared shortcut reads as 0 (LWJGL's KEY_NONE);
+    // the binder treats a non-positive keycode as unbound and never matches it.
+    private static List<Integer> resolveLayerKeycodes(List<MapLayer> layers) {
         var keycodes = new ArrayList<Integer>(layers.size());
         for (var layer : layers) {
-            keycodes.add(KmuMapKeybindSettings.getMapLayerShortcut(
-                layer.getShortcutSettingKey(),
-                layer.getDefaultShortcutKeycode()));
+            keycodes.add(layer.resolveShortcutKeycode());
         }
         return keycodes;
     }

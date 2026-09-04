@@ -17,7 +17,6 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreenControls;
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.settings.KmuMapKeybindSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
 
@@ -63,7 +62,6 @@ final class MapSidebarHostTest {
 
     // A stand-in layer binding: which layers exist is the composition root's business, so the shortcut is
     // pinned against a registered fake rather than a concrete view's real key.
-    private static final String SHORTCUT_SETTING_KEY = "kmu_testLayerKey";
     private static final int SHORTCUT_KEYCODE = 25;
 
     private static final float FULLY_DOCKED = 1f;
@@ -274,9 +272,7 @@ final class MapSidebarHostTest {
 
             when(layerMock.getId())
                 .thenReturn("political_map");
-            when(layerMock.getShortcutSettingKey())
-                .thenReturn(SHORTCUT_SETTING_KEY);
-            when(layerMock.getDefaultShortcutKeycode())
+            when(layerMock.resolveShortcutKeycode())
                 .thenReturn(SHORTCUT_KEYCODE);
 
             MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
@@ -286,8 +282,7 @@ final class MapSidebarHostTest {
             when(eventMock.getEventValue())
                 .thenReturn(SHORTCUT_KEYCODE);
 
-            try (var globalMock = mockStatic(Global.class);
-                    var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
+            try (var globalMock = mockStatic(Global.class)) {
 
                 var memoryMock = mock(MemoryAPI.class);
                 var sectorMock = mock(SectorAPI.class);
@@ -298,11 +293,6 @@ final class MapSidebarHostTest {
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(sectorMock);
-                settingsMock
-                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(
-                        SHORTCUT_SETTING_KEY,
-                        SHORTCUT_KEYCODE))
-                    .thenReturn(SHORTCUT_KEYCODE);
 
                 MapSidebarHost.INSTANCE.handleKeyPress(eventMock);
 

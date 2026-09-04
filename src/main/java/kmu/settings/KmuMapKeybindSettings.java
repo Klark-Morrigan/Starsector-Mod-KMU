@@ -13,10 +13,13 @@ import org.lwjgl.input.Keyboard;
  * sifting a large one.
  *
  * <p>The two readings here are different in kind, which is the other reason they sit together.
- * A layer's tab key is looked up by an id the caller supplies, because a layer supplied by another
- * mod owns the id its own key is stored under and the framework must be able to read a key for a
- * layer it has never heard of. The filter row's box is KMU's own chrome with no such caller, so its
- * id and default are stated here like any other knob's.
+ * A layer's tab key is looked up by an id the caller supplies, because a layer owns the row its own
+ * key is stored under and is the only thing that can name it; the callers are KMU's own two layers,
+ * each answering the keycode its tab is in force with. The map-layer framework itself never reaches
+ * here - it asks a layer for the key rather than for a field - so a layer shipped by another mod
+ * binds its tab out of that mod's own settings and this file has nothing to say about it. The filter
+ * row's box is KMU's own chrome with no such caller, so its id and default are stated here like any
+ * other knob's.
  *
  * <p>What each key does for the player is stated once, in the description column of
  * data/config/LunaSettings.csv, and how any of them are rebound once more, in that tab's own note
@@ -56,8 +59,8 @@ public final class KmuMapKeybindSettings {
      * rebind which key jumps to that layer.
      *
      * <p>The field id is the caller's rather than a constant here: each layer owns the id its own
-     * shortcut is stored under, so the framework can read a shortcut for a layer it does not know
-     * about.
+     * shortcut is stored under, so one reader serves every KMU layer with a row on the tab and a
+     * layer added later needs no case of its own here.
      *
      * <p>A keycode of 0 (LWJGL's {@code KEY_NONE}) means the player cleared the binding with
      * Escape, so the layer has no shortcut; callers treat that as unbound rather than a real key.

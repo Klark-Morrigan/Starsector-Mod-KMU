@@ -20,7 +20,6 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
-import kmu.settings.KmuMapKeybindSettings;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.lwjgl.input.Keyboard;
@@ -139,6 +138,17 @@ public final class LiveSidebarPlacement {
         return labels;
     }
 
+    // The row's shortcut hints, built to run parallel to the labels above - same order, same length, one
+    // entry per layer whether or not it has a key to print, since the control pairs the two by index.
+    static List<String> resolveTabShortcuts(List<MapLayer> layers) {
+
+        var shortcuts = new ArrayList<String>(layers.size());
+        for (var layer : layers) {
+            shortcuts.add(resolveShortcutName(layer));
+        }
+        return shortcuts;
+    }
+
     // Lays the panel out for the given anchor, tab style, and controller - the one path both host entry
     // points share, so the map and intel panels are the same layout differing only in where they anchor and
     // how tall they stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs
@@ -235,27 +245,19 @@ public final class LiveSidebarPlacement {
             cell -> selection.selectLayer(layers.get(cell)));
     }
 
-    // The row's shortcut hints, built to run parallel to the labels above - same order, same length, one
-    // entry per layer whether or not it has a key to print, since the control pairs the two by index.
-    private static List<String> resolveTabShortcuts(List<MapLayer> layers) {
-
-        var shortcuts = new ArrayList<String>(layers.size());
-        for (var layer : layers) {
-            shortcuts.add(resolveShortcutName(layer));
-        }
-        return shortcuts;
-    }
-
-    // The display name of a layer's shortcut key, or null when it has none - an unbound keycode (0,
-    // cleared with Escape; LWJGL still names it "NONE") or a code LWJGL cannot name. A null/blank
-    // shortcut leaves the tab label alone.
+    // The display name of the key a layer answers to, or null when it has none - an unbound keycode (0,
+    // cleared with Escape; LWJGL still names it "NONE"), a code past the keyboard LWJGL knows, or one
+    // inside it that it has no name for. A null/blank shortcut leaves the tab label alone.
+    //
+    // The keycode is the layer's answer rather than a settings read here, so a layer from another mod
+    // binds its tab out of a settings file KMU has no reader for. The bound test is the price of taking
+    // an arbitrary mod's number: LWJGL's name table is indexed by keycode with no range check of its
+    // own, so a layer answering past its end would take the whole tab row down rather than print no hint.
     private static String resolveShortcutName(MapLayer layer) {
 
-        var keycode = KmuMapKeybindSettings.getMapLayerShortcut(
-            layer.getShortcutSettingKey(),
-            layer.getDefaultShortcutKeycode());
+        var keycode = layer.resolveShortcutKeycode();
 
-        if (keycode <= 0) {
+        if (keycode <= 0 || keycode >= Keyboard.KEYBOARD_SIZE) {
             return null;
         }
         return Keyboard.getKeyName(keycode);

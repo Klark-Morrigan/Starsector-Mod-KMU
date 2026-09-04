@@ -4,6 +4,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
+import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStrings;
 
 import org.lwjgl.input.Keyboard;
@@ -20,6 +21,10 @@ public final class NoLayer implements MapLayer {
 
     /** The one shared instance; the registration and any state gate reference this pick. */
     public static final NoLayer INSTANCE = new NoLayer();
+
+    // N for "no layer", and what the tab prints until the player rebinds it. Mirrors the matching
+    // Keycode default in data/config/LunaSettings.csv.
+    private static final int DEFAULT_SHORTCUT_KEYCODE = Keyboard.KEY_N;
 
     // LunaLib stores a rebound key under the field id.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_noLayer";
@@ -44,13 +49,13 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
-    public int getDefaultShortcutKeycode() {
-        return Keyboard.KEY_N;
-    }
-
-    @Override
-    public String getShortcutSettingKey() {
-        return SHORTCUT_SETTING_FIELD;
+    public int resolveShortcutKeycode() {
+        // The framework asks for the key in force rather than for a field to read, so the LunaLib
+        // lookup is this layer's own: it is the only thing that knows its row exists in KMU's
+        // settings file, and a layer from another mod answers however its own mod stores keys.
+        return KmuMapKeybindSettings.getMapLayerShortcut(
+            SHORTCUT_SETTING_FIELD,
+            DEFAULT_SHORTCUT_KEYCODE);
     }
 
     @Override
