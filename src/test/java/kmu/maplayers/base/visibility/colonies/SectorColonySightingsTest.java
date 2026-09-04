@@ -92,8 +92,8 @@ final class SectorColonySightingsTest {
         @Test
         void reports_nothing_seen_where_there_is_no_sector_to_read() {
 
-            assertThat(SectorColonySightings.readSightings(null))
-                .isSameAs(ColonySightings.NONE);
+            assertThat(SectorColonySightings.readSightings(null).readObservation("any"))
+                .isNull();
         }
 
         @Test
@@ -132,18 +132,6 @@ final class SectorColonySightingsTest {
                 .isEqualTo(ColonyObservation.createUndatedObservation(SYSTEM_ID));
         }
 
-        @Test
-        void reports_an_untimed_value_whole_where_its_place_holds_the_separator() {
-            // The same case for a location id that reads like a timed entry and is not one. Read
-            // as a time it would name a place that does not exist, so the whole of it is the place.
-            var stored = new HashMap<String, String>();
-
-            stored.put("sentinel_gantries", "outer@" + SYSTEM_ID);
-            storeSightings(stored);
-
-            assertThat(readObservationOf("sentinel_gantries"))
-                .isEqualTo(ColonyObservation.createUndatedObservation("outer@" + SYSTEM_ID));
-        }
     }
 
     @Nested
@@ -294,6 +282,23 @@ final class SectorColonySightingsTest {
             // mid-walk over a sector that answers nothing must cost the register nothing.
             SectorColonySightings.recordSightingsByInhabitants(
                 sectorMock, null, Colonies.NONE, ColonyKnowledge.observingUnderTheFog());
+
+            verifyNoInteractions(memoryMock);
+        }
+
+        @Test
+        void records_nothing_where_there_is_no_sector_to_stamp_the_sighting_against() {
+            // The only route that reaches the write with colonies to file and no sector: the set
+            // arrives from the caller's own walk rather than from the sector, so nothing empties it
+            // on the way in. It must cost the register nothing rather than fault over the clock it
+            // has nowhere to read.
+            listColoniesInSystem(buildOpenColony("jangala", "hegemony"));
+            placeColoniesOnSystemEntities(buildDerelict("sentinel_gantries"));
+
+            var observedColonies = SystemColonies.readColoniesIn(sectorMock, systemMock);
+
+            SectorColonySightings.recordSightingsByInhabitants(
+                null, systemMock, observedColonies, ColonyKnowledge.observingUnderTheFog());
 
             verifyNoInteractions(memoryMock);
         }

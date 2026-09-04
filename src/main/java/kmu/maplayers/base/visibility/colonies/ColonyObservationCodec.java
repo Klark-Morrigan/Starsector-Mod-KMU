@@ -11,15 +11,13 @@ import kmu.util.KmuValues;
  * this way, and nothing in a loaded game could tell an entry it can no longer read from a colony
  * nobody has ever met - so the separator and the field order are fixed once and for good.
  *
- * <p>The time leads, so whatever follows the first separator is the location id verbatim -
- * punctuation and all. That is the fixed-fields-first convention the register underneath states,
- * and the place is the family's free-form field: an id the game composed, which may be spelt with
- * anything at all.
+ * <p>The time is this family's fixed field and the place its free-form one, an id the game composed
+ * that may be spelt with anything at all - so the time leads and whatever follows the first
+ * separator is the place verbatim.
  *
- * <p>An entry with no separator, or one whose leading field is not a time, is a place alone. That
- * is what every value written before observations were timed looks like, and reading it as an
- * undated observation is both the honest reading and the one healed at the next observation of the
- * same colony.
+ * <p>An entry with no separator, or one whose leading field is not a time, is a place alone: what
+ * every value written before observations were timed looks like, healed at the next observation of
+ * the same colony.
  *
  * <p>Package-private: what a colony sighting means is this family's own, and the register beside it
  * is the only thing that ever spells one.

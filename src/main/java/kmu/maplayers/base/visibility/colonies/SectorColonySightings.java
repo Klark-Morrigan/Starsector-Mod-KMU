@@ -3,29 +3,20 @@ package kmu.maplayers.base.visibility.colonies;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.SystemColonies;
-import kmlib.starsector.markets.LocationMarkets;
 
 import kmu.maplayers.base.visibility.observations.ObservationStore;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The sighting register kept in the sector's own memory: reading it, adding to it wherever an
  * observation is made, and shedding what it no longer describes.
- *
- * <p>Sector memory rather than anything of vanilla's, because vanilla keeps no such fact. It
- * serialises into the save alongside everything else there, so an observation survives reload the
- * way the visit that produced it does.
  *
  * <p>Two routes write it, because both are observations and knowledge does not evaporate when the
  * informant dies. {@link #recordSightingsIn} takes what an observer standing in a place can see,
@@ -50,11 +41,12 @@ import java.util.Set;
  * register says - there is no system to have been in - so recording out there would buy nothing,
  * and hyperspace holds by far the largest entity list in the sector to walk for it.
  *
- * <p>The bytes and the lifecycle underneath are an {@link ObservationStore}'s, which every map
- * family that keeps observations shares. What one entry means stays here, in
- * {@link ColonyObservationCodec}: everything above this class is handed a {@link ColonyObservation}
- * carrying both the place and the moment, so a reader cannot pair one entry's place with another's
- * time - and the two cannot be stored apart and drift.
+ * <p>The bytes and the load lifecycle underneath are an {@link ObservationStore}'s, which every map
+ * family that keeps observations shares, and which colonies the sector still holds is
+ * {@link PresentColonies}'. What one entry means stays here, in {@link ColonyObservationCodec}:
+ * everything above this class is handed a {@link ColonyObservation} carrying both the place and the
+ * moment, so a reader cannot pair one entry's place with another's time - and the two cannot be
+ * stored apart and drift.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state, and
  * null-defensive like the rest of the map framework.
@@ -77,21 +69,12 @@ public final class SectorColonySightings {
     /**
      * Opens the sector's sighting register for reading.
      *
-     * <p>Handed out as a lookup over the stored map rather than as a copy of it. The register is
-     * read once per pass, and a copy taken there would cost the whole sector's sightings to answer
-     * about one place.
-     *
      * @param sector the sector whose memory holds the register; null - or one holding no
-     *               register yet - yields {@link ColonySightings#NONE}
+     *               register yet - reads as nothing having been seen anywhere
      * @return what was last observed of each colony, by colony id; never null
      */
     public static ColonySightings readSightings(SectorAPI sector) {
 
-        // No sector is no register at all, so the port's own stated nothing is handed back rather
-        // than a lookup wrapping one - a value every caller holding no sector can share.
-        if (sector == null) {
-            return ColonySightings.NONE;
-        }
         var recordedSightings = SIGHTINGS_REGISTER.readObservations(sector);
 
         // The register answers an absent observation with an empty optional; this port answers it
@@ -200,7 +183,7 @@ public final class SectorColonySightings {
 
         SIGHTINGS_REGISTER.dropObservationsOfAbsentSubjects(
             sector,
-            SectorColonySightings::readColonyIdsIn);
+            PresentColonies::readColonyIds);
     }
 
     /**
@@ -222,7 +205,7 @@ public final class SectorColonySightings {
 
         SIGHTINGS_REGISTER.reconcileWithLoadedSave(
             sector,
-            SectorColonySightings::readColonyIdsIn,
+            PresentColonies::readColonyIds,
             loadedSector -> recordSightingsIn(loadedSector, loadedSector.getCurrentLocation()));
     }
 
@@ -245,7 +228,7 @@ public final class SectorColonySightings {
         }
         SIGHTINGS_REGISTER.recordObservations(
             sector,
-            buildObservationsOf(observedColonies, locationId, readClockTimestamp(sector)));
+            buildObservationsByColonyId(locationId, readClockTimestamp(sector), observedColonies));
     }
 
     // One observation of a place, filed against every colony seen standing in it. The observation
@@ -253,10 +236,10 @@ public final class SectorColonySightings {
     //
     // A colony the game names with nothing is left to the register, which files entries by the very
     // id a read would ask for and so refuses one that could never be reached.
-    private static Map<String, ColonyObservation> buildObservationsOf(
-            List<Colony> observedColonies,
+    private static Map<String, ColonyObservation> buildObservationsByColonyId(
             String locationId,
-            Long observedTimestamp) {
+            Long observedTimestamp,
+            List<Colony> observedColonies) {
 
         var observation = observedTimestamp == null
             ? ColonyObservation.createUndatedObservation(locationId)
@@ -280,54 +263,4 @@ public final class SectorColonySightings {
         return clock == null ? null : clock.getTimestamp();
     }
 
-    // The markets present in one place, both listings together: the economy's, and the ones hung
-    // on the place's own entities that it never registered. Read for the reconciliation alone,
-    // which asks what the sector still holds rather than what may be shown of it, so the ownership
-    // and kind rules a colony set applies are beside the point - an id present under any market at
-    // all is an id a sighting may still be about.
-    private static List<MarketAPI> readMarketsIn(SectorAPI sector, LocationAPI location) {
-
-        var markets = new ArrayList<MarketAPI>(LocationMarkets.readMarkets(sector, location));
-
-        markets.addAll(LocationMarkets.readMarketsUnlistedByEconomy(sector, location));
-
-        return markets;
-    }
-
-    // Every colony id the sector still holds, hyperspace included. Read the same two ways a
-    // sighting is recorded, so the reconciliation cannot drop a colony merely for having been
-    // found by a listing the walk here forgot about.
-    private static Set<String> readColonyIdsIn(SectorAPI sector) {
-
-        var colonyIds = new HashSet<String>();
-
-        if (sector == null) {
-            return colonyIds;
-        }
-        var systems = sector.getStarSystems();
-
-        if (systems != null) {
-            for (var system : systems) {
-                collectColonyIdsIn(sector, system, colonyIds);
-            }
-        }
-        collectColonyIdsIn(sector, sector.getHyperspace(), colonyIds);
-
-        return colonyIds;
-    }
-
-    private static void collectColonyIdsIn(
-            SectorAPI sector,
-            LocationAPI location,
-            Set<String> colonyIds) {
-
-        for (var market : readMarketsIn(sector, location)) {
-
-            var colonyId = market.getId();
-
-            if (colonyId != null) {
-                colonyIds.add(colonyId);
-            }
-        }
-    }
 }
