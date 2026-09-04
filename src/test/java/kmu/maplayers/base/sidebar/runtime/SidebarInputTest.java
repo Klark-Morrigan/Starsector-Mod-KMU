@@ -46,7 +46,7 @@ final class SidebarInputTest {
         when(hostMock.getController()).thenReturn(controllerMock);
         // The live case, so each test states only the gate it is actually about.
         when(hostMock.isOverlayShowing()).thenReturn(true);
-        when(hostMock.resolvePlacement()).thenReturn(placementMock);
+        when(hostMock.getDrawnPlacement()).thenReturn(placementMock);
     }
 
     @Nested
@@ -117,7 +117,7 @@ final class SidebarInputTest {
             // A key press needs no placement: jumping to a layer does not depend on where the box landed,
             // so a frame that drew nothing still answers its hotkeys - and with no placement to ask about,
             // the fold is the only thing left to gate on.
-            when(hostMock.resolvePlacement())
+            when(hostMock.getDrawnPlacement())
                 .thenReturn(null);
             when(controllerMock.isFullyExpanded())
                 .thenReturn(true);
@@ -142,9 +142,20 @@ final class SidebarInputTest {
         }
 
         @Test
+        void processCampaignInputPreCoreHitTestsTheDrawnPanelRatherThanLayingOutItsOwn() {
+            // A click has to answer to the box the player is looking at. Laying one out here would hit-test
+            // a panel resolved after the draw, which a settings change landing between the two passes would
+            // have moved out from under the pointer.
+            input.processCampaignInputPreCore(List.of(mockPointerEvent()));
+
+            verify(hostMock, never())
+                .refreshPlacement();
+        }
+
+        @Test
         void processCampaignInputPreCoreIgnoresAPointerEventWithNothingDrawnToHit() {
             // No placement means no box on screen this frame, so there is nothing to hit-test against.
-            when(hostMock.resolvePlacement())
+            when(hostMock.getDrawnPlacement())
                 .thenReturn(null);
 
             var eventMock = mockPointerEvent();
@@ -194,9 +205,9 @@ final class SidebarInputTest {
             verify(controllerMock, never())
                 .handlePointer(any(), any());
 
-            // Nothing is drawn off the gate, so the placement is never even resolved.
+            // Nothing is drawn off the gate, so the drawn panel is never even asked for.
             verify(hostMock, never())
-                .resolvePlacement();
+                .getDrawnPlacement();
         }
 
         @Test

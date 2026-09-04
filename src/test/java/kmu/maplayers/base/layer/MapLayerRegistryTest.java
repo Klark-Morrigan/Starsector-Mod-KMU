@@ -339,7 +339,8 @@ final class MapLayerRegistryTest {
         intelScreenFake.setIntelTabOpen(isIntelTabOpen);
 
         MapLayerScreens
-            .resolveLayerControlOfLiveScreen()
+            .resolveLivePicks()
+            .layerVisibility()
             .recordControlAttached();
     }
 

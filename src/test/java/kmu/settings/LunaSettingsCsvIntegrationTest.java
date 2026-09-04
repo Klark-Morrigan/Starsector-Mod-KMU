@@ -100,6 +100,7 @@ final class LunaSettingsCsvIntegrationTest {
     private static final String RADIO_FIELD_TYPE = "Radio";
     private static final String INT_FIELD_TYPE = "Int";
     private static final String BOOLEAN_FIELD_TYPE = "Boolean";
+    private static final String KEYCODE_FIELD_TYPE = "Keycode";
 
     // The one row whose bounds are declared twice - once as the slider's ends here, once as the clamp
     // its getter puts round whatever LunaLib hands back. Named singly rather than walked for every
@@ -154,6 +155,18 @@ final class LunaSettingsCsvIntegrationTest {
     // two spellings of a value agreeing, which the walk over every switch already holds.
     private static final String FILTER_ROW_TOGGLE_FIELD_ID =
         "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
+
+    // The three Keycode rows. They are held here rather than in the numeric walk because there is
+    // nothing to walk them against: no Java fallback mirrors a keycode, deliberately, so this column is
+    // the only place in the mod each key is stated and nothing else would notice one drifting. What a
+    // key must be worth is a decision like the two rows above, and it is made of two halves - the key
+    // has to be free on both screens the shortcut is live on, and it has to still be the key the tab
+    // prints, since a player reads it off the tab rather than out of the settings screen.
+    private static final String NO_LAYER_KEY_FIELD_ID = "kmu_map_keybinds_layers_noLayer";
+    private static final String POLITICAL_MAP_KEY_FIELD_ID = "kmu_map_keybinds_layers_factions";
+
+    private static final String FILTER_ROW_TOGGLE_KEY_FIELD_ID =
+        "kmu_map_keybinds_filters_mapLayersToggle";
 
     // The tabs the settings screen is laid out into. LunaLib creates a tab by being asked for one,
     // so a mistyped tab name is not an error there - it silently opens a tab of its own holding
@@ -457,6 +470,48 @@ final class LunaSettingsCsvIntegrationTest {
                     FILTER_ROW_TOGGLE_FIELD_ID,
                     SETTINGS_CSV)
                 .isEqualTo(BOOLEAN_ON_VALUE);
+        }
+    }
+
+    @Nested
+    class KeycodeDefaults {
+
+        @Test
+        void theNoLayerTabShipsOnTheNKey() {
+
+            assertThat(readColumn(NO_LAYER_KEY_FIELD_ID, DEFAULT_VALUE_COLUMN, KEYCODE_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: 49 is LWJGL's KEY_N, the letter of the tab it jumps to, and"
+                        + " free on both the map and intel screens the bar draws on",
+                    NO_LAYER_KEY_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo("49");
+        }
+
+        @Test
+        void thePoliticalMapTabShipsOnThePKey() {
+
+            assertThat(readColumn(POLITICAL_MAP_KEY_FIELD_ID, DEFAULT_VALUE_COLUMN, KEYCODE_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: 25 is LWJGL's KEY_P, and clear of the intel screen's own"
+                        + " bindings - its item actions take T, U and G, its tag filter Q and Ctrl+S",
+                    POLITICAL_MAP_KEY_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo("25");
+        }
+
+        @Test
+        void theFilterRowToggleShipsOnTheMKey() {
+
+            assertThat(readColumn(FILTER_ROW_TOGGLE_KEY_FIELD_ID, DEFAULT_VALUE_COLUMN, KEYCODE_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: 50 is LWJGL's KEY_M, for map. Deliberately not a digit - the"
+                        + " vanilla filter row this box is appended to keys its own six buttons to"
+                        + " digits, and nothing in the game can be asked which of them a screen has"
+                        + " already taken",
+                    FILTER_ROW_TOGGLE_KEY_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo("50");
         }
     }
 

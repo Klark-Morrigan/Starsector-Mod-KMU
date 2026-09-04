@@ -54,7 +54,10 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
     }
 
     @Override
-    public boolean attachToggleTo(MapFilterRow row, MapLayerVisibility layerVisibility) {
+    public boolean attachToggleTo(
+            MapFilterRow row,
+            MapLayerVisibility layerVisibility,
+            boolean areLayersShownAtFirst) {
 
         // The click has to report what the box now shows, and the box is only made by the call that
         // takes the click handler - so the handle is put in a one-slot carrier the handler reads
@@ -76,7 +79,7 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
 
         // Seeded rather than left at whatever a fresh button starts at: a screen reopened with its
         // layers hidden would otherwise show a ticked box over an empty map.
-        toggle.setChecked(layerVisibility.areLayersShown());
+        toggle.setChecked(areLayersShownAtFirst);
 
         // A key nothing had to arrange the scope of: it is live on the screens this box stands on
         // and nowhere else, which is the same shape as the box itself being what a stored hide waits

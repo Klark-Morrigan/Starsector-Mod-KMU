@@ -21,14 +21,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 
 /**
- * Pins the four things the live attachment owes the box it stands: it opens showing what that
- * screen already holds, a click on it writes back what it now shows, it answers the key the player
- * has bound, and it carries the hover its neighbours on the row do. The first two are what make the
- * control read as the state of the layers rather than as a switch of its own; the last two are what
- * make it read as one of the row's.
+ * Pins the four things the live attachment owes the box it stands: it opens showing the state it is
+ * handed, a click on it writes back what it now shows, it answers the key the player has bound, and
+ * it carries the hover its neighbours on the row do. The first two are what make the control read as
+ * the state of the layers rather than as a switch of its own; the last two are what make it read as
+ * one of the row's.
+ *
+ * <p>The state it opens at is handed over rather than read off the pick, so what is pinned here is
+ * that the box wears it. Which state that is - the pick as it stands, or the one the screen settles
+ * at as the box goes up - is the caller's, and pinned there.
  *
  * <p>The key is pinned for being read afresh at each attachment rather than for reaching the button
  * once. Where it lands is the row's business and is pinned there; what is this one's is that a
@@ -49,17 +52,22 @@ final class VanillaMapLayerToggleAttacherTest {
     // where it is not what is under test.
     private static final IntSupplier NO_KEY_BOUND = () -> 0;
 
+    // The two states a box can be handed to open at.
+    private static final boolean LAYERS_SHOWN = true;
+    private static final boolean LAYERS_HIDDEN = false;
+
     @Nested
     class AttachToggleTo {
 
         @Test
-        void attachToggleToOpensTheBoxTickedForAScreenShowingItsLayers() {
+        void attachToggleToOpensTheBoxTickedWhereTheLayersAreShown() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
-            var visibilityMock = mockVisibility(true);
 
-            var isAttached = createAttacher()
-                .attachToggleTo(ShownFilterRows.createRowOver(rowFake), visibilityMock);
+            var isAttached = createAttacher().attachToggleTo(
+                ShownFilterRows.createRowOver(rowFake),
+                mock(MapLayerVisibility.class),
+                LAYERS_SHOWN);
 
             assertThat(isAttached)
                 .isTrue();
@@ -68,16 +76,17 @@ final class VanillaMapLayerToggleAttacherTest {
         }
 
         @Test
-        void attachToggleToOpensTheBoxUntickedForAScreenHidingItsLayers() {
+        void attachToggleToOpensTheBoxUntickedWhereTheLayersAreHidden() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
-            var visibilityMock = mockVisibility(false);
 
-            createAttacher()
-                .attachToggleTo(ShownFilterRows.createRowOver(rowFake), visibilityMock);
+            createAttacher().attachToggleTo(
+                ShownFilterRows.createRowOver(rowFake),
+                mock(MapLayerVisibility.class),
+                LAYERS_HIDDEN);
 
-            // Seeded from the save rather than left at whatever a fresh button starts at, which
-            // would show a ticked box over an empty map.
+            // Seeded rather than left at whatever a fresh button starts at, which would show a ticked
+            // box over an empty map.
             assertThat(readAppendedButton(rowFake).isChecked())
                 .isFalse();
         }
@@ -86,10 +95,10 @@ final class VanillaMapLayerToggleAttacherTest {
         void attachToggleToMovesTheScreensPickToWhatTheBoxShowsWhenItIsClicked() {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
-            var visibilityMock = mockVisibility(false);
+            var visibilityMock = mock(MapLayerVisibility.class);
 
-            createAttacher()
-                .attachToggleTo(ShownFilterRows.createRowOver(rowFake), visibilityMock);
+            createAttacher().attachToggleTo(
+                ShownFilterRows.createRowOver(rowFake), visibilityMock, LAYERS_HIDDEN);
 
             readAppendedButton(rowFake).click();
 
@@ -104,8 +113,10 @@ final class VanillaMapLayerToggleAttacherTest {
 
             var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
 
-            createAttacherReading(() -> FIRST_BOUND_KEY)
-                .attachToggleTo(ShownFilterRows.createRowOver(rowFake), mockVisibility(true));
+            createAttacherReading(() -> FIRST_BOUND_KEY).attachToggleTo(
+                ShownFilterRows.createRowOver(rowFake),
+                mock(MapLayerVisibility.class),
+                LAYERS_SHOWN);
 
             assertThat(readAppendedButton(rowFake).readShortcutKeycode())
                 .isEqualTo(Keyboard.KEY_M);
@@ -120,11 +131,14 @@ final class VanillaMapLayerToggleAttacherTest {
 
             attacher.attachToggleTo(
                 ShownFilterRows.createRowOver(ShownFilterRows.createRowFakeWithRoomToSpare()),
-                mockVisibility(true));
+                mock(MapLayerVisibility.class),
+                LAYERS_SHOWN);
 
             boundKey.set(REBOUND_KEY);
             attacher.attachToggleTo(
-                ShownFilterRows.createRowOver(rebuiltRowFake), mockVisibility(true));
+                ShownFilterRows.createRowOver(rebuiltRowFake),
+                mock(MapLayerVisibility.class),
+                LAYERS_SHOWN);
 
             // Read at each attachment rather than once, so a rebind reaches the next screen the
             // player opens instead of waiting for the next load. The box already standing keeps the
@@ -141,8 +155,10 @@ final class VanillaMapLayerToggleAttacherTest {
 
             StarsectorSettingsFake.installSettingsWithUiElements(() -> elementMock);
             try {
-                createAttacher()
-                    .attachToggleTo(ShownFilterRows.createRowOver(rowFake), mockVisibility(true));
+                createAttacher().attachToggleTo(
+                    ShownFilterRows.createRowOver(rowFake),
+                    mock(MapLayerVisibility.class),
+                    LAYERS_SHOWN);
             } finally {
                 StarsectorSettingsFake.clearSettings();
             }
@@ -163,8 +179,8 @@ final class VanillaMapLayerToggleAttacherTest {
             var rowFake = ShownFilterRows.createFullRowFake();
             var visibilityMock = mock(MapLayerVisibility.class);
 
-            var isAttached = createAttacher()
-                .attachToggleTo(ShownFilterRows.createRowOver(rowFake), visibilityMock);
+            var isAttached = createAttacher().attachToggleTo(
+                ShownFilterRows.createRowOver(rowFake), visibilityMock, LAYERS_SHOWN);
 
             // First come: a row somebody else has filled is left as it was found, and the pick is
             // not even read, there being no box to open at it.
@@ -190,16 +206,6 @@ final class VanillaMapLayerToggleAttacherTest {
         return new VanillaMapLayerToggleAttacher(
             shortcutKeycode,
             new MapLayerToggleTooltip(() -> false));
-    }
-
-    private static MapLayerVisibility mockVisibility(boolean areLayersShown) {
-
-        var visibilityMock = mock(MapLayerVisibility.class);
-
-        when(visibilityMock.areLayersShown())
-            .thenReturn(areLayersShown);
-
-        return visibilityMock;
     }
 
     private static MapFilterButtonFake readAppendedButton(MapFilterRowFake rowFake) {

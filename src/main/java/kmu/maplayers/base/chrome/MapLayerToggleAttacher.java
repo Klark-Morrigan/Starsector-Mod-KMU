@@ -25,11 +25,21 @@ import kmu.maplayers.base.layer.MapLayerVisibility;
 public interface MapLayerToggleAttacher {
 
     /**
-     * Stands a tick box on {@code row}, showing and driving {@code layerVisibility}.
+     * Stands a tick box on {@code row}, opening it at {@code areLayersShownAtFirst} and driving
+     * {@code layerVisibility} from then on.
      *
-     * @param row             the row to put it on, which is the one on screen
-     * @param layerVisibility the show-or-hide pick of the screen that row belongs to
+     * @param row                   the row to put it on, which is the one on screen
+     * @param layerVisibility       the show-or-hide pick of the screen that row belongs to, which a click
+     *                              on the box moves
+     * @param areLayersShownAtFirst what the box opens showing. Handed over rather than read off the pick,
+     *                              because standing a box can itself settle the screen it stands on: one
+     *                              seeded from what that pick read a moment earlier would open on the
+     *                              state the screen is leaving, and go on saying so until it was used
+     *                              twice
      * @return whether a control is now standing on that row
      */
-    boolean attachToggleTo(MapFilterRow row, MapLayerVisibility layerVisibility);
+    boolean attachToggleTo(
+        MapFilterRow row,
+        MapLayerVisibility layerVisibility,
+        boolean areLayersShownAtFirst);
 }

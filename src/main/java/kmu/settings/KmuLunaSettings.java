@@ -44,15 +44,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>{@link KmuMapKeybindSettings} is the framework's one such section, and is named for its tab
  * because the tab is what it holds - every key the overlay answers to and nothing else. It buys no
  * isolation, the framework reading both halves; what it buys is that one screen of the settings
- * dialog has one class behind it, so a key added to that tab has an obvious home. It is also the one
- * section that mirrors no CSV default, for a reason particular to keys: a key is either bound by the
- * table or not bound at all, and every path that takes a keycode already goes inert on an unbound
- * one - so a read that cannot reach the row answers unbound rather than a key of its own choosing.
+ * dialog has one class behind it, so a key added to that tab has an obvious home.
  *
  * <p>All of them hold field ids, fallbacks and accessors only. The mod id, the revision and
  * the reads stay here because they are mod-wide - a second layer's settings would want the
  * same reads against the same id - and because a fallback that mirrors a CSV default belongs
- * beside the accessor that answers with it, not beside the reader that fetches it.
+ * beside the accessor that answers with it, not beside the reader that fetches it. The keybind
+ * section is the one that mirrors no default at all, and says there why.
  *
  * <p>What each knob does for the player is stated once, in the description column of
  * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose

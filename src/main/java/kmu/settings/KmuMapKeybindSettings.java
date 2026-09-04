@@ -18,12 +18,11 @@ package kmu.settings;
  * binds its tab out of that mod's own settings and this file has nothing to say about it. The filter
  * row's box is KMU's own chrome with no such caller, so its id is stated here like any other knob's.
  *
- * <p><b>No key is defaulted here.</b> What a row is worth on a fresh install is the row's own
- * business, declared once in the default column of data/config/LunaSettings.csv, and a read that
- * cannot reach it answers unbound rather than substituting a key of its own. A second number in Java
- * would be a second answer to a question the table already answers, and the two would part the day
- * one of them moved - silently, since nothing compares them. Unbound is a working state everywhere
- * it lands: the tab prints no hint, the bar matches no press, and the filter box stands keyless.
+ * <p><b>No key is defaulted here</b>, unlike every other settings section: what a row is worth on a
+ * fresh install is declared once, in the default column of data/config/LunaSettings.csv. A second
+ * number in Java would be a second answer to a question the table already settles, and the two would
+ * part the day one of them moved, silently. So a read that cannot reach a row answers unbound, which
+ * every path taking a keycode already treats as no key at all.
  *
  * <p>What each key does for the player is stated once, in the description column of that same table,
  * and how any of them are rebound once more, in that tab's own note row. The prose here answers only
@@ -42,9 +41,8 @@ public final class KmuMapKeybindSettings {
     private static final String FILTER_ROW_TOGGLE_SHORTCUT_FIELD =
         "kmu_map_keybinds_filters_mapLayersToggle";
 
-    // What a key the settings cannot answer for is worth. LWJGL's KEY_NONE, which every consumer of
-    // a keycode here already treats as "no key" - the same value the player leaves behind by clearing
-    // a binding with Escape, so an unreadable setting and a cleared one need no telling apart.
+    // LWJGL's KEY_NONE, and the same value the player leaves behind by clearing a binding with
+    // Escape - so an unreadable row and a cleared one need no telling apart.
     private static final int UNBOUND_KEYCODE = 0;
 
     private KmuMapKeybindSettings() {
@@ -67,10 +65,6 @@ public final class KmuMapKeybindSettings {
      * <p>The field id is the caller's rather than a constant here: each layer owns the id its own
      * shortcut is stored under, so one reader serves every KMU layer with a row on the tab and a
      * layer added later needs no case of its own here.
-     *
-     * <p>A keycode of 0 (LWJGL's {@code KEY_NONE}) means the layer has no shortcut - the player
-     * cleared the binding with Escape, or the row could not be read at all; callers treat it as
-     * unbound rather than as a real key.
      *
      * @param settingKey the LunaLib field id holding the keycode
      * @return the LWJGL keycode the layer's tab jumps to, or 0 when the shortcut is unbound

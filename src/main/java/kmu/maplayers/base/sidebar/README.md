@@ -10,7 +10,7 @@ Part of [map layers](../../README.md); see the
 ## Index
 
 - [Hosts: what differs per screen](#hosts-what-differs-per-screen)
-- [Placement: one resolve, two consumers](#placement-one-resolve-two-consumers)
+- [Placement: one resolve a frame, published to every pass](#placement-one-resolve-a-frame-published-to-every-pass)
 - [Drawing and input outside the widget tree](#drawing-and-input-outside-the-widget-tree)
 - [Fold persistence](#fold-persistence)
 - [Picker state](#picker-state)
@@ -45,18 +45,19 @@ them diverge as far as they do - one a strip framed in its base accent, the othe
 framed in the dark step - is that neither `SidebarRenderer` nor `LiveSidebarPlacement` holds a screen
 test about it: a third screen would be a third host and no renderer change.
 
-Keys are not in that table because the panel offers the same tabs wherever it draws, so
+Keys are not in that table because the panel offers the same body of tabs wherever it draws, so
 `BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer
 and is consumed, and any other key falls through. Because the pick is per-screen, a shortcut moves
-only the tab of the screen it was pressed on.
+only the tab of the screen it was pressed on - and so does a tab being withheld, so a key can be
+live on one screen's row and silent on the other's.
 
 Which key that is comes from the layer - `resolveShortcutKeycode`, asked per frame - rather than from a
 settings read here, so the row hints and the key claim carry a layer whose rebinding lives in another
 mod's settings file. A non-positive answer is unbound and both halves go inert for that layer: no hint
-is printed and no press matches it, its tab keeping its place in the row. Nothing here supplies a key
-in its place. The claim only compares numbers, but the hint indexes LWJGL's name table, which has no
-range check of its own: `LiveSidebarPlacement` bounds the keycode before naming it, so one layer
-answering nonsense costs itself a hint rather than taking the tab row down.
+is printed and no press matches it, its tab keeping its place in the row. The claim only compares
+numbers, but the hint indexes LWJGL's name table, which has no range check of its own:
+`LiveSidebarPlacement` bounds the keycode before naming it, so one layer answering nonsense costs
+itself a hint rather than taking the tab row down.
 
 Consuming happens pre-core (see below), so a KM shortcut wins over whatever the screen underneath
 binds to the same key. On the intel screen that matters: item action buttons bind `T`, `U`, and `G`,
@@ -130,9 +131,9 @@ fails closed - an unresolvable link hides the sidebar rather than throwing on a 
 `SidebarHosts` is the roster, and where a question about "the sidebar" with no screen attached to it
 is put to all of them: `isPointOverAnySidebar` answers whether a point in UI coordinates lands on a
 live panel, for code reached through hooks that never name the screen that invoked them. It asks each
-host's `isOverlayShowing()` before its placement, in that order, because only the intel host's
-placement goes null off its screen - the on-map host hangs its panel from the screen corner and
-resolves a box wherever it is asked. What the point is tested against is the placement's own
+host's `isOverlayShowing()` before its drawn placement, in that order, because only the intel host's
+placement goes null off its screen - the on-map host hangs its panel from the screen corner and has a
+box to report wherever it is asked. What the point is tested against is the placement's own
 `containsPoint`, so the body-plus-notch footprint is KMLib's answer and not a second copy here.
 
 That roster is the whole of "every host": `SidebarInstaller` walks it for the per-load fold reseed
@@ -151,12 +152,17 @@ one border in, and the intel row, its left dropped, stands at the anchor. Both f
 rather than each being placed, which is why aligning the map row against the vanilla tabs above it
 moved no intel pixel.
 
-## Placement: one resolve, two consumers
+## Placement: one resolve a frame, published to every pass
 
 `LiveSidebarPlacement` builds the placement from the live screen, the settings, and the calling
-screen's `ActiveLayerSelection`. Both the render and the input pass resolve through it each frame
-rather than caching or each computing its own: a settings change landing between the two passes
-would otherwise move the drawn box out from under the hit-test.
+screen's `ActiveLayerSelection`. The draw asks for it once a frame, through
+`SidebarHost.refreshPlacement()`, and what it lays out is published as the panel on screen; the
+input pass and the hover cover then read that through `getDrawnPlacement()` rather than each
+resolving one of their own. Hit-testing the drawn box is the point: a settings change landing
+between two passes that each resolved would move the box out from under the pointer. It is also
+three layouts a frame saved - a full one measures every tab and every body label - and the cover
+asks its question every frame the cursor moves, over every host on the roster. The draw drops the
+published placement as it stands down, so nothing hit-tests a panel that has left the screen.
 
 The two entry points (`resolveMapPlacement`, `resolveIntelPlacement`) differ only in the anchor
 padding; `computeIntelPadding` converts the visor rect into top-left-anchored padding, and is
@@ -168,7 +174,9 @@ text; callers then draw and consume nothing.
 
 The layer selector is a single `ControlSpec.Tabs` whose action selects the layer at the clicked
 index, so the switch rides on the control and no tab callback is threaded through the input pass.
-Each resolve also clamps the controller's stored scroll offset to the freshly laid-out overflow.
+The draw also clamps the controller's stored scroll offset to the freshly laid-out overflow, since it
+is the pass that owns the frame - the layout itself only reads that offset, and a hit-test that wrote
+it would be correcting state it had no part in moving.
 
 ## Drawing and input outside the widget tree
 
@@ -252,9 +260,10 @@ and blinks that layer's tab. The blink is what tells the player the key landed: 
 nothing on screen at all, so an unblinked tab would read as a key the panel ignored. Both it and a
 tab's press lift follow the press rather than the switch, so a shortcut for the layer already shown
 still blinks and a press on the lit tab still lifts - an act the player made that answered with
-nothing at all would read as a panel that missed it. A layer's tab sits at its
-registry index, the tabs row being built from the same registry in the same order, so the index the
-binder matched is the index blinked.
+nothing at all would read as a panel that missed it. A layer's tab sits at its place in the row this
+screen is offered - `ScreenLayerTabs.resolveTabbedLayers`, which the layout and this walk both take -
+so the index the binder matched is the index blinked, and a tab withheld from this screen answers no
+key rather than switching to a layer nothing lit.
 
 Neither pass has an error state: when a signal blocks the panel it is simply absent. That makes
 `SidebarRenderer`'s deduped view-state log (host state, screen size, resolved box, opacity) the only

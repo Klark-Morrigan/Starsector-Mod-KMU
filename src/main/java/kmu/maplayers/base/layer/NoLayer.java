@@ -20,8 +20,7 @@ public final class NoLayer implements MapLayer {
     /** The one shared instance; the registration and any state gate reference this pick. */
     public static final NoLayer INSTANCE = new NoLayer();
 
-    // LunaLib stores this tab's key under the field id, and the row it names is the only place the
-    // key is decided - no keycode is stated here to fall back on. The table ships it on N.
+    // LunaLib stores this tab's key under the field id; the row it names is where the key is decided.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_noLayer";
 
     private NoLayer() {
@@ -46,10 +45,8 @@ public final class NoLayer implements MapLayer {
     @Override
     public int resolveShortcutKeycode() {
         // The framework asks for the key in force rather than for a field to read, so the LunaLib
-        // lookup is this layer's own: it is the only thing that knows its row exists in KMU's
-        // settings file, and a layer from another mod answers however its own mod stores keys.
-        // Whatever the row answers is the whole answer - a settings read that fails leaves the tab
-        // unbound rather than falling back on a key this class picked.
+        // lookup is this layer's own: it is the only thing that knows its row exists in KMU's settings
+        // file, and a layer from another mod answers however its own mod stores keys.
         return KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_FIELD);
     }
 

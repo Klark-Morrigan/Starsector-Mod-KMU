@@ -18,7 +18,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.util.KmuValues;
 
@@ -30,10 +30,10 @@ import java.util.Set;
 /**
  * Resolves a sidebar's placement from the live screen, settings, and active layer - the one placement
  * the host's renderer draws and its input listener hit-tests, so the two agree on exactly what is on
- * screen. Both passes resolve through here each frame rather than each computing its own, so the tabs a
- * click resolves against are the tabs that were drawn; without a single source the two could drift (a
- * settings change landing between the render and the input pass would move the drawn box out from under
- * the hit-test). The two entry points differ only in where the panel anchors:
+ * screen. It is asked once a frame, by the draw, which publishes what it laid out for every pass after it
+ * to answer to; a click therefore resolves against the tabs that were drawn rather than against a second
+ * layout of its own, which a settings change landing between the two passes would have moved out from
+ * under the pointer. The two entry points differ only in where the panel anchors:
  * {@link #resolveMapPlacement} hangs it from the screen top-left for the on-map sidebar, and {@link
  * #resolveIntelPlacement} anchors it to the visor's top-left, overlaying the intel screen's map preview.
  * Both lay out the same body; each takes the host's own {@link TabPanelController}, so the map and intel
@@ -101,7 +101,7 @@ public final class LiveSidebarPlacement {
             Math.round(mapVisorRect.x()));
     }
 
-    // The row's labels, one per layer in registry order. A blank answer still contributes an entry, so a
+    // The row's labels, one per offered layer, in order. A blank answer still contributes an entry, so a
     // layer with nothing to say costs its tab its letters and not its place in the row.
     //
     // Taken through the text read that settles absent and blank to the same empty string, because the
@@ -123,14 +123,14 @@ public final class LiveSidebarPlacement {
             .toList();
     }
 
-    // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
-    // registry order, the active layer lit, and an action that selects the layer at the clicked index.
-    // Baking the switch into the action means the placement's tabs, the renderer's lit index, and the
-    // click all index the same registry row, and no separate tab callback is threaded through the input.
+    // Builds the layer selector as one tabs control: each offered layer's label and current shortcut key
+    // in order, the active layer lit, and an action that selects the layer at the clicked index. Baking
+    // the switch into the action means the placement's tabs, the renderer's lit index, and the click all
+    // index the same row of layers, and no separate tab callback is threaded through the input.
     //
     // Both halves of the row come off the layers themselves, so the assembly stands up without a settings
     // file or a live registry behind it and what it says can be asked directly. Both are also one entry
-    // per layer in registry order, since the control pairs a label to its hint by index - which is why
+    // per offered layer in that order, since the control pairs a label to its hint by index - which is why
     // neither half drops a layer that answers nothing, and why the lit index is a position in that same
     // row rather than a search of it.
     static ControlSpec.Tabs buildTabsSpec(
@@ -149,6 +149,11 @@ public final class LiveSidebarPlacement {
     // so the map and intel panels are the same layout differing only in where they anchor and how tall they
     // stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs to measured
     // text and cannot run without it - so the caller draws nothing and consumes nothing that frame.
+    //
+    // Reads the panel's scroll and fold without writing either. Settling the stored scroll request against
+    // the overflow this layout just found belongs to whichever pass owns the frame, and that is not a
+    // question a layout can answer: a caller asking only where the box is would otherwise correct state it
+    // had no part in moving.
     private static TabPanelPlacement resolvePlacement(Padding padding, SidebarHostPanel panel) {
 
         var tabStyle = panel.tabStyle();
@@ -156,21 +161,25 @@ public final class LiveSidebarPlacement {
         if (measurer == null) {
             return null;
         }
-        var layers = MapLayerRegistry.getLayers();
+
+        // The tabs this screen is offered rather than the whole roster: a screen carrying a control of
+        // its own on the game's chrome is not offered a tab that does the same job less visibly.
+        var screenPicks = panel.screenPicks();
+        var layers = ScreenLayerTabs.resolveTabbedLayers(screenPicks);
 
         // The active layer comes from the calling screen's own selection, not one shared value, so the lit
         // tab and the body are this screen's pick and a switch here never moves the other screen's tab.
-        var activeLayer = panel.selection().getActiveLayer();
+        var activeLayer = screenPicks.layerSelection().getActiveLayer();
         var controller = panel.controller();
 
-        var placement = TabPanelLayout.computePlacement(
+        return TabPanelLayout.computePlacement(
             // The height alone: the panel hangs from a top edge stated as padding, so the layout
             // measures down from the screen's top and never asks where its corner is.
             VanillaScreen.resolveUiHeight(),
             padding,
             buildChrome(panel.borderedEdges()),
             tabStyle,
-            buildTabsSpec(layers, activeLayer, panel.selection()),
+            buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
             activeLayer.getBodyControls(),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch
@@ -179,15 +188,6 @@ public final class LiveSidebarPlacement {
             new TabPanelViewState(
                 controller.getScrollState().getOffset(),
                 controller.getCollapseFraction()));
-
-        // Settle the stored scroll request into the list's real range now the layout has resolved the
-        // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Both
-        // the render and input passes call this each frame, so the stored offset stays bounded.
-        controller
-            .getScrollState()
-            .clampTo(placement.body().scrollOverflow());
-
-        return placement;
     }
 
     // What the panel spends on chrome rather than on content, read per frame so a settings change shows on
@@ -221,10 +221,11 @@ public final class LiveSidebarPlacement {
             KmuMapLayerSettings.getMapIntelSidebarPaddingTop());
     }
 
-    // Which tab is lit: the active layer's row in the registry, or no tab at all when it holds none. A
-    // pick can outlive its layer - the mod that registered it is gone from the load order, and the screen
-    // is still holding the layer it last chose - and a row with nothing to light is the honest answer for
-    // that frame, the save migrations being what settles the pick itself.
+    // Which tab is lit: the active layer's place in the row, or no tab at all when the row does not hold
+    // it. A pick can outlive its layer - the mod that registered it is gone from the load order, and the
+    // screen is still holding the layer it last chose - and it can sit on a tab this screen is no longer
+    // offered. A row with nothing to light is the honest answer for either, the pick itself being settled
+    // where it is stored rather than where it is drawn.
     //
     // Stated rather than left to indexOf, which answers -1 for the same case and happens to agree with
     // NO_SELECTION. That agreement is a coincidence of two unrelated conventions sharing a number, and it

@@ -7,8 +7,9 @@ import kmlib.logging.SessionWarning;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
 
-import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.apache.log4j.Logger;
@@ -49,10 +50,10 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // next screen opened rather than at the next load.
     private final BooleanSupplier isToggleEnabled;
 
-    // The show-or-hide state of the screen showing this frame: the pick a box drives, and the word
-    // that a box stands there. One object for both, so a box cannot be bound to one screen while
-    // the other is told it has one.
-    private final Supplier<ControlBackedMapLayerVisibility> resolveLiveScreenLayerControl;
+    // The picks of the screen showing this frame: the show-or-hide state a box drives, the word that
+    // a box stands there, and the tab beside them a standing box takes the job of. One object for all
+    // of it, so a box cannot be bound to one screen while the other is told it has one.
+    private final Supplier<ScreenLayerPicks> resolveLiveScreenPicks;
 
     // The filter row of the map on screen, or nothing on the many screens that show no map.
     private final Supplier<MapFilterRow> resolveShownFilterRow;
@@ -64,28 +65,28 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // holder for every way of failing, all of them the same news: there is no control on the row.
     private final SessionWarning warning = new SessionWarning(LOG);
 
-    // The row each screen's box was last put on, keyed by that screen's own state - which is what a
+    // The row each screen's box was last put on, keyed by that screen's own picks - which is what a
     // box is bound to. By identity: a row is the widget itself, not anything describable about it.
-    private final Map<ControlBackedMapLayerVisibility, MapFilterRow> attachedRowsByScreenState =
+    private final Map<ScreenLayerPicks, MapFilterRow> attachedRowsByScreenPicks =
         new IdentityHashMap<>();
 
     /** Reads the live settings, screens and widget tree - the pairing a running game gets. */
     public MapLayerToggleUpkeep() {
         this(
             KmuMapLayerSettings::getMapFilterRowToggleEnabled,
-            MapLayerScreens::resolveLayerControlOfLiveScreen,
+            MapLayerScreens::resolveLivePicks,
             MapFilterRows::resolveShownMapFilterRow,
             new VanillaMapLayerToggleAttacher());
     }
 
     MapLayerToggleUpkeep(
             BooleanSupplier isToggleEnabled,
-            Supplier<ControlBackedMapLayerVisibility> resolveLiveScreenLayerControl,
+            Supplier<ScreenLayerPicks> resolveLiveScreenPicks,
             Supplier<MapFilterRow> resolveShownFilterRow,
             MapLayerToggleAttacher toggleAttacher) {
 
         this.isToggleEnabled = isToggleEnabled;
-        this.resolveLiveScreenLayerControl = resolveLiveScreenLayerControl;
+        this.resolveLiveScreenPicks = resolveLiveScreenPicks;
         this.resolveShownFilterRow = resolveShownFilterRow;
         this.toggleAttacher = toggleAttacher;
     }
@@ -135,24 +136,51 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
             return;
         }
 
-        var screenLayerControl = resolveLiveScreenLayerControl.get();
+        var screenPicks = resolveLiveScreenPicks.get();
 
-        var attachedRow = attachedRowsByScreenState.get(screenLayerControl);
+        var attachedRow = attachedRowsByScreenPicks.get(screenPicks);
         if (attachedRow != null && attachedRow.isSameRowAs(shownRow)) {
 
             // Re-asserted rather than assumed: a closed hatch takes the word back, and this is the
             // only frame that sees a standing row again, the append below being skipped.
-            screenLayerControl.recordControlAttached();
+            standControlOn(screenPicks);
             return;
         }
 
+        // The box opens on what the screen settles at rather than on what it holds now, the stand
+        // below being able to move the pick under it. Asked before the append because the settling
+        // is owed only once a box is actually up, so nothing is written yet to read back.
+        var areLayersShownAtFirst = ScreenLayerTabs.areLayersShownOnceControlStands(screenPicks);
+
         // Recorded only where a box actually went up: a refusal is retried next frame, and a screen
         // told it has a control it never got would act on a stored hide it cannot reverse.
-        if (!toggleAttacher.attachToggleTo(shownRow, screenLayerControl.getStoredVisibility())) {
+        if (!toggleAttacher.attachToggleTo(
+                shownRow,
+                screenPicks.layerVisibility().getStoredVisibility(),
+                areLayersShownAtFirst)) {
             return;
         }
-        attachedRowsByScreenState.put(screenLayerControl, shownRow);
-        screenLayerControl.recordControlAttached();
+        attachedRowsByScreenPicks.put(screenPicks, shownRow);
+        standControlOn(screenPicks);
+    }
+
+    // What a box now standing on a screen is worth to that screen: its stored hide is acted on from
+    // here, and a pick the strip stops offering a screen with a box is moved off before the two can
+    // disagree - a blank map held by a tab, under a box saying the layers are shown.
+    //
+    // The move is owed on the first box to stand and on no later one, so the word is read before it
+    // is said. That also keeps the common frame - a box already where it belongs - at one field read,
+    // the move costing a look at the save.
+    private static void standControlOn(ScreenLayerPicks screenPicks) {
+
+        var layerControl = screenPicks.layerVisibility();
+        var isFirstControlOnThisScreen = !layerControl.hasControlBeenAttached();
+
+        layerControl.recordControlAttached();
+
+        if (isFirstControlOnThisScreen) {
+            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
+        }
     }
 
     // What closing the hatch means beyond attempting nothing further. The word is a latch, so one
@@ -164,8 +192,8 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // instead of appending a second box beside the first.
     private void forgetEveryControlAttached() {
 
-        for (var screenLayerControl : attachedRowsByScreenState.keySet()) {
-            screenLayerControl.forgetControlAttached();
+        for (var screenPicks : attachedRowsByScreenPicks.keySet()) {
+            screenPicks.layerVisibility().forgetControlAttached();
         }
     }
 }

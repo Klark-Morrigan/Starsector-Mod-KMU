@@ -75,6 +75,16 @@ public final class ControlBackedMapLayerVisibility implements MapLayerVisibility
     }
 
     /**
+     * @return whether a control able to reverse a hide stands on this screen. Read by whatever else has
+     *         to answer differently on a screen the player can switch the layers off from: the strip
+     *         drops its own way of emptying the map where this control has taken that job over, and
+     *         keeps it wherever the reach could not be made
+     */
+    public boolean hasControlBeenAttached() {
+        return hasControlBeenAttached;
+    }
+
+    /**
      * Records that a control able to reverse a hide now stands on this screen, from which point its
      * stored pick is what the mod acts on. Idempotent, since a screen reopened stands a fresh control
      * on its rebuilt row and says so again.

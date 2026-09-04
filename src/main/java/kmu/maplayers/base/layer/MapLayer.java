@@ -55,20 +55,15 @@ public interface MapLayer {
     /**
      * The keycode this layer's tab jumps to and prints as its hint, resolved rather than described by
      * a rebinding field: a settings field id is only meaningful to the settings file holding it, and
-     * the framework reads one file while a layer may come from any mod. A layer offering no rebinding
-     * at all answers a constant rather than inventing a field id it has no reader for.
+     * the framework reads one file while a layer may come from any mod.
      *
      * <p>Asked for per read, like the label above: the tab hints and the key claim are both rebuilt
      * from the roster each frame, so a rebind reaches the next frame rather than the next load.
      *
-     * <p><b>Having no shortcut is a first-class answer.</b> Non-positive means unbound, and the whole
-     * hotkey path is then inert for this layer - the tab prints no hint and no press ever selects it,
-     * the tab itself staying exactly where it is in the row. The framework defaults nothing in its
-     * place: a layer that wants no key says so by answering zero and needs no settings row, and a
-     * layer whose key comes from a setting that cannot be read is unbound rather than bound to a
-     * number the framework picked. That is also the state a player reaches by clearing a binding.
-     *
-     * @return the LWJGL keycode in force, or a non-positive code for a layer with no shortcut
+     * @return the LWJGL keycode in force, or non-positive for a layer with no shortcut - a binding the
+     *         player cleared, a setting that could not be read, or a layer that wants no key at all.
+     *         The framework substitutes nothing for it: the tab keeps its place in the row, prints no
+     *         hint, and answers no press
      */
     int resolveShortcutKeycode();
 

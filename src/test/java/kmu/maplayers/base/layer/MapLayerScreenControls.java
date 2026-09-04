@@ -31,7 +31,8 @@ public final class MapLayerScreenControls {
     public static void standAControlOnTheShownScreen() {
 
         MapLayerScreens
-            .resolveLayerControlOfLiveScreen()
+            .resolveLivePicks()
+            .layerVisibility()
             .recordControlAttached();
     }
 

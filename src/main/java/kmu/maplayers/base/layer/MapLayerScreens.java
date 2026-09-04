@@ -40,7 +40,7 @@ public final class MapLayerScreens {
     // Each screen's show-or-hide pick as the rest of the mod reads it: the stored pick behind the rule
     // that a hide is acted on only while that screen has a control able to reverse it. Held as that
     // reading rather than as the stored pick, so no consumer can be handed the raw choice by accident -
-    // the one caller entitled to it is named below.
+    // the one entitled to it is whatever stands the control, and it asks the reading for it by name.
     private static final ControlBackedMapLayerVisibility MAP_LAYER_VISIBILITY =
         new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY));
     private static final ControlBackedMapLayerVisibility INTEL_LAYER_VISIBILITY =
@@ -93,7 +93,9 @@ public final class MapLayerScreens {
     /**
      * @return the picks of the screen showing this frame. The pair rather than either half, so a caller
      *         wanting both cannot answer one for a screen the other has already left - which would hide
-     *         one screen's layers over the other's tab
+     *         one screen's layers over the other's tab. It is also what a control on a screen's own
+     *         chrome is stood through: the tab and the hide are both its business, one to take over and
+     *         one to move
      */
     public static ScreenLayerPicks resolveLivePicks() {
         return isIntelScreenLive()
@@ -118,19 +120,6 @@ public final class MapLayerScreens {
      */
     public static float resolveShownFadeOnLiveScreen() {
         return resolveLivePicks().layerVisibility().resolveShownFade();
-    }
-
-    /**
-     * @return the show-or-hide state of the screen showing this frame, for whatever stands a control on
-     *         that screen's own chrome: the stored pick such a control shows and moves, and the word
-     *         that one now stands there. One object for both halves, so a control cannot be bound to
-     *         one screen and recorded against the other; which screen it belongs to is settled here, so
-     *         the caller never has to ask
-     */
-    public static ControlBackedMapLayerVisibility resolveLayerControlOfLiveScreen() {
-        return isIntelScreenLive()
-            ? INTEL_LAYER_VISIBILITY
-            : MAP_LAYER_VISIBILITY;
     }
 
     /**

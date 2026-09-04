@@ -27,14 +27,16 @@ Part of Klark Morrigan's Utilities; see the
 | **No Layer** | nothing - the map reads as vanilla | empty |
 | **Political map** | the sector coloured by who controls each system | map-wide options, the view radio, the bloc spotlight picker, and the active view's own toggles |
 
-No Layer leads the strip as a first-class tab rather than an off switch, so the strip always shows
-what is and is not drawn and an empty map reads as a choice. The political map is the pick an
-untouched save resolves to, so the overlay is up the first time the sector map opens. A tab may also
+No Layer leads the strip as a first-class tab rather than an off switch, so an empty map reads as a
+choice - on every screen that has no tick box of its own on the game's filter row. Where that box
+stands it does the same job more discoverably, so the tab is withheld from that screen's strip, and
+a pick already sitting on it moves to the default layer with the emptiness stored as a hide. It
+comes back wherever there is no box, which is any screen the reach could not be made on. The
+political map is the pick an untouched save resolves to, so the overlay is up the first time the
+sector map opens. A tab may also
 answer a shortcut, printed on the tab, on both screens the box draws; since the picks are per-screen,
 a shortcut moves only the tab of the screen it was pressed on. KMU's two tabs take theirs from
-LunaLib rows the player can rebind, seeded by the shipped settings table rather than by any keycode
-in code - so a tab whose key is cleared, or a layer that wants none, simply has no hint and answers
-no press.
+LunaLib rows the player can rebind, and a tab with no key simply has no hint and answers no press.
 
 ## The one-way arrow
 
@@ -165,7 +167,11 @@ about what the overlay means.
   gets is `ControlBackedMapLayerVisibility`: a stored hide is acted on only while that screen has a
   control able to take it back, and read as shown until it has one, the stored choice untouched and
   honoured again the moment there is a control for it. Which screens have one is `base/chrome`'s
-  answer below, and the session's rather than the save's. A layer is
+  answer below, and the session's rather than the save's. It also settles which tabs a screen is
+  offered: `ScreenLayerTabs` withholds `NoLayer` from a screen carrying such a control, in one read
+  the strip and the shortcut walk both take - two lists would switch to the layer one along from the
+  tab they lit - and never withholds the last tab standing. Withheld from the strip and never from
+  the roster, a stored pick being an id resolved against it. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own. A layer also letters and binds its own
@@ -174,9 +180,7 @@ about what the overlay means.
   the mod that declares a layer holds the bundle its name lives in and the file its rebinding is
   stored in, and the bar carries whatever is registered. Both are asked per frame, so a rename or a
   rebind shows on the next one; KMU's own two layers answer out of `KmuStrings` and the
-  `Map - Keybinds` settings tab themselves. Nothing defaults a key on a layer's behalf: a
-  non-positive keycode is unbound, the hotkey path is inert for it, and a layer that wants no
-  shortcut says so by answering zero.
+  `Map - Keybinds` settings tab themselves.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
@@ -664,7 +668,12 @@ about what the overlay means.
   a control, said once a box is actually standing rather than when one is attempted, so a screen it
   never writes to goes on showing its layers whatever the save holds. That word is what
   `ControlBackedMapLayerVisibility` acts on, and a box is bound to the stored pick underneath it, so
-  it shows the choice the player made rather than the reading that rule gives everything else.
+  it shows the choice the player made rather than the reading that rule gives everything else. The
+  same word withholds the No Layer tab from that screen, so the first box to stand on a screen still
+  set to it moves the pick to the default layer and stores a hide - the map is as blank as it was,
+  under a box that now says so. Once per screen, on the first box up, and never on a row that
+  refused one; what the box opens showing is handed to the attachment rather than read off the pick,
+  since the stand is what settles the pick.
   Whether it is attempted at all is `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev hatch
   rather than an appearance knob, since what it governs is the reach and not the look. Which key
   ticks it is `kmu_map_keybinds_filters_mapLayersToggle`, default M, read afresh at each attachment

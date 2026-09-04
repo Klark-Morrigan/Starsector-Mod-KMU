@@ -11,10 +11,16 @@ package kmu.maplayers.base.layer;
  * the other. As a pair the screen is chosen once, where the keys are named, and the crossing has nowhere to
  * happen.
  *
+ * <p>The hide travels as the reading behind a control rather than as the bare pick, because whether this
+ * screen has a control able to reverse a hide governs the tab beside it as well: the strip stops offering
+ * its own way of emptying the map on a screen that has one. Held as the narrower type, a holder of the pair
+ * holds that whole story rather than half of it, and no site has to find the other half for itself.
+ *
  * @param layerSelection  which layer is active on this screen
- * @param layerVisibility whether this screen's layers show, and how far through a change they stand
+ * @param layerVisibility whether this screen's layers show, how far through a change they stand, and
+ *                        whether a control able to switch them back on stands on this screen
  */
 public record ScreenLayerPicks(
     ActiveLayerSelection layerSelection,
-    MapLayerVisibility layerVisibility) {
+    ControlBackedMapLayerVisibility layerVisibility) {
 }

@@ -9,11 +9,14 @@ import kmlib.starsector.ui.render.gl.style.WidgetStyle;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
+import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
+import kmu.settings.KmuMapKeybindSettings;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -203,6 +206,33 @@ final class BaseSidebarHostTest {
                 .isCloseTo(0f, within(TOLERANCE));
             assertThat(hoverFractionAt(host, SECOND_LAYER_TAB_INDEX))
                 .isCloseTo(0f, within(TOLERANCE));
+        }
+
+        @Test
+        void handleKeyPressBlinksTheTabTheStripLitForTheLayerItJumpedTo() {
+            // The row the key walks and the row the strip draws are one read, so a tab this screen is
+            // not offered is walked past here too. Two lists would agree on the layer and disagree on
+            // its place in the row - marking the tab one along from the one the player is looking at,
+            // for a switch that did happen.
+            MapLayerRegistry.registerLayers(
+                List.of(NoLayer.INSTANCE, firstLayerMock, secondLayerMock), firstLayerMock);
+
+            var layerSelectionMock = mock(ActiveLayerSelection.class);
+            var host = createHost(layerSelectionMock);
+
+            // The empty view reads its own key out of the settings file, which no test has: stood in
+            // for so a withholding that stopped working fails on the index below rather than on the
+            // read it lets through.
+            try (var keybindsMock = mockStatic(KmuMapKeybindSettings.class)) {
+                host.handleKeyPress(mockKeyPress(SECOND_KEYCODE));
+            }
+            advanceAWholeTraverse(host);
+
+            verify(layerSelectionMock)
+                .selectLayer(secondLayerMock);
+
+            assertThat(hoverFractionAt(host, SECOND_LAYER_TAB_INDEX))
+                .isCloseTo(1f, within(TOLERANCE));
         }
 
         @Test
@@ -472,7 +502,7 @@ final class BaseSidebarHostTest {
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
         return createHost(
-            new ScreenLayerPicks(layerSelection, mockVisibility(true, FULLY_SHOWN)),
+            new ScreenLayerPicks(layerSelection, standAControlOver(mockVisibility(true, FULLY_SHOWN))),
             ScreenClaims.createUnclaimedScreen(),
             false);
     }
@@ -515,7 +545,19 @@ final class BaseSidebarHostTest {
     // One screen's picks around the given show-or-hide pick, for the cases whose subject is that pick and
     // which have no use for the tab beside it.
     private static ScreenLayerPicks createPicks(MapLayerVisibility layerVisibility) {
-        return new ScreenLayerPicks(mock(ActiveLayerSelection.class), layerVisibility);
+        return new ScreenLayerPicks(
+            mock(ActiveLayerSelection.class), standAControlOver(layerVisibility));
+    }
+
+    // The given pick behind a control that stands on the screen, which is what the panel actually reads:
+    // a screen with no control of its own reads its layers shown whatever it holds, so a case posing them
+    // hidden has to pose the control that hid them with it.
+    private static ControlBackedMapLayerVisibility standAControlOver(MapLayerVisibility storedVisibility) {
+
+        var layerControl = new ControlBackedMapLayerVisibility(storedVisibility);
+        layerControl.recordControlAttached();
+
+        return layerControl;
     }
 
     // A show-or-hide pick posed at both of its readings at once, since the gate takes the crisp one and the

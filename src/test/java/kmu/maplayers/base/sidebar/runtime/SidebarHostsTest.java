@@ -99,7 +99,20 @@ final class SidebarHostsTest {
             assertThat(askOneHost(INSIDE_BODY_X, INSIDE_BODY_Y))
                 .isFalse();
             verify(hostMock, never())
-                .resolvePlacement();
+                .getDrawnPlacement();
+        }
+
+        @Test
+        void isPointOverAnySidebarOfLaysOutNoPanelOfItsOwnToAnswer() {
+            // The cursor asks this every frame it moves, so it reads the panel the draw published rather
+            // than laying one out: a hit-test that measured a whole panel would spend a layout per frame
+            // per host on a question about what is already on screen.
+            showSidebar(hostMock, placeSidebar(NOTCH));
+
+            askOneHost(INSIDE_BODY_X, INSIDE_BODY_Y);
+
+            verify(hostMock, never())
+                .refreshPlacement();
         }
 
         @Test
@@ -149,12 +162,13 @@ final class SidebarHostsTest {
         return SidebarHosts.isPointOverAnySidebarOf(List.of(hostMock), uiX, uiY);
     }
 
-    // Puts a host on screen with the given placement resolved, the live case every hit-test needs.
+    // Puts a host on screen with the given placement published by its draw, the live case every hit-test
+    // needs.
     private static void showSidebar(SidebarHost sidebarHostMock, TabPanelPlacement placement) {
 
         when(sidebarHostMock.isOverlayShowing())
             .thenReturn(true);
-        when(sidebarHostMock.resolvePlacement())
+        when(sidebarHostMock.getDrawnPlacement())
             .thenReturn(placement);
     }
 

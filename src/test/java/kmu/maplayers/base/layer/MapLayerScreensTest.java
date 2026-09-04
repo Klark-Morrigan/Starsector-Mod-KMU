@@ -169,6 +169,27 @@ final class MapLayerScreensTest {
             assertThat(MapLayerScreens.resolveLivePicks())
                 .isSameAs(MapLayerScreens.getMapPicks());
         }
+
+        @Test
+        void resolveLivePicksCarriesTheShowingScreensOwnStoredPick() {
+            // The pair is also what a control on a screen's own chrome is stood through, so it has to
+            // carry the stored pick such a control shows and moves - and writing through it must move
+            // the screen that was up and leave the other where it was, which is the whole of what a
+            // control on one screen's chrome may do.
+            intelScreenFake.setIntelTabOpen(true);
+
+            MapLayerScreens
+                .resolveLivePicks()
+                .layerVisibility()
+                .getStoredVisibility()
+                .showLayers(false);
+
+            assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
+                .isEqualTo(false);
+
+            assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
+                .isNull();
+        }
     }
 
     @Nested
@@ -211,46 +232,6 @@ final class MapLayerScreensTest {
         }
     }
 
-    @Nested
-    class ResolveLayerControlOfLiveScreen {
-
-        @Test
-        void resolveLayerControlOfLiveScreenHandsBackTheShowingScreensOwnStoredPick() {
-            // The stored pick rather than a reading of it, since what asks is a control that both
-            // shows it and moves it. Written through, it must move the screen that was up and leave
-            // the other where it was - which is the whole of what a control on one screen's own
-            // chrome may do.
-            intelScreenFake.setIntelTabOpen(true);
-
-            MapLayerScreens
-                .resolveLayerControlOfLiveScreen()
-                .getStoredVisibility()
-                .showLayers(false);
-
-            assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
-                .isEqualTo(false);
-
-            assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
-                .isNull();
-        }
-
-        @Test
-        void resolveLayerControlOfLiveScreenHandsBackTheStateInTheShowingScreensPair() {
-            // The one object per screen, not a second alongside the pair: a control recorded against
-            // one instance while the hosts and the overlay read another would leave a hide the player
-            // made through the box unacted on, with nothing to say which of the two was wrong.
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerScreens.resolveLayerControlOfLiveScreen())
-                .isSameAs(MapLayerScreens.getIntelPicks().layerVisibility());
-
-            intelScreenFake.setIntelTabOpen(false);
-
-            assertThat(MapLayerScreens.resolveLayerControlOfLiveScreen())
-                .isSameAs(MapLayerScreens.getMapPicks().layerVisibility());
-        }
-    }
-
     // Poses a save in which the intel screen's layers were switched off and their ramp has long since
     // run out, together with the control that switched them off - a stored hide is acted on only for a
     // screen that has one, so a case seeding the hide alone would be posing a screen whose layers are
@@ -263,7 +244,8 @@ final class MapLayerScreensTest {
         intelScreenFake.setIntelTabOpen(true);
 
         MapLayerScreens
-            .resolveLayerControlOfLiveScreen()
+            .resolveLivePicks()
+            .layerVisibility()
             .recordControlAttached();
     }
 }

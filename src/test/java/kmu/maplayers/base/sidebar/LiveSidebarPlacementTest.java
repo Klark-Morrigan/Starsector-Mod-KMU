@@ -2,18 +2,30 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.font.LazyFontCache;
+import kmlib.starsector.ui.font.TextFace;
+import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
+import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -25,6 +37,9 @@ import static org.mockito.Mockito.when;
  * <p>And where the tab row's letters and key hints come from: each layer's own answer, taken as drawn text
  * and as the keycode in force, so a layer shipped by another mod letters and binds its tab out of its own
  * bundle and its own settings.
+ *
+ * <p>And the one way a placement comes back with nothing in it: the tab face failing to load, which the
+ * caller has to read as "draw nothing this frame" rather than as an empty row it may still hit-test.
  */
 final class LiveSidebarPlacementTest {
 
@@ -43,6 +58,10 @@ final class LiveSidebarPlacementTest {
 
     // Past the end of that table, which is indexed by keycode with no range check of its own.
     private static final int OFF_THE_KEYBOARD_KEYCODE = 9999;
+
+    // A face size for a style whose font never loads. Arbitrary: nothing measures anything in the one
+    // case that stands a style up, so the number is there only because a face carries one.
+    private static final double TAB_FACE_SIZE = 12d;
 
     @Nested
     class ComputeIntelPadding {
@@ -306,6 +325,54 @@ final class LiveSidebarPlacementTest {
                 .thenReturn(label);
 
             return layerMock;
+        }
+    }
+
+    @Nested
+    class ResolveMapPlacement {
+
+        @Test
+        void resolveMapPlacementDrawsNothingWhenTheTabFontCannotLoad() {
+            // The layout snaps every tab to its own measured label, so a face that will not load leaves
+            // the panel unmeasurable rather than merely unstyled. Answering null is what lets the caller
+            // draw nothing and consume nothing that frame, instead of laying a row out at no width and
+            // then hit-testing it - which would take clicks over the map underneath.
+            var selectionMock = mock(ActiveLayerSelection.class);
+            var panel = buildPanelWithAnUnloadableFace(selectionMock);
+
+            try (var fontsMock = mockStatic(LazyFontCache.class);
+                    var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+
+                fontsMock
+                    .when(() -> LazyFontCache.loadByFace(any()))
+                    .thenReturn(null);
+
+                assertThat(LiveSidebarPlacement.resolveMapPlacement(panel))
+                    .isNull();
+            }
+
+            // The measurer is loaded before anything else is read, so a frame that cannot draw costs no
+            // screen pick and no roster walk either. Read through the pick, the one collaborator the
+            // panel hands over rather than resolves statically.
+            verifyNoInteractions(selectionMock);
+        }
+
+        // A host panel whose look names a face nothing can load, which is the one arrangement every case
+        // here is about. The font is left unnamed because the cache read is stood in for wholesale - what
+        // the face would have resolved to never comes up.
+        private SidebarHostPanel buildPanelWithAnUnloadableFace(ActiveLayerSelection selection) {
+
+            var tabStyleMock = mock(TabStyle.class);
+
+            when(tabStyleMock.face())
+                .thenReturn(new TextFace(null, TAB_FACE_SIZE));
+
+            return new SidebarHostPanel(
+                tabStyleMock,
+                mock(TabPanelController.class),
+                new ScreenLayerPicks(
+                    selection, new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class))),
+                Set.of());
         }
     }
 }

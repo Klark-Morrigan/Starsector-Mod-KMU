@@ -1,9 +1,6 @@
 package kmu.maplayers.base.sidebar.runtime;
 
-import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
-import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.starsector.memory.SectorMemoryAccess;
@@ -13,8 +10,6 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreenControls;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.SidebarSettingsMock;
@@ -24,8 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -59,10 +52,6 @@ final class MapSidebarHostTest {
     // The frozen key this screen's show-or-hide pick is stored under, pinned here for the reason the pick
     // above is: this host has to answer to its own screen's and to no other's.
     private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
-
-    // A stand-in layer binding: which layers exist is the composition root's business, so the shortcut is
-    // pinned against a registered fake rather than a concrete view's real key.
-    private static final int SHORTCUT_KEYCODE = 25;
 
     private static final float FULLY_DOCKED = 1f;
     private static final float FULLY_EXPANDED = 0f;
@@ -267,38 +256,12 @@ final class MapSidebarHostTest {
         void handleKeyPressWritesTheSectorMapsOwnPick() {
             // The shared jump reads whichever selection its host was built with, so this pins the wiring
             // that keeps an on-map shortcut on the sector map's tab: swapping the two hosts' selections
-            // would leave every other test green while the key moved the intel screen's tab.
-            var layerMock = mock(MapLayer.class);
-
-            when(layerMock.getId())
-                .thenReturn("political_map");
-            when(layerMock.resolveShortcutKeycode())
-                .thenReturn(SHORTCUT_KEYCODE);
-
-            MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
-
-            var eventMock = mock(InputEventAPI.class);
-
-            when(eventMock.getEventValue())
-                .thenReturn(SHORTCUT_KEYCODE);
-
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-                var sectorMock = mock(SectorAPI.class);
-
-                when(sectorMock.getMemoryWithoutUpdate())
-                    .thenReturn(memoryMock);
-
-                globalMock
-                    .when(Global::getSector)
-                    .thenReturn(sectorMock);
-
-                MapSidebarHost.INSTANCE.handleKeyPress(eventMock);
-
-                verify(memoryMock)
-                    .set(MAP_ACTIVE_LAYER_KEY, "political_map");
-            }
+            // would leave every other test green while the key moved the intel screen's tab. Its twin on
+            // the intel host is the other half of that claim, so both press one arrangement.
+            LayerShortcutPresses.pressTheBoundKeyOn(
+                () -> MapSidebarHost.INSTANCE,
+                memoryMock -> verify(memoryMock)
+                    .set(MAP_ACTIVE_LAYER_KEY, LayerShortcutPresses.LAYER_ID));
         }
     }
 
