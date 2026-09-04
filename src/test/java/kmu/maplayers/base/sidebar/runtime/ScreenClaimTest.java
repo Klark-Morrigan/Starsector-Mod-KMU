@@ -16,12 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins that either claimant alone stands the panel down, and that neither is asked to speak for the other.
+ * Pins that any one claimant alone stands the panel down, and that none is asked to speak for another.
  *
- * <p>Worth pinning as a disjunction rather than through the hosts, because the two reads fail open
+ * <p>Worth pinning as a disjunction rather than through the hosts, because the three reads fail open
  * independently: an install without the console mod answers no console for the whole session, and a build
- * whose core UI cannot be walked answers no modal for the whole session. Composed with an AND either of
- * those would silence the other, and nothing at a host would show it.
+ * whose core UI cannot be walked - or whose app state cannot be reached - answers no modal and no codex for
+ * the whole session. Composed with an AND any of those would silence the others, and nothing at a host would
+ * show it.
  *
  * <p>The short-circuit is pinned too. The modal read walks the core UI's children where the console read is
  * a field, so an order that asked the walk first would pay for it on every frame of every screen - which is
@@ -35,10 +36,18 @@ class ScreenClaimTest {
     class IsScreenClaimed {
 
         @Test
-        void isScreenClaimedIsFalseWithNeitherAConsoleNorAModalUp() {
+        void isScreenClaimedIsFalseWithNoConsoleCodexOrModalUp() {
 
             assertThat(ScreenClaims.createUnclaimedScreen().isScreenClaimed())
                 .isFalse();
+        }
+
+        @Test
+        void isScreenClaimedIsTrueWhileTheCodexIsUp() {
+            // Its own read rather than a case of the modal beside it: the codex is raised outside the
+            // core UI, so the modal read answers no on exactly the frames this one has to answer yes.
+            assertThat(ScreenClaims.createScreenClaimedByTheCodex().isScreenClaimed())
+                .isTrue();
         }
 
         @Test
@@ -80,6 +89,7 @@ class ScreenClaimTest {
             var modalReadCount = new AtomicInteger();
             var claim = new ScreenClaim(
                 new ConsoleCommandsOverlay(consolePresenceFake),
+                () -> false,
                 () -> {
                     modalReadCount.incrementAndGet();
                     return ModalDialogState.NONE;
@@ -125,6 +135,14 @@ class ScreenClaimTest {
             ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
                 assertThat(claim.resolveClaimStrength())
                     .isCloseTo(1f, within(TOLERANCE)));
+        }
+
+        @Test
+        void resolveClaimStrengthIsFullForTheCodexThatReportsNoFade() {
+            // Read like the console and for the same reason: the codex arrives whole, so a panel
+            // painted at anything less would be dissolving against something that never moved.
+            assertThat(ScreenClaims.createScreenClaimedByTheCodex().resolveClaimStrength())
+                .isCloseTo(1f, within(TOLERANCE));
         }
     }
 }

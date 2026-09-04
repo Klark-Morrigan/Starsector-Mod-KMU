@@ -9,7 +9,7 @@ import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
  * claim it is standing under rather than composing two reads it does not care about.
  *
  * <p>The console-backed one takes the overlay from its caller, since a suite exercising the console half
- * drives it through a presence it holds; the other two settle both reads outright, a host test having no
+ * drives it through a presence it holds; the others settle every read outright, a host test having no
  * use for which of them answered.
  */
 final class ScreenClaims {
@@ -40,18 +40,27 @@ final class ScreenClaims {
     static ScreenClaim createScreenClaimedByAModalAt(float brightness) {
         return new ScreenClaim(
             createClosedConsole(),
+            () -> false,
             () -> new ModalDialogState(true, brightness));
     }
 
+    /** A screen claimed by the codex, with neither of the other two reads answering. */
+    static ScreenClaim createScreenClaimedByTheCodex() {
+        return new ScreenClaim(
+            createClosedConsole(),
+            () -> true,
+            () -> ModalDialogState.NONE);
+    }
+
     /**
-     * A claim whose console half the caller drives and whose modal half is settled shut, so a console test
-     * cannot pass on the wrong read.
+     * A claim whose console half the caller drives and whose other reads are settled shut, so a console
+     * test cannot pass on the wrong read.
      *
      * @param consoleOverlay the console state to read
      * @return a claim over it alone
      */
     static ScreenClaim createClaimOverConsole(ConsoleCommandsOverlay consoleOverlay) {
-        return new ScreenClaim(consoleOverlay, () -> ModalDialogState.NONE);
+        return new ScreenClaim(consoleOverlay, () -> false, () -> ModalDialogState.NONE);
     }
 
     // A console read that answers shut, for the claims whose console half is not what they are about. Its
