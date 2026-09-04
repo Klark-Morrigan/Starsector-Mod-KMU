@@ -5,8 +5,7 @@ import kmlib.starsector.ui.coreui.CodexView;
 import java.util.function.BooleanSupplier;
 
 /**
- * The cover the codex lays over the map: it is raised full screen over whatever the player was
- * looking at and takes every event, so while one is up nothing the cursor rests on is the map.
+ * The cover the codex lays over the map: while it is up nothing the cursor rests on is the map.
  *
  * <p>Its own cover rather than a case of the modal one beside it, because the codex is not raised
  * inside the core UI at all - the campaign state holds a second screen panel of its own for it, so
@@ -19,8 +18,12 @@ import java.util.function.BooleanSupplier;
  * - but the layers read the mouse for themselves from a render pass, so they see the real pointer
  * and go on lighting cells behind the codex.
  *
- * <p>No cursor test, for the same reason the pause menu and the console need none: the codex claims
- * the whole screen, so where the pointer is does not come into it.
+ * <p>No cursor test, for the same reason the pause menu and the console need none - though the codex
+ * gets there differently, and the difference is worth stating because the panel plainly does not fill
+ * the screen. It is raised with a screen-spanning sibling behind it that dims the backdrop and takes
+ * the events, so what is covered is the whole screen even though what is drawn is a box in the middle
+ * of it. Measuring the pointer against that box would leave the map answering the cursor over the
+ * dimmed remainder, which is the part the player can see and cannot reach.
  *
  * <p>Fails open per the role's rule - a game whose state cannot be read reports no codex - which the
  * reading behind it guarantees and documents.

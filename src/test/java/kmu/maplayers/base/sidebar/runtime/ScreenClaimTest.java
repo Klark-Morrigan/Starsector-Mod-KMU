@@ -138,9 +138,10 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthIsFullForTheCodexThatReportsNoFade() {
-            // Read like the console and for the same reason: the codex arrives whole, so a panel
-            // painted at anything less would be dissolving against something that never moved.
+        void resolveClaimStrengthIsFullForTheCodexWhoseFadeIsNotFollowed() {
+            // Read at full strength like the console, but on a different footing: the codex does fade
+            // in, over a few tenths of a second and on a panel the reading never reaches. Pinned so a
+            // later attempt to ride that fade is a deliberate change rather than a plausible tidy-up.
             assertThat(ScreenClaims.createScreenClaimedByTheCodex().resolveClaimStrength())
                 .isCloseTo(1f, within(TOLERANCE));
         }

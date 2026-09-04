@@ -77,8 +77,9 @@ They part company only while something is fading. A modal takes every event outs
 frame it is raised, so input cannot wait for its fade; but the modal darkens the screen over that
 same fade, and a panel cut away at the first frame of it reads as a snap against a backdrop still
 deepening. So the panel keeps painting, thinner each frame, until the modal is fully in. A claimant
-that reports no fade - the console, and the codex - takes both at once, which is right: a panel should
-snap with whatever snapped over it. The show-or-hide ramp splits the pair the same way and for the same reason,
+with no fade to follow takes both at once, which is right: the console performs no dissolve for the
+panel to join, and the codex performs one too brief and too far out of reach to be worth joining.
+The show-or-hide ramp splits the pair the same way and for the same reason,
 the panel dissolving with the overlay it drives rather than cutting away from over it, and the two
 fades multiply. Both compositions ask the claim first and the screen last, so the read that walks
 live widgets is skipped while the panel is standing down anyway.

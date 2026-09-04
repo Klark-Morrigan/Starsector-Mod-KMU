@@ -357,16 +357,16 @@ about what the overlay means.
   pointer is pressing rather than pointing - it stands in for vanilla's own marker menu, which no
   geometry here can see; the class states why), `PauseMenuMapCover` (the campaign's pause menu,
   raised over the screen without taking it down, so the map keeps drawing behind it),
-  `CodexMapCover` (the codex, raised full screen over whatever the player was looking at),
+  `CodexMapCover` (the codex - a panel over the middle of the screen, with a screen-spanning backdrop
+  taking the events over the rest of it, so the cover reads no geometry either),
   `ModalDialogMapCover` (a confirmation prompt or picker a core screen raises in front of itself,
   which nothing the campaign publishes reports), `SidebarMapCover` (any host's panel, through
   `SidebarHosts`), and `VanillaChromeMapCover` (the map's own tab strip and control bar, stated as
   "outside the map surface" since the chrome widgets are a fact about one game build).
 
-  The codex is its own cover rather than a case of the modal beside it, and that is the point of the
-  pair: the codex is raised outside the core UI entirely, so the modal's walk of the core UI's
-  children answers no on exactly the frames the codex has to answer yes. `CodexMapCover` states that
-  and KMLib's `CodexView` states the reading behind it.
+  The codex is its own cover rather than a case of the modal beside it, because it is raised outside
+  the core UI entirely - so the modal's walk answers no on exactly the frames the codex answers yes.
+  `CodexMapCover` states that, over KMLib's `CodexView`.
 
   Both sit ahead of the sidebar's deliberately: either stands the sidebar down, so the panel's own
   cover cannot answer for them. `ModalDialogMapCover` and `CodexMapCover` state what follows for

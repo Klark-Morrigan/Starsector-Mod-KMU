@@ -22,18 +22,18 @@ import java.util.function.Supplier;
  * <ul>
  *   <li>A text-entry console, which takes the keyboard for the length of a command - which is what frees
  *       the layer shortcut keys to type rather than switch tabs.</li>
- *   <li>The codex, raised full screen over whatever the player was looking at. Not a case of the modal
- *       below it: it is raised outside the core UI entirely, which is why it needs a reading of its own -
- *       see {@link CodexView}.</li>
+ *   <li>The codex, whose panel covers a good part of the screen and whose screen-spanning backdrop takes
+ *       the events over the rest of it. Not a case of the modal below it: it is raised outside the core
+ *       UI entirely, which is why it needs a reading of its own - see {@link CodexView}.</li>
  *   <li>A modal a core screen has raised in front of itself - a confirmation prompt, a picker - which
  *       takes every event outside its own box and dims the rest of the screen behind it.</li>
  * </ul>
  *
- * <p>Bundled rather than passed to a host one read at a time, because a host has no use for either
+ * <p>Bundled rather than passed to a host one read at a time, because a host has no use for any of them
  * separately: it asks one question, and the answer is the same on every screen. That also keeps the
- * reason a panel stood down in one place, so a third claimant is added here rather than at each host.
+ * reason a panel stood down in one place, so a further claimant is added here rather than at each host.
  *
- * <p>Both reads fail open - what cannot be established is not a claim - which is theirs to guarantee
+ * <p>Every read fails open - what cannot be established is not a claim - which is theirs to guarantee
  * rather than this class's to enforce, and each documents it. The composition only has to not add a
  * failure of its own, which is why it holds no state and takes no reading of its own.
  *
@@ -64,9 +64,9 @@ public final class ScreenClaim {
     // one implementation. What varies underneath it is the console state, which it takes standing in.
     private final ConsoleCommandsOverlay consoleOverlay;
 
-    // Whether the codex stands over the screen. A bare presence read, with no fade beside it: the codex
-    // is raised outside the core UI and reports nothing about its own arrival, so it counts as wholly
-    // in place from the frame it appears - the same stance the console takes, and for the same reason.
+    // Whether the codex stands over the screen. A bare presence read: the codex does fade in, but over
+    // a few tenths of a second and on a panel the reading behind this never walks to, so there is no
+    // curve here to ride and none worth riding.
     private final BooleanSupplier isCodexShowing;
 
     // What a modal a core screen has raised in front of itself is doing - whether it is there, and how
@@ -93,9 +93,7 @@ public final class ScreenClaim {
      * @return whether anything has claimed the screen, and false whenever a claim cannot be established
      */
     public boolean isScreenClaimed() {
-        return consoleOverlay.isOpen()
-            || isCodexShowing.getAsBoolean()
-            || modalDialogState.get().isShowing();
+        return isClaimantTakenAtFullStrength() || modalDialogState.get().isShowing();
     }
 
     /**
@@ -112,15 +110,20 @@ public final class ScreenClaim {
      * <p>A console reports no fade of its own, so it counts as wholly in place from the moment it opens
      * and the panel goes at once. That is not a shortcoming to correct here: a claimant that snaps is one
      * the panel should snap with, and inventing a fade for it would put the panel halfway through a
-     * dissolve the thing above it never performed. The codex is read the same way and for the same
-     * reason - it arrives whole and at once, so a panel dissolving against it would be dissolving
-     * against nothing.
+     * dissolve the thing above it never performed.
+     *
+     * <p>The codex is read at full strength too, but on a different footing, and the difference is worth
+     * keeping visible: it *does* fade in. Only the fade is a few tenths of a second long and sits on a
+     * panel this never reaches - the reading is a flag off the app state, not a walk - so what the panel
+     * would gain by riding it is a dissolve nobody has time to see. Dropping it at once reads as the
+     * codex arriving, not as a cut. That is a judgement about how brief the fade is rather than a claim
+     * that there is none, so a codex that grew a slower one would be worth reading properly.
      *
      * @return how far the claim stands, 0..1, and 0 whenever none can be established
      */
     public float resolveClaimStrength() {
 
-        if (consoleOverlay.isOpen() || isCodexShowing.getAsBoolean()) {
+        if (isClaimantTakenAtFullStrength()) {
             return FULLY_CLAIMED;
         }
 
@@ -129,5 +132,17 @@ public final class ScreenClaim {
         return modal.isShowing()
             ? modal.brightness()
             : UNCLAIMED;
+    }
+
+    // The claimants there is no fade to follow on - the console having none at all, the codex having one
+    // this cannot reach and would not be seen riding. Named for how they are read rather than for how
+    // they arrive, since that is the one thing true of both and it is what the answers above act on.
+    //
+    // Named once because both of them turn on it and would otherwise each carry their own copy of which
+    // claimants those are - a list that agreed only for as long as nobody added a claimant to one of
+    // them. It is also the cheap half of both, so asking it first keeps the modal walk off the frames
+    // either of these has already settled.
+    private boolean isClaimantTakenAtFullStrength() {
+        return consoleOverlay.isOpen() || isCodexShowing.getAsBoolean();
     }
 }
