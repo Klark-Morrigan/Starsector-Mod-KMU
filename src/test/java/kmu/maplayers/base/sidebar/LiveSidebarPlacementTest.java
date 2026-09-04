@@ -28,7 +28,7 @@ final class LiveSidebarPlacementTest {
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
-    // LWJGL's KEY_P and KEY_N, the two keys the shipped tabs answer to.
+    // LWJGL's KEY_P and KEY_N, two real keys a layer could be answering with.
     private static final int POLITICAL_MAP_KEYCODE = 25;
     private static final int NO_LAYER_KEYCODE = 49;
 

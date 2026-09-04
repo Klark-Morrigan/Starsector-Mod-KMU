@@ -52,15 +52,17 @@ only the tab of the screen it was pressed on.
 
 Which key that is comes from the layer - `resolveShortcutKeycode`, asked per frame - rather than from a
 settings read here, so the row hints and the key claim carry a layer whose rebinding lives in another
-mod's settings file. The claim compares numbers, but the hint indexes LWJGL's name table, which has no
+mod's settings file. A non-positive answer is unbound and both halves go inert for that layer: no hint
+is printed and no press matches it, its tab keeping its place in the row. Nothing here supplies a key
+in its place. The claim only compares numbers, but the hint indexes LWJGL's name table, which has no
 range check of its own: `LiveSidebarPlacement` bounds the keycode before naming it, so one layer
 answering nonsense costs itself a hint rather than taking the tab row down.
 
 Consuming happens pre-core (see below), so a KM shortcut wins over whatever the screen underneath
 binds to the same key. On the intel screen that matters: item action buttons bind `T`, `U`, and `G`,
-and the tag filter uses `Q` and `Ctrl+S`. KMU's own two layers default to `N` and `P`, which avoid all
-of them, and the LunaLib Keycode fields those layers read are the way out of any clash a mod's intel
-item introduces.
+and the tag filter uses `Q` and `Ctrl+S`. The shipped settings table seeds KMU's own two tabs on `N`
+and `P`, which avoid all of them, and the LunaLib Keycode rows those layers read are the way out of
+any clash a mod's intel item introduces.
 
 Only the *screen* part of that answer is per-host, and there are two answers rather than one.
 `BaseSidebarHost.isOverlayShowing()` is the crisp gate - `!screenClaim.isScreenClaimed() &&

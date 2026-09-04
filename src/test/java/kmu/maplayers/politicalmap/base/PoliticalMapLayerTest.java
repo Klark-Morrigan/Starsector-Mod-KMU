@@ -24,7 +24,6 @@ import kmu.util.KmuStrings;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.input.Keyboard;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
@@ -64,11 +63,12 @@ final class PoliticalMapLayerTest {
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
 
     // The live LunaLib field id, pinned as a literal: a rename here silently drops the player's rebind
-    // and returns the tab to its default key.
+    // and leaves the tab keyless.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
 
-    // A key the player rebound to, distinct from the default so a read that ignored the store still fails.
-    private static final int REBOUND_KEYCODE = 20;
+    // Whatever the settings row is answering with - the value is arbitrary, since the point is that the
+    // tab hands it back untouched rather than that it is any particular key.
+    private static final int BOUND_KEYCODE = 20;
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents. Their tone is
@@ -431,19 +431,29 @@ final class PoliticalMapLayerTest {
 
         @Test
         void resolveShortcutKeycodeReadsThePoliticalMapsOwnRebindingField() {
-            // The tab holds both halves of the read now - which field the rebind lands in and what it
-            // answers to before there is one - so a wrong id here silently ignores the player's rebind
-            // while every framework test stays green.
+            // Which row the rebind lands in is this tab's own fact now, so a wrong id here silently
+            // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
                 settingsMock
-                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(
-                        SHORTCUT_SETTING_FIELD,
-                        Keyboard.KEY_P))
-                    .thenReturn(REBOUND_KEYCODE);
+                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_FIELD))
+                    .thenReturn(BOUND_KEYCODE);
 
                 assertThat(PoliticalMapLayer.INSTANCE.resolveShortcutKeycode())
-                    .isEqualTo(REBOUND_KEYCODE);
+                    .isEqualTo(BOUND_KEYCODE);
+            }
+        }
+
+        @Test
+        void resolveShortcutKeycodeLeavesTheTabUnboundWhenTheSettingsRowAnswersNoKey() {
+            // No key of this tab's own stands behind the row: a settings read answering nothing leaves
+            // the tab unbound, which the bar draws no hint for and matches no press against. A fallback
+            // keycode here would be a second answer to what the shipped table already decides, and would
+            // bind a key the player had cleared.
+            try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
+
+                assertThat(PoliticalMapLayer.INSTANCE.resolveShortcutKeycode())
+                    .isZero();
             }
         }
     }

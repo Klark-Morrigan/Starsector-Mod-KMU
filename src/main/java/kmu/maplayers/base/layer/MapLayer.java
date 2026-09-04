@@ -61,8 +61,14 @@ public interface MapLayer {
      * <p>Asked for per read, like the label above: the tab hints and the key claim are both rebuilt
      * from the roster each frame, so a rebind reaches the next frame rather than the next load.
      *
-     * @return the LWJGL keycode in force; non-positive for a binding the player cleared, which the
-     *         framework prints no hint for and matches no press against
+     * <p><b>Having no shortcut is a first-class answer.</b> Non-positive means unbound, and the whole
+     * hotkey path is then inert for this layer - the tab prints no hint and no press ever selects it,
+     * the tab itself staying exactly where it is in the row. The framework defaults nothing in its
+     * place: a layer that wants no key says so by answering zero and needs no settings row, and a
+     * layer whose key comes from a setting that cannot be read is unbound rather than bound to a
+     * number the framework picked. That is also the state a player reaches by clearing a binding.
+     *
+     * @return the LWJGL keycode in force, or a non-positive code for a layer with no shortcut
      */
     int resolveShortcutKeycode();
 

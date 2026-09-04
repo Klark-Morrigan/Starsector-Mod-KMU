@@ -29,9 +29,12 @@ Part of Klark Morrigan's Utilities; see the
 
 No Layer leads the strip as a first-class tab rather than an off switch, so the strip always shows
 what is and is not drawn and an empty map reads as a choice. The political map is the pick an
-untouched save resolves to, so the overlay is up the first time the sector map opens. Each tab also
-answers a LunaLib-rebindable shortcut, printed on the tab, on both screens the box draws; since the
-picks are per-screen, a shortcut moves only the tab of the screen it was pressed on.
+untouched save resolves to, so the overlay is up the first time the sector map opens. A tab may also
+answer a shortcut, printed on the tab, on both screens the box draws; since the picks are per-screen,
+a shortcut moves only the tab of the screen it was pressed on. KMU's two tabs take theirs from
+LunaLib rows the player can rebind, seeded by the shipped settings table rather than by any keycode
+in code - so a tab whose key is cleared, or a layer that wants none, simply has no hint and answers
+no press.
 
 ## The one-way arrow
 
@@ -171,7 +174,9 @@ about what the overlay means.
   the mod that declares a layer holds the bundle its name lives in and the file its rebinding is
   stored in, and the bar carries whatever is registered. Both are asked per frame, so a rename or a
   rebind shows on the next one; KMU's own two layers answer out of `KmuStrings` and the
-  `Map - Keybinds` settings tab themselves.
+  `Map - Keybinds` settings tab themselves. Nothing defaults a key on a layer's behalf: a
+  non-positive keycode is unbound, the hotkey path is inert for it, and a layer that wants no
+  shortcut says so by answering zero.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
