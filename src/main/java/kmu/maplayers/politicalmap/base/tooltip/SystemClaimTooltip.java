@@ -20,8 +20,9 @@ import java.util.List;
  *
  * <p>What this box decides is the account beneath those lines - how far into a faction the box goes -
  * and it composes one account, read to whatever depth was asked for: who claims the system at the
- * shallowest level, the colonies behind that a tier down, their terms a tier below again. One tree
- * read to four depths rather than four bodies, so no two depths can describe one system differently.
+ * shallowest level, the colonies behind that a tier down, their terms a tier below again - and there
+ * the account ends, which is where its cycle wraps. One tree read to three depths rather than three
+ * bodies, so no two depths can describe one system differently.
  *
  * <p>What is drawn is settled by the cut the listing is laid out under
  * ({@link kmu.maplayers.base.tooltip.layout.CellTooltipBody}); what is composed stops at the same place, so a
@@ -69,6 +70,15 @@ public final class SystemClaimTooltip extends SystemClaimContestTooltip {
             HolderGroupingSource holderGroupingSource) {
 
         super(claimBreakdownReader, holderGroupingSource);
+    }
+
+    @Override
+    protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
+        // The colonies behind a faction, and the terms behind a colony's score - and there the claim
+        // account ends. Vanilla settles a claim on size, a garrison and how many colonies the faction
+        // holds beside it; no patrol enters the arithmetic anywhere, so the level below has nothing to
+        // show and the cycle collapses from here instead of offering it.
+        return HoverTooltipDetailLevel.MARKET_STATS;
     }
 
     @Override

@@ -34,8 +34,8 @@ import java.util.Optional;
  * <p>How far into what it lists a block is read is neither the block's nor the layer's, but the
  * player's, arriving as the {@linkplain HoverTooltipDetailLevel detail level} the body was opened at. A
  * layer hands over one tree however deep it was asked for, and the walk lays out as much of it as that
- * level admits - so the same tree reads at four depths without any layer holding four accounts of a
- * system that could come to disagree with each other.
+ * level admits - so the same tree reads at every depth without any layer holding one account per
+ * depth, which could come to disagree with each other.
  *
  * <p>What is drawn is settled by that walk and nowhere else, so a layer that stops composing a tier the
  * level would not admit - which is worth doing wherever a tier is expensive to work out - changes

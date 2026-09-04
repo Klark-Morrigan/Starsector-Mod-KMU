@@ -10,7 +10,7 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
  * here in any case, since drawing one needs a live GL context - so what a case reads of this is that
  * it was reached and at which level, never what it painted.
  *
- * <p>It leaves {@link MapHoverTooltip#isOfferingExpansionFor} unoverridden on purpose: inheriting the
+ * <p>It leaves {@link MapHoverTooltip#resolveNextLevelFor} unoverridden on purpose: inheriting the
  * interface's own answer is what makes this the tooltip that takes no part in the detail cycle, so a
  * test using it pins the default every implementation gets rather than a stand-in's imitation of it.
  */

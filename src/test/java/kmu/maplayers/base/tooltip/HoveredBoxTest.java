@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
+import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -226,47 +227,47 @@ final class HoveredBoxTest {
     }
 
     @Nested
-    class IsOfferingExpansion {
+    class ResolveNextLevel {
 
         @Test
-        void isOfferingExpansionAsksTheBoxAboutTheSystemItWouldDrawFor() {
-            // Asked of the box rather than answered off the level alone, and about this system rather
-            // than in general - which is what lets a box offer an expansion on one cell and none on
-            // the next.
-            when(tooltipMock.isOfferingExpansionFor(sectorMock, systemMock, FACTIONS))
-                .thenReturn(true);
+        void resolveNextLevelAsksTheBoxAboutTheSystemItWouldDrawFor() {
+            // Asked of the box rather than worked out off the level alone, and about this system
+            // rather than in general - which is what lets a box open up on one cell and offer
+            // nothing on the next.
+            when(tooltipMock.resolveNextLevelFor(sectorMock, systemMock, FACTIONS))
+                .thenReturn(Optional.of(SYSTEM_COMPOSITION));
 
             assertThat(new HoveredBox(tooltipMock, sectorMock, systemMock)
-                    .isOfferingExpansion(FACTIONS))
-                .isTrue();
+                    .resolveNextLevel(FACTIONS))
+                .contains(SYSTEM_COMPOSITION);
         }
 
         @Test
-        void isOfferingExpansionAsksTheBoxAboutTheLevelItWouldBeDrawnAt() {
+        void resolveNextLevelAsksTheBoxAboutTheLevelItWouldBeDrawnAt() {
             // The press moves on from the level being drawn, so that level travels to the box rather
             // than being left out: read against another, the key could be claimed on a frame whose
             // box offered nothing.
-            when(tooltipMock.isOfferingExpansionFor(any(), any(), eq(PATROL_DETAILS)))
-                .thenReturn(true);
+            when(tooltipMock.resolveNextLevelFor(any(), any(), eq(PATROL_DETAILS)))
+                .thenReturn(Optional.of(FACTIONS));
 
             assertThat(new HoveredBox(tooltipMock, sectorMock, systemMock)
-                    .isOfferingExpansion(FACTIONS))
-                .isFalse();
+                    .resolveNextLevel(FACTIONS))
+                .isEmpty();
         }
 
         @Test
-        void isOfferingExpansionIsFalseForABoxWithNothingMoreToState() {
+        void resolveNextLevelIsEmptyForABoxWithNothingMoreToState() {
 
-            when(tooltipMock.isOfferingExpansionFor(any(), any(), any()))
-                .thenReturn(false);
+            when(tooltipMock.resolveNextLevelFor(any(), any(), any()))
+                .thenReturn(Optional.empty());
 
             assertThat(new HoveredBox(tooltipMock, sectorMock, systemMock)
-                    .isOfferingExpansion(FACTIONS))
-                .isFalse();
+                    .resolveNextLevel(FACTIONS))
+                .isEmpty();
         }
 
         @Test
-        void isOfferingExpansionIsFalseForABoxTakingNoPartInTheDetailCycle() {
+        void resolveNextLevelIsEmptyForABoxTakingNoPartInTheDetailCycle() {
             // The interface default, read at the level whose press acts over any box that draws a
             // hint: a tooltip that offers no detail draws none, so the key must fall through to
             // vanilla rather than being swallowed over a box that told the player nothing. Pinned on
@@ -275,8 +276,8 @@ final class HoveredBoxTest {
             var tooltipFake = new MapHoverTooltipFake();
 
             assertThat(new HoveredBox(tooltipFake, sectorMock, systemMock)
-                    .isOfferingExpansion(PATROL_DETAILS))
-                .isFalse();
+                    .resolveNextLevel(PATROL_DETAILS))
+                .isEmpty();
         }
     }
 

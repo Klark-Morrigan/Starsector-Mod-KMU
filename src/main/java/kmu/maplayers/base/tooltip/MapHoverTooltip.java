@@ -5,6 +5,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 
+import java.util.Optional;
+
 /**
  * A map layer's hover tooltip: the box a layer draws for the star system under the cursor. A layer
  * injects one - or none - through {@code MapLayerRenderer.resolveHoverTooltip}, and the shared hover
@@ -36,37 +38,41 @@ public interface MapHoverTooltip {
     void renderFor(SectorAPI sector, StarSystemAPI system, HoverTooltipDetailLevel detailLevel);
 
     /**
-     * Whether the press that moves on from {@code detailLevel} would change what the player sees over
-     * {@code system} - the question the pass claiming the cycle key asks before acting on a press.
+     * Where the press that moves on from {@code detailLevel} would take this box over {@code system}
+     * - the question the pass claiming the cycle key asks before acting on a press, and the same one
+     * the hint at the box's foot is worded from.
+     *
+     * <p>Answered as the destination rather than as a yes or no, because the pass that claims the key
+     * has to set the level it lands on and no other party can work it out: the cycle wraps at the
+     * deepest level the box itself holds anything at, not at the deepest the level enum declares. A
+     * box asked only whether it had more would leave the stepping to a caller that cannot see where
+     * its tree ends.
      *
      * <p>Asked of the box rather than read off the level alone, because a level admitting a deeper
-     * tier is not the same as this box having anything at that tier: a box may compose a tree that,
-     * for this particular system, runs no deeper than the shallowest level already shows. Pressing
-     * the key there would advance a level the player sees no result from, and - since the level is
-     * shared and holds across hovers - would leave the next system that <em>does</em> differ opening
-     * at a depth they did not choose.
+     * tier is not the same as this box having anything at that tier: a claim is settled over colonies
+     * with no patrol entering it anywhere, so the level naming patrol tiers is one that box can never
+     * fill. Offered it regardless, the player presses the key and sees the same box again - and,
+     * since the level is shared and holds across hovers, the next system that <em>does</em> differ
+     * then opens at a depth they did not choose.
      *
-     * <p>The level is handed in rather than left out because the answer turns on where the press
-     * lands as much as on what the box holds: the cycle wraps, so from the deepest level the press
-     * collapses the box, which acts whatever the system holds.
+     * <p>Asked per system rather than once per box because part of the answer lives there: what a box
+     * holds turns on what the cursor is over, and a system it lists nothing for has nothing to open
+     * up at all.
      *
-     * <p>Asked per system rather than once per box because that is where the rest of the answer
-     * lives: whether there is anything more to show turns on what the cursor is over - a system a box
-     * lists nothing for has nothing to open up - and not on which box is drawing.
-     *
-     * <p>A box taking no part in the detail cycle answers no at every level, the default here: it
+     * <p>A box taking no part in the detail cycle offers nowhere at every level, the default here: it
      * draws no hint, so a press it swallowed would be one the player was never told about.
      *
      * @param sector      the live sector, whose economy the answer may read
      * @param system      the star system under the cursor
      * @param detailLevel how deep the box is being read now, which the press moves on from
-     * @return true when the key would change what the player sees for this system
+     * @return the level one press moves to, or empty where the press would change nothing the player
+     *         can see
      */
-    default boolean isOfferingExpansionFor(
+    default Optional<HoverTooltipDetailLevel> resolveNextLevelFor(
             SectorAPI sector,
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
 
-        return false;
+        return Optional.empty();
     }
 }

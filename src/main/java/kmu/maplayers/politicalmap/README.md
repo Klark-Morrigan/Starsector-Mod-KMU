@@ -332,7 +332,12 @@ what to hang beneath a faction as the account of its score (`FactionAccountResol
 once per paint and applied by `StandingRowResolver` where the standing and the line named from it
 are both in hand, so no faction's colonies can be listed under another's name. Every box on the
 shape answers it rather than inheriting an empty one: a box that hung nothing would draw the same
-thing at all four levels while `F1` went on offering to open it up.
+thing at every level while `F1` went on offering to open it up.
+
+Beside it every box on the shape states how far that account reaches
+(`resolveDeepestAccountLevel`), which is where the cycle wraps for this box: the domination one fills
+the levels out at `PATROL_DETAILS`, and the claims box beside it stops a tier higher. The shape joins
+that constant with what the ranking found for the hovered system, so a box states only the first.
 
 Where each ranked group is listed is `StandingBlockRouting`'s one answer, taken per hover over the
 closed set of blocks `StandingBlock` names - which carries each block's heading too, so the order
@@ -554,7 +559,14 @@ was asked for and cut by the blocks, on the same terms as the domination box. It
 and the five blocks, and leaves open only what hangs beneath a faction (`resolveAccountEntries`,
 answered by every box on the shape). It is asked at all only where the level shows a line of one
 (`isAdmittingAccounts`), so the shallowest level selects, ranks and words no faction's markets;
-below it `ClaimScoreRowResolver` works out a market's terms only from `MARKET_STATS`. That account
+below it `ClaimScoreRowResolver` works out a market's terms only from `MARKET_STATS`.
+
+That is also where this box's cycle wraps (`resolveDeepestAccountLevel`). Vanilla settles a claim on
+a colony's size, its garrison and how many colonies the faction holds beside it - no patrol enters
+the arithmetic anywhere - so the level below has nothing for this box to put in it, and `F1`
+collapses from the market stats instead of offering a tier that would redraw the box unchanged.
+
+That account
 is handed the whole `ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to

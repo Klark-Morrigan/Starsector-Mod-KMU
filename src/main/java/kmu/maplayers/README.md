@@ -430,21 +430,29 @@ about what the overlay means.
   between two of these keeps answering about the right thing - and `isReadingAtLeast`, asked by a
   layer about a tier of its own subject matter. The cut answers a tier it was never handed exactly as it answers one it declines. The
   level never decides
-  *which* box draws either - one box per layer, read to four depths - so the choice holds across
+  *which* box draws either - one box per layer, read to as many depths as its account holds - so the
+  choice holds across
   hovers and layer switches without any layer holding a second body. What writes that level is
-  `HoverTooltipDetailLevelInput`, a campaign input listener claiming F1 pre-core: each press advances
-  one level, wrapping from the deepest back to the first, so the key that leads into detail also
-  leads out of it. A render pass is
+  `HoverTooltipDetailLevelInput`, a campaign input listener claiming F1 pre-core: each press moves
+  one level deeper, wrapping back to the first, so the key that leads into detail also
+  leads out of it. Where it wraps is the *box's* depth rather than the last constant: the levels name
+  tiers of one particular account and a box built on another mechanic simply has none of the deeper
+  ones - a claim is settled over colonies with no patrol entering it anywhere - so a cycle wrapping
+  at the last constant regardless would offer such a box a level that redraws exactly what is on
+  screen, and the player would press through it to reach the collapse. A render pass is
   handed no events and so can consume none, which is why reading the key and drawing its result
   are two passes agreeing through the holder. Both read one gate seam, `HoverTooltipGates` - the
   settings tiers above any layer, and a map on screen - rather than a copy each, so the key is
   claimed when and only when a box could be drawn and a condition added later reaches both passes.
   Behind that seam the press is claimed only where it would do something the player can see: the box
-  under the cursor answers `MapHoverTooltip.isOfferingExpansionFor` for the hovered system at the
-  level being drawn, and a system with nothing more to state leaves the key alone. Asked per system
-  rather than per box because that is where most of the answer lives - an unpopulated system has no
+  under the cursor answers `MapHoverTooltip.resolveNextLevelFor` for the hovered system at the
+  level being drawn, and a system with nothing more to state names nowhere and leaves the key alone.
+  Answered as the destination rather than as a yes or no, because the listener has to set the level
+  it lands on and cannot work that out itself - only the box knows where its own tree ends. Asked per
+  system rather than per box because part of the answer lives there - an unpopulated system has no
   colonies for a deeper tier to account for; asked at a level because the rest of it lives there -
-  the cycle wraps, so at the deepest level the press collapses the box, which acts over any system.
+  the cycle wraps, so from the deepest level the levels declare the press collapses the box, which
+  acts over any system.
   Left unclaimed rather than advanced invisibly because the level is one shared fact:
   a press swallowed over a system with nothing to expand would silently decide how the next system
   that *does* differ opens. What the cursor is over is resolved once, by `HoveredBox`, and read by
@@ -465,19 +473,22 @@ about what the overlay means.
   box taking part in the detail cycle ends on one more block: the key and what pressing it would do,
   drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights
   a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What
-  it says is the step the *next* press takes - "expand market stats", and "collapse to factions" from
-  the deepest - rather than which level is current, a number or a name telling the player nothing
-  about what they would gain. The phrase is the level's
-  (`HoverTooltipDetailLevel.resolveNextActionPhrase`), carried by the level being arrived at, so
+  it says is the step the *next* press takes - "expand market stats", and "collapse to factions" once
+  the box's own tree runs out - rather than which level is current, a number or a name telling the
+  player nothing about what they would gain. The phrase is the level's
+  (`HoverTooltipDetailLevel.resolveArrivalPhrase`), carried by the level being arrived at, so
   every layer names one step the same way and a level added brings its own wording with it. What a
-  layer answers is only whether it has anything down there at all, and it comes back beside the
+  layer answers is how deep it goes for this system, and it comes back beside the
   blocks rather than being asked for (`ComposedCellBody`): that turns on what the body found, so a
   layer that read its system to compose the blocks already holds the answer. Asked separately, the
   box would pay for that read a second time every frame the cursor rests on the cell - and the hint
   could describe a reading the body beside it no longer agrees with. The key handler asks through
-  `hasDeeperDetailFor` instead, that being the one caller with nothing composed to take the answer
-  from, and it asks once per press - and not at all at the deepest level, where the collapse settles
-  it. Hint and press run off that one rule, so the box cannot advertise a key that does nothing. The
+  `resolveDeepestHeldLevelFor` instead, that being the one caller with nothing composed to take the
+  answer from, and it asks once per press - and not at all at the deepest level the levels declare,
+  where no box can hold anything further and the collapse settles it whatever this one holds. The
+  bound is two facts joined once per layer shape: how far the box's *account* reaches, a constant of
+  what it explains, and whether this system left it anything to account for at all. Hint and press
+  run off that one rule, so the box cannot advertise a key that does nothing. The
   hint is not content: a box with nothing to say about the system stays undrawn
   rather than appearing as a lone offer to expand into nothing. That same line carries one more run
   where the box had less room than its content needed: how many entries it could not show, in the

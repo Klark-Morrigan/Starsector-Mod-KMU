@@ -98,18 +98,40 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return readRankedStandings(sector, system)
             .map(ranking -> new ComposedCellBody(
                 buildBlocksFrom(sector, system, ranking, detailLevel),
-                hasAnyStanding(ranking)))
+                resolveDeepestHeldLevel(hasAnyStanding(ranking))))
             .orElse(ComposedCellBody.NOTHING);
     }
 
     @Override
-    protected final boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
+    protected final HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
         // The press-time path, which composes nothing and so has to rank the system for itself. A
         // paint reaches the same judgement above, off the ranking it already holds.
         return readRankedStandings(sector, system)
-            .filter(SystemStandingsTooltip::hasAnyStanding)
-            .isPresent();
+            .map(ranking -> resolveDeepestHeldLevel(hasAnyStanding(ranking)))
+            .orElse(HoverTooltipDetailLevel.FACTIONS);
     }
+
+    /**
+     * The deepest level this box's account of one listed faction reaches, over a system it ranks
+     * somebody in. What bounds the cycle, so the press after that level collapses the box rather than
+     * offering a tier the account has nothing to put in.
+     *
+     * <p>Asked of the box that supplies the account rather than settled here, because it is a fact
+     * about that account's own subject matter: the levels name tiers of one particular reading of a
+     * system, and a box explaining a different mechanic simply has no line at some of them.
+     *
+     * <p>A constant of the box rather than a read of the system, unlike the level actually reported
+     * above: what tiers an account carries follows from what it explains, while whether any of them
+     * has content for one hovered system follows from what the ranking found. The two are combined
+     * here so a box states the first alone.
+     *
+     * @return the deepest level the resolver from {@link #createFactionAccountResolver} ever puts a
+     *         line at
+     */
+    protected abstract HoverTooltipDetailLevel resolveDeepestAccountLevel();
 
     /**
      * Resolves what hangs beneath each faction the box lists, as the account of where that faction's
@@ -122,7 +144,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
      * admits an account, so the shallowest level costs that read nothing.
      *
      * <p>Answered by every box on this shape rather than defaulted: a box inheriting
-     * {@link FactionAccountResolver#NO_ACCOUNT} would draw the same thing at all four detail levels
+     * {@link FactionAccountResolver#NO_ACCOUNT} would draw the same thing at every detail level
      * while the key went on offering to open it up, which is the one failure the level cycle cannot
      * show the player.
      *
@@ -151,6 +173,17 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         return detailLevel.isAdmittingAccounts()
             ? createFactionAccountResolver(system, pass, detailLevel)
             : FactionAccountResolver.NO_ACCOUNT;
+    }
+
+    // How deep the box goes over one hovered system: as deep as its account reaches where the ranking
+    // left it somebody to account for, and no deeper than the box's own voice where it did not.
+    //
+    // The one place the two halves are joined, so the paint and the press cannot combine them
+    // differently - the failure that would put the hint and the key at odds over one system.
+    private HoverTooltipDetailLevel resolveDeepestHeldLevel(boolean hasAnyStanding) {
+        return hasAnyStanding
+            ? resolveDeepestAccountLevel()
+            : HoverTooltipDetailLevel.FACTIONS;
     }
 
     // Whether the ranking found anybody the box may name - the one judgement behind both the hint at

@@ -18,8 +18,12 @@ import kmu.util.KmuStrings;
  * level that shows the least costing the most. The two questions below are what a layer asks before
  * working a tier out at all.
  *
- * <p>The cycle is declaration order, wrapping from the deepest back to the first - which is what
- * lets one key be both the way into detail and the way out of it.
+ * <p>The cycle is declaration order, wrapping back to the first - which is what lets one key be both
+ * the way into detail and the way out of it. Where it wraps is not fixed at the last constant: a box
+ * states the deepest level its own tree holds anything at, and the press collapses from there. The
+ * levels below name tiers no box is obliged to have - a claim is settled over colonies without a
+ * patrol entering it anywhere - and a cycle wrapping at the last constant regardless would offer such
+ * a box a level that redraws exactly what is already on screen.
  */
 public enum HoverTooltipDetailLevel {
 
@@ -41,6 +45,10 @@ public enum HoverTooltipDetailLevel {
     // accounts without reaching into how a box is laid out.
     private static final int ACCOUNT_SUBORDINATION = 1;
 
+    // Where the cycle opens and wraps back to. Read off declaration order rather than named, so a
+    // level inserted ahead of the present first one moves the wrap target with it.
+    private static final int SHALLOWEST_ORDINAL = 0;
+
     // Stated per constant rather than derived from position, so what a level admits is read off the
     // constant that names it instead of counted from wherever it happens to sit in the cycle.
     private final int maximumSubordination;
@@ -50,8 +58,9 @@ public enum HoverTooltipDetailLevel {
     // level added or reordered carries its own wording with it instead of leaving a phrase behind
     // describing a step that no longer lands here.
     //
-    // The shallowest is worded as a collapse because that is the only way the cycle reaches it: it
-    // is where the box opens, and a press arrives there only by wrapping from the deepest.
+    // The shallowest is worded as a collapse because that is the only way a press reaches it: it is
+    // where the box opens, and the cycle arrives there only by wrapping from wherever the box being
+    // read runs out of tiers.
     private final String arrivalPhraseKey;
 
     HoverTooltipDetailLevel(int maximumSubordination, String arrivalPhraseKey) {
@@ -60,41 +69,59 @@ public enum HoverTooltipDetailLevel {
     }
 
     /**
-     * @return the level one press moves to: the next deeper one, or the first again from the
-     *         deepest - wrapping rather than stopping, so a press always acts and the deepest box
-     *         can always be left
+     * @return the deepest level the cycle declares - the bound a box holding every tier there is to
+     *         hold would state, and the level past which no box can hold anything. What lets a
+     *         caller settle where a press lands without asking any box how deep it goes
      */
-    public HoverTooltipDetailLevel getNextLevel() {
+    public static HoverTooltipDetailLevel resolveDeepestLevel() {
 
         var levels = values();
 
-        return levels[(ordinal() + 1) % levels.length];
+        return levels[levels.length - 1];
     }
 
     /**
-     * What the next press does to a box drawn at this level, in the player's words - the whole of
-     * what the hint at its foot says beside the key.
+     * The level one press moves to, given how deep the box being read actually goes: the next deeper
+     * level, or the shallowest again once {@code deepestHeldLevel} has been reached - so a press
+     * always acts and any box can be collapsed from wherever its own tree ends.
      *
-     * <p>Stated as the action rather than as the level the box is at, because a number or a name
-     * tells the player nothing about what they would gain by pressing: the hint exists to say what
-     * the key is for. Read off the level being moved to, so the phrase and the press it describes
-     * cannot come apart.
+     * <p>Bounded by the box rather than by the cycle, because the two are not the same depth. A box
+     * whose tree ends above the last constant would otherwise be offered levels that redraw what is
+     * already on screen, and the player would press through them to reach the collapse.
      *
-     * @return the phrase for the step one press takes from here
+     * <p>Wrapping is judged at or past the bound rather than exactly at it, since the level is one
+     * shared fact held across layer switches: a box reached at a level deeper than it holds anything
+     * at collapses on the next press rather than sitting at a depth it cannot act on.
+     *
+     * @param deepestHeldLevel the deepest level the box being read holds anything at
+     * @return the level to move to, which is this level itself where there is nowhere else to go -
+     *         a box holding nothing past the shallowest, read at the shallowest
      */
-    public String resolveNextActionPhrase() {
-        return KmuStrings.get(getNextLevel().arrivalPhraseKey);
+    public HoverTooltipDetailLevel resolveNextLevelWithin(HoverTooltipDetailLevel deepestHeldLevel) {
+
+        var levels = values();
+
+        if (isReadingAtLeast(deepestHeldLevel)) {
+            return levels[SHALLOWEST_ORDINAL];
+        }
+        // Short of the bound there is always a deeper constant to step to, the bound being one of
+        // these levels itself - so the step needs no wrap of its own.
+        return levels[ordinal() + 1];
     }
 
     /**
-     * Whether the next press takes the box back to the shallowest level rather than one tier deeper.
-     * The cycle wraps, so this holds at the deepest level alone - the one place the key collapses the
-     * box instead of opening it further.
+     * What arriving at this level does, in the player's words - the whole of what the hint at the
+     * foot of a box says beside the key.
      *
-     * @return true where one press collapses the box
+     * <p>Stated as the action rather than as the level's name, because a number or a name tells the
+     * player nothing about what they would gain by pressing: the hint exists to say what the key is
+     * for. Read off the level being arrived at rather than off the one being left, so the phrase and
+     * the press it describes cannot come apart.
+     *
+     * @return the phrase for arriving here
      */
-    public boolean isCollapsingOnNextPress() {
-        return getNextLevel() == FACTIONS;
+    public String resolveArrivalPhrase() {
+        return KmuStrings.get(arrivalPhraseKey);
     }
 
     /**

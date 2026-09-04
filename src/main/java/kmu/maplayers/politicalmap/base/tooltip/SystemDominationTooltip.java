@@ -87,6 +87,14 @@ public final class SystemDominationTooltip extends SystemStandingsTooltip {
     }
 
     @Override
+    protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
+        // The colonies behind a faction, the factors behind a colony's weight, and the small, medium
+        // and large split behind the patrol factor - which is the deepest tier the levels declare, so
+        // this box fills the cycle out.
+        return HoverTooltipDetailLevel.PATROL_DETAILS;
+    }
+
+    @Override
     protected FactionAccountResolver createFactionAccountResolver(
             StarSystemAPI system,
             DominancePass pass,

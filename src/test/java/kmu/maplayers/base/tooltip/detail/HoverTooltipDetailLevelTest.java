@@ -13,11 +13,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the ordered depths the hover box can be read at: that each level admits exactly the
  * subordination its tier of the account sits at - the cut every listing walk asks it about - that
  * the two questions a composer asks before working a tier out answer over that same order, and that
- * one key cycles through all four and back, so the deepest box can always be left.
+ * one key cycles through them and back, so any box can always be left.
  *
- * <p>And what the hint at the foot of the box says at each of them: the phrase names the step the
- * next press takes rather than the level being drawn, so it is pinned per level against the words
- * the game ships.
+ * <p>Where the cycle wraps is pinned against the box's own depth rather than against the last
+ * constant, that being what stops a box whose account ends higher up offering a tier it can never
+ * fill.
+ *
+ * <p>And what the hint at the foot of the box says: the phrase belongs to the level being arrived
+ * at, so it is pinned per level against the words the game ships.
  */
 final class HoverTooltipDetailLevelTest {
 
@@ -110,63 +113,85 @@ final class HoverTooltipDetailLevelTest {
     }
 
     @Nested
-    class GetNextLevel {
+    class ResolveDeepestLevel {
 
         @Test
-        void getNextLevelStepsFromFactionsToSystemComposition() {
+        void resolveDeepestLevelNamesTheLastTierTheCycleDeclares() {
+            // The bound past which no box can hold anything, which is what lets a caller settle a
+            // collapse without asking any box how far its own tree reaches.
+            assertThat(HoverTooltipDetailLevel.resolveDeepestLevel())
+                .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
+        }
+    }
 
-            assertThat(HoverTooltipDetailLevel.FACTIONS.getNextLevel())
+    @Nested
+    class ResolveNextLevelWithin {
+
+        @Test
+        void resolveNextLevelWithinStepsFromFactionsToSystemComposition() {
+
+            assertThat(HoverTooltipDetailLevel.FACTIONS
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
                 .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
         }
 
         @Test
-        void getNextLevelStepsFromSystemCompositionToMarketStats() {
+        void resolveNextLevelWithinStepsFromSystemCompositionToMarketStats() {
 
-            assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION.getNextLevel())
+            assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
                 .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
         }
 
         @Test
-        void getNextLevelStepsFromMarketStatsToPatrolDetails() {
+        void resolveNextLevelWithinStepsFromMarketStatsToPatrolDetails() {
 
-            assertThat(HoverTooltipDetailLevel.MARKET_STATS.getNextLevel())
+            assertThat(HoverTooltipDetailLevel.MARKET_STATS
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
                 .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
         }
 
         @Test
-        void getNextLevelWrapsFromPatrolDetailsBackToFactions() {
-            // The wrap is what makes every press act: at the deepest level the next press collapses
-            // rather than dead-ending, so the key that led in also leads out.
-            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS.getNextLevel())
+        void resolveNextLevelWithinWrapsFromTheDeepestLevelTheBoxHolds() {
+            // The wrap is what makes every press act: once the box's own tree runs out the next press
+            // collapses rather than dead-ending, so the key that led in also leads out.
+            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
+        }
+
+        @Test
+        void resolveNextLevelWithinWrapsAtABoundShortOfTheDeepestLevelDeclared() {
+            // The whole point of the bound: a box whose account ends at the market stats - a claim,
+            // which no patrol enters - collapses from there rather than being offered a patrol tier
+            // that would redraw what is already on screen.
+            assertThat(HoverTooltipDetailLevel.MARKET_STATS
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.MARKET_STATS))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
+        }
+
+        @Test
+        void resolveNextLevelWithinWrapsFromPastTheBoundRatherThanSittingThere() {
+            // The level is one shared fact carried across layer switches, so a box can be reached at
+            // a depth it holds nothing at. It collapses on the next press instead of stranding the
+            // player at a level its own tree cannot act on.
+            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.MARKET_STATS))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
+        }
+
+        @Test
+        void resolveNextLevelWithinStaysPutForABoxHoldingNothingBelowTheShallowest() {
+            // The one case where a press would change nothing: a box that lists nobody, read at the
+            // level it opens on. There is no tier to open and nothing to collapse.
+            assertThat(HoverTooltipDetailLevel.FACTIONS
+                    .resolveNextLevelWithin(HoverTooltipDetailLevel.FACTIONS))
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
     }
 
     @Nested
-    class IsCollapsingOnNextPress {
-
-        @Test
-        void isCollapsingOnNextPressHoldsAtTheDeepestLevelAlone() {
-            // The one place the key takes detail away rather than adding it, which is what both the
-            // hint's wording and the press's own claim turn on.
-            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS.isCollapsingOnNextPress())
-                .isTrue();
-        }
-
-        @Test
-        void isCollapsingOnNextPressIsFalseAtEveryLevelShortOfTheDeepest() {
-
-            assertThat(HoverTooltipDetailLevel.FACTIONS.isCollapsingOnNextPress())
-                .isFalse();
-            assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION.isCollapsingOnNextPress())
-                .isFalse();
-            assertThat(HoverTooltipDetailLevel.MARKET_STATS.isCollapsingOnNextPress())
-                .isFalse();
-        }
-    }
-
-    @Nested
-    class ResolveNextActionPhrase {
+    class ResolveArrivalPhrase {
 
         @BeforeEach
         void installStrings() {
@@ -179,23 +204,23 @@ final class HoverTooltipDetailLevelTest {
         }
 
         @Test
-        void resolveNextActionPhraseNamesTheStepThePressTakes() {
-            // The hint states what the player would gain rather than which level they are at, so each
-            // level is worded from the one it moves to - read off the level being drawn instead, every
-            // phrase would name detail already on screen.
-            assertThat(HoverTooltipDetailLevel.FACTIONS.resolveNextActionPhrase())
+        void resolveArrivalPhraseNamesWhatArrivingAtTheLevelDoes() {
+            // The hint states what the player would gain rather than which level they are at, so it
+            // is read off the level being moved to - read off the one being left instead, a phrase
+            // would name detail already on screen.
+            assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION.resolveArrivalPhrase())
                 .isEqualTo("expand system composition");
-            assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION.resolveNextActionPhrase())
+            assertThat(HoverTooltipDetailLevel.MARKET_STATS.resolveArrivalPhrase())
                 .isEqualTo("expand market stats");
-            assertThat(HoverTooltipDetailLevel.MARKET_STATS.resolveNextActionPhrase())
+            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS.resolveArrivalPhrase())
                 .isEqualTo("expand patrol details");
         }
 
         @Test
-        void resolveNextActionPhraseNamesTheCollapseAtTheDeepestLevelAlone() {
+        void resolveArrivalPhraseNamesTheCollapseAtTheShallowestLevelAlone() {
             // The cycle wraps, so the shallowest level is only ever arrived at by collapsing - which
             // is why it is the phrase that level carries, and why no other level names one.
-            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS.resolveNextActionPhrase())
+            assertThat(HoverTooltipDetailLevel.FACTIONS.resolveArrivalPhrase())
                 .isEqualTo("collapse to factions");
         }
     }

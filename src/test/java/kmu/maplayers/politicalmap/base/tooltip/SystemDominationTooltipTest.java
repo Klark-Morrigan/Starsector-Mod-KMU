@@ -420,6 +420,19 @@ final class SystemDominationTooltipTest {
     }
 
     @Nested
+    class ResolveDeepestAccountLevel {
+
+        @Test
+        void resolveDeepestAccountLevelFillsOutTheWholeCycle() {
+            // This box is the one the levels were named after: colonies under a faction, factors under
+            // a colony, and the patrol tiers under the patrol factor. It is what makes the deepest
+            // level worth declaring at all - the claim box beside it stops a tier higher.
+            assertThat(tooltip.resolveDeepestAccountLevel())
+                .isEqualTo(PATROL_DETAILS);
+        }
+    }
+
+    @Nested
     class CreateFactionAccountResolver {
 
         @Test

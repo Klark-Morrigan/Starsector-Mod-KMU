@@ -8,13 +8,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins the holder that carries the hover box's detail level from the cycle key to the box that
  * draws: that it starts on the shallowest level rather than surprising a player with a deep one,
- * that each press is what the next read sees, that the cycle wraps from the deepest level back to
- * the first (so one key is a cycle and not a one-way descent), that a load drops the level the
- * previous save was left at, and that the shared instance is genuinely one instance - two
- * collaborators resolving different holders would leave the box ignoring the key.
+ * that each press is what the next read sees, that it goes exactly where it is sent rather than
+ * stepping a cycle it cannot see the end of, that a load drops the level the previous save was left
+ * at, and that the shared instance is genuinely one instance - two collaborators resolving different
+ * holders would leave the box ignoring the key.
  *
  * <p>Each test builds its own holder rather than using {@link HoverTooltipDetailLevelState#getInstance},
- * so an advance cannot leak into another test through the shared one.
+ * so a move cannot leak into another test through the shared one.
  */
 final class HoverTooltipDetailLevelStateTest {
 
@@ -30,28 +30,27 @@ final class HoverTooltipDetailLevelStateTest {
     }
 
     @Nested
-    class AdvanceLevel {
+    class MoveToLevel {
 
         @Test
-        void advanceLevelStepsFromFactionsToSystemComposition() {
+        void moveToLevelIsWhatTheNextReadSees() {
 
             var state = new HoverTooltipDetailLevelState();
-            state.advanceLevel();
+            state.moveToLevel(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             assertThat(state.getLevel())
                 .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
         }
 
         @Test
-        void advanceLevelWrapsBackToFactionsOnTheFourthPress() {
-            // The wrap is what keeps every press acting: from the deepest level the key collapses
-            // rather than dead-ending, so the player is never stuck in the tallest box.
+        void moveToLevelTakesTheLevelItIsGivenRatherThanSteppingTheCycle() {
+            // Where a press lands turns on how deep the box under the cursor goes, which this holder
+            // cannot read. Stepping here it would walk a shallow box's player through tiers that
+            // redraw the same thing, so it is told the destination and does no arithmetic of its own.
             var state = new HoverTooltipDetailLevelState();
 
-            state.advanceLevel();
-            state.advanceLevel();
-            state.advanceLevel();
-            state.advanceLevel();
+            state.moveToLevel(HoverTooltipDetailLevel.PATROL_DETAILS);
+            state.moveToLevel(HoverTooltipDetailLevel.FACTIONS);
 
             assertThat(state.getLevel())
                 .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
@@ -66,7 +65,7 @@ final class HoverTooltipDetailLevelStateTest {
 
             var state = new HoverTooltipDetailLevelState();
 
-            state.advanceLevel();
+            state.moveToLevel(HoverTooltipDetailLevel.MARKET_STATS);
             state.discardLevelFromPreviousSave();
 
             assertThat(state.getLevel())

@@ -59,11 +59,17 @@ public final class HoverTooltipDetailLevelState {
     }
 
     /**
-     * Moves to the next detail level, wrapping from the deepest back to the first. The level stands
-     * until advanced again, so the choice carries across hovers, layer switches, and map open and
-     * close.
+     * Moves to {@code level}. It stands until moved again, so the choice carries across hovers,
+     * layer switches, and map open and close.
+     *
+     * <p>Told where to go rather than stepping the cycle itself, because where a press lands turns
+     * on how deep the box under the cursor actually goes - a fact this holder has no way to read.
+     * Stepping here, it would advance past the tiers a shallow box holds and leave the player
+     * pressing through levels that redraw the same thing.
+     *
+     * @param level how deep the box under the cursor is to read from now on
      */
-    public void advanceLevel() {
-        level = level.getNextLevel();
+    public void moveToLevel(HoverTooltipDetailLevel level) {
+        this.level = level;
     }
 }

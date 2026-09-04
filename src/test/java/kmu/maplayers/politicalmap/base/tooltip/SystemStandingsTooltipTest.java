@@ -129,21 +129,22 @@ final class SystemStandingsTooltipTest {
     }
 
     @Nested
-    class HasDeeperDetailFor {
+    class ResolveDeepestHeldLevelFor {
 
         @Test
-        void hasDeeperDetailForOffersTheAccountBehindTheScoresRanked() {
-            // What the key at the foot of the box would reach. Answered for the whole cycle at once
-            // because it is the one thing its levels agree on - the deeper tiers account for the very
-            // scores the shallowest ranks by, so every press reaches the same account.
+        void resolveDeepestHeldLevelForOffersTheAccountBehindTheScoresRanked() {
+            // What the key at the foot of the box would reach: as deep as the box's own account goes,
+            // the deeper tiers accounting for the very scores the shallowest ranks by. How deep that
+            // is comes from the box rather than from this shape, which knows only that there is
+            // somebody to account for.
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
 
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isTrue();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
         }
 
         @Test
-        void hasDeeperDetailForOffersTheAccountBehindAStandingOverACollapsedSystem() {
+        void resolveDeepestHeldLevelForOffersTheAccountBehindAStandingOverACollapsedSystem() {
             // The status line and the standings answer different questions of the one pass: a system
             // whose colonies have all collapsed is headed Decivilised and still ranks whoever holds
             // them, and those colonies are exactly what a deeper level opens up. Judged off the
@@ -152,27 +153,27 @@ final class SystemStandingsTooltipTest {
             StandingsTooltipSeamsFake.stubGroupEntries(createLeadingGroupEntry());
             StandingsTooltipSeamsFake.stubStatusRow("Decivilised");
 
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isTrue();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
         }
 
         @Test
-        void hasDeeperDetailForOffersNothingForASystemRankingNobody() {
+        void resolveDeepestHeldLevelForOffersNothingForASystemRankingNobody() {
             // Nobody ranks, so there is no score for a deeper tier to account for and every level
             // would state the same banner - a key press the player could not see the result of. The
             // hint goes with it rather than advertising one.
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isFalse();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
 
         @Test
-        void hasDeeperDetailForOffersNothingWhileNoViewIsPainting() {
+        void resolveDeepestHeldLevelForOffersNothingWhileNoViewIsPainting() {
             // The tab is switched away, so there is no pass to judge the system under and no body being
             // drawn for the hint to sit beneath.
             StandingsTooltipSeamsFake.stubNoActiveView();
 
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isFalse();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
     }
 
@@ -578,6 +579,13 @@ final class SystemStandingsTooltipTest {
         }
 
         @Override
+        protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
+            // The deepest the levels declare, which is what a box carrying every tier states - so a
+            // case here reads the shape's own combining rather than a stand-in's shallower bound.
+            return HoverTooltipDetailLevel.PATROL_DETAILS;
+        }
+
+        @Override
         protected FactionAccountResolver createFactionAccountResolver(
                 StarSystemAPI system,
                 DominancePass pass,
@@ -609,6 +617,11 @@ final class SystemStandingsTooltipTest {
 
         private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
             super(claimBreakdownReader, HolderGrouping::identity);
+        }
+
+        @Override
+        protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
+            return HoverTooltipDetailLevel.PATROL_DETAILS;
         }
 
         @Override

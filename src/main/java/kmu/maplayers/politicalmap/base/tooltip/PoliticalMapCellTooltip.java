@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
 
 import java.util.List;
@@ -70,29 +71,30 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
     }
 
     /**
-     * Whether the deeper detail levels would state anything more about the system than the shallowest
-     * already does.
+     * The deepest level this box holds anything at for the hovered system.
      *
      * <p>Asked per hovered system rather than once per box: the deeper tiers account for the colonies
-     * behind what this box lists, so a system it lists nothing for has nothing to account for, and
-     * every level would draw the same thing. The hint is dropped there rather than offering a key that
-     * changes nothing on screen.
+     * behind what this box lists, so a system it lists nothing for holds nothing below the shallowest
+     * level, and every level would draw the same thing. The hint is dropped there rather than offering
+     * a key that changes nothing on screen.
      *
      * <p>Answered through the very read the body is built from, so a box cannot offer to expand a
      * listing it is about to draw as empty - which the fog alone can produce, a faction present only
      * through colonies the player has not found leaving nothing this box may state.
      *
-     * <p>Re-declared abstract rather than left at the inherited false, because there is no honest
-     * default here: a box of this layer that answered false out of inheritance would silently withhold
-     * the hint over a system it has plenty more to say about, and nothing on screen would say the key
-     * was worth pressing.
+     * <p>Re-declared abstract rather than left at the inherited shallowest, because there is no honest
+     * default here: a box of this layer inheriting that answer would silently withhold the hint over a
+     * system it has plenty more to say about, and nothing on screen would say the key was worth
+     * pressing.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
-     * @return true where a deeper level would show the player something the shallowest does not
+     * @return the deepest level with something to show for this system
      */
     @Override
-    protected abstract boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system);
+    protected abstract HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
+        SectorAPI sector,
+        StarSystemAPI system);
 
     /**
      * Whether this box's own body names the faction holding the system by decree. A box that does goes

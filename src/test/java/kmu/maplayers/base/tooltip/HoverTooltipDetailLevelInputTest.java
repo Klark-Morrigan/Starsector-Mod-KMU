@@ -42,12 +42,16 @@ import static org.mockito.Mockito.when;
  * differently one press on, which is the other half of the same honesty: the level is one shared fact
  * that holds across hovers, so a press swallowed over a system with nothing to expand would decide how
  * the next system that does differ opens. What the cursor is over is a live chain through the hover
- * state, the layer registry and the sector, so it arrives here stood in for - offering or not offering
- * is the whole of what these tests can say.
+ * state, the layer registry and the sector, so it arrives here stood in for - the level a box names,
+ * or none, is the whole of what these tests can say.
  *
- * <p>Which level that question is asked at is pinned here rather than left to the box, since only this
- * pass holds both the read and the advance: asked after the advance, the gate would answer about a
- * depth the player has not been shown.
+ * <p>That the press lands where the box said rather than one constant further on is pinned here too:
+ * the cycle wraps at the deepest level a box holds anything at, which this pass cannot work out for
+ * itself, so a step taken here would walk a shallow box's player through tiers it cannot fill.
+ *
+ * <p>Which level the question is asked at is pinned here rather than left to the box, since only this
+ * pass holds both the read and the move: asked after the move, the gate would answer about a depth the
+ * player has not been shown.
  */
 final class HoverTooltipDetailLevelInputTest {
 
@@ -66,7 +70,7 @@ final class HoverTooltipDetailLevelInputTest {
         // The ordinary case for a case about the gates: something is hovered and it does read
         // deeper, so the press turns on the gate under test rather than on the offer.
         hoveredBoxMock = Mockito.mockStatic(HoveredBox.class);
-        stubHoveredBoxOffering(true);
+        stubHoveredBoxOffering(Optional.of(HoverTooltipDetailLevel.SYSTEM_COMPOSITION));
     }
 
     @AfterEach
@@ -96,7 +100,7 @@ final class HoverTooltipDetailLevelInputTest {
     class ProcessCampaignInputPreCore {
 
         @Test
-        void processCampaignInputPreCoreAdvancesTheLevelOnTheCycleKeyPress() {
+        void processCampaignInputPreCoreMovesToTheLevelTheBoxNamedOnTheCycleKeyPress() {
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
@@ -113,29 +117,35 @@ final class HoverTooltipDetailLevelInputTest {
         @Test
         void processCampaignInputPreCoreAsksTheBoxAboutTheLevelThePressMovesOnFrom() {
             // The offer is a question about this press, so it is asked at the level on screen rather
-            // than at the one the advance is about to land on. Read the other way round the gate
-            // would answer about a depth the player has not been shown - and at the deepest level it
-            // would ask about the shallowest, claiming the key over a box that offered nothing.
-            var tooltipMock = stubHoveredBoxOffering(true);
+            // than at the one the move is about to land on. Read the other way round the gate would
+            // answer about a depth the player has not been shown - and from the box's deepest level
+            // it would ask about the shallowest, claiming the key over a box that offered nothing.
+            var tooltipMock = stubHoveredBoxOffering(
+                Optional.of(HoverTooltipDetailLevel.SYSTEM_COMPOSITION));
 
             runWithHoverTooltipSwitchOn(
                 () -> input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1))));
 
             verify(tooltipMock)
-                .isOfferingExpansionFor(any(), any(), eq(HoverTooltipDetailLevel.FACTIONS));
+                .resolveNextLevelFor(any(), any(), eq(HoverTooltipDetailLevel.FACTIONS));
         }
 
         @Test
-        void processCampaignInputPreCoreAdvancesFurtherOnASecondPress() {
-            // One press is one step of the cycle, not a toggle: a second press must reach the next
-            // depth rather than undo the first.
-            runWithHoverTooltipSwitchOn(() -> {
-                input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1)));
-                input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1)));
-            });
+        void processCampaignInputPreCoreTakesTheBoxsDestinationRatherThanSteppingTheCycle() {
+            // The cycle wraps at the deepest level the box itself holds anything at, which only the
+            // box knows - so the press lands exactly where it said and not one constant further on.
+            // Stepped here, a box whose account ends early would walk its player through tiers that
+            // redraw the same thing.
+            stubHoveredBoxOffering(Optional.of(HoverTooltipDetailLevel.FACTIONS));
+
+            HoverTooltipDetailLevelState.getInstance()
+                .moveToLevel(HoverTooltipDetailLevel.MARKET_STATS);
+
+            runWithHoverTooltipSwitchOn(
+                () -> input.processCampaignInputPreCore(List.of(mockKeyDown(Keyboard.KEY_F1))));
 
             assertThat(HoverTooltipDetailLevelState.getInstance().getLevel())
-                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
 
         @Test
@@ -265,7 +275,7 @@ final class HoverTooltipDetailLevelInputTest {
             // The whole point of asking: the level is shared and holds across hovers, so advancing
             // it here would decide how the next system that does differ opens - a depth the player
             // never chose, from a press that appeared to do nothing.
-            stubHoveredBoxOffering(false);
+            stubHoveredBoxOffering(Optional.empty());
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
@@ -302,9 +312,10 @@ final class HoverTooltipDetailLevelInputTest {
             // The offer is symmetric: a box that could be deepened can be collapsed again, so the key
             // has to keep working once the deepest box is the one on screen. Were it read as "can
             // this grow", the player would open a box they could not close.
-            HoverTooltipDetailLevelState.getInstance().advanceLevel();
-            HoverTooltipDetailLevelState.getInstance().advanceLevel();
-            HoverTooltipDetailLevelState.getInstance().advanceLevel();
+            stubHoveredBoxOffering(Optional.of(HoverTooltipDetailLevel.FACTIONS));
+
+            HoverTooltipDetailLevelState.getInstance()
+                .moveToLevel(HoverTooltipDetailLevel.PATROL_DETAILS);
 
             var eventMock = mockKeyDown(Keyboard.KEY_F1);
 
@@ -386,18 +397,19 @@ final class HoverTooltipDetailLevelInputTest {
         return eventMock;
     }
 
-    // Stands the cursor over a box that would - or would not - read differently one press on. The
-    // chain behind the real answer runs through the hover state, the layer registry and the live
-    // sector, none of which a unit test can stand up; what the listener acts on is the answer.
+    // Stands the cursor over a box that answers every press with nextLevel - or, empty, over one that
+    // would read no differently one press on. The chain behind the real answer runs through the hover
+    // state, the layer registry and the live sector, none of which a unit test can stand up; what the
+    // listener acts on is the answer.
     //
     // The box comes back so a case about what it was asked can read the question rather than only
     // the answer.
-    private MapHoverTooltip stubHoveredBoxOffering(boolean isOfferingExpansion) {
+    private MapHoverTooltip stubHoveredBoxOffering(Optional<HoverTooltipDetailLevel> nextLevel) {
 
         var tooltipMock = mock(MapHoverTooltip.class);
 
-        when(tooltipMock.isOfferingExpansionFor(any(), any(), any()))
-            .thenReturn(isOfferingExpansion);
+        when(tooltipMock.resolveNextLevelFor(any(), any(), any()))
+            .thenReturn(nextLevel);
 
         hoveredBoxMock
             .when(HoveredBox::resolveHoveredBox)

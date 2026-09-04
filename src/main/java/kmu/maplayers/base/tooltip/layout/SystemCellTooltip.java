@@ -26,7 +26,6 @@ import kmu.util.KmuStrings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
@@ -92,6 +91,13 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // asking whether anything was left out rather than as comparing against a bare zero.
     private static final int NOTHING_WITHHELD = 0;
 
+    // The deepest level the cycle declares, which is the deepest bound any box could state. A box read
+    // at it collapses on the next press however far its own tree reaches, so the answer is settled
+    // without asking - which is what keeps the read behind that question off the frames it cannot
+    // change.
+    private static final HoverTooltipDetailLevel DEEPEST_LEVEL_IN_CYCLE =
+        HoverTooltipDetailLevel.resolveDeepestLevel();
+
     // The two halves of that line a given box may have nothing for: a box at a level that offers no
     // further reading of this system, and one that had room for all of it. Named so the composition
     // below states what the line is missing rather than handing it unexplained nulls.
@@ -137,7 +143,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     }
 
     @Override
-    public final boolean isOfferingExpansionFor(
+    public final Optional<HoverTooltipDetailLevel> resolveNextLevelFor(
             SectorAPI sector,
             StarSystemAPI system,
             HoverTooltipDetailLevel detailLevel) {
@@ -148,8 +154,13 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // box says it would rather than under a second rule that could drift from it.
         //
         // Once per press rather than once per frame, so the read it costs is one the player asked
-        // for - and skipped outright where the level already settles the answer.
-        return isOfferingExpansionAt(detailLevel, () -> hasDeeperDetailFor(sector, system));
+        // for - and skipped outright at the deepest level the cycle declares, where the press
+        // collapses the box whatever this one holds and its own bound cannot change the answer.
+        var deepestHeldLevel = detailLevel.isReadingAtLeast(DEEPEST_LEVEL_IN_CYCLE)
+            ? DEEPEST_LEVEL_IN_CYCLE
+            : resolveDeepestHeldLevelFor(sector, system);
+
+        return resolveOfferedLevel(detailLevel, deepestHeldLevel);
     }
 
     /**
@@ -204,29 +215,38 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         HoverTooltipDetailLevel detailLevel);
 
     /**
-     * Whether the deeper detail levels hold anything more about {@code system} than the level being
-     * read already shows. Answered by a box taking part in the detail cycle, and false for one that
-     * does not, which is the ordinary case.
+     * The deepest level this box holds anything at for {@code system} - where its cycle wraps, so the
+     * press after it collapses the box instead of offering a tier that would redraw what is already on
+     * screen. Answered by a box taking part in the detail cycle, and left at the shallowest level for
+     * one that does not, which is the ordinary case.
+     *
+     * <p>Stated as a level rather than as "there is more", because the cycle's own deepest constant is
+     * not every box's: the levels name tiers of one particular account and a box built on a different
+     * mechanic simply has none of the deeper ones. A box that could only say yes or no would keep
+     * saying yes at a level it cannot fill, and the key would advertise a step that changes nothing.
      *
      * <p>This is the <em>press-time</em> entry to that question, reached when the key is struck and
      * nothing has been composed to take the answer from. A paint gets the same answer out of
      * {@link #composeBody} instead, off the read the body was built from, so the box never pays for
      * this twice in a frame. A layer answering both states one rule and reaches it two ways.
      *
-     * <p>Asked per hovered system rather than once per box, because whether there is anything to expand
-     * into is a fact about the system: a box whose deeper tiers would state nothing more for this one
-     * answers false, and the hint is dropped rather than offering a key press that changes nothing.
+     * <p>Asked per hovered system rather than once per box, because how deep a box reaches is partly a
+     * fact about the system: one it lists nothing for holds nothing at any level, whatever tiers its
+     * account could carry elsewhere.
      *
-     * <p>What that press would then be called is not asked of a box at all: the phrase is the level's
-     * ({@link HoverTooltipDetailLevel#resolveNextActionPhrase}), so every layer names one step the
-     * same way.
+     * <p>What the press would then be called is not asked of a box at all: the phrase belongs to the
+     * level being arrived at ({@link HoverTooltipDetailLevel#resolveArrivalPhrase}), so every layer
+     * names one step the same way.
      *
      * @param sector the live sector, whose economy the answer may read
      * @param system the star system under the cursor
-     * @return true where a deeper level would state something this one does not
+     * @return the deepest level with something to show for this system
      */
-    protected boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
-        return false;
+    protected HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
+        return HoverTooltipDetailLevel.FACTIONS;
     }
 
     // The whole box at one entry allowance: the heading, the body laid out within that allowance, and
@@ -255,7 +275,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // Drawn from what the composition already found rather than from a read of its own: the hint
         // answers a fact about the body beside it, and a second read would charge the whole layer's
         // economy walk to a line of fine print - once per frame the cursor rests on the cell.
-        buildFooterSection(detailLevel, body.hasDeeperDetail(), drawnBody.withheldEntryCount())
+        buildFooterSection(detailLevel, body.deepestHeldLevel(), drawnBody.withheldEntryCount())
             .ifPresent(sections::add);
 
         return sections;
@@ -276,32 +296,34 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // one wherever the cut happened to land.
     private static Optional<TooltipSection> buildFooterSection(
             HoverTooltipDetailLevel detailLevel,
-            boolean hasDeeperDetail,
+            HoverTooltipDetailLevel deepestHeldLevel,
             int withheldEntryCount) {
 
-        var isOfferingExpansion = isOfferingExpansionAt(detailLevel, () -> hasDeeperDetail);
+        var offeredLevel = resolveOfferedLevel(detailLevel, deepestHeldLevel);
         var isStatingWithheld = withheldEntryCount > NOTHING_WITHHELD;
 
-        if (!isOfferingExpansion && !isStatingWithheld) {
+        if (offeredLevel.isEmpty() && !isStatingWithheld) {
             return Optional.empty();
         }
         return Optional.of(TooltipSection.createSection(List.of(buildFooterRow(
-            isOfferingExpansion ? detailLevel.resolveNextActionPhrase() : NO_OFFER,
+            offeredLevel.map(HoverTooltipDetailLevel::resolveArrivalPhrase).orElse(NO_OFFER),
             isStatingWithheld ? formatWithheldPhrase(withheldEntryCount) : NOTHING_TO_STATE))));
     }
 
-    // Whether one press would change what the player sees: the one rule behind both the hint the box
-    // draws and the key the input pass claims.
+    // Where one press would take a box read at detailLevel whose own tree ends at deepestHeldLevel:
+    // the one rule behind both the hint the box draws and the key the input pass claims.
     //
-    // The level settles it first, and at the deepest level settles it outright - the cycle wraps, so
-    // the press there collapses the box, which acts over any system at all. Only below that does the
-    // answer turn on the box having something deeper for this system, which is why the read behind it
-    // is deferred: at the deepest level it is never taken.
-    private static boolean isOfferingExpansionAt(
+    // Empty is the one case where the press would change nothing the player can see - a box holding
+    // nothing past the shallowest level, read at the shallowest level, which the cycle has nowhere to
+    // step to and nothing to collapse. Everywhere else there is either a deeper tier to open or a
+    // collapse to take, both of which the player sees.
+    private static Optional<HoverTooltipDetailLevel> resolveOfferedLevel(
             HoverTooltipDetailLevel detailLevel,
-            BooleanSupplier hasDeeperDetail) {
+            HoverTooltipDetailLevel deepestHeldLevel) {
 
-        return detailLevel.isCollapsingOnNextPress() || hasDeeperDetail.getAsBoolean();
+        var nextLevel = detailLevel.resolveNextLevelWithin(deepestHeldLevel);
+
+        return nextLevel == detailLevel ? Optional.empty() : Optional.of(nextLevel);
     }
 
     // The box's heading as one block: the hovered system's name, and any lines the layer heads its box

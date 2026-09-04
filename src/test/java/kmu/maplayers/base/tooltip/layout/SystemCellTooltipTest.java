@@ -225,21 +225,21 @@ final class SystemCellTooltipTest {
     }
 
     @Nested
-    class IsOfferingExpansionFor {
+    class ResolveNextLevelFor {
 
         @Test
-        void isOfferingExpansionForAgreesWithTheHintTheBoxDraws() {
+        void resolveNextLevelForAgreesWithTheHintTheBoxDraws() {
             // The key acts exactly where the box says it will. The two reach the answer by different
             // routes - the press asks the box, the paint takes what the composition found - so what
             // has to hold is that they agree, and the drift would be the cruel kind: a box
             // advertising a key that does nothing. Asserted over one box, both ways at once.
             var tooltipFake = buildTooltipOfferingDetail();
 
-            assertThat(tooltipFake.isOfferingExpansionFor(
+            assertThat(tooltipFake.resolveNextLevelFor(
                     buildSectorWithEconomy(),
                     buildNamedSystem(),
                     HoverTooltipDetailLevel.FACTIONS))
-                .isTrue();
+                .contains(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             assertThat(readRow(
                     captureDrawnBox(tooltipFake).sections(),
@@ -249,43 +249,59 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void isOfferingExpansionForIsFalseForABoxWithNothingDeeperToState() {
+        void resolveNextLevelForIsEmptyForABoxWithNothingDeeperToState() {
             // The same agreement the other way: no hint is drawn, and the key must not act.
             var tooltipFake = buildTooltipSayingSomething();
 
-            assertThat(tooltipFake.isOfferingExpansionFor(
+            assertThat(tooltipFake.resolveNextLevelFor(
                     buildSectorWithEconomy(),
                     buildNamedSystem(),
                     HoverTooltipDetailLevel.FACTIONS))
-                .isFalse();
+                .isEmpty();
 
             assertThat(captureDrawnBox(tooltipFake).sections())
                 .hasSize(BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT);
         }
 
         @Test
-        void isOfferingExpansionForClaimsTheKeyAtTheDeepestLevelWhateverTheBoxHolds() {
-            // The cycle wraps, so the press at the deepest level collapses the box - which acts over
-            // any system at all, including one this box has nothing deeper to say about. Left
-            // unclaimed there, a player who reached that level over another system would have no way
-            // back out of it while the cursor rests here.
-            var tooltipFake = buildTooltipSayingSomething();
+        void resolveNextLevelForCollapsesAtTheDeepestLevelTheBoxItselfHolds() {
+            // The wrap is the box's own rather than the cycle's last constant. A box whose account
+            // ends at the market stats - a claim, which no patrol enters - would otherwise be offered
+            // a patrol tier that redraws exactly what is on screen, and the player would press through
+            // it to reach the collapse.
+            var tooltipFake = buildTooltipOfferingDetailDownTo(HoverTooltipDetailLevel.MARKET_STATS);
 
-            assertThat(tooltipFake.isOfferingExpansionFor(
+            assertThat(tooltipFake.resolveNextLevelFor(
                     buildSectorWithEconomy(),
                     buildNamedSystem(),
-                    PATROL_DETAILS))
-                .isTrue();
+                    HoverTooltipDetailLevel.MARKET_STATS))
+                .contains(HoverTooltipDetailLevel.FACTIONS);
         }
 
         @Test
-        void isOfferingExpansionForCostsNoReadAtTheDeepestLevel() {
-            // The level settles the answer there, so the read behind it is never taken - which is the
-            // whole point of the press-time seam being deferred: it is the one question that costs a
-            // walk of the hovered system, and it is asked once per press.
+        void resolveNextLevelForClaimsTheKeyAtTheDeepestLevelWhateverTheBoxHolds() {
+            // The cycle wraps, so the press at the deepest level the levels declare collapses the box
+            // - which acts over any system at all, including one this box has nothing deeper to say
+            // about. Left unclaimed there, a player who reached that level over another system would
+            // have no way back out of it while the cursor rests here.
             var tooltipFake = buildTooltipSayingSomething();
 
-            tooltipFake.isOfferingExpansionFor(
+            assertThat(tooltipFake.resolveNextLevelFor(
+                    buildSectorWithEconomy(),
+                    buildNamedSystem(),
+                    PATROL_DETAILS))
+                .contains(HoverTooltipDetailLevel.FACTIONS);
+        }
+
+        @Test
+        void resolveNextLevelForCostsNoReadAtTheDeepestLevel() {
+            // No box can hold anything past the deepest level the cycle declares, so the press there
+            // collapses whatever this one holds and its own bound cannot change the answer - which is
+            // the whole point of the press-time seam being deferred: it is the one question that costs
+            // a walk of the hovered system, and it is asked once per press.
+            var tooltipFake = buildTooltipSayingSomething();
+
+            tooltipFake.resolveNextLevelFor(
                 buildSectorWithEconomy(),
                 buildNamedSystem(),
                 PATROL_DETAILS);
@@ -606,6 +622,22 @@ final class SystemCellTooltipTest {
         }
 
         @Test
+        void renderForEndsABoxAtItsOwnDeepestLevelWithTheCollapseRatherThanADeadTier() {
+            // The bug the bound exists for. A box whose account stops at the market stats has nothing
+            // at the level below, so offering to expand into it would advertise a press that redraws
+            // the box unchanged - the hint names the collapse instead, and the key acts on it.
+            var sections = captureDrawnBoxAt(
+                    buildTooltipOfferingDetailDownTo(HoverTooltipDetailLevel.MARKET_STATS),
+                    HoverTooltipDetailLevel.MARKET_STATS)
+                .sections();
+
+            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
+                .containsExactly(
+                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
+                    new TextSpan(COLLAPSE_TO_FACTIONS, GRAY));
+        }
+
+        @Test
         void renderForOffersTheWayOutOfTheDeepestLevelToABoxWithNothingDeeper() {
             // The level is one shared fact carried across hovers, so a box with nothing to expand can
             // be met at the deepest level all the same - reached over some other system. It ends on
@@ -856,9 +888,18 @@ final class SystemCellTooltipTest {
     }
 
     // The same layer, taking part in the detail cycle: it has something to say and something more to
-    // say a level down, which is what every case about the hint is posed over.
+    // say at every level below, which is what every case about the hint is posed over.
     private static SystemCellTooltipFake buildTooltipOfferingDetail() {
         return buildTooltipSayingSomething().offering();
+    }
+
+    // A layer in the detail cycle whose account ends above the deepest level the cycle declares -
+    // what a box explaining a mechanic the deeper tiers say nothing about states, and what the wrap
+    // has to be judged against.
+    private static SystemCellTooltipFake buildTooltipOfferingDetailDownTo(
+            HoverTooltipDetailLevel deepestHeldLevel) {
+
+        return buildTooltipSayingSomething().offeringDownTo(deepestHeldLevel);
     }
 
     // A layer whose body is one block listing several things, which is what a box short of room can
@@ -934,9 +975,9 @@ final class SystemCellTooltipTest {
         // arrived. Null until the box has drawn once.
         private HoverTooltipDetailLevel bodyDetailLevel;
 
-        // Whether this box has anything to state at its deeper levels. False for a box taking no part
-        // in the detail cycle, which is the ordinary case.
-        private boolean hasDeeperDetail;
+        // The deepest level this box holds anything at. The shallowest for a box taking no part in the
+        // detail cycle, which is the ordinary case.
+        private HoverTooltipDetailLevel deepestHeldLevel = HoverTooltipDetailLevel.FACTIONS;
 
         // What this box lists under a heading, for the cases about a box with less room than its
         // content needs. Empty for a box whose lines each stand alone, which is every other case here.
@@ -984,23 +1025,32 @@ final class SystemCellTooltipTest {
                 body.appendBannerSection(Optional.of(bodyRow));
             }
             body.appendSection(LISTED_BLOCK_HEADING, listedEntries);
-            // The offer is stated beside the blocks the way a real box states it, off the same
+            // The depth is stated beside the blocks the way a real box states it, off the same
             // stand-in answer - so a case reading the hint reads it from this box's composition
             // rather than from a second seam only the stand-in has.
-            return new ComposedCellBody(body.readBlocks(), hasDeeperDetail);
+            return new ComposedCellBody(body.readBlocks(), deepestHeldLevel);
         }
 
         @Override
-        protected boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
+        protected HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
+                SectorAPI sector,
+                StarSystemAPI system) {
 
             deeperDetailAskCount++;
 
-            return hasDeeperDetail;
+            return deepestHeldLevel;
         }
 
-        // Puts this box in the detail cycle, with something for a deeper level to state.
+        // Puts this box in the detail cycle, holding every tier the levels declare - the box that has
+        // something for each of them, against which a shallower one is the interesting case.
         private SystemCellTooltipFake offering() {
-            hasDeeperDetail = true;
+            return offeringDownTo(HoverTooltipDetailLevel.PATROL_DETAILS);
+        }
+
+        // Puts this box in the detail cycle with its account ending at deepestHeldLevel, which is what
+        // a box explaining a mechanic the deeper tiers say nothing about states.
+        private SystemCellTooltipFake offeringDownTo(HoverTooltipDetailLevel deepestHeldLevel) {
+            this.deepestHeldLevel = deepestHeldLevel;
             return this;
         }
 

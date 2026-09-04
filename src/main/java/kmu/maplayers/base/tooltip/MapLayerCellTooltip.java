@@ -34,7 +34,8 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
  * per layer: the dispatcher reads {@link HoverTooltipDetailLevelState} and hands the level to the box
  * the active layer injected, which reads its own content only as deep as the level admits. So the
  * choice holds across hovers and layer switches, no layer holds a level of its own to be told about,
- * and the level never decides <em>which</em> box draws - one box per layer, read to four depths.
+ * and the level never decides <em>which</em> box draws - one box per layer, read to as many depths
+ * as its own account holds.
  */
 public final class MapLayerCellTooltip implements CampaignUIRenderingListener {
 

@@ -199,7 +199,8 @@ final class MapLayerCellTooltipTest {
             // it the same way it reads the hover.
             var vanillaMapTooltipProbeMock = mock(VanillaMapTooltipProbe.class);
 
-            HoverTooltipDetailLevelState.getInstance().advanceLevel();
+            HoverTooltipDetailLevelState.getInstance()
+                .moveToLevel(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
 
             runWithHoverTooltipSwitchOn(() -> {
                 try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {

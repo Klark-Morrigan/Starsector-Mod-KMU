@@ -1506,24 +1506,38 @@ final class SystemClaimTooltipTest {
     }
 
     @Nested
-    class HasDeeperDetailFor {
+    class ResolveDeepestAccountLevel {
 
         @Test
-        void hasDeeperDetailForOffersTheAccountBehindAScoredStanding() {
-            // What the key at the foot of the box would reach. Answered for the whole cycle at once
-            // because it is the one thing its levels agree on - the deeper tiers account for the very
-            // scores the shallowest states.
+        void resolveDeepestAccountLevelStopsAtTheMarketStats() {
+            // The whole reason a box states its own depth. Vanilla settles a claim on a colony's size,
+            // its garrison and how many colonies the faction holds beside it - no patrol enters the
+            // arithmetic anywhere - so the account has no line at the level below and the cycle has to
+            // collapse from here. Offered that level, the key would redraw the box unchanged.
+            assertThat(tooltip.resolveDeepestAccountLevel())
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
+        }
+    }
+
+    @Nested
+    class ResolveDeepestHeldLevelFor {
+
+        @Test
+        void resolveDeepestHeldLevelForOffersTheAccountBehindAScoredStanding() {
+            // What the key at the foot of the box would reach: the colonies behind the faction, and
+            // the terms behind a colony's score - the deeper tiers accounting for the very score the
+            // shallowest states, and stopping where the mechanic's arithmetic does.
             stubBreakdown(new SystemClaimBreakdown(
                 null,
                 HEGEMONY,
                 List.of(buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, true))));
 
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isTrue();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
         }
 
         @Test
-        void hasDeeperDetailForOffersTheAccountBehindAPresenceTheContestNeverWeighed() {
+        void resolveDeepestHeldLevelForOffersTheAccountBehindAPresenceTheContestNeverWeighed() {
             // Such a faction's colonies are exactly what the player can read nowhere else in the box,
             // its line stating a nought and nothing more - so the key has something to open even
             // where the mechanic weighed the whole system at nothing.
@@ -1532,12 +1546,12 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isTrue();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
         }
 
         @Test
-        void hasDeeperDetailForOffersNothingWhereTheProjectionListsNobody() {
+        void resolveDeepestHeldLevelForOffersNothingWhereTheProjectionListsNobody() {
             // The deeper tiers account for the factions this box lists, and the fog has left it
             // listing none. Every level would state the same claim line, so the key would do nothing
             // the player could see - and a hint over it would advertise that it would.
@@ -1546,8 +1560,8 @@ final class SystemClaimTooltipTest {
                 null,
                 List.of(buildUnknownPresenceOnlyStanding(TRITACHYON, IS_TERRITORIAL))));
 
-            assertThat(tooltip.hasDeeperDetailFor(sectorMock, systemMock))
-                .isFalse();
+            assertThat(tooltip.resolveDeepestHeldLevelFor(sectorMock, systemMock))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
         }
     }
 
@@ -1642,6 +1656,13 @@ final class SystemClaimTooltipTest {
 
         private AccountingClaimContestTooltip(ClaimBreakdownReader claimBreakdownReader) {
             super(claimBreakdownReader, HolderGrouping::identity);
+        }
+
+        @Override
+        protected HoverTooltipDetailLevel resolveDeepestAccountLevel() {
+            // The deepest the levels declare, so the shape is exercised over a box that fills the
+            // cycle out - the real claim box's shallower bound is its own suite's subject.
+            return HoverTooltipDetailLevel.PATROL_DETAILS;
         }
 
         @Override

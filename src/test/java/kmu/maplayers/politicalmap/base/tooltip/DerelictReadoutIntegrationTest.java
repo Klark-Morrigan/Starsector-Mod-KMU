@@ -9,6 +9,7 @@ import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
+import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
 import org.junit.jupiter.api.AfterEach;
@@ -127,7 +128,7 @@ final class DerelictReadoutIntegrationTest {
     }
 
     @Nested
-    class HasDeeperDetailFor {
+    class ResolveDeepestHeldLevelFor {
 
         @Test
         void offersTheAccountOverASystemTheBoxCallsUnpopulated() {
@@ -138,8 +139,8 @@ final class DerelictReadoutIntegrationTest {
             // colony is the whole of what the counterpart has to open up.
             var sector = buildSectorHoldingADerelict();
 
-            assertThat(hasDominationDeeperDetail(sector))
-                .isTrue();
+            assertThat(resolveDominationDeepestHeldLevel(sector))
+                .isEqualTo(PATROL_DETAILS);
         }
 
         @Test
@@ -149,8 +150,8 @@ final class DerelictReadoutIntegrationTest {
             // makes the pair worth stating: the boxes part on the listing, not on the line.
             var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
 
-            assertThat(hasDominationDeeperDetail(sector))
-                .isFalse();
+            assertThat(resolveDominationDeepestHeldLevel(sector))
+                .isEqualTo(FACTIONS);
         }
     }
 
@@ -186,12 +187,12 @@ final class DerelictReadoutIntegrationTest {
             readDominanceSections(sector, buildOnlySystem(sector), FACTIONS));
     }
 
-    // Whether the dominance box has anything deeper to state over the sector's one system, which is
-    // what the key at its foot is offered for - read through the same box the labels above come from.
-    private static boolean hasDominationDeeperDetail(SectorAPI sector) {
+    // How deep the dominance box goes over the sector's one system, which is what the key at its foot
+    // is offered for - read through the same box the labels above come from.
+    private static HoverTooltipDetailLevel resolveDominationDeepestHeldLevel(SectorAPI sector) {
 
         return buildDominanceBox()
-            .hasDeeperDetailFor(sector, buildOnlySystem(sector));
+            .resolveDeepestHeldLevelFor(sector, buildOnlySystem(sector));
     }
 
     // The claim contest behind the system, read through the real mechanic over the pass's own walk

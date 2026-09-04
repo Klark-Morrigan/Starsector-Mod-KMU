@@ -171,10 +171,12 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         appendStandingSections(body, reading);
 
-        // The offer goes back beside the blocks, judged on the very contest they were drawn from: a
-        // box listing nobody has nothing for a deeper level to account for, and asking again would
-        // read the system a second time to settle what this one already knows.
-        return new ComposedCellBody(body.readBlocks(), contest.hasListedStanding());
+        // How deep the box goes goes back beside the blocks, judged on the very contest they were
+        // drawn from: a box listing nobody has nothing for any deeper level to account for, and
+        // asking again would read the system a second time to settle what this one already knows.
+        return new ComposedCellBody(
+            body.readBlocks(),
+            resolveDeepestHeldLevel(contest.hasListedStanding()));
     }
 
     @Override
@@ -186,12 +188,33 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     }
 
     @Override
-    protected final boolean hasDeeperDetailFor(SectorAPI sector, StarSystemAPI system) {
+    protected final HoverTooltipDetailLevel resolveDeepestHeldLevelFor(
+            SectorAPI sector,
+            StarSystemAPI system) {
+
         // The deeper tiers account for the colonies behind the factions this box lists, so a box
         // listing none has nothing for them to account for: every level would state the same claim
         // line and the key would do nothing the player could see.
-        return readListedContest(sector, system).hasListedStanding();
+        return resolveDeepestHeldLevel(readListedContest(sector, system).hasListedStanding());
     }
+
+    /**
+     * The deepest level this box's account of one listed faction reaches, over a system it lists
+     * somebody in. What bounds the cycle, so the press after that level collapses the box rather than
+     * offering a tier the account has nothing to put in.
+     *
+     * <p>Asked of the box that supplies the account rather than settled here, because it is a fact
+     * about that account's own subject matter: the levels name tiers of one particular reading of a
+     * system, and a box explaining a different mechanic simply has no line at some of them.
+     *
+     * <p>A constant of the box rather than a read of the system, unlike the level actually reported
+     * above: what tiers an account carries follows from what it explains, while whether any of them
+     * has content for one hovered system follows from what the contest found. The two are combined
+     * here so a box states the first alone.
+     *
+     * @return the deepest level {@link #resolveAccountEntries} ever puts a line at
+     */
+    protected abstract HoverTooltipDetailLevel resolveDeepestAccountLevel();
 
     /**
      * Resolves what hangs beneath each faction the box lists, as the account of where that faction's
@@ -217,7 +240,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      * colonies the map is drawing, which is what an account is of.
      *
      * <p>Answered by every box on this shape rather than defaulted: a box inheriting an empty account
-     * would draw the same thing at all four detail levels while the key went on offering to open it
+     * would draw the same thing at every detail level while the key went on offering to open it
      * up, which is the one failure the level cycle cannot show the player.
      *
      * @param contest       the whole contest the box is being built from - the scored read, the
@@ -257,6 +280,17 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      */
     protected static ColonyVisibility readColonyVisibility() {
         return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
+    }
+
+    // How deep the box goes over one hovered system: as deep as its account reaches where the contest
+    // left it somebody to account for, and no deeper than the box's own voice where it did not.
+    //
+    // The one place the two halves are joined, so the paint and the press cannot combine them
+    // differently - the failure that would put the hint and the key at odds over one system.
+    private HoverTooltipDetailLevel resolveDeepestHeldLevel(boolean hasListedStanding) {
+        return hasListedStanding
+            ? resolveDeepestAccountLevel()
+            : HoverTooltipDetailLevel.FACTIONS;
     }
 
     // Everyone present other than the claimant, in the blocks their standing to it puts them in: who

@@ -10,6 +10,7 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
 import org.lwjgl.input.Keyboard;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Claims the key that advances how much detail hover boxes state, as a campaign input listener in
@@ -94,21 +95,27 @@ public final class HoverTooltipDetailLevelInput implements CampaignInputListener
             if (!isDetailLevelCycleKey(event)) {
                 continue;
             }
-            // Nothing under the cursor would read differently one press on, so there is nothing for
-            // the key to switch. Left alone rather than advanced invisibly: the level is shared and
-            // holds across hovers, so a press swallowed here would open the next system that does
-            // differ at a level the player never chose - the one place a press with no visible result
-            // is not harmless.
+            // Where the box under the cursor would go one press on, or nowhere at all - in which case
+            // there is nothing for the key to switch. Left alone rather than advanced invisibly: the
+            // level is shared and holds across hovers, so a press swallowed here would open the next
+            // system that does differ at a level the player never chose - the one place a press with
+            // no visible result is not harmless.
             //
             // Judged against the level the box is being drawn at, since that is what the press moves
             // on from: read against anything else, the key could be claimed on a frame whose box
             // offered nothing, or fall through on one whose box offered to collapse.
+            //
+            // The destination comes from the box rather than being stepped here, because the cycle
+            // wraps at the deepest level that box holds anything at rather than at the deepest the
+            // levels declare - a step taken here would walk a shallow box's player through tiers it
+            // has nothing to put in.
             var detailLevelState = HoverTooltipDetailLevelState.getInstance();
+            var nextLevel = resolveNextLevelForHoveredBox(detailLevelState.getLevel());
 
-            if (!isAnyBoxOfferingExpansion(detailLevelState.getLevel())) {
+            if (nextLevel.isEmpty()) {
                 continue;
             }
-            detailLevelState.advanceLevel();
+            detailLevelState.moveToLevel(nextLevel.get());
             // Consumed only where it acted, so nothing else claims the key while the map is open
             // and the rest of the game keeps it.
             event.consume();
@@ -133,14 +140,15 @@ public final class HoverTooltipDetailLevelInput implements CampaignInputListener
         return event.isKeyDownEvent() && event.getEventValue() == CYCLE_KEY;
     }
 
-    // Whether the box under the cursor would show the player anything different one press on.
-    // Asked of the same chain the drawing pass resolves its box through, so the key is claimed on
-    // exactly the frames a box would answer it - and of the box itself, since only the layer knows
-    // whether its own tree runs any deeper for the system being hovered.
-    private static boolean isAnyBoxOfferingExpansion(HoverTooltipDetailLevel detailLevel) {
+    // Where the box under the cursor would go one press on, or nowhere where the press would show
+    // the player nothing new. Asked of the same chain the drawing pass resolves its box through, so
+    // the key is claimed on exactly the frames a box would answer it - and of the box itself, since
+    // only the layer knows how far its own tree runs for the system being hovered.
+    private static Optional<HoverTooltipDetailLevel> resolveNextLevelForHoveredBox(
+            HoverTooltipDetailLevel detailLevel) {
+
         return HoveredBox
             .resolveHoveredBox()
-            .filter(hoveredBox -> hoveredBox.isOfferingExpansion(detailLevel))
-            .isPresent();
+            .flatMap(hoveredBox -> hoveredBox.resolveNextLevel(detailLevel));
     }
 }
