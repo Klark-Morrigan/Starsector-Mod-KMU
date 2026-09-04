@@ -161,12 +161,12 @@ final class MapLayerToggleTooltip {
     }
 
     /**
-     * The wording the sentence is built from, and the source of every run tinted inside it.
+     * The wording the three paragraphs are built from, and the source of every run tinted inside
+     * them.
      *
-     * @param layersName    what the feature is called
-     * @param supplierAside the parenthetical naming the mod that supplies it
-     * @param mapName       what the layers draw
-     * @param viewNames     the views that map offers, in the order its own selector offers them
+     * @param layersName what the feature is called, which every paragraph names
+     * @param mapName    what the layers draw
+     * @param views      the views that map offers, in the order its own selector offers them
      */
     private record SentenceParts(String layersName, String mapName, List<ViewMention> views) {
 
@@ -217,43 +217,27 @@ final class MapLayerToggleTooltip {
          */
         Highlight[] listUninstallWarningHighlights() {
 
-            var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
-            var stepColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
-
             return new Highlight[] {
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
-                    StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve()),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
-                    namedColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
-                    stepColour),
-                Highlight.of(layersName, namedColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
-                    stepColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
-                    namedColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
-                    stepColour),
+                flagRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
+                nameRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                stepRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
+                nameWord(layersName),
+                stepRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                nameRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                stepRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
             };
         }
 
         /** @return each run bound to the colour it takes, in the order the sentence reads them */
         Highlight[] listRunHighlights() {
 
-            var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
             var highlights = new ArrayList<Highlight>();
 
-            highlights.add(Highlight.of(layersName, namedColour));
-            highlights.add(Highlight.of(mapName, namedColour));
+            highlights.add(nameWord(layersName));
+            highlights.add(nameWord(mapName));
 
             for (var view : views) {
-                highlights.add(Highlight.of(view.highlightedName(), namedColour));
+                highlights.add(nameWord(view.highlightedName()));
             }
 
             return highlights.toArray(new Highlight[0]);
@@ -265,13 +249,34 @@ final class MapLayerToggleTooltip {
          */
         Highlight[] listUninstallHighlights() {
 
-            var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
-
             return new Highlight[] {
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
-                    namedColour),
+                nameRun(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
             };
+        }
+
+        // The three roles the paragraphs tint by, each said once. Named for what a run is rather
+        // than for the shade it takes: which colour marks a name is one decision, and spelling it
+        // out at every run is where two paragraphs drift into disagreeing about it.
+        private static Highlight flagRun(String stringId) {
+            return Highlight.of(
+                KmuStrings.get(stringId),
+                StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve());
+        }
+
+        private static Highlight nameRun(String stringId) {
+            return nameWord(KmuStrings.get(stringId));
+        }
+
+        // A name already in hand rather than one to look up - the feature's own, which the parts
+        // carry because every paragraph says it.
+        private static Highlight nameWord(String name) {
+            return Highlight.of(name, StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve());
+        }
+
+        private static Highlight stepRun(String stringId) {
+            return Highlight.of(
+                KmuStrings.get(stringId),
+                StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve());
         }
     }
 }
