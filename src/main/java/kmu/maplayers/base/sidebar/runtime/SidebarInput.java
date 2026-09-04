@@ -52,10 +52,10 @@ public final class SidebarInput implements CampaignInputListener {
             host.getController().cancelDrag();
             return;
         }
-        // The placement the renderer drew this frame; null when there is nothing on screen, in which case
-        // there is nothing to hit-test. Key presses still route, since the host needs no placement to jump
-        // to a layer.
-        var placement = host.resolvePlacement();
+        // The placement the renderer drew this frame - read from the draw rather than laid out again, so a
+        // click answers to the box on screen. Null when there is nothing on screen, in which case there is
+        // nothing to hit-test. Key presses still route, since the host needs no placement to jump to a layer.
+        var placement = host.getDrawnPlacement();
         for (var index = 0; index < events.size(); index++) {
 
             var event = events.get(index);

@@ -144,6 +144,10 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // the player never saw begin.
             host.getController().resetInputMotions();
 
+            // The panel is off the screen, so what it last laid out is no longer on it: dropped here, where
+            // the draw learns it has stood down, rather than left standing for a hit-test to find.
+            host.clearDrawnPlacement();
+
             // "Not drawn" rather than "hidden": this says the panel was not painted, while what follows
             // says why - and one of those reasons is now the layers being hidden, which the two words
             // together would read as a stutter.
@@ -167,14 +171,24 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // once it settles, which happens frames after the handle press that started it.
         recordSettledFold(host);
 
-        // The same placement the input listener hit-tests, resolved from one source so the drawn box and the
-        // clickable box line up. Null means there is nothing to draw - the tab font could not load, or the
-        // host's anchor is gone - so the panel stays absent, logged once.
-        var placement = host.resolvePlacement();
+        // The frame's one layout, published as the panel on screen: the input listener and the hover cover
+        // hit-test this very placement rather than each laying out their own, so the clickable box is the
+        // drawn box by construction and not by two passes happening to agree. Null means there is nothing
+        // to draw - the tab font could not load, or the host's anchor is gone - so the panel stays absent,
+        // logged once.
+        var placement = host.refreshPlacement();
         if (placement == null) {
             logViewStateOnChange("not drawn; placement unavailable; " + host.describeViewState());
             return;
         }
+
+        // Settle the stored scroll request into the list's real range now the layout has resolved the
+        // overflow, so a wheel past the bottom or a list that shrank does not leave it drifting. Here
+        // because this is the pass that owns the frame: the layout itself only reads that request, and a
+        // hit-test that wrote it would be correcting state it had no part in moving.
+        host.getController()
+            .getScrollState()
+            .clampTo(placement.body().scrollOverflow());
         // Step the panel's input motions - the hover fades, the tabs' click pulses, and their hotkey
         // blinks - against the placement just resolved, the one this frame draws, so the tab and the handle
         // that light are the ones the pointer is over now rather than the ones it was over before the panel

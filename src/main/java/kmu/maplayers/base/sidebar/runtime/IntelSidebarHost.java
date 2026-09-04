@@ -101,21 +101,6 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     }
 
     @Override
-    public TabPanelPlacement resolvePlacement() {
-        var mapVisorRect = intelScreen.getMapVisorRect();
-        if (mapVisorRect == null) {
-            return null;
-        }
-        return LiveSidebarPlacement.resolveIntelPlacement(
-            mapVisorRect,
-            new SidebarHostPanel(
-                buildTabStyle(),
-                getController(),
-                getLayerSelection(),
-                layoutBorderEdges()));
-    }
-
-    @Override
     public WidgetStyle resolveWidgetStyle() {
         // The intel screen's look: framed in the accent's dark step, the one the surrounding chrome's own
         // frames are drawn in, rather than in the base its controls are ruled in - this panel sits inside
@@ -129,6 +114,21 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         return decideBorderEdges(
             placement.body().box().y(),
             intelScreen.getMapVisorRect());
+    }
+
+    @Override
+    protected TabPanelPlacement computePlacement() {
+        var mapVisorRect = intelScreen.getMapVisorRect();
+        if (mapVisorRect == null) {
+            return null;
+        }
+        return LiveSidebarPlacement.resolveIntelPlacement(
+            mapVisorRect,
+            new SidebarHostPanel(
+                buildTabStyle(),
+                getController(),
+                getScreenPicks(),
+                layoutBorderEdges()));
     }
 
     @Override

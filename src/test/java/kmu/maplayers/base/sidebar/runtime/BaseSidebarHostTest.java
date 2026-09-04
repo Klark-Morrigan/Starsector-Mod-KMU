@@ -598,7 +598,7 @@ final class BaseSidebarHostTest {
         }
 
         @Override
-        public TabPanelPlacement resolvePlacement() {
+        protected TabPanelPlacement computePlacement() {
             return null;
         }
 

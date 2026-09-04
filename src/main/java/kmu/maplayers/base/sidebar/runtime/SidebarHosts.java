@@ -59,16 +59,19 @@ public final class SidebarHosts {
         return false;
     }
 
-    // Whether one host's sidebar covers the point. Gated the way the render and input passes are -
-    // the host's own "is the sidebar live" answer first, then the placement it resolves - because a
-    // host that is not showing can still lay a box out for a screen that is not on: only the intel
-    // host's anchor is the thing that goes missing off its screen, while the on-map host hangs its
-    // panel from the screen corner and would resolve a box wherever it were asked.
+    // Whether one host's sidebar covers the point. Gated the way the render and input passes are - the
+    // host's own "is the sidebar live" answer first, then the panel its draw published - because a host
+    // that is not showing can still have a box to report: only the intel host's anchor is the thing that
+    // goes missing off its screen, while the on-map host hangs its panel from the screen corner.
+    //
+    // The drawn panel rather than a fresh layout: this asks what the pointer is over, and what it is over
+    // is what is painted. Laying one out to answer that would also spend a whole panel's measurement on a
+    // question asked every frame the cursor moves.
     private static boolean isPointOverSidebarOf(SidebarHost host, float uiX, float uiY) {
         if (!host.isOverlayShowing()) {
             return false;
         }
-        var placement = host.resolvePlacement();
+        var placement = host.getDrawnPlacement();
         return placement != null && placement.containsPoint(uiX, uiY);
     }
 }

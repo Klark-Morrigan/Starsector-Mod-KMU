@@ -65,17 +65,6 @@ public final class MapSidebarHost extends BaseSidebarHost {
     }
 
     @Override
-    public TabPanelPlacement resolvePlacement() {
-        // Reserves inset space for all four edges, the same full set resolveBorderEdges strokes, so the
-        // reserved strips and the stroke never disagree.
-        return LiveSidebarPlacement.resolveMapPlacement(new SidebarHostPanel(
-            buildTabStyle(),
-            getController(),
-            getLayerSelection(),
-            BoxEdge.ALL));
-    }
-
-    @Override
     public WidgetStyle resolveWidgetStyle() {
         // The map's own look: the chosen colour scheme's accents over a black body, with the frame
         // taking that same accent since this panel floats free and has no neighbouring chrome to match.
@@ -87,6 +76,17 @@ public final class MapSidebarHost extends BaseSidebarHost {
         // The on-map sidebar floats free on the screen, touching no other panel's edge, so it frames all
         // four sides.
         return BoxEdge.ALL;
+    }
+
+    @Override
+    protected TabPanelPlacement computePlacement() {
+        // Reserves inset space for all four edges, the same full set resolveBorderEdges strokes, so the
+        // reserved strips and the stroke never disagree.
+        return LiveSidebarPlacement.resolveMapPlacement(new SidebarHostPanel(
+            buildTabStyle(),
+            getController(),
+            getScreenPicks(),
+            BoxEdge.ALL));
     }
 
     @Override

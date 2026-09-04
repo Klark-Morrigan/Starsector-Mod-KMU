@@ -57,10 +57,30 @@ public interface SidebarHost {
     float resolveOverlayFade();
 
     /**
-     * @return the placement to draw and hit-test this frame, or {@code null} when there is nothing to draw
-     *         (the tab font cannot load, or the anchor is gone); the caller then draws and consumes nothing
+     * Lays the panel out for the frame about to be drawn and publishes it as the panel on screen. The draw
+     * calls this and nothing else does: it is the pass that owns the frame, having just advanced the fold
+     * the layout resolves at.
+     *
+     * @return the placement to draw, or {@code null} when there is nothing to draw (the tab font cannot
+     *         load, or the anchor is gone); the caller then draws and consumes nothing
      */
-    TabPanelPlacement resolvePlacement();
+    TabPanelPlacement refreshPlacement();
+
+    /**
+     * The panel the last draw put on screen - what every pass after it answers to. Hit-testing against the
+     * drawn box rather than against a freshly laid-out one is what makes a click land on the panel the
+     * player is looking at: a settings change between the two passes would otherwise move the box out from
+     * under the pointer, and one layout a frame is a good deal cheaper besides.
+     *
+     * @return the placement published by the last draw, or {@code null} when nothing is on screen
+     */
+    TabPanelPlacement getDrawnPlacement();
+
+    /**
+     * Drops the published placement as the panel leaves the screen, so no pass hit-tests a panel that is no
+     * longer drawn. Called by the draw as it stands down, that being the pass that knows it has stopped.
+     */
+    void clearDrawnPlacement();
 
     /**
      * @return the look this host's panel is painted in - its fills, accents, frame colour, faces, and the

@@ -6,16 +6,15 @@ import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 import kmlib.starsector.ui.widgets.tabs.TabPanelHotkeys;
+import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabStrip;
 
-import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,8 +28,8 @@ import java.util.List;
  * <p>The shortcut jump lives here because the panel offers the same tabs on every screen that shows it, so
  * the key that reaches a tab should not depend on which screen the player is looking at. It writes the
  * host's own selection, so a shortcut moves the tab of the screen it was pressed on and leaves the other
- * screen's where it was. Which keycodes those are is the player's to change through the layer settings,
- * which is also the way out of a clash with a screen's own bindings.
+ * screen's where it was. Which key reaches which tab is each layer's own answer, asked afresh at every
+ * press; a layer with none is skipped, so an unbound tab never captures a key.
  *
  * <p>Whether the sidebar is live at all is settled here too, since only one part of that answer differs
  * between screens: a host says whether its own screen is up, while standing down for whatever else has
@@ -79,6 +78,11 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // safe to draw before any save is loaded, then replaced per load by restoreFoldFromSave.
     private TabPanelController controller;
 
+    // The placement this frame's draw laid out, held so the passes that come after it read the panel that
+    // was actually drawn rather than laying out one of their own. Null whenever nothing is on screen: the
+    // draw drops it as it stands down, so no pass can hit-test a panel that has left.
+    private TabPanelPlacement drawnPlacement;
+
     protected BaseSidebarHost(
             SidebarFoldSelection foldSelection,
             ScreenLayerPicks screenPicks,
@@ -126,6 +130,30 @@ public abstract class BaseSidebarHost implements SidebarHost {
         return hidingState + hostScreenState;
     }
 
+    /**
+     * Lays this host's panel out and publishes it as the panel on screen, which is what makes one layout a
+     * frame enough: the passes that follow the draw read what it published instead of laying out again, so
+     * a click and a hover answer to the box the player is actually looking at rather than to one computed
+     * a moment later from settings that may have moved under them.
+     *
+     * @return the placement just laid out, or {@code null} when there is nothing to draw
+     */
+    @Override
+    public final TabPanelPlacement refreshPlacement() {
+        drawnPlacement = computePlacement();
+        return drawnPlacement;
+    }
+
+    @Override
+    public final TabPanelPlacement getDrawnPlacement() {
+        return drawnPlacement;
+    }
+
+    @Override
+    public final void clearDrawnPlacement() {
+        drawnPlacement = null;
+    }
+
     @Override
     public final TabPanelController getController() {
         return controller;
@@ -145,14 +173,16 @@ public abstract class BaseSidebarHost implements SidebarHost {
      * where the switch came from; a keypress has nothing on screen at all, so without it a shortcut that
      * reached an already-shown layer would look like a key the panel ignored.
      *
-     * <p>A layer's tab sits at its registry index - the tabs row is built from the same registry in the same
-     * order - so the index the binder matched is the index the panel blinks.
+     * <p>A layer's tab sits at its place in the row the panel draws, and both are taken from the one read
+     * that says which layers this screen is offered - so the index the binder matched is the index the panel
+     * blinks, and a tab this screen is not offered answers no key rather than switching to a layer the
+     * player cannot see lit.
      *
      * @param event the key-down event
      */
     @Override
     public final void handleKeyPress(InputEventAPI event) {
-        var layers = MapLayerRegistry.getLayers();
+        var layers = ScreenLayerTabs.resolveTabbedLayers(screenPicks);
         var tabIndex = TabPanelHotkeys.findTabForKey(
             event.getEventValue(),
             resolveLayerKeycodes(layers));
@@ -233,6 +263,15 @@ public abstract class BaseSidebarHost implements SidebarHost {
     }
 
     /**
+     * Lays this host's panel out from the live screen, settings and active layer. The publishing half is
+     * {@link #refreshPlacement()}'s, so a host states how its own panel is anchored and nothing about when
+     * that layout is spent or who reads it afterwards.
+     *
+     * @return the placement for this frame, or {@code null} when there is nothing to draw
+     */
+    protected abstract TabPanelPlacement computePlacement();
+
+    /**
      * @return a short description of this host's own screen state, in its own words - the screen half of
      *         the view-state line, the show-or-hide half being every host's alike and prefixed by
      *         {@link #describeViewState()}
@@ -240,12 +279,12 @@ public abstract class BaseSidebarHost implements SidebarHost {
     protected abstract String describeHostScreenViewState();
 
     /**
-     * @return this host's screen's active-layer pick, for a subclass to lay the panel out around the lit
-     *         tab. The same selection the shortcut key writes, so the layout and the jump never disagree
-     *         on which pick is this screen's
+     * @return this host's screen's picks, for a subclass to lay the panel out around the lit tab and the
+     *         tabs this screen is offered. The same pair the shortcut key reads and writes, so the layout
+     *         and the jump never disagree on which screen's state they are answering for
      */
-    protected final ActiveLayerSelection getLayerSelection() {
-        return screenPicks.layerSelection();
+    protected final ScreenLayerPicks getScreenPicks() {
+        return screenPicks;
     }
 
     /**
@@ -277,15 +316,13 @@ public abstract class BaseSidebarHost implements SidebarHost {
             : new TabPanelController(soundPlayer, soundScheme);
     }
 
-    // Each layer's bound keycode in registry order, so a matched index maps back to its layer. Taken from
+    // Each offered layer's bound keycode in row order, so a matched index maps back to its layer. Taken from
     // the layer rather than read out of KMU's settings here, so a layer from another mod claims a key
-    // through whatever its own mod stores bindings in. A cleared shortcut reads as 0 (LWJGL's KEY_NONE);
-    // the binder treats a non-positive keycode as unbound and never matches it.
+    // through whatever its own mod stores bindings in; the binder skips a non-positive keycode, so an
+    // unbound layer contributes a row without ever matching a press.
     private static List<Integer> resolveLayerKeycodes(List<MapLayer> layers) {
-        var keycodes = new ArrayList<Integer>(layers.size());
-        for (var layer : layers) {
-            keycodes.add(layer.resolveShortcutKeycode());
-        }
-        return keycodes;
+        return layers.stream()
+            .map(MapLayer::resolveShortcutKeycode)
+            .toList();
     }
 }
