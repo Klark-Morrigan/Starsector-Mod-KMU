@@ -46,11 +46,13 @@ final class MapLayerToggleTooltipTest {
     // every unnamed key answers with one default shade that would make the two indistinguishable.
     private static final Color HIGHLIGHT = new Color(255, 220, 80);
     private static final Color POSITIVE = new Color(120, 220, 120);
+    private static final Color NEGATIVE = new Color(220, 80, 80);
 
-    // The engine's own keys for the two roles: the shade a highlighted run takes, and the shade it
-    // writes something favourable in.
+    // The engine's own keys for the three roles: the shade a highlighted run takes, the shade it
+    // writes something favourable in, and the shade it keeps for bad news.
     private static final String HIGHLIGHT_COLOUR_KEY = "buttonShortcut";
     private static final String POSITIVE_COLOUR_KEY = "textFriendColor";
+    private static final String NEGATIVE_COLOUR_KEY = "textEnemyColor";
 
     @BeforeEach
     void installStarsectorSettings() {
@@ -58,6 +60,7 @@ final class MapLayerToggleTooltipTest {
         StarsectorSettingsFake.installSettings(key -> switch (key) {
             case HIGHLIGHT_COLOUR_KEY -> HIGHLIGHT;
             case POSITIVE_COLOUR_KEY -> POSITIVE;
+            case NEGATIVE_COLOUR_KEY -> NEGATIVE;
             default -> null;
         });
     }
@@ -129,6 +132,30 @@ final class MapLayerToggleTooltipTest {
             // do reads the positive runs and gets the whole procedure in order.
             verify(labelMock)
                 .setHighlightColors(HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE);
+        }
+
+        @Test
+        void describeToggleFlagsTheWarningBeforeItIsReadAndKeepsTheVocabularyAfter() {
+
+            var tooltipMock = mock(TooltipMakerAPI.class);
+            var labelMock = mockLabelOn(tooltipMock);
+
+            new MapLayerToggleTooltip(() -> true).describeToggle(tooltipMock);
+
+            verify(tooltipMock)
+                .addPara(
+                    eq("Warning: save game loading will produce an error if KMU is disabled without "
+                        + "uninstalling Sector Map Layers from a save beforehand."),
+                    any(Color.class),
+                    anyFloat());
+
+            verify(labelMock)
+                .setHighlight("Warning:", "KMU", "uninstalling", "Sector Map Layers");
+
+            // One run in the shade for bad news - the flag - and then the two roles the paragraph
+            // above taught: a name, a step, a name.
+            verify(labelMock)
+                .setHighlightColors(NEGATIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT);
         }
 
         @Test

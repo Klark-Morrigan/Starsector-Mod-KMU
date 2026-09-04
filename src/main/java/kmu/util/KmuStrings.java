@@ -46,6 +46,10 @@ public final class KmuStrings {
         "map_layer_tooltip_filter_row_toggle_uninstall_action";
     public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING =
         "map_layer_tooltip_filter_row_toggle_uninstall_warning";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION =
+        "map_layer_tooltip_filter_row_toggle_uninstall_warning_action";
+    public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL =
+        "map_layer_tooltip_filter_row_toggle_uninstall_warning_label";
     public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE =
         "map_layer_tooltip_filter_row_toggle_uninstall_disable";
     public static final String MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE =

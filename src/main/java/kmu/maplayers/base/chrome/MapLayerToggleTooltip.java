@@ -93,13 +93,11 @@ final class MapLayerToggleTooltip {
         new HighlightedParagraph(parts.composeUninstallNote(), parts.listUninstallHighlights())
             .addTo(tooltip, PARAGRAPH_GAP);
 
-        // The consequence of doing it the other way round, drawn entirely in the shade the engine
-        // uses for bad news rather than tinting a run inside it. Nothing here is a name or a step -
-        // the whole sentence is the warning - and a warning with one word picked out reads as an
-        // instruction with an emphasis rather than as something to avoid.
-        new HighlightedParagraph(
-            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING),
-            StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve())
+        // The consequence of doing it the other way round. Its opening word is the only run in the
+        // shade the engine keeps for bad news, so the paragraph is flagged before it is read; the
+        // rest takes the same two roles the paragraph above uses, names in one shade and the step
+        // in the other, so the three paragraphs read as one vocabulary.
+        new HighlightedParagraph(parts.composeUninstallWarning(), parts.listUninstallWarningHighlights())
             .addTo(tooltip, PARAGRAPH_GAP);
     }
 
@@ -198,6 +196,43 @@ final class MapLayerToggleTooltip {
                 KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
                 KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
                 KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE));
+        }
+
+        /**
+         * @return the third paragraph: what happens to a save the feature was pulled out from under,
+         *         opened by the one word that says which kind of paragraph this is
+         */
+        String composeUninstallWarning() {
+
+            return KmuStrings.format(
+                KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING,
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
+                layersName);
+        }
+
+        /**
+         * @return the third paragraph's runs, in reading order: the flag in the shade for bad news,
+         *         then the same two roles the paragraph above uses - names in one shade, the step in
+         *         the other - so a reader who learned the vocabulary one paragraph up keeps it
+         */
+        Highlight[] listUninstallWarningHighlights() {
+
+            var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+
+            return new Highlight[] {
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
+                    StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve()),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
+                    namedColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
+                    StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve()),
+                Highlight.of(layersName, namedColour),
+            };
         }
 
         /** @return each run bound to the colour it takes, in the order the sentence reads them */
