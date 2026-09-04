@@ -182,25 +182,20 @@ final class MapLayerToggleTooltip {
                     views.stream().map(ViewMention::phrase).toList()));
         }
 
-        /**
-         * @return the second paragraph: who supplies the feature, and the one order of operations
-         *         that takes it back out of a save without leaving anything behind in it
-         */
+        /** @return the second paragraph: who is answerable for the feature, and nothing else */
         String composeUninstallNote() {
 
             return KmuStrings.format(
                 KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL,
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION),
-                layersName,
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
-                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE));
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER));
         }
 
         /**
          * @return the third paragraph: what happens to a save the feature was pulled out from under,
-         *         opened by the one word that says which kind of paragraph this is
+         *         opened by the one word that says which kind of paragraph this is, and closed by the
+         *         steps that avoid it. The procedure sits here rather than beside the attribution
+         *         because it is only worth reading once the reader knows what it is for - "to do so"
+         *         answers a question the sentence before it has just raised
          */
         String composeUninstallWarning() {
 
@@ -209,17 +204,21 @@ final class MapLayerToggleTooltip {
                 KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL),
                 KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
                 KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
-                layersName);
+                layersName,
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE));
         }
 
         /**
          * @return the third paragraph's runs, in reading order: the flag in the shade for bad news,
-         *         then the same two roles the paragraph above uses - names in one shade, the step in
-         *         the other - so a reader who learned the vocabulary one paragraph up keeps it
+         *         then names in one shade and steps in the other, alternating through the warning and
+         *         on into the procedure that closes it
          */
         Highlight[] listUninstallWarningHighlights() {
 
             var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+            var stepColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
 
             return new Highlight[] {
                 Highlight.of(
@@ -230,8 +229,17 @@ final class MapLayerToggleTooltip {
                     namedColour),
                 Highlight.of(
                     KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_ACTION),
-                    StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve()),
+                    stepColour),
                 Highlight.of(layersName, namedColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
+                    stepColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
+                    namedColour),
+                Highlight.of(
+                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
+                    stepColour),
             };
         }
 
@@ -252,32 +260,17 @@ final class MapLayerToggleTooltip {
         }
 
         /**
-         * @return the second paragraph's runs, in reading order. The things that have names take the
-         *         naming colour and the things the player is being told to do take the positive one,
-         *         so the steps stand out from the mods they are carried out in
+         * @return the second paragraph's one run: the mod that answers for the feature, in the shade
+         *         the other paragraphs give a name
          */
         Highlight[] listUninstallHighlights() {
 
             var namedColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
-            var stepColour = StarsectorUiColour.VANILLA_HIGHLIGHT_GREEN.resolve();
 
             return new Highlight[] {
                 Highlight.of(
                     KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SUPPLIER),
                     namedColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION),
-                    stepColour),
-                Highlight.of(layersName, namedColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE),
-                    stepColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD),
-                    namedColour),
-                Highlight.of(
-                    KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE),
-                    stepColour),
             };
         }
     }

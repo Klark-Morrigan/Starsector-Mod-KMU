@@ -104,38 +104,30 @@ final class MapLayerToggleTooltipTest {
         }
 
         @Test
-        void describeToggleMarksTheUninstallStepsApartFromTheModsTheyAreCarriedOutIn() {
+        void describeToggleNamesTheModAnswerableForTheFeatureAndNothingElse() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = mockLabelOn(tooltipMock);
 
             new MapLayerToggleTooltip(() -> true).describeToggle(tooltipMock);
 
+            // Attribution alone. What to do about it belongs where the reason for doing it is,
+            // which is the paragraph below rather than this one.
             verify(tooltipMock)
                 .addPara(
-                    eq("This feature is provided by the KMU mod. To safely uninstall Sector Map "
-                        + "Layers from your save game, disable this feature in LunaLib mod settings "
-                        + "and save your game."),
+                    eq("This feature is provided by the KMU mod."),
                     any(Color.class),
                     anyFloat());
 
             verify(labelMock)
-                .setHighlight(
-                    "KMU",
-                    "safely uninstall",
-                    "Sector Map Layers",
-                    "disable this feature",
-                    "LunaLib",
-                    "save your game");
+                .setHighlight("KMU");
 
-            // Three named things and three things to do, alternating. A player skimming for what to
-            // do reads the positive runs and gets the whole procedure in order.
             verify(labelMock)
-                .setHighlightColors(HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE);
+                .setHighlightColors(HIGHLIGHT);
         }
 
         @Test
-        void describeToggleFlagsTheWarningBeforeItIsReadAndKeepsTheVocabularyAfter() {
+        void describeToggleFlagsTheWarningThenGivesTheStepsThatAvoidIt() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
             var labelMock = mockLabelOn(tooltipMock);
@@ -145,17 +137,27 @@ final class MapLayerToggleTooltipTest {
             verify(tooltipMock)
                 .addPara(
                     eq("Warning: save game loading will produce an error if KMU is disabled without "
-                        + "uninstalling Sector Map Layers from a save beforehand."),
+                        + "uninstalling Sector Map Layers from a save beforehand. To do so, disable "
+                        + "this feature in LunaLib mod settings and save your game."),
                     any(Color.class),
                     anyFloat());
 
             verify(labelMock)
-                .setHighlight("Warning:", "KMU", "uninstalling", "Sector Map Layers");
+                .setHighlight(
+                    "Warning:",
+                    "KMU",
+                    "uninstalling",
+                    "Sector Map Layers",
+                    "disable this feature",
+                    "LunaLib",
+                    "save your game");
 
-            // One run in the shade for bad news - the flag - and then the two roles the paragraph
-            // above taught: a name, a step, a name.
+            // The flag in the shade for bad news, then names and steps alternating through the
+            // warning and on into the procedure - one vocabulary across the whole paragraph, so a
+            // player skimming the positive runs reads the procedure in order.
             verify(labelMock)
-                .setHighlightColors(NEGATIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT);
+                .setHighlightColors(
+                    NEGATIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE, HIGHLIGHT, POSITIVE);
         }
 
         @Test

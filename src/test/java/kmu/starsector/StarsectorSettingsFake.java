@@ -113,9 +113,6 @@ public final class StarsectorSettingsFake {
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_SETTINGS_MOD,
             "LunaLib");
         stringsByKey.put(
-            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_ACTION,
-            "safely uninstall");
-        stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_DISABLE,
             "disable this feature");
         stringsByKey.put(
