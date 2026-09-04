@@ -4,6 +4,7 @@ import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.Control;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.PanelPlacement;
+import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import java.util.List;
@@ -111,7 +112,14 @@ final class SidebarPlacements {
         return new TabPanelPlacement(
             tabsHeader,
             drawnHeaderBand,
-            new PanelPlacement(bodyBox, bodyBox, bodyControls, bodyBox, 0f, 0f),
+            new PanelPlacement(
+                bodyBox,
+                bodyBox,
+                bodyControls,
+                bodyBox,
+                0f,
+                0f,
+                ScrollbarThickness.DEFAULT),
             new BoxBorder(BORDER_WIDTH),
             notch);
     }

@@ -11,6 +11,7 @@ import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
+import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
@@ -167,6 +168,9 @@ public final class LiveSidebarPlacement {
             // The player's border width over the edges the host frames; a dropped edge collapses its
             // reserved inset so the box sits flush against the neighbour the host meant to blend into.
             new BoxBorder(KmuMapLayerSettings.getMapSidebarBorderWidth(), borderedEdges),
+            // TODO: feed the player's scrollbar thickness here once the setting exists; the default
+            // keeps the bar the width it has always drawn at until then.
+            ScrollbarThickness.DEFAULT,
             tabStyle,
             buildTabsSpec(layers, activeLayer, selection),
             activeLayer.getBodyControls(),
