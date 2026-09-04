@@ -393,6 +393,15 @@ a body control by and the light a press lifts it further by, the insignia body f
 the host's own tab style. Nothing of it is held between frames - every shade reads the running game's
 colours and the player's live settings - and nothing of it is persisted.
 
+The opacity setting fades the body and its chrome, not the words. A translucent panel exists so the
+map shows through the pane, not so the reading is half-composited with whatever happens to be behind
+it, and the cost falls hardest on text carrying a colour of its own: a value in a relation's shade
+gives up that shade toward the backdrop while the greys it is meant to be told apart from barely
+move, so a faded reading does not merely dim, it flattens the distinctions the colour was for. The
+words still leave with the panel - `PanelAlpha` keeps the look's translucency and the panel's arrival
+apart, and the text takes the second alone. That is why the setting floors at 50%: the body is what
+the words are read against, and one faded much past half leaves solid text standing on open map.
+
 The hover wash is that same base accent at a lesser strength than the selected wash carries, so a
 control under the pointer reads as lit without reading as picked, and a lit one under the pointer
 lifts past both. It is a shade only: how fast a cell travels onto it is the panel's one input pace,

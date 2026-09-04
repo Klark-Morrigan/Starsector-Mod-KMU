@@ -94,9 +94,21 @@ final class LunaSettingsCsvIntegrationTest {
     private static final int FIELD_TYPE_COLUMN = 6;
     private static final int DEFAULT_VALUE_COLUMN = 7;
     private static final int OPTIONS_COLUMN = 8;
+    private static final int MIN_VALUE_COLUMN = 14;
+    private static final int MAX_VALUE_COLUMN = 15;
     private static final int TAB_COLUMN = 16;
     private static final String RADIO_FIELD_TYPE = "Radio";
+    private static final String INT_FIELD_TYPE = "Int";
     private static final String BOOLEAN_FIELD_TYPE = "Boolean";
+
+    // The one row whose bounds are declared twice - once as the slider's ends here, once as the clamp
+    // its getter puts round whatever LunaLib hands back. Named singly rather than walked for every
+    // numeric row, because every other numeric getter takes the stored value as it comes: a walk over
+    // all of them would be machinery for a set of one, and would have to invent a rule for the rows
+    // that clamp nothing. A second clamped row joining is what turns this into a walk.
+    private static final String CLAMPED_FIELD_ID = "kmu_map_visuals_sidebar_opacity";
+    private static final String CLAMPED_MINIMUM_CONSTANT = "MIN_SIDEBAR_OPACITY_PERCENT";
+    private static final String CLAMPED_MAXIMUM_CONSTANT = "MAX_SIDEBAR_OPACITY_PERCENT";
     private static final String BOOLEAN_ON_VALUE = "TRUE";
     private static final String BOOLEAN_OFF_VALUE = "FALSE";
 
@@ -467,6 +479,35 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(readColumn(fieldId, DEFAULT_VALUE_COLUMN, fieldType)));
+        }
+    }
+
+    @Nested
+    class NumericFieldBounds {
+
+        @Test
+        void numericFieldBoundsMatchTheClampTheirGetterApplies() {
+
+            assertThat(readDeclaredNumber(CLAMPED_MINIMUM_CONSTANT))
+                .as(
+                    "%s in the settings sources against the low end of %s in %s: the slider's end is"
+                        + " as far as a player can drag the row, and the clamp is how far the value"
+                        + " is allowed once read, so two bounds let a saved value sit somewhere the"
+                        + " slider will not go back to",
+                    CLAMPED_MINIMUM_CONSTANT,
+                    CLAMPED_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo(Double.parseDouble(
+                    readColumn(CLAMPED_FIELD_ID, MIN_VALUE_COLUMN, INT_FIELD_TYPE)));
+
+            assertThat(readDeclaredNumber(CLAMPED_MAXIMUM_CONSTANT))
+                .as(
+                    "%s in the settings sources against the high end of %s in %s",
+                    CLAMPED_MAXIMUM_CONSTANT,
+                    CLAMPED_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo(Double.parseDouble(
+                    readColumn(CLAMPED_FIELD_ID, MAX_VALUE_COLUMN, INT_FIELD_TYPE)));
         }
     }
 

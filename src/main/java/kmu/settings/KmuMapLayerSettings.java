@@ -216,9 +216,12 @@ public final class KmuMapLayerSettings {
 
     private static final int DEFAULT_SIDEBAR_BORDER_WIDTH = 1;
 
-    // Stored 0..100 in the CSV, exposed 0..1.
+    // Stored 50..100 in the CSV, exposed 0..1. The floor is not a taste: the body is what the controls
+    // are read against, and its words no longer take its translucency, so a body faded much past half
+    // leaves opaque text standing on whatever the map happens to show through - which is harder to read
+    // than the same text on a dimmer panel, and unreadable over a bright cluster.
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
-    private static final int MIN_SIDEBAR_OPACITY_PERCENT = 0;
+    private static final int MIN_SIDEBAR_OPACITY_PERCENT = 50;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
 
     // Mirrors TabPanelCollapse.DEFAULT_DURATION_SECONDS, the KMLib holder's own default pace;
