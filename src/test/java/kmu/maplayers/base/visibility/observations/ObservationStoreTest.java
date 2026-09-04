@@ -42,12 +42,14 @@ final class ObservationStoreTest {
     private static final String OBSERVED_ELSEWHERE = "corvus";
     private static final long OBSERVED_MOMENT = 4_200L;
     private static final String OBSERVED_PLACE = "kumari_kandam";
+    private static final String OTHER_REGISTER_KEY = "$kmu_other_synthetic_observations";
     private static final String REGISTER_KEY = "$kmu_synthetic_observations";
     private static final String SUBJECT_ID = "sentinel_gantries";
 
     // A free-form field spelt with the codec's own separator in it. The one spelling that parts in
     // the wrong place unless the fixed field leads, which is why the convention exists at all.
-    private static final String PLACE_HOLDING_THE_SEPARATOR = "outer@" + OBSERVED_PLACE;
+    private static final String PLACE_HOLDING_THE_SEPARATOR =
+        "outer" + SyntheticObservationCodecFake.FIELD_SEPARATOR + OBSERVED_PLACE;
 
     private MemoryAPI memoryMock;
     private SectorAPI sectorMock;
@@ -117,7 +119,7 @@ final class ObservationStoreTest {
         void readsNothingWhereTheKeyHoldsSomethingThatIsNotARegister() {
             // Another party writing over the key must cost this family's observations and nothing
             // else: a read that threw here would take down every surface asking about them.
-            storeRegister("not a register");
+            storeRegisterUnder(REGISTER_KEY, "not a register");
 
             assertThat(readObservationOf(SUBJECT_ID))
                 .isEmpty();
@@ -126,29 +128,54 @@ final class ObservationStoreTest {
         @Test
         void readsNothingForASubjectTheRegisterHasNeverHeld() {
 
-            openRegister().put(SUBJECT_ID, OBSERVED_MOMENT + "@" + OBSERVED_PLACE);
+            openRegister().put(SUBJECT_ID, composeStoredEntry(OBSERVED_MOMENT, OBSERVED_PLACE));
 
             assertThat(readObservationOf(ABSENT_SUBJECT_ID))
                 .isEmpty();
         }
 
         @Test
+        void readsNothingRecordedByAFamilyKeepingItsOwnRegister() {
+            // What the key buys. Every family shares this class and the one sector memory under it,
+            // so a key held per store rather than per class is the whole of what keeps their news
+            // apart. The other family's own entries are asserted too, so a case that wrote nowhere
+            // at all could not read as one that wrote somewhere else.
+            var storedEntries = openRegister();
+            var otherFamilyEntries = openRegisterUnder(OTHER_REGISTER_KEY);
+            var codecFake = new SyntheticObservationCodecFake();
+            var otherFamilyStore = new ObservationStore<>(OTHER_REGISTER_KEY, codecFake);
+
+            otherFamilyStore.recordObservations(
+                sectorMock,
+                Map.of(SUBJECT_ID, new SyntheticObservation(OBSERVED_MOMENT, OBSERVED_PLACE)));
+
+            assertThat(otherFamilyEntries)
+                .containsOnlyKeys(SUBJECT_ID);
+            assertThat(storedEntries)
+                .isEmpty();
+            assertThat(readObservationOf(SUBJECT_ID))
+                .isEmpty();
+        }
+
+        @Test
         void readsBackWhatTheCodecWroteDown() {
 
-            openRegister().put(SUBJECT_ID, "1720@" + OBSERVED_PLACE);
+            openRegister().put(SUBJECT_ID, composeStoredEntry(OBSERVED_MOMENT, OBSERVED_PLACE));
 
             assertThat(readObservationOf(SUBJECT_ID))
-                .contains(new SyntheticObservation(1720L, OBSERVED_PLACE));
+                .contains(new SyntheticObservation(OBSERVED_MOMENT, OBSERVED_PLACE));
         }
 
         @Test
         void readsAFreeFormFieldWholeWhereItIsSpeltWithTheSeparator() {
             // The whole of the fixed-fields-first convention. The free-form field runs to the end
             // of the entry, so a separator inside it is part of what it says, not a boundary.
-            openRegister().put(SUBJECT_ID, "1720@" + PLACE_HOLDING_THE_SEPARATOR);
+            openRegister().put(
+                SUBJECT_ID,
+                composeStoredEntry(OBSERVED_MOMENT, PLACE_HOLDING_THE_SEPARATOR));
 
             assertThat(readObservationOf(SUBJECT_ID))
-                .contains(new SyntheticObservation(1720L, PLACE_HOLDING_THE_SEPARATOR));
+                .contains(new SyntheticObservation(OBSERVED_MOMENT, PLACE_HOLDING_THE_SEPARATOR));
         }
 
         @Test
@@ -160,6 +187,17 @@ final class ObservationStoreTest {
 
             assertThat(readObservationOf(SUBJECT_ID))
                 .contains(new SyntheticObservation(null, PLACE_HOLDING_THE_SEPARATOR));
+        }
+
+        @Test
+        void readsNothingWhereTheCodecCanMakeNothingOfTheEntryAtAll() {
+            // The far end of the same posture. An entry the codec cannot read even weakly is not an
+            // observation of nothing - it is no observation, and the subject reads as never seen
+            // rather than as seen somewhere unstated.
+            openRegister().put(SUBJECT_ID, "");
+
+            assertThat(readObservationOf(SUBJECT_ID))
+                .isEmpty();
         }
     }
 
@@ -249,16 +287,22 @@ final class ObservationStoreTest {
             // An entry no read could ever reach, since a subject is asked about by the very id it
             // would be filed under.
             var storedEntries = openRegister();
-            var observationsBySubjectId = new HashMap<String, SyntheticObservation>();
 
-            observationsBySubjectId.put(
-                "  ",
-                new SyntheticObservation(OBSERVED_MOMENT, OBSERVED_PLACE));
-
-            store.recordObservations(sectorMock, observationsBySubjectId);
+            store.recordObservations(sectorMock, buildObservationOfAnUnnamedSubject());
 
             assertThat(storedEntries)
                 .isEmpty();
+        }
+
+        @Test
+        void leavesNoRegisterBehindWhereNothingInTheSetCanBeFiled() {
+            // The same guard, one step earlier. Weighed per entry into an opened register instead,
+            // a set of nothing but unnameable subjects would cost the save an empty map to discover
+            // there had been nothing to write.
+            store.recordObservations(sectorMock, buildObservationOfAnUnnamedSubject());
+
+            verify(memoryMock, never())
+                .set(anyString(), any());
         }
     }
 
@@ -368,22 +412,50 @@ final class ObservationStoreTest {
             .readObservation(subjectId);
     }
 
+    // One stored entry spelt out by hand, the way a save holds one: the fixed field, the separator,
+    // then the free-form field to the end. Written here rather than taken from the codec so that a
+    // case reading an entry back is not handed the very entry the codec would have produced.
+    private static String composeStoredEntry(long recordedMoment, String freeFormPlaceId) {
+        return recordedMoment
+            + SyntheticObservationCodecFake.FIELD_SEPARATOR
+            + freeFormPlaceId;
+    }
+
+    // A whole observation of a subject the game names with nothing, which is the one set that can
+    // be non-empty and still have nothing in it to file.
+    private static Map<String, SyntheticObservation> buildObservationOfAnUnnamedSubject() {
+
+        var observationsBySubjectId = new HashMap<String, SyntheticObservation>();
+
+        observationsBySubjectId.put(
+            "  ",
+            new SyntheticObservation(OBSERVED_MOMENT, OBSERVED_PLACE));
+
+        return observationsBySubjectId;
+    }
+
     // Opens the register the way a first observation would, so a case can seed it and then assert
     // against the very map the code under test writes into.
     private Map<String, String> openRegister() {
+        return openRegisterUnder(REGISTER_KEY);
+    }
+
+    // The same, under whichever key is asked for - what a second family's store writes into, so a
+    // case can tell one register apart from another in the one sector memory holding both.
+    private Map<String, String> openRegisterUnder(String memoryKey) {
 
         var storedEntries = new HashMap<String, String>();
 
-        storeRegister(storedEntries);
+        storeRegisterUnder(memoryKey, storedEntries);
 
         return storedEntries;
     }
 
-    private void storeRegister(Object storedValue) {
+    private void storeRegisterUnder(String memoryKey, Object storedValue) {
 
-        when(memoryMock.contains(REGISTER_KEY))
+        when(memoryMock.contains(memoryKey))
             .thenReturn(true);
-        when(memoryMock.get(REGISTER_KEY))
+        when(memoryMock.get(memoryKey))
             .thenReturn(storedValue);
     }
 
@@ -403,6 +475,11 @@ final class ObservationStoreTest {
         @Override
         public SyntheticObservation decodeObservation(String storedObservation) {
 
+            if (storedObservation.isBlank()) {
+                // Nothing usable at all, which is not the same as a field missing: there is no
+                // weaker reading to fall back to, so the codec states none.
+                return null;
+            }
             var separatorIndex = storedObservation.indexOf(FIELD_SEPARATOR);
 
             if (separatorIndex < 0) {

@@ -28,8 +28,8 @@ import java.util.Set;
  * renaming a key silently drops every observation in every existing save, and nothing in a loaded
  * game can tell that from a player who has been nowhere.
  *
- * <p><strong>A sector with nothing to record leaves no register behind.</strong> Writing opens the
- * map on the first entry that will land in it, so the vast majority of places - which hold nothing
+ * <p><strong>A sector with nothing to record leaves no register behind.</strong> What can be filed
+ * is written out before the register is opened, so the vast majority of places - which hold nothing
  * worth recording at all - never put an empty map into a save between them.
  *
  * <p><strong>The lifecycle is held here because every family wants the same one.</strong> A load
@@ -90,29 +90,21 @@ public final class ObservationStore<T> {
      *
      * @param sector                  the sector whose memory holds the register; one with no memory
      *                                to write into is a no-op
-     * @param observationsBySubjectId what was observed, by the subject's own id; nothing to record
-     *                                is a no-op, and leaves no empty register behind
+     * @param observationsBySubjectId what was observed, by the subject's own id; nothing to
+     *                                record - or nothing in it that can be filed - is a no-op, and
+     *                                leaves no empty register behind
      */
     public void recordObservations(SectorAPI sector, Map<String, T> observationsBySubjectId) {
 
-        if (observationsBySubjectId == null || observationsBySubjectId.isEmpty()) {
+        var storedObservations = encodeRecordableObservations(observationsBySubjectId);
+
+        if (storedObservations.isEmpty()) {
             return;
         }
         var storedEntries = openStoredEntries(sector);
 
-        if (storedEntries == null) {
-            return;
-        }
-        for (var observation : observationsBySubjectId.entrySet()) {
-
-            // A subject the game names with nothing cannot be asked about later, so recording it
-            // would only put an entry in the save that no read could ever reach.
-            if (KmuValues.hasText(observation.getKey()) && observation.getValue() != null) {
-
-                storedEntries.put(
-                    observation.getKey(),
-                    codec.encodeObservation(observation.getValue()));
-            }
+        if (storedEntries != null) {
+            storedEntries.putAll(storedObservations);
         }
     }
 
@@ -163,6 +155,33 @@ public final class ObservationStore<T> {
         if (sector != null) {
             liveObservations.recordObservationsSeenNow(sector);
         }
+    }
+
+    // What of a set can actually be filed, each written as the register holds it.
+    //
+    // Encoded before the register is opened rather than entry by entry into it, so that a set
+    // nothing in which can be filed leaves no empty map in the save: the register is opened for
+    // entries that will land in it, never for the attempt.
+    private Map<String, String> encodeRecordableObservations(
+            Map<String, T> observationsBySubjectId) {
+
+        var storedObservations = new HashMap<String, String>();
+
+        if (observationsBySubjectId == null) {
+            return storedObservations;
+        }
+        for (var observation : observationsBySubjectId.entrySet()) {
+
+            // A subject the game names with nothing cannot be asked about later, so recording it
+            // would only put an entry in the save that no read could ever reach.
+            if (KmuValues.hasText(observation.getKey()) && observation.getValue() != null) {
+
+                storedObservations.put(
+                    observation.getKey(),
+                    codec.encodeObservation(observation.getValue()));
+            }
+        }
+        return storedObservations;
     }
 
     // One stored entry read back through the family's own codec, which is the only thing that knows
