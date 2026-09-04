@@ -87,38 +87,6 @@ final class ScreenLayerTabsTest {
     }
 
     @Nested
-    class AreLayersShownOnceControlStands {
-
-        @Test
-        void areLayersShownOnceControlStandsReadsAPickAboutToBeMovedAsAHide() {
-            // What a box has to open showing: the pick it is taking over from left the map blank, and
-            // the move says so as a hide rather than as a tab.
-            registerTheEmptyViewBesideALayerThatPaints();
-
-            var screenPicks = createPicksOnTheEmptyView();
-
-            assertThat(ScreenLayerTabs.areLayersShownOnceControlStands(screenPicks))
-                .isFalse();
-        }
-
-        @Test
-        void areLayersShownOnceControlStandsReadsAnUnmovedPicksOwnStoredState() {
-            // Every other screen: nothing is about to be settled, so the answer is the save's.
-            registerTheEmptyViewBesideALayerThatPaints();
-
-            var screenPicks = createPicksWithNoControl();
-
-            when(screenPicks.layerSelection().getActiveLayer())
-                .thenReturn(paintingLayerMock);
-            when(screenPicks.layerVisibility().getStoredVisibility().areLayersShown())
-                .thenReturn(true);
-
-            assertThat(ScreenLayerTabs.areLayersShownOnceControlStands(screenPicks))
-                .isTrue();
-        }
-    }
-
-    @Nested
     class MigratePickOffWithheldTab {
 
         @Test

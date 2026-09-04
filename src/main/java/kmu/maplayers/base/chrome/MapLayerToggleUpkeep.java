@@ -6,8 +6,10 @@ import com.fs.starfarer.api.Global;
 import kmlib.logging.SessionWarning;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
+import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapLayerSettings;
@@ -20,17 +22,25 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
- * Keeps the map layers' tick box standing on whichever filter row the player is looking at.
+ * Keeps the map layers' tick box standing on whichever filter row the player is looking at, and
+ * keeps it showing what that screen holds.
  *
  * <p>A standing pass rather than a one-time install: the map widget builds its row inside its own
  * constructor, so every open of a screen produces a fresh row while the box put on the last one
- * goes on existing, attached to a widget nobody can see. Nothing announces that, so the row on
- * screen is compared against the row the box was put on.
+ * goes on existing, attached to a widget nobody can see. Nothing announces that, so the box held
+ * for a screen is asked whether it still stands on the row that is up.
  *
- * <p>Compared by identity, and one row remembered per screen. Counting the row's children instead
- * would read another mod's button as our own having gone missing, and append a second box every
- * frame; a single remembered row would have nothing to compare against once the player moved
- * between the two screens and back.
+ * <p>Asked by identity, and one box held per screen. Counting the row's children instead would read
+ * another mod's button as our own having gone missing, and append a second box every frame; a
+ * single held box would have nothing to compare against once the player moved between the two
+ * screens and back.
+ *
+ * <p>What the box shows is a standing job for the same reason its standing is. One seeded as it
+ * went up would tell the truth only until something moved the pick under it - the settling below
+ * does exactly that, and so does a hatch closed and reopened over a box already up - and a box
+ * saying the layers are shown over a map with none on it is worse than no box at all. So it is
+ * written from the pick each frame rather than at the moment it goes up, which also leaves whatever
+ * moves the pick free to know nothing about boxes.
  *
  * <p>A script rather than a render pass, the sidebar's own pass running only while the sidebar is
  * showing - and this control has to work its way out of exactly the state where nothing of the
@@ -70,9 +80,10 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // holder for every way of failing, all of them the same news: there is no control on the row.
     private final SessionWarning warning = new SessionWarning(LOG);
 
-    // The row each screen's box was last put on, keyed by that screen's own picks - which is what a
-    // box is bound to. By identity: a row is the widget itself, not anything describable about it.
-    private final Map<ScreenLayerPicks, MapFilterRow> attachedRowsByScreenPicks =
+    // Each screen's own box, keyed by the picks it is bound to. Held rather than only recorded as
+    // having been put up, because it goes on being driven for as long as it stands. By identity:
+    // picks are the pair of choices themselves, not anything describable about them.
+    private final Map<ScreenLayerPicks, MapFilterToggle> attachedTogglesByScreenPicks =
         new IdentityHashMap<>();
 
     /** Reads the live settings, screens and widget tree - the pairing a running game gets. */
@@ -102,7 +113,7 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         // The switch read is inside the boundary too: it reaches the settings substrate, as able to
         // throw on an unfamiliar install as the widget walk below it.
         try {
-            attachToggleWhereMissing();
+            keepTheBoxStandingAndTruthful();
 
         } catch (RuntimeException failure) {
 
@@ -128,9 +139,9 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     }
 
     // Ordered cheapest-first: a switch read, one hop into the widget on screen, then a reference
-    // compare - so the common frame, the box already where it belongs, costs the hop and the word
-    // re-asserted under it, and nothing that reaches the save.
-    private void attachToggleWhereMissing() {
+    // compare - so the common frame, the box already where it belongs, costs the hop, the word
+    // re-asserted under it, and the one save read that keeps the box honest.
+    private void keepTheBoxStandingAndTruthful() {
 
         if (!isToggleEnabled.getAsBoolean()) {
             forgetEveryControlAttached();
@@ -144,30 +155,41 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
         var screenPicks = resolveLiveScreenPicks.get();
 
-        var attachedRow = attachedRowsByScreenPicks.get(screenPicks);
-        if (attachedRow != null && attachedRow.isSameRowAs(shownRow)) {
-
-            // Re-asserted rather than assumed: a closed hatch takes the word back, and this is the
-            // only frame that sees a standing row again, the append below being skipped.
-            standControlOn(screenPicks);
+        var standingToggle = resolveToggleStandingOn(shownRow, screenPicks);
+        if (standingToggle == null) {
             return;
         }
 
-        // The box opens on what the screen settles at rather than on what it holds now, the stand
-        // below being able to move the pick under it. Asked before the append because the settling
-        // is owed only once a box is actually up, so nothing is written yet to read back.
-        var areLayersShownAtFirst = ScreenLayerTabs.areLayersShownOnceControlStands(screenPicks);
-
-        // Recorded only where a box actually went up: a refusal is retried next frame, and a screen
-        // told it has a control it never got would act on a stored hide it cannot reverse.
-        if (!toggleAttacher.attachToggleTo(
-                shownRow,
-                screenPicks.layerVisibility().getStoredVisibility(),
-                areLayersShownAtFirst)) {
-            return;
-        }
-        attachedRowsByScreenPicks.put(screenPicks, shownRow);
         standControlOn(screenPicks);
+
+        // Written after the stand rather than before it, since standing can move the pick: the box
+        // shows where the screen ended up, on the very frame it goes up and on every frame after.
+        standingToggle.setChecked(readStoredVisibilityOf(screenPicks).areLayersShown());
+    }
+
+    // The box on the row that is up, appending one where the screen has none - which is every screen
+    // reopened, its row being rebuilt with nothing of ours on it.
+    //
+    // Nothing is remembered for a row that would take no box: a refusal is retried next frame, which
+    // is what lets a row the layout had not placed yet take one later.
+    private MapFilterToggle resolveToggleStandingOn(
+            MapFilterRow shownRow,
+            ScreenLayerPicks screenPicks) {
+
+        var attachedToggle = attachedTogglesByScreenPicks.get(screenPicks);
+        if (attachedToggle != null && attachedToggle.isStillAttachedTo(shownRow)) {
+            return attachedToggle;
+        }
+
+        var appendedToggle = toggleAttacher.attachToggleTo(
+            shownRow, readStoredVisibilityOf(screenPicks));
+
+        if (appendedToggle == null) {
+            return null;
+        }
+        attachedTogglesByScreenPicks.put(screenPicks, appendedToggle);
+
+        return appendedToggle;
     }
 
     // What a box now standing on a screen is worth to that screen: its stored hide is acted on from
@@ -175,8 +197,8 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // disagree - a blank map held by a tab, under a box saying the layers are shown.
     //
     // The move is owed on the first box to stand and on no later one, so the word is read before it
-    // is said. That also keeps the common frame - a box already where it belongs - at one field read,
-    // the move costing a look at the save.
+    // is said. Re-asserted rather than assumed on every other frame, a closed hatch having taken the
+    // word back while leaving the box itself standing.
     private static void standControlOn(ScreenLayerPicks screenPicks) {
 
         var layerControl = screenPicks.layerVisibility();
@@ -198,8 +220,15 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // instead of appending a second box beside the first.
     private void forgetEveryControlAttached() {
 
-        for (var screenPicks : attachedRowsByScreenPicks.keySet()) {
+        for (var screenPicks : attachedTogglesByScreenPicks.keySet()) {
             screenPicks.layerVisibility().forgetControlAttached();
         }
+    }
+
+    // The pick a box shows and moves: the stored choice itself rather than the reading the
+    // no-control-no-hiding rule gives everything else. A box is what lifts that rule, so one bound
+    // to the reading would report the layers shown over a save that holds them hidden.
+    private static MapLayerVisibility readStoredVisibilityOf(ScreenLayerPicks screenPicks) {
+        return screenPicks.layerVisibility().getStoredVisibility();
     }
 }

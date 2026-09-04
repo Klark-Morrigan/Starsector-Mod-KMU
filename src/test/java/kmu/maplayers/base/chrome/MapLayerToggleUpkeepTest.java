@@ -1,6 +1,9 @@
 package kmu.maplayers.base.chrome;
 
 import kmlib.starsector.ui.map.controls.MapFilterRow;
+import kmlib.starsector.ui.map.controls.MapFilterToggle;
+import kmlib.testfixtures.starsector.ui.map.controls.MapFilterButtonFake;
+import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
@@ -26,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -38,6 +41,11 @@ import static org.mockito.Mockito.when;
  * Pins when the pass writes into the game's filter row and when it leaves it alone: once per row per
  * screen, again as soon as a screen rebuilds its row, never while the switch is closed or no map is
  * up, and never in a way that lets a broken read out.
+ *
+ * <p>And that the box standing there says what its screen holds - as it goes up, and on every frame
+ * after, since the pick moves under a standing box in more ways than one and a box saying the layers
+ * are shown over an empty map is worse than no box at all. The cases posing that read the tick off a
+ * real box on a real row, that being the whole of what the claim is about.
  *
  * <p>And when it says the screen has a control at all, which is what a stored hide is acted on: after
  * a box is standing, never after a row that refused one, and no longer once the switch that permits
@@ -69,9 +77,12 @@ final class MapLayerToggleUpkeepTest {
     private static final BooleanSupplier SWITCH_OPEN = () -> true;
     private static final BooleanSupplier SWITCH_CLOSED = () -> false;
 
-    // What a box opens showing on a screen whose pick the stand is about to take over: the map was
-    // blank under that pick and stays blank under the hide it becomes.
-    private static final boolean LAYERS_HIDDEN = false;
+    // Where an appended box lands on a row carrying the game's own buttons.
+    private static final int APPENDED_BUTTON_INDEX = ShownFilterRows.VANILLA_BUTTON_COUNT;
+
+    // The words on the box the stand-in attachment puts up. Arbitrary: which words the live one uses
+    // is its own case, and nothing here reads them.
+    private static final String BOX_LABEL = "Map layers";
 
     private final MapLayer paintingLayerMock = mock(MapLayer.class);
 
@@ -99,8 +110,8 @@ final class MapLayerToggleUpkeepTest {
             // Bound to the stored pick of the screen the row belongs to: to that screen's, so a
             // control on one screen's row cannot move the other screen's layers, and to the stored
             // pick, since a box is what lifts the no-control-no-hiding rule rather than a reader of it.
-            verify(toggleAttacherMock).attachToggleTo(
-                eq(shownRow), eq(readStoredVisibility(screenPicks)), anyBoolean());
+            verify(toggleAttacherMock)
+                .attachToggleTo(shownRow, readStoredVisibility(screenPicks));
         }
 
         @Test
@@ -116,9 +127,9 @@ final class MapLayerToggleUpkeepTest {
             upkeep.advance(PAUSED_FRAME);
             upkeep.advance(PAUSED_FRAME);
 
-            // The common frame: the row on screen is the row the control was put on, so there is
-            // nothing to do and nothing appended a second time.
-            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any(), anyBoolean());
+            // The common frame: the box held for this screen is still on the row that is up, so there
+            // is nothing to append and nothing appended a second time.
+            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any());
         }
 
         @Test
@@ -137,18 +148,16 @@ final class MapLayerToggleUpkeepTest {
             shownRow.set(rebuiltRow);
             upkeep.advance(PAUSED_FRAME);
 
-            // Reopening the screen builds a new row and leaves the old control attached to a widget
+            // Reopening the screen builds a new row and leaves the old box attached to a widget
             // nobody can see, so the new row gets one of its own.
             var storedVisibility = readStoredVisibility(screenPicks);
 
-            verify(toggleAttacherMock)
-                .attachToggleTo(eq(firstRow), eq(storedVisibility), anyBoolean());
-            verify(toggleAttacherMock)
-                .attachToggleTo(eq(rebuiltRow), eq(storedVisibility), anyBoolean());
+            verify(toggleAttacherMock).attachToggleTo(firstRow, storedVisibility);
+            verify(toggleAttacherMock).attachToggleTo(rebuiltRow, storedVisibility);
         }
 
         @Test
-        void advanceRemembersEachScreensRowSeparately() {
+        void advanceRemembersEachScreensBoxSeparately() {
 
             var mapRow = ShownFilterRows.createRowWithRoomToSpare();
             var intelRow = ShownFilterRows.createRowWithRoomToSpare();
@@ -171,11 +180,11 @@ final class MapLayerToggleUpkeepTest {
             shownRow.set(mapRow);
             upkeep.advance(PAUSED_FRAME);
 
-            // Moving to the other screen and back does not append a second control to the first
-            // screen's row: each screen's row is remembered against that screen's own picks.
-            verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any(), anyBoolean());
-            verify(toggleAttacherMock, times(1)).attachToggleTo(
-                eq(mapRow), eq(readStoredVisibility(mapScreenPicks)), anyBoolean());
+            // Moving to the other screen and back does not append a second box to the first screen's
+            // row: each screen's box is held against that screen's own picks.
+            verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any());
+            verify(toggleAttacherMock, times(1))
+                .attachToggleTo(mapRow, readStoredVisibility(mapScreenPicks));
         }
 
         @Test
@@ -226,9 +235,50 @@ final class MapLayerToggleUpkeepTest {
             upkeep.advance(PAUSED_FRAME);
             upkeep.advance(PAUSED_FRAME);
 
-            // A refusal is not an attachment, so nothing is remembered - which is what lets a row
-            // the layout had not placed yet take a control on a later frame.
-            verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any(), anyBoolean());
+            // A refusal is not an attachment, so nothing is held - which is what lets a row the
+            // layout had not placed yet take a box on a later frame.
+            verify(toggleAttacherMock, times(2)).attachToggleTo(any(), any());
+        }
+
+        @Test
+        void advanceOpensTheBoxShowingWhatTheScreenHolds() {
+
+            var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
+            var shownRow = ShownFilterRows.createRowOver(rowFake);
+
+            new MapLayerToggleUpkeep(
+                SWITCH_OPEN,
+                MapLayerToggleUpkeepTest::buildScreenPicksOverAHiddenSave,
+                () -> shownRow,
+                buildAcceptingAttacherMock())
+                .advance(PAUSED_FRAME);
+
+            // On the frame it goes up, not the one after: a box that opened ticked over a hidden save
+            // would be wrong on the only frame the player meets it on.
+            assertThat(readAppendedButton(rowFake).isChecked())
+                .isFalse();
+        }
+
+        @Test
+        void advanceKeepsTheBoxShowingAPickThatMovedUnderIt() {
+
+            var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
+            var shownRow = ShownFilterRows.createRowOver(rowFake);
+            var areLayersShown = new AtomicBoolean(true);
+            var screenPicks = buildScreenPicksReading(areLayersShown);
+
+            var upkeep = new MapLayerToggleUpkeep(
+                SWITCH_OPEN, () -> screenPicks, () -> shownRow, buildAcceptingAttacherMock());
+
+            upkeep.advance(PAUSED_FRAME);
+            areLayersShown.set(false);
+            upkeep.advance(PAUSED_FRAME);
+
+            // The pick can move under a standing box - the settling below does it, and so does the
+            // hatch closed and reopened over one - and the row offers no way to take a box off and
+            // put a fresh one up. So it is written from the pick each frame rather than seeded once.
+            assertThat(readAppendedButton(rowFake).isChecked())
+                .isFalse();
         }
 
         @Test
@@ -314,7 +364,7 @@ final class MapLayerToggleUpkeepTest {
             // hatch restores the word rather than appending a second box beside the first.
             assertThat(screenPicks.layerVisibility().areLayersShown())
                 .isFalse();
-            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any(), anyBoolean());
+            verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any());
         }
 
         @Test
@@ -338,22 +388,22 @@ final class MapLayerToggleUpkeepTest {
         }
 
         @Test
-        void advanceOpensTheBoxOnTheStateTheScreenSettlesAt() {
+        void advanceOpensTheBoxOnTheStateTheMovedPickSettlesAt() {
 
-            var screenPicks = buildScreenPicksOnTheEmptyView();
-            var toggleAttacherMock = buildAcceptingAttacherMock();
+            var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
+            var shownRow = ShownFilterRows.createRowOver(rowFake);
+            var areLayersShown = new AtomicBoolean(true);
+            var screenPicks = buildScreenPicksOnTheEmptyView(areLayersShown);
 
             new MapLayerToggleUpkeep(
-                SWITCH_OPEN,
-                () -> screenPicks,
-                ShownFilterRows::createRowWithRoomToSpare,
-                toggleAttacherMock)
+                SWITCH_OPEN, () -> screenPicks, () -> shownRow, buildAcceptingAttacherMock())
                 .advance(PAUSED_FRAME);
 
-            // A box seeded from what the pick read as it went up would open ticked over the empty map
-            // it is taking charge of, and say the layers were shown until it was used twice.
-            verify(toggleAttacherMock)
-                .attachToggleTo(any(), any(), eq(LAYERS_HIDDEN));
+            // The box goes up on the frame the pick it is taking over from is moved, so it shows
+            // where the screen ended up rather than what it held a moment before - a ticked box over
+            // the empty map it just took charge of is the one thing this whole move exists to avoid.
+            assertThat(readAppendedButton(rowFake).isChecked())
+                .isFalse();
         }
 
         @Test
@@ -392,12 +442,10 @@ final class MapLayerToggleUpkeepTest {
 
             // The move is what a standing box is worth to a screen, so a screen that got none keeps
             // both its tab and its picture: a player on the empty view whose row would not take a box
-            // must not find the map painted instead. The pick is read to settle what a box would open
-            // at, so what is pinned is that neither half of it was written.
-            verify(screenPicks.layerSelection(), never())
-                .selectLayer(any());
+            // must not find the map painted instead.
+            verifyNoInteractions(screenPicks.layerSelection());
             verify(readStoredVisibility(screenPicks), never())
-                .showLayers(anyBoolean());
+                .showLayers(false);
         }
 
         @Test
@@ -421,14 +469,14 @@ final class MapLayerToggleUpkeepTest {
             assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
                 .doesNotThrowAnyException();
 
-            verify(toggleAttacherMock, never()).attachToggleTo(any(), any(), anyBoolean());
+            verify(toggleAttacherMock, never()).attachToggleTo(any(), any());
 
             upkeep.advance(PAUSED_FRAME);
 
             // A write into another party's widget must not be able to take the pass down with it,
             // and a session that failed once is not written off: the next frame reaches the row.
-            verify(toggleAttacherMock).attachToggleTo(
-                eq(shownRow), eq(readStoredVisibility(screenPicks)), anyBoolean());
+            verify(toggleAttacherMock)
+                .attachToggleTo(shownRow, readStoredVisibility(screenPicks));
         }
     }
 
@@ -461,9 +509,7 @@ final class MapLayerToggleUpkeepTest {
     // not the worth. The stored pick and the tab are the stand-ins instead, since which save they came
     // off is nothing to do with this.
     private static ScreenLayerPicks buildScreenPicks() {
-        return new ScreenLayerPicks(
-            mock(ActiveLayerSelection.class),
-            new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)));
+        return buildScreenPicksOver(mock(MapLayerVisibility.class));
     }
 
     // The same over a save whose layers were switched off in an earlier session, which is the state
@@ -475,9 +521,25 @@ final class MapLayerToggleUpkeepTest {
         when(storedVisibilityMock.areLayersShown())
             .thenReturn(false);
 
+        return buildScreenPicksOver(storedVisibilityMock);
+    }
+
+    // The same over a save that answers whatever the given flag holds at the moment it is asked, for
+    // the cases whose subject is a pick moving while a box stands over it.
+    private static ScreenLayerPicks buildScreenPicksReading(AtomicBoolean areLayersShown) {
+
+        var storedVisibilityMock = mock(MapLayerVisibility.class);
+
+        when(storedVisibilityMock.areLayersShown())
+            .thenAnswer(read -> areLayersShown.get());
+
+        return buildScreenPicksOver(storedVisibilityMock);
+    }
+
+    private static ScreenLayerPicks buildScreenPicksOver(MapLayerVisibility storedVisibility) {
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
-            new ControlBackedMapLayerVisibility(storedVisibilityMock));
+            new ControlBackedMapLayerVisibility(storedVisibility));
     }
 
     // The stored pick a box is bound to, dug out of the picks so a case states which of the two
@@ -486,13 +548,17 @@ final class MapLayerToggleUpkeepTest {
         return screenPicks.layerVisibility().getStoredVisibility();
     }
 
-    // An attachment that succeeds, which is what the cases about remembering rows are posed over.
+    // An attachment that succeeds, standing a real box on the row it is handed - so the pass's own
+    // "is it still there" read answers as it would in play, and a case can read what the box shows
+    // off the button itself. A stand-in handing back some other row's box would make the first of
+    // those pass by accident and the second unaskable.
     private static MapLayerToggleAttacher buildAcceptingAttacherMock() {
 
         var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
-        when(toggleAttacherMock.attachToggleTo(any(), any(), anyBoolean()))
-            .thenReturn(true);
+        when(toggleAttacherMock.attachToggleTo(any(), any()))
+            .thenAnswer(attachment -> MapFilterToggle.appendToRow(
+                attachment.getArgument(0), BOX_LABEL, () -> { }));
 
         return toggleAttacherMock;
     }
@@ -504,19 +570,41 @@ final class MapLayerToggleUpkeepTest {
 
         var toggleAttacherMock = mock(MapLayerToggleAttacher.class);
 
-        when(toggleAttacherMock.attachToggleTo(any(), any(), anyBoolean()))
-            .thenReturn(false);
+        when(toggleAttacherMock.attachToggleTo(any(), any()))
+            .thenReturn(null);
 
         return toggleAttacherMock;
+    }
+
+    private static MapFilterButtonFake readAppendedButton(MapFilterRowFake rowFake) {
+        return (MapFilterButtonFake) rowFake.getChildrenCopy().get(APPENDED_BUTTON_INDEX);
     }
 
     // A screen sitting on the empty view, over a roster that offers a layer that paints beside it -
     // the one arrangement a standing box has to settle, and the only one in which the strip withholds
     // anything at all.
     private ScreenLayerPicks buildScreenPicksOnTheEmptyView() {
+        return buildScreenPicksOnTheEmptyView(new AtomicBoolean(true));
+    }
+
+    // The same over a save that answers the given flag, for a case reading what the box the move
+    // settles under shows.
+    private ScreenLayerPicks buildScreenPicksOnTheEmptyView(AtomicBoolean areLayersShown) {
 
         MapLayerRegistry.registerLayers(
             List.of(NoLayer.INSTANCE, paintingLayerMock), paintingLayerMock);
+
+        var storedVisibilityMock = mock(MapLayerVisibility.class);
+
+        when(storedVisibilityMock.areLayersShown())
+            .thenAnswer(read -> areLayersShown.get());
+
+        // The stand-in save actually holds what is written to it, so a case can read back what the
+        // box shows once the move has run rather than only that the move was asked for.
+        doAnswer(hide -> {
+            areLayersShown.set(hide.getArgument(0));
+            return null;
+        }).when(storedVisibilityMock).showLayers(anyBoolean());
 
         var layerSelectionMock = mock(ActiveLayerSelection.class);
 
@@ -525,6 +613,6 @@ final class MapLayerToggleUpkeepTest {
 
         return new ScreenLayerPicks(
             layerSelectionMock,
-            new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)));
+            new ControlBackedMapLayerVisibility(storedVisibilityMock));
     }
 }

@@ -1,17 +1,23 @@
 package kmu.maplayers.base.chrome;
 
 import kmlib.starsector.ui.map.controls.MapFilterRow;
+import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
 
 /**
  * Puts the map layers' own tick box on a map's filter row and binds it to one screen's show-or-hide
- * pick: the box opens showing the state it is handed, and a click on it moves that pick.
+ * pick, so that a click on the box moves that pick.
  *
  * <p>The pick travels with the row rather than being read where the box is built, because a row
  * belongs to a screen and a pick belongs to the same one. Handed the pair, this cannot put a box on
  * one screen's row that moves the other screen's layers - which is the one way an attachment could
  * be wrong without looking wrong.
+ *
+ * <p>What the box <em>shows</em> is not settled here. A box says what its screen holds for as long
+ * as it stands, and the pick can move while it stands - by the player's own click, and by anything
+ * else that writes the pick - so keeping it in step is a standing job rather than part of putting it
+ * up, and it belongs to whatever holds the box. That is why the handle is handed back.
  *
  * <p>A seam rather than the write itself. What stands a control on somebody else's widget is a
  * reach into the running game's own tree, and the handle it answers with is made by that reach and
@@ -25,21 +31,13 @@ import kmu.maplayers.base.layer.MapLayerVisibility;
 public interface MapLayerToggleAttacher {
 
     /**
-     * Stands a tick box on {@code row}, opening it at {@code areLayersShownAtFirst} and driving
-     * {@code layerVisibility} from then on.
+     * Stands a tick box on {@code row}, driving {@code layerVisibility} when it is clicked.
      *
-     * @param row                   the row to put it on, which is the one on screen
-     * @param layerVisibility       the show-or-hide pick of the screen that row belongs to, which a click
-     *                              on the box moves
-     * @param areLayersShownAtFirst what the box opens showing. Handed over rather than read off the pick,
-     *                              because standing a box can itself settle the screen it stands on: one
-     *                              seeded from what that pick read a moment earlier would open on the
-     *                              state the screen is leaving, and go on saying so until it was used
-     *                              twice
-     * @return whether a control is now standing on that row
+     * @param row             the row to put it on, which is the one on screen
+     * @param layerVisibility the show-or-hide pick of the screen that row belongs to, which a click
+     *                        on the box moves
+     * @return the box now standing on that row, for its holder to keep in step with the pick, or
+     *         null where the row would take none
      */
-    boolean attachToggleTo(
-        MapFilterRow row,
-        MapLayerVisibility layerVisibility,
-        boolean areLayersShownAtFirst);
+    MapFilterToggle attachToggleTo(MapFilterRow row, MapLayerVisibility layerVisibility);
 }

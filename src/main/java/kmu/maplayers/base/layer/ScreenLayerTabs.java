@@ -47,24 +47,6 @@ public final class ScreenLayerTabs {
     }
 
     /**
-     * What a control going up on this screen leaves its layers reading, for a control being built to open
-     * at.
-     *
-     * <p>Asked ahead of the move rather than after it because the move may not be owed at all: nothing is
-     * written until a box is actually standing, so a caller has to know what the box will open at before
-     * it knows whether there is a box to open.
-     *
-     * @param screenPicks the screen's own picks
-     * @return whether this screen's layers are shown once a control stands on it
-     */
-    public static boolean areLayersShownOnceControlStands(ScreenLayerPicks screenPicks) {
-        // A pick about to be moved off a withheld tab takes its emptiness with it: the map stays as blank
-        // as the player left it, said as a hide rather than as a tab.
-        return !isPickWithheldOnceControlStands(screenPicks)
-            && screenPicks.layerVisibility().getStoredVisibility().areLayersShown();
-    }
-
-    /**
      * Moves a pick this screen no longer offers to the default layer, and stores the empty map it stood
      * for as a hide - so the picture is unchanged and what the player chose is now held by the control
      * that can reverse it.

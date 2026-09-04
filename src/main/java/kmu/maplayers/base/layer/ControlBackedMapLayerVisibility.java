@@ -96,7 +96,7 @@ public final class ControlBackedMapLayerVisibility implements MapLayerVisibility
     /**
      * @return the pick underneath, for a control to show and to move. A control is what lifts the rule
      *         above rather than something subject to it, so it is bound to the player's own choice: one
-     *         seeded from the reading would report the layers as shown over a save that holds them
+     *         showing the reading instead would report the layers as shown over a save that holds them
      *         hidden, and stay at odds with them until it was used twice
      */
     public MapLayerVisibility getStoredVisibility() {

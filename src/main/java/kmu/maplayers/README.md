@@ -674,8 +674,10 @@ about what the overlay means.
   same word withholds the No Layer tab from that screen, so the first box to stand on a screen still
   set to it moves the pick to the default layer and stores a hide - the map is as blank as it was,
   under a box that now says so. Once per screen, on the first box up, and never on a row that
-  refused one; what the box opens showing is handed to the attachment rather than read off the pick,
-  since the stand is what settles the pick.
+  refused one. The upkeep holds each screen's box rather than only recording that one went up, and
+  writes what it shows from the pick every frame: the pick moves under a standing box - that move
+  does it, and so does a hatch closed and reopened over one - and the row offers no way to take a
+  box off and put a fresh one up in its place.
   Whether it is attempted at all is `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev hatch
   rather than an appearance knob, since what it governs is the reach and not the look. Which key
   ticks it is `kmu_map_keybinds_filters_mapLayersToggle`, default M, read afresh at each attachment
