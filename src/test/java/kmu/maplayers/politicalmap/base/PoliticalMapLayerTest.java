@@ -18,11 +18,13 @@ import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
+import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.lwjgl.input.Keyboard;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
@@ -50,14 +52,23 @@ import static org.mockito.Mockito.when;
  * other installation would answer identically. They pin that the picker is read off that sector's
  * memo, and that every control the body places is handed that installation's own refresh board.
  *
- * <p>Also the key this tab letters itself from, which the bar takes as drawn text rather than looking
- * up: swapped for another tab's, it is a wrong label on screen and nothing else catches it.
+ * <p>Also the two things this tab resolves for itself rather than being read out of: the strings key it
+ * letters itself from, which the bar takes as drawn text, and the settings row its shortcut is rebound
+ * in, which the bar takes as a keycode. Swapped for another tab's, either is a wrong label or a stolen
+ * shortcut on screen and nothing else catches it.
  */
 final class PoliticalMapLayerTest {
 
     // The frozen sector-memory key the active-view selection serialises under, pinned as a literal so
     // a rename that would reset every save to the default fails here rather than shipping.
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
+
+    // The live LunaLib field id, pinned as a literal: a rename here silently drops the player's rebind
+    // and returns the tab to its default key.
+    private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
+
+    // A key the player rebound to, distinct from the default so a read that ignored the store still fails.
+    private static final int REBOUND_KEYCODE = 20;
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents. Their tone is
@@ -411,6 +422,28 @@ final class PoliticalMapLayerTest {
 
                 assertThat(PoliticalMapLayer.INSTANCE.resolveTabLabelText())
                     .isEqualTo("Political Map");
+            }
+        }
+    }
+
+    @Nested
+    class ResolveShortcutKeycode {
+
+        @Test
+        void resolveShortcutKeycodeReadsThePoliticalMapsOwnRebindingField() {
+            // The tab holds both halves of the read now - which field the rebind lands in and what it
+            // answers to before there is one - so a wrong id here silently ignores the player's rebind
+            // while every framework test stays green.
+            try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
+
+                settingsMock
+                    .when(() -> KmuMapKeybindSettings.getMapLayerShortcut(
+                        SHORTCUT_SETTING_FIELD,
+                        Keyboard.KEY_P))
+                    .thenReturn(REBOUND_KEYCODE);
+
+                assertThat(PoliticalMapLayer.INSTANCE.resolveShortcutKeycode())
+                    .isEqualTo(REBOUND_KEYCODE);
             }
         }
     }
