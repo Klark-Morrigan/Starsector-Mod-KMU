@@ -28,8 +28,8 @@ import java.util.Set;
  * <p>Each host owns its own {@link TabPanelController} and its own {@link SidebarFoldSelection}, so the two
  * screens' panels keep separate scroll and collapse state - and reopen at their own folds - even though
  * they share one layout and one set of layer controls. {@link BaseSidebarHost} carries the plumbing
- * common to every host - including the shortcut key that jumps to a layer, since the panel offers the same
- * tabs wherever it draws - leaving a concrete host only the questions that genuinely differ between
+ * common to every host - including the shortcut key that jumps to a layer, since the panel draws one body
+ * of tabs wherever it shows - leaving a concrete host only the questions that genuinely differ between
  * screens.
  */
 public interface SidebarHost {

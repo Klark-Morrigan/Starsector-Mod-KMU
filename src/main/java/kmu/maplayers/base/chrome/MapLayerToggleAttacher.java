@@ -6,7 +6,7 @@ import kmu.maplayers.base.layer.MapLayerVisibility;
 
 /**
  * Puts the map layers' own tick box on a map's filter row and binds it to one screen's show-or-hide
- * pick: the box opens showing what that screen's pick holds, and a click on it moves that pick.
+ * pick: the box opens showing the state it is handed, and a click on it moves that pick.
  *
  * <p>The pick travels with the row rather than being read where the box is built, because a row
  * belongs to a screen and a pick belongs to the same one. Handed the pair, this cannot put a box on

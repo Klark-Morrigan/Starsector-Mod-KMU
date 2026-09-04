@@ -11,9 +11,13 @@ import java.util.List;
 
 /**
  * The empty view: selecting it paints no overlay, so the sector map reads as vanilla. It is a
- * first-class tab rather than an off state, so the bar always shows what is and is not drawn
- * and the player has an explicit "show nothing" pick. Its tab opens no body (empty controls),
- * so the empty map is understood as a choice, not a failure to draw.
+ * first-class tab rather than an off state, so the player has an explicit "show nothing" pick and
+ * an empty map is understood as a choice rather than a failure to draw. Its tab opens no body
+ * (empty controls), for the same reason.
+ *
+ * <p>Where the map's own chrome carries a control that empties the map, this tab stands down in its
+ * favour - {@link ScreenLayerTabs} withholds it per screen, that being where such a control stands
+ * or fails to. So it is the pick a screen falls back to rather than one always on offer.
  */
 public final class NoLayer implements MapLayer {
 

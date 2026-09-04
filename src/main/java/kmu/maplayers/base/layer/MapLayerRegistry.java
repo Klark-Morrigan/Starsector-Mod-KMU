@@ -7,10 +7,15 @@ import java.util.List;
 
 /**
  * The roster of map layers, and the one answer everything that paints hangs off: which of them is in
- * play on the screen showing this frame. The layer bar composes its tabs from {@link #getLayers()},
- * each layer's own state reads {@link #isActive} to decide whether it is the one to draw, and the map
- * surface dispatches through {@link #resolveActiveMapRenderer} - so all agree on one selection without
- * sharing state directly.
+ * play on the screen showing this frame. Each layer's own state reads {@link #isActive} to decide
+ * whether it is the one to draw, and the map surface dispatches through
+ * {@link #resolveActiveMapRenderer} - so all agree on one selection without sharing state directly.
+ *
+ * <p>{@link #getLayers()} is the roster and not the row of tabs any screen draws: which of them a
+ * given screen offers is {@link ScreenLayerTabs}', a screen carrying a control of its own on the
+ * game's chrome being offered one fewer. The roster stays whole underneath that, since a stored pick
+ * is an id resolved against it - filtered, a save left on a withheld tab would read as an id from an
+ * older build and fall back to a layer that paints.
  *
  * <p>The player's own state is not here: which layer each screen is set to, and whether that screen
  * shows its layers at all, belong to {@link MapLayerScreens}, whose live pair this reads. Two classes
@@ -28,8 +33,9 @@ public final class MapLayerRegistry {
     // stops being answered at all.
     private static final float FULLY_HIDDEN = 0f;
 
-    // The registered layers, in tab order, and the pick an untouched save resolves to. Empty
-    // until a composition root registers them at startup, before any sector map can open.
+    // The registered layers, in the order a screen offering all of them rows them up, and the pick an
+    // untouched save resolves to. Empty until a composition root registers them at startup, before
+    // any sector map can open.
     private static List<MapLayer> orderedLayers = List.of();
     private static MapLayer defaultLayer;
 
@@ -37,11 +43,11 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * Records the layers the bar shows and the pick an untouched save resolves to. Called once
+     * Records the layers that exist and the pick an untouched save resolves to. Called once
      * by the composition root at startup: it is the only place a concrete layer is named, so
      * the framework here stays agnostic to which views exist.
      *
-     * @param layers        the registered layers in tab order, left to right
+     * @param layers        the registered layers in row order, left to right
      * @param defaultLayer  the pick an untouched save (or a stale stored id) resolves to
      */
     public static void registerLayers(List<MapLayer> layers, MapLayer defaultLayer) {
@@ -49,7 +55,10 @@ public final class MapLayerRegistry {
         MapLayerRegistry.defaultLayer = defaultLayer;
     }
 
-    /** @return the registered layers in tab order, left to right. */
+    /**
+     * @return every registered layer, in row order, left to right - the roster rather than any one
+     *         screen's tabs
+     */
     public static List<MapLayer> getLayers() {
         return orderedLayers;
     }

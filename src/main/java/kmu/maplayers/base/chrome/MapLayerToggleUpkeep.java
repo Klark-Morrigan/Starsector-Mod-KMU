@@ -41,6 +41,11 @@ import java.util.function.Supplier;
  * the only thing that can say a screen has a control, which is what a stored hide is acted on - so
  * a screen it never writes to shows its layers whatever the save holds, and neither a broken reach
  * nor a closed hatch can leave a player in front of a blank map with nothing to reverse it.
+ *
+ * <p>Saying so is also what takes a tab off that screen's strip, so this is where the pick standing
+ * on that tab is settled - once, on the first box to stand. It is the only place that knows when a
+ * box went up, and the pick has to move before the box opens on the state it leaves behind, so both
+ * halves belong to the frame that stands it rather than to whatever draws the strip afterwards.
  */
 public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
@@ -123,7 +128,8 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     }
 
     // Ordered cheapest-first: a switch read, one hop into the widget on screen, then a reference
-    // compare - so the common frame, the box already where it belongs, costs the hop alone.
+    // compare - so the common frame, the box already where it belongs, costs the hop and the word
+    // re-asserted under it, and nothing that reaches the save.
     private void attachToggleWhereMissing() {
 
         if (!isToggleEnabled.getAsBoolean()) {

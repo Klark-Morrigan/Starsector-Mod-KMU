@@ -25,11 +25,13 @@ import java.util.List;
  * answers the questions that actually differ between screens: whether its screen is up, where it anchors,
  * which frame edges it strokes, and how that screen's own view state reads.
  *
- * <p>The shortcut jump lives here because the panel offers the same tabs on every screen that shows it, so
- * the key that reaches a tab should not depend on which screen the player is looking at. It writes the
- * host's own selection, so a shortcut moves the tab of the screen it was pressed on and leaves the other
- * screen's where it was. Which key reaches which tab is each layer's own answer, asked afresh at every
- * press; a layer with none is skipped, so an unbound tab never captures a key.
+ * <p>The shortcut jump lives here because the panel draws one body of tabs wherever it shows, so the key
+ * that reaches a tab should not depend on which screen the player is looking at. It writes the host's own
+ * selection, so a shortcut moves the tab of the screen it was pressed on and leaves the other screen's
+ * where it was - and it walks that screen's own row, so a tab withheld from this screen answers no key
+ * here while going on answering on a screen that still offers it. Which key reaches which tab is each
+ * layer's own answer, asked afresh at every press; a layer with none is skipped, so an unbound tab never
+ * captures a key.
  *
  * <p>Whether the sidebar is live at all is settled here too, since only one part of that answer differs
  * between screens: a host says whether its own screen is up, while standing down for whatever else has

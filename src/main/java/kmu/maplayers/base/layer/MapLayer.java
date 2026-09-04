@@ -9,9 +9,10 @@ import java.util.List;
 
 /**
  * One selectable view of the sector map: a tab in the on-map layer bar and, for the views
- * that paint, one styling of the sector's clusters. The bar composes whatever layers are
- * registered with {@link MapLayerRegistry} into a row of tabs and switches between them,
- * exactly one active at a time - the same model as the map's own Sector/System tabs.
+ * that paint, one styling of the sector's clusters. The bar composes the layers registered with
+ * {@link MapLayerRegistry} - as many of them as the screen it draws on is offered - into a row of
+ * tabs and switches between them, exactly one active at a time, the same model as the map's own
+ * Sector/System tabs.
  *
  * <p>The framework exists so a new view is a matter of adding an implementation and
  * registering it: the bar draws its tab, the input listener hit-tests it, and its hotkey
