@@ -238,7 +238,9 @@ about what the overlay means.
   the player is looking at. The register behind the observations is `ColonySightings` over
   `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
   political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
-  stands both up on load.
+  stands both up on load. What it keeps is kept in the shared `ObservationStore` under this family's
+  own key, one entry spelt by `ColonyObservationCodec` - the moment, then the place - so what a
+  sighting means stays here while the bytes and the load lifecycle are the store's.
 - **`base/visibility/observations`** - how old the news about one concealed fact is, stated once for
   every family that conceals one. `ObservationRecency` is the triad it can be in - something is
   revealing it now, the record recalls it from a moment, or nothing ever established it - sealed so
