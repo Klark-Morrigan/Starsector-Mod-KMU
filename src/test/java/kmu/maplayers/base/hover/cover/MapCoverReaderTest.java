@@ -73,12 +73,12 @@ final class MapCoverReaderTest {
     class ComposeLiveCovers {
 
         @Test
-        void asksAModalBeforeTheSidebarItStandsDown() {
+        void asksWhateverStandsTheSidebarDownBeforeTheSidebarItself() {
             // Load-bearing rather than incidental, and the one ordering a later cover could break by
-            // being inserted between them: a modal stands the sidebar down, so behind it the
-            // sidebar's cover resolves placements for a panel that is not drawn, to reach a false it
-            // can no longer avoid. Pinned on its own because the full-list assertion below would
-            // report a break in it as a mismatch about optional mods.
+            // being inserted between them: a modal and the codex each stand the sidebar down, so
+            // behind either the sidebar's cover resolves placements for a panel that is not drawn,
+            // to reach a false it can no longer avoid. Pinned on its own because the full-list
+            // assertion below would report a break in it as a mismatch about optional mods.
             // Presence stubbed for the same reason the case below stubs it: both are always-present
             // covers, so what the optional mods would add says nothing about the order between them.
             try (var consoleMock = mockStatic(ConsoleCommandsPresence.class);
@@ -97,6 +97,8 @@ final class MapCoverReaderTest {
                     .toList();
 
                 assertThat(coverTypes.indexOf(ModalDialogMapCover.class))
+                    .isLessThan(coverTypes.indexOf(SidebarMapCover.class));
+                assertThat(coverTypes.indexOf(CodexMapCover.class))
                     .isLessThan(coverTypes.indexOf(SidebarMapCover.class));
             }
         }
@@ -120,6 +122,7 @@ final class MapCoverReaderTest {
                     .hasExactlyElementsOfTypes(
                         HeldPointerMapCover.class,
                         PauseMenuMapCover.class,
+                        CodexMapCover.class,
                         ModalDialogMapCover.class,
                         SidebarMapCover.class,
                         VanillaChromeMapCover.class);

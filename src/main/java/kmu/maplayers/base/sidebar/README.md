@@ -68,8 +68,8 @@ They part company only while something is fading. A modal takes every event outs
 frame it is raised, so input cannot wait for its fade; but the modal darkens the screen over that
 same fade, and a panel cut away at the first frame of it reads as a snap against a backdrop still
 deepening. So the panel keeps painting, thinner each frame, until the modal is fully in. A claimant
-that reports no fade - the console - takes both at once, which is right: a panel should snap with
-whatever snapped over it. The show-or-hide ramp splits the pair the same way and for the same reason,
+that reports no fade - the console, and the codex - takes both at once, which is right: a panel should
+snap with whatever snapped over it. The show-or-hide ramp splits the pair the same way and for the same reason,
 the panel dissolving with the overlay it drives rather than cutting away from over it, and the two
 fades multiply. Both compositions ask the claim first and the screen last, so the read that walks
 live widgets is skipped while the panel is standing down anyway.
@@ -101,8 +101,8 @@ package's. Standing the sidebar down takes its cover over the map down with it, 
 hover would read straight through to the cells under whatever claimed the screen - and it is the act
 of hiding that does this, so a claimant that hides the panel *cannot* be reported by the panel's own
 cover. Each claimant is therefore a cover in its own right too: the console as `ConsoleMapCover`, a
-modal as `ModalDialogMapCover` - see [map layers](../../README.md) on `base/hover/cover`, where both
-sit beside the sidebar's.
+modal as `ModalDialogMapCover`, the codex as `CodexMapCover` - see [map layers](../../README.md) on
+`base/hover/cover`, where all three sit beside the sidebar's.
 
 Both screen gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
 visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)
