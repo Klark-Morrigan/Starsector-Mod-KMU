@@ -11,6 +11,7 @@ import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
+import kmlib.starsector.ui.widgets.PanelChrome;
 import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
@@ -165,12 +166,7 @@ public final class LiveSidebarPlacement {
             // measures down from the screen's top and never asks where its corner is.
             VanillaScreen.resolveUiHeight(),
             padding,
-            // The player's border width over the edges the host frames; a dropped edge collapses its
-            // reserved inset so the box sits flush against the neighbour the host meant to blend into.
-            new BoxBorder(KmuMapLayerSettings.getMapSidebarBorderWidth(), borderedEdges),
-            // TODO: feed the player's scrollbar thickness here once the setting exists; the default
-            // keeps the bar the width it has always drawn at until then.
-            ScrollbarThickness.DEFAULT,
+            buildChrome(borderedEdges),
             tabStyle,
             buildTabsSpec(layers, activeLayer, selection),
             activeLayer.getBodyControls(),
@@ -190,6 +186,18 @@ public final class LiveSidebarPlacement {
             .clampTo(placement.body().scrollOverflow());
 
         return placement;
+    }
+
+    // What the panel spends on chrome rather than on content, read per frame so a settings change shows on
+    // the next one: the player's border width over the edges the host frames - a dropped edge collapses its
+    // reserved inset so the box sits flush against the neighbour the host meant to blend into - and the bar
+    // thickness the body reserves its gutter for.
+    private static PanelChrome buildChrome(Set<BoxEdge> borderedEdges) {
+        return new PanelChrome(
+            new BoxBorder(KmuMapLayerSettings.getMapSidebarBorderWidth(), borderedEdges),
+            // TODO: feed the player's scrollbar thickness here once the setting exists; the default keeps
+            // the bar the width it has always drawn at until then.
+            ScrollbarThickness.DEFAULT);
     }
 
     // The on-map anchor: hang from the screen top-left by the player's padding. The right margin is
