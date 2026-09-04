@@ -123,6 +123,23 @@ final class LiveSidebarPlacementTest {
             assertThat(LiveSidebarPlacement.resolveTabLabels(List.of(blankLabelLayerMock, labelledLayerMock)))
                 .containsExactly("", "Political Map");
         }
+
+        @Test
+        void resolveTabLabelsLettersNothingForALayerAnsweringNoLabelAtAll() {
+            // A layer answering null rather than blank, which an arbitrary mod's layer can. The row refuses
+            // a null label outright, so an ungated read would cost the player the whole tab strip over one
+            // layer's missing answer instead of costing that layer its letters.
+            var namelessLayerMock = mock(MapLayer.class);
+            var labelledLayerMock = mock(MapLayer.class);
+
+            when(namelessLayerMock.resolveTabLabelText())
+                .thenReturn(null);
+            when(labelledLayerMock.resolveTabLabelText())
+                .thenReturn("Political Map");
+
+            assertThat(LiveSidebarPlacement.resolveTabLabels(List.of(namelessLayerMock, labelledLayerMock)))
+                .containsExactly("", "Political Map");
+        }
     }
 
     @Nested
@@ -261,6 +278,22 @@ final class LiveSidebarPlacementTest {
                 .hasSize(3);
             assertThat(spec.shortcuts())
                 .hasSameSizeAs(spec.labels());
+        }
+
+        @Test
+        void buildTabsSpecStandsTheRowUpAroundALayerAnsweringNoLabel() {
+            // The end of the same path: the strip refuses a null label, so an unsettled answer from one
+            // layer would throw here rather than in the read that produced it. The row stands, and the
+            // layer that said nothing simply has nothing lettered on its tab.
+            var layers = List.of(buildLayerMock(null), buildLayerMock("Political Map"));
+
+            var spec = LiveSidebarPlacement.buildTabsSpec(
+                layers,
+                layers.get(1),
+                mock(ActiveLayerSelection.class));
+
+            assertThat(spec.labels())
+                .containsExactly("", "Political Map");
         }
 
         // A layer that letters its tab and answers no key, which is the shape every case here is about -

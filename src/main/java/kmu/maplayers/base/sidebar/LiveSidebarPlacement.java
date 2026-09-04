@@ -20,10 +20,10 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.settings.KmuMapLayerSettings;
+import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -103,24 +103,24 @@ public final class LiveSidebarPlacement {
 
     // The row's labels, one per layer in registry order. A blank answer still contributes an entry, so a
     // layer with nothing to say costs its tab its letters and not its place in the row.
+    //
+    // Taken through the text read that settles absent and blank to the same empty string, because the
+    // answer is an arbitrary mod's: the row refuses a null label outright, so one layer returning nothing
+    // would take the whole strip down instead of costing itself its letters - the same price the keycode
+    // is bounded for, one field over.
     static List<String> resolveTabLabels(List<MapLayer> layers) {
-
-        var labels = new ArrayList<String>(layers.size());
-        for (var layer : layers) {
-            labels.add(layer.resolveTabLabelText());
-        }
-        return labels;
+        return layers.stream()
+            .map(layer -> KmuValues.getTextOrEmpty(layer.resolveTabLabelText()))
+            .toList();
     }
 
-    // The row's shortcut hints, built to run parallel to the labels above - same order, same length, one
-    // entry per layer whether or not it has a key to print, since the control pairs the two by index.
+    // The row's shortcut hints, one per layer whether or not it has a key to print. Unlike the labels
+    // above, a hint may be absent outright - the control reads a null entry as a tab with no hint - so
+    // the collector has to be one that admits nulls.
     static List<String> resolveTabShortcuts(List<MapLayer> layers) {
-
-        var shortcuts = new ArrayList<String>(layers.size());
-        for (var layer : layers) {
-            shortcuts.add(resolveShortcutName(layer));
-        }
-        return shortcuts;
+        return layers.stream()
+            .map(LiveSidebarPlacement::resolveShortcutName)
+            .toList();
     }
 
     // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
@@ -129,7 +129,10 @@ public final class LiveSidebarPlacement {
     // click all index the same registry row, and no separate tab callback is threaded through the input.
     //
     // Both halves of the row come off the layers themselves, so the assembly stands up without a settings
-    // file or a live registry behind it and what it says can be asked directly.
+    // file or a live registry behind it and what it says can be asked directly. Both are also one entry
+    // per layer in registry order, since the control pairs a label to its hint by index - which is why
+    // neither half drops a layer that answers nothing, and why the lit index is a position in that same
+    // row rather than a search of it.
     static ControlSpec.Tabs buildTabsSpec(
             List<MapLayer> layers,
             MapLayer activeLayer,
@@ -232,14 +235,12 @@ public final class LiveSidebarPlacement {
         return index < 0 ? ControlSpec.NO_SELECTION : index;
     }
 
-    // The display name of the key a layer answers to, or null when it has none - an unbound keycode (0,
-    // cleared with Escape; LWJGL still names it "NONE"), a code past the keyboard LWJGL knows, or one
-    // inside it that it has no name for. A null/blank shortcut leaves the tab label alone.
+    // The display name of the key a layer answers to, or null when it has none: an unbound keycode,
+    // which LWJGL would otherwise name "NONE", or a code it holds no name for.
     //
-    // The keycode is the layer's answer rather than a settings read here, so a layer from another mod
-    // binds its tab out of a settings file KMU has no reader for. The bound test is the price of taking
-    // an arbitrary mod's number: LWJGL's name table is indexed by keycode with no range check of its
-    // own, so a layer answering past its end would take the whole tab row down rather than print no hint.
+    // The upper bound is the price of taking an arbitrary mod's number: LWJGL indexes its name table by
+    // keycode with no range check of its own, so a layer answering past its end would take the whole tab
+    // row down rather than cost itself a hint.
     private static String resolveShortcutName(MapLayer layer) {
 
         var keycode = layer.resolveShortcutKeycode();
