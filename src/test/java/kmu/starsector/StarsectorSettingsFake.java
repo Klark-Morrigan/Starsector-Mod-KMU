@@ -122,6 +122,10 @@ public final class StarsectorSettingsFake {
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_SAVE,
             "save your game");
         stringsByKey.put(
+            KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING,
+            "Save game loading will produce an error if KMU is disabled without uninstalling map "
+                + "layers from a save beforehand.");
+        stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_VIEW_POLITICAL_MAP,
             "Political Map");
         stringsByKey.put(

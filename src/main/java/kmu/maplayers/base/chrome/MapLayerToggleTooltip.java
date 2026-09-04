@@ -46,6 +46,12 @@ final class MapLayerToggleTooltip {
     // the game's does not sit its text differently from the six that are.
     private static final float PARAGRAPH_PAD = 3f;
 
+    // What separates one paragraph from the next. Wider than the pad above the first, because that
+    // one only lifts the text off the tooltip's edge while this one has to read as a break: at the
+    // same three units the three paragraphs run together as one block of prose, and the reader loses
+    // the only cue that the middle one is a different kind of statement from the first.
+    private static final float PARAGRAPH_GAP = 10f;
+
     // Whether the political map offers an alliances view at all. Asked rather than stated, the view
     // itself being registered only where the mod that keeps alliances is installed - so an install
     // without it is not told about a view it does not have.
@@ -85,7 +91,16 @@ final class MapLayerToggleTooltip {
         // says who is answerable for it and how to be rid of it, and a player looking for the second
         // should not have to read the first to find it.
         new HighlightedParagraph(parts.composeUninstallNote(), parts.listUninstallHighlights())
-            .addTo(tooltip, PARAGRAPH_PAD);
+            .addTo(tooltip, PARAGRAPH_GAP);
+
+        // The consequence of doing it the other way round, drawn entirely in the shade the engine
+        // uses for bad news rather than tinting a run inside it. Nothing here is a name or a step -
+        // the whole sentence is the warning - and a warning with one word picked out reads as an
+        // instruction with an emphasis rather than as something to avoid.
+        new HighlightedParagraph(
+            KmuStrings.get(KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING),
+            StarsectorUiColour.VANILLA_HIGHLIGHT_RED.resolve())
+            .addTo(tooltip, PARAGRAPH_GAP);
     }
 
     // The pieces the sentence is made of, read once. The same four settle both what the text says
