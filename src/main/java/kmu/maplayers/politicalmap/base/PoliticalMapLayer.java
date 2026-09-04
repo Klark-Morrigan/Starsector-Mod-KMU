@@ -35,8 +35,7 @@ public final class PoliticalMapLayer implements MapLayer {
     // in the active-tab memory key.
     private static final String LAYER_ID = "political_map";
 
-    // LunaLib stores this tab's key under the field id, and the row it names is the only place the
-    // key is decided - no keycode is stated here to fall back on. The table ships it on P.
+    // LunaLib stores this tab's key under the field id; the row it names is where the key is decided.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
 
     private PoliticalMapLayer() {
@@ -89,9 +88,7 @@ public final class PoliticalMapLayer implements MapLayer {
     public int resolveShortcutKeycode() {
         // The framework asks for the key in force rather than for a field to read, so the LunaLib
         // lookup is this tab's own: the field id is a row in KMU's settings file, which is a fact
-        // about this mod rather than about the bar the tab stands in. Whatever the row answers is
-        // the whole answer - a settings read that fails leaves the tab unbound rather than falling
-        // back on a key this class picked.
+        // about this mod rather than about the bar the tab stands in.
         return KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_FIELD);
     }
 
