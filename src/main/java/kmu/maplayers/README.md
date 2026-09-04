@@ -241,7 +241,17 @@ about what the overlay means.
   recency with its own lead-in: every recalled axis carrying a moment contributes it, the most
   recent wins and is stated in that axis's words, and a row nothing contributes to carries no date.
   A current axis and an unknown one both contribute nothing, so a row is dated by what it recalls
-  and by nothing else.
+  and by nothing else. What an axis recalls is kept by `ObservationStore`, the register every family
+  writes its observations into: sector memory under a key of its own, held as text so no class name
+  of ours is baked into a save, and never opened at all where there was nothing to record.
+  `RecordedObservations` is what a pass reads it back through. What one entry means stays with the
+  family, as an `ObservationCodec` the store is handed - which is also where the fixed-fields-first
+  convention lives, the free-form field running to the end of an entry so an id spelt with the
+  separator reads back whole, and an entry that does not part reading as the weaker true thing
+  rather than as corrupt. The lifecycle is the store's because all three families want the same one:
+  a load sheds what the register no longer describes and then records what the player was left
+  standing among, in that order, asking the family which of its subjects still exist and what is
+  being observed now.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and
