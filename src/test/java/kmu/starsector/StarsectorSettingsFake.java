@@ -101,8 +101,7 @@ public final class StarsectorSettingsFake {
             "Shows %s that draw a %s (%s) over the sector map.");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL,
-            "This feature is provided by the %s mod. To %s %s from your save game, %s in %s mod "
-                + "settings and %s.");
+            "This feature is provided by the %s mod.");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_LAYERS,
             "Sector Map Layers");
@@ -121,7 +120,7 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING,
             "%s save game loading will produce an error if %s is disabled without %s %s from a "
-                + "save beforehand.");
+                + "save beforehand. To do so, %s in %s mod settings and %s.");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE_UNINSTALL_WARNING_LABEL,
             "Warning:");
