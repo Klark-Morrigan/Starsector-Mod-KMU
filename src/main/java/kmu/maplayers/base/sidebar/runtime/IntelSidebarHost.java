@@ -11,6 +11,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
+import kmu.maplayers.base.sidebar.SidebarHostPanel;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
 import java.util.EnumSet;
@@ -107,10 +108,11 @@ public final class IntelSidebarHost extends BaseSidebarHost {
         }
         return LiveSidebarPlacement.resolveIntelPlacement(
             mapVisorRect,
-            buildTabStyle(),
-            getController(),
-            getLayerSelection(),
-            layoutBorderEdges());
+            new SidebarHostPanel(
+                buildTabStyle(),
+                getController(),
+                getLayerSelection(),
+                layoutBorderEdges()));
     }
 
     @Override

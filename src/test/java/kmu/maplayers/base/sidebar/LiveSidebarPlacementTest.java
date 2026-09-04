@@ -1,7 +1,9 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 
 import org.junit.jupiter.api.Nested;
@@ -11,6 +13,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -185,6 +188,91 @@ final class LiveSidebarPlacementTest {
 
             assertThat(LiveSidebarPlacement.resolveTabShortcuts(List.of(offTheKeyboardLayerMock)))
                 .containsExactly((String) null);
+        }
+    }
+
+    @Nested
+    class BuildTabsSpec {
+
+        @Test
+        void buildTabsSpecLightsTheTabOfTheScreensOwnActiveLayer() {
+
+            var layers = List.of(buildLayerMock("No Layer"), buildLayerMock("Political Map"));
+
+            var spec = LiveSidebarPlacement.buildTabsSpec(
+                layers,
+                layers.get(1),
+                mock(ActiveLayerSelection.class));
+
+            // The lit index is the layer's row in the registry, which is what pairs the drawn tab with the
+            // body beneath it - both index the same list.
+            assertThat(spec.selectedIndex())
+                .isEqualTo(1);
+        }
+
+        @Test
+        void buildTabsSpecLightsNoTabForAnActiveLayerTheRegistryNoLongerHolds() {
+            // A pick can outlive its layer: the mod that registered it leaves the load order while the
+            // screen is still holding it. The row then lights nothing rather than lighting a tab that
+            // stands for something else, and NO_SELECTION is what says so.
+            var layers = List.of(buildLayerMock("No Layer"), buildLayerMock("Political Map"));
+
+            var spec = LiveSidebarPlacement.buildTabsSpec(
+                layers,
+                buildLayerMock("Trade Routes"),
+                mock(ActiveLayerSelection.class));
+
+            assertThat(spec.selectedIndex())
+                .isEqualTo(ControlSpec.NO_SELECTION);
+            assertThat(spec.isLit())
+                .isFalse();
+        }
+
+        @Test
+        void buildTabsSpecSelectsTheLayerAtTheClickedTab() {
+            // The switch rides on the control's own action, so the tab that was drawn at an index and the
+            // layer a click on it selects are the same registry row - no separate tab callback to fall out
+            // of step with the row.
+            var layers = List.of(buildLayerMock("No Layer"), buildLayerMock("Political Map"));
+            var selectionMock = mock(ActiveLayerSelection.class);
+
+            LiveSidebarPlacement.buildTabsSpec(layers, layers.get(0), selectionMock)
+                .action()
+                .activateCell(1);
+
+            verify(selectionMock).selectLayer(layers.get(1));
+        }
+
+        @Test
+        void buildTabsSpecPairsEveryLabelWithAShortcutSlot() {
+            // The control reads the two lists by index, so a row whose hints ran shorter than its labels
+            // would hand a tab someone else's key - or none where one was bound.
+            var layers = List.of(
+                buildLayerMock("No Layer"),
+                buildLayerMock("Political Map"),
+                buildLayerMock("Trade Routes"));
+
+            var spec = LiveSidebarPlacement.buildTabsSpec(
+                layers,
+                layers.get(0),
+                mock(ActiveLayerSelection.class));
+
+            assertThat(spec.labels())
+                .hasSize(3);
+            assertThat(spec.shortcuts())
+                .hasSameSizeAs(spec.labels());
+        }
+
+        // A layer that letters its tab and answers no key, which is the shape every case here is about -
+        // the label matters because the row refuses a null one, and the keycode is left at its unbound
+        // default so no case turns on a hint it did not arrange.
+        private MapLayer buildLayerMock(String label) {
+
+            var layerMock = mock(MapLayer.class);
+            when(layerMock.resolveTabLabelText())
+                .thenReturn(label);
+
+            return layerMock;
         }
     }
 }

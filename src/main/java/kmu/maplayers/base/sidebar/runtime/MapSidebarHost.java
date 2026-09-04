@@ -9,6 +9,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
+import kmu.maplayers.base.sidebar.SidebarHostPanel;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
 import java.util.Set;
@@ -67,11 +68,11 @@ public final class MapSidebarHost extends BaseSidebarHost {
     public TabPanelPlacement resolvePlacement() {
         // Reserves inset space for all four edges, the same full set resolveBorderEdges strokes, so the
         // reserved strips and the stroke never disagree.
-        return LiveSidebarPlacement.resolveMapPlacement(
+        return LiveSidebarPlacement.resolveMapPlacement(new SidebarHostPanel(
             buildTabStyle(),
             getController(),
             getLayerSelection(),
-            BoxEdge.ALL);
+            BoxEdge.ALL));
     }
 
     @Override

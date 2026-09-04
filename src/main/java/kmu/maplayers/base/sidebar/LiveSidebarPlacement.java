@@ -6,7 +6,6 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.font.LineWidthMeasurer;
-import kmlib.starsector.ui.input.TabPanelController;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.screen.VanillaScreen;
@@ -60,27 +59,13 @@ public final class LiveSidebarPlacement {
      * Lays the on-map sidebar out for the current screen, the player's padding, and the active layer's
      * body: it hangs from the screen top-left and grows rightward to fit its content.
      *
-     * @param tabStyle      the on-map host's tab look, the value its band is snapped to and painted from
-     * @param controller    the on-map panel's scroll and collapse state
-     * @param selection     the on-map screen's own active-layer pick, read for the lit tab and body and
-     *                      written when a tab is clicked
-     * @param borderedEdges which frame edges the host reserves and strokes; the on-map sidebar frames all
-     *                      four, while a host drawn flush against a neighbour drops the shared edges so the
-     *                      box collapses the strip they would occupy
+     * @param panel the on-map host's own panel: its look, its scroll and fold, its active-layer pick, and
+     *              the frame edges it reserves - the on-map sidebar frames all four
      * @return the placement to draw and hit-test, or {@code null} when the tab font cannot load (see
      *         {@link #resolvePlacement})
      */
-    public static TabPanelPlacement resolveMapPlacement(
-            TabStyle tabStyle,
-            TabPanelController controller,
-            ActiveLayerSelection selection,
-            Set<BoxEdge> borderedEdges) {
-        return resolvePlacement(
-            buildMapPadding(),
-            tabStyle,
-            controller,
-            selection,
-            borderedEdges);
+    public static TabPanelPlacement resolveMapPlacement(SidebarHostPanel panel) {
+        return resolvePlacement(buildMapPadding(), panel);
     }
 
     /**
@@ -88,29 +73,18 @@ public final class LiveSidebarPlacement {
      * and hangs from the visor top (pushed down by the player's top padding to clear the vanilla map
      * toggles), overlaying the visor with the same body the on-map sidebar lays out.
      *
-     * @param mapVisorRect  the lit visor's screen rectangle, the corner the panel anchors to
-     * @param tabStyle      the intel host's tab look, the value its band is snapped to and painted from
-     * @param controller    the intel panel's own scroll and collapse state, separate from the on-map panel's
-     * @param selection     the intel screen's own active-layer pick, separate from the on-map screen's, so a
-     *                      switch on one screen does not move the other's tab
-     * @param borderedEdges which frame edges the intel host reserves and strokes; it drops the edges it
-     *                      shares with the visor so the box collapses the strip they would occupy and sits
-     *                      flush
+     * @param mapVisorRect the lit visor's screen rectangle, the corner the panel anchors to
+     * @param panel        the intel host's own panel, separate from the on-map host's throughout - its own
+     *                     scroll and fold, its own active-layer pick, so a switch on one screen never moves
+     *                     the other's tab - and the frame edges it reserves, which drop the ones it shares
+     *                     with the visor so the box sits flush
      * @return the placement to draw and hit-test, or {@code null} when the tab font cannot load (see
      *         {@link #resolvePlacement})
      */
     public static TabPanelPlacement resolveIntelPlacement(
             Rectangle mapVisorRect,
-            TabStyle tabStyle,
-            TabPanelController controller,
-            ActiveLayerSelection selection,
-            Set<BoxEdge> borderedEdges) {
-        return resolvePlacement(
-            buildIntelPadding(mapVisorRect),
-            tabStyle,
-            controller,
-            selection,
-            borderedEdges);
+            SidebarHostPanel panel) {
+        return resolvePlacement(buildIntelPadding(mapVisorRect), panel);
     }
 
     // The intel-screen anchor, expressed as screen padding so the top-left-anchored layout lands the panel
@@ -149,18 +123,32 @@ public final class LiveSidebarPlacement {
         return shortcuts;
     }
 
-    // Lays the panel out for the given anchor, tab style, and controller - the one path both host entry
-    // points share, so the map and intel panels are the same layout differing only in where they anchor and
-    // how tall they stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs
-    // to measured text and cannot run without it - so the caller draws nothing and consumes nothing that
-    // frame.
-    private static TabPanelPlacement resolvePlacement(
-            Padding padding,
-            TabStyle tabStyle,
-            TabPanelController controller,
-            ActiveLayerSelection selection,
-            Set<BoxEdge> borderedEdges) {
+    // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
+    // registry order, the active layer lit, and an action that selects the layer at the clicked index.
+    // Baking the switch into the action means the placement's tabs, the renderer's lit index, and the
+    // click all index the same registry row, and no separate tab callback is threaded through the input.
+    //
+    // Both halves of the row come off the layers themselves, so the assembly stands up without a settings
+    // file or a live registry behind it and what it says can be asked directly.
+    static ControlSpec.Tabs buildTabsSpec(
+            List<MapLayer> layers,
+            MapLayer activeLayer,
+            ActiveLayerSelection selection) {
 
+        return new ControlSpec.Tabs(
+            resolveTabLabels(layers),
+            resolveTabShortcuts(layers),
+            resolveLitTabIndex(layers, activeLayer),
+            cell -> selection.selectLayer(layers.get(cell)));
+    }
+
+    // Lays the panel out for the given anchor and host panel - the one path both host entry points share,
+    // so the map and intel panels are the same layout differing only in where they anchor and how tall they
+    // stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs to measured
+    // text and cannot run without it - so the caller draws nothing and consumes nothing that frame.
+    private static TabPanelPlacement resolvePlacement(Padding padding, SidebarHostPanel panel) {
+
+        var tabStyle = panel.tabStyle();
         var measurer = loadTabMeasurer(tabStyle);
         if (measurer == null) {
             return null;
@@ -169,16 +157,17 @@ public final class LiveSidebarPlacement {
 
         // The active layer comes from the calling screen's own selection, not one shared value, so the lit
         // tab and the body are this screen's pick and a switch here never moves the other screen's tab.
-        var activeLayer = selection.getActiveLayer();
+        var activeLayer = panel.selection().getActiveLayer();
+        var controller = panel.controller();
 
         var placement = TabPanelLayout.computePlacement(
             // The height alone: the panel hangs from a top edge stated as padding, so the layout
             // measures down from the screen's top and never asks where its corner is.
             VanillaScreen.resolveUiHeight(),
             padding,
-            buildChrome(borderedEdges),
+            buildChrome(panel.borderedEdges()),
             tabStyle,
-            buildTabsSpec(layers, activeLayer, selection),
+            buildTabsSpec(layers, activeLayer, panel.selection()),
             activeLayer.getBodyControls(),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch
@@ -229,20 +218,18 @@ public final class LiveSidebarPlacement {
             KmuMapLayerSettings.getMapIntelSidebarPaddingTop());
     }
 
-    // Builds the layer selector as one tabs control: each layer's label and current shortcut key in
-    // registry order, the active layer lit, and an action that selects the layer at the clicked index.
-    // Baking the switch into the action means the placement's tabs, the renderer's lit index, and the
-    // click all index the same registry row, and no separate tab callback is threaded through the input.
-    private static ControlSpec.Tabs buildTabsSpec(
-            List<MapLayer> layers,
-            MapLayer activeLayer,
-            ActiveLayerSelection selection) {
+    // Which tab is lit: the active layer's row in the registry, or no tab at all when it holds none. A
+    // pick can outlive its layer - the mod that registered it is gone from the load order, and the screen
+    // is still holding the layer it last chose - and a row with nothing to light is the honest answer for
+    // that frame, the save migrations being what settles the pick itself.
+    //
+    // Stated rather than left to indexOf, which answers -1 for the same case and happens to agree with
+    // NO_SELECTION. That agreement is a coincidence of two unrelated conventions sharing a number, and it
+    // is doing real work here, so it is spelled rather than relied on.
+    private static int resolveLitTabIndex(List<MapLayer> layers, MapLayer activeLayer) {
 
-        return new ControlSpec.Tabs(
-            resolveTabLabels(layers),
-            resolveTabShortcuts(layers),
-            layers.indexOf(activeLayer),
-            cell -> selection.selectLayer(layers.get(cell)));
+        var index = layers.indexOf(activeLayer);
+        return index < 0 ? ControlSpec.NO_SELECTION : index;
     }
 
     // The display name of the key a layer answers to, or null when it has none - an unbound keycode (0,
