@@ -206,15 +206,17 @@ bar once does not order it again per save.
   political map is what a fresh save opens on. Two *different* layers under one id are arbitrated
   rather than tabbed twice, both tabs otherwise reading and writing the one stored pick that names
   them. Nothing is settled at load, since a mod registering after KMU's own load has returned is the
-  ordinary case rather than the exception. What the player makes of that row is held apart from it:
-  `MapLayerArrangement` is their own order and the ids they took off the bar, kept per user in the
-  game's common data by `PersistedMapLayerArrangement` rather than in the save, for the reason the
-  table above gives. It is a preference laid over whatever is registered rather than a roster of its
-  own, and `ArrangedLayers` is that laying: an id nothing registers is skipped, a registered layer
-  the store does not name is appended in registration order, an id named twice is placed once, and an
-  arrangement that would leave no tab at all keeps the leading one - a bar with no tabs having no way
-  back to itself. So a mod installed, removed or renamed costs the player nothing and needs no
-  migration, and a file that cannot be read is worth exactly the unarranged row.
+  ordinary case rather than the exception.
+- **The bar arrangement** - what the player makes of that row, held apart from the roster itself and
+  living in `base/layer` beside it. `MapLayerArrangement` is their own order and the ids they took
+  off the bar, kept per user in the game's common data by `PersistedMapLayerArrangement` rather than
+  in the save, for the reason the table above gives. It is a preference laid over whatever is
+  registered rather than a roster of its own, and `ArrangedLayers` is that laying: an id nothing
+  registers is skipped, a registered layer the store does not name is appended in registration order,
+  an id named twice is placed once, and an arrangement that would leave no tab at all keeps the
+  leading one - a bar with no tabs having no way back to itself. So a mod installed, removed or
+  renamed costs the player nothing and needs no migration, and a file that cannot be read is worth
+  exactly the unarranged row.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

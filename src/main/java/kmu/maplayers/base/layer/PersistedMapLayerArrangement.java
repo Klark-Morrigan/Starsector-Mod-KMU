@@ -14,13 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The bar arrangement kept in the game's common data, which is per user and per install rather than
- * per save - so the bar a player laid out once is the bar every campaign they load opens with.
- *
- * <p>Common data rather than sector memory because of what the value is about: an arrangement is a
- * preference about the interface, while the tab a screen is on is a fact about one campaign. Where
- * a thing lives follows what it is about rather than which class holds it, which is why this sits
- * beside {@link PersistedActiveLayerSelection} and stores somewhere else entirely.
+ * A {@link MapLayerArrangement} kept in the game's common data, which is per user and per install
+ * rather than per save - so it sits beside {@link PersistedActiveLayerSelection} and stores
+ * somewhere else entirely, for the reason the arrangement itself gives.
  *
  * <p>The file name carries the mod id because common data is one folder shared by every installed
  * mod, so an unprefixed name is a collision waiting for the mod that picks the same word.

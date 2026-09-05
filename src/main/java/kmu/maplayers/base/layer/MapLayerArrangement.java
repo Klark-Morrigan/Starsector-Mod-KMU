@@ -12,10 +12,8 @@ import java.util.List;
  * ordered their bar once does not order it again per save.
  *
  * <p><b>Neither list is authoritative.</b> This is a preference laid over whatever is registered
- * rather than a roster of its own: {@link ArrangedLayers} names an id nothing registers and skips
- * it, and appends a registered layer this says nothing about. So a mod installed, removed or
- * renamed costs the player nothing and needs no migration, and an id is kept here rather than
- * pruned when its mod goes - a layer put back finds the place it was given.
+ * rather than a roster of its own, and {@link ArrangedLayers} is that laying. So an id is kept here
+ * rather than pruned when its mod goes - a layer put back finds the place it was given.
  *
  * @param orderedLayerIds the ids the player has placed, left to right; the layers they have never
  *                        arranged are simply absent rather than listed at the end

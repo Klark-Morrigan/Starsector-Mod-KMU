@@ -1,7 +1,9 @@
 package kmu.maplayers.base.layer;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Lays a {@link MapLayerArrangement} over a roster and answers the row that comes out of it.
@@ -9,12 +11,12 @@ import java.util.List;
  * <p>The rule sits apart from the value it reads because this is where the judgement is: what to do
  * with an id nothing registers, with a registered layer the player has never seen, with a stored
  * list that names one twice, and with an arrangement that would leave no tab at all. Folded into
- * the record, none of that would be reachable without building one.
+ * the record, none of that would be reachable without building one. It is why a mod installed,
+ * removed or renamed costs the player nothing and needs no migration.
  *
- * <p>Reconciled on every read rather than settled once, for the reason the roster itself is never
- * settled: a mod that depends on this one registers its layer after this one's load has returned,
- * so there is no moment at which the row is known to be whole. Every answer here is about the
- * roster as it stands when it is asked.
+ * <p>Asked of a roster passed in rather than of the registry, and so reconciled afresh on every
+ * read: {@link MapLayerRegistry} is never settled, and the answer is only ever about the roster as
+ * it stood when it was asked.
  */
 public final class ArrangedLayers {
 
@@ -53,46 +55,45 @@ public final class ArrangedLayers {
     // The whole roster in the player's order: the ids they placed, in that order, then everything
     // they never placed, in registration order.
     //
-    // Appending the unplaced rather than dropping them is what lets a mod be installed after the
-    // arrangement was stored: its layer lands where registration order would have put it, to the
-    // right of the layers it was built on, and the player moves it from there if they want to.
-    //
-    // An id named twice by a hand-edited store places its layer once. The alternative is a row
-    // carrying one layer under two tabs, which both write and read the same stored pick.
+    // Taking each placed layer out of the roster index is what settles all three of the awkward
+    // cases at once, rather than each needing a guard of its own: an id nothing registers takes
+    // nothing out and contributes nothing, an id named twice finds it already gone the second time,
+    // and whatever is left over is exactly the unplaced - in registration order, the index keeping
+    // insertion order. Appending those rather than dropping them is what lets a mod be installed
+    // after the arrangement was stored: its layer lands where registration order would have put it,
+    // to the right of the layers it was built on.
     private static List<MapLayer> orderLayers(
             MapLayerArrangement arrangement,
             List<MapLayer> rosterLayers) {
 
+        var unplacedLayers = indexRosterById(rosterLayers);
         var orderedLayers = new ArrayList<MapLayer>(rosterLayers.size());
 
         for (var layerId : arrangement.orderedLayerIds()) {
 
-            var placedLayer = findLayerById(rosterLayers, layerId);
-
-            // Null is an id from a mod no longer installed, or one it renamed. Skipped rather than
-            // answered for: the store is a preference over what is registered, so what is not
-            // registered is simply not in the row.
-            if (placedLayer != null && !orderedLayers.contains(placedLayer)) {
+            var placedLayer = unplacedLayers.remove(layerId);
+            if (placedLayer != null) {
                 orderedLayers.add(placedLayer);
             }
         }
-        for (var rosterLayer : rosterLayers) {
-            if (!orderedLayers.contains(rosterLayer)) {
-                orderedLayers.add(rosterLayer);
-            }
-        }
+        orderedLayers.addAll(unplacedLayers.values());
+
         return List.copyOf(orderedLayers);
     }
 
-    // The registered layer under this id, or null for an id nothing registers. By id rather than by
-    // identity, the stored side being a string a past session wrote.
-    private static MapLayer findLayerById(List<MapLayer> rosterLayers, String layerId) {
+    // The roster keyed by id, in registration order. By id rather than by identity, the placing
+    // side being a string a past session wrote.
+    //
+    // The leftmost of two layers sharing an id wins, which the registry's own arbitration already
+    // makes unreachable through it - but this takes any list, so the rule is stated rather than
+    // assumed.
+    private static Map<String, MapLayer> indexRosterById(List<MapLayer> rosterLayers) {
+
+        var rosterIndex = new LinkedHashMap<String, MapLayer>();
 
         for (var rosterLayer : rosterLayers) {
-            if (rosterLayer.getId().equals(layerId)) {
-                return rosterLayer;
-            }
+            rosterIndex.putIfAbsent(rosterLayer.getId(), rosterLayer);
         }
-        return null;
+        return rosterIndex;
     }
 }
