@@ -443,18 +443,15 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // Whether the colony has been found at all: the fog, or a report from the place's own
     // inhabitants standing in for it.
     //
-    // The report is an arm of finding rather than a gate beside it, because a gate narrows and
-    // this widens. A collapsed colony is admitted by vanilla's survey level alone, and vanilla
-    // writes that level for player acts only - so the world stays off the map while the faction's
-    // colony orbiting beside it is drawn, though anybody living there can plainly see the ruin.
+    // A collapsed colony is admitted by vanilla's survey level alone, and vanilla writes that
+    // level for player acts only - so the world stays off the map while the faction's colony
+    // orbiting beside it is drawn, though anybody living there can plainly see the ruin.
     //
-    // Held to what a sighting is worth. Somebody's word that the world is standing there says it
-    // was laid eyes on and no more, so the route answers only where the bar asks no more than
-    // that; past it the player has asked for survey data, which nobody's presence produces.
-    //
-    // Which leaves one bar the route really decides. At the lowest the fog asks for no survey at
-    // all and admits the world outright, so this arm is never reached; higher up it is refused.
-    // The route earns its keep at the bar in between, which is the one the map ships on.
+    // Somebody's word is worth a sighting and no survey, which leaves one bar this really decides.
+    // At the lowest the fog asks for no survey at all and admits the world outright, so this arm
+    // is never reached; at the two above it the player has asked for readings nobody's presence
+    // produces, and it is refused. The route earns its keep at the bar in between, which is the
+    // one the map ships on.
     //
     // Which kinds a report can reach is the kind's own answer, and no kind that says yes settles
     // its place - so nothing found this way ever joins the owners folded for the first pass, and

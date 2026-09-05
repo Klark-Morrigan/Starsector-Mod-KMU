@@ -27,7 +27,8 @@ import java.util.Set;
  * one added later needs no existing rule rewritten - {@link RevelationGate} says what each covers.
  *
  * <p>Each part reaches the one thing it names and no other. The reveal drops the discovery arm of
- * the fog and clears no gate beside it; the survey level decides one kind's fog and nothing else's;
+ * the fog and clears no gate beside it; the survey level decides how one kind is found and no
+ * other's;
  * a gate narrows and never widens, so leaving one out drops that shape back to the fog rather than
  * admitting anything the fog refuses. Which is what lets a player ask for exactly the thing they
  * meant and be shown nothing beside it.
@@ -40,8 +41,10 @@ import java.util.Set;
  *                                         still counts - the "show all factions" reveal, which
  *                                         drops the discovery arm of the fog and no more
  * @param ungovernedColonySurveyLevel      how far a collapsed colony's world must have been
- *                                         surveyed before the map will name it; an unstated level
- *                                         reads as {@link DecivilisedMarkets#DEFAULT_SURVEY_LEVEL}
+ *                                         surveyed before the map will name it, and the bar
+ *                                         somebody else's word about one is measured against; an
+ *                                         unstated level reads as
+ *                                         {@link DecivilisedMarkets#DEFAULT_SURVEY_LEVEL}
  * @param revelationGates                  the shapes that must have been revealed as well as
  *                                         found; a shape whose gate is absent is held to the fog
  *                                         alone

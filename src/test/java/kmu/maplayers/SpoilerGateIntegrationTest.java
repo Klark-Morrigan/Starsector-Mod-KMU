@@ -177,6 +177,26 @@ final class SpoilerGateIntegrationTest {
             assertThat(readKnownOwnerIds(sector))
                 .containsExactly(Factions.NEUTRAL);
         }
+
+        @Test
+        void namesAnUnsurveyedDecivilisedWorldItsNeighboursCanSee() {
+            // The knob's other half, driven through the same live read. At the shipped bar a ruin
+            // nobody has surveyed is named on the word of the colony sharing its system - the
+            // asymmetry the route closes, since that colony is drawn in a system the player has
+            // never entered. Asking for more than a sighting is worth takes the ruin back off the
+            // map and leaves its neighbour exactly where it was.
+            var sector = buildSectorHoldingAnUnsurveyedDecivilisedWorldBesideAColony();
+
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactlyInAnyOrder(OPEN_HOLDER, Factions.NEUTRAL);
+
+            settingsMock
+                .when(KmuMapLayerSettings::getDecivilisedWorldSurveyLevel)
+                .thenReturn(SurveyLevel.PRELIMINARY);
+
+            assertThat(readKnownOwnerIds(sector))
+                .containsExactly(OPEN_HOLDER);
+        }
     }
 
     // A sector of one system whose only market is a collapsed colony nobody has looked at. Its
@@ -187,6 +207,22 @@ final class SpoilerGateIntegrationTest {
         var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
 
         DecivilisedPlanetFixtures.placeUnsurveyedDecivilisedPlanetIn(buildOnlySystem(sector));
+
+        return sector;
+    }
+
+    // The same world with an open colony beside it, which is what gives the system inhabitants to
+    // report the ruin. Each reaches the colony walk the way the sector really holds it: the colony
+    // through the economy's listing, the ruin through the system's own entities, a collapsed colony
+    // being dropped from the economy as it falls.
+    private static SectorAPI buildSectorHoldingAnUnsurveyedDecivilisedWorldBesideAColony() {
+
+        var openColony = buildOpenColony();
+        var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, openColony);
+        var system = buildOnlySystem(sector);
+
+        DecivilisedPlanetFixtures.placeUnsurveyedDecivilisedPlanetIn(system);
+        SectorPoliticsFixtures.placeMarketsInSystem(system, openColony);
 
         return sector;
     }

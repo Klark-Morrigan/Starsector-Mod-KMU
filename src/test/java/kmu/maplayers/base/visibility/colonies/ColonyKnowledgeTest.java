@@ -102,11 +102,12 @@ final class ColonyKnowledgeTest {
 
     // One notch above what a sighting is worth, which is the boundary the report route turns on
     // rather than a bar picked for being high: at this level the player has asked for readings off
-    // the world itself, and somebody standing nearby produces none.
+    // the world itself, and somebody standing nearby produces none. Every gate is left in force so
+    // that a case pairing this with the shipped rule moves the bar and nothing beside it.
     private static final ColonyVisibility ASKING_A_PRELIMINARY_SURVEY = new ColonyVisibility(
         NOTHING_REVEALED,
         SurveyLevel.PRELIMINARY,
-        Set.of());
+        EVERY_GATE);
 
     // Both fog arms open at once, for the world neither knob alone reaches.
     private static final ColonyVisibility ASKING_NEITHER_FOG_ARM = new ColonyVisibility(
@@ -1139,6 +1140,21 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
+        void keeps_a_dead_world_a_neighbour_reported() {
+            // Habitation reads the same found-test the listing does, so a ruin admitted on the
+            // Hegemony's word counts as people living there exactly as a surveyed one does. Which
+            // it should: the survivors on it are no less present for the player not having looked.
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+            var neighbour = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(decivilisedWorld, neighbour);
+
+            assertThat(knowing(fixture, BOTH_GATES_ON).readInhabitingColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
+                .containsExactly(buildUngovernedColony(decivilisedWorld), buildColony(neighbour));
+        }
+
+        @Test
         void excludes_a_derelict_its_own_gate_has_let_through() {
             // Kind and gate answer separate questions. Turning the station gate off says the
             // player may be told about a hulk they have found; it does not put anybody aboard it.
@@ -1253,6 +1269,27 @@ final class ColonyKnowledgeTest {
 
             assertThat(knowing(fixture, BOTH_GATES_ON).hasInhabitingColony(buildColoniesOf(buildDerelict(derelict), buildColony(colony))))
                 .isTrue();
+        }
+
+        @Test
+        void answers_true_for_a_remembered_ruin_whose_neighbours_are_gone() {
+            // What the register buys this reading: a system whose colonies have all since
+            // collapsed still reads as somewhere people are, on an observation of the ruin made
+            // while somebody was there to make it. The world is unsurveyed throughout, so the fog
+            // is not what answers - and raising the bar past a sighting takes the answer away
+            // again, the survey level reaching habitation exactly as it reaches the listing.
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+
+            fixture.placeColoniesInSystem(decivilisedWorld);
+            fixture.markColoniesAsSighted(decivilisedWorld);
+
+            var colonies = buildColoniesOf(buildUngovernedColony(decivilisedWorld));
+
+            assertThat(knowing(fixture, BOTH_GATES_ON).hasInhabitingColony(colonies))
+                .isTrue();
+            assertThat(knowing(fixture, ASKING_A_PRELIMINARY_SURVEY).hasInhabitingColony(colonies))
+                .isFalse();
         }
 
         @Test

@@ -180,8 +180,9 @@ public final class KmuMapLayerSettings {
     // The first two are the spoiler gates, over the shapes the discovery fog alone leaks - an
     // unowned station nobody ever lived on, and a market that conceals itself. Both sit on entities
     // that were never discoverable, so the fog admits them from the first day of a campaign. The
-    // last three widen rather than gate, and all three reseed the geometry, so moving one forces a
-    // geometry rebuild rather than the restyle a styling knob triggers.
+    // last three reseed the geometry, so moving one forces a geometry rebuild rather than the
+    // restyle a styling knob triggers. Two of those widen outright; the survey level runs both
+    // ways, since it also decides whether a collapsed colony may be found on a neighbour's word.
     private static final String SHOW_UNSEEN_ABANDONED_STATIONS_FIELD =
         "kmu_map_visibility_overrides_shouldShowUnseenAbandonedStations";
     private static final String SHOW_UNSEEN_HIDDEN_MARKETS_FIELD =
