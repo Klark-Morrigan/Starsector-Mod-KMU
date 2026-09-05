@@ -18,6 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * with it; what this adds is that the classification routes to the right kind - including which of
  * the two derelict-shaped kinds an owner or a listing makes it - and that anything unrecognised
  * falls to the ordinary one rather than being erased.
+ *
+ * <p>The two questions the kind answers about itself are pinned against literals per kind, so a
+ * kind added later fails here until it has declared for both rather than inheriting whichever
+ * answer a comparison happened to give it.
  */
 final class ColonyKindTest {
 
@@ -118,6 +122,30 @@ final class ColonyKindTest {
             // that keeps a place on the map, because misfiling a settlement as a hulk erases it.
             assertThat(ColonyKind.resolveKind(null, UNLISTED_BY_ECONOMY))
                 .isEqualTo(ColonyKind.COLONY);
+        }
+    }
+
+    @Nested
+    class IsFoundByReport {
+
+        @Test
+        void answers_true_for_a_dead_colony() {
+            // The one kind the fog withholds on survey level rather than on the entity flag, which
+            // is what leaves a ruin invisible in a system its neighbours have been living in.
+            assertThat(ColonyKind.UNGOVERNED_COLONY.isFoundByReport())
+                .isTrue();
+        }
+
+        @Test
+        void answers_false_for_the_kinds_the_fog_already_answers_for() {
+            // Posed against the case above: these are entities the player has found or not, so a
+            // report would widen nothing and the route is refused them.
+            assertThat(ColonyKind.COLONY.isFoundByReport())
+                .isFalse();
+            assertThat(ColonyKind.OUTPOST.isFoundByReport())
+                .isFalse();
+            assertThat(ColonyKind.SPACE_DERELICT.isFoundByReport())
+                .isFalse();
         }
     }
 

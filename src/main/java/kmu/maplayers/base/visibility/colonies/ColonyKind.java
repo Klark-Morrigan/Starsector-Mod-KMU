@@ -30,6 +30,13 @@ import kmlib.starsector.markets.Markets;
  * false. It is admitted on the one condition that marks it, and named here so nothing downstream
  * has to ask again what a collapsed colony is.
  *
+ * <p>Two questions are put to the kind, and neither is the other's inverse. {@link
+ * #isSettlingLocation} asks who can speak - whose presence vouches for whatever else stands where
+ * they are. {@link #isFoundByReport} asks who can be spoken about - which shapes the map may admit
+ * on somebody else's word in place of the player having found them. The collapsed colony answers no
+ * to the first and yes to the second: it is full of people nobody hears from, and it is plainly
+ * visible to anybody living in orbit beside it.
+ *
  * <p>A kind rather than a boolean because the distinction was already known not to be binary, and
  * the fourth arrived exactly as expected. An enum admits a fifth without any reader changing shape,
  * where a boolean would have to be replaced.
@@ -114,6 +121,30 @@ public enum ColonyKind {
         return Markets.isSettledColony(market) || isListedByEconomy
             ? OUTPOST
             : SPACE_DERELICT;
+    }
+
+    /**
+     * Whether a place of this kind can be found on somebody else's word - whether a report from
+     * the inhabitants of the same location stands in for the player having been there.
+     *
+     * <p>True for the collapsed colony alone, and it is the only kind that wants the route. The
+     * others are entities the player has either found or not, and the fog answers for them from
+     * the entity flag. A decivilised world sits on a planet, which is always discovered, so nothing
+     * about it is withheld except vanilla's survey level - state written for player acts only.
+     * Without this it is the one thing in a system that somebody living there can see and the map
+     * cannot say.
+     *
+     * <p>What a report is worth is not stated here. Somebody's word that a world is standing there
+     * is a sighting and never a survey, and the rule spending this answer is what holds it to that
+     * bar ({@link DecivilisedMarkets#SIGHTING_SURVEY_LEVEL}).
+     *
+     * <p>Asked of the kind rather than tested against a constant at the rule that uses it, for the
+     * reason {@link #isSettlingLocation} is.
+     *
+     * @return true when a report from the inhabitants of the location can find a place of this kind
+     */
+    public boolean isFoundByReport() {
+        return this == UNGOVERNED_COLONY;
     }
 
     /**
