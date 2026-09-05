@@ -9,19 +9,14 @@ import kmlib.profiling.ProfilePhase;
  * carving the names and the cell's own narrow places off that ring, and stroking what is left into
  * triangles.
  *
- * <p>Four rather than one because they grow on different axes, and one total cannot say which of
- * them moved. The trace grows with the cells whose ring this bake had to walk - a miter inset, a
- * fold splice, a clearance walk, a winding normalisation and an arc-length walk apiece - which is
- * every cell on a fresh build and only the re-shaped ones on a bake that follows, since a traced
- * ring is kept for as long as the shape it was traced inside stands. The carve grows with the cells
- * times the names, since every name on the map is tested against every cell, and the count grows
- * with what the systems hold rather than with either. A sector that doubles its colonies moves them
- * by different factors, so "the bake got slower" is a different question in each case.
+ * <p>Four rather than one because they grow on different axes - the trace with the cells whose ring
+ * had to be walked, the carve with the cells times the names, the count with what the systems hold
+ * - so one total could say a bake got slower without saying which of them did. Which axis each grows
+ * on, and why, is the package README's.
  *
  * <p>Phases of one scope rather than sections of their own, so what the readout reports is what one
  * cell costs in each of them: a bake is one call and a cell is one turn of its loop, and it is the
- * turn a rebuild's cost actually scales with. Measuring a cell as a section of its own would cost
- * about what a cell's work costs.
+ * turn a rebuild's cost scales with.
  */
 public final class RibbonBakePhases {
 
