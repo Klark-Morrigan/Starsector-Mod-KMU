@@ -33,7 +33,8 @@ import java.util.List;
 public final class MapCoverReader {
 
     // In ascending cost, since the first cover to answer ends the read: a polled mouse flag, then a
-    // published one-call read, then the console's settled flag, then one hop off the app state,
+    // published one-call read, then this mod's own dialog state, then the console's settled flag, then
+    // one hop off the app state,
     // then a walk of the core UI's own children, then arithmetic over a box this mod laid out, then
     // the two that walk further into the live widget tree - the map tab's own layout, and finally
     // the surfaces another mod put on screen, which is the dearest because its walk is rooted above
@@ -82,6 +83,10 @@ public final class MapCoverReader {
 
         covers.add(new HeldPointerMapCover());
         covers.add(new PauseMenuMapCover());
+
+        // Beside those two rather than beside the modal walk it behaves like, because it is read like
+        // these: a field on a panel this mod stood up itself, with nothing to search.
+        covers.add(new ArrangementDialogMapCover());
 
         // Composed only where the mod is present, which is safe to settle here: the mod set is
         // fixed for the launch, and this factory runs no earlier than the renderer's first ask,

@@ -31,6 +31,11 @@ public final class KmuStrings {
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE = "condition_manager_tooltip_hidden_title";
     public static final String CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY = "condition_manager_tooltip_hidden_body";
     public static final String DIALOG_CLOSE = "dialog_close";
+    public static final String MAP_LAYER_ARRANGE_TITLE = "map_layer_arrange_title";
+    public static final String MAP_LAYER_ARRANGE_HINT = "map_layer_arrange_hint";
+    public static final String MAP_LAYER_ARRANGE_SHOWN = "map_layer_arrange_shown";
+    public static final String MAP_LAYER_ARRANGE_MOVE_UP = "map_layer_arrange_move_up";
+    public static final String MAP_LAYER_ARRANGE_MOVE_DOWN = "map_layer_arrange_move_down";
     public static final String MAP_LAYER_TAB_NO_LAYER = "map_layer_tab_no_layer";
     public static final String MAP_LAYER_CTL_COLUMNS_CAPTION = "map_layer_ctl_columns_caption";
     public static final String MAP_LAYER_CTL_FILTER_ROW_TOGGLE = "map_layer_ctl_filter_row_toggle";

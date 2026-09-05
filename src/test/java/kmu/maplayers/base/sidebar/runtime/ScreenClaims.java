@@ -41,13 +41,24 @@ final class ScreenClaims {
         return new ScreenClaim(
             createClosedConsole(),
             () -> false,
+            () -> false,
             () -> new ModalDialogState(true, brightness));
     }
 
-    /** A screen claimed by the codex, with neither of the other two reads answering. */
+    /** A screen claimed by the codex, with none of the other reads answering. */
     static ScreenClaim createScreenClaimedByTheCodex() {
         return new ScreenClaim(
             createClosedConsole(),
+            () -> true,
+            () -> false,
+            () -> ModalDialogState.NONE);
+    }
+
+    /** A screen claimed by this mod's own bar-arranging dialog, with no other read answering. */
+    static ScreenClaim createScreenClaimedByTheArrangementDialog() {
+        return new ScreenClaim(
+            createClosedConsole(),
+            () -> false,
             () -> true,
             () -> ModalDialogState.NONE);
     }
@@ -60,7 +71,7 @@ final class ScreenClaims {
      * @return a claim over it alone
      */
     static ScreenClaim createClaimOverConsole(ConsoleCommandsOverlay consoleOverlay) {
-        return new ScreenClaim(consoleOverlay, () -> false, () -> ModalDialogState.NONE);
+        return new ScreenClaim(consoleOverlay, () -> false, () -> false, () -> ModalDialogState.NONE);
     }
 
     // A console read that answers shut, for the claims whose console half is not what they are about. Its

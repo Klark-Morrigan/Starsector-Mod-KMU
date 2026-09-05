@@ -24,6 +24,10 @@ import java.util.List;
  * <p>How the panel claims what it takes is the controller's business rather than this listener's: a press
  * is consumed, while a move parks the pointer instead, so the map underneath hears that the pointer left
  * the control it had lit. This listener only decides which events reach the controller at all.
+ *
+ * <p>Every key here is a layer's. Nothing about the bar's own chrome is bound to one - the dialog the bar
+ * is arranged in is reached from the bar itself, so a key for it would be a second way in to something
+ * already on screen.
  */
 public final class SidebarInput implements CampaignInputListener {
 

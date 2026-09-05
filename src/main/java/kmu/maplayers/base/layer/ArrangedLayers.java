@@ -41,7 +41,7 @@ public final class ArrangedLayers {
             MapLayerArrangement arrangement,
             List<MapLayer> rosterLayers) {
 
-        var orderedLayers = orderLayers(arrangement, rosterLayers);
+        var orderedLayers = arrangeAllLayers(arrangement, rosterLayers);
 
         var visibleLayers = orderedLayers.stream()
             .filter(layer -> !arrangement.isLayerHidden(layer.getId()))
@@ -52,17 +52,28 @@ public final class ArrangedLayers {
             : visibleLayers;
     }
 
-    // The whole roster in the player's order: the ids they placed, in that order, then everything
-    // they never placed, in registration order.
-    //
-    // Taking each placed layer out of the roster index is what settles all three of the awkward
-    // cases at once, rather than each needing a guard of its own: an id nothing registers takes
-    // nothing out and contributes nothing, an id named twice finds it already gone the second time,
-    // and whatever is left over is exactly the unplaced - in registration order, the index keeping
-    // insertion order. Appending those rather than dropping them is what lets a mod be installed
-    // after the arrangement was stored: its layer lands where registration order would have put it,
-    // to the right of the layers it was built on.
-    private static List<MapLayer> orderLayers(
+    /**
+     * The whole roster in the player's order, hidden layers included: the ids they placed, in that
+     * order, then everything they never placed, in registration order.
+     *
+     * <p>Published beside the row the bar draws because arranging the bar is a different question
+     * from drawing it. A control that moves and hides tabs has to show the player the tabs they have
+     * already hidden - those being the only thing that can put one back - so it reads the order
+     * without the hiding, while the bar reads both.
+     *
+     * <p>Taking each placed layer out of the roster index is what settles all three of the awkward
+     * cases at once, rather than each needing a guard of its own: an id nothing registers takes
+     * nothing out and contributes nothing, an id named twice finds it already gone the second time,
+     * and whatever is left over is exactly the unplaced - in registration order, the index keeping
+     * insertion order. Appending those rather than dropping them is what lets a mod be installed
+     * after the arrangement was stored: its layer lands where registration order would have put it,
+     * to the right of the layers it was built on.
+     *
+     * @param arrangement  the player's own arrangement
+     * @param rosterLayers every registered layer, in registration order
+     * @return every registered layer, left to right in the player's order
+     */
+    public static List<MapLayer> arrangeAllLayers(
             MapLayerArrangement arrangement,
             List<MapLayer> rosterLayers) {
 

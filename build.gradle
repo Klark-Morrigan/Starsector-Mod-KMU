@@ -196,6 +196,13 @@ def magicLibJars = findModJars('MagicLib.jar')
 def lazyLibKotlinRuntimeJarFile = file(
     "${starsectorRoot}/mods/lw_lazylib/jars/internal/Kotlin-Runtime.jar")
 
+// org.json backs the preferences KMU keeps in the game's common data, which is a folder of JSON
+// files: the port KMLib publishes for it is spelled in JSONObject, so javac must resolve the type
+// to compile a caller of it. The classes ship in starsector-core/json.jar and the game classloader
+// provides them at runtime, so compileOnly like the rest - the test runtime already sees the jar
+// through the core-jar set the shared conventions put there.
+def jsonJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['json.jar'])
+
 // LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
 // The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
 // needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
@@ -206,6 +213,7 @@ def lwjglJars = fileTree(dir: "${starsectorRoot}/starsector-core",
 
 dependencies {
     compileOnly consoleCommandsJars
+    compileOnly jsonJars
     compileOnly nexJars
     compileOnly xstreamJars
     compileOnly obfJars
@@ -218,6 +226,7 @@ dependencies {
     compileOnly files(lazyLibJarFile)
 
     testCompileOnly consoleCommandsJars
+    testCompileOnly jsonJars
     testCompileOnly nexJars
     testCompileOnly xstreamJars
     testCompileOnly kmlibDependency

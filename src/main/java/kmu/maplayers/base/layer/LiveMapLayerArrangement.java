@@ -37,6 +37,21 @@ public final class LiveMapLayerArrangement {
     }
 
     /**
+     * The store itself, for the one caller that writes as well as reads: the control the player
+     * arranges the bar with, which has to put its changes back where the bar reads them from.
+     *
+     * <p>Beside the read rather than replacing it, because everything on the frame path only reads and
+     * has no business holding something it could write through. Null rather than a store that discards
+     * writes: a control with nowhere to record to should not open and pretend, and every other caller
+     * already has the reading above.
+     *
+     * @return the bound store, or null while none is bound
+     */
+    public static MapLayerArrangementSelection resolveArrangementSelection() {
+        return arrangementSelection;
+    }
+
+    /**
      * @return the arrangement the player has made, or {@link MapLayerArrangement#UNARRANGED} while no
      *         store is bound
      */

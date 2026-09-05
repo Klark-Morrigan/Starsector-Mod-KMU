@@ -225,6 +225,23 @@ bar once does not order it again per save.
   the row being assembled on every frame the sidebar draws and every key it routes, which is more
   often than a file may be opened. An arrangement recorded through that holding is what the next
   frame reads, rather than what the next start does.
+- **The arranging dialog** - what writes that arrangement, in `base/chrome/arrange`. Opened from the
+  bar and from nowhere else: no key is bound to it, a bar that is on screen needing no second way in.
+  `MapLayerArrangementEditor` is the whole of what the dialog does - the rows in bar order with
+  hidden tabs among them, since this is the only way one comes back; **Up** and **Down** buttons that
+  swap a row with its neighbour, disabled at the ends of their travel rather than absent, and worded
+  rather than drawn as glyphs like every other button in the game's UI; and a toggle that refuses the
+  last tab still on the bar, which is the same guard
+  `ArrangedLayers` keeps against a hand-edited store, made here so the click is never offered. Every
+  change is recorded at once rather than drafted: the bar behind the dialog is the thing being
+  arranged. `MapLayerArrangementDialog` is the surface - a vanilla `CustomPanelAPI` stood in the core
+  UI's own tree by KMLib's `CoreUiOverlayPanels`, with vanilla labels, boxes and buttons inside it, and
+  nothing painted into the map's render pass. Every published route to a custom dialog hangs off an
+  interaction dialog, which these screens have none of, so the tree is what is left - and because a
+  panel added that way is an ordinary child, the dialog supplies its own backdrop and its own input
+  claim, and publishes `isDialogRaised()` for the gates that stand down under a modal. The game's own
+  modal reading cannot see it: it recognises modals by the base they descend from, and this descends
+  from nothing of the game's.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
@@ -404,10 +421,11 @@ bar once does not order it again per save.
   whatever is covering them. `MapCover` is the role - one thing that can be over the cursor - and
   `MapCoverReader` holds the set and stops at the first that answers.
 
-  Six are always in the set and live here: `HeldPointerMapCover` (a held left button, on which the
+  Seven are always in the set and live here: `HeldPointerMapCover` (a held left button, on which the
   pointer is pressing rather than pointing - it stands in for vanilla's own marker menu, which no
   geometry here can see; the class states why), `PauseMenuMapCover` (the campaign's pause menu,
   raised over the screen without taking it down, so the map keeps drawing behind it),
+  `ArrangementDialogMapCover` (this mod's own bar-arranging dialog, read off its own state),
   `CodexMapCover` (the codex - a panel over the middle of the screen, with a screen-spanning backdrop
   taking the events over the rest of it, so the cover reads no geometry either),
   `ModalDialogMapCover` (a confirmation prompt or picker a core screen raises in front of itself,
@@ -417,7 +435,9 @@ bar once does not order it again per save.
 
   The codex is its own cover rather than a case of the modal beside it, because it is raised outside
   the core UI entirely - so the modal's walk answers no on exactly the frames the codex answers yes.
-  `CodexMapCover` states that, over KMLib's `CodexView`.
+  `CodexMapCover` states that, over KMLib's `CodexView`. The arranging dialog is its own for the
+  mirror-image reason: it is raised *inside* the core UI but descends from nothing of the game's, so
+  the marker that walk recognises a modal by is not on it.
 
   Both sit ahead of the sidebar's deliberately: either stands the sidebar down, so the panel's own
   cover cannot answer for them. `ModalDialogMapCover` and `CodexMapCover` state what follows for

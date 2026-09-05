@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.within;
 /**
  * Pins that any one claimant alone stands the panel down, and that none is asked to speak for another.
  *
- * <p>Worth pinning as a disjunction rather than through the hosts, because the three reads fail open
+ * <p>Worth pinning as a disjunction rather than through the hosts, because the reads fail open
  * independently: an install without the console mod answers no console for the whole session, and a build
  * whose core UI cannot be walked - or whose app state cannot be reached - answers no modal and no codex for
  * the whole session. Composed with an AND any of those would silence the others, and nothing at a host would
- * show it.
+ * show it - this mod's own dialog included, which nothing else on the list can speak for.
  *
  * <p>The short-circuit is pinned too. The modal read walks the core UI's children where the console read is
  * a field, so an order that asked the walk first would pay for it on every frame of every screen - which is
@@ -82,6 +82,15 @@ class ScreenClaimTest {
         }
 
         @Test
+        void isScreenClaimedIsTrueWhileTheArrangementDialogIsUp() {
+            // Its own read rather than a case of the modal beside it, and this is the one that would go
+            // unnoticed: this mod's dialog descends from nothing of the game's, so the modal walk finds
+            // no dialog on exactly the frames one is standing over the panel.
+            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialog().isScreenClaimed())
+                .isTrue();
+        }
+
+        @Test
         void isScreenClaimedLeavesTheModalReadUntakenWhileAConsoleIsUp() {
             // The modal read walks the core UI's children; the console read is a field. Asked in the other
             // order the walk is paid for on every frame, whatever else is on screen.
@@ -89,6 +98,7 @@ class ScreenClaimTest {
             var modalReadCount = new AtomicInteger();
             var claim = new ScreenClaim(
                 new ConsoleCommandsOverlay(consolePresenceFake),
+                () -> false,
                 () -> false,
                 () -> {
                     modalReadCount.incrementAndGet();
@@ -135,6 +145,14 @@ class ScreenClaimTest {
             ModStateScopes.runWithModEnabled(CONSOLE_COMMANDS, true, () ->
                 assertThat(claim.resolveClaimStrength())
                     .isCloseTo(1f, within(TOLERANCE)));
+        }
+
+        @Test
+        void resolveClaimStrengthIsFullForTheArrangementDialogThatArrivesWhole() {
+            // Its backdrop is the engine's own panel fill rather than something ramped, so there is no
+            // fade to ride and the panel should go with it at once.
+            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialog().resolveClaimStrength())
+                .isCloseTo(1f, within(TOLERANCE));
         }
 
         @Test

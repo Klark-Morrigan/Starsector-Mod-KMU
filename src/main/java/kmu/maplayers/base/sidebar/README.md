@@ -61,6 +61,10 @@ numbers, but the hint indexes LWJGL's name table, which has no range check of it
 `LiveSidebarPlacement` bounds the keycode before naming it, so one layer answering nonsense costs
 itself a hint rather than taking the tab row down.
 
+Every key on that pass is a layer's. The bar's own chrome binds none - the dialog the bar is arranged
+in is opened from the bar itself, so a key for it would be a second way in to something already on
+screen, and the fold that hides the opener is one the player is a click away from undoing.
+
 Consuming happens pre-core (see below), so a KM shortcut wins over whatever the screen underneath
 binds to the same key. On the intel screen that matters: item action buttons bind `T`, `U`, and `G`,
 and the tag filter uses `Q` and `Ctrl+S`. The shipped settings table seeds KMU's own two tabs on `N`
@@ -115,8 +119,11 @@ package's. Standing the sidebar down takes its cover over the map down with it, 
 hover would read straight through to the cells under whatever claimed the screen - and it is the act
 of hiding that does this, so a claimant that hides the panel *cannot* be reported by the panel's own
 cover. Each claimant is therefore a cover in its own right too: the console as `ConsoleMapCover`, a
-modal as `ModalDialogMapCover`, the codex as `CodexMapCover` - see [map layers](../../README.md) on
-`base/hover/cover`, where all three sit beside the sidebar's.
+modal as `ModalDialogMapCover`, the codex as `CodexMapCover`, and this mod's own bar-arranging dialog
+as `ArrangementDialogMapCover` - see [map layers](../../README.md) on `base/hover/cover`, where all
+four sit beside the sidebar's. That last one has to be read separately from the modal beside it: a
+dialog this mod stands in the core UI descends from nothing of the game's, so the walk that recognises
+the game's modals answers no on exactly the frames one of ours is up.
 
 Both screen gates ask the same question and nothing beyond it - is there a live canvas under the panel. The
 visor rect is absent when the intel tab is not showing, when a sibling sub-tab (Planets, Factions)

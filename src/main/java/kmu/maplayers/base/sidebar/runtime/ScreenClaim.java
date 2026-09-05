@@ -5,6 +5,8 @@ import kmlib.starsector.ui.coreui.CodexView;
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
 import kmlib.starsector.ui.coreui.ModalDialogState;
 
+import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
+
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -27,6 +29,11 @@ import java.util.function.Supplier;
  *       UI entirely, which is why it needs a reading of its own - see {@link CodexView}.</li>
  *   <li>A modal a core screen has raised in front of itself - a confirmation prompt, a picker - which
  *       takes every event outside its own box and dims the rest of the screen behind it.</li>
+ *   <li>This mod's own dialog for arranging the bar, which is a modal in every way but the one that
+ *       matters to the reading above: it is a panel of ours standing in the core UI rather than one of
+ *       the game's, so nothing about the game's modal base is true of it and the walk that finds those
+ *       cannot find this. Read separately for that reason alone - it claims the screen for exactly the
+ *       same reason, and the panel it stands over is the one it was opened from.</li>
  * </ul>
  *
  * <p>Bundled rather than passed to a host one read at a time, because a host has no use for any of them
@@ -51,6 +58,7 @@ public final class ScreenClaim {
     public static final ScreenClaim INSTANCE = new ScreenClaim(
         ConsoleCommandsOverlay.INSTANCE,
         CodexView::isCodexShowing,
+        MapLayerArrangementDialog.INSTANCE::isDialogRaised,
         CoreUiDialogView::resolveModalDialogState);
 
     // A claimant wholly in place, which is what anything that cannot report a fade of its own counts as.
@@ -69,6 +77,11 @@ public final class ScreenClaim {
     // curve here to ride and none worth riding.
     private final BooleanSupplier isCodexShowing;
 
+    // Whether this mod's own bar-arranging dialog stands over the screen. A field read on the dialog
+    // itself, which is why it sits with the other two rather than with the walk below: nothing has to be
+    // searched for a panel this mod put there itself.
+    private final BooleanSupplier isArrangementDialogShowing;
+
     // What a modal a core screen has raised in front of itself is doing - whether it is there, and how
     // far through its fade. One read rather than two, so the presence a claim stands input down on and
     // the fade it hands the draw cannot come off two walks taken either side of a modal being raised.
@@ -77,10 +90,12 @@ public final class ScreenClaim {
     ScreenClaim(
         ConsoleCommandsOverlay consoleOverlay,
         BooleanSupplier isCodexShowing,
+        BooleanSupplier isArrangementDialogShowing,
         Supplier<ModalDialogState> modalDialogState) {
 
         this.consoleOverlay = consoleOverlay;
         this.isCodexShowing = isCodexShowing;
+        this.isArrangementDialogShowing = isArrangementDialogShowing;
         this.modalDialogState = modalDialogState;
     }
 
@@ -135,14 +150,19 @@ public final class ScreenClaim {
     }
 
     // The claimants there is no fade to follow on - the console having none at all, the codex having one
-    // this cannot reach and would not be seen riding. Named for how they are read rather than for how
-    // they arrive, since that is the one thing true of both and it is what the answers above act on.
+    // this cannot reach and would not be seen riding, and the bar-arranging dialog having none because it
+    // is drawn by the engine's own panel fill, which arrives whole. Named for how they are read rather
+    // than for how they arrive, since that is the one thing true of all three and it is what the answers
+    // above act on.
     //
     // Named once because both of them turn on it and would otherwise each carry their own copy of which
     // claimants those are - a list that agreed only for as long as nobody added a claimant to one of
     // them. It is also the cheap half of both, so asking it first keeps the modal walk off the frames
     // either of these has already settled.
     private boolean isClaimantTakenAtFullStrength() {
-        return consoleOverlay.isOpen() || isCodexShowing.getAsBoolean();
+
+        return consoleOverlay.isOpen()
+            || isCodexShowing.getAsBoolean()
+            || isArrangementDialogShowing.getAsBoolean();
     }
 }
