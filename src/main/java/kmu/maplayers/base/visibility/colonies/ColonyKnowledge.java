@@ -276,6 +276,11 @@ public final class ColonyKnowledge implements KnownColonyReader {
      * lists is permanently in the sector's own sight, so writing an observation of one down would
      * buy nothing and cost an entry per colony in the sector.
      *
+     * <p>Narrower than what the inhabitants' route records, and deliberately so. A collapsed world
+     * is found on a report as well, but the player standing here is the very act vanilla already
+     * stamps a permanent survey level for - so an entry would restate what the fog answers anyway,
+     * at the cost of one per collapsed world in every system the player has ever entered.
+     *
      * @param colonies the place's colonies; null holds nothing
      * @return the colonies a gate covers, in the set's own order
      */
@@ -284,8 +289,9 @@ public final class ColonyKnowledge implements KnownColonyReader {
     }
 
     /**
-     * The gated colonies the place's own inhabitants can see standing here - what somebody living
-     * beside a derelict or a concealed base has observed, whether or not the player ever comes.
+     * The colonies an observation decides that the place's own inhabitants can see standing here -
+     * what somebody living beside a derelict, a concealed base or a collapsed world has observed,
+     * whether or not the player ever comes.
      *
      * <p>Owner-aware through the same test the rule uses: the people keeping a secret are exactly
      * the ones a faction-blind reading would credit with telling it. So a faction's open colony
@@ -297,7 +303,8 @@ public final class ColonyKnowledge implements KnownColonyReader {
      * them out.
      *
      * @param colonies the place's colonies; null holds nothing
-     * @return the gated colonies somebody living here has seen, in the set's own order
+     * @return the colonies an observation decides that somebody living here has seen, in the set's
+     *         own order
      */
     public List<Colony> readColoniesObservedByInhabitants(Colonies colonies) {
 
@@ -305,7 +312,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
 
         return collectColonies(
             colonies,
-            colony -> isGatedColony(colony)
+            colony -> isColonyDecidedByObservation(colony)
                 && isObservedByInhabitants(colony, settlingOwnerIds));
     }
 
@@ -503,6 +510,21 @@ public final class ColonyKnowledge implements KnownColonyReader {
         return MarketVisibility.isCountedAsColony(
             colony.market(),
             fogRule.shouldIncludeUndiscoveredMarkets());
+    }
+
+    // Whether an observation of this colony decides anything at all - the one question the sighting
+    // register is kept to answer, and so the one thing worth writing an entry for.
+    //
+    // Two shapes qualify, for opposite reasons. A gated colony is withheld until somebody has seen
+    // it; a colony a report can find is admitted because somebody has. Stated once here rather than
+    // at each caller, since a register holding one of the two and a rule spending both would leave
+    // the colonies of the missing half answering only while a witness was still alive.
+    //
+    // Everything else is left out on purpose. An open colony the economy lists is permanently in the
+    // sector's own sight, so an entry for one would answer nothing while costing an entry per colony
+    // in the sector.
+    private boolean isColonyDecidedByObservation(Colony colony) {
+        return isGatedColony(colony) || readKindOf(colony).isFoundByReport();
     }
 
     // Whether any gate at all covers this colony, whatever the rule happens to be holding back.

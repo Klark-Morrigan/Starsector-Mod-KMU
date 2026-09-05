@@ -1411,6 +1411,20 @@ final class ColonyKnowledgeTest {
             assertThat(observing().readGatedColonies(buildColoniesOf(buildDerelict(derelict))))
                 .containsExactly(buildDerelict(derelict));
         }
+
+        @Test
+        void passes_over_a_dead_world_the_inhabitants_route_would_record() {
+            // The deliberate gap between the two observation reads. Arriving here is the very act
+            // vanilla stamps a permanent survey level for, so an entry would restate what the fog
+            // already answers - at the cost of one per collapsed world in every system entered.
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+
+            fixture.placeColoniesInSystem(decivilisedWorld);
+
+            assertThat(observing().readGatedColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
+                .isEmpty();
+        }
     }
 
     @Nested
@@ -1518,6 +1532,51 @@ final class ColonyKnowledgeTest {
 
             assertThat(observing().readColoniesObservedByInhabitants(buildColoniesOf(buildDerelict(derelict), buildColony(undiscoveredNeighbour))))
                 .isEmpty();
+        }
+
+        @Test
+        void yields_a_dead_world_a_rival_colony_can_see() {
+            // The report route's own entry, and the reason this read is not the gated one. No gate
+            // is about a collapsed world; what the neighbours can see of it is nonetheless the whole
+            // of why the map shows it, so the observation has to be written down.
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+            var neighbour = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(decivilisedWorld, neighbour);
+
+            assertThat(observing().readColoniesObservedByInhabitants(
+                    buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
+                .containsExactly(buildUngovernedColony(decivilisedWorld));
+        }
+
+        @Test
+        void yields_nothing_for_a_dead_world_alone_in_its_system() {
+
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+
+            fixture.placeColoniesInSystem(decivilisedWorld);
+
+            assertThat(observing().readColoniesObservedByInhabitants(
+                    buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
+                .isEmpty();
+        }
+
+        @Test
+        void yields_a_dead_world_though_the_rule_asks_for_more_than_a_sighting() {
+            // What is written down is keyed on the kind and never on the knob. A player who ran at
+            // a stricter bar for a hundred cycles must not come back down to a hole in the register
+            // for those years - a setting says what may be shown and never what was seen.
+            var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+            var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+            var neighbour = fixture.buildVisibleColony("hegemony");
+
+            fixture.placeColoniesInSystem(decivilisedWorld, neighbour);
+
+            assertThat(knowing(fixture, ASKING_A_PRELIMINARY_SURVEY).readColoniesObservedByInhabitants(
+                    buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
+                .containsExactly(buildUngovernedColony(decivilisedWorld));
         }
     }
 

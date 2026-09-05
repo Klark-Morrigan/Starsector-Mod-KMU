@@ -40,6 +40,7 @@ final class ColonyObservationIntegrationTest {
         DecivilisedMarkets.DEFAULT_SURVEY_LEVEL,
         Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
+    private static final String DEAD_WORLD_ID = "tibicena";
     private static final String DERELICT_ID = "sentinel_gantries";
     private static final String MOVER_ID = "rat_exoship";
     private static final String NEIGHBOUR_ID = "jangala";
@@ -65,6 +66,24 @@ final class ColonyObservationIntegrationTest {
 
             assertThat(readKnownColoniesIn(fixture))
                 .containsExactly(new Colony(derelict, false));
+        }
+
+        @Test
+        void keeps_a_dead_world_shown_once_the_colony_that_reported_it_has_decivilised() {
+            // The same claim for the report route, and the failure that makes the widened write
+            // worth its entries: the world is on the map on the neighbours' word alone, so without
+            // a record of what they saw it would vanish with the last of them.
+            var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
+            var deadWorld = placeDeadWorldIn(fixture);
+            var neighbour = listNeighbourIn(fixture);
+
+            fixture.openSectorMemory();
+
+            recordWhatTheSystemsInhabitantsSee(fixture);
+            decivilise(neighbour);
+
+            assertThat(readKnownColoniesIn(fixture))
+                .containsExactly(new Colony(deadWorld, false));
         }
 
         @Test
@@ -180,6 +199,18 @@ final class ColonyObservationIntegrationTest {
         fixture.placeColoniesInSystem(derelict);
 
         return derelict;
+    }
+
+    // A world whose government has collapsed, standing where the derelict does. Unsurveyed, so the
+    // fog refuses it outright and the neighbours' report is the only thing that can put it on the
+    // map - which is what makes the record of that report the whole of the case.
+    private static MarketAPI placeDeadWorldIn(ColonyKnowledgeFixture fixture) {
+
+        var deadWorld = nameColony(fixture.buildUnsurveyedDecivilisedWorld(), DEAD_WORLD_ID);
+
+        fixture.placeColoniesInSystem(deadWorld);
+
+        return deadWorld;
     }
 
     // A concealed colony that wanders, standing where the derelict does - the shape that makes a

@@ -39,9 +39,9 @@ import static org.mockito.Mockito.when;
  * every case here is about how the register accumulates across calls - a stubbed read could not
  * show a second visit overwriting the first, nor a reconciliation removing an entry.
  *
- * <p>The colonies are {@link ColonyMarketFixture}'s, gated shapes for the most part: an ungated
- * colony is never recorded, so a suite posing only those could not tell a working recorder from
- * one that wrote nothing at all.
+ * <p>The colonies are {@link ColonyMarketFixture}'s, shapes an observation decides for the most
+ * part: a colony neither gate nor report is about is never recorded, so a suite posing only those
+ * could not tell a working recorder from one that wrote nothing at all.
  */
 final class SectorColonySightingsTest {
 
@@ -189,6 +189,20 @@ final class SectorColonySightingsTest {
         }
 
         @Test
+        void records_nothing_for_a_dead_world_the_player_is_standing_in() {
+            // The narrower half of the pair the two routes make. Arriving is the very act vanilla
+            // stamps a permanent survey level for, so an entry here would restate what the fog
+            // answers anyway - at the cost of one per dead world in every system ever entered.
+            placeColoniesOnSystemEntities(buildDeadWorld("tibicena"));
+            openStoredSightings();
+
+            SectorColonySightings.recordSightingsIn(sectorMock, systemMock);
+
+            assertThat(readStoredSightings())
+                .isEmpty();
+        }
+
+        @Test
         void moves_a_colonys_sighting_to_wherever_it_was_last_seen() {
             // The mover's own case, from the register's side: meeting a colony again names the
             // new place rather than adding to a list of places it has ever been.
@@ -246,6 +260,23 @@ final class SectorColonySightingsTest {
             assertThat(readStoredSightings())
                 .containsOnlyKeys("sentinel_gantries");
             assertThat(readObservationOf("sentinel_gantries"))
+                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+        }
+
+        @Test
+        void records_a_dead_world_standing_beside_another_factions_colony() {
+            // The wider half of the pair. No gate is about a dead world, and the neighbours' word
+            // is nonetheless the whole of why the map shows one - so the entry is what keeps it
+            // there after the colony that reported it has itself collapsed.
+            listColoniesInSystem(buildOpenColony("jangala", "hegemony"));
+            placeColoniesOnSystemEntities(buildDeadWorld("tibicena"));
+            openStoredSightings();
+
+            recordWhatTheSystemsInhabitantsSee();
+
+            assertThat(readStoredSightings())
+                .containsOnlyKeys("tibicena");
+            assertThat(readObservationOf("tibicena"))
                 .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
 
@@ -403,6 +434,12 @@ final class SectorColonySightingsTest {
     // introduced for.
     private static MarketAPI buildDerelict(String colonyId) {
         return nameColony(ColonyMarketFixture.buildDerelictStation(), colonyId);
+    }
+
+    // A world whose government has collapsed: no gate is about it, and only the inhabitants' route
+    // records one. Unsurveyed, which is what makes the neighbours' word the only thing showing it.
+    private static MarketAPI buildDeadWorld(String colonyId) {
+        return nameColony(ColonyMarketFixture.buildUnsurveyedDecivilisedWorld(), colonyId);
     }
 
     // A base that conceals itself: the other gated shape, held by a real faction.

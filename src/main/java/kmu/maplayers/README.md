@@ -308,7 +308,11 @@ bar once does not order it again per save.
   the player is looking at. The register behind the observations is `ColonySightings` over
   `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
   political map's staleness poll for what a place's own inhabitants can see; `ColonySightingInstaller`
-  stands both up on load. Its entries sit in the shared `ObservationStore` under a key of its own,
+  stands both up on load. The two routes record different sets, keyed on the kind and never on the
+  knob: the player's own arrival writes the gated shapes alone, since vanilla already stamps a
+  permanent survey level for it, while the inhabitants' sweep also writes the collapsed worlds their
+  word is the only thing showing - which is what keeps one on the map after the last neighbour that
+  could report it has itself collapsed. Its entries sit in the shared `ObservationStore` under a key of its own,
   each spelt by `ColonyObservationCodec` - the moment, then the place - and `PresentColonies` is
   what a load asks which colonies the sector still holds, read off the raw market listings so a
   superseded market that may yet win its place is not shed as gone.

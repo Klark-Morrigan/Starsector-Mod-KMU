@@ -33,9 +33,10 @@ import java.util.Map;
  * live reading of a place precisely so that a sector whose poll never ran still shows what the
  * player can plainly see.
  *
- * <p>Only the shapes a {@link RevelationGate} holds back are recorded at all. Nothing ever asks
- * the register about an open colony the economy lists, so an entry for one would answer nothing
- * while costing an entry per colony in the sector.
+ * <p>Only the shapes an observation decides are recorded at all: those a {@link RevelationGate}
+ * holds back until somebody has seen them, and those a report from the inhabitants can find because
+ * somebody has. Nothing ever asks the register about an open colony the economy lists, so an entry
+ * for one would answer nothing while costing an entry per colony in the sector.
  *
  * <p>Only star systems are recorded. A colony standing anywhere else reads sighted whatever the
  * register says - there is no system to have been in - so recording out there would buy nothing,
@@ -117,14 +118,19 @@ public final class SectorColonySightings {
     }
 
     /**
-     * Records every gated colony in one system that the system's own inhabitants can see as
-     * observed where it stands.
+     * Records every colony in one system that an observation decides and the system's own
+     * inhabitants can see, as observed where it stands.
      *
      * <p>The other route by which an observation is made, and the reason it is written down rather
      * than merely tested where the rule is applied. A colony standing among people who are not its
      * owner is common knowledge there; leaving that as a live test alone would take the colony off
      * the map the moment its last neighbour decivilised, for a player who had known it was there
      * for years.
+     *
+     * <p>Wider than what an arriving observer records, which is the gated shapes alone. A collapsed
+     * world is found on the neighbours' word and would be lost with them, while the player arriving
+     * beside one leaves vanilla's own permanent survey level behind - so only this route owes it an
+     * entry.
      *
      * <p>Written one place at a time, over a colony set the caller already holds, rather than swept
      * for here. This route has to be noticed by a walk - nothing in the engine announces a colony
@@ -211,8 +217,8 @@ public final class SectorColonySightings {
 
     // Stamps a set of colonies as observed in one place, at this moment.
     //
-    // Nothing to stamp is weighed here rather than by the register, so a system holding no gated
-    // colony at all - which is most of them - costs no reading of the clock on the way to
+    // Nothing to stamp is weighed here rather than by the register, so a system holding nothing an
+    // observation decides - which is most of them - costs no reading of the clock on the way to
     // recording nothing.
     //
     // The clock is read once for the whole set rather than per colony, so every colony observed in
