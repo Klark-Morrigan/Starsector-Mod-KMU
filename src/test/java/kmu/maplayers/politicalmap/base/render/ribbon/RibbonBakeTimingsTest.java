@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.profiling.Profiler;
+import kmlib.profiling.RecordingProfiler;
 import kmlib.profiling.SectionTiming;
 
 import org.junit.jupiter.api.Nested;
@@ -28,7 +29,7 @@ final class RibbonBakeTimingsTest {
     private static final String STROKE_SECTION = "politicalMap.bakeRibbons.stroke";
 
     private final RibbonBakeTimings timings = new RibbonBakeTimings();
-    private final Profiler profiler = new Profiler();
+    private final Profiler profiler = new RecordingProfiler();
 
     @Nested
     class RecordPhaseTotals {
