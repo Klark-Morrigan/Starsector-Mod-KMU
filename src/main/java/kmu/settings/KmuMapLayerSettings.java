@@ -37,6 +37,8 @@ public final class KmuMapLayerSettings {
         "kmu_map_visuals_sidebar_borderWidth";
     private static final String SIDEBAR_OPACITY_FIELD =
         "kmu_map_visuals_sidebar_opacity";
+    private static final String SIDEBAR_SCROLLBAR_THICKNESS_FIELD =
+        "kmu_map_visuals_sidebar_scrollbarThickness";
     private static final String SIDEBAR_COLLAPSE_SECONDS_FIELD =
         "kmu_map_visuals_sidebar_collapseSeconds";
 
@@ -223,6 +225,12 @@ public final class KmuMapLayerSettings {
     private static final int DEFAULT_SIDEBAR_OPACITY_PERCENT = 80;
     private static final int MIN_SIDEBAR_OPACITY_PERCENT = 50;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
+
+    // The width the panel's bar drew before it was a knob, so a player who never opens the slider
+    // sees the panel they had. Floored at 1 by the slider rather than by a clamp here: 0 is a
+    // meaning the widget library keeps for a host that scrolls its strip some other way, and this
+    // sidebar is not one - a bar taken away would leave nothing on screen to say where it went.
+    private static final int DEFAULT_SIDEBAR_SCROLLBAR_THICKNESS = 3;
 
     // Mirrors TabPanelCollapse.DEFAULT_DURATION_SECONDS, the KMLib holder's own default pace;
     // restated as a literal like every fallback here so this class stays decoupled from the widget
@@ -861,6 +869,17 @@ public final class KmuMapLayerSettings {
             Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
 
         return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
+    }
+
+    /**
+     * @return how thick the overlay sidebar's scroll bar draws - its track and the handle in it - in
+     *         pixels; 3 by default. The panel reserves the room the bar needs, widening rightward
+     *         past the default rather than drawing over the rows it scrolls
+     */
+    public static int getMapSidebarScrollbarThickness() {
+        return KmuLunaSettings.readInt(
+            SIDEBAR_SCROLLBAR_THICKNESS_FIELD,
+            DEFAULT_SIDEBAR_SCROLLBAR_THICKNESS);
     }
 
     /**
