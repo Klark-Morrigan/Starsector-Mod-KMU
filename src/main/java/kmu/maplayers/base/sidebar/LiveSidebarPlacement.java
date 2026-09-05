@@ -197,8 +197,9 @@ public final class LiveSidebarPlacement {
     private static PanelChrome buildChrome(Set<BoxEdge> borderedEdges) {
         return new PanelChrome(
             new BoxBorder(KmuMapLayerSettings.getMapSidebarBorderWidth(), borderedEdges),
-            // TODO: feed the player's scrollbar thickness here once the setting exists; the default keeps
-            // the bar the width it has always drawn at until then.
+            // TODO: hand KmuMapLayerSettings.getMapSidebarScrollbarThickness() to a ScrollbarThickness
+            // here - the setting is shipped and read, so this call site is all that stands between the
+            // slider and the bar. The default keeps the bar the width it has always drawn at until then.
             ScrollbarThickness.DEFAULT);
     }
 

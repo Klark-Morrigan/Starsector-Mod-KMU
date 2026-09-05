@@ -9,9 +9,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.SidebarHostPanel;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
@@ -92,20 +90,9 @@ public final class IntelSidebarHost extends BaseSidebarHost {
 
     IntelSidebarHost(IntelScreenView intelScreen, ScreenClaim screenClaim) {
         // The intel screen's own picks: a switch or a hide on the map screen leaves both where they were,
-        // and reopening the intel screen returns to them rather than inheriting the map's. Its fold is
-        // built under the same value's scope, so the two cannot name different screens.
-        this(intelScreen, MapLayerScreens.getIntelPicks(), screenClaim);
-    }
-
-    private IntelSidebarHost(
-            IntelScreenView intelScreen,
-            ScreenLayerPicks screenPicks,
-            ScreenClaim screenClaim) {
-
-        super(
-            new PersistedSidebarFold(screenPicks.memoryScope(), OPENS_DOCKED),
-            screenPicks,
-            screenClaim);
+        // and reopening the intel screen returns to them rather than inheriting the map's. The fold goes
+        // under the same screen, the base composing it from these picks.
+        super(MapLayerScreens.getIntelPicks(), OPENS_DOCKED, screenClaim);
         this.intelScreen = intelScreen;
     }
 

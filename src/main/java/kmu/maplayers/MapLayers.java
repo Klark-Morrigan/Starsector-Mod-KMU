@@ -59,10 +59,8 @@ public final class MapLayers {
         registerOpenlyKnownColonies();
         registerFactionAlliances();
 
-        // One call each, in row order: the roster accumulates whatever registers, so KMU's own two
-        // take the left of the strip and any layer another mod ships lands to their right when that
-        // mod loads. The empty view leads without offering itself as the pick, so a fresh save still
-        // opens on the political map.
+        // KMU's own two, in the order they stand on the strip. The empty view leads it without
+        // offering itself as the pick, which is what leaves a fresh save opening on the political map.
         MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
         MapLayerRegistry.registerLayer(PoliticalMapLayer.INSTANCE);
 

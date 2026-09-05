@@ -186,32 +186,58 @@ final class MapLayerRegistryTest {
         }
 
         @Test
+        void registerLayerLeavesTheRowAloneWhenOneLayerRegistersTwice() {
+            // Not every second registration is a clash: a mod wiring from two lifecycle hooks, or a
+            // composition root run again, re-registers what is already standing. The row it was
+            // already in is the row it stays in.
+            MapLayerRegistry.registerLayer(firstLayerMock);
+
+            assertThat(MapLayerRegistry.getLayers())
+                .containsExactly(firstLayerMock, secondLayerMock);
+        }
+
+        @Test
+        void registerLayerReportsNothingWhenOneLayerRegistersTwice() {
+            // The arbitration line names the two sides of a clash, so writing one for a layer giving
+            // way to itself would report a conflict between a mod and itself - and it would be
+            // written on every load of any mod that registers more than once.
+            assertThat(recordLinesWrittenWhileRegistering(firstLayerMock))
+                .isEmpty();
+        }
+
+        @Test
         void registerLayerReportsTheTwoLayersThatShareAnId() {
             // The arbitration is silent to the player, so the log is the only place a mod author
             // finds out why their tab is not the one on the bar - which makes the line naming both
             // sides the whole of what the outcome is worth.
-            // Reached through log4j's own cache rather than through Global, which the sector-memory
-            // fake is standing in for while a case runs: the registry resolved this same logger by
-            // name before any of that, so the two are one object.
             var replacementLayerMock = createLayerMockWithId("first");
-            var log = Logger.getLogger(MapLayerRegistry.class);
+            var writtenLines = recordLinesWrittenWhileRegistering(replacementLayerMock);
 
-            try {
-                log.setAdditivity(false);
-                log.addAppender(appenderFake);
+            assertThat(writtenLines)
+                .hasSize(1);
+            assertThat(writtenLines.get(0))
+                .contains("first")
+                .contains(firstLayerMock.getClass().getName())
+                .contains(replacementLayerMock.getClass().getName());
+        }
+    }
 
-                MapLayerRegistry.registerLayer(replacementLayerMock);
+    @Nested
+    class ResolveLayerById {
 
-                assertThat(appenderFake.getMessages())
-                    .hasSize(1);
-                assertThat(appenderFake.getMessages().get(0))
-                    .contains("first")
-                    .contains(firstLayerMock.getClass().getName())
-                    .contains(replacementLayerMock.getClass().getName());
-            } finally {
-                log.removeAppender(appenderFake);
-                log.setAdditivity(true);
-            }
+        @Test
+        void resolveLayerByIdAnswersTheLayerRegisteredUnderIt() {
+
+            assertThat(MapLayerRegistry.resolveLayerById("first"))
+                .isSameAs(firstLayerMock);
+        }
+
+        @Test
+        void resolveLayerByIdIsNullForAnIdNothingRegistered() {
+            // What a save holds after the mod that shipped that layer is uninstalled, which is why
+            // the answer is an absence to fall back from rather than a fault.
+            assertThat(MapLayerRegistry.resolveLayerById("removed_long_ago"))
+                .isNull();
         }
     }
 
@@ -490,6 +516,29 @@ final class MapLayerRegistryTest {
         mapLayerSettingsMock
             .when(KmuMapLayerSettings::getMapLayerHideFadeSeconds)
             .thenReturn(LONG_HIDE_FADE_SECONDS);
+    }
+
+    // Registers one layer with the registry's own log captured, and hands back what it wrote.
+    //
+    // The logger is reached through log4j's own cache rather than through Global, which the
+    // sector-memory fake is standing in for while a case runs: the registry resolved this same logger
+    // by name before any of that, so the two are one object. Additivity goes off with the attachment,
+    // so a run's console output carries none of what a case plants.
+    private List<String> recordLinesWrittenWhileRegistering(MapLayer layer) {
+
+        var log = Logger.getLogger(MapLayerRegistry.class);
+
+        try {
+            log.setAdditivity(false);
+            log.addAppender(appenderFake);
+
+            MapLayerRegistry.registerLayer(layer);
+
+            return List.copyOf(appenderFake.getMessages());
+        } finally {
+            log.removeAppender(appenderFake);
+            log.setAdditivity(true);
+        }
     }
 
     // A layer answering nothing but the id it registers under, which is all the registration cases

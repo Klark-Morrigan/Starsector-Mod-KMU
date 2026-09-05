@@ -11,11 +11,14 @@ import java.util.function.DoubleSupplier;
 import java.util.function.LongSupplier;
 
 /**
- * A screen's show-or-hide pick persisted in sector memory under one key, so the pick survives reload,
- * together with the ramp the paint rides between the two states. Each screen holds its own instance under
- * its own key, so the picks stay independent - hiding on one screen writes only its key - while both
- * screens persist the same way, for one consistent behaviour across screens. A save holding no pick yet
- * resolves to shown, which is what a player who has never touched the control is entitled to see.
+ * A screen's show-or-hide pick persisted in sector memory, so the pick survives reload, together with the
+ * ramp the paint rides between the two states. Each screen holds its own instance under its own scope, so
+ * the picks stay independent - hiding on one screen writes only its key - while both screens persist the
+ * same way, for one consistent behaviour across screens. A save holding no pick yet resolves to shown,
+ * which is what a player who has never touched the control is entitled to see.
+ *
+ * <p>The base key is held here rather than supplied, because it is this pick's identity and the same on
+ * every screen; what a caller chooses is the screen, and the two compose to the slot.
  *
  * <p>The ramp is derived from how long ago the pick changed rather than advanced by a per-frame tick.
  * Nothing then has to be stepped in the right pass, or at all: two readings taken in different passes of
@@ -37,6 +40,10 @@ import java.util.function.LongSupplier;
  */
 public final class PersistedMapLayerVisibility implements MapLayerVisibility {
 
+    // Save-serialised identity of this pick, before the screen's own segment; frozen once shipped, since
+    // renaming it returns every existing save to shown.
+    private static final String LAYERS_SHOWN_KEY = "$kmu_political_layers_shown";
+
     // What a save holding no pick yet resolves to. Shown, because the layers are what the feature is for:
     // a player who has never reached the control has not asked for them to be gone.
     private static final boolean LAYERS_SHOWN_BY_DEFAULT = true;
@@ -46,8 +53,8 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
     private static final float FULLY_HIDDEN = 0f;
     private static final float FULLY_SHOWN = 1f;
 
-    // The stored pick and the default an untouched save resolves to. The key is the save-serialised
-    // identity, so it must stay stable once shipped - renaming it returns every existing save to shown.
+    // The stored pick and the default an untouched save resolves to, under the slot this pick's base key
+    // composes to for the screen it was built for.
     private final SectorMemoryFlag areLayersShownFlag;
 
     // The monotonic clock the ramp is measured against. Only differences are read, so a wall clock
@@ -65,24 +72,25 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
     private long flippedAtNanos;
 
     /**
-     * @param memoryKey the sector-memory key this pick persists under; stable once shipped, since a
-     *                  rename returns every existing save to shown
+     * @param memoryScope the screen whose pick this is; its slot is this pick's base key resolved under it
      */
-    public PersistedMapLayerVisibility(String memoryKey) {
-        this(memoryKey, System::nanoTime, KmuMapLayerSettings::getMapLayerHideFadeSeconds);
+    public PersistedMapLayerVisibility(ScreenMemoryScope memoryScope) {
+        this(memoryScope, System::nanoTime, KmuMapLayerSettings::getMapLayerHideFadeSeconds);
     }
 
     /**
-     * @param memoryKey         the sector-memory key this pick persists under
+     * @param memoryScope       the screen whose pick this is
      * @param readElapsedNanos  the monotonic clock the ramp is measured against
      * @param readRampSeconds   how long a whole ramp takes, in seconds; zero or less makes it a cut
      */
     PersistedMapLayerVisibility(
-            String memoryKey,
+            ScreenMemoryScope memoryScope,
             LongSupplier readElapsedNanos,
             DoubleSupplier readRampSeconds) {
 
-        this.areLayersShownFlag = new SectorMemoryFlag(memoryKey, LAYERS_SHOWN_BY_DEFAULT);
+        this.areLayersShownFlag = new SectorMemoryFlag(
+            memoryScope.resolveKeyFor(LAYERS_SHOWN_KEY),
+            LAYERS_SHOWN_BY_DEFAULT);
         this.readElapsedNanos = readElapsedNanos;
         this.readRampSeconds = readRampSeconds;
     }

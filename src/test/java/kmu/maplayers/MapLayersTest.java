@@ -4,10 +4,14 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceFixture;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
+import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.tooltip.PoliticalMapCellTooltip;
 import kmu.maplayers.politicalmap.claims.ClaimsView;
@@ -57,6 +61,13 @@ final class MapLayersTest {
     @AfterEach
     void clearOpenlyKnownColonies() {
         clearRegistrations();
+    }
+
+    @AfterEach
+    void restoreTheRosterTheWiringLeft() {
+        // The wiring registers KMU's real layers into a static roster, so a case that ran it would
+        // otherwise leave the political map standing in every later roster read in the same run.
+        MapLayerRosters.restoreNonEmptyRoster();
     }
 
     @Nested
@@ -132,6 +143,24 @@ final class MapLayersTest {
                 assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(
                         buildEntity(ACADEMY_ENTITY_ID)))
                     .isTrue();
+            }
+        }
+
+        @Test
+        void registerAllLeavesTheEmptyViewLeadingTheStripAndThePoliticalMapAsThePick() {
+            // The row and the pick used to be one call's two arguments and are now spread over three
+            // files - two registrations here, and each layer's own answer to whether it offers itself.
+            // So nothing but this fails if the calls are reordered or either answer is flipped, and
+            // both are facts a player meets on the first sector map they open.
+            try (MockedStatic<Global> globalMock = mockStatic(Global.class)) {
+                stubNexEnabled(globalMock, false);
+
+                MapLayers.registerAll();
+
+                assertThat(MapLayerRegistry.getLayers())
+                    .containsExactly(NoLayer.INSTANCE, PoliticalMapLayer.INSTANCE);
+                assertThat(MapLayerRegistry.getDefaultLayer())
+                    .isSameAs(PoliticalMapLayer.INSTANCE);
             }
         }
 

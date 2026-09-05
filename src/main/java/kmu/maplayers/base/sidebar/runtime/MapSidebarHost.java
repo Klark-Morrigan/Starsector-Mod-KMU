@@ -7,9 +7,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
-import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.SidebarHostPanel;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
@@ -57,16 +55,8 @@ public final class MapSidebarHost extends BaseSidebarHost {
 
     MapSidebarHost(ScreenClaim screenClaim) {
         // The sector map's own picks, so neither its tab nor its hiding is moved by a switch on the intel
-        // screen - and its fold is built under the same value's scope, so the two cannot name different
-        // screens.
-        this(MapLayerScreens.getMapPicks(), screenClaim);
-    }
-
-    private MapSidebarHost(ScreenLayerPicks screenPicks, ScreenClaim screenClaim) {
-        super(
-            new PersistedSidebarFold(screenPicks.memoryScope(), OPENS_DOCKED),
-            screenPicks,
-            screenClaim);
+        // screen - and the fold goes under the same screen, the base composing it from these picks.
+        super(MapLayerScreens.getMapPicks(), OPENS_DOCKED, screenClaim);
     }
 
     @Override

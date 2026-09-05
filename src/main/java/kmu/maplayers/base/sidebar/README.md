@@ -23,7 +23,9 @@ Part of [map layers](../../README.md); see the
 panel controller, the fold selection, the layer selection, and the view-state text. `BaseSidebarHost`
 holds the plumbing common to both (controller, fold selection, layer selection, the per-load reseed,
 the shortcut jump, and the composed live gate), leaving each concrete host only the genuine
-differences.
+differences. A concrete host names its screen's picks and its opening fold; everything a real screen's
+host would otherwise compose for itself - the persisted fold, the sound player behind the controller -
+is composed in the base, which is what keeps the two hosts down to what actually differs.
 
 | | `MapSidebarHost` | `IntelSidebarHost` |
 | --- | --- | --- |
@@ -274,9 +276,10 @@ way to answer "why hidden" or "drawn where".
 
 `SidebarFoldSelection` is where a fold is read from and recorded to; `PersistedSidebarFold` is the
 sector-memory implementation, one instance per host with its own opening default. Its key is one base
-key resolved through the screen's `ScreenMemoryScope`, which each host takes from the same
-`ScreenLayerPicks` it draws through - so the fold and the picks cannot name different screens, and the
-slot has the shape every per-screen key does.
+key resolved through the screen's `ScreenMemoryScope`, so the slot has the shape every per-screen key
+does. A host does not build it: it hands `BaseSidebarHost` its screen's picks and its opening default,
+and the fold is composed there from those same picks - so the fold and the picks cannot be built for
+two different screens, which would draw one screen's panel while folding another's.
 
 | Key | Holds |
 | --- | --- |

@@ -14,9 +14,10 @@ import kmlib.starsector.ui.intel.IntelScreenView;
  *
  * <p>Each screen is named once here, as the {@link ScreenMemoryScope} every one of its keys is composed
  * through, and each screen's pair is its own {@link PersistedActiveLayerSelection} and
- * {@link PersistedMapLayerVisibility} under the keys that scope resolves, so a switch or a hide on one
- * screen survives reload without moving the other's, and the base keys and the two scopes sit in one
- * place. The picks and the scope travel as one {@link ScreenLayerPicks} so a screen is chosen once, at
+ * {@link PersistedMapLayerVisibility} built under that scope, so a switch or a hide on one screen survives
+ * reload without moving the other's. What is named here is the screens; each preference's own base key
+ * belongs to the holder that owns it, which is the only arrangement available to the ones this package may
+ * not import. The picks and the scope travel as one {@link ScreenLayerPicks} so a screen is chosen once, at
  * the site that names it, rather than at each site wanting one of its picks or a key for a preference of
  * its own. Each screen's hide is handed out through {@link ControlBackedMapLayerVisibility}, so a stored
  * hide is acted on only while that screen has a control able to reverse it - the difference between an
@@ -34,33 +35,23 @@ public final class MapLayerScreens {
     private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
     private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
 
-    // Save-serialised identity of a screen's active pick, before the screen's own segment; frozen once
-    // shipped, since renaming it silently resets every existing save under it to the default.
-    private static final String ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
-
-    // The same for a screen's show-or-hide pick, and frozen for the same reason.
-    private static final String LAYERS_SHOWN_KEY = "$kmu_political_layers_shown";
-
     // Each screen's show-or-hide pick as the rest of the mod reads it: the stored pick behind the rule
     // that a hide is acted on only while that screen has a control able to reverse it. Held as that
     // reading rather than as the stored pick, so no consumer can be handed the raw choice by accident -
     // the one entitled to it is whatever stands the control, and it asks the reading for it by name.
     private static final ControlBackedMapLayerVisibility MAP_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(
-            new PersistedMapLayerVisibility(MAP_SCOPE.resolveKeyFor(LAYERS_SHOWN_KEY)));
+        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(MAP_SCOPE));
     private static final ControlBackedMapLayerVisibility INTEL_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(
-            new PersistedMapLayerVisibility(INTEL_SCOPE.resolveKeyFor(LAYERS_SHOWN_KEY)));
+        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(INTEL_SCOPE));
 
-    // Each screen's picks, under the keys that screen's own scope resolves, with the scope beside them.
-    // The map host draws through the map value and the overlay follows it; the intel host draws through
-    // the intel value.
+    // Each screen's picks, built under that screen's own scope, with the scope beside them. The map host
+    // draws through the map value and the overlay follows it; the intel host draws through the intel value.
     private static final ScreenLayerPicks MAP_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(MAP_SCOPE.resolveKeyFor(ACTIVE_LAYER_KEY)),
+        new PersistedActiveLayerSelection(MAP_SCOPE),
         MAP_LAYER_VISIBILITY,
         MAP_SCOPE);
     private static final ScreenLayerPicks INTEL_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(INTEL_SCOPE.resolveKeyFor(ACTIVE_LAYER_KEY)),
+        new PersistedActiveLayerSelection(INTEL_SCOPE),
         INTEL_LAYER_VISIBILITY,
         INTEL_SCOPE);
 

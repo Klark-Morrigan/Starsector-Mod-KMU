@@ -12,6 +12,7 @@ import kmlib.starsector.ui.widgets.tabs.TabStrip;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
+import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 
@@ -86,6 +87,36 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // draw drops it as it stands down, so no pass can hit-test a panel that has left.
     private TabPanelPlacement drawnPlacement;
 
+    /**
+     * A host whose fold persists in the save under the same screen its picks are held for, which is what
+     * every host on a real screen wants: composed here rather than at each host so the fold and the picks
+     * cannot be built for two different screens, an arrangement that draws one screen's panel while
+     * folding another's.
+     *
+     * @param screenPicks      this host's screen's picks, whose scope the fold is stored under
+     * @param isDockedDefault  the fold a save holding no choice yet opens this host's panel at
+     * @param screenClaim      whether anything else has claimed the screen this frame
+     */
+    protected BaseSidebarHost(
+            ScreenLayerPicks screenPicks,
+            boolean isDockedDefault,
+            ScreenClaim screenClaim) {
+
+        this(
+            new PersistedSidebarFold(screenPicks.memoryScope(), isDockedDefault),
+            screenPicks,
+            screenClaim);
+    }
+
+    /**
+     * A host over any fold at all, for the one case the constructor above cannot serve: a fold that is not
+     * the save's. The seam stays open because where a fold is read from and recorded to is a role
+     * ({@link SidebarFoldSelection}) rather than a fact about sector memory.
+     *
+     * @param foldSelection where this host's fold is read from and recorded to
+     * @param screenPicks   this host's screen's picks
+     * @param screenClaim   whether anything else has claimed the screen this frame
+     */
     protected BaseSidebarHost(
             SidebarFoldSelection foldSelection,
             ScreenLayerPicks screenPicks,

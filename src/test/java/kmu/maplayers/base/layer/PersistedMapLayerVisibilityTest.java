@@ -12,8 +12,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
 /**
- * Pins the per-screen show-or-hide pick: it reads and writes one sector-memory key, defaults to shown,
- * and never touches a second screen's key - the independence the whole per-screen split rests on.
+ * Pins the per-screen show-or-hide pick: the slot it composes for the screen it was built for, that it
+ * defaults to shown, and that it never touches a second screen's slot - the independence the whole
+ * per-screen split rests on.
  *
  * <p>The ramp cases are the reason the clock and the pace are injected rather than read: a fade derived
  * from elapsed real time is only checkable at instants a case can name, and a fade the shipped knob paces
@@ -25,8 +26,14 @@ import static org.assertj.core.api.Assertions.within;
  */
 final class PersistedMapLayerVisibilityTest {
 
-    private static final String KEY = "$kmu_test_layers_shown";
-    private static final String OTHER_KEY = "$kmu_test_layers_shown_other";
+    private static final ScreenMemoryScope SCREEN_SCOPE = ScreenMemoryScopes.createStandInScreen();
+
+    // The slot that screen composes, as a literal: the base key is a save-serialised identity, so a rename
+    // must break this test rather than ship and return every existing save to shown.
+    private static final String KEY = "$kmu_political_layers_shown_test";
+
+    // The same base key under a second screen, which is what this pick must never write.
+    private static final String OTHER_KEY = "$kmu_political_layers_shown_other";
 
     // A pace no shipped default shares, so a reading that happens to match one is not mistaken for a
     // reading taken through the injected one.
@@ -51,7 +58,7 @@ final class PersistedMapLayerVisibilityTest {
         sectorMemoryFake = new SectorMemoryFake();
 
         visibility = new PersistedMapLayerVisibility(
-            KEY,
+            SCREEN_SCOPE,
             () -> elapsedNanos,
             () -> rampSeconds);
     }
@@ -94,9 +101,9 @@ final class PersistedMapLayerVisibilityTest {
         }
 
         @Test
-        void showLayersUnderOneKeyLeavesAnotherKeysPickUntouched() {
+        void showLayersOnOneScreenLeavesAnotherScreensPickUntouched() {
             // The independence the per-screen split needs: hiding on one screen must never write a
-            // second screen's key, or the player would lose the layers on a screen they are not on.
+            // second screen's slot, or the player would lose the layers on a screen they are not on.
             visibility.showLayers(false);
 
             assertThat(sectorMemoryFake.hasStoredValue(OTHER_KEY))

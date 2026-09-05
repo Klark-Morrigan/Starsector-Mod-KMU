@@ -124,9 +124,14 @@ key in `MapLayerScreens`, and `MapLayerRegistry.isActive` resolves which is live
 which screen is up.
 
 A screen's key is composed rather than spelled: `ScreenMemoryScope` appends that screen's segment to
-a preference's own key (`$kmu_political_active_layer` + `map`), and `MapLayerScreens` names the two
-screens as the two scopes every one of their keys resolves through. One shape for every per-screen
+a preference's own base key (`$kmu_political_active_layer` + `map`), and `MapLayerScreens` names the
+two screens as the two scopes every one of their keys resolves through. One shape for every per-screen
 slot, and a screen the mod does not name has nowhere to be spelled.
+
+The base key belongs to the holder that owns it, and the screen to the caller: a holder takes a scope
+and resolves its own key under it. That is the only arrangement open to the holders `base/layer` may
+not import - the political map's own preferences - so it is the arrangement all of them use, rather
+than a central list of keys that could only ever hold some of them.
 
 ```mermaid
 flowchart TD
@@ -187,18 +192,15 @@ about what the overlay means.
   the mod that declares a layer holds the bundle its name lives in and the file its rebinding is
   stored in, and the bar carries whatever is registered. Both are asked per frame, so a rename or a
   rebind shows on the next one; KMU's own two layers answer out of `KmuStrings` and the
-  `Map - Keybinds` settings tab themselves. Registration is one layer at a time and accumulates:
-  `registerLayer` appends to the row, so a mod that depends on KMU registers its own layer as it
-  loads and lands to the right of the layers it was built on, and no mod's call can displace
-  another's. That arrival order is the whole of the row's order - no layer states a rank, none being
-  in a position to see the row it stands in - and the default pick falls out of it too: the first
-  registered layer that offers itself (`isOfferedAsDefaultPick`), so `NoLayer` leads the strip while
-  declining and the political map is what a fresh save opens on. Where nobody offers, the leading
-  layer stands in, a row of tabs with none lit being worse than an arbitrary pick. Two layers
-  registering under one id are arbitrated rather than tabbed twice - the later takes the earlier's
-  place in the row, with a log line naming both - since both tabs would otherwise read and write the
-  one stored pick that names them. Nothing is settled at load: a mod loading after KMU registers
-  after KMU's own load has returned, so every read answers from whatever has registered by then.
+  `Map - Keybinds` settings tab themselves. Registration is one layer at a time and accumulates, so a
+  mod that depends on KMU registers its own as it loads and lands to the right of the layers it was
+  built on. That arrival order is the whole of the row's order - no layer states a rank, none being
+  in a position to see the row it stands in - and the default pick falls out of it: the first layer
+  that offers itself (`isOfferedAsDefaultPick`), so `NoLayer` leads the strip while declining and the
+  political map is what a fresh save opens on. Two *different* layers under one id are arbitrated
+  rather than tabbed twice, both tabs otherwise reading and writing the one stored pick that names
+  them. Nothing is settled at load, since a mod registering after KMU's own load has returned is the
+  ordinary case rather than the exception.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

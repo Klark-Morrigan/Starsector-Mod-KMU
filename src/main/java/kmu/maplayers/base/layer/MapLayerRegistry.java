@@ -34,9 +34,8 @@ import java.util.List;
  *
  * <p>Nothing is settled at any one moment, because there is no moment at which the roster is known
  * to be whole: a mod that depends on this one loads after it, so its layer lands after this mod's
- * own load has returned. Every read - the row, the default pick, the active pick - answers from
- * whatever has registered by the time it is taken, and a layer registered later reaches the next
- * read rather than the next load.
+ * own load has returned. Every read answers from whatever has registered by the time it is taken,
+ * the default pick included.
  */
 public final class MapLayerRegistry {
 
@@ -69,25 +68,27 @@ public final class MapLayerRegistry {
      * wants otherwise, that is an arrangement to make over the whole row rather than a number each
      * mod picks for itself.
      *
-     * <p>An id registered twice is arbitrated rather than tabbed twice: the later layer takes the
-     * earlier one's place in the row, and the exchange is logged naming both. Two layers under one id
-     * would share the stored pick that names it, so a row offering both would carry two tabs a save
-     * cannot tell apart - worse than an arbitrated one, which at least paints something the pick
-     * agrees with.
+     * <p>Two <em>different</em> layers under one id are arbitrated rather than tabbed twice: the later
+     * takes the earlier one's place in the row, and the exchange is logged naming both. They would
+     * otherwise share the stored pick that names the id, so a row offering both would carry two tabs a
+     * save cannot tell apart. The same layer registering again is neither a clash nor a second tab -
+     * it changes nothing and says nothing.
      *
      * @param layer the layer to add, or to stand in the place of one already registered under its id
      */
     public static void registerLayer(MapLayer layer) {
 
-        var revisedLayers = new ArrayList<>(orderedLayers);
         var replacedIndex = findIndexOfLayerId(layer.getId());
+
+        if (replacedIndex >= 0 && orderedLayers.get(replacedIndex) == layer) {
+            return;
+        }
+        var revisedLayers = new ArrayList<>(orderedLayers);
 
         if (replacedIndex < 0) {
             revisedLayers.add(layer);
         } else {
-            LOG.warn("Two map layers registered under the id '" + layer.getId() + "': "
-                + revisedLayers.get(replacedIndex).getClass().getName() + " gives way to "
-                + layer.getClass().getName() + ", which takes its place in the row.");
+            warnOfTheIdTwoLayersShare(orderedLayers.get(replacedIndex), layer);
             revisedLayers.set(replacedIndex, layer);
         }
         orderedLayers = List.copyOf(revisedLayers);
@@ -102,14 +103,24 @@ public final class MapLayerRegistry {
     }
 
     /**
+     * The layer registered under {@code layerId}, or null for an id nothing has registered - an id a
+     * save holds from a build that shipped a layer since removed, or from a mod no longer installed.
+     *
+     * @param layerId the stored id to resolve against the roster
+     * @return that layer, or null where nothing is registered under the id
+     */
+    public static MapLayer resolveLayerById(String layerId) {
+
+        var layerIndex = findIndexOfLayerId(layerId);
+
+        return layerIndex < 0 ? null : orderedLayers.get(layerIndex);
+    }
+
+    /**
      * The pick an untouched save resolves to, and the fallback for an absent or stale stored pick:
      * the first registered layer offering itself as one. So the row's order settles the default too,
      * and a layer that leads the strip without wanting to be what a new save opens on simply declines
      * - which is how the empty view leads while a layer that paints is the pick.
-     *
-     * <p>Resolved per read rather than recorded when a layer registers, for the reason the row is:
-     * a mod loading later may bring the layer that offers itself, and an answer recorded before it
-     * arrived would outlive the reason it was right.
      *
      * <p>A roster where nobody offers falls back to the leading layer rather than to no pick at all.
      * No pick paints nothing and lights no tab, leaving a player looking at a row with nothing to move
@@ -191,6 +202,16 @@ public final class MapLayerRegistry {
      */
     static void forgetLayers() {
         orderedLayers = List.of();
+    }
+
+    // Says one id reached the row twice, which is silent to the player: the log is where the author of
+    // the layer that lost finds out why their tab is not the one on the bar. Named by class, that
+    // being what says which mod each side came from.
+    private static void warnOfTheIdTwoLayersShare(MapLayer displacedLayer, MapLayer registeredLayer) {
+
+        LOG.warn("Two map layers registered under the id '" + registeredLayer.getId() + "': "
+            + displacedLayer.getClass().getName() + " gives way to "
+            + registeredLayer.getClass().getName() + ", which takes its place in the row.");
     }
 
     // Where a layer under this id already stands in the row, or -1 for an id nothing has registered.
