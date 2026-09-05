@@ -3,7 +3,8 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.diagnostics.KmuProfiling;
+import kmlib.profiling.ActiveProfiler;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.labels.LabelsBuilder;
@@ -74,7 +75,7 @@ final class IncrementalPoliticsRefresh {
             StandingPoliticalMap standingMap,
             Set<String> staleSystemIds) {
 
-        KmuProfiling.getProfiler().measure(
+        ActiveProfiler.resolveProfiler().measure(
             "politicalMap.applyPoliticsUpdates",
             () -> applyMarkedPoliticsUpdates(sector, standingMap, staleSystemIds));
     }

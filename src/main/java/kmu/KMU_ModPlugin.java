@@ -4,7 +4,9 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.diagnostics.KmuProfiling;
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.RecordingProfiler;
+
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -94,7 +96,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // profiler is silent until a mod binds a recording one, and KMU is the mod whose console
         // command reads the readout.
         KmuWiringSteps.runGuardedStep(
-            KmuProfiling::bindRecordingProfiler,
+            () -> ActiveProfiler.bindProfiler(new RecordingProfiler()),
             "Failed to bind KMU profiler");
 
         // App-scoped, once per launch: register KMU's LunaLib settings bindings before any save

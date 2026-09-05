@@ -3,9 +3,9 @@ package kmu.maplayers.base.labels;
 import com.fs.starfarer.api.Global;
 
 import kmlib.math.geometry.Segment;
+import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Timings;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 
 import org.apache.log4j.Logger;
@@ -70,7 +70,7 @@ public final class LabelsBuilder {
             return;
         }
         var buildStart = System.nanoTime();
-        KmuProfiling.getProfiler().measure("mapLayer.buildLabels", () -> {
+        ActiveProfiler.resolveProfiler().measure("mapLayer.buildLabels", () -> {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking
             // geometry stays a self-contained calculation apart from GL resource creation.

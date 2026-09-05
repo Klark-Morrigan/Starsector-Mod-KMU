@@ -9,8 +9,8 @@ import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlLines;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlQuads;
+import kmlib.profiling.ActiveProfiler;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.lwjgl.opengl.GL11;
@@ -80,7 +80,7 @@ public final class ClusterAnchorRenderer {
             GlLineQuality.ALIASED,
             // Profiled (not logged) like the base passes: this runs every frame the map is
             // open, so only the profiler's accumulated view is affordable here.
-            () -> KmuProfiling.getProfiler().measure(
+            () -> ActiveProfiler.resolveProfiler().measure(
                 "mapLayer.render.anchors",
                 () -> drawClusterAnchors(anchors, factor, alphaMult)));
     }

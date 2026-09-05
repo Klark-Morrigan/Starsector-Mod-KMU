@@ -3,11 +3,11 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.Global;
 
 import kmlib.opengl.GlVertexRuns;
+import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
@@ -63,7 +63,7 @@ public final class TerritoryBuilder {
             HolderPass pass,
             PoliticalMapView view) {
 
-        var profiler = KmuProfiling.getProfiler();
+        var profiler = ActiveProfiler.resolveProfiler();
         return profiler.measure("politicalMap.rebuildTerritories", () -> {
 
             // The grouping is the pass's rather than a second sampling of the view's (the

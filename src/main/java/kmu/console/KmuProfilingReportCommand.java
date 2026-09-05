@@ -5,10 +5,9 @@ import kmlib.console.output.CommandOutput;
 import kmlib.console.output.ConsoleCommandOutput;
 import kmlib.console.parsing.Parameter;
 import kmlib.console.parsing.ParameterSpec;
+import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.TimingReport;
-
-import kmu.diagnostics.KmuProfiling;
 
 import java.util.Objects;
 
@@ -16,7 +15,7 @@ import java.util.Objects;
  * Console command that prints KMU's accumulated performance timings, or clears
  * them when invoked with {@code reset}.
  *
- * <p>The on-demand reporting surface for {@link KmuProfiling}'s profiler: it
+ * <p>The on-demand reporting surface for whichever profiler is bound: it
  * formats the per-section stats (count, average / min / max / total ms) so the
  * cost of instrumented work - geometry build, ownership scan, per-frame draw -
  * can be read without flooding the log. The profiler and output sink arrive as
@@ -30,7 +29,7 @@ public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
     private final Profiler profiler;
 
     public KmuProfilingReportCommand() {
-        this(KmuProfiling.getProfiler(), ConsoleCommandOutput.INSTANCE);
+        this(ActiveProfiler.resolveProfiler(), ConsoleCommandOutput.INSTANCE);
     }
 
     KmuProfilingReportCommand(Profiler profiler, CommandOutput output) {

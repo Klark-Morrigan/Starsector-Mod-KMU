@@ -1,8 +1,7 @@
 package kmu.maplayers.base.labels;
 
 import kmlib.colour.Colours;
-
-import kmu.diagnostics.KmuProfiling;
+import kmlib.profiling.ActiveProfiler;
 
 import org.lwjgl.opengl.GL11;
 
@@ -43,7 +42,7 @@ public final class LabelRenderer {
         if (labels.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        KmuProfiling.getProfiler().measure(
+        ActiveProfiler.resolveProfiler().measure(
             "mapLayer.render.labels",
             () -> drawLabels(labels, factor, alphaMult));
     }

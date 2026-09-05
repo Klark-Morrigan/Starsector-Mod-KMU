@@ -3,11 +3,11 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Timings;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SystemColoniesIndex;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
@@ -514,8 +514,8 @@ final class PoliticalMapCache {
             cellCut.visibilityRules());
 
         var movingSystemIds = installation.resolveMovingSystems().getMovingSystemIds();
-        KmuProfiling
-            .getProfiler()
+        ActiveProfiler
+            .resolveProfiler()
             .measure(
                 "politicalMap.updateGeometry",
                 () -> cellGeometry.cells().updateFromSector(

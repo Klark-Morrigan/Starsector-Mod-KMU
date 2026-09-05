@@ -5,9 +5,9 @@ import kmlib.opengl.GlColour;
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
+import kmlib.profiling.ActiveProfiler;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.base.theme.GlLineHatchStroke;
@@ -112,7 +112,7 @@ public final class ClusterRenderer {
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             lineQuality,
-            () -> KmuProfiling.getProfiler().measure(
+            () -> ActiveProfiler.resolveProfiler().measure(
                 measureName,
                 () -> emitRuns.accept(frame)));
     }

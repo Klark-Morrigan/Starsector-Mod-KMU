@@ -5,8 +5,7 @@ import kmlib.opengl.GlColour;
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
-
-import kmu.diagnostics.KmuProfiling;
+import kmlib.profiling.ActiveProfiler;
 
 import org.lwjgl.opengl.GL11;
 
@@ -61,7 +60,7 @@ public final class CellPresenceRibbonRenderer {
         }
         // Profiled like the other map passes, since this runs every frame the map is open; only
         // the profiler's accumulated view is affordable here, never a per-frame log line.
-        KmuProfiling.getProfiler().measure(
+        ActiveProfiler.resolveProfiler().measure(
             "mapLayer.render.ribbons",
             () -> GlPasses.runBlendedPass(
                 GlBlendMode.ALPHA,

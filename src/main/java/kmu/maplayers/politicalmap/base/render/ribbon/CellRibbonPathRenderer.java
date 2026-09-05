@@ -5,8 +5,8 @@ import kmlib.opengl.GlColour;
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
+import kmlib.profiling.ActiveProfiler;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
 
 import org.lwjgl.opengl.GL11;
@@ -87,7 +87,7 @@ public final class CellRibbonPathRenderer {
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             GlLineQuality.ALIASED,
-            () -> KmuProfiling.getProfiler().measure(
+            () -> ActiveProfiler.resolveProfiler().measure(
                 "mapLayer.render.ribbonPaths",
                 () -> drawRibbonPaths(ribbonPaths, factor, alphaMult)));
     }

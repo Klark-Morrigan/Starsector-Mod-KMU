@@ -2,9 +2,9 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Timings;
 
-import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -131,14 +131,14 @@ public final class CellRibbonsBaker {
         // contest over them - so this is the one part of a rebuild that could rival the known
         // label-fit stall, and it is profiled and timed on its own so a rebuild that slows down
         // says which half slowed.
-        var bakedCells = KmuProfiling
-            .getProfiler()
+        var bakedCells = ActiveProfiler
+            .resolveProfiler()
             .measure(RibbonBakeTimings.BAKE_SECTION, () -> bakeCellRibbons(cellIds, timings));
 
         // The four phases beside the whole-pass measure rather than instead of it: what they
         // leave unaccounted - the loop itself, and the overlay's second trace while a player has
         // it on - shows only as the gap between their sum and the total.
-        timings.recordPhaseTotals(KmuProfiling.getProfiler());
+        timings.recordPhaseTotals(ActiveProfiler.resolveProfiler());
 
         LOG.debug("Political map presence bands baked; cells="
             + cellIds.size()
