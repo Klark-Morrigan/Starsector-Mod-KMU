@@ -48,7 +48,7 @@ final class IntelSidebarHostTest {
 
     // The live fold key, pinned as a literal: a rename must break this test rather than shipping and
     // quietly re-docking every save that had the rail open.
-    private static final String DOCKED_KEY = "$kmu_political_intel_sidebar_docked";
+    private static final String DOCKED_KEY = "$kmu_political_sidebar_docked_intel";
 
     // The frozen key this screen's active-layer pick is stored under, pinned here so the shortcut is shown
     // writing the intel screen's own pick rather than the sector map's.

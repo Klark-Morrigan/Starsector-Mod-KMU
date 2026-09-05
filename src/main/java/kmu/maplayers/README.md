@@ -123,6 +123,11 @@ the player is looking at. Each screen holds its own `PersistedActiveLayerSelecti
 key in `MapLayerScreens`, and `MapLayerRegistry.isActive` resolves which is live per frame from
 which screen is up.
 
+A screen's key is composed rather than spelled: `ScreenMemoryScope` appends that screen's segment to
+a preference's own key (`$kmu_political_active_layer` + `map`), and `MapLayerScreens` names the two
+screens as the two scopes every one of their keys resolves through. One shape for every per-screen
+slot, and a screen the mod does not name has nowhere to be spelled.
+
 ```mermaid
 flowchart TD
     F([Frame]) --> Q{Is the intel<br/>screen up?}
@@ -134,7 +139,8 @@ flowchart TD
 ```
 
 Switching tabs on one screen leaves the other where it was. Both picks persist; a save holding no
-pick, or one naming a layer no longer registered, resolves to the registered default.
+pick, or one naming a layer no longer registered, resolves to the default the roster answers - the
+first registered layer that offered itself as one.
 
 ## What is per screen
 
@@ -154,11 +160,12 @@ about what the overlay means.
 
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, shortcut key),
   `MapLayerRegistry` (the roster, and what is in play on the screen showing this frame),
-  `MapLayerScreens` (both screens' picks under their frozen keys, and which screen is up), `NoLayer`,
+  `MapLayerScreens` (both screens' picks under their frozen keys, and which screen is up),
+  `ScreenMemoryScope` (a screen's segment of a key, and the one place one is composed), `NoLayer`,
   and
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
-  beside its tab and handed out with it as one `ScreenLayerPicks`, so nothing can read one screen's
-  tab against another's hiding. The pick is folded into the active-layer answer rather than read by
+  beside its tab and handed out with it and that screen's scope as one `ScreenLayerPicks`, so nothing
+  can read one screen's tab against another's hiding. The pick is folded into the active-layer answer rather than read by
   each consumer:
   a hidden screen resolves to no active layer once its fade is out, which every pass driven by that
   pick already draws nothing for. The sidebar is the one part of the footprint outside that answer,
@@ -180,7 +187,18 @@ about what the overlay means.
   the mod that declares a layer holds the bundle its name lives in and the file its rebinding is
   stored in, and the bar carries whatever is registered. Both are asked per frame, so a rename or a
   rebind shows on the next one; KMU's own two layers answer out of `KmuStrings` and the
-  `Map - Keybinds` settings tab themselves.
+  `Map - Keybinds` settings tab themselves. Registration is one layer at a time and accumulates:
+  `registerLayer` appends to the row, so a mod that depends on KMU registers its own layer as it
+  loads and lands to the right of the layers it was built on, and no mod's call can displace
+  another's. That arrival order is the whole of the row's order - no layer states a rank, none being
+  in a position to see the row it stands in - and the default pick falls out of it too: the first
+  registered layer that offers itself (`isOfferedAsDefaultPick`), so `NoLayer` leads the strip while
+  declining and the political map is what a fresh save opens on. Where nobody offers, the leading
+  layer stands in, a row of tabs with none lit being worse than an arbitrary pick. Two layers
+  registering under one id are arbitrated rather than tabbed twice - the later takes the earlier's
+  place in the row, with a log line naming both - since both tabs would otherwise read and write the
+  one stored pick that names them. Nothing is settled at load: a mod loading after KMU registers
+  after KMU's own load has returned, so every read answers from whatever has registered by then.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

@@ -7,8 +7,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,11 +36,12 @@ final class PersistedActiveLayerSelectionTest {
         when(secondLayerMock.getId())
             .thenReturn("second");
 
-        // Second is the default, so an untouched save resolves to it - a non-leading default, the shape the
-        // real composition root uses.
-        MapLayerRegistry.registerLayers(
-            List.of(firstLayerMock, secondLayerMock),
-            secondLayerMock);
+        // Second offers itself as the default, so an untouched save resolves to it - a non-leading
+        // default, the shape the real composition root leaves.
+        when(secondLayerMock.isOfferedAsDefaultPick())
+            .thenReturn(true);
+
+        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
 
         sectorMemoryFake = new SectorMemoryFake();
     }

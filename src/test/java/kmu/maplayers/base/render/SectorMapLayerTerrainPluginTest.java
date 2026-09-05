@@ -18,8 +18,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.List;
-
 import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfaceIn;
 import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfacesInAnInstalledSector;
 
@@ -110,7 +108,7 @@ final class SectorMapLayerTerrainPluginTest {
         when(drawingLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
 
-        MapLayerRegistry.registerLayers(List.of(drawingLayerMock), drawingLayerMock);
+        MapLayerRosters.replaceRosterWith(drawingLayerMock);
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
@@ -399,7 +397,7 @@ final class SectorMapLayerTerrainPluginTest {
             when(silentLayerMock.getId())
                 .thenReturn("silent");
 
-            MapLayerRegistry.registerLayers(List.of(silentLayerMock), silentLayerMock);
+            MapLayerRosters.replaceRosterWith(silentLayerMock);
 
             var plugin = new SectorMapLayerTerrainPlugin();
 
@@ -414,7 +412,7 @@ final class SectorMapLayerTerrainPluginTest {
         void renderOnMapDrawsNothingWithoutAnActiveLayer() {
             // The pre-registration frame: the terrain can be added before any composition root has
             // run, so the surface must survive a null pick rather than dereference it.
-            MapLayerRegistry.registerLayers(List.of(), null);
+            MapLayerRosters.forgetEveryLayer();
 
             var plugin = new SectorMapLayerTerrainPlugin();
 

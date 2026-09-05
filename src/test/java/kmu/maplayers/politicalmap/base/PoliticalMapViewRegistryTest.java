@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerRosters;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -63,9 +63,7 @@ final class PoliticalMapViewRegistryTest {
             firstViewMock,
             hostTabMock);
 
-        MapLayerRegistry.registerLayers(
-            List.of(hostTabMock, otherTabMock),
-            hostTabMock);
+        MapLayerRosters.replaceRosterWith(hostTabMock, otherTabMock);
     }
 
     @Nested

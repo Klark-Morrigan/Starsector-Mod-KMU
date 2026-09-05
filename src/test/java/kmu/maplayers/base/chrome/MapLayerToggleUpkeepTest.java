@@ -8,17 +8,16 @@ import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -539,7 +538,8 @@ final class MapLayerToggleUpkeepTest {
     private static ScreenLayerPicks buildScreenPicksOver(MapLayerVisibility storedVisibility) {
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
-            new ControlBackedMapLayerVisibility(storedVisibility));
+            new ControlBackedMapLayerVisibility(storedVisibility),
+            ScreenMemoryScopes.createStandInScreen());
     }
 
     // The stored pick a box is bound to, dug out of the picks so a case states which of the two
@@ -591,8 +591,10 @@ final class MapLayerToggleUpkeepTest {
     // settles under shows.
     private ScreenLayerPicks buildScreenPicksOnTheEmptyView(AtomicBoolean areLayersShown) {
 
-        MapLayerRegistry.registerLayers(
-            List.of(NoLayer.INSTANCE, paintingLayerMock), paintingLayerMock);
+        when(paintingLayerMock.isOfferedAsDefaultPick())
+            .thenReturn(true);
+
+        MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
 
         var storedVisibilityMock = mock(MapLayerVisibility.class);
 
@@ -613,6 +615,7 @@ final class MapLayerToggleUpkeepTest {
 
         return new ScreenLayerPicks(
             layerSelectionMock,
-            new ControlBackedMapLayerVisibility(storedVisibilityMock));
+            new ControlBackedMapLayerVisibility(storedVisibilityMock),
+            ScreenMemoryScopes.createStandInScreen());
     }
 }

@@ -12,7 +12,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -551,7 +551,7 @@ final class PoliticalMapLayerTest {
             .thenReturn("host");
 
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
-        MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
+        MapLayerRosters.replaceRosterWith(hostTabMock);
     }
 
     // One sentinel control, named so an assertion can tell the composed pieces apart. A caption is the
@@ -619,7 +619,7 @@ final class PoliticalMapLayerTest {
             .thenReturn("host");
 
         PoliticalMapViewRegistry.registerViews(List.of(view), view, hostTabMock);
-        MapLayerRegistry.registerLayers(List.of(hostTabMock), hostTabMock);
+        MapLayerRosters.replaceRosterWith(hostTabMock);
     }
 
     // What a case makes of a body built over a really installed sector. It takes the sector and its

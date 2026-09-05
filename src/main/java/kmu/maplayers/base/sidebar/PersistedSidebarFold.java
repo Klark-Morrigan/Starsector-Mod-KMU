@@ -2,13 +2,18 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.memory.SectorMemoryFlag;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+
 /**
- * A screen's sidebar fold persisted in sector memory under one key, so the panel reopens at the end the
- * player left it at. Each screen holds its own instance under its own key and its own default, so the folds
- * stay independent - folding one screen's panel writes only its key - while both screens persist the same
- * way, for one consistent behaviour across screens. A save holding no fold yet resolves to the default,
- * which is how each screen keeps the opening fold that suits it: the on-map panel opens out, the intel
- * panel folded clear of the visor.
+ * A screen's sidebar fold persisted in sector memory under that screen's key, so the panel reopens at the
+ * end the player left it at. Each screen holds its own instance under its own scope and its own default, so
+ * the folds stay independent - folding one screen's panel writes only its key - while both screens persist
+ * the same way, for one consistent behaviour across screens. A save holding no fold yet resolves to the
+ * default, which is how each screen keeps the opening fold that suits it: the on-map panel opens out, the
+ * intel panel folded clear of the visor.
+ *
+ * <p>The key is composed from one base key and the screen's scope, the way every other per-screen
+ * preference's is, so the fold's slot has the same shape as the rest and no host spells a key of its own.
  *
  * <p>A consumer offers the settled fold every frame its panel draws, so a write happens only where the
  * offered fold differs from the one already stored. That comparison is made against sector memory itself
@@ -18,19 +23,22 @@ import kmlib.starsector.memory.SectorMemoryFlag;
  */
 public final class PersistedSidebarFold implements SidebarFoldSelection {
 
-    // The stored fold and the default a save that holds no choice yet resolves to. The key is the
-    // save-serialised identity, so it must stay stable once shipped - renaming it silently returns every
-    // existing save to the default.
+    // Save-serialised identity of a screen's resting fold, before the screen's own segment; frozen once
+    // shipped, since renaming it silently returns every existing save to the opening default.
+    private static final String SIDEBAR_DOCKED_KEY = "$kmu_political_sidebar_docked";
+
+    // The stored fold and the default a save that holds no choice yet resolves to.
     private final SectorMemoryFlag isRailDockedFlag;
 
     /**
-     * @param memoryKey       the sector-memory key this fold persists under; stable once shipped, since a
-     *                        rename returns every existing save to the default
+     * @param memoryScope     the screen whose fold this is; its key is the base key resolved under it
      * @param isDockedDefault the fold a save holding no choice yet opens at - true to open folded to the
      *                        rail, false to open out
      */
-    public PersistedSidebarFold(String memoryKey, boolean isDockedDefault) {
-        this.isRailDockedFlag = new SectorMemoryFlag(memoryKey, isDockedDefault);
+    public PersistedSidebarFold(ScreenMemoryScope memoryScope, boolean isDockedDefault) {
+        this.isRailDockedFlag = new SectorMemoryFlag(
+            memoryScope.resolveKeyFor(SIDEBAR_DOCKED_KEY),
+            isDockedDefault);
     }
 
     @Override

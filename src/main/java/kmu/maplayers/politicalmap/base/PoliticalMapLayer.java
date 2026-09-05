@@ -52,6 +52,14 @@ public final class PoliticalMapLayer implements MapLayer {
     }
 
     @Override
+    public boolean isOfferedAsDefaultPick() {
+        // The layer a fresh save opens on, and what a stored pick naming a layer since removed falls
+        // back to: the overlay is the point of the mod, so it is up the first time the sector map is
+        // opened rather than waiting to be found on the strip.
+        return true;
+    }
+
+    @Override
     public List<ControlSpec> getBodyControls() {
 
         // Which sector this body is being built for has to be resolved off the running game here: a

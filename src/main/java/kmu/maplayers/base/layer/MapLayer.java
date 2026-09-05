@@ -46,6 +46,20 @@ public interface MapLayer {
     String resolveTabLabelText();
 
     /**
+     * Whether this layer offers itself as the pick a save with no stored one opens on. The first
+     * registered layer answering yes is what the framework settles on, so a layer says only that it
+     * is willing rather than which of the others it beats - no layer can see the rest of the row, and
+     * a claim to be better than layers it cannot name would be a guess.
+     *
+     * <p>Declining is the answer for a layer whose picture the player has to go looking for, and for
+     * one that paints nothing: an untouched save should open on something rather than on a row where
+     * every tab is unlit.
+     *
+     * @return whether this layer is willing to be what a save with no pick of its own resolves to
+     */
+    boolean isOfferedAsDefaultPick();
+
+    /**
      * @return the control specs this layer's tab opens in its body once selected, top to
      *         bottom; empty for a tab that only switches the map paint and opens no body. The
      *         layer describes its controls, so a new view supplies its own body without the

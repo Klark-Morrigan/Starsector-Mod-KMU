@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -18,13 +20,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the persisted sidebar fold: a save that has never stored one reads the opening default each screen
- * was given, a stored fold wins over that default, and a write reaches the save only where the offered fold
- * differs from the one already there - so a panel offering its fold every frame writes once per real change.
+ * Pins the persisted sidebar fold: the key it composes for the screen it was built for, that a save which
+ * has never stored one reads the opening default each screen was given, that a stored fold wins over that
+ * default, and that a write reaches the save only where the offered fold differs from the one already there
+ * - so a panel offering its fold every frame writes once per real change.
  */
 final class PersistedSidebarFoldTest {
 
-    private static final String FOLD_KEY = "$kmu_test_sidebar_docked";
+    // A stand-in screen, since which screens exist is the composition root's business: what is pinned here
+    // is that the fold composes its slot from whichever it was handed, and the two live screens' own keys
+    // are pinned in their hosts' suites.
+    private static final ScreenMemoryScope SCREEN_SCOPE = new ScreenMemoryScope("test");
+
+    // The slot that scope composes, as a literal: the base key is a save-serialised identity, so a rename
+    // must break this test rather than ship and quietly reopen every save's panel at its default.
+    private static final String FOLD_KEY = "$kmu_political_sidebar_docked_test";
 
     private static final boolean OPENS_DOCKED = true;
     private static final boolean OPENS_OUT = false;
@@ -46,9 +56,9 @@ final class PersistedSidebarFoldTest {
                 when(memoryMock.contains(FOLD_KEY))
                     .thenReturn(false);
 
-                assertThat(new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED).isRailDocked())
+                assertThat(new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED).isRailDocked())
                     .isTrue();
-                assertThat(new PersistedSidebarFold(FOLD_KEY, OPENS_OUT).isRailDocked())
+                assertThat(new PersistedSidebarFold(SCREEN_SCOPE, OPENS_OUT).isRailDocked())
                     .isFalse();
             }
         }
@@ -69,7 +79,7 @@ final class PersistedSidebarFoldTest {
                 when(memoryMock.getBoolean(FOLD_KEY))
                     .thenReturn(false);
 
-                assertThat(new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED).isRailDocked())
+                assertThat(new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED).isRailDocked())
                     .isFalse();
             }
         }
@@ -83,7 +93,7 @@ final class PersistedSidebarFoldTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                assertThat(new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED).isRailDocked())
+                assertThat(new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED).isRailDocked())
                     .isTrue();
             }
         }
@@ -108,7 +118,7 @@ final class PersistedSidebarFoldTest {
                 when(memoryMock.getBoolean(FOLD_KEY))
                     .thenReturn(true);
 
-                new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED).recordFold(false);
+                new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED).recordFold(false);
 
                 verify(memoryMock)
                     .set(FOLD_KEY, false);
@@ -131,7 +141,7 @@ final class PersistedSidebarFoldTest {
                 when(memoryMock.getBoolean(FOLD_KEY))
                     .thenReturn(true);
 
-                new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED).recordFold(true);
+                new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED).recordFold(true);
 
                 verify(memoryMock, never())
                     .set(eq(FOLD_KEY), anyBoolean());
@@ -153,7 +163,7 @@ final class PersistedSidebarFoldTest {
                 when(memoryMock.contains(FOLD_KEY))
                     .thenReturn(false);
 
-                new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED).recordFold(true);
+                new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED).recordFold(true);
 
                 verify(memoryMock, never())
                     .set(eq(FOLD_KEY), anyBoolean());
@@ -170,7 +180,7 @@ final class PersistedSidebarFoldTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                var fold = new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED);
+                var fold = new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED);
 
                 fold.recordFold(false);
 
@@ -207,7 +217,7 @@ final class PersistedSidebarFoldTest {
                 when(memoryMock.getBoolean(FOLD_KEY))
                     .thenReturn(true);
 
-                var fold = new PersistedSidebarFold(FOLD_KEY, OPENS_DOCKED);
+                var fold = new PersistedSidebarFold(SCREEN_SCOPE, OPENS_DOCKED);
 
                 fold.recordFold(false);
 

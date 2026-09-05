@@ -1,8 +1,13 @@
 package kmu.maplayers.base.layer;
 
+import com.fs.starfarer.api.Global;
+
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
+import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,40 +24,73 @@ import java.util.List;
  *
  * <p>The player's own state is not here: which layer each screen is set to, and whether that screen
  * shows its layers at all, belong to {@link MapLayerScreens}, whose live pair this reads. Two classes
- * because the roster is settled once at startup for the whole process while the picks move with every
- * click and ride in the save.
+ * because the roster is a fact about what is installed, written at mod load and held for the whole
+ * process, while the picks move with every click and ride in the save.
  *
- * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer. The set of
- * layers and the default pick are supplied once at startup by a composition root through
- * {@link #registerLayers}, so a new view is added by registering it rather than by editing this class.
- * An untouched save resolves to the registered default, as does one holding an id no longer registered.
+ * <p>This is the feature-agnostic framework half: it knows nothing of any concrete layer. Layers
+ * arrive one at a time through {@link #registerLayer}, each mod's own composition root registering
+ * what it ships, so a layer is added by registering it rather than by editing this class and no
+ * mod's registration displaces another's.
+ *
+ * <p>Nothing is settled at any one moment, because there is no moment at which the roster is known
+ * to be whole: a mod that depends on this one loads after it, so its layer lands after this mod's
+ * own load has returned. Every read - the row, the default pick, the active pick - answers from
+ * whatever has registered by the time it is taken, and a layer registered later reaches the next
+ * read rather than the next load.
  */
 public final class MapLayerRegistry {
+
+    private static final Logger LOG = Global.getLogger(MapLayerRegistry.class);
 
     // The end of the hide ramp: none of a screen's layers left on it, which is where the active pick
     // stops being answered at all.
     private static final float FULLY_HIDDEN = 0f;
 
-    // The registered layers, in the order a screen offering all of them rows them up, and the pick an
-    // untouched save resolves to. Empty until a composition root registers them at startup, before
-    // any sector map can open.
+    // The registered layers, in the order a screen offering all of them rows them up. Empty until a
+    // composition root registers the first, which happens at mod load, before any sector map can open.
+    //
+    // Replaced wholesale on each registration rather than added to in place, so what a caller was
+    // handed stays the row it asked for: the roster is read per frame and a mod may still register
+    // after those reads have begun.
     private static List<MapLayer> orderedLayers = List.of();
-    private static MapLayer defaultLayer;
 
     private MapLayerRegistry() {
     }
 
     /**
-     * Records the layers that exist and the pick an untouched save resolves to. Called once
-     * by the composition root at startup: it is the only place a concrete layer is named, so
-     * the framework here stays agnostic to which views exist.
+     * Adds one layer to the roster, at the right-hand end of the row. Called by each mod's own
+     * composition root as it loads: those are the only places a concrete layer is named, so the
+     * framework here stays agnostic to which ones exist.
      *
-     * @param layers        the registered layers in row order, left to right
-     * @param defaultLayer  the pick an untouched save (or a stale stored id) resolves to
+     * <p>Row order is registration order, and nothing on a layer states where it belongs. A mod can
+     * see neither the row nor who else stands in it, so a position it declared would be a guess every
+     * mod would make the same way. What decides the row instead is load order, which already runs
+     * dependencies first: the layers a mod is built on are registered to its left. Where the player
+     * wants otherwise, that is an arrangement to make over the whole row rather than a number each
+     * mod picks for itself.
+     *
+     * <p>An id registered twice is arbitrated rather than tabbed twice: the later layer takes the
+     * earlier one's place in the row, and the exchange is logged naming both. Two layers under one id
+     * would share the stored pick that names it, so a row offering both would carry two tabs a save
+     * cannot tell apart - worse than an arbitrated one, which at least paints something the pick
+     * agrees with.
+     *
+     * @param layer the layer to add, or to stand in the place of one already registered under its id
      */
-    public static void registerLayers(List<MapLayer> layers, MapLayer defaultLayer) {
-        orderedLayers = List.copyOf(layers);
-        MapLayerRegistry.defaultLayer = defaultLayer;
+    public static void registerLayer(MapLayer layer) {
+
+        var revisedLayers = new ArrayList<>(orderedLayers);
+        var replacedIndex = findIndexOfLayerId(layer.getId());
+
+        if (replacedIndex < 0) {
+            revisedLayers.add(layer);
+        } else {
+            LOG.warn("Two map layers registered under the id '" + layer.getId() + "': "
+                + revisedLayers.get(replacedIndex).getClass().getName() + " gives way to "
+                + layer.getClass().getName() + ", which takes its place in the row.");
+            revisedLayers.set(replacedIndex, layer);
+        }
+        orderedLayers = List.copyOf(revisedLayers);
     }
 
     /**
@@ -63,9 +101,31 @@ public final class MapLayerRegistry {
         return orderedLayers;
     }
 
-    /** @return the pick an untouched save resolves to, the fallback for an absent or stale stored pick. */
+    /**
+     * The pick an untouched save resolves to, and the fallback for an absent or stale stored pick:
+     * the first registered layer offering itself as one. So the row's order settles the default too,
+     * and a layer that leads the strip without wanting to be what a new save opens on simply declines
+     * - which is how the empty view leads while a layer that paints is the pick.
+     *
+     * <p>Resolved per read rather than recorded when a layer registers, for the reason the row is:
+     * a mod loading later may bring the layer that offers itself, and an answer recorded before it
+     * arrived would outlive the reason it was right.
+     *
+     * <p>A roster where nobody offers falls back to the leading layer rather than to no pick at all.
+     * No pick paints nothing and lights no tab, leaving a player looking at a row with nothing to move
+     * off - and a roster of foreign layers alone, none of which thought to offer, is exactly the case
+     * that would produce it.
+     *
+     * @return the default pick, or null while nothing is registered
+     */
     public static MapLayer getDefaultLayer() {
-        return defaultLayer;
+
+        for (var layer : orderedLayers) {
+            if (layer.isOfferedAsDefaultPick()) {
+                return layer;
+            }
+        }
+        return orderedLayers.isEmpty() ? null : orderedLayers.get(0);
     }
 
     /**
@@ -120,6 +180,30 @@ public final class MapLayerRegistry {
     public static boolean isActive(MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
         return getActiveLayer() == layer;
+    }
+
+    /**
+     * Empties the roster, leaving the reading a process that has registered nothing gives.
+     *
+     * <p>Package-private, unlike everything above it: registering is a load-time act and nothing in a
+     * running game takes a layer back off, so a caller able to empty the roster could only ever take
+     * every tab off the bar with no way to put one back.
+     */
+    static void forgetLayers() {
+        orderedLayers = List.of();
+    }
+
+    // Where a layer under this id already stands in the row, or -1 for an id nothing has registered.
+    // Compared by id rather than by identity, since the case this answers is two mods arriving with
+    // one id and no notion of each other's objects.
+    private static int findIndexOfLayerId(String layerId) {
+
+        for (var index = 0; index < orderedLayers.size(); index++) {
+            if (orderedLayers.get(index).getId().equals(layerId)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     // Whether anything of the given screen's layers is on it at all: a screen switched off goes on being

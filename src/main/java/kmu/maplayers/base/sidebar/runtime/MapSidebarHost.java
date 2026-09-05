@@ -7,6 +7,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.SidebarHostPanel;
@@ -49,18 +50,22 @@ public final class MapSidebarHost extends BaseSidebarHost {
     // checkable without a live sector, which the style built from it needs to resolve its colours.
     static final float HEADER_BAND_HEIGHT = 19f;
 
-    // Save-serialised key of this panel's resting fold; frozen once shipped, since renaming it silently
-    // returns every existing save to the opening default.
-    private static final String MAP_SIDEBAR_DOCKED_KEY = "$kmu_political_map_sidebar_docked";
+    // The fold a save that has never folded this panel opens at: out, since this panel is the player's
+    // primary way in to the map layers and has the screen width to sit open, so out is the useful first
+    // sight of it.
+    private static final boolean OPENS_DOCKED = false;
 
     MapSidebarHost(ScreenClaim screenClaim) {
-        // Opens out on a save that has never folded it: this panel is the player's primary way in to the
-        // map layers and has the screen width to sit open, so out is the useful first sight of it. The
-        // sector map's own picks go with it, so neither its tab nor its hiding is moved by a switch on
-        // the intel screen.
+        // The sector map's own picks, so neither its tab nor its hiding is moved by a switch on the intel
+        // screen - and its fold is built under the same value's scope, so the two cannot name different
+        // screens.
+        this(MapLayerScreens.getMapPicks(), screenClaim);
+    }
+
+    private MapSidebarHost(ScreenLayerPicks screenPicks, ScreenClaim screenClaim) {
         super(
-            new PersistedSidebarFold(MAP_SIDEBAR_DOCKED_KEY, false),
-            MapLayerScreens.getMapPicks(),
+            new PersistedSidebarFold(screenPicks.memoryScope(), OPENS_DOCKED),
+            screenPicks,
             screenClaim);
     }
 

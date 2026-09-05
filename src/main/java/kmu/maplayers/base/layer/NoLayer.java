@@ -41,6 +41,13 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
+    public boolean isOfferedAsDefaultPick() {
+        // Leads the strip without being the pick: a save that has never been touched opens on a map
+        // that paints, and this tab is where the player goes to ask for the map they already had.
+        return false;
+    }
+
+    @Override
     public List<ControlSpec> getBodyControls() {
         // The empty view opens no control panel: its tab only clears the map paint.
         return List.of();

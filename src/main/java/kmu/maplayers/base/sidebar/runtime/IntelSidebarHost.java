@@ -9,6 +9,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.LiveSidebarPlacement;
 import kmu.maplayers.base.sidebar.PersistedSidebarFold;
 import kmu.maplayers.base.sidebar.SidebarHostPanel;
@@ -76,11 +77,12 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     // rounding while a box floating clear of the visor bottom stays well outside it.
     private static final float BOTTOM_FLUSH_TOLERANCE = 1f;
 
-    // Save-serialised key of this panel's resting fold; frozen once shipped, since renaming it silently
-    // re-docks every existing save. Its own key rather than a widening of the active-layer pick: the pick
-    // stores which tab is lit and the fold stores whether the body is folded away, and the two move
-    // independently - the rail can be docked with a layer still the lit tab.
-    private static final String INTEL_SIDEBAR_DOCKED_KEY = "$kmu_political_intel_sidebar_docked";
+    // The fold a save that has never moved this panel opens at: folded to the rail, so it never covers the
+    // visor uninvited - the player expands it by the collapse handle when they want the controls. Its own
+    // slot rather than a widening of the active-layer pick: the pick stores which tab is lit and the fold
+    // stores whether the body is folded away, and the two move independently - the rail can be docked with
+    // a layer still the lit tab.
+    private static final boolean OPENS_DOCKED = true;
 
     // Reads whether the intel tab is up and the lit visor's screen rectangle - the seam into the game's
     // concrete intel panel, failing closed to null when there is no lit visor to draw over. Handed in
@@ -89,13 +91,20 @@ public final class IntelSidebarHost extends BaseSidebarHost {
     private final IntelScreenView intelScreen;
 
     IntelSidebarHost(IntelScreenView intelScreen, ScreenClaim screenClaim) {
-        // Opens folded to the rail on a save that has never moved it, so the panel never covers the visor
-        // uninvited - the player expands it by the collapse handle when they want the controls. The intel
-        // screen's own picks go with it: a switch or a hide on the map screen leaves both where they were,
-        // and reopening the intel screen returns to them rather than inheriting the map's.
+        // The intel screen's own picks: a switch or a hide on the map screen leaves both where they were,
+        // and reopening the intel screen returns to them rather than inheriting the map's. Its fold is
+        // built under the same value's scope, so the two cannot name different screens.
+        this(intelScreen, MapLayerScreens.getIntelPicks(), screenClaim);
+    }
+
+    private IntelSidebarHost(
+            IntelScreenView intelScreen,
+            ScreenLayerPicks screenPicks,
+            ScreenClaim screenClaim) {
+
         super(
-            new PersistedSidebarFold(INTEL_SIDEBAR_DOCKED_KEY, true),
-            MapLayerScreens.getIntelPicks(),
+            new PersistedSidebarFold(screenPicks.memoryScope(), OPENS_DOCKED),
+            screenPicks,
             screenClaim);
         this.intelScreen = intelScreen;
     }

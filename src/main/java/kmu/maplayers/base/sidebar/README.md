@@ -43,7 +43,8 @@ map, the other overlaid on the intel visor amid that screen's own chrome - so ea
 part of what surrounds it, which a shared renderer could only do by naming the screens. What lets
 them diverge as far as they do - one a strip framed in its base accent, the other a row of buttons
 framed in the dark step - is that neither `SidebarRenderer` nor `LiveSidebarPlacement` holds a screen
-test about it: a third screen would be a third host and no renderer change.
+test about it: a third screen would be a third host and no renderer change. Neither is the fold, which
+is per screen but composed the same way on both - see [fold persistence](#fold-persistence).
 
 Keys are not in that table because the panel offers the same body of tabs wherever it draws, so
 `BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer
@@ -89,8 +90,9 @@ That the panel goes with the layers at all is folded in here rather than at the 
 input listener separately, for the reason the pick is folded into the active-layer answer rather than
 into each pass driven by it: the sidebar is part of what the layers put on a screen, so it leaves
 with the rest of that footprint on one read taken where the gate already is. Which screen a host
-reads is chosen once, in its constructor: `ScreenLayerPicks` carries that screen's tab and its hiding
-together, so no host can be wired to one screen's tab and another's hiding.
+reads is chosen once, in its constructor: `ScreenLayerPicks` carries that screen's tab, its hiding and
+the scope its keys are composed through together, so no host can be wired to one screen's tab and
+another's hiding, or store a preference in a screen it is not drawing on.
 
 `describeViewState()` carries the pick into the view-state log, prefixing the host's own screen state
 with `layers hidden` once the ramp is out and `layers hiding` while it is running - different bug
@@ -272,15 +274,18 @@ way to answer "why hidden" or "drawn where".
 ## Fold persistence
 
 `SidebarFoldSelection` is where a fold is read from and recorded to; `PersistedSidebarFold` is the
-sector-memory implementation, one instance per host with its own key and opening default.
+sector-memory implementation, one instance per host with its own opening default. Its key is one base
+key resolved through the screen's `ScreenMemoryScope`, which each host takes from the same
+`ScreenLayerPicks` it draws through - so the fold and the picks cannot name different screens, and the
+slot has the shape every per-screen key does.
 
 | Key | Holds |
 | --- | --- |
-| `$kmu_political_map_sidebar_docked` | `MapSidebarHost`'s resting fold, default expanded |
-| `$kmu_political_intel_sidebar_docked` | `IntelSidebarHost`'s resting fold, default docked |
+| `$kmu_political_sidebar_docked_map` | `MapSidebarHost`'s resting fold, default expanded |
+| `$kmu_political_sidebar_docked_intel` | `IntelSidebarHost`'s resting fold, default docked |
 
-Both keys are save-serialised identities and frozen once shipped; renaming one returns every
-existing save to that host's default.
+The base key is a save-serialised identity and frozen once shipped; renaming it returns every existing
+save to its host's default.
 
 Only a settled end is recorded. `SidebarRenderer.resolveSettledFold` reads the collapse fraction and
 the fully-expanded flag and yields `null` mid-fold, so the in-flight animation is never written.

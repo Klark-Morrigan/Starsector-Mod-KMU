@@ -24,8 +24,8 @@ import java.util.List;
  * treat specially.
  * It is the one place that names every layer, view, entity and mod, sitting above both the framework
  * ({@code base}) and the layers/views ({@code politicalmap}) so neither depends on the other: the
- * registries stay ignorant of which layers, views and places exist, and each stays ignorant of the
- * order and the default pick.
+ * registries stay ignorant of which layers, views and places exist, and each layer stays ignorant of
+ * the order it is registered in.
  */
 public final class MapLayers {
 
@@ -59,9 +59,12 @@ public final class MapLayers {
         registerOpenlyKnownColonies();
         registerFactionAlliances();
 
-        MapLayerRegistry.registerLayers(
-            List.of(NoLayer.INSTANCE, PoliticalMapLayer.INSTANCE),
-            PoliticalMapLayer.INSTANCE);
+        // One call each, in row order: the roster accumulates whatever registers, so KMU's own two
+        // take the left of the strip and any layer another mod ships lands to their right when that
+        // mod loads. The empty view leads without offering itself as the pick, so a fresh save still
+        // opens on the political map.
+        MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
+        MapLayerRegistry.registerLayer(PoliticalMapLayer.INSTANCE);
 
         // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
         // looked at rather than one fixed screen's. This is the live binding that tells the two apart;

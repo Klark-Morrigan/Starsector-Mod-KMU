@@ -6,9 +6,8 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerRosters;
 
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -54,7 +53,7 @@ final class LayerShortcutPresses {
             .thenReturn(SHORTCUT_KEYCODE);
 
         // The registry is static, so a neighbour's layers would otherwise outlive their test.
-        MapLayerRegistry.registerLayers(List.of(layerMock), layerMock);
+        MapLayerRosters.replaceRosterWith(layerMock);
 
         var eventMock = mock(InputEventAPI.class);
 

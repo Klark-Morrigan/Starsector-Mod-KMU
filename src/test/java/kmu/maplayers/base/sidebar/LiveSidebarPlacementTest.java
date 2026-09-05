@@ -12,6 +12,7 @@ import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.settings.KmuMapLayerSettings;
 
 import org.junit.jupiter.api.Nested;
@@ -371,7 +372,9 @@ final class LiveSidebarPlacementTest {
                 tabStyleMock,
                 mock(TabPanelController.class),
                 new ScreenLayerPicks(
-                    selection, new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class))),
+                    selection,
+                    new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
+                    ScreenMemoryScopes.createStandInScreen()),
                 Set.of());
         }
     }

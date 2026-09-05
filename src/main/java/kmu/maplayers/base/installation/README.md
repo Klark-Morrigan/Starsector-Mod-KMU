@@ -174,11 +174,12 @@ one sector a caller drawing another's map is not looking at.
 
 Kept out of here on purpose, so a reader does not go looking:
 
-- **The rosters.** `MapLayerRegistry`'s ordered layers and default, `MapLayerScreens`' intel screen,
+- **The rosters.** `MapLayerRegistry`'s ordered layers, `MapLayerScreens`' intel screen,
   and
-  `PoliticalMapViewRegistry`'s ordered views, default and host tab, are mod-load facts written once
-  by `MapLayers.registerAll` before any sector exists. Which layers *exist* is the process's; which
-  is *picked* is the sector's, and that half lives in sector memory.
+  `PoliticalMapViewRegistry`'s ordered views, default and host tab, are mod-load facts. KMU's own are
+  written by `MapLayers.registerAll` before any sector exists, and a layer another mod ships joins
+  the roster when that mod loads - later still, and no nearer any sector. Which layers *exist* is
+  the process's; which is *picked* is the sector's, and that half lives in sector memory.
 - **The views and layers themselves.** They are stateless strategies. One that started remembering
   would become a shared cache two installations read. The claims view is the one that holds a field
   at all, and it holds the *means of opening* a claim reader rather than a reader - one is opened

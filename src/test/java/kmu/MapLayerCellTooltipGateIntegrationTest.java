@@ -15,7 +15,6 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.MapLayerRenderer;
@@ -106,7 +105,7 @@ class MapLayerCellTooltipGateIntegrationTest {
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systemMock));
 
-        MapLayerRegistry.registerLayers(List.of(tooltipLayerMock), tooltipLayerMock);
+        MapLayerRosters.replaceRosterWith(tooltipLayerMock);
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.

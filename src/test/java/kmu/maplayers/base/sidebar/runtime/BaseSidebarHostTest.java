@@ -11,10 +11,11 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapKeybindSettings;
 
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,8 +93,15 @@ final class BaseSidebarHostTest {
         when(secondLayerMock.resolveShortcutKeycode())
             .thenReturn(SECOND_KEYCODE);
 
+        // Ids as well, the roster arbitrating by them: a layer registering under an id already in the
+        // row takes that place rather than a second tab, so registering reads what each one answers.
+        when(firstLayerMock.getId())
+            .thenReturn("first");
+        when(secondLayerMock.getId())
+            .thenReturn("second");
+
         // The registry is static, so a neighbour's layers would otherwise outlive their test.
-        MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), firstLayerMock);
+        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
     }
 
     @Nested
@@ -214,8 +221,11 @@ final class BaseSidebarHostTest {
             // not offered is walked past here too. Two lists would agree on the layer and disagree on
             // its place in the row - marking the tab one along from the one the player is looking at,
             // for a switch that did happen.
-            MapLayerRegistry.registerLayers(
-                List.of(NoLayer.INSTANCE, firstLayerMock, secondLayerMock), firstLayerMock);
+            when(firstLayerMock.isOfferedAsDefaultPick())
+                .thenReturn(true);
+
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE, firstLayerMock, secondLayerMock);
 
             var layerSelectionMock = mock(ActiveLayerSelection.class);
             var host = createHost(layerSelectionMock);
@@ -502,7 +512,10 @@ final class BaseSidebarHostTest {
     // per-screen answers are stubbed out rather than bound to either live screen.
     private static SidebarHostFake createHost(ActiveLayerSelection layerSelection) {
         return createHost(
-            new ScreenLayerPicks(layerSelection, standAControlOver(mockVisibility(true, FULLY_SHOWN))),
+            new ScreenLayerPicks(
+                layerSelection,
+                standAControlOver(mockVisibility(true, FULLY_SHOWN)),
+                ScreenMemoryScopes.createStandInScreen()),
             ScreenClaims.createUnclaimedScreen(),
             false);
     }
@@ -546,7 +559,9 @@ final class BaseSidebarHostTest {
     // which have no use for the tab beside it.
     private static ScreenLayerPicks createPicks(MapLayerVisibility layerVisibility) {
         return new ScreenLayerPicks(
-            mock(ActiveLayerSelection.class), standAControlOver(layerVisibility));
+            mock(ActiveLayerSelection.class),
+            standAControlOver(layerVisibility),
+            ScreenMemoryScopes.createStandInScreen());
     }
 
     // The given pick behind a control that stands on the screen, which is what the panel actually reads:

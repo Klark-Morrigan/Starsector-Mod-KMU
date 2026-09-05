@@ -7,12 +7,16 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapLayerSettings;
 
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,6 +63,10 @@ final class MapLayerRegistryTest {
 
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
 
+    // Records what the registry writes to the log, the arbitration line being the one thing a
+    // duplicate registration produces that leaves nothing behind in state a case could read back.
+    private final LogAppenderFake appenderFake = new LogAppenderFake();
+
     // The hide ramp is paced by a shipped knob, and that read reaches LunaLib, which no test has. Stood
     // in for the class so every case names a pace: Mockito's own default answers a pace of nothing, which
     // makes each fade a cut and leaves these cases describing the settled answers they are about. The
@@ -76,9 +84,12 @@ final class MapLayerRegistryTest {
         when(secondLayerMock.getId())
             .thenReturn("second");
 
-        // Second layer is the default, so an untouched save resolves to it - the same shape the real
-        // composition root uses (a non-leading default pick).
-        MapLayerRegistry.registerLayers(List.of(firstLayerMock, secondLayerMock), secondLayerMock);
+        // Second layer offers itself as the default, so an untouched save resolves to it - the same
+        // shape the real composition root leaves, the leading tab declining the pick.
+        when(secondLayerMock.isOfferedAsDefaultPick())
+            .thenReturn(true);
+
+        MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
 
         // The screens are static, so one left wired would outlive its test. Handing a fresh fake per
         // test starts each from the intel screen closed rather than wherever a neighbour left it - and
@@ -125,6 +136,125 @@ final class MapLayerRegistryTest {
 
             assertThat(MapLayerRegistry.getLayers())
                 .containsExactly(firstLayerMock, secondLayerMock);
+        }
+    }
+
+    @Nested
+    class RegisterLayer {
+
+        @Test
+        void registerLayerAppendsToTheRightHandEndOfTheRow() {
+            // Registration order is row order, and it is all the order there is: nothing on a layer
+            // states where it belongs, so a layer arriving later lands to the right of everything
+            // already there.
+            var thirdLayerMock = createLayerMockWithId("third");
+
+            MapLayerRegistry.registerLayer(thirdLayerMock);
+
+            assertThat(MapLayerRegistry.getLayers())
+                .containsExactly(firstLayerMock, secondLayerMock, thirdLayerMock);
+        }
+
+        @Test
+        void registerLayerReachesARosterThatHasAlreadyBeenRead() {
+            // The constraint the whole additive form is shaped by: a mod that depends on this one
+            // loads after it, so its layer registers after the bar has been drawn from the roster at
+            // least once. A registry that settled its row on first read would leave that mod's tab
+            // off until the next load.
+            var lateLayerMock = createLayerMockWithId("late");
+
+            assertThat(MapLayerRegistry.getLayers())
+                .containsExactly(firstLayerMock, secondLayerMock);
+
+            MapLayerRegistry.registerLayer(lateLayerMock);
+
+            assertThat(MapLayerRegistry.getLayers())
+                .containsExactly(firstLayerMock, secondLayerMock, lateLayerMock);
+        }
+
+        @Test
+        void registerLayerPutsALayerSharingAnIdInThePlaceOfTheOneItReplaces() {
+            // Two mods shipping one id will happen, and both tabs would read and write the one stored
+            // pick that names it. Arbitrated, the row holds one tab that the save agrees with; left
+            // alone, it would hold two the save cannot tell apart.
+            var replacementLayerMock = createLayerMockWithId("first");
+
+            MapLayerRegistry.registerLayer(replacementLayerMock);
+
+            assertThat(MapLayerRegistry.getLayers())
+                .containsExactly(replacementLayerMock, secondLayerMock);
+        }
+
+        @Test
+        void registerLayerReportsTheTwoLayersThatShareAnId() {
+            // The arbitration is silent to the player, so the log is the only place a mod author
+            // finds out why their tab is not the one on the bar - which makes the line naming both
+            // sides the whole of what the outcome is worth.
+            // Reached through log4j's own cache rather than through Global, which the sector-memory
+            // fake is standing in for while a case runs: the registry resolved this same logger by
+            // name before any of that, so the two are one object.
+            var replacementLayerMock = createLayerMockWithId("first");
+            var log = Logger.getLogger(MapLayerRegistry.class);
+
+            try {
+                log.setAdditivity(false);
+                log.addAppender(appenderFake);
+
+                MapLayerRegistry.registerLayer(replacementLayerMock);
+
+                assertThat(appenderFake.getMessages())
+                    .hasSize(1);
+                assertThat(appenderFake.getMessages().get(0))
+                    .contains("first")
+                    .contains(firstLayerMock.getClass().getName())
+                    .contains(replacementLayerMock.getClass().getName());
+            } finally {
+                log.removeAppender(appenderFake);
+                log.setAdditivity(true);
+            }
+        }
+    }
+
+    @Nested
+    class GetDefaultLayer {
+
+        @Test
+        void getDefaultLayerAnswersTheOfferingLayerRatherThanTheLeadingOne() {
+            // The two facts the old single call spelled separately, now one: the row leads with a
+            // layer that declines, and the pick is the one that offered.
+            assertThat(MapLayerRegistry.getDefaultLayer())
+                .isSameAs(secondLayerMock);
+        }
+
+        @Test
+        void getDefaultLayerAnswersTheEarlierOfTwoLayersOffering() {
+            // Which is what makes load order settle the pick without any mod stating a rank: a
+            // foreign layer offering itself arrives after the host's and loses by arriving later.
+            when(firstLayerMock.isOfferedAsDefaultPick())
+                .thenReturn(true);
+
+            assertThat(MapLayerRegistry.getDefaultLayer())
+                .isSameAs(firstLayerMock);
+        }
+
+        @Test
+        void getDefaultLayerFallsBackToTheLeadingLayerWhereNobodyOffers() {
+            // A roster of layers that all decline is a roster nobody arranged - foreign layers alone,
+            // say. Answering nothing there would leave a bar of tabs with none of them lit and a map
+            // that paints nothing to explain it.
+            MapLayerRosters.replaceRosterWith(firstLayerMock);
+
+            assertThat(MapLayerRegistry.getDefaultLayer())
+                .isSameAs(firstLayerMock);
+        }
+
+        @Test
+        void getDefaultLayerIsNullBeforeAnyLayerIsRegistered() {
+
+            MapLayerRosters.forgetEveryLayer();
+
+            assertThat(MapLayerRegistry.getDefaultLayer())
+                .isNull();
         }
     }
 
@@ -180,7 +310,7 @@ final class MapLayerRegistryTest {
         void getActiveLayerIsNullBeforeAnyLayerIsRegistered() {
             // The map surface can be asked for a frame before the composition root has run, so the
             // registry has to answer "no pick" rather than leave a caller to find out by throwing.
-            MapLayerRegistry.registerLayers(List.of(), null);
+            MapLayerRosters.forgetEveryLayer();
             sectorMemoryFake.removeSector();
 
             assertThat(MapLayerRegistry.getActiveLayer())
@@ -227,7 +357,7 @@ final class MapLayerRegistryTest {
         @Test
         void resolveActiveMapRendererIsNullBeforeAnyLayerIsRegistered() {
 
-            MapLayerRegistry.registerLayers(List.of(), null);
+            MapLayerRosters.forgetEveryLayer();
             sectorMemoryFake.removeSector();
 
             assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
@@ -360,5 +490,42 @@ final class MapLayerRegistryTest {
         mapLayerSettingsMock
             .when(KmuMapLayerSettings::getMapLayerHideFadeSeconds)
             .thenReturn(LONG_HIDE_FADE_SECONDS);
+    }
+
+    // A layer answering nothing but the id it registers under, which is all the registration cases
+    // are about: where it lands in the row, and who it displaces.
+    private static MapLayer createLayerMockWithId(String layerId) {
+
+        var layerMock = mock(MapLayer.class);
+
+        when(layerMock.getId())
+            .thenReturn(layerId);
+
+        return layerMock;
+    }
+
+    // Records what reached the log, an arbitration line leaving nothing behind in state a case could
+    // read back.
+    private static final class LogAppenderFake extends AppenderSkeleton {
+
+        private final List<String> messages = new ArrayList<>();
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public boolean requiresLayout() {
+            return false;
+        }
+
+        List<String> getMessages() {
+            return messages;
+        }
+
+        @Override
+        protected void append(LoggingEvent event) {
+            messages.add(String.valueOf(event.getMessage()));
+        }
     }
 }

@@ -81,7 +81,7 @@ final class HoveredBoxTest {
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systemMock));
 
-        MapLayerRegistry.registerLayers(List.of(tooltipLayerMock), tooltipLayerMock);
+        MapLayerRosters.replaceRosterWith(tooltipLayerMock);
 
         // The registry is static, so a screen left wired would outlive its test; a fresh fake starts
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
@@ -333,9 +333,10 @@ final class HoveredBoxTest {
             when(silencedRendererMock.resolveHoverTooltip())
                 .thenReturn(Optional.empty());
 
-            MapLayerRegistry.registerLayers(
-                List.of(silencedLayerMock, tooltipLayerMock),
-                tooltipLayerMock);
+            when(tooltipLayerMock.isOfferedAsDefaultPick())
+                .thenReturn(true);
+
+            MapLayerRosters.replaceRosterWith(silencedLayerMock, tooltipLayerMock);
 
             try (var globalMock = mockStatic(Global.class)) {
 
@@ -357,7 +358,7 @@ final class HoveredBoxTest {
             when(silentLayerMock.getId())
                 .thenReturn("silent");
 
-            MapLayerRegistry.registerLayers(List.of(silentLayerMock), silentLayerMock);
+            MapLayerRosters.replaceRosterWith(silentLayerMock);
 
             try (var globalMock = mockStatic(Global.class)) {
 
@@ -396,7 +397,7 @@ final class HoveredBoxTest {
         void resolveActiveTooltipIsEmptyWithoutAnActiveLayer() {
             // The pre-registration frame: both passes are installed on game load, so the chain can be
             // asked before any composition root has run rather than dereference a null pick.
-            MapLayerRegistry.registerLayers(List.of(), null);
+            MapLayerRosters.forgetEveryLayer();
 
             try (var globalMock = mockStatic(Global.class)) {
 

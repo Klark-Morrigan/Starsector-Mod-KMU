@@ -43,7 +43,7 @@ final class MapSidebarHostTest {
 
     // The live fold key, pinned as a literal: a rename must break this test rather than shipping and
     // quietly reopening every save's panel at the default.
-    private static final String DOCKED_KEY = "$kmu_political_map_sidebar_docked";
+    private static final String DOCKED_KEY = "$kmu_political_sidebar_docked_map";
 
     // The frozen key this screen's active-layer pick is stored under, pinned here so the shortcut is shown
     // writing the sector map's own pick rather than the intel screen's.
@@ -341,9 +341,9 @@ final class MapSidebarHostTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                when(memoryMock.contains("$kmu_political_intel_sidebar_docked"))
+                when(memoryMock.contains("$kmu_political_sidebar_docked_intel"))
                     .thenReturn(true);
-                when(memoryMock.getBoolean("$kmu_political_intel_sidebar_docked"))
+                when(memoryMock.getBoolean("$kmu_political_sidebar_docked_intel"))
                     .thenReturn(true);
                 when(memoryMock.contains(DOCKED_KEY))
                     .thenReturn(false);

@@ -17,10 +17,12 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the two screens' state: the four frozen save keys each pair reads and writes, that neither
- * screen's pick moves the other's, and that every reading answers from the screen the player is
- * looking at. The generic persisted-pick logic is {@link PersistedActiveLayerSelectionTest}'s and
- * {@link PersistedMapLayerVisibilityTest}'s; what is added here is the keys and the live-screen rule.
+ * Pins the two screens' state: the four frozen save keys each screen's picks read and write, the scope
+ * each carries for the preferences set on its own panel, that neither screen's pick moves the other's,
+ * and that every reading answers from the screen the player is looking at. The generic persisted-pick
+ * logic is {@link PersistedActiveLayerSelectionTest}'s and {@link PersistedMapLayerVisibilityTest}'s,
+ * and the shape of a composed key {@link ScreenMemoryScopeTest}'s; what is added here is which screen
+ * gets which, and the live-screen rule.
  *
  * <p>The screens themselves are stand-in gates: which concrete screens exist is the composition root's
  * business, and this pins only that the showing one wins.
@@ -40,6 +42,11 @@ final class MapLayerScreensTest {
     // The same for each screen's show-or-hide pick, pinned for the same reason.
     private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
     private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
+
+    // A preference of no screen's in particular, for reading which screen a carried scope composes for.
+    // Its own key rather than one of the two above, so the case is about the scope rather than about a
+    // holder that happens to use it.
+    private static final String PREFERENCE_KEY = "$kmu_political_preference";
 
     // The two ends of the hide ramp, as a consumer reads them.
     private static final float FULLY_HIDDEN = 0f;
@@ -121,6 +128,15 @@ final class MapLayerScreensTest {
             assertThat(sectorMemoryFake.readStoredValue(MAP_LAYERS_SHOWN_KEY))
                 .isEqualTo(false);
         }
+
+        @Test
+        void getMapPicksCarriesTheMapScreensOwnScope() {
+            // The scope travels with the picks so that a preference set on this screen's panel lands in
+            // the same screen's save as its tab and its hiding do. Carried wrongly, the panel would set a
+            // preference the other screen reads back, with both cases above still green.
+            assertThat(MapLayerScreens.getMapPicks().memoryScope().resolveKeyFor(PREFERENCE_KEY))
+                .isEqualTo("$kmu_political_preference_map");
+        }
     }
 
     @Nested
@@ -149,16 +165,24 @@ final class MapLayerScreensTest {
             assertThat(sectorMemoryFake.readStoredValue(INTEL_LAYERS_SHOWN_KEY))
                 .isEqualTo(false);
         }
+
+        @Test
+        void getIntelPicksCarriesTheIntelScreensOwnScope() {
+            // Its own, and not the map screen's: the two panels' preferences part here, so both are
+            // pinned rather than one and the composition trusted for the other.
+            assertThat(MapLayerScreens.getIntelPicks().memoryScope().resolveKeyFor(PREFERENCE_KEY))
+                .isEqualTo("$kmu_political_preference_intel");
+        }
     }
 
     @Nested
     class ResolveLivePicks {
 
         @Test
-        void resolveLivePicksHandsBackTheShowingScreensPair() {
-            // The pair rather than either half, and one resolution for both: everything composed on top
-            // of this reads a tab and a show-or-hide state together, and two resolutions could answer
-            // them for different screens.
+        void resolveLivePicksHandsBackTheShowingScreensOwnPicks() {
+            // The whole value rather than any one part of it, and one resolution for all of it:
+            // everything composed on top of this reads a tab, a show-or-hide state and a scope together,
+            // and two resolutions could answer them for different screens.
             intelScreenFake.setIntelTabOpen(true);
 
             assertThat(MapLayerScreens.resolveLivePicks())
@@ -172,7 +196,7 @@ final class MapLayerScreensTest {
 
         @Test
         void resolveLivePicksCarriesTheShowingScreensOwnStoredPick() {
-            // The pair is also what a control on a screen's own chrome is stood through, so it has to
+            // The value is also what a control on a screen's own chrome is stood through, so it has to
             // carry the stored pick such a control shows and moves - and writing through it must move
             // the screen that was up and leave the other where it was, which is the whole of what a
             // control on one screen's chrome may do.

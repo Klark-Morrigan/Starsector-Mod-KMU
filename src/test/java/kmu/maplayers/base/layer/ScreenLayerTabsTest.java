@@ -4,8 +4,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -79,7 +77,7 @@ final class ScreenLayerTabsTest {
         void resolveTabbedLayersKeepsTheLastTabStandingWhateverElseIsTrue() {
             // An empty strip has no way back to itself. Unreachable while a layer that paints is
             // registered beside it, which is a composition root's arrangement rather than a rule.
-            MapLayerRegistry.registerLayers(List.of(NoLayer.INSTANCE), NoLayer.INSTANCE);
+            MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
 
             assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
                 .containsExactly(NoLayer.INSTANCE);
@@ -130,7 +128,7 @@ final class ScreenLayerTabsTest {
             // The guard above, read from the other end: a tab that is not withheld is not migrated off
             // either, so a strip of one leaves the player where they were rather than storing a hide
             // over the only tab there is.
-            MapLayerRegistry.registerLayers(List.of(NoLayer.INSTANCE), NoLayer.INSTANCE);
+            MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
 
             var screenPicks = createPicksOnTheEmptyView();
 
@@ -144,8 +142,14 @@ final class ScreenLayerTabsTest {
     // The roster the withholding is about: the empty view beside a layer that paints, which is the
     // shape every install ships and the only one in which anything is withheld at all.
     private void registerTheEmptyViewBesideALayerThatPaints() {
-        MapLayerRegistry.registerLayers(
-            List.of(NoLayer.INSTANCE, paintingLayerMock), paintingLayerMock);
+
+        // The layer that paints offers itself as the default pick, which is what a migration off the
+        // withheld tab moves the screen to. The empty view leads the row and declines it, as it does
+        // in play.
+        when(paintingLayerMock.isOfferedAsDefaultPick())
+            .thenReturn(true);
+
+        MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
     }
 
     // A screen whose box has stood at least once this session, which is what withholds its tab.
@@ -162,7 +166,8 @@ final class ScreenLayerTabsTest {
     private static ScreenLayerPicks createPicksWithNoControl() {
         return new ScreenLayerPicks(
             mock(ActiveLayerSelection.class),
-            new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)));
+            new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
+            ScreenMemoryScopes.createStandInScreen());
     }
 
     // A screen carrying a box and still set to the tab that box takes over from, which is the one

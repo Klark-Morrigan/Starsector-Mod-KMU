@@ -12,14 +12,15 @@ import kmlib.starsector.ui.intel.IntelScreenView;
  * moving whenever they touch a tab or a control. A reader wanting "what draws" asks the registry, and
  * one wanting "what has this screen been set to" asks here.
  *
- * <p>Each screen's pair is its own {@link PersistedActiveLayerSelection} and
- * {@link PersistedMapLayerVisibility} under its own frozen keys, so a switch or a hide on one screen
- * survives reload without moving the other's, and all four keys sit in one place. The two travel as one
- * {@link ScreenLayerPicks} so a screen is chosen once, at the site that names its keys, rather than at
- * each site wanting one of its two picks. Each screen's hide is handed out through
- * {@link ControlBackedMapLayerVisibility}, so a stored hide is acted on only while that screen has a
- * control able to reverse it - the difference between an optional decoration on the game's own chrome
- * and a load-bearing one.
+ * <p>Each screen is named once here, as the {@link ScreenMemoryScope} every one of its keys is composed
+ * through, and each screen's pair is its own {@link PersistedActiveLayerSelection} and
+ * {@link PersistedMapLayerVisibility} under the keys that scope resolves, so a switch or a hide on one
+ * screen survives reload without moving the other's, and the base keys and the two scopes sit in one
+ * place. The picks and the scope travel as one {@link ScreenLayerPicks} so a screen is chosen once, at
+ * the site that names it, rather than at each site wanting one of its picks or a key for a preference of
+ * its own. Each screen's hide is handed out through {@link ControlBackedMapLayerVisibility}, so a stored
+ * hide is acted on only while that screen has a control able to reverse it - the difference between an
+ * optional decoration on the game's own chrome and a load-bearing one.
  *
  * <p>Which screen is live is a per-frame question rather than a fixed answer: the same map widget draws
  * on both, so a pass reading one fixed screen's pick would paint the sector map's choice onto the intel
@@ -28,32 +29,40 @@ import kmlib.starsector.ui.intel.IntelScreenView;
  */
 public final class MapLayerScreens {
 
-    // Save-serialised identity of each screen's active pick; frozen once shipped, since renaming one
-    // silently resets every existing save under it to the default.
-    private static final String MAP_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_map";
-    private static final String INTEL_ACTIVE_LAYER_KEY = "$kmu_political_active_layer_intel";
+    // The two screens as the save knows them. Every per-screen key resolves through one of these, so the
+    // segment has one spelling and a screen is named here and nowhere else.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
+    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
 
-    // The same for each screen's show-or-hide pick, and frozen for the same reason.
-    private static final String MAP_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_map";
-    private static final String INTEL_LAYERS_SHOWN_KEY = "$kmu_political_layers_shown_intel";
+    // Save-serialised identity of a screen's active pick, before the screen's own segment; frozen once
+    // shipped, since renaming it silently resets every existing save under it to the default.
+    private static final String ACTIVE_LAYER_KEY = "$kmu_political_active_layer";
+
+    // The same for a screen's show-or-hide pick, and frozen for the same reason.
+    private static final String LAYERS_SHOWN_KEY = "$kmu_political_layers_shown";
 
     // Each screen's show-or-hide pick as the rest of the mod reads it: the stored pick behind the rule
     // that a hide is acted on only while that screen has a control able to reverse it. Held as that
     // reading rather than as the stored pick, so no consumer can be handed the raw choice by accident -
     // the one entitled to it is whatever stands the control, and it asks the reading for it by name.
     private static final ControlBackedMapLayerVisibility MAP_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(MAP_LAYERS_SHOWN_KEY));
+        new ControlBackedMapLayerVisibility(
+            new PersistedMapLayerVisibility(MAP_SCOPE.resolveKeyFor(LAYERS_SHOWN_KEY)));
     private static final ControlBackedMapLayerVisibility INTEL_LAYER_VISIBILITY =
-        new ControlBackedMapLayerVisibility(new PersistedMapLayerVisibility(INTEL_LAYERS_SHOWN_KEY));
+        new ControlBackedMapLayerVisibility(
+            new PersistedMapLayerVisibility(INTEL_SCOPE.resolveKeyFor(LAYERS_SHOWN_KEY)));
 
-    // Each screen's pair of picks, under that screen's own frozen keys. The map host draws through the
-    // map pair and the overlay follows it; the intel host draws through the intel pair.
+    // Each screen's picks, under the keys that screen's own scope resolves, with the scope beside them.
+    // The map host draws through the map value and the overlay follows it; the intel host draws through
+    // the intel value.
     private static final ScreenLayerPicks MAP_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(MAP_ACTIVE_LAYER_KEY),
-        MAP_LAYER_VISIBILITY);
+        new PersistedActiveLayerSelection(MAP_SCOPE.resolveKeyFor(ACTIVE_LAYER_KEY)),
+        MAP_LAYER_VISIBILITY,
+        MAP_SCOPE);
     private static final ScreenLayerPicks INTEL_PICKS = new ScreenLayerPicks(
-        new PersistedActiveLayerSelection(INTEL_ACTIVE_LAYER_KEY),
-        INTEL_LAYER_VISIBILITY);
+        new PersistedActiveLayerSelection(INTEL_SCOPE.resolveKeyFor(ACTIVE_LAYER_KEY)),
+        INTEL_LAYER_VISIBILITY,
+        INTEL_SCOPE);
 
     // Reads whether the intel screen is the one up. Null until the composition root supplies it, which
     // resolves every read to the map screen's pick - the answer to give before any screen is wired,
@@ -76,7 +85,7 @@ public final class MapLayerScreens {
 
     /**
      * @return the map screen's picks, for the map host to draw through, switch and flip, so the host and
-     *         the overlay read one pair rather than each resolving their own
+     *         the overlay read one value rather than each resolving their own
      */
     public static ScreenLayerPicks getMapPicks() {
         return MAP_PICKS;
@@ -91,11 +100,19 @@ public final class MapLayerScreens {
     }
 
     /**
-     * @return the picks of the screen showing this frame. The pair rather than either half, so a caller
-     *         wanting both cannot answer one for a screen the other has already left - which would hide
-     *         one screen's layers over the other's tab. It is also what a control on a screen's own
-     *         chrome is stood through: the tab and the hide are both its business, one to take over and
-     *         one to move
+     * Resolves the picks of the screen showing this frame.
+     *
+     * <p>The sector map is the primary screen, and the answer wherever the intel screen is not up: a pass
+     * drawing the map somewhere the mod put no sidebar - another mod's minimap, a tooltip map, any foreign
+     * widget compositing the map - reads the sector map's picks and preferences. The intel visor reads its
+     * own. Only the intel screen is asked, so a surface the mod does not know about cannot land on a
+     * screen of its own with nothing set for it.
+     *
+     * @return the whole value rather than any one part of it, so a caller wanting the tab, the hide and
+     *         the scope together cannot answer one for a screen the others have already left - which would
+     *         hide one screen's layers over the other's tab, or paint one screen's preferences under the
+     *         other's. It is also what a control on a screen's own chrome is stood through: the tab and the
+     *         hide are both its business, one to take over and one to move
      */
     public static ScreenLayerPicks resolveLivePicks() {
         return isIntelScreenLive()
