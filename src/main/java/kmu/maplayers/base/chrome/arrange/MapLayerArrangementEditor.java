@@ -32,12 +32,17 @@ import java.util.List;
  */
 public final class MapLayerArrangementEditor {
 
-    // The one visible row the last-tab guard protects. A bar showing this many tabs cannot afford to
-    // hide one, the dialog that would put it back being reached from the bar.
-    private static final int LAST_VISIBLE_ROW = 1;
+    // How many tabs a bar has left when it cannot afford to lose one. A bar showing this many cannot
+    // hide the last, the dialog that would put it back being reached from the bar.
+    private static final int LAST_VISIBLE_TAB_COUNT = 1;
 
     // Nothing in the row list answers to this id.
     private static final int NO_ROW = -1;
+
+    // Which way a move goes, as the offset from a row to the neighbour it swaps with. Named because a
+    // bare sign at a call site says nothing about which end of the column it means.
+    private static final int ONE_PLACE_UP = -1;
+    private static final int ONE_PLACE_DOWN = 1;
 
     // Where the arrangement is recorded as the player makes it. Read once at construction and written
     // on every change, which is the whole of this editor's contact with anything outside itself.
@@ -99,12 +104,8 @@ public final class MapLayerArrangementEditor {
     public boolean canToggleRowHidden(String layerId) {
 
         var rowIndex = indexOfRow(layerId);
-        if (rowIndex == NO_ROW) {
-            return false;
-        }
 
-        return rows.get(rowIndex).isHidden()
-            || countVisibleRows() > LAST_VISIBLE_ROW;
+        return rowIndex != NO_ROW && canToggleRowAt(rowIndex);
     }
 
     /**
@@ -114,7 +115,7 @@ public final class MapLayerArrangementEditor {
      * @param layerId the row's layer id
      */
     public void moveRowUp(String layerId) {
-        moveRow(layerId, -1);
+        moveRow(layerId, ONE_PLACE_UP);
     }
 
     /**
@@ -123,7 +124,7 @@ public final class MapLayerArrangementEditor {
      * @param layerId the row's layer id
      */
     public void moveRowDown(String layerId) {
-        moveRow(layerId, 1);
+        moveRow(layerId, ONE_PLACE_DOWN);
     }
 
     /**
@@ -134,11 +135,11 @@ public final class MapLayerArrangementEditor {
      */
     public void toggleRowHidden(String layerId) {
 
-        if (!canToggleRowHidden(layerId)) {
+        var rowIndex = indexOfRow(layerId);
+
+        if (rowIndex == NO_ROW || !canToggleRowAt(rowIndex)) {
             return;
         }
-
-        var rowIndex = indexOfRow(layerId);
         rows.set(rowIndex, rows.get(rowIndex).toggleHidden());
 
         recordArrangement();
@@ -192,6 +193,17 @@ public final class MapLayerArrangementEditor {
             }
         }
         return NO_ROW;
+    }
+
+    // The toggle rule itself, over a row its caller has already found. Shared by the question and the
+    // act so the two cannot part company, and so neither pays for a second lookup of the same row.
+    //
+    // Refuses in one direction only: putting a tab back is always allowed, and taking the last one off
+    // would leave a bar with no way to the dialog that would undo it.
+    private boolean canToggleRowAt(int rowIndex) {
+
+        return rows.get(rowIndex).isHidden()
+            || countVisibleRows() > LAST_VISIBLE_TAB_COUNT;
     }
 
     // How many tabs the bar would show as the rows stand, which is what the last-tab guard counts.

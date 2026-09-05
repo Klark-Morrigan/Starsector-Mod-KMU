@@ -241,7 +241,11 @@ bar once does not order it again per save.
   panel added that way is an ordinary child, the dialog supplies its own backdrop and its own input
   claim, and publishes `isDialogRaised()` for the gates that stand down under a modal. The game's own
   modal reading cannot see it: it recognises modals by the base they descend from, and this descends
-  from nothing of the game's.
+  from nothing of the game's. The widgets themselves are `MapLayerArrangementDialogBody`, apart because
+  when the dialog stands up and what it claims is a question about a screen while how wide the label
+  column is and which cell sits beside which is a question about a layout. A change to the arrangement
+  builds a new body and takes the old one off rather than nudging widgets into new places, since a
+  column edited in place would eventually disagree with the order it was drawn from.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
