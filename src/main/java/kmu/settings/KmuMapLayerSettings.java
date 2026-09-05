@@ -227,9 +227,8 @@ public final class KmuMapLayerSettings {
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
 
     // The width the panel's bar drew before it was a knob, so a player who never opens the slider
-    // sees the panel they had. Floored at 1 by the slider rather than by a clamp here: 0 is a
-    // meaning the widget library keeps for a host that scrolls its strip some other way, and this
-    // sidebar is not one - a bar taken away would leave nothing on screen to say where it went.
+    // sees the panel they had. The row floors at 1 rather than 0: a bar taken away is a control
+    // gone from the panel with nothing on screen to say where it went.
     private static final int DEFAULT_SIDEBAR_SCROLLBAR_THICKNESS = 3;
 
     // Mirrors TabPanelCollapse.DEFAULT_DURATION_SECONDS, the KMLib holder's own default pace;
@@ -872,9 +871,9 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return how thick the overlay sidebar's scroll bar draws - its track and the handle in it - in
-     *         pixels; 3 by default. The panel reserves the room the bar needs, widening rightward
-     *         past the default rather than drawing over the rows it scrolls
+     * @return how thick the overlay sidebar's scrollbar draws, in pixels; 3 by default. Returned as
+     *         stored, the layout the value is handed to being what reserves the room a bar this wide
+     *         needs
      */
     public static int getMapSidebarScrollbarThickness() {
         return KmuLunaSettings.readInt(

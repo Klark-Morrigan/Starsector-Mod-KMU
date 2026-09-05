@@ -23,11 +23,11 @@ public final class KmuConditionIconGrid {
     public static final int DEFAULT_COLUMNS = 12;
     static final float CELL_GAP = 8f;
 
-    /** Space reserved on the right so the scroll bar does not overlap grid content. */
+    /** Space reserved on the right so the scrollbar does not overlap grid content. */
     static final float SCROLLBAR_RIGHT_PAD = 18f;
 
     /** Total width a surrounding panel must be to show exactly the given number
-     *  of square-icon columns, including the scroll bar clearance on the right. */
+     *  of square-icon columns, including the scrollbar clearance on the right. */
     public static float computeTotalWidthForSquareColumns(int columns) {
         return computeWidthForSquareColumns(columns) + SCROLLBAR_RIGHT_PAD;
     }
