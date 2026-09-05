@@ -46,6 +46,7 @@ final class KmuProfilingReportCommandTest {
                     TWO_MILLIS_IN_NANOS,
                     TWO_MILLIS_IN_NANOS,
                     TWO_MILLIS_IN_NANOS,
+                    List.of(),
                     List.of())));
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
