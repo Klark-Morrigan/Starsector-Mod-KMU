@@ -714,12 +714,16 @@ dimensions. The three arrival levels and the list-scroll level are fields of the
 `Map - Sound` tab, which is where the volume half of the look is stated rather than beside the
 shades.
 
-A thicker scrollbar widens the panel rather than covering the rows: the body reserves a gutter of
-the bar plus its margin and its clearance off the list, and grows rightward by whatever that gutter
-exceeds its own padding - so the rows stay where they were and only the box moves. All of these are
-read per frame, so a slider moved on the settings screen shows on the next one with no reopen, and
-both hosts read them through the one `buildChrome`, which is what keeps the map and intel sidebars
-from drawing different bars.
+All of them are read per frame, so a slider moved on the settings screen shows on the next one with
+no reopen, and both hosts read them through the one `buildChrome` - which is what keeps the map and
+intel sidebars from drawing different boxes. The scrollbar thickness is the one whose effect reaches
+past the chrome it names: a bar fatter than the gutter widens the panel rather than covering the
+rows, so a player moving that slider sees the box grow. How much and why is KMLib's, stated on
+`CappedStripLayout`.
+
+The thickness is also clamped on this side, to the 1..12 the slider offers. A width of nothing is a
+state KMLib supports and this panel never wants - it removes the bar outright, leaving nothing on
+screen to say where the control went - so a hand-edited settings file cannot reach it either.
 
 ## What is not here
 

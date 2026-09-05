@@ -226,10 +226,16 @@ public final class KmuMapLayerSettings {
     private static final int MIN_SIDEBAR_OPACITY_PERCENT = 50;
     private static final int MAX_SIDEBAR_OPACITY_PERCENT = 100;
 
-    // The width the panel's bar drew before it was a knob, so a player who never opens the slider
-    // sees the panel they had. The row floors at 1 rather than 0: a bar taken away is a control
-    // gone from the panel with nothing on screen to say where it went.
+    // The thin bar the panel draws when the player leaves the slider alone.
+    //
+    // The floor is 1 rather than 0 because 0 is a state the widget library offers and this panel never
+    // wants: it takes the bar away outright, which is a control gone from the panel with nothing on
+    // screen to say where it went or how to get it back. Clamped here as well as bounded on the slider,
+    // so a hand-edited settings file cannot reach the state the mod says it never enters - the same
+    // reason the opacity above holds its own floor.
     private static final int DEFAULT_SIDEBAR_SCROLLBAR_THICKNESS = 3;
+    private static final int MIN_SIDEBAR_SCROLLBAR_THICKNESS = 1;
+    private static final int MAX_SIDEBAR_SCROLLBAR_THICKNESS = 12;
 
     // Mirrors TabPanelCollapse.DEFAULT_DURATION_SECONDS, the KMLib holder's own default pace;
     // restated as a literal like every fallback here so this class stays decoupled from the widget
@@ -871,14 +877,19 @@ public final class KmuMapLayerSettings {
     }
 
     /**
-     * @return how thick the overlay sidebar's scrollbar draws, in pixels; 3 by default. Returned as
-     *         stored, the layout the value is handed to being what reserves the room a bar this wide
-     *         needs
+     * @return how thick the overlay sidebar's scrollbar draws, in pixels; 3 by default, held between 1
+     *         and 12 so the panel always stands a bar the player can find. The layout the value is handed
+     *         to is what reserves the room a bar this wide needs
      */
     public static int getMapSidebarScrollbarThickness() {
-        return KmuLunaSettings.readInt(
+
+        var pixels = KmuLunaSettings.readInt(
             SIDEBAR_SCROLLBAR_THICKNESS_FIELD,
             DEFAULT_SIDEBAR_SCROLLBAR_THICKNESS);
+
+        return Math.max(
+            MIN_SIDEBAR_SCROLLBAR_THICKNESS,
+            Math.min(MAX_SIDEBAR_SCROLLBAR_THICKNESS, pixels));
     }
 
     /**
