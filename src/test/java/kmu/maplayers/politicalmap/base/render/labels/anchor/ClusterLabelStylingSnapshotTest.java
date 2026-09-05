@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
 
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -68,9 +67,10 @@ final class ClusterLabelStylingSnapshotTest {
         }
 
         @Test
-        void resolveFromCarriesTheViewGroupingAndFilterWhole() {
-            // Taken as the two retained records rather than unpacked and recombined, so the view
-            // a label is named under and the filter it recedes by cannot come from two passes.
+        void resolveFromCarriesTheViewGroupingAndSampledPicksWhole() {
+            // Taken as the two retained records rather than unpacked and recombined, so the view a
+            // label is named under, the filter it recedes by and the format it is spelled in cannot
+            // come from two passes.
             var viewGrouping = buildViewGrouping();
             var filterSnapshot = buildSpotlightFilter();
 
@@ -83,8 +83,8 @@ final class ClusterLabelStylingSnapshotTest {
 
             assertThat(styling.viewGrouping())
                 .isSameAs(viewGrouping);
-            assertThat(styling.filterSnapshot())
-                .isSameAs(filterSnapshot);
+            assertThat(styling.contentInputs())
+                .isSameAs(filterSnapshot.contentInputs());
         }
 
         @Test
@@ -98,7 +98,7 @@ final class ClusterLabelStylingSnapshotTest {
                     buildViewGrouping(),
                     FilterSnapshot.unfiltered()));
 
-            assertThat(styling.filterSnapshot().isFiltering())
+            assertThat(styling.contentInputs().isFiltering())
                 .isFalse();
         }
     }
@@ -129,8 +129,7 @@ final class ClusterLabelStylingSnapshotTest {
 
     private static FilterSnapshot buildSpotlightFilter() {
         return new FilterSnapshot(
-            SPOTLIT_BLOC_ID,
-            ElementStyleAdjustment.NONE,
+            PoliticalMapTerritoryFixtures.createInputsSpotlighting(SPOTLIT_BLOC_ID),
             Set.of("corvus"));
     }
 }

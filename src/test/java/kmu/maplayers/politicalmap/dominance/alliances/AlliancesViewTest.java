@@ -5,10 +5,8 @@ import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
@@ -30,7 +28,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
-import kmu.settings.KmuPoliticalMapTerritorySettings;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -65,12 +63,6 @@ import static org.mockito.Mockito.when;
 final class AlliancesViewTest {
 
     private static final String NEXERELIN_MOD_ID = "nexerelin";
-
-    // The alliances view's own non-allied recede set keys, driven here through sector memory so the
-    // view's real recede reads are exercised. Pinned as literals: this set is what the view consults
-    // for a non-allied faction, so a rename that would silently reset the choice breaks here.
-    private static final String ALLIANCE_MUTE_KEY = "$kmu_political_alliance_recede_mute";
-    private static final String ALLIANCE_DESATURATE_KEY = "$kmu_political_alliance_recede_desaturate";
 
     // An alliance grouping with one alliance bloc "rebel_pact" fusing two members, coloured off the
     // sorted-first member and named "Rebel Pact"; a faction not in the map stays its own lone bloc.
@@ -108,25 +100,26 @@ final class AlliancesViewTest {
         }
 
         @Test
-        void getContentRevisionShiftsWhenTheRecedeStyleRevisionMoves() {
-            // A Mute/Desaturate flip is the view's other live input: those sidebar-only toggles
-            // never move settingsRevision, so the recede-style revision must fold in here for a flip
-            // to repaint the overlay live.
+        void getContentRevisionStandsStillWhenTheRecedeStyleRevisionMoves() {
+            // A Mute/Desaturate flip is not folded here. The bake samples this view's non-allied
+            // recede with every other preference and folds the values in, so a flip that leaves the
+            // recede where it was must cost nothing - and one that moves it rebuilds through the
+            // sampled value rather than through a counter that only says somebody clicked.
             var board = new MapLayerRefreshBoard();
             var before = AlliancesView.INSTANCE.getContentRevision(board);
 
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
 
             assertThat(AlliancesView.INSTANCE.getContentRevision(board))
-                .isNotEqualTo(before);
+                .isEqualTo(before);
         }
 
         @Test
         void getContentRevisionFoldsTheBoardItIsHandedRatherThanAnother() {
             // One stateless view answers for every sector, so the board handed in is the only thing
-            // telling two sectors' asks apart. A recede flip made under one sector's sidebar must
-            // move that sector's number and leave the other's exactly where it was - a view folding
-            // an ambient board instead would repaint whichever sector happened to be running.
+            // telling two sectors' asks apart. An alliance formed under one sector must move that
+            // sector's number and leave the other's exactly where it was - a view folding an
+            // ambient board instead would repaint whichever sector happened to be running.
             //
             // Made once, here, for the seam rather than per view: every view's cases above build a
             // board of their own, so a view resolving one instead of folding the argument already
@@ -137,7 +130,7 @@ final class AlliancesViewTest {
             var before = AlliancesView.INSTANCE.getContentRevision(board);
             var otherBefore = AlliancesView.INSTANCE.getContentRevision(otherBoard);
 
-            board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
+            board.requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
 
             assertThat(AlliancesView.INSTANCE.getContentRevision(board))
                 .isNotEqualTo(before);
@@ -276,102 +269,54 @@ final class AlliancesViewTest {
     @Nested
     class ResolveBlocStyleAdjustment {
 
-        // The muted modifier and the two toggles the non-allied recede set is driven to, so a test
-        // proves the view returns exactly what that set resolves rather than composing its own.
-        private static final double MUTED_MODIFIER = 0.3;
-        private static final ElementStyleAdjustment RECEDED = new ElementStyleAdjustment(MUTED_MODIFIER, true);
+        // The recede the bake sampled for this view's non-allied set, distinct from the identity so
+        // a bloc that took it can be told from a bloc the gate spared.
+        private static final ElementStyleAdjustment RECEDED = new ElementStyleAdjustment(0.3, true);
 
-        // What an untouched save resolves to: recoloured at full opacity, since Desaturate defaults
-        // on and Mute defaults off. A literal, so a flip of either default breaks this test.
-        private static final ElementStyleAdjustment DESATURATED_ONLY = new ElementStyleAdjustment(1.0, true);
+        // The picks a pass carrying that recede was baked under. Nothing else in the reading
+        // reaches this decision, so the other four sit at the inert values.
+        private static final ContentInputs RECEDING_INPUTS = new ContentInputs(
+            null, // Nothing spotlighted.
+            ElementStyleAdjustment.NONE, // No filter recede.
+            RECEDED,
+            FactionNameFormatChoice.FULL,
+            false); // No uninhabited outline.
 
         @Test
         void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {
-            // An alliance keeps its full colour: the view gates it to NONE before its non-allied
-            // recede set is consulted, so recede can never dim or desaturate an alliance - and no
-            // memory is touched.
+            // An alliance keeps its full colour: the view gates it to NONE ahead of the recede the
+            // bake sampled, so recede can never dim or desaturate an alliance.
             assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
                     "rebel_pact",
-                    ALLIANCE_GROUPING))
+                    ALLIANCE_GROUPING,
+                    RECEDING_INPUTS))
                 .isEqualTo(ElementStyleAdjustment.NONE);
         }
 
         @Test
-        void resolveBlocStyleAdjustmentTakesTheNonAlliedRecedeForANonAllianceBloc() {
-            // A non-allied faction is backdrop, so the view returns exactly what its own
-            // non-allied recede set resolves - the one adjustment every faction outside an alliance
-            // takes, driven here through that set's mute and desaturate keys.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(ALLIANCE_MUTE_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(ALLIANCE_MUTE_KEY))
-                    .thenReturn(true);
-                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(ALLIANCE_DESATURATE_KEY))
-                    .thenReturn(true);
-
-                settingsMock
-                    .when(KmuPoliticalMapTerritorySettings::getPoliticalMapAllianceMutedOpacityModifier)
-                    .thenReturn(MUTED_MODIFIER);
-
-                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                        "hegemony",
-                        ALLIANCE_GROUPING))
-                    .isEqualTo(RECEDED);
-            }
-        }
-
-        @Test
-        void resolveBlocStyleAdjustmentDesaturatesANonAlliedFactionOnAnUntouchedSave() {
-            // The view opens with the alliances already reading as the figure: with neither key
-            // stored, Desaturate's on default recolours a non-allied faction while Mute's off
-            // default leaves it at full opacity. No settings mock is needed precisely because the
-            // muted modifier goes unread while Mute is off.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(ALLIANCE_MUTE_KEY))
-                    .thenReturn(false);
-                when(memoryMock.contains(ALLIANCE_DESATURATE_KEY))
-                    .thenReturn(false);
-
-                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                        "hegemony",
-                        ALLIANCE_GROUPING))
-                    .isEqualTo(DESATURATED_ONLY);
-            }
+        void resolveBlocStyleAdjustmentTakesTheSampledNonAlliedRecedeForANonAllianceBloc() {
+            // A non-allied faction is backdrop, so the view hands back exactly the non-allied recede
+            // the rebuild sampled - the one adjustment every faction outside an alliance takes.
+            // Taken off the reading rather than off the stored toggles, so every cell of one rebuild
+            // recedes by one answer and a flip mid-rebuild cannot split the backdrop in two.
+            assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                    "hegemony",
+                    ALLIANCE_GROUPING,
+                    RECEDING_INPUTS))
+                .isEqualTo(RECEDED);
         }
 
         @Test
         void resolveBlocStyleAdjustmentIsNoneForEveryBlocWhenNoAllianceExists() {
             // No alliance means no figure, so receding would sink the whole sector rather than
             // isolate anything - the state a fresh Nex campaign opens in, before diplomacy has
-            // formed a single alliance. The gate runs ahead of the recede set, so the on-by-default
-            // Desaturate never reaches a bloc here and sector memory is not even read.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
-
-                assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
-                        "hegemony",
-                        HolderGrouping.identity()))
-                    .isEqualTo(ElementStyleAdjustment.NONE);
-
-                memoryAccessMock
-                    .verifyNoInteractions();
-            }
+            // formed a single alliance. The gate runs ahead of the sampled recede, so the
+            // on-by-default Desaturate never reaches a bloc here.
+            assertThat(AlliancesView.INSTANCE.resolveBlocStyleAdjustment(
+                    "hegemony",
+                    HolderGrouping.identity(),
+                    RECEDING_INPUTS))
+                .isEqualTo(ElementStyleAdjustment.NONE);
         }
     }
 

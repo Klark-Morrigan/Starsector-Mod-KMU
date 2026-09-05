@@ -20,7 +20,6 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
@@ -248,6 +247,11 @@ final class PoliticalMapCache {
 
         var isCellCutStale = !cellCut.equals(lastCellCut);
 
+        // The rebuild's one sampling of the sidebar preferences, taken here beside the cut's for
+        // the same reason: every stage that bakes one reads this reading, and the staleness
+        // question below is asked of the values rather than of the counters their flips raise.
+        var contentInputs = ContentInputs.sampleForView(view);
+
         // TODO: when only geometry changed (isCellCutStale), reshape just the cells
         // CellGeometryCache rebuilt - the system that gained or lost access and every cell
         // it touches - rather than the full territories rebuild below. Have updateFromSector report
@@ -256,12 +260,17 @@ final class PoliticalMapCache {
 
         // Both views null means neither has been built for this sector, so the first frame forces
         // the build even if the content revision happens to match its unbuilt seed.
-        var contentRevision = computeContentRevision(view);
+        var contentRevision = computeContentRevision(view, contentInputs);
         var isContentStale = isCellCutStale
             || (territories == null && borderStageOverlay == null)
             || contentRevision != lastContentRevision;
 
-        return new StaleHalves(cellCut, isCellCutStale, contentRevision, isContentStale);
+        return new StaleHalves(
+            cellCut,
+            isCellCutStale,
+            contentInputs,
+            contentRevision,
+            isContentStale);
     }
 
     // The rebuild itself, run only where the decision above found something stale. Advances each
@@ -299,7 +308,7 @@ final class PoliticalMapCache {
         // map when there is one, resolving its own from the sector when the debug build left
         // none behind.
         if (KmuPoliticalMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
-            rebuildBorderTracingOverlay(sector, view);
+            rebuildBorderTracingOverlay(sector, view, staleHalves.contentInputs());
 
         } else {
 
@@ -308,17 +317,18 @@ final class PoliticalMapCache {
                     view.resolveGrouping(),
                     staleHalves.cellCut().visibilityRules().colonyVisibility(),
                     colonies),
-                view);
+                view,
+                staleHalves.contentInputs());
         }
 
         // The name labels are minted from the placements just rebuilt (empty when the names
         // toggle is off), keeping them in step with the fills and borders and reusing the one
-        // placement search both consumers share. The name choice is read here rather than
-        // inside the build, since whether names draw at all is this layer's own answer.
+        // placement search both consumers share. The name choice comes off this rebuild's own
+        // sampling rather than the preference, so what is minted matches what was fitted.
         LabelsBuilder.rebuildLabels(
             factionLabels,
             standingAnchors.getAnchors(),
-            NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+            staleHalves.contentInputs().nameFormat().areNamesDrawn());
 
         lastContentRevision = staleHalves.contentRevision();
 
@@ -337,11 +347,15 @@ final class PoliticalMapCache {
     // holding from the sector rather than through the rebuild's own reading, and deliberately: the
     // overlay is gated behind a dev toggle and builds no draw lists for the anchors to borrow a
     // holder map from, so what it costs is paid only while somebody is looking at it.
-    private void rebuildBorderTracingOverlay(SectorAPI sector, PoliticalMapView view) {
+    private void rebuildBorderTracingOverlay(
+            SectorAPI sector,
+            PoliticalMapView view,
+            ContentInputs contentInputs) {
 
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
-            sector);
+            sector,
+            contentInputs.isUninhabitedOutlineDrawn());
 
         territories = null;
 
@@ -349,7 +363,8 @@ final class PoliticalMapCache {
             standingAnchors,
             cellGeometry,
             sector,
-            view);
+            view,
+            contentInputs);
     }
 
     // The production view's three stages, driven off the one reading of the sector the rebuild
@@ -359,9 +374,16 @@ final class PoliticalMapCache {
     // The grouping the pass was opened under is the view's, sampled once, which is the condition
     // the bake shares this reading on: a pass folded by another grouping would plan bands against
     // blocs the fills never drew.
-    private void rebuildTerritoriesAndBands(HolderPass pass, PoliticalMapView view) {
+    private void rebuildTerritoriesAndBands(
+            HolderPass pass,
+            PoliticalMapView view,
+            ContentInputs contentInputs) {
 
-        territories = TerritoryBuilder.buildTerritories(cellGeometry.cells(), pass, view);
+        territories = TerritoryBuilder.buildTerritories(
+            cellGeometry.cells(),
+            pass,
+            view,
+            contentInputs);
         borderStageOverlay = null;
 
         // The cells go over carrying the revision they stand at rather than the live
@@ -468,18 +490,23 @@ final class PoliticalMapCache {
     // reads, whether to fuse blocs or only to judge a contest - rebuilds the territories even though
     // no setting moved. The pipeline stays view-neutral by reading this off the view rather than
     // naming the alliance signal itself, so a view that samples nothing simply contributes a
-    // constant and is never churned by a change it does not render. The
-    // filter, recede-style, and map-style revisions are folded in at this pipeline level rather than
-    // through any view, since each is a mode or an appearance toggle either view can be under: a
-    // filter pick or clear, a recede Mute/Desaturate flip, or a flip of the sidebar's shared
-    // appearance toggles (the uninhabited outline, the full/short name format) bumps its revision and
-    // rebuilds the territories under whichever view is up, with no view naming it. Those toggles are
-    // sector-memory state rather than LunaLib fields, so settingsRevision above does not cover them.
+    // constant and is never churned by a change it does not render.
+    //
+    // The sidebar preferences are folded in as the values this frame sampled, rather than as the
+    // filter, recede-style and map-style counters their flips raise. Those toggles are
+    // sector-memory state rather than LunaLib fields, so settingsRevision above does not cover
+    // them - but a counter only reports that somebody clicked something, not what the map is now
+    // under. Folding the values asks the only question worth asking: would this build come out the
+    // same. Two readings holding the same picks are one bake whatever has been clicked between
+    // them, and a pick that really moved rebuilds under whichever view is up with no view naming
+    // it. The counters stay raised on the board for the consumers that do repaint on them - the
+    // sidebar and the bloc cache - they simply no longer decide whether the territories are stale.
+    //
     // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
-    // combine here. The three counters come off this cache's own board, and the view is handed that
-    // same board to fold its own live inputs from, so a signal raised in another sector cannot
-    // restyle these cells - and a signal raised in this one cannot fail to.
-    private int computeContentRevision(PoliticalMapView view) {
+    // combine here. The view is handed this cache's own board to fold its own live inputs from, so
+    // a signal raised in another sector cannot restyle these cells - and a signal raised in this
+    // one cannot fail to.
+    private int computeContentRevision(PoliticalMapView view, ContentInputs contentInputs) {
 
         var board = installation.resolveRefreshBoard();
 
@@ -487,9 +514,7 @@ final class PoliticalMapCache {
             KmuLunaSettings.getSettingsRevision(),
             view.getId(),
             view.getContentRevision(board),
-            board.getRevision(MapLayerCommonRefreshSignal.FILTER),
-            board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE),
-            board.getRevision(MapLayerCommonRefreshSignal.MAP_STYLE));
+            contentInputs);
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
@@ -546,6 +571,7 @@ final class PoliticalMapCache {
      * @param cellCut         what the cells would be cut from now: the reachable-set revision, the
      *                        seed knobs and the visibility rules, sampled once
      * @param isCellCutStale  whether those differ from what the standing cells were cut from
+     * @param contentInputs   the sidebar preferences a rebuild would bake under, sampled once
      * @param contentRevision the fold of every input the territories are styled under
      * @param isContentStale  whether anything at all is owed, the cut included - false is the frame
      *                        that stops at the decision
@@ -553,6 +579,7 @@ final class PoliticalMapCache {
     private record StaleHalves(
         CellCutInputs cellCut,
         boolean isCellCutStale,
+        ContentInputs contentInputs,
         int contentRevision,
         boolean isContentStale) {
     }

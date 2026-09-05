@@ -60,7 +60,8 @@ public final class DebugBorderTracingBuilder {
     // drawables, so the plugin builds this instead of them in debug mode, not alongside.
     public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
-            SectorAPI sector) {
+            SectorAPI sector,
+            boolean isUninhabitedOutlineDrawn) {
 
         // This overlay's own reading of the sector: it never filters and groups nothing, so it
         // opens a plain identity pass rather than being handed one - there is no rebuild above it
@@ -127,6 +128,7 @@ public final class DebugBorderTracingBuilder {
             geometryCache,
             cellGrouping,
             inhabitedSystemIds,
+            isUninhabitedOutlineDrawn,
             borderSmoothing.cornerRounding(),
             stageCollector);
 
@@ -143,13 +145,16 @@ public final class DebugBorderTracingBuilder {
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
             Set<String> inhabitedSystemIds,
+            boolean isUninhabitedOutlineDrawn,
             CornerRoundingStyle cornerRounding,
             ClusterBorderStageCollector stageCollector) {
 
         // The whole theme rather than the two factionless bundles separately, so a category
         // resolved by the shared rule indexes straight into it - the same lookup the production
-        // draw makes, which is what keeps the overlay showing the cells the map would show.
-        var renderStyle = RenderStyleReader.readRenderStyle();
+        // draw makes, which is what keeps the overlay showing the cells the map would show. The
+        // uninhabited outline's own switch arrives with the rebuild for the same reason: read here
+        // it would be a second reading, free to show cells the production draw would not.
+        var renderStyle = RenderStyleReader.readRenderStyle(isUninhabitedOutlineDrawn);
 
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {

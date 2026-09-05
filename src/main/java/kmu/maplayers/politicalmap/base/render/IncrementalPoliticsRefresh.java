@@ -9,7 +9,6 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -203,10 +202,14 @@ final class IncrementalPoliticsRefresh {
             sector,
             ClusterLabelStylingSnapshot.resolveFrom(territories));
 
+        // The name choice off the standing map rather than off the preference: this fold edits the
+        // build already on screen, so whether its labels draw is what that build was baked under. A
+        // live read here would mint or drop labels for a pick no cell of the standing map was
+        // shaped for, without the rebuild that pick is owed.
         LabelsBuilder.rebuildLabels(
             standingMap.factionLabels(),
             standingMap.standingAnchors().getAnchors(),
-            NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+            territories.getContentInputs().nameFormat().areNamesDrawn());
 
         return nameDisturbance;
     }

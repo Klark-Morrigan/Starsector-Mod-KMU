@@ -40,6 +40,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -67,6 +68,11 @@ import static org.mockito.Mockito.when;
  */
 final class DebugBorderTracingBuilderTest {
     private static final String HEGEMONY = "hegemony";
+
+    // The uninhabited-outline pick the overlay is handed. Every case here stubs the theme whole,
+    // so the pick reaches nothing and stands only for "the rebuild sampled one" - which category
+    // actually outlines is stated by the stubbed bundles instead.
+    private static final boolean OUTLINE_DRAWN = true;
 
     // Two cells of one bloc meeting along x = 2000, so the pair proves the trace fuses them; the
     // other two share no edge with anything, each enclosed by the reach bound alone.
@@ -185,7 +191,8 @@ final class DebugBorderTracingBuilderTest {
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
-                sectorMock);
+                sectorMock,
+                OUTLINE_DRAWN);
 
             // One loop rather than two: the shared edge is a same-bloc seam, exactly as in the
             // production trace this stage is supposed to be showing.
@@ -204,7 +211,8 @@ final class DebugBorderTracingBuilderTest {
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(HELD_SYSTEM),
-                sectorMock);
+                sectorMock,
+                OUTLINE_DRAWN);
 
             assertThat(drawables.baseLoops()).hasSize(1);
             assertThat(drawables.despikedLoops()).hasSize(1);
@@ -217,7 +225,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(buildRoundingOnly(), ElementStyle.NOT_DRAWN, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), sectorMock);
+                listCellsFor(HELD_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             // Rounding feeds off whatever the previous stage left, so with sanding off it rounds
             // the base - and the skipped stage stays empty rather than standing in for it.
@@ -231,7 +239,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
+                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             // The dead world's cell resolves to the decivilised bundle and draws; the uninhabited
             // one resolves to the bundle the player switched off and is skipped, which is what
@@ -244,7 +252,7 @@ final class DebugBorderTracingBuilderTest {
             stubInhabitedSystems(DEAD_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock);
+                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             assertThat(drawables.isEmpty()).isTrue();
         }
@@ -255,7 +263,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(HELD_SYSTEM), sectorMock);
+                listCellsFor(HELD_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             // One loop with both factionless outlines on: the cell is grouped, so the factionless
             // pass steps over it instead of stroking a second ring inside its cluster border.
@@ -273,7 +281,7 @@ final class DebugBorderTracingBuilderTest {
                 .thenReturn(Map.of(HELD_SYSTEM, HELD_SYSTEM));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                    geometryCacheMock, sectorMock);
+                    geometryCacheMock, sectorMock, OUTLINE_DRAWN);
 
             // A bloc whose cells carry no edges traces nothing, and the overlay drops it rather
             // than capturing an empty stage entry the renderer would walk.
@@ -286,7 +294,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(TINY_SYSTEM), sectorMock);
+                listCellsFor(TINY_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             // The cell is narrower than twice the border inset, so insetting leaves no polygon
             // at all - dropped rather than flattened into a degenerate run.
@@ -299,7 +307,7 @@ final class DebugBorderTracingBuilderTest {
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM), sectorMock);
+                listCellsFor(DEAD_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.
@@ -399,7 +407,9 @@ final class DebugBorderTracingBuilderTest {
             categories);
 
         styleReaderMock.when(RenderStyleReader::readBorderSmoothingStyle).thenReturn(smoothing);
-        styleReaderMock.when(RenderStyleReader::readRenderStyle).thenReturn(renderStyle);
+        styleReaderMock
+            .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
+            .thenReturn(renderStyle);
     }
 
     private void stubHolders(Map<String, DominantHolder> ownerBySystemId) {

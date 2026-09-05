@@ -28,6 +28,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
@@ -63,6 +64,15 @@ final class FactionsViewTest {
     // The faction view ignores its grouping argument (its own grouping is always identity),
     // so any grouping stands in where the interface demands one.
     private static final HolderGrouping ANY_GROUPING = HolderGrouping.identity();
+
+    // A reading that does recede something, so a NONE answer here is this view adjusting nothing
+    // rather than the picks it was handed holding nothing to adjust with.
+    private static final ContentInputs RECEDING_INPUTS = new ContentInputs(
+        null, // Nothing spotlighted.
+        ElementStyleAdjustment.NONE, // No filter recede.
+        new ElementStyleAdjustment(0.4, true),
+        FactionNameFormatChoice.FULL,
+        false); // No uninhabited outline.
 
     @Nested
     class ResolveGrouping {
@@ -216,12 +226,14 @@ final class FactionsViewTest {
             // draw exactly as classified, so the pipeline has nothing to dim or recolour.
             assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
                     "hegemony",
-                    ANY_GROUPING))
+                    ANY_GROUPING,
+                    RECEDING_INPUTS))
                 .isEqualTo(ElementStyleAdjustment.NONE);
 
             assertThat(FactionsView.INSTANCE.resolveBlocStyleAdjustment(
                     Factions.INDEPENDENT,
-                    ANY_GROUPING))
+                    ANY_GROUPING,
+                    RECEDING_INPUTS))
                 .isEqualTo(ElementStyleAdjustment.NONE);
         }
     }

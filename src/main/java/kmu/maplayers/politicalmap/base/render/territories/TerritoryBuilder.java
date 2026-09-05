@@ -12,15 +12,13 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
-import kmu.maplayers.base.sidebar.FilterSelection;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
-import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -57,11 +55,14 @@ public final class TerritoryBuilder {
     //
     // The reading of the sector arrives rather than being opened here, so this build's walk of
     // each system is the same walk the geometry and the band bake either side of it make. It is
-    // the rebuild's, and is discarded with it.
+    // the rebuild's, and is discarded with it. The sidebar preferences arrive for the same reason:
+    // the rebuild sampled them once when it decided it was owed, so reading them again here could
+    // paint the map under a pick the decision never saw.
     public static PoliticalMapTerritories buildTerritories(
             CellGeometryCache geometryCache,
             HolderPass pass,
-            PoliticalMapView view) {
+            PoliticalMapView view,
+            ContentInputs contentInputs) {
 
         var profiler = ActiveProfiler.resolveProfiler();
         return profiler.measure("politicalMap.rebuildTerritories", () -> {
@@ -72,12 +73,12 @@ public final class TerritoryBuilder {
             var grouping = pass.grouping();
             var sector = pass.sector();
 
-            // The spotlighted bloc, read once so the whole pass keys off one snapshot - the
-            // holding provider (which keeps a spotlit bloc drawn wherever it is present), the
-            // recede the rest of the sector takes, and the retained filter snapshot all resolve
-            // from this one read, exactly like the grouping.
-            var selectedBlocId = FilterSelection.getSelectedIdOf(view.getId());
-            var isFiltering = selectedBlocId != null;
+            // The spotlighted bloc, off the rebuild's one sampling so the whole pass keys off one
+            // snapshot - the holding provider (which keeps a spotlit bloc drawn wherever it is
+            // present), the recede the rest of the sector takes, and the retained filter snapshot
+            // all resolve from that one read, exactly like the grouping.
+            var selectedBlocId = contentInputs.selectedBlocId();
+            var isFiltering = contentInputs.isFiltering();
 
             // The politics scan walks the whole economy - the priciest content step -
             // so it is profiled and timed on its own, and the holder count logged
@@ -159,7 +160,8 @@ public final class TerritoryBuilder {
             // through the single reader seam, plus the shared neutral colour and the desaturation
             // palette the profile resolves to. Held on the territories so the incremental refresh
             // re-shapes cells against the same snapshot this pass used.
-            var renderStyle = RenderStyleReader.readRenderStyle();
+            var renderStyle = RenderStyleReader.readRenderStyle(
+                contentInputs.isUninhabitedOutlineDrawn());
             var neutralColour = StarsectorFactionColours.resolveNeutralColour(sector);
 
             // Stated once here, ahead of any geometry, because it does not vary across the bodies
@@ -182,13 +184,6 @@ public final class TerritoryBuilder {
                 neutralColour,
                 renderStyle.global().presenceLightening());
 
-            // The styling every non-spotlighted bloc recedes to, resolved once from the filter recede
-            // toggles - the "rest of the sector" set, shared across both views under a filter; the
-            // identity adjustment off filter, so a normal pass touches no bloc.
-            var recedeAdjustment = isFiltering
-                ? RecedePreferences.FILTER.resolveRecedeAdjustment()
-                : ElementStyleAdjustment.NONE;
-
             var territories = new PoliticalMapTerritories(
                 occupancy,
                 unfilledSystemIds,
@@ -198,10 +193,9 @@ public final class TerritoryBuilder {
                     desaturationPalette,
                     presencePalette),
                 new ViewGrouping(view, grouping),
-                new FilterSnapshot(
-                    selectedBlocId,
-                    recedeAdjustment,
-                    contestedSystemIds));
+                // The picks go over whole beside the one thing this build derived about the
+                // spotlight: which of the spotlit bloc's systems it holds without dominating.
+                new FilterSnapshot(contentInputs, contestedSystemIds));
 
             // Shape the raw cells into merged clusters once, holding-aware. The agnostic
             // geometry clusters by holder, so hand it each system's faction id as the

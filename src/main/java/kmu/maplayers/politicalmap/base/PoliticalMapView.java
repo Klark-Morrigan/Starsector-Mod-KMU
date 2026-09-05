@@ -19,6 +19,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocStatsRead;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 
@@ -162,13 +163,19 @@ public interface PoliticalMapView {
      * alliances untouched. Resolving it here lets the pipeline apply the two knobs without
      * knowing why a view wanted them, mirroring the {@link #shouldUseIndependentStyle} seam.
      *
-     * @param blocId   the winning bloc for a system, as resolved under {@code grouping}
-     * @param grouping the grouping this pass resolved, so the decision is a pure lookup over
-     *                 the once-sampled snapshot rather than a fresh read
+     * @param blocId        the winning bloc for a system, as resolved under {@code grouping}
+     * @param grouping      the grouping this pass resolved, so the decision is a pure lookup over
+     *                      the once-sampled snapshot rather than a fresh read
+     * @param contentInputs the preferences this bake sampled, so a view that recedes blocs of its
+     *                      own reads its recede out of the rebuild's one sampling rather than off
+     *                      the stored preference a second time
      * @return the per-bloc styling adjustment; {@link ElementStyleAdjustment#NONE} to draw the
      *         bloc exactly as classified
      */
-    ElementStyleAdjustment resolveBlocStyleAdjustment(String blocId, HolderGrouping grouping);
+    ElementStyleAdjustment resolveBlocStyleAdjustment(
+        String blocId,
+        HolderGrouping grouping,
+        ContentInputs contentInputs);
 
     /**
      * The label a bloc reads under this view: a faction's display name for a faction

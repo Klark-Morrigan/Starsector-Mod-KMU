@@ -5,6 +5,7 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 
 /**
  * Resolves the shared per-bloc style decision - whether a bloc recedes to the independent
@@ -38,26 +39,31 @@ public final class BlocStyleResolver {
      * its bundle off desaturation sees the union rather than one contributing toggle - the palette
      * and the bundle then agree in every mode. The order is safe because no adjustment input depends
      * on the style decision.
+     *
+     * <p>Both halves - whether this pass filters at all, and what the sector recedes to when it
+     * does - come off the bake's own {@code contentInputs} rather than being passed separately, so
+     * the mode a bloc is styled in and the recede it takes in that mode are the one sampling. The
+     * view is handed the same value, since a view that recedes blocs of its own reads its recede
+     * out of it.
      */
     public static BlocStyleDecision resolveBlocStyleDecision(
-            boolean isFiltering,
             String blocId,
             PoliticalMapView view,
             HolderGrouping grouping,
-            ElementStyleAdjustment recedeAdjustment) {
+            ContentInputs contentInputs) {
 
-        if (isFiltering) {
+        if (contentInputs.isFiltering()) {
             var isSpotlit = FilteredPolitics.isSpotlitBloc(blocId);
             var adjustment = resolveFilterAdjustment(
                 isSpotlit,
-                view.resolveBlocStyleAdjustment(blocId, grouping),
-                recedeAdjustment);
+                view.resolveBlocStyleAdjustment(blocId, grouping, contentInputs),
+                contentInputs.filterRecedeAdjustment());
 
             return new BlocStyleDecision(
                 !isSpotlit && view.shouldUseIndependentStyle(blocId, grouping, adjustment),
                 adjustment);
         }
-        var adjustment = view.resolveBlocStyleAdjustment(blocId, grouping);
+        var adjustment = view.resolveBlocStyleAdjustment(blocId, grouping, contentInputs);
         return new BlocStyleDecision(
             view.shouldUseIndependentStyle(blocId, grouping, adjustment),
             adjustment);

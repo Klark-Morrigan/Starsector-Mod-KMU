@@ -21,6 +21,7 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
@@ -141,10 +142,11 @@ public final class ClaimsView implements PoliticalMapView {
     @Override
     public ElementStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
-            HolderGrouping grouping) {
+            HolderGrouping grouping,
+            ContentInputs contentInputs) {
         // The claims view dims or recolours no bloc, exactly as the faction view does not; delegated
         // to keep that one decision in a single place.
-        return FactionsView.INSTANCE.resolveBlocStyleAdjustment(blocId, grouping);
+        return FactionsView.INSTANCE.resolveBlocStyleAdjustment(blocId, grouping, contentInputs);
     }
 
     @Override

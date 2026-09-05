@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.util.KmuStrings;
 
@@ -88,7 +89,8 @@ public final class FactionsView implements DominancePaintedView {
     @Override
     public ElementStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
-            HolderGrouping grouping) {
+            HolderGrouping grouping,
+            ContentInputs contentInputs) {
         // The faction view dims or recolours no bloc - every faction paints exactly as its
         // style classification says, so there is nothing for the pipeline to adjust.
         return ElementStyleAdjustment.NONE;

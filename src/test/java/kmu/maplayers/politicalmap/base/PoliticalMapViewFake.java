@@ -6,6 +6,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
@@ -118,7 +119,10 @@ public final class PoliticalMapViewFake implements PoliticalMapView {
     }
 
     @Override
-    public ElementStyleAdjustment resolveBlocStyleAdjustment(String blocId, HolderGrouping grouping) {
+    public ElementStyleAdjustment resolveBlocStyleAdjustment(
+            String blocId,
+            HolderGrouping grouping,
+            ContentInputs contentInputs) {
         return ElementStyleAdjustment.NONE;
     }
 

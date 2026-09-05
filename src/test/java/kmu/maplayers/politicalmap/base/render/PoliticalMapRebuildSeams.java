@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.mockito.MockedStatic;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 
 /**
  * Everything a real political-map rebuild reaches that no test JVM answers, stood in for in one
@@ -29,10 +30,12 @@ import static org.mockito.ArgumentMatchers.any;
  * suite's cases, which is why it is answered here. A stage that starts reading a new knob otherwise
  * breaks every suite driving a whole rebuild at once, each in its own copy of the same arrangement.
  *
- * <p>Three seams are handed back rather than answered here, because they are what those suites
- * legitimately disagree on: which sector the game is running, whether the bands are on, and what the
- * player is allowed to see. Everything else answers the same way for any rebuild, so a caller states
- * only what it varies.
+ * <p>Four seams are handed back rather than answered here, because they are what those suites
+ * legitimately disagree on: which sector the game is running, whether the bands are on, what the
+ * player is allowed to see, and which bloc is spotlighted. The last is handed back for the suites
+ * whose subject is what a rebuild is owed, since a pick moved between two frames is how such a case
+ * is posed at all. Everything else answers the same way for any rebuild, so a caller states only
+ * what it varies.
  *
  * <p>The suites that stage a rebuild's inputs rather than run one - the incremental fold's, which
  * hand-builds its cells and paints each category apart - deliberately do not take this. They would
@@ -50,6 +53,7 @@ final class PoliticalMapRebuildSeams {
     private final MockedStatic<Global> globalSeam;
     private final MockedStatic<KmuPoliticalMapRibbonSettings> ribbonSettingsSeam;
     private final MockedStatic<MapVisibilityRules> visibilityRulesSeam;
+    private final MockedStatic<FilterSelection> filterSelectionSeam;
 
     private PoliticalMapRebuildSeams() {
 
@@ -71,7 +75,7 @@ final class PoliticalMapRebuildSeams {
 
         // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory state
         // no test JVM has.
-        seams.openSeam(FilterSelection.class);
+        filterSelectionSeam = seams.openSeam(FilterSelection.class);
 
         var geometrySettingsSeam = seams.openSeam(KmuPoliticalMapGeometrySettings.class);
         geometrySettingsSeam
@@ -102,7 +106,7 @@ final class PoliticalMapRebuildSeams {
         // from the geometry or the holding.
         var renderStyleSeam = seams.openSeam(RenderStyleReader.class);
         renderStyleSeam
-            .when(RenderStyleReader::readRenderStyle)
+            .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
             .thenReturn(PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(
                 PoliticalMapTerritoryFixtures.createInertCategoryStyle()));
 
@@ -116,7 +120,7 @@ final class PoliticalMapRebuildSeams {
 
     /**
      * Stands in for every class a rebuild reaches, answering each the one way a rebuild wants unless
-     * it is one of the three handed back below.
+     * it is one of the four handed back below.
      *
      * @return the open arrangement, which its holder closes on the way out
      */
@@ -153,4 +157,13 @@ final class PoliticalMapRebuildSeams {
     MockedStatic<MapVisibilityRules> resolveVisibilityRulesSeam() {
         return visibilityRulesSeam;
     }
+
+    /**
+     * @return the seam standing in for the spotlight pick, for a caller posing a bloc picked or
+     *         cleared between two frames
+     */
+    MockedStatic<FilterSelection> resolveFilterSelectionSeam() {
+        return filterSelectionSeam;
+    }
+
 }

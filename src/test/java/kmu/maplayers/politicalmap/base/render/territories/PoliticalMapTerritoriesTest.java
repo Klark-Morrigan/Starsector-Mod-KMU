@@ -19,10 +19,12 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
 import kmu.maplayers.politicalmap.base.render.ribbon.RibbonBand;
@@ -337,8 +339,12 @@ final class PoliticalMapTerritoriesTest {
                     presencePalette),
                 new ViewGrouping(viewMock, grouping),
                 new FilterSnapshot(
-                    selectedBlocId,
-                    recedeAdjustment,
+                    new ContentInputs(
+                        selectedBlocId,
+                        recedeAdjustment,
+                        ElementStyleAdjustment.NONE, // No alliance recede.
+                        FactionNameFormatChoice.FULL,
+                        false), // No uninhabited outline.
                     contested));
 
             // The two draw lists are created internally, not passed, so the build can fill them;

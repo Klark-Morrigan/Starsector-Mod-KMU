@@ -7,15 +7,14 @@ import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -68,18 +67,14 @@ public final class AlliancesView implements DominancePaintedView {
 
     @Override
     public int getContentRevision(MapLayerRefreshBoard board) {
-        // This view's rebuild is driven by two live inputs, composed into one fingerprint the content
-        // token reads: the alliance set (the sector watcher bumps its revision when membership moves,
-        // repainting on a form/dissolve/transfer) and this view's non-allied recede toggles (their
-        // setter bumps the recede-style revision on a Mute/Desaturate flip, since those sidebar-only
-        // toggles never move settingsRevision). The recede-style revision is one coarse signal every
-        // recede set shares, so a filter-recede flip advances it too; harmless here, since this view
-        // only recedes the non-allied blocs and simply rebuilds. Composing the two means a third live
-        // input later is one more source here, not a wider contract; a change to either forces a
-        // rebuild.
+        // This view's one live input: the alliance set, whose revision the sector watcher bumps when
+        // membership moves, so the map repaints on a form/dissolve/transfer. The non-allied recede
+        // toggles are not folded in here - they are sampled by the bake with every other preference
+        // and folded in as values, so a flip that leaves the recede where it was rebuilds nothing
+        // while a real flip rebuilds whichever view is up. Composed through a fingerprint so a second
+        // live input later is one more source here rather than a wider contract.
         return Fingerprints.compute(
-            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
-            () -> board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE));
+            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
     }
 
     @Override
@@ -118,13 +113,14 @@ public final class AlliancesView implements DominancePaintedView {
     @Override
     public ElementStyleAdjustment resolveBlocStyleAdjustment(
             String blocId,
-            HolderGrouping grouping) {
+            HolderGrouping grouping,
+            ContentInputs contentInputs) {
 
         // An alliance keeps its full colour; only a non-alliance bloc recedes. The view owns just
         // that gate - how far a receded bloc dims or desaturates is its own non-allied recede set's
-        // decision, so every non-allied faction takes the one adjustment that set resolves. Keeping
-        // the gate here (like the grouping already samples Nex) leaves the pipeline a pure applier
-        // that never names an alliance.
+        // decision, taken off the bake's one sampling so every cell of this rebuild recedes by the
+        // same reading of the toggles. Keeping the gate here (like the grouping already samples Nex)
+        // leaves the pipeline a pure applier that never names an alliance.
         //
         // A sector holding no alliance at all recedes nothing. Every bloc would otherwise be
         // non-allied and the whole map would sink at once, with no figure left for it to be the
@@ -135,7 +131,7 @@ public final class AlliancesView implements DominancePaintedView {
         if (!grouping.hasAnyAlliance() || grouping.isAlliance(blocId)) {
             return ElementStyleAdjustment.NONE;
         }
-        return RecedePreferences.ALLIANCE_NON_ALLIED.resolveRecedeAdjustment();
+        return contentInputs.allianceRecedeAdjustment();
     }
 
     @Override

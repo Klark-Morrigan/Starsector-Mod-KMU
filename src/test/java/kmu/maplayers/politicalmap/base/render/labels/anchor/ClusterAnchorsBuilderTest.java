@@ -26,16 +26,15 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -202,8 +201,10 @@ final class ClusterAnchorsBuilderTest {
     // that does not seed it reads as the whole search it was written as.
     private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
 
+    // The picks the rebuild under test was baked under, restated per case by useNameFormat.
+    private ContentInputs contentInputs;
+
     private MockedStatic<KmuPoliticalMapDiagnosticsSettings> settingsMock;
-    private MockedStatic<NameFormatPreference> nameFormatMock;
     private MockedStatic<LabelAnchorSpecification> specificationMock;
     private MockedStatic<BlocNameStyles> nameStylesMock;
     private MockedStatic<LabelFonts> fontsMock;
@@ -215,7 +216,6 @@ final class ClusterAnchorsBuilderTest {
     void openTheSettingsHolderAndFontSeams() {
 
         settingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class);
-        nameFormatMock = mockStatic(NameFormatPreference.class);
         specificationMock = mockStatic(LabelAnchorSpecification.class);
         nameStylesMock = mockStatic(BlocNameStyles.class);
         fontsMock = mockStatic(LabelFonts.class);
@@ -249,15 +249,16 @@ final class ClusterAnchorsBuilderTest {
             .thenReturn(null);
 
         // Names drawn and the debug overlay off by default, so a case names only the half of the
-        // gate it is about.
-        stubNameFormat(FactionNameFormatChoice.FULL);
+        // gate it is about. The format arrives on the picks the rebuild was baked under rather than
+        // through a stubbed preference, which is where the builder now reads it.
+        useNameFormat(FactionNameFormatChoice.FULL);
         stubAnchorOverlay(false);
 
         // A view that groups every faction as its own bloc and adjusts none of them, so a case's
         // observed colour comes from the holder and the filter alone.
         when(viewMock.resolveGrouping())
             .thenReturn(HolderGrouping.identity());
-        when(viewMock.resolveBlocStyleAdjustment(any(), any()))
+        when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
             .thenReturn(ElementStyleAdjustment.NONE);
 
         when(geometryCacheMock.getCellEdgesByCellId())
@@ -277,7 +278,6 @@ final class ClusterAnchorsBuilderTest {
         fontsMock.close();
         nameStylesMock.close();
         specificationMock.close();
-        nameFormatMock.close();
         settingsMock.close();
     }
 
@@ -340,10 +340,12 @@ final class ClusterAnchorsBuilderTest {
                     Map.of(RIVAL_SYSTEM, TRITACHYON_HOLDER),
                     DESATURATION_PALETTE,
                     new ViewGrouping(viewMock, HolderGrouping.identity()),
-                    new FilterSnapshot(
+                    new ContentInputs(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true),
-                        Set.of())));
+                        ElementStyleAdjustment.NONE, // No alliance recede.
+                        FactionNameFormatChoice.FULL,
+                        false))); // No uninhabited outline.
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(Color.GREEN);
@@ -354,7 +356,7 @@ final class ClusterAnchorsBuilderTest {
             // The debug anchor overlay draws the same placements the names hang off, so it has to
             // be able to hold the search open on its own - otherwise the diagnostic shows nothing
             // exactly when the player turned the names off to look at it.
-            stubNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(FactionNameFormatChoice.NONE);
             stubAnchorOverlay(true);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
@@ -371,7 +373,7 @@ final class ClusterAnchorsBuilderTest {
         void rebuildClusterAnchorsFitsNothingWhenNamesAndTheOverlayAreBothOff() {
             // Neither consumer is looking, so the sector's whole cluster search is skipped rather
             // than run for placements nothing will draw.
-            stubNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(FactionNameFormatChoice.NONE);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
                 standingAnchors,
@@ -388,7 +390,7 @@ final class ClusterAnchorsBuilderTest {
             // The list is the overlay's own, so the gate has to empty it rather than leave it
             // alone: switching the names off has to take the fitted labels off the map, not
             // freeze the last pass's on it.
-            stubNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(FactionNameFormatChoice.NONE);
             standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
@@ -492,7 +494,7 @@ final class ClusterAnchorsBuilderTest {
             // indistinguishable from one made under rules that still hold. The two move
             // together, so a gate that emptied the list and left the previous pass's rules
             // standing beside it would offer those placements to a later rebuild that has none.
-            stubNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(FactionNameFormatChoice.NONE);
             standingAnchors.replaceAnchors(List.of(buildStaleAnchor()), FITTED_UNDER_MOVED_RULES);
 
             ClusterAnchorsBuilder.rebuildClusterAnchors(
@@ -541,7 +543,7 @@ final class ClusterAnchorsBuilderTest {
             // Switching the names off empties the standing list, which is as much a change to
             // what a map has room for as a re-fit is: the ring those words covered is free now,
             // and whatever kept clear of them has to be told.
-            stubNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(FactionNameFormatChoice.NONE);
             standingAnchors.replaceAnchors(
                 List.of(buildStandingAnchorOccupyingRoom()),
                 FITTED_UNDER_MOVED_RULES);
@@ -578,7 +580,8 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                viewMock);
+                viewMock,
+                contentInputs);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
@@ -590,7 +593,7 @@ final class ClusterAnchorsBuilderTest {
         void rebuildClusterAnchorsFromSectorFitsLabelsThoughTheNameFormatDrawsNone() {
             // This path exists for the overlay, so the name format has no say over it: the
             // diagnostic still draws its dots for a player reading the map by colour alone.
-            stubNameFormat(FactionNameFormatChoice.NONE);
+            useNameFormat(FactionNameFormatChoice.NONE);
             stubAnchorOverlay(true);
             stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
 
@@ -598,7 +601,8 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                viewMock);
+                viewMock,
+                contentInputs);
 
             assertThat(standingAnchors.getAnchors())
                 .hasSize(1);
@@ -616,7 +620,8 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                viewMock);
+                viewMock,
+                contentInputs);
 
             assertThat(standingAnchors.getFitFingerprint())
                 .isEqualTo(FITTED_UNDER);
@@ -639,7 +644,8 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                viewMock);
+                viewMock,
+                contentInputs);
 
             var firstPassAxis = standingAnchors.getAnchors().get(0).acceptedAxis();
 
@@ -652,7 +658,8 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                viewMock);
+                viewMock,
+                contentInputs);
 
             assertThat(standingAnchors.getAnchors().get(0).acceptedAxis())
                 .isSameAs(firstPassAxis);
@@ -669,7 +676,8 @@ final class ClusterAnchorsBuilderTest {
                 standingAnchors,
                 cellGeometry,
                 sectorMock,
-                viewMock);
+                viewMock,
+                contentInputs);
 
             assertThat(standingAnchors.getAnchors())
                 .isEmpty();
@@ -691,13 +699,19 @@ final class ClusterAnchorsBuilderTest {
             holderBySystemId,
             UNUSED_PALETTE,
             new ViewGrouping(viewMock, HolderGrouping.identity()),
-            FilterSnapshot.unfiltered());
+            contentInputs);
     }
 
-    private void stubNameFormat(FactionNameFormatChoice nameFormat) {
-        nameFormatMock
-            .when(NameFormatPreference::getSelectedNameFormat)
-            .thenReturn(nameFormat);
+    // Restates the picks every path in this suite goes in under, varying the one they gate on:
+    // whether the names draw at all. Nothing here spotlights a bloc, so the cases about a filter
+    // state their own reading instead.
+    private void useNameFormat(FactionNameFormatChoice nameFormat) {
+        contentInputs = new ContentInputs(
+            null, // Nothing spotlighted.
+            ElementStyleAdjustment.NONE, // No filter recede.
+            ElementStyleAdjustment.NONE, // No alliance recede.
+            nameFormat,
+            false); // No uninhabited outline.
     }
 
     private void stubAnchorOverlay(boolean isOverlayShown) {

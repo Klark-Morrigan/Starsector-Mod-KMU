@@ -1,8 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,10 +32,25 @@ final class BlocStyleResolverTest {
 
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
             .thenReturn(usesIndependentStyle);
-        when(viewMock.resolveBlocStyleAdjustment(any(), any()))
+        when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
             .thenReturn(adjustment);
 
         return viewMock;
+    }
+
+    // The picks a pass spotlighting one bloc was sampled under, with the recede the rest of the
+    // sector takes behind it. The other three preferences reach no part of this decision, so they
+    // sit at the inert reading and only the two the decision turns on are stated.
+    private static ContentInputs buildInputsRecedingBehind(
+            String selectedBlocId,
+            ElementStyleAdjustment recedeAdjustment) {
+
+        return new ContentInputs(
+            selectedBlocId,
+            recedeAdjustment,
+            ElementStyleAdjustment.NONE, // No alliance recede.
+            FactionNameFormatChoice.FULL,
+            false); // No uninhabited outline.
     }
 
     @Nested
@@ -88,11 +105,10 @@ final class BlocStyleResolverTest {
             // the faction style when a filter turns on. The stub says independent, so a true result
             // proves the filter left the view's base-style call live.
             var decision = BlocStyleResolver.resolveBlocStyleDecision(
-                true,
                 "independent",
                 buildViewMockDeciding(true, ElementStyleAdjustment.NONE),
                 HolderGrouping.identity(),
-                new ElementStyleAdjustment(0.3, true));
+                buildInputsRecedingBehind("tritachyon", new ElementStyleAdjustment(0.3, true)));
 
             assertThat(decision.usesIndependentStyle())
                 .isTrue();
@@ -107,11 +123,10 @@ final class BlocStyleResolverTest {
             var viewRecede = new ElementStyleAdjustment(0.5, false);
             var sharedRecede = new ElementStyleAdjustment(0.3, true);
             var decision = BlocStyleResolver.resolveBlocStyleDecision(
-                true,
                 "hegemony",
                 buildViewMockDeciding(false, viewRecede),
                 HolderGrouping.identity(),
-                sharedRecede);
+                buildInputsRecedingBehind("tritachyon", sharedRecede));
 
             assertThat(decision.usesIndependentStyle())
                 .isFalse();
@@ -129,11 +144,10 @@ final class BlocStyleResolverTest {
             var viewMock = buildViewMockDeciding(false, new ElementStyleAdjustment(0.5, false));
 
             BlocStyleResolver.resolveBlocStyleDecision(
-                true,
                 "hegemony",
                 viewMock,
                 HolderGrouping.identity(),
-                new ElementStyleAdjustment(0.3, true));
+                buildInputsRecedingBehind("tritachyon", new ElementStyleAdjustment(0.3, true)));
 
             verify(viewMock)
                 .shouldUseIndependentStyle(
@@ -150,11 +164,10 @@ final class BlocStyleResolverTest {
             var viewMock = buildViewMockDeciding(true, adjustment);
 
             BlocStyleResolver.resolveBlocStyleDecision(
-                false,
                 "pirates",
                 viewMock,
                 HolderGrouping.identity(),
-                ElementStyleAdjustment.NONE);
+                buildInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
 
             verify(viewMock)
                 .shouldUseIndependentStyle(
@@ -169,11 +182,10 @@ final class BlocStyleResolverTest {
             // recede test and its per-bloc adjustment, so a normal pass styles exactly as before.
             var adjustment = new ElementStyleAdjustment(0.5, true);
             var decision = BlocStyleResolver.resolveBlocStyleDecision(
-                false,
                 "pirates",
                 buildViewMockDeciding(true, adjustment),
                 HolderGrouping.identity(),
-                ElementStyleAdjustment.NONE);
+                buildInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
 
             assertThat(decision.usesIndependentStyle())
                 .isTrue();

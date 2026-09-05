@@ -15,7 +15,6 @@ import kmu.maplayers.base.theme.HoverWashStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
-import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 import kmu.settings.KmuPoliticalMapHighlightSettings;
@@ -39,8 +38,8 @@ import java.util.Map;
  * colour choice: a decivilised cell draws a fill and an outline, an uninhabited cell an
  * outline alone, and both set their inner seam to "No color" since factionless cells never
  * fuse into clusters. Whether the uninhabited outline draws at all is the player's sidebar
- * checkbox rather than a settings field, so that one input is read from the per-save
- * preference; every other input here is a LunaLib knob.
+ * checkbox rather than a settings field, so that one input arrives from the rebuild's own sampling
+ * of the preferences instead of being read here; every other input is a LunaLib knob this reads.
  */
 public final class RenderStyleReader {
 
@@ -58,12 +57,19 @@ public final class RenderStyleReader {
     // on the open MapStyleCategory rather than on this layer's enum, so the map is a plain
     // hash map rather than an EnumMap - four inserts once per rebuild, against a lookup the
     // framework can serve for any layer's categories.
-    public static RenderStyle readRenderStyle() {
+    //
+    // The uninhabited outline's on/off arrives rather than being read, because it is a sidebar
+    // preference and every one of those is sampled once per rebuild: read here it would be a second
+    // reading, free to disagree with the one the rebuild decided it was owed by.
+    public static RenderStyle readRenderStyle(boolean isUninhabitedOutlineDrawn) {
         Map<MapStyleCategory, CategoryStyle> categories = new LinkedHashMap<>();
         categories.put(PoliticalMapCategory.FACTION, readFactionStyle());
         categories.put(PoliticalMapCategory.INDEPENDENT, readIndependentStyle());
         categories.put(PoliticalMapCategory.DECIVILISED, readDecivilisedStyle());
-        categories.put(PoliticalMapCategory.UNINHABITED, readUninhabitedStyle());
+        categories.put(
+            PoliticalMapCategory.UNINHABITED,
+            readUninhabitedStyle(isUninhabitedOutlineDrawn));
+
         return new RenderStyle(readGlobalStyle(), categories);
     }
 
@@ -201,12 +207,12 @@ public final class RenderStyleReader {
     // Never-settled space stays outline-only: filling it would wash the whole sector, since
     // uninhabited cells cover everything no faction and no dead colony holds. Its outline's
     // on/off is the one style input that is not a LunaLib field - the sidebar's
-    // uninhabited-systems checkbox, a per-save preference - while the opacity and width it
-    // strokes at stay settings-screen knobs.
-    public static CategoryStyle readUninhabitedStyle() {
+    // uninhabited-systems checkbox, a per-save preference the rebuild samples and hands over -
+    // while the opacity and width it strokes at stay settings-screen knobs read here.
+    public static CategoryStyle readUninhabitedStyle(boolean isUninhabitedOutlineDrawn) {
         return neutralStyle(
             ElementStyle.NOT_DRAWN,
-            UninhabitedOutlinePreference.isOutlineDrawn(),
+            isUninhabitedOutlineDrawn,
             KmuPoliticalMapTerritorySettings.getUninhabitedBorderOpacity(),
             KmuPoliticalMapTerritorySettings.getUninhabitedBorderWidth());
     }

@@ -17,6 +17,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRingPathCache;
@@ -48,7 +49,8 @@ import java.util.Set;
  * the neutral colour, and the desaturation palette - how each category draws and what a
  * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
  * grouping - how holding is grouped and which blocs recede to the independent style),
- * and {@link FilterSnapshot} (the spotlight state). The unfilled-system set rides alongside as
+ * and {@link FilterSnapshot} (the picks this build sampled, the spotlight among them, paired with
+ * the contested systems it derived). The unfilled-system set rides alongside as
  * how an owned system's fill is drawn. An incremental re-shape reads them all back so it
  * classifies a cell exactly as the full build did.
  *
@@ -455,11 +457,10 @@ public final class PoliticalMapTerritories implements
         return BlocStyling.resolveFrom(
             getRenderStyle(),
             BlocStyleResolver.resolveBlocStyleDecision(
-                isFiltering(),
                 blocId,
                 getView(),
                 getGrouping(),
-                getRecedeAdjustment()));
+                getContentInputs()));
     }
 
     // The view and grouping as the one retained pair, for a consumer that carries both onward
@@ -474,6 +475,14 @@ public final class PoliticalMapTerritories implements
     // recombined from different passes.
     public FilterSnapshot getFilterSnapshot() {
         return filter;
+    }
+
+    // The preferences this build was baked under, as the one reading every stage of it sampled -
+    // what a pass that runs after the build reads rather than asking the holders again. A label
+    // re-fit or a band re-bake taken off a second reading would spell the names one way and have
+    // been sized for another.
+    public ContentInputs getContentInputs() {
+        return filter.contentInputs();
     }
 
     public PoliticalMapView getView() {
@@ -493,14 +502,14 @@ public final class PoliticalMapTerritories implements
     // The spotlighted bloc's id this build recedes the rest of the sector around, or null off
     // filter; the label rebuild resolves the filter's synthetic spotlight keys back to its name.
     public String getSelectedBlocId() {
-        return filter.selectedBlocId();
+        return filter.contentInputs().selectedBlocId();
     }
 
     // The styling every non-spotlighted bloc recedes to this pass - and, through
     // FactionlessStyleResolver, a decivilised cell with it; ElementStyleAdjustment.NONE off filter,
     // so anything no filter recedes draws untouched.
     public ElementStyleAdjustment getRecedeAdjustment() {
-        return filter.recedeAdjustment();
+        return filter.contentInputs().filterRecedeAdjustment();
     }
 
     // The spotlit systems the bloc is present in but does not dominate, so the faction builder

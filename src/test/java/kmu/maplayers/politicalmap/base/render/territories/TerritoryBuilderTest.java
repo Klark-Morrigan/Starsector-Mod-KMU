@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.factions.StarsectorFactionColours;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
@@ -13,6 +12,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -33,6 +33,7 @@ import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTer
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 
@@ -45,16 +46,21 @@ import static org.mockito.Mockito.mockStatic;
  * system through it - but only this build decides which pass they are handed, and one opened here
  * would have the sector walked again while every reader below went on looking correct.
  *
- * <p>Everything the build reads apart from that is stood in for: the theme, the palettes, the
- * inhabitation scan and the filter selection all read live sources no test JVM answers, and none
- * of them is what a case here is about. The geometry is empty, so the shaping and tracing stages
- * run over nothing and the build reduces to the reads this suite names.
+ * <p>Everything the build reads apart from that is stood in for: the theme, the palettes and the
+ * inhabitation scan all read live sources no test JVM answers, and the sidebar picks arrive as a
+ * stated reading rather than being read at all. None of them is what a case here is about. The
+ * geometry is empty, so the shaping and tracing stages run over nothing and the build reduces to
+ * the reads this suite names.
  */
 final class TerritoryBuilderTest {
 
     private static final Color NEUTRAL = new Color(150, 150, 150);
 
-    private MockedStatic<FilterSelection> filterSelectionMock;
+    // The picks a pass off filter was baked under. No case here spotlights a bloc, so the whole
+    // reading is inert and the build reduces to the passes it hands down.
+    private static final ContentInputs UNFILTERED_INPUTS =
+        PoliticalMapTerritoryFixtures.createInputsSpotlighting(null);
+
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<FilteredPolitics> filteredPoliticsMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
@@ -71,16 +77,12 @@ final class TerritoryBuilderTest {
     @BeforeEach
     void openTheLiveSeams() {
 
-        filterSelectionMock = mockStatic(FilterSelection.class);
         inhabitationMock = mockStatic(PoliticalMapInhabitation.class);
         filteredPoliticsMock = mockStatic(FilteredPolitics.class);
         styleReaderMock = mockStatic(RenderStyleReader.class);
         factionColoursMock = mockStatic(StarsectorFactionColours.class);
         palettesMock = mockStatic(MapPalettes.class);
 
-        filterSelectionMock
-            .when(() -> FilterSelection.getSelectedIdOf(any()))
-            .thenReturn(null);
         // The inhabitation scan's pass is kept on the same terms the presence scan's is: it walks
         // every system for its colonies, so which pass reached it decides whether the rebuild
         // read the sector once or twice.
@@ -91,7 +93,7 @@ final class TerritoryBuilderTest {
                 return Set.of("inhabited-system");
             });
         styleReaderMock
-            .when(RenderStyleReader::readRenderStyle)
+            .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
             .thenReturn(createRenderStyleForEveryCategory(createInertCategoryStyle()));
         factionColoursMock
             .when(() -> StarsectorFactionColours.resolveNeutralColour(any()))
@@ -114,7 +116,6 @@ final class TerritoryBuilderTest {
         styleReaderMock.close();
         filteredPoliticsMock.close();
         inhabitationMock.close();
-        filterSelectionMock.close();
     }
 
     @Nested
@@ -135,7 +136,11 @@ final class TerritoryBuilderTest {
                 });
             var rebuildPass = buildPassOverAnEmptySector();
 
-            TerritoryBuilder.buildTerritories(new CellGeometryCache(), rebuildPass, viewFake);
+            TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                rebuildPass,
+                viewFake,
+                UNFILTERED_INPUTS);
 
             // The handed pass at every reader - stated as identity rather than as equality, since
             // two passes over one sector carry two separate walks of it while agreeing about
@@ -165,7 +170,8 @@ final class TerritoryBuilderTest {
             var territories = TerritoryBuilder.buildTerritories(
                 new CellGeometryCache(),
                 HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, grouping),
-                viewFake);
+                viewFake,
+                UNFILTERED_INPUTS);
 
             assertThat(territories.getViewGrouping().grouping())
                 .isSameAs(grouping);

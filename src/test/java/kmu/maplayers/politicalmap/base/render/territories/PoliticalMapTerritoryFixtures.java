@@ -12,10 +12,12 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -130,6 +132,53 @@ public final class PoliticalMapTerritoryFixtures {
             Map<String, DominantHolder> ownerBySystemId,
             Set<String> inhabitedSystemIds,
             Set<String> spotlitPresenceSystemIds) {
+
+        return createTerritoriesUnder(
+            createInputsSpotlighting(selectedBlocId),
+            ownerBySystemId,
+            inhabitedSystemIds,
+            spotlitPresenceSystemIds);
+    }
+
+    /**
+     * The same territories built under a stated name format, for a case about what the drawn names
+     * cost the map around them - the room a presence band keeps clear of.
+     *
+     * <p>Stated on the built model rather than through the preference the sidebar writes, because
+     * that is where a pass reads it: the format is sampled once per rebuild and carried, so a pass
+     * folding into a standing map spells its names the way that map was baked, not the way the save
+     * currently holds.
+     *
+     * @param ownerBySystemId who holds each system
+     * @param nameFormat      how this build's cluster labels spell their holders' names
+     * @return a live territories, ready to have draw records written into it
+     */
+    public static PoliticalMapTerritories createTerritoriesSpellingNames(
+            Map<String, DominantHolder> ownerBySystemId,
+            FactionNameFormatChoice nameFormat) {
+
+        return createTerritoriesUnder(
+            new ContentInputs(
+                null, // No bloc spotlighted.
+                ElementStyleAdjustment.NONE, // No filter recede.
+                ElementStyleAdjustment.NONE, // No alliance recede.
+                nameFormat,
+                false), // No uninhabited outline.
+            ownerBySystemId,
+            ownerBySystemId.keySet(),
+            Set.of());
+    }
+
+    // The one construction every builder above lands on, differing only in the picks it was baked
+    // under and who is where. Held in one place so a slot no builder varies - the inert theme, the
+    // stand-in view - cannot come to read one way through one entry point and another through the
+    // next.
+    private static PoliticalMapTerritories createTerritoriesUnder(
+            ContentInputs contentInputs,
+            Map<String, DominantHolder> ownerBySystemId,
+            Set<String> inhabitedSystemIds,
+            Set<String> spotlitPresenceSystemIds) {
+
         return new PoliticalMapTerritories(
             SystemOccupancy.createCopyOf(
                 ownerBySystemId,
@@ -145,8 +194,7 @@ public final class PoliticalMapTerritoryFixtures {
                 mock(PoliticalMapView.class),
                 HolderGrouping.identity()),
             new FilterSnapshot(
-                selectedBlocId,
-                ElementStyleAdjustment.NONE, // No recede adjustment.
+                contentInputs,
                 new LinkedHashSet<>())); // No contested system IDs.
     }
 
@@ -191,6 +239,30 @@ public final class PoliticalMapTerritoryFixtures {
      * @param style the bundle every category paints from
      * @return a live theme, keyed by the four political categories
      */
+    /**
+     * The picks a build spotlighting one bloc was baked under: that pick, with every other
+     * preference at the inert reading.
+     *
+     * <p>Named here beside the territories builders because the spotlight is what those suites
+     * vary and the other four picks are what they do not - spelt out per suite, the four inert
+     * values are four chances for two suites to disagree about what "no other pick" means.
+     *
+     * <p>The names are off in it, which is the reading a fixture can afford: a build that draws
+     * them reaches the label font, which no test JVM loads. A case whose subject is what a drawn
+     * name costs states its own through {@link #createTerritoriesSpellingNames}.
+     *
+     * @param selectedBlocId the spotlighted bloc, or null for a build off filter
+     * @return a reading holding that pick and nothing else
+     */
+    public static ContentInputs createInputsSpotlighting(String selectedBlocId) {
+        return new ContentInputs(
+            selectedBlocId,
+            ElementStyleAdjustment.NONE, // No filter recede.
+            ElementStyleAdjustment.NONE, // No alliance recede.
+            FactionNameFormatChoice.NONE, // No names drawn.
+            false); // No uninhabited outline.
+    }
+
     public static RenderStyle createRenderStyleForEveryCategory(CategoryStyle style) {
         var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
         for (var category : PoliticalMapCategory.values()) {

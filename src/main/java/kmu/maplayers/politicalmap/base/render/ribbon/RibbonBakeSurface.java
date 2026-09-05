@@ -4,7 +4,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
+import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
 
@@ -71,7 +71,10 @@ public record RibbonBakeSurface(
             // unmodifiable view over the live cells, so asking per cell would mint a wrapper per
             // cell to answer one lookup.
             geometryCache.getSiteBySystemId(),
-            resolveNameBoxes(clusterAnchors),
+            // The name format off the build's own sampling rather than off the stored preference:
+            // the boxes a band keeps clear of are the boxes those very names were fitted into, so
+            // a second reading could carve the bands around names the map is not drawing.
+            resolveNameBoxes(clusterAnchors, territories.getContentInputs().nameFormat()),
             territories.getRingPathCache());
     }
 
@@ -87,9 +90,11 @@ public record RibbonBakeSurface(
     // overhangs the words by whatever it beat them by, while the drawn lines are what the reader
     // sees a name occupying. Both come back as world boxes, so the choice reaches no further than
     // this call.
-    private static List<List<double[]>> resolveNameBoxes(List<ClusterAnchor> clusterAnchors) {
+    private static List<List<double[]>> resolveNameBoxes(
+            List<ClusterAnchor> clusterAnchors,
+            FactionNameFormatChoice nameFormat) {
 
-        var isBandKeptClearOfNames = NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
+        var isBandKeptClearOfNames = nameFormat.areNamesDrawn()
             && KmuPoliticalMapRibbonSettings.shouldKeepPoliticalMapRibbonsClearOfNames();
 
         if (!isBandKeptClearOfNames) {

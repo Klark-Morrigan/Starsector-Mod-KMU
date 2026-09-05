@@ -508,7 +508,9 @@ final class FactionTerritoryBuilderTest {
                 new FactionPalette(Color.GREEN, Color.YELLOW),
                 PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
             new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
-            new FilterSnapshot(null, ElementStyleAdjustment.NONE, Set.of()));
+            new FilterSnapshot(
+                PoliticalMapTerritoryFixtures.createInputsSpotlighting(null),
+                Set.of()));
     }
 
     // A view stub that styles every bloc as its own faction and recedes none of them, so the
@@ -519,7 +521,7 @@ final class FactionTerritoryBuilderTest {
 
         when(viewMock.shouldUseIndependentStyle(any(), any(), any()))
             .thenReturn(false);
-        when(viewMock.resolveBlocStyleAdjustment(any(), any()))
+        when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
             .thenReturn(ElementStyleAdjustment.NONE);
 
         return viewMock;

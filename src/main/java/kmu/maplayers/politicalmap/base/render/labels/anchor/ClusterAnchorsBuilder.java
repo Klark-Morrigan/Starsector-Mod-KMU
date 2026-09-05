@@ -17,15 +17,14 @@ import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.ClusterPartition;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 
 import org.apache.log4j.Logger;
@@ -137,7 +136,7 @@ public final class ClusterAnchorsBuilder {
         // this pass's own output as what stood before it.
         var standingNames = List.copyOf(standingAnchors.getAnchors());
 
-        if (!NameFormatPreference.getSelectedNameFormat().areNamesDrawn()
+        if (!styling.contentInputs().nameFormat().areNamesDrawn()
                 && !KmuPoliticalMapDiagnosticsSettings.getPoliticalMapShowClusterAnchors()) {
             standingAnchors.replaceAnchors(List.of(), fitFingerprint);
 
@@ -180,13 +179,12 @@ public final class ClusterAnchorsBuilder {
         // under a filter it recedes every non-spotlit bloc and leaves the spotlit one full, so a
         // receded name matches its receded fill and a spotlit name stays full, the drift a
         // filter opens.
-        var filter = styling.filterSnapshot();
+        var contentInputs = styling.contentInputs();
         var viewGrouping = styling.viewGrouping();
         var styleDecisionByBlocId = ClusterLabelStyling.newBlocStyleDecisionResolver(
-            filter.isFiltering(),
             viewGrouping.view(),
             viewGrouping.grouping(),
-            filter.recedeAdjustment());
+            contentInputs);
 
         // The tuning comes back off the fingerprint rather than from a second read of the
         // settings, so what the fit ran under and what it reports having run under are one
@@ -207,8 +205,7 @@ public final class ClusterAnchorsBuilder {
                     sector,
                     viewGrouping.view(),
                     viewGrouping.grouping(),
-                    filter.isFiltering(),
-                    filter.selectedBlocId())),
+                    contentInputs)),
             reusableAnchors);
         standingAnchors.replaceAnchors(fit.anchors(), fitFingerprint);
 
@@ -245,7 +242,8 @@ public final class ClusterAnchorsBuilder {
             StandingClusterAnchors standingAnchors,
             RevisedCellGeometry cellGeometry,
             SectorAPI sector,
-            PoliticalMapView view) {
+            PoliticalMapView view,
+            ContentInputs contentInputs) {
 
         if (!KmuPoliticalMapDiagnosticsSettings.getPoliticalMapShowClusterAnchors()) {
             // The economy scan is what the toggle is guarding, so it is skipped - but the
@@ -270,10 +268,12 @@ public final class ClusterAnchorsBuilder {
             RenderStyleReader.readGlobalStyle().desaturationDarkening());
 
         // The debug border-tracing path never filters - it resolves real dominant holders from the
-        // sector - so it recedes nothing and names no synthetic spotlight key. What the shared
-        // rebuild reports about the names it moved is dropped here rather than passed on: this
-        // view replaces the production draw lists outright, so there is nothing laid around the
-        // names for a moved one to oblige.
+        // sector - so the pick is dropped from the picks it goes in under and it recedes nothing
+        // and names no synthetic spotlight key. Dropped rather than the whole reading being
+        // replaced, since this path still draws the names in the format the player asked for.
+        // What the shared rebuild reports about the names it moved is dropped here rather than
+        // passed on: this view replaces the production draw lists outright, so there is nothing
+        // laid around the names for a moved one to oblige.
         rebuildClusterAnchors(
             standingAnchors,
             cellGeometry,
@@ -283,7 +283,7 @@ public final class ClusterAnchorsBuilder {
                     HolderPass.readFromLunaSettings(sector, grouping)),
                 desaturationPalette,
                 new ViewGrouping(view, grouping),
-                FilterSnapshot.unfiltered()));
+                contentInputs.clearFilterPick()));
     }
 
     // The standing placements a fit made now may carry over, filed under the cluster each of

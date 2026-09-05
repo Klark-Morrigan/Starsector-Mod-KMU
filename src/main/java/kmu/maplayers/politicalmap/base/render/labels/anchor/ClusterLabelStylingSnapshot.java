@@ -4,7 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 
 import java.util.Map;
@@ -12,7 +12,8 @@ import java.util.Map;
 /**
  * Everything one label rebuild resolves a cluster's colour and name from: who holds each system,
  * the shades a desaturated bloc recolours to, the view and grouping the holding was classified
- * under, and the spotlight state the rest of the sector recedes by.
+ * under, and the picks the pass was baked under - the spotlight the rest of the sector recedes by,
+ * and the format a name is spelled in.
  *
  * <p>Held as one value because the four have to describe the same moment. A rebuild that named
  * blocs under this pass's view while receding them by the last pass's filter would produce
@@ -28,13 +29,14 @@ import java.util.Map;
  * @param holderBySystemId    the dominant holder of each drawn system, keyed by system id
  * @param desaturationPalette the shared shades a desaturated bloc's name recolours to
  * @param viewGrouping        the view painted and the grouping snapshot holding was resolved under
- * @param filterSnapshot      the spotlight state names and shades recede by; unfiltered off filter
+ * @param contentInputs       the picks the pass was baked under: the spotlight names and shades
+ *                            recede by, and the name format they are spelled and fitted in
  */
 public record ClusterLabelStylingSnapshot(
     Map<String, DominantHolder> holderBySystemId,
     FactionPalette desaturationPalette,
     ViewGrouping viewGrouping,
-    FilterSnapshot filterSnapshot) {
+    ContentInputs contentInputs) {
 
     /**
      * The snapshot a production rebuild styles by: the territories' own retained state, read off
@@ -48,6 +50,6 @@ public record ClusterLabelStylingSnapshot(
             territories.getHolderBySystemId(),
             territories.getDesaturationPalette(),
             territories.getViewGrouping(),
-            territories.getFilterSnapshot());
+            territories.getContentInputs());
     }
 }

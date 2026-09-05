@@ -18,7 +18,6 @@ import kmu.maplayers.base.labels.anchor.ClusterNameBoxes;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -144,7 +143,6 @@ final class IncrementalPoliticsRefreshTest {
         private MockedStatic<StyledCellBuilder> styledCellsMock;
         private MockedStatic<FactionTerritoryBuilder> territoriesMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
-        private MockedStatic<NameFormatPreference> nameFormatMock;
         private MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock;
 
         private SectorAPI sectorMock;
@@ -215,15 +213,6 @@ final class IncrementalPoliticsRefreshTest {
                 .thenReturn(ClusterNameDisturbance.NONE);
 
             seams.openSeam(LabelsBuilder.class);
-
-            // Read as an argument to the label rebuild, so it evaluates even with that
-            // rebuild neutralised - and it reads save-backed memory no test JVM has. Held as a
-            // field because a band's re-bake reads it too: the room a name takes is reserved only
-            // while the names are drawing, so a case about that re-stubs this.
-            nameFormatMock = seams.openSeam(NameFormatPreference.class);
-            nameFormatMock
-                .when(NameFormatPreference::getSelectedNameFormat)
-                .thenReturn(FactionNameFormatChoice.NONE);
 
             // The pair arrives labelled by a pass that ran before this frame, which is what
             // every case here folds into: a fold that overwrote the label without re-fitting
@@ -326,7 +315,12 @@ final class IncrementalPoliticsRefreshTest {
             // map is drawing rather than lay a band as though there were none. This name lies
             // across the whole marked cell, which leaves its ring with nowhere to put one - a
             // re-bake blind to the names would hand it a band running under the word.
-            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            // A name takes up room only while the names are being drawn at all, and which pass
+            // drew them is what the standing map records - so the format is stated on the map the
+            // fold edits rather than on the save behind it.
+            var territories = buildOwnedBySpelling(
+                Map.of(FLIPPED_SYSTEM, HEGEMONY),
+                FactionNameFormatChoice.SHORT);
 
             territories.putStyledCell(
                 FLIPPED_SYSTEM,
@@ -338,11 +332,6 @@ final class IncrementalPoliticsRefreshTest {
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
-
-            // A name takes up room only while the names are being drawn at all.
-            nameFormatMock
-                .when(NameFormatPreference::getSelectedNameFormat)
-                .thenReturn(FactionNameFormatChoice.SHORT);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
 
@@ -362,7 +351,9 @@ final class IncrementalPoliticsRefreshTest {
             // fitted box covers it whole, while the words land elsewhere entirely - so a band comes
             // back where the case above had none, and the reading the player did not pick is never
             // asked for at all.
-            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBySpelling(
+                Map.of(FLIPPED_SYSTEM, HEGEMONY),
+                FactionNameFormatChoice.SHORT);
 
             territories.putStyledCell(
                 FLIPPED_SYSTEM,
@@ -374,10 +365,6 @@ final class IncrementalPoliticsRefreshTest {
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
-
-            nameFormatMock
-                .when(NameFormatPreference::getSelectedNameFormat)
-                .thenReturn(FactionNameFormatChoice.SHORT);
 
             settingsMock
                 .when(KmuPoliticalMapRibbonSettings::getPoliticalMapRibbonNameClearance)
@@ -444,7 +431,9 @@ final class IncrementalPoliticsRefreshTest {
             // across it. The pair with the case above is the point - the two reasons a band has
             // nothing to keep clear of reach the same result by different routes, one because
             // there is no name on the map and one because the player would rather have the band.
-            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+            var territories = buildOwnedBySpelling(
+                Map.of(FLIPPED_SYSTEM, HEGEMONY),
+                FactionNameFormatChoice.SHORT);
 
             territories.putStyledCell(
                 FLIPPED_SYSTEM,
@@ -456,10 +445,6 @@ final class IncrementalPoliticsRefreshTest {
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
-
-            nameFormatMock
-                .when(NameFormatPreference::getSelectedNameFormat)
-                .thenReturn(FactionNameFormatChoice.SHORT);
 
             settingsMock
                 .when(KmuPoliticalMapRibbonSettings::shouldKeepPoliticalMapRibbonsClearOfNames)
@@ -1047,5 +1032,17 @@ final class IncrementalPoliticsRefreshTest {
     private static PoliticalMapTerritories buildOwnedBy(Map<String, String> factionIdBySystemId) {
         return PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(
             buildHoldersOf(factionIdBySystemId));
+    }
+
+    // The same standing map baked under a stated name format, for the cases about the room a drawn
+    // name leaves a band. Off the map rather than off the save, because the fold reads what the
+    // build it is editing was made under.
+    private static PoliticalMapTerritories buildOwnedBySpelling(
+            Map<String, String> factionIdBySystemId,
+            FactionNameFormatChoice nameFormat) {
+
+        return PoliticalMapTerritoryFixtures.createTerritoriesSpellingNames(
+            buildHoldersOf(factionIdBySystemId),
+            nameFormat);
     }
 }

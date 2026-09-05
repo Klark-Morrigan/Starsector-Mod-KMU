@@ -90,6 +90,10 @@ The single exception is whether the uninhabited outline draws at all: that is th
 checkbox (`UninhabitedOutlinePreference`, per-save sector memory), because a LunaLib field would
 duplicate that control on the settings screen. Its opacity and width stay LunaLib knobs.
 
+That one input is passed in rather than read: it travels with the rest of the sidebar preferences in
+the rebuild's `ContentInputs`, sampled once per rebuild. Read here it would be a second reading of a
+value the rebuild has already decided it is owed a rebuild for, free to disagree with it.
+
 ## The resolvers: choices into colours
 
 Rules that both the fills and the cluster-name labels read, so a name can never drift from the

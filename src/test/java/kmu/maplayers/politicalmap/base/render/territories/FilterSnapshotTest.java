@@ -21,7 +21,7 @@ final class FilterSnapshotTest {
 
         @Test
         void unfilteredSpotlightsNothing() {
-            assertThat(FilterSnapshot.unfiltered().selectedBlocId())
+            assertThat(FilterSnapshot.unfiltered().contentInputs().selectedBlocId())
                 .isNull();
         }
 
@@ -31,7 +31,7 @@ final class FilterSnapshotTest {
             // filter at all, and an empty contested set means no cell hatches.
             var snapshot = FilterSnapshot.unfiltered();
 
-            assertThat(snapshot.recedeAdjustment())
+            assertThat(snapshot.contentInputs().filterRecedeAdjustment())
                 .isEqualTo(ElementStyleAdjustment.NONE);
             assertThat(snapshot.contestedSystemIds())
                 .isEmpty();
@@ -51,8 +51,7 @@ final class FilterSnapshotTest {
         void isFilteringIsTrueWhenABlocIsSelected() {
 
             var snapshot = new FilterSnapshot(
-                "hegemony",
-                ElementStyleAdjustment.NONE,
+                PoliticalMapTerritoryFixtures.createInputsSpotlighting("hegemony"),
                 Set.of());
 
             assertThat(snapshot.isFiltering())

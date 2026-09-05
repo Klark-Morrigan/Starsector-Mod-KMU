@@ -7,7 +7,6 @@ import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.HoverGlowStyle;
-import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.settings.FactionPaletteChoice;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 import kmu.settings.KmuPoliticalMapHighlightSettings;
@@ -218,15 +217,10 @@ final class RenderStyleReaderTest {
 
         @Test
         void readUninhabitedStyleDrawsTheOutlineInTheNeutralColourWhenTheSidebarToggleIsOn() {
-            // The on/off comes from the sidebar preference rather than a settings field, so this
-            // category reads two sources; both are stubbed so neither can satisfy the assertion
-            // alone.
-            try (var territorySettingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class);
-                    var preferenceMock = mockStatic(UninhabitedOutlinePreference.class)) {
-
-                preferenceMock
-                    .when(UninhabitedOutlinePreference::isOutlineDrawn)
-                    .thenReturn(true);
+            // The on/off arrives from the rebuild's own sampling of the sidebar preference rather
+            // than from a settings field, so this category is settled by the argument and the two
+            // stubbed knobs together and neither can satisfy the assertion alone.
+            try (var territorySettingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 territorySettingsMock
                     .when(KmuPoliticalMapTerritorySettings::getUninhabitedBorderOpacity)
@@ -235,7 +229,7 @@ final class RenderStyleReaderTest {
                     .when(KmuPoliticalMapTerritorySettings::getUninhabitedBorderWidth)
                     .thenReturn(NEUTRAL_WIDTH);
 
-                var style = RenderStyleReader.readUninhabitedStyle();
+                var style = RenderStyleReader.readUninhabitedStyle(true);
 
                 assertThat(style)
                     .isEqualTo(new CategoryStyle(
@@ -253,12 +247,7 @@ final class RenderStyleReaderTest {
         @Test
         void readUninhabitedStyleHidesTheOutlineButKeepsItsGeometryWhenTheSidebarToggleIsOff() {
 
-            try (var territorySettingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class);
-                    var preferenceMock = mockStatic(UninhabitedOutlinePreference.class)) {
-
-                preferenceMock
-                    .when(UninhabitedOutlinePreference::isOutlineDrawn)
-                    .thenReturn(false);
+            try (var territorySettingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
                 territorySettingsMock
                     .when(KmuPoliticalMapTerritorySettings::getUninhabitedBorderOpacity)
@@ -267,7 +256,7 @@ final class RenderStyleReaderTest {
                     .when(KmuPoliticalMapTerritorySettings::getUninhabitedBorderWidth)
                     .thenReturn(NEUTRAL_WIDTH);
 
-                var style = RenderStyleReader.readUninhabitedStyle();
+                var style = RenderStyleReader.readUninhabitedStyle(false);
 
                 // The outer slot turns off, yet its opacity and width still pass through so the
                 // sole difference from the drawn case is the slot. Off reaches the theme as an
@@ -640,11 +629,11 @@ final class RenderStyleReaderTest {
                     .thenReturn(0.3);
 
                 // Every category getter can default here: the assertions below only check that
-                // each category slot is populated, not its values. The uninhabited category's
-                // toggle reads sector memory, which is absent here and resolves to off. The two
-                // mocks nothing stubs stand in for the section classes the whole-theme read also
-                // reaches, a settings read outside them having no LunaLib to answer it.
-                var renderStyle = RenderStyleReader.readRenderStyle();
+                // each category slot is populated, not its values, so the uninhabited category's
+                // outline pick is stated as off. The two mocks nothing stubs stand in for the
+                // section classes the whole-theme read also reaches, a settings read outside them
+                // having no LunaLib to answer it.
+                var renderStyle = RenderStyleReader.readRenderStyle(false);
 
                 assertThat(renderStyle.global())
                     .isNotNull();

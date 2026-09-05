@@ -10,13 +10,12 @@ import kmlib.starsector.ui.label.FontLabelLengthEstimator;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
 import kmu.maplayers.base.labels.LabelFonts;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
-import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleDecision;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -125,17 +124,15 @@ final class ClusterLabelStyling {
     // rules under one), cached per bloc id like the name estimator resolver below, since every
     // cluster of a bloc shares one decision and the two label consumers both read it.
     static Function<String, BlocStyleDecision> newBlocStyleDecisionResolver(
-            boolean isFiltering,
             PoliticalMapView view,
             HolderGrouping grouping,
-            ElementStyleAdjustment recedeAdjustment) {
+            ContentInputs contentInputs) {
 
         return memoisePerBlocId(blocId -> BlocStyleResolver.resolveBlocStyleDecision(
-            isFiltering,
             blocId,
             view,
             grouping,
-            recedeAdjustment));
+            contentInputs));
     }
 
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
@@ -143,25 +140,29 @@ final class ClusterLabelStyling {
     // active view resolves it, measured with the label font, or the aspect stand-in when
     // the font or the name will not resolve. Cached per bloc id because every cluster of a
     // bloc shares one name, so its wrap is measured once per rebuild, not per cluster.
+    //
+    // The full/short choice comes off the rebuild's own sampling rather than being read here: it
+    // decides the text every box is fitted around, so a name measured under a second reading of it
+    // would size the boxes the fit accepted for a spelling the labels are not minted in.
     static Function<String, LabelLengthEstimator> newNameEstimatorResolver(
             SectorAPI sector,
             PoliticalMapView view,
             HolderGrouping grouping,
-            boolean isFiltering,
-            String selectedBlocId) {
+            ContentInputs contentInputs) {
 
         var font = LabelFonts.loadMapLabelFont();
+        var nameFormat = contentInputs.nameFormat();
 
-        // Read once per rebuild, like the font: every cluster of a bloc spells its name
-        // the same way, so the full/short choice is resolved here rather than per bloc.
-        var nameFormat = NameFormatPreference.getSelectedNameFormat();
         return memoisePerBlocId(blocId -> resolveNameEstimator(
             sector,
             view,
             grouping,
             font,
             nameFormat,
-            resolveNameBlocId(isFiltering, blocId, selectedBlocId)));
+            resolveNameBlocId(
+                contentInputs.isFiltering(),
+                blocId,
+                contentInputs.selectedBlocId())));
     }
 
     // Caches a per-bloc resolution for the life of one rebuild. Every resolution here is

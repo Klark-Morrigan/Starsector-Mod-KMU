@@ -60,6 +60,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -238,7 +239,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
             var renderStyleMock = seams.openSeam(RenderStyleReader.class);
             renderStyleMock
-                .when(RenderStyleReader::readRenderStyle)
+                .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
                 .thenReturn(buildThemePaintingEachCategoryApart());
 
             // The names off, which is what leaves the bands a function of the map alone; the
@@ -468,10 +469,16 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 sectorMock,
                 FactionsView.INSTANCE.resolveGrouping());
 
+            // The rebuild's one sampling of the sidebar picks, taken here as the plugin's cache
+            // takes it and carried through every stage below, so the fills, the fit, the bands and
+            // the labels are all baked under one reading of them.
+            var contentInputs = ContentInputs.sampleForView(FactionsView.INSTANCE);
+
             var territories = TerritoryBuilder.buildTerritories(
                 cellsMock,
                 pass,
-                FactionsView.INSTANCE);
+                FactionsView.INSTANCE,
+                contentInputs);
 
             var standingAnchors = new StandingClusterAnchors();
             var factionLabels = new ArrayList<Label>();
@@ -494,7 +501,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             LabelsBuilder.rebuildLabels(
                 factionLabels,
                 standingAnchors.getAnchors(),
-                NameFormatPreference.getSelectedNameFormat().areNamesDrawn());
+                contentInputs.nameFormat().areNamesDrawn());
 
             return new StandingPoliticalMap(
                 territories,
