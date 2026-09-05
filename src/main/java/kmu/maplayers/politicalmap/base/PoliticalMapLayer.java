@@ -72,13 +72,12 @@ public final class PoliticalMapLayer implements MapLayer {
         var installation = MapLayerInstallations.resolveInstallationForLiveSector();
         var board = installation.resolveRefreshBoard();
 
-        // Which screen is the asking panel's own, and travels to every piece below for the reason the
-        // board does: what a control writes belongs to the screen it was placed on, so a screen found
-        // at the click would file the pick under whichever panel was up by then.
-        //
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
         // radio only switches between views; turning the map off is the tab bar's No Layer pick.
+        //
+        // The asking panel's screen travels beside the board and for the same reason: a control writes
+        // the screen it was placed on, not the one up when it is clicked.
         var controls = new ArrayList<>(
             PoliticalMapBodyControls.buildSharedControls(board, memoryScope));
         controls.add(PoliticalMapBodyControls.buildViewSelector(memoryScope));
@@ -147,8 +146,8 @@ public final class PoliticalMapLayer implements MapLayer {
         // sectors.
         var board = installation.resolveRefreshBoard();
 
-        // TODO: hand memoryScope to the picker's own stores - the spotlight, the sort and the column
-        // count are still one slot per sector, so a pick made on one panel moves the other's list.
+        // TODO: hand memoryScope to the picker's stores - spotlight, sort and columns are still one
+        // slot per sector.
         return FilterSelectionBinder.buildPicker(
             selectedView.getId(),
             blocCache.resolveBlocPickerRead(selectedView).picker(),

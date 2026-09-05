@@ -30,8 +30,9 @@ import java.util.List;
  * are rebuilt per call so a flipped toggle shows immediately.
  *
  * <p>The sub-options are handed the refresh board of the sector they are built for, since each
- * repaints by raising a signal. The selector takes none: switching views writes a selection the
- * overlay reads directly and raises nothing.
+ * repaints by raising a signal. The selector is handed no board: switching views writes a selection the
+ * overlay reads directly and raises nothing. Both are handed the screen whose panel opened the body,
+ * which is what a control's write is filed under.
  */
 public final class PoliticalMapBodyControls {
 
@@ -59,8 +60,8 @@ public final class PoliticalMapBodyControls {
             MapLayerRefreshBoard board,
             ScreenMemoryScope memoryScope) {
 
-        // TODO: hand memoryScope to the two preferences below - the outline flag and the name format are
-        // still one slot per sector, so a flip on one panel moves the other's.
+        // TODO: hand memoryScope to the two preferences below - the outline flag and the name format
+        // are still one slot per sector.
         return List.of(
             ControlSpec.Checkbox.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
@@ -93,8 +94,7 @@ public final class PoliticalMapBodyControls {
      */
     public static ControlSpec buildViewSelector(ScreenMemoryScope memoryScope) {
 
-        // TODO: hand memoryScope to the view registry - the selected view is still one slot per sector,
-        // so a switch on one panel moves the other's picture.
+        // TODO: hand memoryScope to the view registry - the selected view is still one slot per sector.
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));

@@ -37,8 +37,9 @@ import java.util.Set;
  * under the pointer. The two entry points differ only in where the panel anchors:
  * {@link #resolveMapPlacement} hangs it from the screen top-left for the on-map sidebar, and {@link
  * #resolveIntelPlacement} anchors it to the visor's top-left, overlaying the intel screen's map preview.
- * Both lay out the same body; each takes the host's own {@link TabPanelController}, so the map and intel
- * panels keep separate scroll and collapse state while sharing one layout.
+ * Both lay a body out the same way, each built for its own screen; and each takes the host's own
+ * {@link TabPanelController}, so the map and intel panels keep separate scroll and collapse state while
+ * sharing one layout.
  *
  * <p>How a panel looks is the host's, injected here as a {@link TabStyle} rather than chosen from the
  * screen being laid out: the band a strip stands in is part of a look, so a layout that named the two
@@ -72,7 +73,7 @@ public final class LiveSidebarPlacement {
     /**
      * Lays the intel-screen sidebar out over the lit visor: it sits flush against the visor's left edge
      * and hangs from the visor top (pushed down by the player's top padding to clear the vanilla map
-     * toggles), overlaying the visor with the same body the on-map sidebar lays out.
+     * toggles), overlaying the visor with the body the intel screen's own panel opens.
      *
      * @param mapVisorRect the lit visor's screen rectangle, the corner the panel anchors to
      * @param panel        the intel host's own panel, separate from the on-map host's throughout - its own

@@ -15,7 +15,10 @@ import static org.mockito.Mockito.mockStatic;
  * for are now the layer's own facts: swapped for another tab's, they are a wrong label and a stolen
  * shortcut on screen and nothing else catches either. What the strings key is worded as, and what the
  * settings row is worth on a fresh install, are pinned against those files elsewhere - this layer states
- * no key of its own, which is the second case below.
+ * no key of its own, which is the last case here.
+ *
+ * <p>And the one thing it resolves nothing for: its body, empty on whichever screen's panel selects it,
+ * since a tab that opens no controls stores no preference for a screen to hold its own version of.
  */
 final class NoLayerTest {
 

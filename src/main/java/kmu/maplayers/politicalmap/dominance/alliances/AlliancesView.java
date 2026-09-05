@@ -180,8 +180,7 @@ public final class AlliancesView implements DominancePaintedView {
         // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
         // alliances package with the view that owns them.
         //
-        // TODO: hand memoryScope to those checkboxes - the non-allied recede is still one slot per
-        // sector, so a flip on one panel moves the other's fade.
+        // TODO: hand memoryScope to those checkboxes - the non-allied recede is still one slot per sector.
         return AllianceBodyControls.buildControls(board);
     }
 }
