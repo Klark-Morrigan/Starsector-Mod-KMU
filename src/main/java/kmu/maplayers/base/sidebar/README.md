@@ -266,7 +266,9 @@ still blinks and a press on the lit tab still lifts - an act the player made tha
 nothing at all would read as a panel that missed it. A layer's tab sits at its place in the row this
 screen is offered - `ScreenLayerTabs.resolveTabbedLayers`, which the layout and this walk both take -
 so the index the binder matched is the index blinked, and a tab withheld from this screen answers no
-key rather than switching to a layer nothing lit.
+key rather than switching to a layer nothing lit. That one read carries the player's own arrangement
+too, so a row they reordered is walked in their order and a tab they took off the bar answers no key
+either.
 
 Neither pass has an error state: when a signal blocks the panel it is simply absent. That makes
 `SidebarRenderer`'s deduped view-state log (host state, screen size, resolved box, opacity) the only

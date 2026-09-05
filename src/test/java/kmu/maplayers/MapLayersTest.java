@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmu.maplayers.base.layer.MapLayerArrangements;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.NoLayer;
@@ -61,6 +62,13 @@ final class MapLayersTest {
     @AfterEach
     void clearOpenlyKnownColonies() {
         clearRegistrations();
+    }
+
+    @AfterEach
+    void unbindTheArrangementStoreTheWiringLeft() {
+        // The wiring binds a store reading the player's own common-data file, and the holder is static,
+        // so a case that ran it would otherwise leave every later row in the run reading that file.
+        MapLayerArrangements.forgetTheArrangement();
     }
 
     @AfterEach

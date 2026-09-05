@@ -11,6 +11,7 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerArrangements;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.NoLayer;
@@ -19,10 +20,12 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.sidebar.SidebarFoldSelection;
 import kmu.settings.KmuMapKeybindSettings;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +68,10 @@ final class BaseSidebarHostTest {
     private static final int FIRST_LAYER_TAB_INDEX = 0;
     private static final int SECOND_LAYER_TAB_INDEX = 1;
 
+    // The ids the roster arbitrates by, and the ones a stored bar arrangement names its layers with.
+    private static final String FIRST_LAYER_ID = "first";
+    private static final String SECOND_LAYER_ID = "second";
+
     // A whole traverse in one step, so a started blink stands at its peak and an unstarted one at rest -
     // telling the two apart in one number rather than by walking frames. The same pace each way, since
     // only the rise is read here and the paces the panel actually runs at are KMLib's to pin.
@@ -96,12 +103,18 @@ final class BaseSidebarHostTest {
         // Ids as well, the roster arbitrating by them: a layer registering under an id already in the
         // row takes that place rather than a second tab, so registering reads what each one answers.
         when(firstLayerMock.getId())
-            .thenReturn("first");
+            .thenReturn(FIRST_LAYER_ID);
         when(secondLayerMock.getId())
-            .thenReturn("second");
+            .thenReturn(SECOND_LAYER_ID);
 
         // The registry is static, so a neighbour's layers would otherwise outlive their test.
         MapLayerRosters.replaceRosterWith(firstLayerMock, secondLayerMock);
+    }
+
+    @AfterEach
+    void forgetTheArrangementThisCaseMade() {
+        // The holder is static as well, so a bar arranged here would otherwise reorder every later row.
+        MapLayerArrangements.forgetTheArrangement();
     }
 
     @Nested
@@ -243,6 +256,31 @@ final class BaseSidebarHostTest {
 
             assertThat(hoverFractionAt(host, SECOND_LAYER_TAB_INDEX))
                 .isCloseTo(1f, within(TOLERANCE));
+        }
+
+        @Test
+        void handleKeyPressBlinksTheTabTheArrangementMovedTheLayerTo() {
+            // The same one read, read from the other side: the strip draws the player's own order, so a
+            // key walk over registration order would mark the tab their arrangement moved the layer off
+            // - a blink on the layer they did not switch to, for a switch that did happen.
+            MapLayerArrangements.arrangeBarWith(List.of(SECOND_LAYER_ID, FIRST_LAYER_ID), List.of());
+
+            var layerSelectionMock = mock(ActiveLayerSelection.class);
+            var host = createHost(layerSelectionMock);
+
+            host.handleKeyPress(mockKeyPress(FIRST_KEYCODE));
+
+            advanceAWholeTraverse(host);
+
+            verify(layerSelectionMock)
+                .selectLayer(firstLayerMock);
+
+            // The arrangement swaps the two, so the layer bound to the first key now stands in the
+            // second tab's place - and that is the tab the press has to mark.
+            assertThat(hoverFractionAt(host, SECOND_LAYER_TAB_INDEX))
+                .isCloseTo(1f, within(TOLERANCE));
+            assertThat(hoverFractionAt(host, FIRST_LAYER_TAB_INDEX))
+                .isCloseTo(0f, within(TOLERANCE));
         }
 
         @Test

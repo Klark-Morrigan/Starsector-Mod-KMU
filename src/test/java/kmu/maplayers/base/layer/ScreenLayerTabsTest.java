@@ -4,6 +4,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -27,12 +29,24 @@ import static org.mockito.Mockito.when;
  */
 final class ScreenLayerTabsTest {
 
+    // The ids the stored arrangement names its layers by, the store holding ids rather than layers.
+    private static final String NO_LAYER_ID = "no_layer";
+    private static final String PAINTING_LAYER_ID = "painting";
+    private static final String OTHER_PAINTING_LAYER_ID = "other_painting";
+
     private final MapLayer paintingLayerMock = mock(MapLayer.class);
+    private final MapLayer otherPaintingLayerMock = mock(MapLayer.class);
 
     @AfterEach
     void restoreTheRosterThisCaseReplaced() {
         // The registry is static, so a roster of stand-ins would otherwise outlive its case.
         MapLayerRosters.restoreNonEmptyRoster();
+    }
+
+    @AfterEach
+    void forgetTheArrangementThisCaseMade() {
+        // The holder is static too, so a bar arranged here would otherwise reorder every later row.
+        MapLayerArrangements.forgetTheArrangement();
     }
 
     @Nested
@@ -78,6 +92,83 @@ final class ScreenLayerTabsTest {
             // An empty strip has no way back to itself. Unreachable while a layer that paints is
             // registered beside it, which is a composition root's arrangement rather than a rule.
             MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
+
+            assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
+                .containsExactly(NoLayer.INSTANCE);
+        }
+
+        @Test
+        void resolveTabbedLayersPutsTheStripInThePlayersOwnOrder() {
+            // The whole of what the arrangement buys: the row is theirs, laid over whatever the load
+            // order registered, and it is the same row on every screen and in every campaign.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(PAINTING_LAYER_ID, NO_LAYER_ID),
+                List.of());
+
+            assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithNoControl()))
+                .containsExactly(paintingLayerMock, NoLayer.INSTANCE);
+        }
+
+        @Test
+        void resolveTabbedLayersTakesAHiddenLayerOffTheStripAndLeavesItOnTheRoster() {
+            // Hiding is not switching off. The tab goes and the layer stays registered, so a save
+            // holding it as its pick goes on painting exactly as it did - what the player took off is
+            // the way to reach it, not the layer.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(PAINTING_LAYER_ID));
+
+            assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithNoControl()))
+                .containsExactly(NoLayer.INSTANCE);
+
+            assertThat(MapLayerRegistry.resolveLayerById(PAINTING_LAYER_ID))
+                .isSameAs(paintingLayerMock);
+        }
+
+        @Test
+        void resolveTabbedLayersComposesHidingWithTheWithheldEmptyView() {
+            // The two subtractions answer different questions - what the player took off the bar, and
+            // what this screen's own control has taken over - so a row has to survive both being asked
+            // of it at once.
+            registerTwoLayersThatPaintBesideTheEmptyView();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(OTHER_PAINTING_LAYER_ID));
+
+            assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
+                .containsExactly(paintingLayerMock);
+        }
+
+        @Test
+        void resolveTabbedLayersKeepsTheLastTabOfThePlayersOwnRowWhereHidingWouldEmptyIt() {
+            // Only a hand-edited store reaches this, the dialog refusing to hide the last visible tab.
+            // The tab left standing is the leading one of their order rather than of the roster's, so
+            // the bar they cannot empty is still the bar they built.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(PAINTING_LAYER_ID, NO_LAYER_ID),
+                List.of(PAINTING_LAYER_ID, NO_LAYER_ID));
+
+            assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithNoControl()))
+                .containsExactly(paintingLayerMock);
+        }
+
+        @Test
+        void resolveTabbedLayersKeepsTheLastTabHidingAndWithholdingWouldBothTakeOff() {
+            // The two guards read as one here: hiding leaves the empty view alone on the row, and this
+            // screen's control would take that too. A bar with no tabs has no way back to itself
+            // however it was emptied, so the one left standing is offered.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(PAINTING_LAYER_ID));
 
             assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
                 .containsExactly(NoLayer.INSTANCE);
@@ -149,7 +240,25 @@ final class ScreenLayerTabsTest {
         when(paintingLayerMock.isOfferedAsDefaultPick())
             .thenReturn(true);
 
+        // The id a stored arrangement would name it by, the store holding what a past session wrote
+        // rather than the layers themselves.
+        when(paintingLayerMock.getId())
+            .thenReturn(PAINTING_LAYER_ID);
+
         MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
+    }
+
+    // The same roster with a second painting layer on the end, which is the install a foreign mod's
+    // layer makes and the only shape in which hiding and withholding can both bite at once.
+    private void registerTwoLayersThatPaintBesideTheEmptyView() {
+
+        registerTheEmptyViewBesideALayerThatPaints();
+
+        when(otherPaintingLayerMock.getId())
+            .thenReturn(OTHER_PAINTING_LAYER_ID);
+
+        MapLayerRosters.replaceRosterWith(
+            NoLayer.INSTANCE, paintingLayerMock, otherPaintingLayerMock);
     }
 
     // A screen whose box has stood at least once this session, which is what withholds its tab.

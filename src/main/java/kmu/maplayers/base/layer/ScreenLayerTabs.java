@@ -18,9 +18,16 @@ import java.util.List;
  * id and fall back to the default - which is to say, start painting over the map of a player who asked for
  * nothing.
  *
+ * <p>The player's own arrangement is laid over the roster first, so the row is in the order they put it in
+ * and without the tabs they took off, and the withholding then applies to that row rather than to the
+ * roster: the empty view's tab is taken over by a screen's own control whether or not the player has moved
+ * it. The two last-tab-standing guards compose into one that way - a row emptied by hiding and a row
+ * emptied by withholding are the same unusable bar, and what is left standing either way is the leading tab
+ * of the player's own row.
+ *
  * <p>One read for both the strip and the shortcut walk, because the two index the same list by
- * construction: a strip that withheld a tab while the key walk did not would switch to the layer one along
- * from the tab it lit.
+ * construction: a strip that withheld or moved a tab while the key walk did not would switch to the layer
+ * one along from the tab it lit.
  *
  * <p>A pick already sitting on a withheld tab is moved rather than left standing. Left, the two controls
  * would disagree in the one way that cannot be read off the screen: the map is empty because of the pick,
@@ -34,16 +41,19 @@ public final class ScreenLayerTabs {
 
     /**
      * @param screenPicks the screen's own picks, which say whether it has a control of its own
-     * @return the layers this screen offers as tabs, in roster order - the whole roster on a screen with
-     *         no control, and the roster without the empty view on a screen that has one
+     * @return the layers this screen offers as tabs, in the player's own order and without the tabs they
+     *         took off - and without the empty view besides, on a screen carrying a control of its own
      */
     public static List<MapLayer> resolveTabbedLayers(ScreenLayerPicks screenPicks) {
 
-        var registeredLayers = MapLayerRegistry.getLayers();
+        var arrangedLayers = ArrangedLayers.arrangeVisibleLayers(
+            LiveMapLayerArrangement.resolveArrangement(),
+            MapLayerRegistry.getLayers());
+
         if (!screenPicks.layerVisibility().hasControlBeenAttached()) {
-            return registeredLayers;
+            return arrangedLayers;
         }
-        return withholdEmptyViewTab(registeredLayers);
+        return withholdEmptyViewTab(arrangedLayers);
     }
 
     /**
@@ -67,11 +77,16 @@ public final class ScreenLayerTabs {
 
     // Whether this screen's pick is one the strip stops offering once a control stands on it. Stated as
     // "not among the tabs" rather than as "is the empty view", so it cannot drift from what the strip
-    // actually offers - the guard below included, which leaves a lone tab offered and so unmigrated.
+    // withholds - the guard below included, which leaves a lone tab offered and so unmigrated.
     //
-    // The pick is read off the selection rather than through the registry, which folds hiding into its
-    // own answer: what is asked here is which tab the screen is set to, and a screen already hiding its
-    // layers is set to one just the same.
+    // Asked of the roster rather than of the arranged row, which is the one place the two part company:
+    // taking a tab off the bar is not switching a layer off, so a pick the player has hidden goes on
+    // painting and must not be moved - while a pick the withholding took has a control standing in its
+    // place, which is the whole reason to move it.
+    //
+    // The pick is read off the selection rather than through the registry, which folds the screen's hide
+    // into its own answer: what is asked here is which tab the screen is set to, and a screen already
+    // hiding its layers is set to one just the same.
     private static boolean isPickWithheldOnceControlStands(ScreenLayerPicks screenPicks) {
 
         var pick = screenPicks.layerSelection().getActiveLayer();
@@ -80,16 +95,16 @@ public final class ScreenLayerTabs {
             && !withholdEmptyViewTab(MapLayerRegistry.getLayers()).contains(pick);
     }
 
-    // The roster without the empty view's tab, unless that would leave no tab at all: an empty strip has
-    // no way back to itself, so the last one standing is offered whatever else is true. Unreachable while
-    // a layer that paints is registered beside it, which is a fact about a composition root rather than
-    // about this rule.
-    private static List<MapLayer> withholdEmptyViewTab(List<MapLayer> registeredLayers) {
+    // The given row without the empty view's tab, unless that would leave no tab at all: an empty strip
+    // has no way back to itself, so the last one standing is offered whatever else is true. Reached where
+    // the player has hidden every layer that paints, the row handed in being theirs rather than the
+    // roster - which is why the tab left standing is the one they would look for.
+    private static List<MapLayer> withholdEmptyViewTab(List<MapLayer> arrangedLayers) {
 
-        var offeredLayers = registeredLayers.stream()
+        var offeredLayers = arrangedLayers.stream()
             .filter(layer -> layer != NoLayer.INSTANCE)
             .toList();
 
-        return offeredLayers.isEmpty() ? registeredLayers : offeredLayers;
+        return offeredLayers.isEmpty() ? arrangedLayers : offeredLayers;
     }
 }

@@ -186,10 +186,13 @@ bar once does not order it again per save.
   control able to take it back, and read as shown until it has one, the stored choice untouched and
   honoured again the moment there is a control for it. Which screens have one is `base/chrome`'s
   answer below, and the session's rather than the save's. It also settles which tabs a screen is
-  offered: `ScreenLayerTabs` withholds `NoLayer` from a screen carrying such a control, in one read
-  the strip and the shortcut walk both take - two lists would switch to the layer one along from the
-  tab they lit - and never withholds the last tab standing. Withheld from the strip and never from
-  the roster, a stored pick being an id resolved against it. A layer is
+  offered: `ScreenLayerTabs` lays the player's own arrangement over the roster and then withholds
+  `NoLayer` from a screen carrying such a control, in one read the strip and the shortcut walk both
+  take - two lists would switch to the layer one along from the tab they lit - and never withholds
+  the last tab standing, a row emptied by hiding and a row emptied by withholding being the same
+  unusable bar. Both subtractions are from the strip and never from the roster, a stored pick being
+  an id resolved against it: a layer the player hid goes on painting for the save that picked it, and
+  only the way to reach it by tab is gone. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own. A layer also letters and binds its own
@@ -216,7 +219,12 @@ bar once does not order it again per save.
   an id named twice is placed once, and an arrangement that would leave no tab at all keeps the
   leading one - a bar with no tabs having no way back to itself. So a mod installed, removed or
   renamed costs the player nothing and needs no migration, and a file that cannot be read is worth
-  exactly the unarranged row.
+  exactly the unarranged row. Which store answers is bound at the composition root and read through
+  `LiveMapLayerArrangement`, so nothing on the frame path names a file and an install that bound none
+  reads as unarranged; what is bound in play is `SessionHeldMapLayerArrangement` over the stored one,
+  the row being assembled on every frame the sidebar draws and every key it routes, which is more
+  often than a file may be opened. An arrangement recorded through that holding is what the next
+  frame reads, rather than what the next start does.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

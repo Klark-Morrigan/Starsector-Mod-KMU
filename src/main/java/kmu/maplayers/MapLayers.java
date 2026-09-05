@@ -1,10 +1,14 @@
 package kmu.maplayers;
 
+import kmlib.starsector.settings.VanillaCommonDataStore;
 import kmlib.starsector.ui.intel.VanillaIntelScreenView;
 
+import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.NoLayer;
+import kmu.maplayers.base.layer.PersistedMapLayerArrangement;
+import kmu.maplayers.base.layer.SessionHeldMapLayerArrangement;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
 import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
@@ -46,8 +50,9 @@ public final class MapLayers {
     }
 
     /**
-     * Registers the layers the on-map bar shows, the political-map views its tab offers, the
-     * concealed colonies the sector openly points at, and where the live alliance set is read from.
+     * Registers the layers the on-map bar shows, where the player's own arrangement of that bar is
+     * read from, the political-map views its tab offers, the concealed colonies the sector openly
+     * points at, and where the live alliance set is read from.
      * Called once at application load, before any
      * sector map can open. No Layer leads so the "show nothing" pick is the first tab; the
      * political-map tab hosts the view-selector radio over the roster {@link #selectPoliticalMapViews}
@@ -64,6 +69,8 @@ public final class MapLayers {
         MapLayerRegistry.registerLayer(NoLayer.INSTANCE);
         MapLayerRegistry.registerLayer(PoliticalMapLayer.INSTANCE);
 
+        registerBarArrangement();
+
         // Each screen keeps its own tab, so the overlay has to follow the tab of the screen being
         // looked at rather than one fixed screen's. This is the live binding that tells the two apart;
         // naming it here keeps the registry ignorant of any concrete screen.
@@ -73,6 +80,23 @@ public final class MapLayers {
                 selectPoliticalMapViews(),
                 FactionsView.INSTANCE,
                 PoliticalMapLayer.INSTANCE);
+    }
+
+    /**
+     * Binds where the player's bar arrangement is read from: the game's own common data, held for the
+     * session once read. Kept as its own step because binding a store is a different decision from
+     * registering a layer - what the row holds is KMU's to name, while how the player arranged it is
+     * theirs and outlives every campaign.
+     *
+     * <p>The two wrappings are each one job. The file is where a preference about the interface belongs,
+     * per user rather than per save; holding what it read is what lets the bar ask on every frame it
+     * draws and on every key it routes without opening a file for the answer.
+     */
+    static void registerBarArrangement() {
+
+        LiveMapLayerArrangement.registerArrangementSelection(
+            new SessionHeldMapLayerArrangement(
+                new PersistedMapLayerArrangement(new VanillaCommonDataStore())));
     }
 
     /**
