@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
+import kmlib.profiling.ProfileNode;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.RecordingProfiler;
-import kmlib.profiling.SectionTiming;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ final class RibbonBakeTimingsTest {
             timings.recordPhaseTotals(profiler);
 
             assertThat(profiler.snapshot())
-                .extracting(SectionTiming::getSection, SectionTiming::getTotalNanos)
+                .extracting(node -> node.getSection().getName(), ProfileNode::getTotalNanos)
                 .containsExactly(
                     tuple(PLAN_SECTION, 11L),
                     tuple(TRACE_SECTION, 22L),
@@ -91,7 +91,7 @@ final class RibbonBakeTimingsTest {
             timings.recordPhaseTotals(profiler);
 
             assertThat(profiler.snapshot())
-                .extracting(SectionTiming::getSection, SectionTiming::getTotalNanos)
+                .extracting(node -> node.getSection().getName(), ProfileNode::getTotalNanos)
                 .containsExactly(
                     tuple(PLAN_SECTION, 0L),
                     tuple(TRACE_SECTION, 0L),
@@ -135,11 +135,11 @@ final class RibbonBakeTimingsTest {
         }
     }
 
-    private SectionTiming readSection(String section) {
+    private ProfileNode readSection(String section) {
         return profiler
             .snapshot()
             .stream()
-            .filter(timing -> timing.getSection().equals(section))
+            .filter(node -> node.getSection().getName().equals(section))
             .findFirst()
             .orElseThrow();
     }

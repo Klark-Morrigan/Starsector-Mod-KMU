@@ -1,7 +1,8 @@
 package kmu.console;
 
+import kmlib.profiling.ProfileNode;
+import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
-import kmlib.profiling.SectionTiming;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,8 +40,13 @@ final class KmuProfilingReportCommandTest {
         void printsTheFormattedTimingsForABareInvocation() {
 
             when(profilerMock.snapshot()).thenReturn(List.of(
-                new SectionTiming(
-                    SECTION, 1, TWO_MILLIS_IN_NANOS, TWO_MILLIS_IN_NANOS, TWO_MILLIS_IN_NANOS)));
+                new ProfileNode(
+                    ProfileSection.registerSection(SECTION),
+                    1,
+                    TWO_MILLIS_IN_NANOS,
+                    TWO_MILLIS_IN_NANOS,
+                    TWO_MILLIS_IN_NANOS,
+                    List.of())));
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
 
