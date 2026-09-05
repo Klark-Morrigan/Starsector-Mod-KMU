@@ -3,6 +3,7 @@ package kmu;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmu.diagnostics.KmuProfiling;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -69,15 +70,17 @@ class KMU_ModPluginTest {
         void standsUpEveryStepALaunchIsMadeOf() {
             // The list is the whole subject: a step nobody named is a feature that silently never
             // runs, which is how a settings change came to leave a stale spotlight standing. Held
-            // over all four at once, so a step dropped from the wiring fails here rather than in
+            // over all five at once, so a step dropped from the wiring fails here rather than in
             // play.
-            try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
+            try (var profilingMock = mockStatic(KmuProfiling.class);
+                    var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
                     var mapLayersMock = mockStatic(MapLayers.class);
                     var filterHealMock = mockStatic(FilterSelectionHeal.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
 
                 new KMU_ModPlugin().onApplicationLoad();
 
+                profilingMock.verify(KmuProfiling::bindRecordingProfiler);
                 lunaSettingsMock.verify(KmuLunaSettings::installBindings);
                 mapLayersMock.verify(MapLayers::registerAll);
                 filterHealMock.verify(FilterSelectionHeal::installHealOnSettingsChange);
