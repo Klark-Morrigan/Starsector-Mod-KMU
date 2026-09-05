@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.colonies.KnownColonyReader;
+import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.MarketVisibility;
 
 import java.util.ArrayList;
@@ -26,9 +27,14 @@ import java.util.function.Predicate;
  * living somewhere. Named once here so "what counts on the map" cannot drift between the cell that
  * paints a system, the ribbon that counts in it and the box that names its factions.
  *
- * <p>Knowledge is the composition of two facts, not a choice between them: the fog must admit the
- * colony, and the kinds a bare fog would leak must additionally have been observed. So a widened
- * gate can never show what has not been found.
+ * <p>Knowledge is the composition of two facts, not a choice between them: the colony must have
+ * been found, and the kinds a bare fog would leak must additionally have been observed. So a
+ * widened gate can never show what has not been found.
+ *
+ * <p>Being found is itself two routes. The fog is the ordinary one; the other is somebody living
+ * in the same place having reported the colony standing there, which reaches only the kinds that
+ * say so and only while the player has asked for no more than a sighting is worth. A report widens
+ * where a gate narrows, which is why it sits inside the first fact rather than beside the second.
  *
  * <p>The rule and the register travel together because every projection spends both, and one
  * without the other answers nothing: a gate with no observations behind it holds back everything it
@@ -423,7 +429,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // branch per surface, so a fourth kind or a third gate has one place to be added.
     private boolean isKnownColony(Colony colony, Set<String> settlingOwnerIds) {
 
-        if (!isAdmittedByFog(colony, rule)) {
+        if (!isFoundColony(colony, settlingOwnerIds)) {
             return false;
         }
         // A reveal reaches the fog and stops there. It says a colony may be shown though nobody
@@ -432,6 +438,39 @@ public final class ColonyKnowledge implements KnownColonyReader {
         // they never asked for, with nothing on screen to say why it appeared.
         return !isGatedOnRevelation(colony)
             || isObserved(colony, settlingOwnerIds);
+    }
+
+    // Whether the colony has been found at all: the fog, or a report from the place's own
+    // inhabitants standing in for it.
+    //
+    // The report is an arm of finding rather than a gate beside it, because a gate narrows and
+    // this widens. A collapsed colony is admitted by vanilla's survey level alone, and vanilla
+    // writes that level for player acts only - so the world stays off the map while the faction's
+    // colony orbiting beside it is drawn, though anybody living there can plainly see the ruin.
+    //
+    // Held to what a sighting is worth. Somebody's word that the world is standing there says it
+    // was laid eyes on and no more, so the route answers only where the bar asks no more than
+    // that; past it the player has asked for survey data, which nobody's presence produces.
+    //
+    // Which leaves one bar the route really decides. At the lowest the fog asks for no survey at
+    // all and admits the world outright, so this arm is never reached; higher up it is refused.
+    // The route earns its keep at the bar in between, which is the one the map ships on.
+    //
+    // Which kinds a report can reach is the kind's own answer, and no kind that says yes settles
+    // its place - so nothing found this way ever joins the owners folded for the first pass, and
+    // can vouch neither for itself nor for anything standing beside it. The two passes stay an
+    // ordering rather than becoming a cycle.
+    //
+    // A colony found this way that also conceals itself meets the same observation twice, once
+    // here and once at the gate below. Deliberate: both ask literally whether somebody saw it
+    // standing there, and a second class of observation invented to keep them apart would be two
+    // names for one fact.
+    private boolean isFoundColony(Colony colony, Set<String> settlingOwnerIds) {
+
+        return isAdmittedByFog(colony, rule)
+            || (readKindOf(colony).isFoundByReport()
+                && DecivilisedMarkets.isMetBySighting(rule.ungovernedColonySurveyLevel())
+                && isObserved(colony, settlingOwnerIds));
     }
 
     // Whether a colony amounts to people living where it stands - the one thing that separates

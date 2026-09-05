@@ -136,11 +136,21 @@ public final class DecivilisedPlanetFixtures {
     // Stands one ruin in a system, on both walks that could reach it. The entity walk is how a
     // colony set finds an unlisted market at all; the planet walk is what a suite reading the
     // system's worlds sees.
+    //
+    // The market is pointed back at the system as well, because a reader asking whether anybody
+    // has seen this colony reads the place it stands in and compares it against the observation.
+    // Left unstubbed the ruin stands in no system at all - hyperspace, where such a reader has
+    // nothing to compare and so answers seen - and a case posing a ruin nobody has found would
+    // really be posing one everybody has.
     private static void placePlanetIn(StarSystemAPI system, PlanetAPI planet) {
+
+        var market = planet.getMarket();
 
         when(system.getPlanets())
             .thenReturn(List.of(planet));
         when(system.getAllEntities())
             .thenReturn(List.of(planet));
+        when(market.getContainingLocation())
+            .thenReturn(system);
     }
 }

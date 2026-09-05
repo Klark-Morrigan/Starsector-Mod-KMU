@@ -100,6 +100,14 @@ final class ColonyKnowledgeTest {
         SurveyLevel.FULL,
         Set.of());
 
+    // One notch above what a sighting is worth, which is the boundary the report route turns on
+    // rather than a bar picked for being high: at this level the player has asked for readings off
+    // the world itself, and somebody standing nearby produces none.
+    private static final ColonyVisibility ASKING_A_PRELIMINARY_SURVEY = new ColonyVisibility(
+        NOTHING_REVEALED,
+        SurveyLevel.PRELIMINARY,
+        Set.of());
+
     // Both fog arms open at once, for the world neither knob alone reaches.
     private static final ColonyVisibility ASKING_NEITHER_FOG_ARM = new ColonyVisibility(
         UNDISCOVERED_REVEALED,
@@ -121,7 +129,8 @@ final class ColonyKnowledgeTest {
 
         // Sub-grouped by the arm of the rule each case exercises rather than by subject matter, the
         // rule being written as one predicate over exactly these: the fog and the reveal that lifts
-        // it, the player's own sighting, the place's settling owners, and the kinds no gate covers.
+        // it, the report that stands in for the fog where it has nothing to read, the player's own
+        // sighting, the place's settling owners, and the kinds no gate covers.
         // An arm is somewhere a case unambiguously belongs; a theme is a judgement call made again
         // every time one is added.
 
@@ -739,6 +748,116 @@ final class ColonyKnowledgeTest {
                     .containsExactly(buildOutpost(listedStation));
             }
 
+        }
+
+        // The route that stands in for the fog rather than qualifying it: a collapsed colony the
+        // player has not surveyed, found on the word of whoever else is in the system. Every case
+        // here poses a world the fog refuses outright, so nothing in the group could have passed
+        // by any other arm.
+        @Nested
+        class ReportRoute {
+
+            @Test
+            void keeps_an_unsurveyed_dead_world_a_rival_colony_can_see() {
+                // The asymmetry the route exists to close: the Hegemony's colony is drawn in a
+                // system the player has never entered, and the ruin in the next orbit - which
+                // everyone living there can see - was not.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+                var neighbour = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(decivilisedWorld, neighbour);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
+                    .containsExactly(buildUngovernedColony(decivilisedWorld), buildColony(neighbour));
+            }
+
+            @Test
+            void withholds_an_unsurveyed_dead_world_where_more_than_a_sighting_is_asked_for() {
+                // The bar the route is held to, one notch up: the player has asked for survey data,
+                // and a neighbour's word that the world is standing there is not survey data.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+                var neighbour = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(decivilisedWorld, neighbour);
+
+                assertThat(knowing(fixture, ASKING_A_PRELIMINARY_SURVEY).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
+                    .containsExactly(buildColony(neighbour));
+            }
+
+            @Test
+            void withholds_an_unsurveyed_dead_world_alone_in_its_system() {
+                // Nobody is there to have seen it, so the route has nothing to report and the world
+                // falls back to the survey the player has not made.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+
+                fixture.placeColoniesInSystem(decivilisedWorld);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
+                    .isEmpty();
+            }
+
+            @Test
+            void withholds_an_unsurveyed_dead_world_vouched_for_only_by_an_unheld_station() {
+                // Owner-awareness reaching the route without a line of its own. A collapsed colony
+                // falls to neutral as it dies, and so does a station no faction holds that the
+                // economy lists anyway - so the only settler here shares the world's own owner and
+                // is passed over, exactly as a faction's own colony is beside its concealed base.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+                var listedStation = fixture.buildOutpost(Factions.NEUTRAL);
+
+                fixture.placeColoniesInSystem(decivilisedWorld, listedStation);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildOutpost(listedStation))))
+                    .containsExactly(buildOutpost(listedStation));
+            }
+
+            @Test
+            void keeps_an_unsurveyed_dead_world_seen_where_it_stands() {
+                // The recorded half of the same route, and what keeps the world on the map after
+                // the neighbour that reported it has itself collapsed: an observation naming this
+                // system finds the world with nobody left in it.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+
+                fixture.placeColoniesInSystem(decivilisedWorld);
+                fixture.markColoniesAsSighted(decivilisedWorld);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
+                    .containsExactly(buildUngovernedColony(decivilisedWorld));
+            }
+
+            @Test
+            void keeps_a_surveyed_dead_world_where_more_than_a_sighting_is_asked_for() {
+                // The fog arm is untouched by any of this: a world the player has actually surveyed
+                // that far is admitted at a bar no report could ever reach.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildDecivilisedWorld();
+
+                fixture.placeColoniesInSystem(decivilisedWorld);
+
+                assertThat(knowing(fixture, ASKING_A_FULL_SURVEY).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
+                    .containsExactly(buildUngovernedColony(decivilisedWorld));
+            }
+
+            @Test
+            void lets_a_dead_world_this_route_found_settle_nothing() {
+                // The route finds a world and grants it no voice, which is what keeps the two
+                // passes an ordering rather than a cycle: the collapsed colony is on the map and
+                // the hulk drifting beside it stays held back, having nobody there to report it.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+                var derelict = fixture.buildDerelictStation();
+
+                fixture.placeColoniesInSystem(decivilisedWorld, derelict);
+                fixture.markColoniesAsSighted(decivilisedWorld);
+
+                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildDerelict(derelict))))
+                    .containsExactly(buildUngovernedColony(decivilisedWorld));
+            }
         }
 
         // The colonies no gate is about: a kind the rule's gates do not cover, and a gate the rule

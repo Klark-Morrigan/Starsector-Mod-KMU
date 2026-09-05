@@ -790,7 +790,10 @@ public final class KmuMapLayerSettings {
      * @return how far a decivilised world must have been surveyed before the map will say its
      *         colony has collapsed; SEEN by default, which is what vanilla itself asks before
      *         showing a condition. A separate axis from discovery: a planet flown past is
-     *         discovered whatever its survey level says
+     *         discovered whatever its survey level says. It is also the bar that decides whether
+     *         the map will take a neighbour's word for such a world: NONE admits every one of them
+     *         outright, SEEN is where a sighting is survey enough, and PRELIMINARY or FULL asks for
+     *         readings nobody's presence produces, so only the player's own survey counts
      */
     public static SurveyLevel getDecivilisedWorldSurveyLevel() {
         return KmuLunaSettings

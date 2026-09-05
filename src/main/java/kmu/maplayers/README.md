@@ -284,13 +284,18 @@ bar once does not order it again per save.
   and `ColonyKnowledge` pairs that rule with the sector's record of what has been observed and
   publishes the two projections every surface reads - the known listing a box may name, and the
   habitation reading a cell is settled by. Each pass opens one and classifies each colony once
-  through it. `ColonyKindLookup` folds those kinds by colony id for a reader that meets a colony as
-  a row rather than as a colony, and `ColonyDiscoveryLookup` folds the entity's own found-or-not
-  flag the same way for the same reader. `OpenlyKnownColonyLookup` folds a third such answer -
-  whether a concealed colony is one the sector openly points at, off the entity ids and tag
-  `OpenlyKnownColonyRegistry` is seeded with at start-up. That one excuses a word a hover box would
-  otherwise say and reaches no gate: a landmark is concealed to every rule here, exactly as the base
-  beside it is. Who would speak about what stands beside them is owner-aware and then some:
+  through it. Being found and being revealed stay separate questions there: the fog answers the
+  first for nearly everything, and a collapsed colony - which vanilla admits on a survey level it
+  only ever writes for a player act - may instead be found on the word of whoever else lives in the
+  same system, so the ruin in orbit is drawn beside the faction colony that can see it. `ColonyKind`
+  says which kinds that reaches, and it holds only while the survey the player asks for is no more
+  than a sighting is worth. `ColonyKindLookup` folds those kinds by colony id for a reader that
+  meets a colony as a row rather than as a colony, and `ColonyDiscoveryLookup` folds the entity's
+  own found-or-not flag the same way for the same reader. `OpenlyKnownColonyLookup` folds a third
+  such answer - whether a concealed colony is one the sector openly points at, off the entity ids
+  and tag `OpenlyKnownColonyRegistry` is seeded with at start-up. That one excuses a word a hover
+  box would otherwise say and reaches no gate: a landmark is concealed to every rule here, exactly
+  as the base beside it is. Who would speak about what stands beside them is owner-aware and then some:
   `FactionAlliances` says which factions stand together, read through the `FactionAllianceSource`
   port a composition root registers with `FactionAllianceRegistry`, so a partner keeps a concealed
   base quiet exactly as its own faction does. It is a world fact rather than a rule, so it is folded
