@@ -4,8 +4,8 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.RecordingProfiler;
 import kmlib.profiling.SilentProfiler;
+import kmlib.profiling.recording.RecordingProfiler;
 
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;

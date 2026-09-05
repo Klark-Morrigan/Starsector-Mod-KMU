@@ -2,8 +2,8 @@ package kmu.maplayers.base.layer;
 
 import kmlib.math.easing.Easing;
 import kmlib.math.ranges.Ranges;
-import kmlib.profiling.Timings;
 import kmlib.starsector.memory.SectorMemoryFlag;
+import kmlib.time.Timings;
 
 import kmu.settings.KmuMapLayerSettings;
 

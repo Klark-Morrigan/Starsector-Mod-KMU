@@ -1,7 +1,7 @@
 package kmu.maplayers.base.layer;
 
-import kmlib.profiling.Timings;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
+import kmlib.time.Timings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

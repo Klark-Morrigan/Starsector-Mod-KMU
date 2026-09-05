@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.solving.Bisection;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.SystemClusters;

@@ -3,7 +3,7 @@ package kmu.maplayers.base.render.clusters;
 import com.fs.starfarer.api.Global;
 
 import kmlib.opengl.GlVertexRuns;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.theme.HatchStyle;
 

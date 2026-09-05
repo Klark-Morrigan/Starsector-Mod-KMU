@@ -6,7 +6,6 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.logging.SessionWarning;
 import kmlib.math.geometry.Rectangle;
-import kmlib.profiling.Timings;
 import kmlib.starsector.ui.coreui.CoreUiComponentRepainter;
 import kmlib.starsector.ui.input.HoverFade;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
@@ -17,6 +16,7 @@ import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.PanelAlpha;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
+import kmlib.time.Timings;
 
 import kmu.settings.KmuMapLayerSettings;
 

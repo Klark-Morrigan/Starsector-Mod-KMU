@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.Global;
 
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;

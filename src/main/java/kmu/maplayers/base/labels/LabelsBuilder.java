@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 

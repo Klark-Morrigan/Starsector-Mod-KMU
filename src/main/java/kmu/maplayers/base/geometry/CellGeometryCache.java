@@ -4,7 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;

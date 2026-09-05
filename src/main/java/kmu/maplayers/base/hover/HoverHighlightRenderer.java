@@ -5,7 +5,7 @@ import kmlib.opengl.GlColour;
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.base.theme.HoverHighlightStyle;

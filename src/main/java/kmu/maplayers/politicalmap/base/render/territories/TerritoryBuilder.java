@@ -5,8 +5,8 @@ import com.fs.starfarer.api.Global;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Profiler;
-import kmlib.profiling.Timings;
 import kmlib.starsector.factions.StarsectorFactionColours;
+import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;

@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.profiling.Profiler;
-import kmlib.profiling.Timings;
+import kmlib.time.Timings;
 
 /**
  * What one bake of the presence bands spent, split by the four separable things a bake does:

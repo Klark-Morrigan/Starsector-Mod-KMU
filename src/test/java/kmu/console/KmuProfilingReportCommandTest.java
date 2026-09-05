@@ -1,9 +1,11 @@
 package kmu.console;
 
-import kmlib.profiling.ProfileNode;
 import kmlib.profiling.ProfileSection;
-import kmlib.profiling.ProfileTiming;
 import kmlib.profiling.Profiler;
+import kmlib.profiling.snapshot.DurationBuckets;
+import kmlib.profiling.snapshot.ProfileNode;
+import kmlib.profiling.snapshot.ProfileTiming;
+import kmlib.profiling.snapshot.WorstCall;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,7 +46,12 @@ final class KmuProfilingReportCommandTest {
                 new ProfileNode(
                     ProfileSection.registerSection(SECTION),
                     new ProfileTiming(
-                        1, TWO_MILLIS_IN_NANOS, TWO_MILLIS_IN_NANOS, TWO_MILLIS_IN_NANOS),
+                        1,
+                        TWO_MILLIS_IN_NANOS,
+                        TWO_MILLIS_IN_NANOS,
+                        TWO_MILLIS_IN_NANOS,
+                        DurationBuckets.NO_CALLS),
+                    WorstCall.NO_CALL,
                     List.of(),
                     List.of())));
 

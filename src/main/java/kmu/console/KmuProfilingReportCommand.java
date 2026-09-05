@@ -7,7 +7,7 @@ import kmlib.console.parsing.Parameter;
 import kmlib.console.parsing.ParameterSpec;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Profiler;
-import kmlib.profiling.TimingReport;
+import kmlib.profiling.report.TimingReport;
 
 import java.util.Objects;
 

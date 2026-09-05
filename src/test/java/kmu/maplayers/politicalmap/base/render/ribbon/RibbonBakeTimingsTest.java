@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import kmlib.profiling.ProfileTiming;
 import kmlib.profiling.Profiler;
-import kmlib.profiling.RecordingProfiler;
+import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.profiling.snapshot.ProfileTiming;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
