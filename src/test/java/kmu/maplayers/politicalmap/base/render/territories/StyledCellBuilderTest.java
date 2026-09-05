@@ -19,6 +19,7 @@ import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -64,21 +65,6 @@ final class StyledCellBuilderTest {
             .thenReturn(adjustment);
 
         return viewMock;
-    }
-
-    // The picks a pass spotlighting one bloc was sampled under, with the recede the rest of the
-    // sector takes behind it. Only those two reach a styled cell, so the other three sit at the
-    // inert reading.
-    private static ContentInputs buildInputsRecedingBehind(
-            String selectedBlocId,
-            ElementStyleAdjustment recede) {
-
-        return new ContentInputs(
-            selectedBlocId,
-            recede,
-            ElementStyleAdjustment.NONE, // No alliance recede.
-            FactionNameFormatChoice.FULL,
-            false); // No uninhabited outline.
     }
 
     @Nested
@@ -614,7 +600,7 @@ final class StyledCellBuilderTest {
                     buildViewMockAdjusting(ElementStyleAdjustment.NONE),
                     HolderGrouping.identity()),
                 new FilterSnapshot(
-                    buildInputsRecedingBehind(selectedBlocId, recede),
+                    ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
                     Set.of()));
         }
 
@@ -701,7 +687,7 @@ final class StyledCellBuilderTest {
                     new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                 new ViewGrouping(viewMock, HolderGrouping.identity()),
                 new FilterSnapshot(
-                    buildInputsRecedingBehind(isFiltering ? "selected-bloc" : null, recede),
+                    ContentInputsFixtures.createInputsRecedingBehind(isFiltering ? "selected-bloc" : null, recede),
                     Set.of()));
         }
 

@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.settings.KmuMapLayerSettings;
 
@@ -509,7 +510,7 @@ final class FactionTerritoryBuilderTest {
                 PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
             new ViewGrouping(buildViewMockAdjustingNothing(), HolderGrouping.identity()),
             new FilterSnapshot(
-                PoliticalMapTerritoryFixtures.createInputsSpotlighting(null),
+                ContentInputsFixtures.createInertInputs(),
                 Set.of()));
     }
 

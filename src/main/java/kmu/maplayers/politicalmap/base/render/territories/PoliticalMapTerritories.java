@@ -470,13 +470,6 @@ public final class PoliticalMapTerritories implements
         return viewGrouping;
     }
 
-    // The spotlight state as the one retained record, for the same reason: a consumer passing the
-    // filter along keeps it whole rather than splitting it into three values that could be
-    // recombined from different passes.
-    public FilterSnapshot getFilterSnapshot() {
-        return filter;
-    }
-
     // The preferences this build was baked under, as the one reading every stage of it sampled -
     // what a pass that runs after the build reads rather than asking the holders again. A label
     // re-fit or a band re-bake taken off a second reading would spell the names one way and have

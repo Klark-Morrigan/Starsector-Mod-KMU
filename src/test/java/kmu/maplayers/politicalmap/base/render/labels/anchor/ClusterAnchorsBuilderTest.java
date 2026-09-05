@@ -33,6 +33,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
@@ -340,12 +341,9 @@ final class ClusterAnchorsBuilderTest {
                     Map.of(RIVAL_SYSTEM, TRITACHYON_HOLDER),
                     DESATURATION_PALETTE,
                     new ViewGrouping(viewMock, HolderGrouping.identity()),
-                    new ContentInputs(
+                    ContentInputsFixtures.createInputsRecedingBehind(
                         HEGEMONY,
-                        new ElementStyleAdjustment(FULL_OPACITY, true),
-                        ElementStyleAdjustment.NONE, // No alliance recede.
-                        FactionNameFormatChoice.FULL,
-                        false))); // No uninhabited outline.
+                        new ElementStyleAdjustment(FULL_OPACITY, true))));
 
             assertThat(standingAnchors.getAnchors().get(0).colour())
                 .isEqualTo(Color.GREEN);
@@ -590,6 +588,29 @@ final class ClusterAnchorsBuilderTest {
         }
 
         @Test
+        void rebuildClusterAnchorsFromSectorRecedesNothingWhileABlocIsSpotlitElsewhere() {
+            // This path paints real dominant holders across the whole sector, so the spotlight
+            // standing in the picks it is handed has to be dropped before it styles anything.
+            // Carried through, every bloc but the spotlit one would recede and the labels would
+            // come back in the desaturation shade - the map receding around a spotlight the debug
+            // view does not paint. Posed with a bloc spotlit that holds nothing here, so a receded
+            // label is the only way the shade can move.
+            contentInputs = ContentInputsFixtures.createInputsSpotlighting(TRITACHYON);
+            stubAnchorOverlay(true);
+            stubSectorHolders(Map.of(HELD_SYSTEM, HEGEMONY_HOLDER));
+
+            ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
+                standingAnchors,
+                cellGeometry,
+                sectorMock,
+                viewMock,
+                contentInputs);
+
+            assertThat(standingAnchors.getAnchors().get(0).colour())
+                .isEqualTo(HEGEMONY_PRIMARY);
+        }
+
+        @Test
         void rebuildClusterAnchorsFromSectorFitsLabelsThoughTheNameFormatDrawsNone() {
             // This path exists for the overlay, so the name format has no say over it: the
             // diagnostic still draws its dots for a player reading the map by colour alone.
@@ -706,12 +727,7 @@ final class ClusterAnchorsBuilderTest {
     // whether the names draw at all. Nothing here spotlights a bloc, so the cases about a filter
     // state their own reading instead.
     private void useNameFormat(FactionNameFormatChoice nameFormat) {
-        contentInputs = new ContentInputs(
-            null, // Nothing spotlighted.
-            ElementStyleAdjustment.NONE, // No filter recede.
-            ElementStyleAdjustment.NONE, // No alliance recede.
-            nameFormat,
-            false); // No uninhabited outline.
+        contentInputs = ContentInputsFixtures.createInputsSpellingNames(nameFormat);
     }
 
     private void stubAnchorOverlay(boolean isOverlayShown) {

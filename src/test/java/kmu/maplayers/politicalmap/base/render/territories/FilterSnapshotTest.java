@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ final class FilterSnapshotTest {
         void isFilteringIsTrueWhenABlocIsSelected() {
 
             var snapshot = new FilterSnapshot(
-                PoliticalMapTerritoryFixtures.createInputsSpotlighting("hegemony"),
+                ContentInputsFixtures.createInputsSpotlighting("hegemony"),
                 Set.of());
 
             assertThat(snapshot.isFiltering())

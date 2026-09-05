@@ -11,12 +11,13 @@ import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
-import kmu.maplayers.base.theme.CornerRoundingStyle;
+import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -61,7 +62,7 @@ public final class DebugBorderTracingBuilder {
     public static ClusterBorderStageOverlay buildDebugDrawables(
             CellGeometryCache geometryCache,
             SectorAPI sector,
-            boolean isUninhabitedOutlineDrawn) {
+            ContentInputs contentInputs) {
 
         // This overlay's own reading of the sector: it never filters and groups nothing, so it
         // opens a plain identity pass rather than being handed one - there is no rebuild above it
@@ -80,11 +81,20 @@ public final class DebugBorderTracingBuilder {
         // through the same seam, so the overlay shows the cells the map would show.
         var inhabitedSystemIds = PoliticalMapInhabitation.readInhabitedSystemIds(pass);
 
-        // The same trace and the same smoothing profile the production build reads, so a stage
-        // captured here is the geometry the normal render would have drawn rather than one this
-        // builder assembled from its own reads of the same knobs.
+        // The same trace and the same theme the production build reads, so a stage captured here is
+        // the geometry the normal render would have drawn rather than one this builder assembled
+        // from its own reads of the same knobs. The whole theme rather than the smoothing alone,
+        // because the factionless pass below indexes into it by category - read twice, the outlines
+        // could be gated by one reading of the knobs and smoothed by another.
+        //
+        // The uninhabited outline's own switch arrives with the rebuild rather than being read: it
+        // is a sidebar preference, sampled once per rebuild, and a second reading here could show
+        // cells the production draw would not.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
-        var borderSmoothing = RenderStyleReader.readBorderSmoothingStyle();
+        var renderStyle = RenderStyleReader.readRenderStyle(
+            contentInputs.isUninhabitedOutlineDrawn());
+
+        var borderSmoothing = renderStyle.global().borderSmoothing();
         var stageCollector = new ClusterBorderStageCollector();
 
         for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
@@ -128,8 +138,7 @@ public final class DebugBorderTracingBuilder {
             geometryCache,
             cellGrouping,
             inhabitedSystemIds,
-            isUninhabitedOutlineDrawn,
-            borderSmoothing.cornerRounding(),
+            renderStyle,
             stageCollector);
 
         return stageCollector.buildOverlay();
@@ -145,16 +154,14 @@ public final class DebugBorderTracingBuilder {
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
             Set<String> inhabitedSystemIds,
-            boolean isUninhabitedOutlineDrawn,
-            CornerRoundingStyle cornerRounding,
+            RenderStyle renderStyle,
             ClusterBorderStageCollector stageCollector) {
 
-        // The whole theme rather than the two factionless bundles separately, so a category
-        // resolved by the shared rule indexes straight into it - the same lookup the production
-        // draw makes, which is what keeps the overlay showing the cells the map would show. The
-        // uninhabited outline's own switch arrives with the rebuild for the same reason: read here
-        // it would be a second reading, free to show cells the production draw would not.
-        var renderStyle = RenderStyleReader.readRenderStyle(isUninhabitedOutlineDrawn);
+        // The rebuild's one reading of the theme, handed over whole rather than re-read here, so a
+        // category resolved by the shared rule indexes straight into it - the same lookup the
+        // production draw makes, which is what keeps the overlay showing the cells the map would
+        // show.
+        var cornerRounding = renderStyle.global().borderSmoothing().cornerRounding();
 
         for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {

@@ -18,6 +18,7 @@ import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -134,7 +135,7 @@ public final class PoliticalMapTerritoryFixtures {
             Set<String> spotlitPresenceSystemIds) {
 
         return createTerritoriesUnder(
-            createInputsSpotlighting(selectedBlocId),
+            ContentInputsFixtures.createInputsSpotlighting(selectedBlocId),
             ownerBySystemId,
             inhabitedSystemIds,
             spotlitPresenceSystemIds);
@@ -158,12 +159,7 @@ public final class PoliticalMapTerritoryFixtures {
             FactionNameFormatChoice nameFormat) {
 
         return createTerritoriesUnder(
-            new ContentInputs(
-                null, // No bloc spotlighted.
-                ElementStyleAdjustment.NONE, // No filter recede.
-                ElementStyleAdjustment.NONE, // No alliance recede.
-                nameFormat,
-                false), // No uninhabited outline.
+            ContentInputsFixtures.createInputsSpellingNames(nameFormat),
             ownerBySystemId,
             ownerBySystemId.keySet(),
             Set.of());
@@ -239,30 +235,6 @@ public final class PoliticalMapTerritoryFixtures {
      * @param style the bundle every category paints from
      * @return a live theme, keyed by the four political categories
      */
-    /**
-     * The picks a build spotlighting one bloc was baked under: that pick, with every other
-     * preference at the inert reading.
-     *
-     * <p>Named here beside the territories builders because the spotlight is what those suites
-     * vary and the other four picks are what they do not - spelt out per suite, the four inert
-     * values are four chances for two suites to disagree about what "no other pick" means.
-     *
-     * <p>The names are off in it, which is the reading a fixture can afford: a build that draws
-     * them reaches the label font, which no test JVM loads. A case whose subject is what a drawn
-     * name costs states its own through {@link #createTerritoriesSpellingNames}.
-     *
-     * @param selectedBlocId the spotlighted bloc, or null for a build off filter
-     * @return a reading holding that pick and nothing else
-     */
-    public static ContentInputs createInputsSpotlighting(String selectedBlocId) {
-        return new ContentInputs(
-            selectedBlocId,
-            ElementStyleAdjustment.NONE, // No filter recede.
-            ElementStyleAdjustment.NONE, // No alliance recede.
-            FactionNameFormatChoice.NONE, // No names drawn.
-            false); // No uninhabited outline.
-    }
-
     public static RenderStyle createRenderStyleForEveryCategory(CategoryStyle style) {
         var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
         for (var category : PoliticalMapCategory.values()) {

@@ -5,6 +5,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,20 +39,6 @@ final class BlocStyleResolverTest {
         return viewMock;
     }
 
-    // The picks a pass spotlighting one bloc was sampled under, with the recede the rest of the
-    // sector takes behind it. The other three preferences reach no part of this decision, so they
-    // sit at the inert reading and only the two the decision turns on are stated.
-    private static ContentInputs buildInputsRecedingBehind(
-            String selectedBlocId,
-            ElementStyleAdjustment recedeAdjustment) {
-
-        return new ContentInputs(
-            selectedBlocId,
-            recedeAdjustment,
-            ElementStyleAdjustment.NONE, // No alliance recede.
-            FactionNameFormatChoice.FULL,
-            false); // No uninhabited outline.
-    }
 
     @Nested
     class ResolveFilterAdjustment {
@@ -108,7 +95,7 @@ final class BlocStyleResolverTest {
                 "independent",
                 buildViewMockDeciding(true, ElementStyleAdjustment.NONE),
                 HolderGrouping.identity(),
-                buildInputsRecedingBehind("tritachyon", new ElementStyleAdjustment(0.3, true)));
+                ContentInputsFixtures.createInputsRecedingBehind("tritachyon", new ElementStyleAdjustment(0.3, true)));
 
             assertThat(decision.usesIndependentStyle())
                 .isTrue();
@@ -126,7 +113,7 @@ final class BlocStyleResolverTest {
                 "hegemony",
                 buildViewMockDeciding(false, viewRecede),
                 HolderGrouping.identity(),
-                buildInputsRecedingBehind("tritachyon", sharedRecede));
+                ContentInputsFixtures.createInputsRecedingBehind("tritachyon", sharedRecede));
 
             assertThat(decision.usesIndependentStyle())
                 .isFalse();
@@ -147,7 +134,7 @@ final class BlocStyleResolverTest {
                 "hegemony",
                 viewMock,
                 HolderGrouping.identity(),
-                buildInputsRecedingBehind("tritachyon", new ElementStyleAdjustment(0.3, true)));
+                ContentInputsFixtures.createInputsRecedingBehind("tritachyon", new ElementStyleAdjustment(0.3, true)));
 
             verify(viewMock)
                 .shouldUseIndependentStyle(
@@ -167,7 +154,7 @@ final class BlocStyleResolverTest {
                 "pirates",
                 viewMock,
                 HolderGrouping.identity(),
-                buildInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
+                ContentInputsFixtures.createInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
 
             verify(viewMock)
                 .shouldUseIndependentStyle(
@@ -185,7 +172,7 @@ final class BlocStyleResolverTest {
                 "pirates",
                 buildViewMockDeciding(true, adjustment),
                 HolderGrouping.identity(),
-                buildInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
+                ContentInputsFixtures.createInputsRecedingBehind(null, ElementStyleAdjustment.NONE));
 
             assertThat(decision.usesIndependentStyle())
                 .isTrue();

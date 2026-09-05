@@ -21,6 +21,8 @@ import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
@@ -69,10 +71,12 @@ import static org.mockito.Mockito.when;
 final class DebugBorderTracingBuilderTest {
     private static final String HEGEMONY = "hegemony";
 
-    // The uninhabited-outline pick the overlay is handed. Every case here stubs the theme whole,
-    // so the pick reaches nothing and stands only for "the rebuild sampled one" - which category
-    // actually outlines is stated by the stubbed bundles instead.
-    private static final boolean OUTLINE_DRAWN = true;
+    // The picks the overlay is handed. Only the uninhabited outline in them reaches this builder,
+    // and every case but one stubs the theme whole - so which category actually outlines is stated
+    // by the stubbed bundles, and the pick stands for "the rebuild sampled one". The case that the
+    // pick is what the theme is read under is the exception.
+    private static final ContentInputs OUTLINE_DRAWN =
+        ContentInputsFixtures.createInputsOutlining(true);
 
     // Two cells of one bloc meeting along x = 2000, so the pair proves the trace fuses them; the
     // other two share no edge with anything, each enclosed by the reach bound alone.
@@ -302,6 +306,24 @@ final class DebugBorderTracingBuilderTest {
         }
 
         @Test
+        void buildDebugDrawablesReadsTheThemeUnderTheOutlinePickItWasHanded() {
+            // The one pick from the rebuild's sampling that reaches this builder. The overlay
+            // exists to show the cells the production draw would show, so the theme it indexes
+            // categories into has to be read under the same outline answer the fills were - read
+            // here off the preference instead, a flip between the two would have the diagnostic
+            // showing uninhabited cells the map is not drawing, or hiding ones it is.
+            stubInhabitedSystems(DEAD_SYSTEM);
+            stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
+
+            DebugBorderTracingBuilder.buildDebugDrawables(
+                listCellsFor(DEAD_SYSTEM),
+                sectorMock,
+                ContentInputsFixtures.createInputsOutlining(false));
+
+            styleReaderMock.verify(() -> RenderStyleReader.readRenderStyle(false));
+        }
+
+        @Test
         void buildDebugDrawablesGivesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
             stubInhabitedSystems(DEAD_SYSTEM);
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
@@ -406,7 +428,6 @@ final class DebugBorderTracingBuilderTest {
                 0.2),
             categories);
 
-        styleReaderMock.when(RenderStyleReader::readBorderSmoothingStyle).thenReturn(smoothing);
         styleReaderMock
             .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
             .thenReturn(renderStyle);

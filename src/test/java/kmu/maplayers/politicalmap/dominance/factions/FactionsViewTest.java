@@ -29,6 +29,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
@@ -67,12 +68,8 @@ final class FactionsViewTest {
 
     // A reading that does recede something, so a NONE answer here is this view adjusting nothing
     // rather than the picks it was handed holding nothing to adjust with.
-    private static final ContentInputs RECEDING_INPUTS = new ContentInputs(
-        null, // Nothing spotlighted.
-        ElementStyleAdjustment.NONE, // No filter recede.
-        new ElementStyleAdjustment(0.4, true),
-        FactionNameFormatChoice.FULL,
-        false); // No uninhabited outline.
+    private static final ContentInputs RECEDING_INPUTS =
+        ContentInputsFixtures.createInputsRecedingNonAllied(new ElementStyleAdjustment(0.4, true));
 
     @Nested
     class ResolveGrouping {

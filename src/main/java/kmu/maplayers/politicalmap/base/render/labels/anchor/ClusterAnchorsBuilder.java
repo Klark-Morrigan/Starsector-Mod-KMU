@@ -52,9 +52,10 @@ import java.util.Map;
  * build. The overlay list is owned by the terrain plugin and rebuilt in place here, whichever
  * base view a rebuild produced.
  *
- * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the holders,
- * palette, view, grouping and filter one by one, so the two paths differ only in where that
- * snapshot came from and a label can never be styled from two passes at once.
+ * <p>Both entry points take a {@link ClusterLabelStylingSnapshot} rather than the holders, the
+ * palette, the view and grouping and the picks the pass was baked under one by one, so the two
+ * paths differ only in where that snapshot came from and a label can never be styled from two
+ * passes at once.
  *
  * <p>Both also take the caller's {@link StandingClusterAnchors} and leave their own pass in it,
  * rather than reading a list and answering an {@link AnchorFitFingerprint} for it. The pair is

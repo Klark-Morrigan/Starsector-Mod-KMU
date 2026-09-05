@@ -29,6 +29,7 @@ import kmu.maplayers.politicalmap.base.politics.DominanceStatsRead;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -275,12 +276,8 @@ final class AlliancesViewTest {
 
         // The picks a pass carrying that recede was baked under. Nothing else in the reading
         // reaches this decision, so the other four sit at the inert values.
-        private static final ContentInputs RECEDING_INPUTS = new ContentInputs(
-            null, // Nothing spotlighted.
-            ElementStyleAdjustment.NONE, // No filter recede.
-            RECEDED,
-            FactionNameFormatChoice.FULL,
-            false); // No uninhabited outline.
+        private static final ContentInputs RECEDING_INPUTS =
+            ContentInputsFixtures.createInputsRecedingNonAllied(RECEDED);
 
         @Test
         void resolveBlocStyleAdjustmentIsNoneForAnAllianceBlocEvenWhenTheBackdropRecedes() {

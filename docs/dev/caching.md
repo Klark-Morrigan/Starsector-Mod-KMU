@@ -191,9 +191,9 @@ nobody is looking at.
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
 | `groupingStaleSystemIds` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental politics refresh |
 | `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | the alliances view only |
-| `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | the sidebar and the bloc picker memo |
-| `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | the sidebar and the bloc picker memo |
-| `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | the sidebar and the bloc picker memo |
+| `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
+| `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
+| `MapLayerCommonRefreshSignal.MAP_STYLE` | `MapLayerCommonRefreshSignal` | the uninhabited-outline and name-format toggles | **nothing** - see below |
 | `ContentInputs` | [`ContentInputs`](../../src/main/java/kmu/maplayers/politicalmap/base/render/ContentInputs.java) | not raised - sampled per rebuild off the sidebar preferences | the territories rebuild, which folds its values into the content revision |
 | `settingsRevision` | [`KmuLunaSettings`](../../src/main/java/kmu/settings/KmuLunaSettings.java) | any LunaLib settings change | the territories rebuild |
 | content revision | each `PoliticalMapView` | the view's own live inputs, folded via `Fingerprints` off the board it is handed | the territories rebuild, and the sidebar picker memo |
@@ -208,18 +208,21 @@ mechanism in two.
 
 The **sidebar toggles** (recede, filter, spotlight, outline, name format) live in
 sector memory rather than as LunaLib fields, so flipping one does *not* bump
-`settingsRevision`. Each setter raises its own signal, which is what repaints the
-surfaces that read one - the sidebar itself and the bloc picker's memo.
+`settingsRevision`. Each setter raises its own signal, and those three signals are the
+map's rebuild trigger no longer: the territories are rebuilt on the *values* the toggles
+hold, sampled once per rebuild into `ContentInputs` and folded into the content revision.
+A counter reports that somebody clicked something; the values answer the only question a
+rebuild turns on - would this build come out the same. Two readings holding the same picks
+are one bake however many counters have moved between them, and a click that puts a pick
+back where it was costs nothing. It is also what survives the picks becoming per screen: a
+screen switch changes every one of them while every counter stands still, which a
+counter-driven test reads as no change at all.
 
-The **territories** are not among them. They are rebuilt on the *values* those toggles
-hold, sampled once per rebuild into `ContentInputs` and folded into the content revision,
-rather than on the counters the flips raise. A counter reports that somebody clicked
-something; the values answer the only question a rebuild turns on - would this build come
-out the same. Two readings holding the same picks are one bake however many counters have
-moved between them, and a click that puts a pick back where it was costs nothing. It is
-also what survives the picks becoming per screen: a screen switch changes every one of
-them while every counter stands still, which a counter-driven test reads as no change at
-all.
+That leaves `FILTER`, `RECEDE_STYLE` and `MAP_STYLE` **raised and unread** - the four
+setters bump them and nothing folds them anywhere. Whether they and their raises go, or
+something starts reading them again, is an open decision; the setters' `board` argument is
+what carries the "raise on the sector you were handed" rule, so removing the three is a
+change to four holders' signatures rather than a deletion of three enum constants.
 
 The **content revision** is the seam that keeps the shared pipeline from naming any
 concrete view: a view folds its own live inputs into one int, so each invalidates on

@@ -6,6 +6,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.MapStyling;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -129,7 +130,7 @@ final class ClusterLabelStylingSnapshotTest {
 
     private static FilterSnapshot buildSpotlightFilter() {
         return new FilterSnapshot(
-            PoliticalMapTerritoryFixtures.createInputsSpotlighting(SPOTLIT_BLOC_ID),
+            ContentInputsFixtures.createInputsSpotlighting(SPOTLIT_BLOC_ID),
             Set.of("corvus"));
     }
 }

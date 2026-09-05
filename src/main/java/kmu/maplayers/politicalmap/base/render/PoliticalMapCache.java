@@ -47,11 +47,13 @@ import java.util.Objects;
  * <p>System positions in hyperspace are fixed for the life of a save, so the raw cells are built
  * once and cached; they are reseeded only when the reachable-system set changes, the
  * frontier-resolution or cell-reach setting changes (either seeds every cell), or a visibility setting
- * override flips (each changes which systems seed a cell). The territories are rebuilt in full
- * only when KMU's LunaLib settings change (detected off LunaLib's change event via
- * {@link KmuLunaSettings#getSettingsRevision()}) or when the geometry itself was rebuilt; between
- * those, a colony resize marks just its own system stale and drives an incremental re-shape. So
- * switching a colour or dragging an opacity slider takes effect live, and the per-frame path is
+ * override flips (each changes which systems seed a cell). The territories are rebuilt in full when
+ * KMU's LunaLib settings change (detected off LunaLib's change event via
+ * {@link KmuLunaSettings#getSettingsRevision()}), when the view switches or samples a different
+ * live input, when one of the sidebar preferences the bake reads holds a different value
+ * ({@link ContentInputs}), or when the geometry itself was rebuilt; between those, a colony resize
+ * marks just its own system stale and drives an incremental re-shape. So switching a colour,
+ * dragging an opacity slider or picking a spotlight takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
  * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
@@ -355,7 +357,7 @@ final class PoliticalMapCache {
         borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
             cellGeometry.cells(),
             sector,
-            contentInputs.isUninhabitedOutlineDrawn());
+            contentInputs);
 
         territories = null;
 
@@ -499,8 +501,8 @@ final class PoliticalMapCache {
     // under. Folding the values asks the only question worth asking: would this build come out the
     // same. Two readings holding the same picks are one bake whatever has been clicked between
     // them, and a pick that really moved rebuilds under whichever view is up with no view naming
-    // it. The counters stay raised on the board for the consumers that do repaint on them - the
-    // sidebar and the bloc cache - they simply no longer decide whether the territories are stale.
+    // it. Nothing reads those three counters now; whether they are worth keeping raised is a
+    // question for the board, not for this fold.
     //
     // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
     // combine here. The view is handed this cache's own board to fold its own live inputs from, so

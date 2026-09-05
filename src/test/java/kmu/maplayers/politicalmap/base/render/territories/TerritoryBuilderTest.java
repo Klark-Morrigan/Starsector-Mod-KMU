@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
@@ -59,7 +60,7 @@ final class TerritoryBuilderTest {
     // The picks a pass off filter was baked under. No case here spotlights a bloc, so the whole
     // reading is inert and the build reduces to the passes it hands down.
     private static final ContentInputs UNFILTERED_INPUTS =
-        PoliticalMapTerritoryFixtures.createInputsSpotlighting(null);
+        ContentInputsFixtures.createInertInputs();
 
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<FilteredPolitics> filteredPoliticsMock;
