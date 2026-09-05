@@ -707,11 +707,19 @@ raised buttons, the map row against the Sector/System tabs a tab-height above it
 would always be wrong for one of them. The amount rides on the `TabStyle` like the face and the ring do,
 rather than being pushed into the draw pass, which is what keeps the two rows from sharing one.
 
-The border width, opacity, collapse seconds, and both anchors' paddings are LunaLib fields read
-through `kmu.settings.KmuMapLayerSettings`, as are the colour scheme and the chevron colour - those
-two in their own "Overlay sidebar - colours" section below the box's dimensions. The three arrival
-levels and the list-scroll level are fields of the same class on the `Map - Sound` tab, which is
-where the volume half of the look is stated rather than beside the shades.
+The border width, opacity, scrollbar thickness, collapse seconds, and both anchors' paddings are
+LunaLib fields read through `kmu.settings.KmuMapLayerSettings`, as are the colour scheme and the
+chevron colour - those two in their own "Overlay sidebar - colours" section below the box's
+dimensions. The three arrival levels and the list-scroll level are fields of the same class on the
+`Map - Sound` tab, which is where the volume half of the look is stated rather than beside the
+shades.
+
+A thicker scrollbar widens the panel rather than covering the rows: the body reserves a gutter of
+the bar plus its margin and its clearance off the list, and grows rightward by whatever that gutter
+exceeds its own padding - so the rows stay where they were and only the box moves. All of these are
+read per frame, so a slider moved on the settings screen shows on the next one with no reopen, and
+both hosts read them through the one `buildChrome`, which is what keeps the map and intel sidebars
+from drawing different bars.
 
 ## What is not here
 
