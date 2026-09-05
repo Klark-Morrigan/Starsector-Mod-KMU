@@ -4,6 +4,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
+import kmlib.profiling.IterationScope;
+import kmlib.profiling.SilentProfiler;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -36,7 +38,6 @@ import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.S
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -109,9 +110,11 @@ final class CellRibbonSourceTest {
     private static final RibbonPlan ANY_PLAN =
         new RibbonPlan(List.of(new RibbonSegment(BAND_COLOUR, 1)));
 
-    // Where a pass charges what its cells cost it. Handed in and never read back here: which
-    // cells are offered a band at all is what these cases pin, not what one takes to bake.
-    private final RibbonBakeTimings passTimings = new RibbonBakeTimings();
+    // Where a pass marks what its cells cost it. Handed in and never read back here: which cells
+    // are offered a band at all is what these cases pin, not what one takes to bake. The silent
+    // profiler's scope rather than a mock, since nothing here is asked of it.
+    private final IterationScope passScope =
+        SilentProfiler.INSTANCE.openIterations(RibbonBakePhases.BAKE_SECTION);
 
     // The player's knobs stand in for the whole settings class here, so the switch under test is
     // read from a stub rather than from a LunaLib the test JVM has no game to load.
@@ -164,36 +167,36 @@ final class CellRibbonSourceTest {
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, passTimings);
+                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, passScope);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
         }
 
         @Test
-        void chargesTheCountToThePassApartFromTheGeometry() {
+        void marksTheCountOnThePassApartFromTheGeometry() {
             // The one phase of a bake that grows with what the systems hold rather than with the
             // cells - the claim mechanic walks a system's whole market list - so it is worth its
-            // own number only if it is charged where the count happens rather than swept into the
-            // ring work that follows it.
-            var timingsMock = mock(RibbonBakeTimings.class);
+            // own number only if it is marked where the count ends rather than swept into the ring
+            // work that follows it.
+            var bakeScopeMock = mock(IterationScope.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, bakeScopeMock);
 
-            verify(timingsMock).addPlanNanos(anyLong());
+            verify(bakeScopeMock).markPhase(RibbonBakePhases.PLAN_PHASE);
         }
 
         @Test
-        void chargesNothingForACellNothingLivesIn() {
+        void marksNothingForACellNothingLivesIn() {
             // The gate's cost half, stated as what a gated-out cell adds to the bake: nothing was
-            // counted for it, so nothing is charged for it either.
-            var timingsMock = mock(RibbonBakeTimings.class);
+            // counted for it, so no phase of it is marked either.
+            var bakeScopeMock = mock(IterationScope.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, bakeScopeMock);
 
-            verifyNoInteractions(timingsMock);
+            verifyNoInteractions(bakeScopeMock);
         }
 
         @Test
@@ -231,7 +234,7 @@ final class CellRibbonSourceTest {
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
+                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -242,7 +245,7 @@ final class CellRibbonSourceTest {
             // The single-holder cell: the bloc that painted it is the only one present, so there
             // is nothing a band could report that the fill beneath it has not said already.
             assertThat(buildWith(system -> RibbonPlan.NONE)
-                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings))
+                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -253,13 +256,13 @@ final class CellRibbonSourceTest {
             // band nothing would be laid on is a rebuild's worth of inset and arc-length work
             // spent on nothing - so no ring is walked and none is kept.
             var ringPathCache = new CellRingPathCache();
-            var timingsMock = mock(RibbonBakeTimings.class);
+            var bakeScopeMock = mock(IterationScope.class);
 
             buildCachingInto(system -> RibbonPlan.NONE, ringPathCache)
-                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
+                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, bakeScopeMock);
 
-            verify(timingsMock, never())
-                .addTraceNanos(anyLong());
+            verify(bakeScopeMock, never())
+                .markPhase(RibbonBakePhases.TRACE_PHASE);
             assertThat(ringPathCache.findRingPathOf(CELL))
                 .isNull();
         }
@@ -270,14 +273,18 @@ final class CellRibbonSourceTest {
             // is every colony flip, while the ring a band runs along moves only when its cell is
             // re-shaped - so the second bake of an untouched cell must walk nothing.
             var ringPathCache = new CellRingPathCache();
-            var timingsMock = mock(RibbonBakeTimings.class);
             var ribbonSource = buildCachingInto(system -> ANY_PLAN, ringPathCache);
 
-            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
-            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, timingsMock);
+            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
 
-            verify(timingsMock, times(1))
-                .addTraceNanos(anyLong());
+            var pathAfterFirstBake = ringPathCache.findRingPathOf(CELL);
+
+            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
+
+            // The kept path itself, since a walk that happened again would leave a second one
+            // behind: the phase's own duration is what a bake spent either way.
+            assertThat(ringPathCache.findRingPathOf(CELL))
+                .isSameAs(pathAfterFirstBake);
         }
 
         @Test
@@ -290,7 +297,7 @@ final class CellRibbonSourceTest {
             ringPathCache.putRingPath(OTHER_CELL, RingPath.nothingLeftToTrace());
 
             assertThat(buildCachingInto(system -> ANY_PLAN, ringPathCache)
-                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings)
+                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope)
                     .bands())
                 .isNotEmpty();
         }
@@ -412,8 +419,8 @@ final class CellRibbonSourceTest {
 
             var ribbonSource = buildJudgingAgainst(allianceSourceMock);
 
-            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
-            ribbonSource.buildCellRibbon(OTHER_CELL, INHABITED_SYSTEM, SQUARE_CELL, passTimings);
+            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
+            ribbonSource.buildCellRibbon(OTHER_CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
 
             verify(allianceSourceMock, times(1))
                 .resolveGrouping();
@@ -436,7 +443,7 @@ final class CellRibbonSourceTest {
 
     private CellRibbon buildFor(String drawnSystemId) {
         return buildWith(system -> ANY_PLAN)
-            .buildCellRibbon(CELL, drawnSystemId, SQUARE_CELL, passTimings);
+            .buildCellRibbon(CELL, drawnSystemId, SQUARE_CELL, passScope);
     }
 
     private CellRibbonPath traceFor(String drawnSystemId) {

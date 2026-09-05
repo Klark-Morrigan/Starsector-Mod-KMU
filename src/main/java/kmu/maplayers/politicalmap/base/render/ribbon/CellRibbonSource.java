@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
+import kmlib.profiling.IterationScope;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -136,15 +137,15 @@ public final class CellRibbonSource {
      * @param drawnSystemId the system the cell draws as, or null for a cell with no star of its
      *                      own - which nothing paints, so it carries no band
      * @param fillPolygon   the cell's painted outline, the ring the band runs inside
-     * @param timings       the pass's running totals, which this cell's count and the geometry
-     *                      that follows it are charged to
+     * @param bakeScope     the pass's open scope, whose turn is this cell and whose phases this
+     *                      cell's count and the geometry that follows it are marked on
      * @return the cell's baked band, or {@link CellRibbon#NONE} where it draws none
      */
     public CellRibbon buildCellRibbon(
             String cellId,
             String drawnSystemId,
             List<double[]> fillPolygon,
-            RibbonBakeTimings timings) {
+            IterationScope bakeScope) {
 
         var site = resolveBandLayoutSite(drawnSystemId);
         var system = site == null ? null : systemById.get(drawnSystemId);
@@ -155,13 +156,12 @@ public final class CellRibbonSource {
             return CellRibbon.NONE;
         }
 
-        // Charged apart from the geometry that follows it because it is the one phase of a bake
+        // Marked apart from the geometry that follows it because it is the one phase of a bake
         // that grows with what the systems hold rather than with the cells: the first ask about a
         // system walks its colonies, so a sector's colonies move this and the cells' own ring work
         // by different factors.
-        var planStart = System.nanoTime();
         var plan = planner.planSystemRibbon(system);
-        timings.addPlanNanos(System.nanoTime() - planStart);
+        bakeScope.markPhase(RibbonBakePhases.PLAN_PHASE);
 
         // The single-holder cell, and most of the sector: nothing was planned, so nothing is laid
         // out. Answered here rather than by the geometry because what it saves is the ring walk -
@@ -169,12 +169,16 @@ public final class CellRibbonSource {
         if (plan.sumLengthUnits() <= 0) {
             return CellRibbon.NONE;
         }
+        var ringPath = findOrTraceRingPath(cellId, fillPolygon, site);
+
+        bakeScope.markPhase(RibbonBakePhases.TRACE_PHASE);
+
         return CellRibbonBuilder.buildCellRibbon(
-            findOrTraceRingPath(cellId, fillPolygon, site, timings),
+            ringPath,
             plan,
             style,
             surface.nameBoxes(),
-            timings);
+            bakeScope);
     }
 
     /**
@@ -245,23 +249,18 @@ public final class CellRibbonSource {
     // Between the two, every cell in the sector would otherwise re-trace to arrive at the path it
     // discarded a moment earlier.
     //
-    // Charged to the pass only on the trace, so the phase's number is what walking rings cost this
-    // bake rather than what walking them would have cost - which is the difference the cache is
-    // there to make and the one worth being able to read.
-    private RingPath findOrTraceRingPath(
-            String cellId,
-            List<double[]> fillPolygon,
-            double[] site,
-            RibbonBakeTimings timings) {
+    // What the phase covers is the whole answer rather than the walk alone, so a bake over cells
+    // whose rings already stood reports the near-nothing a cache read costs - which is the
+    // difference the cache is there to make and the one worth being able to read, and which is now
+    // the phase's own number rather than a gap in somebody else's.
+    private RingPath findOrTraceRingPath(String cellId, List<double[]> fillPolygon, double[] site) {
 
         var standingPath = surface.ringPathCache().findRingPathOf(cellId);
 
         if (standingPath != null) {
             return standingPath;
         }
-        var traceStart = System.nanoTime();
         var tracedPath = RibbonPathTracer.traceLaidRibbonPath(fillPolygon, site, style);
-        timings.addTraceNanos(System.nanoTime() - traceStart);
 
         surface.ringPathCache().putRingPath(cellId, tracedPath);
 

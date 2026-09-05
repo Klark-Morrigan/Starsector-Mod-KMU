@@ -27,7 +27,7 @@ Part of [the political map](../../../README.md), in Klark Morrigan's Utilities; 
 ## The classes that build one
 
 Six collaborators with deliberately different jobs, since the names are close enough to be worth
-stating apart, plus the accumulator they charge what they spend to:
+stating apart, plus the phases they mark what they spend on:
 
 | Class | Scope | Job |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ stating apart, plus the accumulator they charge what they spend to:
 | `CellRibbonBuilder` | one cell | pure geometry: path plus plan in, `CellRibbon` out |
 | `RibbonPathTracer` | one cell | pure geometry: the ring a band runs along, at whichever inset fits |
 | `CellRingPathCache` | one build | the rings already walked, so a re-bake walks only what was re-shaped |
-| `RibbonBakeTimings` | the pass | what the pass spent, split four ways; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
+| `RibbonBakePhases` | the pass | the section a bake is measured under and its four phases; see [what a bake spends its time on](#what-a-bake-spends-its-time-on) |
 
 `CellRibbonsBaker` runs as its own **stage**, after the rest of a rebuild, because a band needs two
 things no single cell knows: the shape it runs inside, and where every cluster name on the map ended
@@ -326,28 +326,26 @@ and the path it was laid on can be read against each other.
 
 ## What a bake spends its time on
 
-A bake does four separable things, and `RibbonBakeTimings` reports each on its own row of the
-profiling readout (`kmu_profiling`) beside the whole-pass `politicalMap.bakeRibbons`:
+A bake does four separable things, and `RibbonBakePhases` declares each as a phase of the loop the
+whole-pass section `politicalMap.bakeRibbons` runs. The profiling readout (`kmu_profiling`) states
+them under that row, per cell:
 
-| Section | What it covers | What it grows with |
+| Phase | What it covers | What it grows with |
 | --- | --- | --- |
-| `.plan` | counting what a system holds | the systems' colonies - the claim mechanic walks a system's whole market list |
-| `.trace` | `RibbonPathTracer` insetting and walking the ring | the cells this bake had to walk - every cell on a fresh build, only the re-shaped ones after |
-| `.carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
-| `.stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
+| `plan` | counting what a system holds | the systems' colonies - the claim mechanic walks a system's whole market list |
+| `trace` | reaching for the cell's ring, and `RibbonPathTracer` insetting and walking one where none stands | the cells this bake had to walk - every cell on a fresh build, only the re-shaped ones after |
+| `carve` | the names and the pinches taken off that ring, and the band placed on what is left | the cells times the names, since every name on the map is tested against every cell |
+| `stroke` | the runs laid end to end and stroked into triangles | the cells that drew something, and how much each planned |
 
 Four rather than one because those axes differ: a sector that doubles its colonies does not move
 them by one factor, so a single total can say a bake got slower without saying which of them did.
 
-Summed per pass and recorded once at the end of the loop, since `Profiler.record` takes an elapsed
-count - so one pass is one run of each section, and the readout's average is what a bake costs
-rather than what a cell does. They are read against the whole-pass row rather than instead of it:
-the gap between their sum and the total is the loop itself, plus the overlay's second trace while a
-player has it on.
-
-The same four also close the bake's own `LOG.debug` line beside its total
-(`plan=1.50ms trace=0.25ms ...`), so a rebuild being watched in the log says which phase stood out
-without the console command being opened.
+Phases of one open scope rather than sections of their own, because a bake is one call and a cell is
+one turn of its loop - and it is the turn a rebuild's cost scales with. `CellRibbonsBaker` opens the
+scope once, begins a turn per cell named by that cell, and each collaborator marks its phase as it
+finishes it; measuring a cell as a section of its own would cost about what a cell's work costs.
+What the four leave unaccounted - the loop itself, and the overlay's second trace while a player has
+it on - is the difference between their sum and the turn.
 
 ## What is not here
 

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.Global;
 
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.IterationScope;
 import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -44,10 +45,11 @@ import java.util.Map;
  * because a path is traced inside the very shape the band beside it was laid in, and two passes
  * over the same cells could only ever agree about that by both being run.
  *
- * <p>What a pass spent is reported as four numbers rather than one, since a bake does four
- * separable things - counts, traces, carves and strokes - that grow on different axes. See
- * {@link RibbonBakeTimings}, which the loop charges each cell to and which is recorded once at
- * the end of it.
+ * <p>What a pass spent is reported per cell and split four ways, since a bake does four separable
+ * things - counts, traces, carves and strokes - that grow on different axes. See
+ * {@link RibbonBakePhases}: the pass opens one scope over the whole loop and marks each phase as
+ * the cell in hand finishes it, so the readout states what a cell costs rather than what a bake
+ * does.
  *
  * <p>Sampled once per pass and then asked, like the band source it holds: what a pass bakes from -
  * the cells, their geometry, and the room the names took - must not vary between the cells of one
@@ -125,32 +127,30 @@ public final class CellRibbonsBaker {
     public void bakeCellRibbonsOf(Collection<String> cellIds) {
 
         var bakeStart = System.nanoTime();
-        var timings = new RibbonBakeTimings();
+        int bakedCells;
 
         // A band's count walks a system's colonies once per bake, and on the claims layer settles a
         // contest over them - so this is the one part of a rebuild that could rival the known
         // label-fit stall, and it is profiled and timed on its own so a rebuild that slows down
-        // says which half slowed.
-        var bakedCells = ActiveProfiler
-            .resolveProfiler()
-            .measure(RibbonBakeTimings.BAKE_SECTION, () -> bakeCellRibbons(cellIds, timings));
+        // says which half slowed. One scope over the whole loop rather than one per cell, since a
+        // scope per cell would cost about what a cell costs.
+        try (var bakeScope = ActiveProfiler
+                .resolveProfiler()
+                .openIterations(RibbonBakePhases.BAKE_SECTION)) {
 
-        // The four phases beside the whole-pass measure rather than instead of it: what they
-        // leave unaccounted - the loop itself, and the overlay's second trace while a player has
-        // it on - shows only as the gap between their sum and the total.
-        timings.recordPhaseTotals(ActiveProfiler.resolveProfiler());
+            bakedCells = bakeCellRibbons(cellIds, bakeScope);
+        }
 
         LOG.debug("Political map presence bands baked; cells="
             + cellIds.size()
             + " banded=" + bakedCells
-            + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart)
-            + " " + timings.describePhaseTotals());
+            + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart));
     }
 
     // Bakes each named cell's band inside the shape that cell already records, reporting how many
-    // of them came back with anything to draw and charging what each cell cost to the pass's
-    // running totals.
-    private int bakeCellRibbons(Collection<String> cellIds, RibbonBakeTimings timings) {
+    // of them came back with anything to draw and charging what each cell cost to the pass's own
+    // scope, a turn per cell.
+    private int bakeCellRibbons(Collection<String> cellIds, IterationScope bakeScope) {
 
         var bakedCells = 0;
 
@@ -160,15 +160,24 @@ public final class CellRibbonsBaker {
             if (fillPolygon == null) {
                 continue;
             }
+            // Named by the cell, so the slowest turn of the pass says which cell it was over -
+            // which is the one fact a mean over the whole sector cannot carry.
+            bakeScope.beginIteration(cellId);
+
             var ribbon = ribbonSource.buildCellRibbon(
                 cellId,
                 systemIdByCellId.get(cellId),
                 fillPolygon,
-                timings);
+                bakeScope);
 
             territories.putCellRibbon(cellId, ribbon);
             territories.putCellRibbonPath(cellId, traceCellRibbonPath(cellId, fillPolygon));
             bakedCells += ribbon.isEmpty() ? 0 : 1;
+
+            // Closed after the overlay's own trace, so a turn covers everything a cell costs the
+            // pass; what the four phases leave unaccounted is the difference between their sum and
+            // the turn.
+            bakeScope.endIteration();
         }
         return bakedCells;
     }

@@ -3,6 +3,7 @@ package kmu.console;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.snapshot.DurationBuckets;
+import kmlib.profiling.snapshot.ProfileIterations;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.profiling.snapshot.ProfileTiming;
 import kmlib.profiling.snapshot.WorstCall;
@@ -52,6 +53,7 @@ final class KmuProfilingReportCommandTest {
                         TWO_MILLIS_IN_NANOS,
                         DurationBuckets.NO_CALLS),
                     WorstCall.NO_CALL,
+                    ProfileIterations.NO_ITERATIONS,
                     List.of(),
                     List.of())));
 

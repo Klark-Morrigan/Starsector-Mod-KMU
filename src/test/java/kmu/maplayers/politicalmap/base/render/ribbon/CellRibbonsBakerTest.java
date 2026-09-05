@@ -3,6 +3,10 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.SilentProfiler;
+import kmlib.profiling.recording.RecordingProfiler;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -109,6 +113,13 @@ final class CellRibbonsBakerTest {
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }
 
+    // Every case leaves profiling as it found it, since the holder is process-wide: a recording
+    // profiler left bound would follow the next case into a capture it never asked for.
+    @AfterEach
+    void releaseBoundProfiler() {
+        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
+    }
+
     @AfterEach
     void releaseBandSettings() {
         mapLayerSettingsMock.close();
@@ -143,6 +154,30 @@ final class CellRibbonsBakerTest {
 
             assertThat(territories.getRibbonByCellId())
                 .containsOnlyKeys(BANDED_CELL, UNHELD_SETTLED_CELL);
+        }
+
+        @Test
+        void reportsThePassAsOneRowRunningATurnPerCell() {
+            // What the readout has to answer is what a cell costs, and that is a turn of the bake
+            // rather than a call of it: a section per phase would report what a whole pass spent
+            // and leave the number a rebuild scales with to be divided out by hand.
+            var profiler = new RecordingProfiler();
+
+            ActiveProfiler.bindProfiler(profiler);
+
+            bakeEveryCellThrough(buildTwoDrawnCells());
+
+            var bakeRow = profiler.snapshot().get(0);
+
+            assertThat(bakeRow.getSection().getName())
+                .isEqualTo("politicalMap.bakeRibbons");
+            assertThat(bakeRow.getTiming().getCount())
+                .isEqualTo(1);
+            assertThat(bakeRow.getIterations().getCount())
+                .isEqualTo(2);
+            assertThat(bakeRow.getIterations().getPhaseTotals())
+                .extracting(phaseTotal -> phaseTotal.getPhase().getName())
+                .containsExactly("plan", "trace", "carve", "stroke");
         }
 
         @Test

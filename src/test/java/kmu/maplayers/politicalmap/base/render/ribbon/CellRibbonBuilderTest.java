@@ -1,5 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
+import kmlib.profiling.IterationScope;
+import kmlib.profiling.SilentProfiler;
+
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
@@ -20,7 +23,6 @@ import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.S
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -217,20 +219,22 @@ final class CellRibbonBuilderTest {
     // rail intersections, so they carry a rounding whisker rather than being stated arithmetic.
     private static final double CORNER_SLACK = 0.01;
 
-    // Where a bake charges what a cell cost it. Handed in and never read back here: a band's
-    // phases are summed per pass, while what these cases pin is the band one cell comes out with.
-    private final RibbonBakeTimings passTimings = new RibbonBakeTimings();
+    // Where a bake marks what a cell cost it. Handed in and never read back here: a band's phases
+    // are marked per cell, while what these cases pin is the band one cell comes out with. The
+    // silent profiler's scope rather than a mock, since nothing here is asked of it.
+    private final IterationScope passScope =
+        SilentProfiler.INSTANCE.openIterations(RibbonBakePhases.BAKE_SECTION);
 
     @Nested
     class BuildCellRibbon {
 
         @Test
-        void chargesTheCellsCarveAndStrokeToThePass() {
+        void marksTheCellsCarveAndStrokeOnThePass() {
             // What a bake is measured by, and it only means anything if the phases are actually
-            // charged: two numbers nothing writes to would read as a bake that costs nothing. The
-            // trace is not among them - the path arrives already walked, and what walking it cost
-            // is charged where that happened.
-            var timingsMock = mock(RibbonBakeTimings.class);
+            // marked: two slots nothing adds to would read as a bake that costs nothing. The trace
+            // is not among them - the path arrives already walked, and reaching for it is marked
+            // where that happened.
+            var bakeScopeMock = mock(IterationScope.class);
 
             bakeBandIn(
                 SQUARE_CELL,
@@ -238,19 +242,19 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES,
-                timingsMock);
+                bakeScopeMock);
 
-            verify(timingsMock).addCarveNanos(anyLong());
-            verify(timingsMock).addStrokeNanos(anyLong());
-            verify(timingsMock, never()).addTraceNanos(anyLong());
+            verify(bakeScopeMock).markPhase(RibbonBakePhases.CARVE_PHASE);
+            verify(bakeScopeMock).markPhase(RibbonBakePhases.STROKE_PHASE);
+            verify(bakeScopeMock, never()).markPhase(RibbonBakePhases.TRACE_PHASE);
         }
 
         @Test
-        void chargesTheCarveOfACellItLeftNoRoomToLayABandOn() {
+        void marksTheCarveOfACellItLeftNoRoomToLayABandOn() {
             // A refusal is not free, and the cells the carve turns down are the ones whose carve
-            // is most worth knowing the cost of: charged for the ring it walked, and for no
-            // stroke it never reached.
-            var timingsMock = mock(RibbonBakeTimings.class);
+            // is most worth knowing the cost of: marked for the ring it walked, and for no stroke
+            // it never reached.
+            var bakeScopeMock = mock(IterationScope.class);
 
             bakeBandIn(
                 SQUARE_CELL,
@@ -258,10 +262,10 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NAME_ACROSS_THE_WHOLE_CELL,
-                timingsMock);
+                bakeScopeMock);
 
-            verify(timingsMock).addCarveNanos(anyLong());
-            verify(timingsMock, never()).addStrokeNanos(anyLong());
+            verify(bakeScopeMock).markPhase(RibbonBakePhases.CARVE_PHASE);
+            verify(bakeScopeMock, never()).markPhase(RibbonBakePhases.STROKE_PHASE);
         }
 
         @Test
@@ -276,7 +280,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -305,7 +309,7 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -328,7 +332,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(crowdedRuns),
                 STYLE,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .hasSize(CROWDED_RUN_COUNT)
@@ -350,7 +354,7 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -378,7 +382,7 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(DARK, RUN_REACHING_THE_CORNER))),
                 STYLE,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(hasCorner(ribbon.bands().get(0), 3800.0, 3800.0))
                 .isTrue();
@@ -408,7 +412,7 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE,
                 NAMES_EITHER_SIDE_OF_THE_START,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .extracting(RibbonBand::colour)
@@ -438,7 +442,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE,
                 List.of(NAME_ACROSS_THE_BOTTOM_EDGE),
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -465,7 +469,7 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE,
                 List.of(NAME_ACROSS_THE_TOP_EDGE),
-                passTimings);
+                passScope);
 
             assertThat(hasCorner(ribbon.bands().get(0), 1600.0, 3800.0))
                 .isTrue();
@@ -489,7 +493,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_OVER_THE_START_AND_THE_BOTTOM_EDGE,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -512,7 +516,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_UP_TO_THE_START_AND_THE_TOP_EDGE,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -535,7 +539,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NAMES_EITHER_SIDE_OF_THE_START,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -556,7 +560,7 @@ final class CellRibbonBuilderTest {
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NAME_ACROSS_THE_WHOLE_CELL,
-                    passTimings))
+                    passScope))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -574,7 +578,7 @@ final class CellRibbonBuilderTest {
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_NO_HAIRLINE_CAN_STATE))),
                     STYLE,
                     NAMES_LEAVING_ONLY_A_HAIRLINE,
-                    passTimings))
+                    passScope))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -591,7 +595,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 NAME_ACROSS_THE_WHOLE_CELL,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -616,7 +620,7 @@ final class CellRibbonBuilderTest {
                     new RibbonSegment(DARK, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 List.of(NAME_ACROSS_THE_TOP_EDGE),
-                passTimings);
+                passScope);
 
             assertThat(hasCorner(ribbon.bands().get(0), 1600.0, 3800.0))
                 .isTrue();
@@ -636,7 +640,7 @@ final class CellRibbonBuilderTest {
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE_FORCING_A_BAND,
                     NO_NAMES,
-                    passTimings))
+                    passScope))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -653,7 +657,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                 STYLE_FORCING_A_BAND,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -673,7 +677,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE,
                 NO_NAMES,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -697,7 +701,7 @@ final class CellRibbonBuilderTest {
                 new RibbonPlan(List.of(new RibbonSegment(BRIGHT, RUN_OUTRUNNING_THE_STRETCH))),
                 STYLE_FORCING_A_BAND,
                 NAME_ACROSS_THE_WHOLE_CELL,
-                passTimings);
+                passScope);
 
             assertThat(ribbon.bands())
                 .singleElement()
@@ -718,7 +722,7 @@ final class CellRibbonBuilderTest {
                     new RibbonPlan(List.of(new RibbonSegment(BRIGHT, ONE_WIDTH))),
                     STYLE,
                     NO_NAMES,
-                    passTimings))
+                    passScope))
                 .isEqualTo(CellRibbon.NONE);
         }
     }
@@ -736,14 +740,14 @@ final class CellRibbonBuilderTest {
             RibbonPlan plan,
             RibbonStyle style,
             List<List<double[]>> nameBoxes,
-            RibbonBakeTimings timings) {
+            IterationScope bakeScope) {
 
         return CellRibbonBuilder.buildCellRibbon(
             RibbonPathTracer.traceLaidRibbonPath(ring, topAnchor, style),
             plan,
             style,
             nameBoxes,
-            timings);
+            bakeScope);
     }
 
     // How far right a run's triangles reach. A band on the necked cell's right side stands at

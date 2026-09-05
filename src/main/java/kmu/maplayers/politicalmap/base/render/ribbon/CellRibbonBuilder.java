@@ -5,6 +5,7 @@ import kmlib.math.geometry.PolylineBands;
 import kmlib.math.geometry.RingPath;
 import kmlib.math.geometry.RingStretch;
 import kmlib.opengl.GlVertexRuns;
+import kmlib.profiling.IterationScope;
 
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 
@@ -30,13 +31,13 @@ import java.util.List;
  *
  * <p>Pure over a path, a plan and the names' boxes - no sector, no settings read, no GL - so a
  * corner split, a compressed band, a name lying across the ring, a ring narrowed to a neck in one
- * place, and a cell too small to hold a band at all are all posed directly. The pass's timings are
- * written to and never read, so a hand-traced path is still posed with nothing but a fresh
- * accumulator beside it.
+ * place, and a cell too small to hold a band at all are all posed directly. The pass's scope is
+ * marked and never read, so a hand-traced path is still posed with nothing but a silent scope
+ * beside it.
  *
- * <p>Two of a bake's four phases are here, and each is charged separately: what a cell spends
- * carving the names off its path and what it spends stroking the result grow on different axes, so
- * a bake that slowed down is answered here rather than guessed at.
+ * <p>Two of a bake's four phases are marked here, and separately: what a cell spends carving the
+ * names off its path and what it spends stroking the result grow on different axes, so a bake that
+ * slowed down is answered here rather than guessed at.
  */
 public final class CellRibbonBuilder {
 
@@ -63,8 +64,8 @@ public final class CellRibbonBuilder {
      * @param nameBoxes    the room the drawn cluster names take up, as world rings the band
      *                     keeps out of; the whole map's, since a name sits where its own
      *                     cluster is roomiest and that can be over this cell
-     * @param timings      the pass's running totals, which this cell's carve and stroke are
-     *                     charged to
+     * @param bakeScope    the pass's open scope, whose turn is this cell and on which this cell's
+     *                     carve and stroke are marked
      * @return the baked band, or {@link CellRibbon#NONE} where the cell draws none
      */
     public static CellRibbon buildCellRibbon(
@@ -72,7 +73,7 @@ public final class CellRibbonBuilder {
             RibbonPlan plan,
             RibbonStyle style,
             List<List<double[]>> nameBoxes,
-            RibbonBakeTimings timings) {
+            IterationScope bakeScope) {
 
         // A cell whose ring held the band's inset nowhere: smaller than the pad and width
         // together, or too narrow for them along the whole of it. A cell pinched in one place
@@ -81,19 +82,18 @@ public final class CellRibbonBuilder {
             return CellRibbon.NONE;
         }
         var totalLengthUnits = plan.sumLengthUnits();
-
-        var carveStart = System.nanoTime();
         var layout = layOutBand(path, nameBoxes, totalLengthUnits, style);
-        timings.addCarveNanos(System.nanoTime() - carveStart);
+
+        bakeScope.markPhase(RibbonBakePhases.CARVE_PHASE);
 
         // A cell the carve left nothing to lay a band on - charged for the carve all the same,
         // since what it cost is what the pass spent finding that out.
         if (layout == null) {
             return CellRibbon.NONE;
         }
-        var strokeStart = System.nanoTime();
         var bands = strokeSegments(path, plan, layout, style);
-        timings.addStrokeNanos(System.nanoTime() - strokeStart);
+
+        bakeScope.markPhase(RibbonBakePhases.STROKE_PHASE);
 
         return new CellRibbon(bands);
     }
