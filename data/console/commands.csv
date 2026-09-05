@@ -1,3 +1,3 @@
 command,class,tags,syntax,help
 kmu_mcm_open,kmu.console.KmuOpenMarketConditionManagerCommand,"kmu,campaign,market",kmu_mcm_open,"Opens Klark Morrigan's Utilities Market Condition Manager for the current supported market context.\n\nUNFINISHED: the feature ships switched off and this command refuses to open it until it is enabled on KMU's Features settings tab."
-kmu_profiling,kmu.console.KmuProfilingReportCommand,"kmu,debug",kmu_profiling [reset],"Prints KMU performance timings (per-section call count and avg/min/max/total ms).\n\nArguments:\n- reset: clears the collected timings."
+kmu_profiling,kmu.console.KmuProfilingReportCommand,"kmu,debug",kmu_profiling [reset],"Prints KMU performance timings as a tree, each section indented under the one it ran inside (call count and avg/min/max/self/total ms).\n\nArguments:\n- reset: clears the collected timings."

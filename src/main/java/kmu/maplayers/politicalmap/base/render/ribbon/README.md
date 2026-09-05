@@ -327,7 +327,7 @@ and the path it was laid on can be read against each other.
 ## What a bake spends its time on
 
 A bake does four separable things, and `RibbonBakeTimings` reports each on its own row of the
-profiling readout (`kmu_profiling`) beneath the whole-pass `politicalMap.bakeRibbons`:
+profiling readout (`kmu_profiling`) beside the whole-pass `politicalMap.bakeRibbons`:
 
 | Section | What it covers | What it grows with |
 | --- | --- | --- |
