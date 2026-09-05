@@ -2,6 +2,7 @@ package kmu.console;
 
 import kmlib.profiling.ProfileNode;
 import kmlib.profiling.ProfileSection;
+import kmlib.profiling.ProfileTiming;
 import kmlib.profiling.Profiler;
 
 import org.junit.jupiter.api.Nested;
@@ -42,10 +43,8 @@ final class KmuProfilingReportCommandTest {
             when(profilerMock.snapshot()).thenReturn(List.of(
                 new ProfileNode(
                     ProfileSection.registerSection(SECTION),
-                    1,
-                    TWO_MILLIS_IN_NANOS,
-                    TWO_MILLIS_IN_NANOS,
-                    TWO_MILLIS_IN_NANOS,
+                    new ProfileTiming(
+                        1, TWO_MILLIS_IN_NANOS, TWO_MILLIS_IN_NANOS, TWO_MILLIS_IN_NANOS),
                     List.of(),
                     List.of())));
 

@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import kmlib.profiling.ProfileNode;
+import kmlib.profiling.ProfileTiming;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.RecordingProfiler;
 
@@ -46,7 +46,7 @@ final class RibbonBakeTimingsTest {
             timings.recordPhaseTotals(profiler);
 
             assertThat(profiler.snapshot())
-                .extracting(node -> node.getSection().getName(), ProfileNode::getTotalNanos)
+                .extracting(node -> node.getSection().getName(), node -> node.getTiming().getTotalNanos())
                 .containsExactly(
                     tuple(PLAN_SECTION, 11L),
                     tuple(TRACE_SECTION, 22L),
@@ -64,7 +64,7 @@ final class RibbonBakeTimingsTest {
 
             timings.recordPhaseTotals(profiler);
 
-            assertThat(readSection(TRACE_SECTION).getTotalNanos())
+            assertThat(readSectionTiming(TRACE_SECTION).getTotalNanos())
                 .isEqualTo(600L);
         }
 
@@ -78,9 +78,9 @@ final class RibbonBakeTimingsTest {
 
             timings.recordPhaseTotals(profiler);
 
-            assertThat(readSection(CARVE_SECTION).getCount())
+            assertThat(readSectionTiming(CARVE_SECTION).getCount())
                 .isEqualTo(1L);
-            assertThat(readSection(CARVE_SECTION).getAverageNanos())
+            assertThat(readSectionTiming(CARVE_SECTION).getAverageNanos())
                 .isEqualTo(1000L);
         }
 
@@ -91,7 +91,7 @@ final class RibbonBakeTimingsTest {
             timings.recordPhaseTotals(profiler);
 
             assertThat(profiler.snapshot())
-                .extracting(node -> node.getSection().getName(), ProfileNode::getTotalNanos)
+                .extracting(node -> node.getSection().getName(), node -> node.getTiming().getTotalNanos())
                 .containsExactly(
                     tuple(PLAN_SECTION, 0L),
                     tuple(TRACE_SECTION, 0L),
@@ -112,9 +112,9 @@ final class RibbonBakeTimingsTest {
             laterPass.addStrokeNanos(300L);
             laterPass.recordPhaseTotals(profiler);
 
-            assertThat(readSection(STROKE_SECTION).getCount())
+            assertThat(readSectionTiming(STROKE_SECTION).getCount())
                 .isEqualTo(2L);
-            assertThat(readSection(STROKE_SECTION).getMaxNanos())
+            assertThat(readSectionTiming(STROKE_SECTION).getMaxNanos())
                 .isEqualTo(700L);
         }
     }
@@ -135,12 +135,13 @@ final class RibbonBakeTimingsTest {
         }
     }
 
-    private ProfileNode readSection(String section) {
+    private ProfileTiming readSectionTiming(String section) {
         return profiler
             .snapshot()
             .stream()
             .filter(node -> node.getSection().getName().equals(section))
             .findFirst()
-            .orElseThrow();
+            .orElseThrow()
+            .getTiming();
     }
 }
