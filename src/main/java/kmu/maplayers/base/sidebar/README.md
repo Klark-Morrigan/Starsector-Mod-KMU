@@ -43,8 +43,7 @@ map, the other overlaid on the intel visor amid that screen's own chrome - so ea
 part of what surrounds it, which a shared renderer could only do by naming the screens. What lets
 them diverge as far as they do - one a strip framed in its base accent, the other a row of buttons
 framed in the dark step - is that neither `SidebarRenderer` nor `LiveSidebarPlacement` holds a screen
-test about it: a third screen would be a third host and no renderer change. Neither is the fold, which
-is per screen but composed the same way on both - see [fold persistence](#fold-persistence).
+test about it: a third screen would be a third host and no renderer change.
 
 Keys are not in that table because the panel offers the same body of tabs wherever it draws, so
 `BaseSidebarHost.handleKeyPress` serves both: a bound key jumps that host's own pick to its layer

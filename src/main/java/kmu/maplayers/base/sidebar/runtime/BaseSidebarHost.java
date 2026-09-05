@@ -21,8 +21,8 @@ import java.util.List;
  * The plumbing every sidebar host shares: the panel's controller, the fold selection behind it, the screen's
  * picks - which layer is active there and whether its layers show at all - the reseed that opens the panel at
  * the fold a loaded save was left at, and the shortcut key that jumps to a layer. A concrete host supplies
- * its own fold selection and its own screen's picks - its own frozen keys and its own opening default - and
- * answers the questions that actually differ between screens: whether its screen is up, where it anchors,
+ * its own fold selection and its own screen's picks - both under that screen's own scope, and its own
+ * opening default - and answers the questions that actually differ between screens: whether its screen is up, where it anchors,
  * which frame edges it strokes, and how that screen's own view state reads.
  *
  * <p>The shortcut jump lives here because the panel draws one body of tabs wherever it shows, so the key
@@ -67,9 +67,10 @@ public abstract class BaseSidebarHost implements SidebarHost {
     // frozen memory key and the fold the screen opens at stay with the screen that owns them.
     private final SidebarFoldSelection foldSelection;
 
-    // The screen's picks: which tab is lit here, and whether the layers are on this screen at all.
-    // Supplied by the concrete host as one pair, so each screen keeps its own state, a switch or a hide on
-    // one leaves the other untouched, and no host can be wired to one screen's tab and another's hiding.
+    // The screen's picks: which tab is lit here, whether the layers are on this screen at all, and the
+    // scope its keys compose through. Supplied by the concrete host as one value, so each screen keeps its
+    // own state, a switch or a hide on one leaves the other untouched, and no host can be wired to one
+    // screen's tab and another's hiding.
     private final ScreenLayerPicks screenPicks;
 
     // Whether anything else has claimed the screen this frame. Handed in rather than composed here, so a
@@ -282,7 +283,7 @@ public abstract class BaseSidebarHost implements SidebarHost {
 
     /**
      * @return this host's screen's picks, for a subclass to lay the panel out around the lit tab and the
-     *         tabs this screen is offered. The same pair the shortcut key reads and writes, so the layout
+     *         tabs this screen is offered. The same value the shortcut key reads and writes, so the layout
      *         and the jump never disagree on which screen's state they are answering for
      */
     protected final ScreenLayerPicks getScreenPicks() {
