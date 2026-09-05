@@ -53,16 +53,19 @@ public final class ScreenLayerTabs {
         if (!screenPicks.layerVisibility().hasControlBeenAttached()) {
             return arrangedLayers;
         }
+        // The player's row rather than the roster, so a bar left with nothing standing falls back to
+        // the leading tab of their own order rather than to one they never put there.
         return withholdEmptyViewTab(arrangedLayers);
     }
 
     /**
-     * Moves a pick this screen no longer offers to the default layer, and stores the empty map it stood
-     * for as a hide - so the picture is unchanged and what the player chose is now held by the control
-     * that can reverse it.
+     * Moves a pick a control on this screen has taken over to the default layer, and stores the empty map
+     * it stood for as a hide - so the picture is unchanged and what the player chose is now held by the
+     * control that can reverse it.
      *
-     * <p>Owed once, on the first control to stand on a screen; a pick the strip still offers is left
-     * alone, which is every other call.
+     * <p>Owed once, on the first control to stand on a screen; a pick nothing has taken over is left
+     * alone, which is every other call. A pick whose tab the player took off the bar themselves is left
+     * alone too, that being a tab they hid rather than a layer they switched off.
      *
      * @param screenPicks the screen's own picks, both of which this may write
      */
@@ -95,16 +98,15 @@ public final class ScreenLayerTabs {
             && !withholdEmptyViewTab(MapLayerRegistry.getLayers()).contains(pick);
     }
 
-    // The given row without the empty view's tab, unless that would leave no tab at all: an empty strip
-    // has no way back to itself, so the last one standing is offered whatever else is true. Reached where
-    // the player has hidden every layer that paints, the row handed in being theirs rather than the
-    // roster - which is why the tab left standing is the one they would look for.
-    private static List<MapLayer> withholdEmptyViewTab(List<MapLayer> arrangedLayers) {
+    // The given row without the empty view's tab, unless that would leave no tab at all: a row with no
+    // tabs has no way back to itself, so the last one standing is offered whatever else is true. Which
+    // row is asked about is each caller's, and the two ask about different ones deliberately.
+    private static List<MapLayer> withholdEmptyViewTab(List<MapLayer> offeredLayers) {
 
-        var offeredLayers = arrangedLayers.stream()
+        var paintingLayers = offeredLayers.stream()
             .filter(layer -> layer != NoLayer.INSTANCE)
             .toList();
 
-        return offeredLayers.isEmpty() ? arrangedLayers : offeredLayers;
+        return paintingLayers.isEmpty() ? offeredLayers : paintingLayers;
     }
 }

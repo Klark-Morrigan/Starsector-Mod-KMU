@@ -22,6 +22,12 @@ import static org.mockito.Mockito.when;
  * against it and a filtered roster would read a save left on that tab as stale and start painting; and
  * a lone tab is never withheld, an empty strip having no way back to itself.
  *
+ * <p>Pins the other subtraction beside it: the row is the player's own before any of the above is asked
+ * of it, so the strip follows their order and drops the tabs they took off. What the two subtractions do
+ * together is the part neither tier can be held to alone - the reconciliation itself is
+ * {@link ArrangedLayersTest}'s - so what is pinned here is that the strip carries the arrangement at all,
+ * and that a row either of them would empty keeps its last tab.
+ *
  * <p>And the move that keeps the two controls agreeing: a pick already sitting on the withheld tab is
  * put on the default layer and stored as a hide, so the map stays as blank as it was and the box says
  * so. When that is owed - once, on the first control to stand - is
@@ -113,9 +119,9 @@ final class ScreenLayerTabsTest {
 
         @Test
         void resolveTabbedLayersTakesAHiddenLayerOffTheStripAndLeavesItOnTheRoster() {
-            // Hiding is not switching off. The tab goes and the layer stays registered, so a save
-            // holding it as its pick goes on painting exactly as it did - what the player took off is
-            // the way to reach it, not the layer.
+            // Hiding is not switching off: what the player took off is the way to reach the layer by
+            // tab, not the layer. Held to through the roster lookup a stored pick resolves by, that
+            // being what decides whether a save left on a hidden layer goes on painting it.
             registerTheEmptyViewBesideALayerThatPaints();
 
             MapLayerArrangements.arrangeBarWith(
@@ -141,21 +147,6 @@ final class ScreenLayerTabsTest {
                 List.of(OTHER_PAINTING_LAYER_ID));
 
             assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
-                .containsExactly(paintingLayerMock);
-        }
-
-        @Test
-        void resolveTabbedLayersKeepsTheLastTabOfThePlayersOwnRowWhereHidingWouldEmptyIt() {
-            // Only a hand-edited store reaches this, the dialog refusing to hide the last visible tab.
-            // The tab left standing is the leading one of their order rather than of the roster's, so
-            // the bar they cannot empty is still the bar they built.
-            registerTheEmptyViewBesideALayerThatPaints();
-
-            MapLayerArrangements.arrangeBarWith(
-                List.of(PAINTING_LAYER_ID, NO_LAYER_ID),
-                List.of(PAINTING_LAYER_ID, NO_LAYER_ID));
-
-            assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithNoControl()))
                 .containsExactly(paintingLayerMock);
         }
 
@@ -215,6 +206,33 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
+        void migratePickOffWithheldTabLeavesAPickThePlayerHidTheTabOfAlone() {
+            // The one place the strip's row and this reading part company, and the rule that parts
+            // them: hiding a tab is not switching a layer off. Migrated, a player who tidied a layer's
+            // tab off their bar would find the map it paints gone from every save that had picked it -
+            // and nothing on screen saying which of their two acts did it.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(PAINTING_LAYER_ID));
+
+            var screenPicks = createPicksWithAControlStanding();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+
+            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
+
+            // The layer that paints is also the default pick, so a migration that fired here would
+            // select it afresh and hide the layers under it - which is the exact pair asserted against.
+            verify(screenPicks.layerSelection(), never())
+                .selectLayer(paintingLayerMock);
+            verify(screenPicks.layerVisibility().getStoredVisibility(), never())
+                .showLayers(false);
+        }
+
+        @Test
         void migratePickOffWithheldTabLeavesAPickOnTheLastTabStandingAlone() {
             // The guard above, read from the other end: a tab that is not withheld is not migrated off
             // either, so a strip of one leaves the player where they were rather than storing a hide
@@ -234,17 +252,7 @@ final class ScreenLayerTabsTest {
     // shape every install ships and the only one in which anything is withheld at all.
     private void registerTheEmptyViewBesideALayerThatPaints() {
 
-        // The layer that paints offers itself as the default pick, which is what a migration off the
-        // withheld tab moves the screen to. The empty view leads the row and declines it, as it does
-        // in play.
-        when(paintingLayerMock.isOfferedAsDefaultPick())
-            .thenReturn(true);
-
-        // The id a stored arrangement would name it by, the store holding what a past session wrote
-        // rather than the layers themselves.
-        when(paintingLayerMock.getId())
-            .thenReturn(PAINTING_LAYER_ID);
-
+        stubTheLayerThatPaints();
         MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
     }
 
@@ -252,13 +260,25 @@ final class ScreenLayerTabsTest {
     // layer makes and the only shape in which hiding and withholding can both bite at once.
     private void registerTwoLayersThatPaintBesideTheEmptyView() {
 
-        registerTheEmptyViewBesideALayerThatPaints();
+        stubTheLayerThatPaints();
 
         when(otherPaintingLayerMock.getId())
             .thenReturn(OTHER_PAINTING_LAYER_ID);
 
         MapLayerRosters.replaceRosterWith(
             NoLayer.INSTANCE, paintingLayerMock, otherPaintingLayerMock);
+    }
+
+    // What the layer that paints answers, whichever roster it stands in: it offers itself as the
+    // default pick, which is what a migration off the withheld tab moves the screen to, and it answers
+    // the id a stored arrangement would name it by - the store holding ids rather than layers. The
+    // empty view leads the row and declines the pick, as it does in play.
+    private void stubTheLayerThatPaints() {
+
+        when(paintingLayerMock.isOfferedAsDefaultPick())
+            .thenReturn(true);
+        when(paintingLayerMock.getId())
+            .thenReturn(PAINTING_LAYER_ID);
     }
 
     // A screen whose box has stood at least once this session, which is what withholds its tab.
