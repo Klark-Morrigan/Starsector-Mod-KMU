@@ -39,9 +39,9 @@ import static org.mockito.Mockito.when;
  * every case here is about how the register accumulates across calls - a stubbed read could not
  * show a second visit overwriting the first, nor a reconciliation removing an entry.
  *
- * <p>The colonies are {@link ColonyMarketFixture}'s, shapes an observation decides for the most
- * part: a colony neither gate nor report is about is never recorded, so a suite posing only those
- * could not tell a working recorder from one that wrote nothing at all.
+ * <p>The colonies are {@link ColonyMarketFixture}'s, shapes worth recording for the most part: an
+ * ordinary open colony is never recorded, so a suite posing only those could not tell a working
+ * recorder from one that wrote nothing at all.
  */
 final class SectorColonySightingsTest {
 
@@ -190,9 +190,8 @@ final class SectorColonySightingsTest {
 
         @Test
         void records_nothing_for_a_dead_world_the_player_is_standing_in() {
-            // The narrower half of the pair the two routes make. Arriving is the very act vanilla
-            // stamps a permanent survey level for, so an entry here would restate what the fog
-            // answers anyway - at the cost of one per dead world in every system ever entered.
+            // The narrower half of the pair the two routes make: vanilla's own survey level already
+            // remembers the player's arrival, so the register owes this shape nothing here.
             placeColoniesOnSystemEntities(buildDeadWorld("tibicena"));
             openStoredSightings();
 

@@ -265,21 +265,18 @@ public final class ColonyKnowledge implements KnownColonyReader {
 
     /**
      * The colonies some gate holds back until they have been observed - and so, for anybody
-     * standing in the place this set was read out of, exactly what they have just observed.
+     * standing in the place this set was read out of, what they have just observed that is worth
+     * writing down.
      *
      * <p>Being somewhere is seeing what is in it, which is why this reads no fog and no rule. A
      * concealed base the observer cannot pick out is recorded all the same: an observation is not
      * by itself permission to show anything, the gate being a further condition on top of the fog
      * rather than an alternative to it.
      *
-     * <p>Only the gated shapes, since only they are ever asked about. An open colony the economy
-     * lists is permanently in the sector's own sight, so writing an observation of one down would
-     * buy nothing and cost an entry per colony in the sector.
-     *
-     * <p>Narrower than what the inhabitants' route records, and deliberately so. A collapsed world
-     * is found on a report as well, but the player standing here is the very act vanilla already
-     * stamps a permanent survey level for - so an entry would restate what the fog answers anyway,
-     * at the cost of one per collapsed world in every system the player has ever entered.
+     * <p>The gated shapes alone, which is one shape fewer than the inhabitants' read records. A
+     * collapsed world is found on a report as well, but the player standing here is the very act
+     * vanilla already stamps a permanent survey level for - so an entry would restate what the fog
+     * answers anyway, at the cost of one per collapsed world in every system ever entered.
      *
      * @param colonies the place's colonies; null holds nothing
      * @return the colonies a gate covers, in the set's own order
@@ -289,9 +286,9 @@ public final class ColonyKnowledge implements KnownColonyReader {
     }
 
     /**
-     * The colonies an observation decides that the place's own inhabitants can see standing here -
-     * what somebody living beside a derelict, a concealed base or a collapsed world has observed,
-     * whether or not the player ever comes.
+     * The colonies worth recording that the place's own inhabitants can see standing here - what
+     * somebody living beside a derelict, a concealed base or a collapsed world has observed, whether
+     * or not the player ever comes.
      *
      * <p>Owner-aware through the same test the rule uses: the people keeping a secret are exactly
      * the ones a faction-blind reading would credit with telling it. So a faction's open colony
@@ -303,8 +300,8 @@ public final class ColonyKnowledge implements KnownColonyReader {
      * them out.
      *
      * @param colonies the place's colonies; null holds nothing
-     * @return the colonies an observation decides that somebody living here has seen, in the set's
-     *         own order
+     * @return the colonies worth recording that somebody living here has seen, in the set's own
+     *         order
      */
     public List<Colony> readColoniesObservedByInhabitants(Colonies colonies) {
 
@@ -312,7 +309,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
 
         return collectColonies(
             colonies,
-            colony -> isColonyDecidedByObservation(colony)
+            colony -> isWorthRecording(colony)
                 && isObservedByInhabitants(colony, settlingOwnerIds));
     }
 
@@ -512,18 +509,16 @@ public final class ColonyKnowledge implements KnownColonyReader {
             fogRule.shouldIncludeUndiscoveredMarkets());
     }
 
-    // Whether an observation of this colony decides anything at all - the one question the sighting
-    // register is kept to answer, and so the one thing worth writing an entry for.
+    // Whether an observation of this colony decides anything - the one question the sighting
+    // register exists to answer, and so the one thing worth an entry.
     //
-    // Two shapes qualify, for opposite reasons. A gated colony is withheld until somebody has seen
-    // it; a colony a report can find is admitted because somebody has. Stated once here rather than
-    // at each caller, since a register holding one of the two and a rule spending both would leave
-    // the colonies of the missing half answering only while a witness was still alive.
-    //
-    // Everything else is left out on purpose. An open colony the economy lists is permanently in the
-    // sector's own sight, so an entry for one would answer nothing while costing an entry per colony
-    // in the sector.
-    private boolean isColonyDecidedByObservation(Colony colony) {
+    // Two shapes qualify, for opposite reasons: a gated colony is withheld until somebody has seen
+    // it, and a colony a report can find is admitted because somebody has. Stated once, since a
+    // register holding one of the two under a rule spending both would leave the missing half
+    // answering only while a witness was still alive. An open colony the economy lists is
+    // permanently in the sector's own sight, so an entry for one would answer nothing while costing
+    // an entry per colony in the sector.
+    private boolean isWorthRecording(Colony colony) {
         return isGatedColony(colony) || readKindOf(colony).isFoundByReport();
     }
 

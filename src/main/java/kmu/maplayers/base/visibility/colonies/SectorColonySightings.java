@@ -127,10 +127,8 @@ public final class SectorColonySightings {
      * the map the moment its last neighbour decivilised, for a player who had known it was there
      * for years.
      *
-     * <p>Wider than what an arriving observer records, which is the gated shapes alone. A collapsed
-     * world is found on the neighbours' word and would be lost with them, while the player arriving
-     * beside one leaves vanilla's own permanent survey level behind - so only this route owes it an
-     * entry.
+     * <p>Wider by one shape than what an arriving observer records: the collapsed world, which
+     * only this route can lose - {@link ColonyKnowledge#readGatedColonies} says why.
      *
      * <p>Written one place at a time, over a colony set the caller already holds, rather than swept
      * for here. This route has to be noticed by a walk - nothing in the engine announces a colony
