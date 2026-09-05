@@ -48,8 +48,10 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
-    public List<ControlSpec> getBodyControls() {
-        // The empty view opens no control panel: its tab only clears the map paint.
+    public List<ControlSpec> getBodyControls(ScreenMemoryScope memoryScope) {
+        // The empty view opens no control panel: its tab only clears the map paint. The asking screen
+        // goes unread for the same reason - a body with no controls in it stores nothing, so there is
+        // no preference here for a screen to hold its own version of.
         return List.of();
     }
 

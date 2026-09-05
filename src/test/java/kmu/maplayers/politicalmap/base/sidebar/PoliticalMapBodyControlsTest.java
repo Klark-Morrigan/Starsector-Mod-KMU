@@ -5,6 +5,8 @@ import com.fs.starfarer.api.util.Misc;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -58,6 +60,10 @@ final class PoliticalMapBodyControlsTest {
     // machinery. Held by identity rather than read for revisions: the preferences are stubbed, so
     // nothing raises on it and what each case pins is that this exact board reached the writer.
     private static final MapLayerRefreshBoard BUILT_BOARD = new MapLayerRefreshBoard();
+
+    // The screen whose panel these controls were built on. A stand-in rather than one of the two live
+    // screens, since what a control does with the screen it was built under is the same on either.
+    private static final ScreenMemoryScope BUILT_SCREEN = ScreenMemoryScopes.createStandInScreen();
 
     private final PoliticalMapView factionsViewMock = mock(PoliticalMapView.class);
     private final PoliticalMapView alliancesViewMock = mock(PoliticalMapView.class);
@@ -153,7 +159,7 @@ final class PoliticalMapBodyControlsTest {
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubSelectorViews(registryMock, stringsMock);
 
-                var selector = PoliticalMapBodyControls.buildViewSelector();
+                var selector = PoliticalMapBodyControls.buildViewSelector(BUILT_SCREEN);
 
                 assertThat(selector).isInstanceOf(ControlSpec.HorizontalRadio.class);
                 assertThat(((ControlSpec.HorizontalRadio) selector).labels())
@@ -170,7 +176,7 @@ final class PoliticalMapBodyControlsTest {
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubSelectorViews(registryMock, stringsMock);
 
-                var selector = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls.buildViewSelector();
+                var selector = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls.buildViewSelector(BUILT_SCREEN);
 
                 assertThat(selector.reselect()).isEqualTo(ReselectBehaviour.INERT);
             }
@@ -192,7 +198,7 @@ final class PoliticalMapBodyControlsTest {
                 preferenceMock.when(UninhabitedOutlinePreference::isOutlineDrawn).thenReturn(true);
 
                 var checkbox = (ControlSpec.Checkbox) PoliticalMapBodyControls
-                        .buildSharedControls(BUILT_BOARD)
+                        .buildSharedControls(BUILT_BOARD, BUILT_SCREEN)
                         .get(0);
                 checkbox.action().activateCell(0);
 
@@ -214,7 +220,7 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(FactionNameFormatChoice.SHORT);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
-                        .buildSharedControls(BUILT_BOARD).get(1);
+                        .buildSharedControls(BUILT_BOARD, BUILT_SCREEN).get(1);
                 radio.action().activateCell(0);
 
                 assertThat(radio.selectedIndex()).isEqualTo(1);
@@ -236,7 +242,7 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(FactionNameFormatChoice.NONE);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
-                        .buildSharedControls(BUILT_BOARD).get(1);
+                        .buildSharedControls(BUILT_BOARD, BUILT_SCREEN).get(1);
                 radio.action().activateCell(2);
 
                 assertThat(radio.selectedIndex()).isEqualTo(2);
@@ -258,7 +264,7 @@ final class PoliticalMapBodyControlsTest {
     private static void clickViewSegment(int segmentIndex) {
         // The selector is a horizontal radio (an Interactive control), so its click action drives the
         // private selectViewSegment the selector wires.
-        var selector = (ControlSpec.Interactive) PoliticalMapBodyControls.buildViewSelector();
+        var selector = (ControlSpec.Interactive) PoliticalMapBodyControls.buildViewSelector(BUILT_SCREEN);
         selector.action().activateCell(segmentIndex);
     }
 

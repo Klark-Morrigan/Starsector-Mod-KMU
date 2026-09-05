@@ -12,6 +12,7 @@ import kmlib.starsector.memory.SectorMemoryAccess;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -182,7 +183,9 @@ final class AlliancesViewTest {
                     .when(() -> AllianceBodyControls.buildControls(passedBoard))
                     .thenReturn(builtControls);
 
-                assertThat(AlliancesView.INSTANCE.getViewBodyControls(passedBoard))
+                assertThat(AlliancesView.INSTANCE.getViewBodyControls(
+                        passedBoard,
+                        ScreenMemoryScopes.createStandInScreen()))
                     .isSameAs(builtControls);
             }
         }

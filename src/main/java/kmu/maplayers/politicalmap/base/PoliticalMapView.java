@@ -8,6 +8,7 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -347,11 +348,20 @@ public interface PoliticalMapView {
      * view is a stateless strategy every sector's machinery shares, so a control it builds has no
      * sector of its own to raise on.
      *
-     * @param board the refresh board of the sector this tab is being built for, carried into
-     *              whatever controls the view contributes so their writes repaint that sector
+     * <p>The screen arrives beside it for the same reason, one axis over: a control the view contributes
+     * writes a preference the panel it was placed on owns, and a view has no screen of its own to write
+     * under any more than it has a sector.
+     *
+     * @param board       the refresh board of the sector this tab is being built for, carried into
+     *                    whatever controls the view contributes so their writes repaint that sector
+     * @param memoryScope the scope of the screen this body was opened on, carried into those same
+     *                    controls so their writes are that panel's own
      * @return this view's own body controls, top to bottom; empty when the view adds none
      */
-    default List<ControlSpec> getViewBodyControls(MapLayerRefreshBoard board) {
+    default List<ControlSpec> getViewBodyControls(
+            MapLayerRefreshBoard board,
+            ScreenMemoryScope memoryScope) {
+
         return List.of();
     }
 

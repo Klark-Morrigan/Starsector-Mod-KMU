@@ -5,6 +5,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
@@ -60,7 +61,7 @@ public final class PoliticalMapLayer implements MapLayer {
     }
 
     @Override
-    public List<ControlSpec> getBodyControls() {
+    public List<ControlSpec> getBodyControls(ScreenMemoryScope memoryScope) {
 
         // Which sector this body is being built for has to be resolved off the running game here: a
         // body build is an adapter onto a vanilla screen, which hands it none. This is the one
@@ -71,11 +72,16 @@ public final class PoliticalMapLayer implements MapLayer {
         var installation = MapLayerInstallations.resolveInstallationForLiveSector();
         var board = installation.resolveRefreshBoard();
 
+        // Which screen is the asking panel's own, and travels to every piece below for the reason the
+        // board does: what a control writes belongs to the screen it was placed on, so a screen found
+        // at the click would file the pick under whichever panel was up by then.
+        //
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
         // radio only switches between views; turning the map off is the tab bar's No Layer pick.
-        var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls(board));
-        controls.add(PoliticalMapBodyControls.buildViewSelector());
+        var controls = new ArrayList<>(
+            PoliticalMapBodyControls.buildSharedControls(board, memoryScope));
+        controls.add(PoliticalMapBodyControls.buildViewSelector(memoryScope));
 
         // Then the spotlight picker and the selected view's own controls, so the body shows the
         // filter list plus any widgets specific to the active view (the alliances view's
@@ -86,8 +92,8 @@ public final class PoliticalMapLayer implements MapLayer {
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
 
         if (selectedView != null) {
-            controls.addAll(buildSpotlightControls(selectedView, installation));
-            controls.addAll(selectedView.getViewBodyControls(board));
+            controls.addAll(buildSpotlightControls(selectedView, installation, memoryScope));
+            controls.addAll(selectedView.getViewBodyControls(board, memoryScope));
         }
         return List.copyOf(controls);
     }
@@ -126,7 +132,8 @@ public final class PoliticalMapLayer implements MapLayer {
     // under its own caption, here bound to the filter recede set rather than the non-allied one.
     private static List<ControlSpec> buildSpotlightControls(
             PoliticalMapView selectedView,
-            MapLayerInstallation installation) {
+            MapLayerInstallation installation,
+            ScreenMemoryScope memoryScope) {
 
         // The list is read through the memo the sector's installed machinery holds, so this
         // per-frame body build reads a cached list rather than re-walking the economy every frame
@@ -140,6 +147,8 @@ public final class PoliticalMapLayer implements MapLayer {
         // sectors.
         var board = installation.resolveRefreshBoard();
 
+        // TODO: hand memoryScope to the picker's own stores - the spotlight, the sort and the column
+        // count are still one slot per sector, so a pick made on one panel moves the other's list.
         return FilterSelectionBinder.buildPicker(
             selectedView.getId(),
             blocCache.resolveBlocPickerRead(selectedView).picker(),

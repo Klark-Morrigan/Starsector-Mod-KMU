@@ -13,6 +13,8 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRosters;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -46,10 +48,12 @@ import static org.mockito.Mockito.when;
  * picker are stubbed to sentinels so this pins the composition order alone, not what those pieces
  * contain.
  *
- * <p>Two cases build over a sector with machinery really installed on it, which is what makes the
+ * <p>Three cases build over a sector with machinery really installed on it, which is what makes the
  * body's one resolution observable: the composition cases resolve no sector, so a build reaching any
  * other installation would answer identically. They pin that the picker is read off that sector's
- * memo, and that every control the body places is handed that installation's own refresh board.
+ * memo, that every control the body places is handed that installation's own refresh board, and that
+ * every piece is handed the screen whose panel asked for the body - the two axes a control's write
+ * belongs to, which sector's map it repaints and which screen's slot it lands in.
  *
  * <p>Also the two things this tab resolves for itself rather than being read out of: the strings key it
  * letters itself from, which the bar takes as drawn text, and the settings row its shortcut is rebound
@@ -69,6 +73,11 @@ final class PoliticalMapLayerTest {
     // Whatever the settings row is answering with - the value is arbitrary, since the point is that the
     // tab hands it back untouched rather than that it is any particular key.
     private static final int BOUND_KEYCODE = 20;
+
+    // The screen whose panel asks for the body in every case below. A stand-in rather than one of the two
+    // live screens: what this tab does with the screen it is handed is to pass it on, which is the same
+    // whichever one it is.
+    private static final ScreenMemoryScope BODY_SCREEN = ScreenMemoryScopes.createStandInScreen();
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents. Their tone is
@@ -143,7 +152,7 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsAppendsTheSelectedViewsControlsAfterTheSelector() {
 
-            when(viewWithControlsMock.getViewBodyControls(any()))
+            when(viewWithControlsMock.getViewBodyControls(any(), any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
             registerDefaultView(viewWithControlsMock);
@@ -167,7 +176,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var body = PoliticalMapLayer.INSTANCE.getBodyControls();
+                var body = PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
                 assertThat(body)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER, VIEW_MARKER);
@@ -177,7 +186,7 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsPlacesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
 
-            when(viewWithControlsMock.getViewBodyControls(any()))
+            when(viewWithControlsMock.getViewBodyControls(any(), any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
             registerDefaultView(viewWithControlsMock);
@@ -209,7 +218,7 @@ final class PoliticalMapLayerTest {
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
-                var body = PoliticalMapLayer.INSTANCE.getBodyControls();
+                var body = PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
                 assertThat(body)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER, PICKER_MARKER, VIEW_MARKER);
@@ -221,7 +230,7 @@ final class PoliticalMapLayerTest {
 
             // The faction view adds no controls of its own, so the body is only the shared rows and
             // the selector - nothing trails the selector.
-            when(viewWithoutControlsMock.getViewBodyControls(any()))
+            when(viewWithoutControlsMock.getViewBodyControls(any(), any()))
                 .thenReturn(List.of());
 
             registerDefaultView(viewWithoutControlsMock);
@@ -244,7 +253,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var body = PoliticalMapLayer.INSTANCE.getBodyControls();
+                var body = PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
                 assertThat(body)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER);
@@ -277,7 +286,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var body = PoliticalMapLayer.INSTANCE.getBodyControls();
+                var body = PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
                 assertThat(body)
                     .containsExactly(SHARED_MARKER, SELECTOR_MARKER);
@@ -310,7 +319,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                var sortRow = findSortRow(PoliticalMapLayer.INSTANCE.getBodyControls());
+                var sortRow = findSortRow(PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN));
 
                 // The left half is the sort selector over this layer's own vocabulary, one row per
                 // mode, so the modes reaching the picker are the political map's.
@@ -354,7 +363,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
 
-                PoliticalMapLayer.INSTANCE.getBodyControls();
+                PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
@@ -394,7 +403,7 @@ final class PoliticalMapLayerTest {
                 // view's own controls - and the picker, which takes the machinery whole: both of
                 // its writers are that sector's, so it derives them rather than being handed them.
                 controlsMock.verify(
-                    () -> PoliticalMapBodyControls.buildSharedControls(installedBoard));
+                    () -> PoliticalMapBodyControls.buildSharedControls(eq(installedBoard), any()));
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
                         any(),
@@ -403,7 +412,25 @@ final class PoliticalMapLayerTest {
                         any(),
                         eq(installation)));
                 verify(viewWithoutControlsMock)
-                    .getViewBodyControls(installedBoard);
+                    .getViewBodyControls(eq(installedBoard), any());
+            });
+        }
+
+        @Test
+        void getBodyControlsHandsEveryPieceTheScreenWhosePanelAskedForTheBody() {
+            // The screen travels the whole build for the same reason the board does: a control writes the
+            // preference of the panel it was placed on, so a piece left to find a screen for itself would
+            // file its click under whichever panel happened to be up when it was pressed. Every seam the
+            // body composes is asked for, since one of them dropping the screen is exactly one control set
+            // silently landing on the other panel's slots.
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock) -> {
+
+                controlsMock.verify(
+                    () -> PoliticalMapBodyControls.buildSharedControls(any(), eq(BODY_SCREEN)));
+                controlsMock.verify(
+                    () -> PoliticalMapBodyControls.buildViewSelector(BODY_SCREEN));
+                verify(viewWithoutControlsMock)
+                    .getViewBodyControls(any(), eq(BODY_SCREEN));
             });
         }
     }
@@ -466,7 +493,7 @@ final class PoliticalMapLayerTest {
     // install (made outside the stubbing, so the index resolves a real logger rather than one taken
     // from a stubbed Global), the sector the running game answers with, a settings proxy the recede's
     // text tone is read off, and the two view-agnostic pieces stubbed to their sentinels. Written
-    // once so the two cases cannot drift into arranging different builds and reading the difference
+    // once so the cases cannot drift into arranging different builds and reading the difference
     // as a finding.
     private void buildBodyOverInstalledSector(BodyBuildAssertion assertion) {
 
@@ -507,7 +534,7 @@ final class PoliticalMapLayerTest {
                     any()))
                 .thenReturn(List.of(PICKER_MARKER));
 
-            PoliticalMapLayer.INSTANCE.getBodyControls();
+            PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
             assertion.assertOverBodyBuild(sectorMock, installation, controlsMock, pickerMock);
 
@@ -529,7 +556,7 @@ final class PoliticalMapLayerTest {
         when(view.getContentRevision(any()))
             .thenReturn(1);
 
-        when(view.getViewBodyControls(any()))
+        when(view.getViewBodyControls(any(), any()))
             .thenReturn(List.of());
 
         // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item
@@ -588,11 +615,11 @@ final class PoliticalMapLayerTest {
             MockedStatic<PoliticalMapBodyControls> controlsMock) {
 
         controlsMock
-            .when(() -> PoliticalMapBodyControls.buildSharedControls(any()))
+            .when(() -> PoliticalMapBodyControls.buildSharedControls(any(), any()))
             .thenReturn(List.of(SHARED_MARKER));
 
         controlsMock
-            .when(PoliticalMapBodyControls::buildViewSelector)
+            .when(() -> PoliticalMapBodyControls.buildViewSelector(any()))
             .thenReturn(SELECTOR_MARKER);
     }
 

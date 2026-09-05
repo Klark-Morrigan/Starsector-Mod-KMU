@@ -10,8 +10,10 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.settings.KmuMapLayerSettings;
 
@@ -38,6 +40,10 @@ import static org.mockito.Mockito.when;
  * <p>And where the tab row's letters and key hints come from: each layer's own answer, taken as drawn text
  * and as the keycode in force, so a layer shipped by another mod letters and binds its tab out of its own
  * bundle and its own settings.
+ *
+ * <p>And which screen the active layer's body is opened under: the asking panel's own, with no live-screen
+ * read of its own beside it, since a control in that body writes the preference of the screen it was
+ * placed on.
  *
  * <p>And the one way a placement comes back with nothing in it: the tab face failing to load, which the
  * caller has to read as "draw nothing this frame" rather than as an empty row it may still hit-test.
@@ -326,6 +332,50 @@ final class LiveSidebarPlacementTest {
                 .thenReturn(label);
 
             return layerMock;
+        }
+    }
+
+    @Nested
+    class BuildBodyControls {
+
+        @Test
+        void buildBodyControlsOpensTheBodyUnderThePanelsOwnScreen() {
+            // Every control the body opens writes the preference of the screen its panel draws for, so the
+            // screen the body is built under is the one the panel carries.
+            var panelScope = ScreenMemoryScopes.createStandInScreen();
+            var activeLayerMock = mock(MapLayer.class);
+
+            LiveSidebarPlacement.buildBodyControls(activeLayerMock, buildPicksUnder(panelScope));
+
+            verify(activeLayerMock)
+                .getBodyControls(panelScope);
+        }
+
+        @Test
+        void buildBodyControlsAsksNoScreenOfItsOwn() {
+            // The live screen goes unread, which is the half a passing scope cannot show: a layout that
+            // resolved one here would answer the panel's own question a second time, and the two part
+            // company whenever one host lays its body out while the other screen is up - filing that
+            // panel's clicks under the screen the player is not looking at.
+            var activeLayerMock = mock(MapLayer.class);
+
+            try (var screensMock = mockStatic(MapLayerScreens.class)) {
+
+                LiveSidebarPlacement.buildBodyControls(
+                    activeLayerMock,
+                    buildPicksUnder(ScreenMemoryScopes.createStandInScreen()));
+
+                screensMock.verifyNoInteractions();
+            }
+        }
+
+        // One screen's picks under the given scope. The tab and the hide are left as bare stand-ins,
+        // since which of the three the body is built from is the whole of what these cases read.
+        private ScreenLayerPicks buildPicksUnder(ScreenMemoryScope memoryScope) {
+            return new ScreenLayerPicks(
+                mock(ActiveLayerSelection.class),
+                new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
+                memoryScope);
         }
     }
 

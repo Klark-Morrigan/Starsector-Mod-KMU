@@ -6,6 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -171,10 +172,16 @@ public final class AlliancesView implements DominancePaintedView {
     }
 
     @Override
-    public List<ControlSpec> getViewBodyControls(MapLayerRefreshBoard board) {
+    public List<ControlSpec> getViewBodyControls(
+            MapLayerRefreshBoard board,
+            ScreenMemoryScope memoryScope) {
+
         // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
         // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
         // alliances package with the view that owns them.
+        //
+        // TODO: hand memoryScope to those checkboxes - the non-allied recede is still one slot per
+        // sector, so a flip on one panel moves the other's fade.
         return AllianceBodyControls.buildControls(board);
     }
 }

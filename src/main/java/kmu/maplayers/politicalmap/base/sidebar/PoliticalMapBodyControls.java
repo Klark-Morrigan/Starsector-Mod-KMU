@@ -4,6 +4,7 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
@@ -46,13 +47,20 @@ public final class PoliticalMapBodyControls {
     }
 
     /**
-     * @param board the refresh board of the sector these controls are built for, carried into both
-     *              writers so a flip or a pick repaints that sector's overlay
+     * @param board       the refresh board of the sector these controls are built for, carried into both
+     *                    writers so a flip or a pick repaints that sector's overlay
+     * @param memoryScope the scope of the screen this body was opened on, for the writers to save under
+     *                    so a flip or a pick is that panel's own
      * @return the tab's view-agnostic sub-options, top to bottom: the uninhabited-systems checkbox
      *         (lit when uninhabited systems draw), then the Full/Short/No name radio (its lit
      *         segment the active choice) with its trailing "faction names" label
      */
-    public static List<ControlSpec> buildSharedControls(MapLayerRefreshBoard board) {
+    public static List<ControlSpec> buildSharedControls(
+            MapLayerRefreshBoard board,
+            ScreenMemoryScope memoryScope) {
+
+        // TODO: hand memoryScope to the two preferences below - the outline flag and the name format are
+        // still one slot per sector, so a flip on one panel moves the other's.
         return List.of(
             ControlSpec.Checkbox.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
@@ -79,9 +87,14 @@ public final class PoliticalMapBodyControls {
      * one control that turns the map off, and the view axis has no "none" a player can fall into by
      * clicking twice.
      *
+     * @param memoryScope the scope of the screen this body was opened on, for the selector to read and
+     *                    write the view under so each panel holds its own
      * @return the horizontal, always-on view-selector radio
      */
-    public static ControlSpec buildViewSelector() {
+    public static ControlSpec buildViewSelector(ScreenMemoryScope memoryScope) {
+
+        // TODO: hand memoryScope to the view registry - the selected view is still one slot per sector,
+        // so a switch on one panel moves the other's picture.
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));

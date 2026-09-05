@@ -60,12 +60,22 @@ public interface MapLayer {
     boolean isOfferedAsDefaultPick();
 
     /**
+     * The controls this layer's tab opens in its body once selected.
+     *
+     * <p>Built for a named screen rather than for the live one: a control placed in this body writes
+     * whatever preference it stands for when it is clicked, and that write belongs to the screen the
+     * panel it was placed on draws for. A layer given no screen would have to resolve one, which is a
+     * second answer to a question the asking panel already holds - and the two part company whenever one
+     * host lays its body out while the other screen is the one up.
+     *
+     * @param memoryScope the scope of the screen whose panel is opening this body, for the layer to pass
+     *                    to every preference its controls read and write
      * @return the control specs this layer's tab opens in its body once selected, top to
      *         bottom; empty for a tab that only switches the map paint and opens no body. The
      *         layer describes its controls, so a new view supplies its own body without the
      *         bar hard-coding one per layer.
      */
-    List<ControlSpec> getBodyControls();
+    List<ControlSpec> getBodyControls(ScreenMemoryScope memoryScope);
 
     /**
      * The keycode this layer's tab jumps to and prints as its hint, resolved rather than described by

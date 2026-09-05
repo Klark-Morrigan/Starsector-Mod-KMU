@@ -46,6 +46,19 @@ final class NoLayerTest {
     }
 
     @Nested
+    class GetBodyControls {
+
+        @Test
+        void getBodyControlsOpensNoPanelForTheScreenThatAsked() {
+            // The empty view's whole contract is to draw nothing, so its tab opens nothing either - on
+            // whichever screen's panel it is selected. Nothing here stores a preference, which is why the
+            // screen goes unread rather than partitioning anything.
+            assertThat(NoLayer.INSTANCE.getBodyControls(ScreenMemoryScopes.createStandInScreen()))
+                .isEmpty();
+        }
+    }
+
+    @Nested
     class ResolveShortcutKeycode {
 
         @Test

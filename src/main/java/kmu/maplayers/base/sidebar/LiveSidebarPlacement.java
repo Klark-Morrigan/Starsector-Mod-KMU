@@ -18,6 +18,7 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapLayerSettings;
 import kmu.util.KmuValues;
@@ -145,6 +146,16 @@ public final class LiveSidebarPlacement {
             cell -> selection.selectLayer(layers.get(cell)));
     }
 
+    // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
+    // control in that body writes the preference it stands for when clicked, and that write belongs to the
+    // screen the panel draws for - so the screen is taken from the panel rather than resolved here, which
+    // would be a second answer to a question the panel already holds. The two part company whenever one
+    // host lays its body out while the other screen is the one up, and the body would then file its
+    // clicks under the screen the player is not looking at.
+    static List<ControlSpec> buildBodyControls(MapLayer activeLayer, ScreenLayerPicks screenPicks) {
+        return activeLayer.getBodyControls(screenPicks.memoryScope());
+    }
+
     // Lays the panel out for the given anchor and host panel - the one path both host entry points share,
     // so the map and intel panels are the same layout differing only in where they anchor and how tall they
     // stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs to measured
@@ -180,7 +191,7 @@ public final class LiveSidebarPlacement {
             buildChrome(panel.borderedEdges()),
             tabStyle,
             buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
-            activeLayer.getBodyControls(),
+            buildBodyControls(activeLayer, screenPicks),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch
             // rides the shrinking edge; the render pass advances the fold each frame and both passes
