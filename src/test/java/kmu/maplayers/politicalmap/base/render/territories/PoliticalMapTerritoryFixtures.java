@@ -8,7 +8,6 @@ import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
@@ -189,9 +188,8 @@ public final class PoliticalMapTerritoryFixtures {
             new ViewGrouping(
                 mock(PoliticalMapView.class),
                 HolderGrouping.identity()),
-            new FilterSnapshot(
-                contentInputs,
-                new LinkedHashSet<>())); // No contested system IDs.
+            contentInputs,
+            new LinkedHashSet<>()); // No contested system IDs.
     }
 
     /**
@@ -220,7 +218,8 @@ public final class PoliticalMapTerritoryFixtures {
                 NEUTRAL_PALETTE, // Desaturation palette.
                 NEUTRAL_PALETTE), // Presence palette.
             new ViewGrouping(view, HolderGrouping.identity()),
-            FilterSnapshot.unfiltered());
+            ContentInputs.createEmpty(),
+            Set.of());
     }
 
     /**

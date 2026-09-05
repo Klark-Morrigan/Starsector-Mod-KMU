@@ -19,7 +19,6 @@ import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -171,7 +170,8 @@ final class PoliticalMapTerritoriesTest {
                     PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
                     PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
                 new ViewGrouping(mock(PoliticalMapView.class), HolderGrouping.identity()),
-                FilterSnapshot.unfiltered());
+                ContentInputs.createEmpty(),
+                Set.of());
 
             territories.getStyledCellByCellId().put("system", styledCell);
             territories.getStyledClusterGroupByOwnerId().put("faction", styledClusterGroup);
@@ -339,11 +339,10 @@ final class PoliticalMapTerritoriesTest {
                     desaturationPalette,
                     presencePalette),
                 new ViewGrouping(viewMock, grouping),
-                new FilterSnapshot(
-                    ContentInputsFixtures.createInputsRecedingBehind(
-                        selectedBlocId,
-                        recedeAdjustment),
-                    contested));
+                ContentInputsFixtures.createInputsRecedingBehind(
+                    selectedBlocId,
+                    recedeAdjustment),
+                contested);
 
             // The two draw lists are created internally, not passed, so the build can fill them;
             // they start empty and stay mutable for the incremental refresh to edit in place.

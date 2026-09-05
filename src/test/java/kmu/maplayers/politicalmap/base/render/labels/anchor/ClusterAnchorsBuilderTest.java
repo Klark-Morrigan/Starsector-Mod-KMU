@@ -341,7 +341,7 @@ final class ClusterAnchorsBuilderTest {
                     Map.of(RIVAL_SYSTEM, TRITACHYON_HOLDER),
                     DESATURATION_PALETTE,
                     new ViewGrouping(viewMock, HolderGrouping.identity()),
-                    ContentInputsFixtures.createInputsRecedingBehind(
+                    buildSpotlitPicksDrawingNames(
                         HEGEMONY,
                         new ElementStyleAdjustment(FULL_OPACITY, true))));
 
@@ -721,6 +721,22 @@ final class ClusterAnchorsBuilderTest {
             UNUSED_PALETTE,
             new ViewGrouping(viewMock, HolderGrouping.identity()),
             contentInputs);
+    }
+
+    // The one reading this suite needs that no other does: a spotlight up AND the names drawn. The
+    // shared fixtures spell no names, which is what keeps a suite that cannot afford the label font
+    // from paying for it - but this suite stubs that font, and a fit that draws nothing leaves no
+    // placement for a case about a label's colour to read.
+    private static ContentInputs buildSpotlitPicksDrawingNames(
+            String selectedBlocId,
+            ElementStyleAdjustment filterRecede) {
+
+        return new ContentInputs(
+            selectedBlocId,
+            filterRecede,
+            ElementStyleAdjustment.NONE, // No alliance recede.
+            FactionNameFormatChoice.FULL,
+            false); // No uninhabited outline.
     }
 
     // Restates the picks every path in this suite goes in under, varying the one they gate on:

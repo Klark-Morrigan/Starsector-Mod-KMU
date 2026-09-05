@@ -120,7 +120,8 @@ in, so what is left over is the systems it is absent from and the read costs the
 returns empty.
 
 Both sets sit with the holder map in **`SystemOccupancy`** - who is in each system - rather than
-beside the `FilterSnapshot` the build's own sampled picks live in, because all three move between
+beside the `ContentInputs` the build was baked under or the contested set it derived, both of which
+are fixed once the build ends, because all three of these move between
 rebuilds: a colony founded or lost changes what stands in a system, and the pick founding one
 changes where the pick lives, in neither case moving a holder the map would notice. The
 incremental refresh folds each marked system's answer into that one type, so the three facts a

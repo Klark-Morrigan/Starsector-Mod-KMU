@@ -43,15 +43,15 @@ import java.util.Set;
  * seam/outline records, and each faction's bodies with the fill and national border they
  * share. They start empty and the build fills them, so they are created here rather than
  * passed in. The rest are
- * retained inputs, grouped into four cohesive snapshots: {@link SystemOccupancy} (who is in each
+ * retained inputs, three of them cohesive snapshots: {@link SystemOccupancy} (who is in each
  * system - the holder, what stands there, and where a spotlit pick lives unheld),
  * {@link MapStyling} (the theme,
  * the neutral colour, and the desaturation palette - how each category draws and what a
- * desaturated bloc recolours to), {@link ViewGrouping} (the view and its once-sampled
- * grouping - how holding is grouped and which blocs recede to the independent style),
- * and {@link FilterSnapshot} (the picks this build sampled, the spotlight among them, paired with
- * the contested systems it derived). The unfilled-system set rides alongside as
- * how an owned system's fill is drawn. An incremental re-shape reads them all back so it
+ * desaturated bloc recolours to), and {@link ViewGrouping} (the view and its once-sampled
+ * grouping - how holding is grouped and which blocs recede to the independent style). The
+ * {@link ContentInputs} the rebuild sampled ride beside them, and two derived sets alongside
+ * those: the unfilled systems, as how an owned system's fill is drawn, and the contested ones, as
+ * how a spotlit system it does not dominate is. An incremental re-shape reads them all back so it
  * classifies a cell exactly as the full build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
@@ -60,7 +60,7 @@ import java.util.Set;
  * holder change touched, and the occupancy is folded by the same refresh as colonies come
  * and go. Its three facts are mutable together and behind that one type's folds, so no pass
  * can bring one of them up to date and leave a cell drawn from two readings of the sector.
- * The styling, unfilled set, view grouping, and filter snapshot are set
+ * The styling, view grouping, sampled picks and two derived sets are set
  * once at build and only read after, so an incremental pass re-shapes against the exact inputs
  * the full build baked in.
  *
@@ -123,12 +123,22 @@ public final class PoliticalMapTerritories implements
     // stops. Set once at build alongside the occupancy, read by the per-faction fill split.
     private final Set<String> unfilledSystemIds;
 
-    // The three cohesive input snapshots: the resolved paint scheme, the view and its once-sampled
-    // grouping, and the spotlight state. The flat getters below unwrap them so every reader keeps
-    // its original accessor.
+    // The two cohesive input snapshots: the resolved paint scheme, and the view with its
+    // once-sampled grouping. The flat getters below unwrap them so every reader keeps its original
+    // accessor.
     private final MapStyling styling;
     private final ViewGrouping viewGrouping;
-    private final FilterSnapshot filter;
+
+    // The sidebar picks this build was baked under, as the rebuild's one sampling of them. Held
+    // whole rather than unpacked, so a pass reading the spotlight and a pass reading the name
+    // format are reading one moment.
+    private final ContentInputs contentInputs;
+
+    // The one thing this build derived about that spotlight: the spotlit systems the bloc is
+    // present in but does not dominate, so the faction builder hatches their cells inside the one
+    // spotlit frontier while the dominated cells fill solid. Empty off filter, and fixed at build -
+    // unlike the presence set beside the holder map, which moves as colonies come and go.
+    private final Set<String> contestedSystemIds;
 
     // Which contiguous territory each system sits in, re-derived by reindexClusters whenever the
     // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
@@ -147,12 +157,15 @@ public final class PoliticalMapTerritories implements
             Set<String> unfilledSystemIds,
             MapStyling styling,
             ViewGrouping viewGrouping,
-            FilterSnapshot filter) {
+            ContentInputs contentInputs,
+            Set<String> contestedSystemIds) {
+
         this.occupancy = occupancy;
         this.unfilledSystemIds = unfilledSystemIds;
         this.styling = styling;
         this.viewGrouping = viewGrouping;
-        this.filter = filter;
+        this.contentInputs = contentInputs;
+        this.contestedSystemIds = contestedSystemIds;
     }
 
     // An empty placeholder for the render path to fall back on after a failed first
@@ -171,7 +184,8 @@ public final class PoliticalMapTerritories implements
             new ViewGrouping(
                 view,
                 HolderGrouping.identity()),
-            FilterSnapshot.unfiltered());
+            ContentInputs.createEmpty(),
+            Set.of());
     }
 
     @Override
@@ -475,7 +489,7 @@ public final class PoliticalMapTerritories implements
     // re-fit or a band re-bake taken off a second reading would spell the names one way and have
     // been sized for another.
     public ContentInputs getContentInputs() {
-        return filter.contentInputs();
+        return contentInputs;
     }
 
     public PoliticalMapView getView() {
@@ -489,27 +503,27 @@ public final class PoliticalMapTerritories implements
     // Whether this build spotlights a bloc - it does exactly when a bloc id was selected, so the
     // shared cell and faction builders bypass the view's per-bloc styling seams for the filter's.
     public boolean isFiltering() {
-        return filter.isFiltering();
+        return contentInputs.isFiltering();
     }
 
     // The spotlighted bloc's id this build recedes the rest of the sector around, or null off
     // filter; the label rebuild resolves the filter's synthetic spotlight keys back to its name.
     public String getSelectedBlocId() {
-        return filter.contentInputs().selectedBlocId();
+        return contentInputs.selectedBlocId();
     }
 
     // The styling every non-spotlighted bloc recedes to this pass - and, through
     // FactionlessStyleResolver, a decivilised cell with it; ElementStyleAdjustment.NONE off filter,
     // so anything no filter recedes draws untouched.
     public ElementStyleAdjustment getRecedeAdjustment() {
-        return filter.contentInputs().filterRecedeAdjustment();
+        return contentInputs.filterRecedeAdjustment();
     }
 
     // The spotlit systems the bloc is present in but does not dominate, so the faction builder
     // hatches their cells inside the one spotlit frontier while the dominated cells fill solid.
     // Empty off filter.
     public Set<String> getContestedSystemIds() {
-        return filter.contestedSystemIds();
+        return contestedSystemIds;
     }
 
     // The settled systems the spotlit bloc lives in that no holder was resolved for, so the

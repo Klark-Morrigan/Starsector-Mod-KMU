@@ -93,9 +93,10 @@ public final class TerritoryBuilder {
                 // alliances view reads Nexerelin), so the holding this build resolved and the
                 // grouping the retained copy names cannot be two readings of it.
                 new ViewGrouping(view, pass.grouping()),
-                // The picks go over whole beside the one thing this build derived about the
-                // spotlight: which of the spotlit bloc's systems it holds without dominating.
-                new FilterSnapshot(contentInputs, resolution.contestedSystemIds()));
+                contentInputs,
+                // The one thing this build derived about the spotlight: which of the spotlit bloc's
+                // systems it holds without dominating.
+                resolution.contestedSystemIds());
 
             shapeAndStyleCells(profiler, territories, geometryCache);
 

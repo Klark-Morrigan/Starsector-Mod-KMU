@@ -13,12 +13,10 @@ import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.MapStyleCategory;
 import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
-import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
-import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
@@ -599,9 +597,8 @@ final class StyledCellBuilderTest {
                 new ViewGrouping(
                     buildViewMockAdjusting(ElementStyleAdjustment.NONE),
                     HolderGrouping.identity()),
-                new FilterSnapshot(
-                    ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
-                    Set.of()));
+                ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
+                Set.of());
         }
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
@@ -686,9 +683,10 @@ final class StyledCellBuilderTest {
                     new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
                     new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
                 new ViewGrouping(viewMock, HolderGrouping.identity()),
-                new FilterSnapshot(
-                    ContentInputsFixtures.createInputsRecedingBehind(isFiltering ? "selected-bloc" : null, recede),
-                    Set.of()));
+                ContentInputsFixtures.createInputsRecedingBehind(
+                    isFiltering ? "selected-bloc" : null,
+                    recede),
+                Set.of());
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

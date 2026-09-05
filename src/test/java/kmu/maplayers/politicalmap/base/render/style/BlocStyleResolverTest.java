@@ -1,10 +1,8 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 
 import org.junit.jupiter.api.Nested;
@@ -38,7 +36,6 @@ final class BlocStyleResolverTest {
 
         return viewMock;
     }
-
 
     @Nested
     class ResolveFilterAdjustment {

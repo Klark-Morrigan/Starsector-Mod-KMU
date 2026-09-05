@@ -6,8 +6,8 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
+import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
-import kmu.maplayers.politicalmap.base.render.territories.FilterSnapshot;
 import kmu.maplayers.politicalmap.base.render.territories.MapStyling;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
@@ -53,7 +53,7 @@ final class ClusterLabelStylingSnapshotTest {
                 holderBySystemId,
                 desaturationPalette,
                 buildViewGrouping(),
-                buildSpotlightFilter());
+                buildSpotlightPicks());
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(territories);
 
@@ -73,19 +73,19 @@ final class ClusterLabelStylingSnapshotTest {
             // label is named under, the filter it recedes by and the format it is spelled in cannot
             // come from two passes.
             var viewGrouping = buildViewGrouping();
-            var filterSnapshot = buildSpotlightFilter();
+            var contentInputs = buildSpotlightPicks();
 
             var styling = ClusterLabelStylingSnapshot.resolveFrom(
                 buildTerritories(
                     Map.of(),
                     new FactionPalette(Color.GRAY, Color.GRAY),
                     viewGrouping,
-                    filterSnapshot));
+                    contentInputs));
 
             assertThat(styling.viewGrouping())
                 .isSameAs(viewGrouping);
             assertThat(styling.contentInputs())
-                .isSameAs(filterSnapshot.contentInputs());
+                .isSameAs(contentInputs);
         }
 
         @Test
@@ -97,7 +97,7 @@ final class ClusterLabelStylingSnapshotTest {
                     Map.of(),
                     new FactionPalette(Color.GRAY, Color.GRAY),
                     buildViewGrouping(),
-                    FilterSnapshot.unfiltered()));
+                    ContentInputs.createEmpty()));
 
             assertThat(styling.contentInputs().isFiltering())
                 .isFalse();
@@ -108,7 +108,7 @@ final class ClusterLabelStylingSnapshotTest {
             Map<String, DominantHolder> holderBySystemId,
             FactionPalette desaturationPalette,
             ViewGrouping viewGrouping,
-            FilterSnapshot filterSnapshot) {
+            ContentInputs contentInputs) {
 
         return new PoliticalMapTerritories(
             SystemOccupancy.createCopyOf(holderBySystemId, Set.of(), Set.of()),
@@ -119,7 +119,8 @@ final class ClusterLabelStylingSnapshotTest {
                 desaturationPalette,
                 PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
             viewGrouping,
-            filterSnapshot);
+            contentInputs,
+            Set.of());
     }
 
     // The view is a seam the snapshot only carries, so a mock stands in for whichever concrete
@@ -128,9 +129,7 @@ final class ClusterLabelStylingSnapshotTest {
         return new ViewGrouping(mock(PoliticalMapView.class), HolderGrouping.identity());
     }
 
-    private static FilterSnapshot buildSpotlightFilter() {
-        return new FilterSnapshot(
-            ContentInputsFixtures.createInputsSpotlighting(SPOTLIT_BLOC_ID),
-            Set.of("corvus"));
+    private static ContentInputs buildSpotlightPicks() {
+        return ContentInputsFixtures.createInputsSpotlighting(SPOTLIT_BLOC_ID);
     }
 }

@@ -57,7 +57,7 @@ public record MapStyling(
      * not because anything paints them.
      *
      * <p>Named here rather than spelt out by the caller for the same reason
-     * {@link FilterSnapshot#unfiltered()} is: "no scheme yet" is one value every such pass shares,
+     * {@code ContentInputs.createEmpty()} is: "no scheme yet" is one value every such pass shares,
      * and a caller assembling it by hand is choosing four stand-ins that only look arbitrary until
      * one of them turns out not to be.
      *
