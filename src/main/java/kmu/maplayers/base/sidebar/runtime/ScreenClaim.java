@@ -45,9 +45,10 @@ import java.util.function.Supplier;
  * failure of its own, which is why it holds no state and takes no reading of its own.
  *
  * <p>Order is cheapest first rather than likeliest first. The console read is a settled flag over a
- * static holder; the codex read is one hop off the app state; the modal read walks the core UI's
- * children. The likelier order would be the reverse - none of them is up on most frames - but it would
- * spend a tree walk to save a field read.
+ * static holder; the codex read is one hop off the app state; the arranging dialog's is a field on a
+ * panel this mod put on screen itself; the modal read walks the core UI's children. The likelier order
+ * would be the reverse - none of them is up on most frames - but it would spend a tree walk to save a
+ * field read.
  */
 public final class ScreenClaim {
 

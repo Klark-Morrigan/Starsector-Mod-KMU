@@ -57,7 +57,7 @@ import java.util.List;
  */
 public final class MapLayerArrangementDialog {
 
-    /** The one dialog, opened by whichever screen's bar the player pressed the key on. */
+    /** The one dialog, opened from whichever screen's bar the player reached for it on. */
     public static final MapLayerArrangementDialog INSTANCE = new MapLayerArrangementDialog();
 
     // How dark the backdrop stands the screen down to. Vanilla's own element fill rather than a quad of
@@ -161,8 +161,8 @@ public final class MapLayerArrangementDialog {
 
     /**
      * Takes the dialog off the screen and drops what it was holding. Safe to call with the dialog
-     * already down, which is what lets every way it can end - the key, the button, the screen closing -
-     * say the same thing.
+     * already down, which is what lets every way it can end - the close button, Escape, the screen
+     * closing - say the same thing.
      */
     public void closeDialog() {
 
