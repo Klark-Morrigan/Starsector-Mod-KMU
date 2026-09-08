@@ -105,16 +105,15 @@ case, which pays nothing for the machinery. Built per owner around the context t
 shares (the cells, their grouping, the trace, the hatch geometry), and answered per owner rather
 than per body, since the split's rings are the owner's and are traced once.
 
-It is also handed a `HatchRunObserver` - what the caller wants read off each hatch as it is cut.
-A run is reduced to its segments the moment it lands in a draw record, so anything else it knows
-(how the joining closed its joins) is gone unless someone asks during the build. Inverting it
-keeps the builder out of the question entirely: it neither formats, nor decides which readings
-mean anything under the joining in force, nor holds a logger. `IGNORED` is the normal answer.
-`HatchBuildDiagnostics` is the implementation that reports a build, and the shape it reports in is
-the point - the settings once, ahead of any geometry, then one row per body carrying only what
-that body decided (its segment count, what cutting it cost, and how its joins closed). A value
-that cannot vary across a rebuild belongs on the heading; restated per row it buries the few
-numbers that do vary among repetitions of the ones that never do.
+Each body's cut is measured under `HatchBuildDiagnostics.CUT_HATCH_SECTION`, and what the cut found
+is recorded on that scope: its strokes as a count, and how its joins closed as the call's name. A
+run is reduced to its segments the moment it lands in a draw record, so anything else it knows is
+gone unless it is taken as the body is cut. `HatchBuildDiagnostics` owns what a cut says, and the
+shape it says it in is the point - the settings once as a line, ahead of any geometry, then per
+body only what that body decided. A value that cannot vary across a rebuild belongs on the heading;
+restated per body it buries the few numbers that do vary among repetitions of the ones that never
+do. The duration comes from the scope rather than from a clock read beside it, so what the log says
+a cut cost and what the profiling report says are one measurement.
 
 `TracedFill` is what it hands back, and where the cutting lives: sealed over the three ways an
 owner fills - nothing, whole bodies, or per fill state - so only the third carries rings, and

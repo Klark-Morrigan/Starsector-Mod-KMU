@@ -3,6 +3,9 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.SilentProfiler;
+import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
@@ -20,6 +23,7 @@ import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.labels.anchor.specifications.LeanScoring;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -270,6 +274,13 @@ final class ClusterAnchorsBuilderTest {
             .thenReturn(listIdentityCellsFor(EDGES.keySet()));
     }
 
+    // Every case leaves profiling as it found it, since the holder is process-wide: a recording
+    // profiler left bound would follow the next case into a capture it never asked for.
+    @AfterEach
+    void releaseBoundProfiler() {
+        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
+    }
+
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
 
@@ -303,6 +314,37 @@ final class ClusterAnchorsBuilderTest {
             // them, which is what makes a label read as naming a territory rather than a system.
             assertThat(standingAnchors.getAnchors())
                 .hasSize(2);
+        }
+
+        @Test
+        void rebuildClusterAnchorsCountsThePlacementsItFitted() {
+            // The number the fit's duration is read against - it is the rebuild's dominant cost,
+            // and what it cost per placement is the reading a sweep is tuned by. What it swept to
+            // get there rides on the call's name instead, none of it being a volume of work.
+            var profiler = new RecordingProfiler();
+
+            ActiveProfiler.bindProfiler(profiler);
+            ClusterAnchorsBuilder.rebuildClusterAnchors(
+                standingAnchors,
+                cellGeometry,
+                sectorMock,
+                buildUnfilteredStyling(Map.of(
+                    HELD_SYSTEM,
+                    HEGEMONY_HOLDER,
+                    NEIGHBOUR_SYSTEM,
+                    HEGEMONY_HOLDER,
+                    RIVAL_SYSTEM,
+                    TRITACHYON_HOLDER)));
+
+            var fitRow = profiler.snapshot().get(0).getRoots().get(0);
+
+            assertThat(fitRow.getSection().getName())
+                .isEqualTo("politicalMap.fitClusterAnchors");
+            assertThat(fitRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal())
+                .isEqualTo(2);
+            assertThat(fitRow.getWorstCall().getTag())
+                .contains("clusters=2")
+                .contains("keepOuts=");
         }
 
         @Test

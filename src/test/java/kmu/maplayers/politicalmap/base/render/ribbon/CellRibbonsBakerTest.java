@@ -8,6 +8,7 @@ import kmlib.profiling.SilentProfiler;
 import kmlib.profiling.recording.RecordingProfiler;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -183,6 +184,25 @@ final class CellRibbonsBakerTest {
             assertThat(bakeRow.getIterations().getPhaseTotals())
                 .extracting(phaseTotal -> phaseTotal.getPhase().getName())
                 .containsExactly("plan", "trace", "carve", "stroke");
+        }
+
+        @Test
+        void countsTheCellsItWasAskedToBand() {
+            // The number the pass's duration is read against, which used to be printed in a log
+            // line the profiler never saw. How many of them came back with a band to draw is on
+            // the call's name instead, being a fact about one call rather than a volume of work.
+            var profiler = new RecordingProfiler();
+            var baker = bakeThrough(buildTwoDrawnCells());
+
+            ActiveProfiler.bindProfiler(profiler);
+            baker.bakeAllCellRibbons();
+
+            var bakeRow = profiler.snapshot().get(0).getRoots().get(0);
+
+            assertThat(bakeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
+                .isEqualTo(2);
+            assertThat(bakeRow.getWorstCall().getTag())
+                .isEqualTo("banded=2");
         }
 
         @Test

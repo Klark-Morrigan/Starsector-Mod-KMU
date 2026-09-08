@@ -3,7 +3,9 @@ package kmu.maplayers.base.render.clusters;
 import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
+import kmlib.opengl.hatch.HatchRun;
 import kmlib.opengl.hatch.Hatching;
+import kmlib.profiling.ActiveProfiler;
 
 import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
 import kmu.maplayers.base.theme.HatchStyle;
@@ -84,37 +86,37 @@ public sealed interface TracedFill {
      * @param solidRings        the solid state's traced rings, empty when no member is solid
      * @param hatchedRings      the hatched state's traced rings, empty when no member is hatched
      * @param hatch             the sector-wide hatch geometry the hatched area is cut with
-     * @param hatchRunObserver  what the caller wants read off each body's hatch as it is baked;
-     *                          {@link HatchRunObserver#IGNORED} for a build nobody is reading
      */
     record PerFillState(
         List<List<double[]>> solidRings,
         List<List<double[]>> hatchedRings,
-        HatchStyle hatch,
-        HatchRunObserver hatchRunObserver) implements TracedFill {
+        HatchStyle hatch) implements TracedFill {
 
         @Override
         public ClusterFill buildFillFor(RingRegion clusterRegion) {
             var clusterRings = clusterRegion.toRings();
 
-            // The hatched fill is tessellated before the clock starts, so what is timed is the
+            // The hatched fill is tessellated before the scope opens, so what is measured is the
             // clip and merge alone - the part a joining or a tolerance changes. Tessellating costs
             // the same either way, and is much the larger of the two.
             var hatchedTriangles = clipToCluster(hatchedRings, clusterRings);
 
-            var cutStart = System.nanoTime();
-            var hatchRun = Hatching.computeHatchRun(
-                hatchedTriangles,
-                hatch.angleRadians(),
-                hatch.spacing(),
-                hatch.joinToleranceFraction());
-            var elapsedNanos = System.nanoTime() - cutStart;
+            HatchRun hatchRun;
 
-            // Offered only where there is a hatch to offer. A body of a splitting owner that
-            // holds no hatched member cuts nothing, and an observer counting bodies would find
-            // those indistinguishable from ones whose hatch came out empty for a reason.
-            if (hatchRun.segments().length > 0) {
-                hatchRunObserver.observeHatchRun(new TimedHatchRun(hatchRun, elapsedNanos));
+            // Measured rather than timed by hand: what the cut cost, how many strokes it came back
+            // as and how its joins closed are then one record, read in the log as this body is cut
+            // and in the report afterwards.
+            try (var cutScope = ActiveProfiler
+                    .resolveProfiler()
+                    .open(HatchBuildDiagnostics.CUT_HATCH_SECTION)) {
+
+                hatchRun = Hatching.computeHatchRun(
+                    hatchedTriangles,
+                    hatch.angleRadians(),
+                    hatch.spacing(),
+                    hatch.joinToleranceFraction());
+
+                HatchBuildDiagnostics.reportHatchRun(cutScope, hatchRun);
             }
             return new ClusterFill(
                 clipToCluster(solidRings, clusterRings),

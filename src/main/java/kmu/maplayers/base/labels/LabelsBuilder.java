@@ -1,14 +1,13 @@
 package kmu.maplayers.base.labels;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.ActiveProfiler;
-import kmlib.time.Timings;
+import kmlib.profiling.CallLogThreshold;
+import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 
-import org.apache.log4j.Logger;
 import org.lazywizard.lazylib.ui.LazyFont;
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 
@@ -38,7 +37,11 @@ import java.util.List;
  * strings before minting the new ones; nothing here runs per frame.
  */
 public final class LabelsBuilder {
-    private static final Logger LOG = Global.getLogger(LabelsBuilder.class);
+
+    // Every mint writes its line: it runs on a rebuild rather than per frame, so each call is a
+    // step a reader following that rebuild through the log expects to find.
+    private static final ProfileSection BUILD_SECTION = ProfileSection.registerSection(
+        "mapLayer.buildLabels", CallLogThreshold.LOGGING_EVERY_CALL);
 
     // Below two lines there is no gap between line centres to measure, so the band holds one
     // line height and nothing more.
@@ -69,8 +72,7 @@ public final class LabelsBuilder {
         if (resolvedFont == null) {
             return;
         }
-        var buildStart = System.nanoTime();
-        ActiveProfiler.resolveProfiler().measure("mapLayer.buildLabels", () -> {
+        try (var buildScope = ActiveProfiler.resolveProfiler().open(BUILD_SECTION)) {
             // The plan step (each line's text, colour, hang point, slant, and font size)
             // is pure computation; only the mint below touches GL, so the stacking
             // geometry stays a self-contained calculation apart from GL resource creation.
@@ -89,14 +91,11 @@ public final class LabelsBuilder {
                     plan.hangY(),
                     plan.slantDegrees()));
             }
-        });
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Map layer labels built; lines="
-                + labels.size()
-                + " ofClusters="
-                + anchors.size()
-                + " took="
-                + Timings.formatMillis(System.nanoTime() - buildStart));
+            // The lines are what the mint is paid per, so they are the count; how many clusters
+            // they came from is a fact about this one call rather than a volume of work, and rides
+            // on its name.
+            buildScope.addCount(MapBuildCounters.LABELS, labels.size());
+            buildScope.tagCall("ofClusters=" + anchors.size());
         }
     }
 

@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
+import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.PhasedSection;
 import kmlib.profiling.ProfilePhase;
 
@@ -29,9 +30,16 @@ public final class RibbonBakePhases {
     private static final String CARVE_PHASE_NAME = "carve";
     private static final String STROKE_PHASE_NAME = "stroke";
 
-    /** The section a whole bake is measured under, whose loop runs one turn per cell. */
+    /**
+     * The section a whole bake is measured under, whose loop runs one turn per cell.
+     *
+     * <p>Writes its line on every call - once per bake rather than once per cell, a bake being
+     * the pass a rebuild pays for - so a reader following a rebuild through the log finds the
+     * bands beside the shaping and the fit.
+     */
     public static final PhasedSection BAKE_SECTION = PhasedSection.registerPhasedSection(
         BAKE_SECTION_NAME,
+        CallLogThreshold.LOGGING_EVERY_CALL,
         PLAN_PHASE_NAME,
         TRACE_PHASE_NAME,
         CARVE_PHASE_NAME,

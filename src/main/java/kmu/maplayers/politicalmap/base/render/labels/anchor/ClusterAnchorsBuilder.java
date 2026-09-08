@@ -4,7 +4,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.solving.Bisection;
-import kmlib.time.Timings;
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.CallLogThreshold;
+import kmlib.profiling.ProfileScope;
+import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.geometry.SystemClusters;
@@ -17,6 +20,7 @@ import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.base.labels.anchor.ClusterPartition;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -78,6 +82,11 @@ import java.util.Map;
  */
 public final class ClusterAnchorsBuilder {
     private static final Logger LOG = Global.getLogger(ClusterAnchorsBuilder.class);
+
+    // Every fit writes its line: it runs on a rebuild rather than per frame, and it is the
+    // rebuild's dominant cost, so a reader following one through the log wants each of them.
+    private static final ProfileSection FIT_ANCHORS_SECTION = ProfileSection.registerSection(
+        "politicalMap.fitClusterAnchors", CallLogThreshold.LOGGING_EVERY_CALL);
 
     // The font tolerance last announced, so a knob that sits still is not restated on every
     // fit. Zero cannot come from the read - the tuning floors it above zero - so it doubles
@@ -143,10 +152,84 @@ public final class ClusterAnchorsBuilder {
 
             return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
         }
-        // Timed from here, past the gate: the skipped path does no work worth reporting, and the
+        // Scoped from here, past the gate: the skipped path does no work worth reporting, and the
         // fit is the rebuild's dominant cost, so it needs a duration of its own beside the
         // politics scan's and the cell shaping's rather than only inside the whole-rebuild total.
-        var fitStart = System.nanoTime();
+        List<ClusterAnchor> fittedAnchors;
+
+        try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
+            fittedAnchors = fitClusterAnchors(cellGeometry, sector, styling, fitFingerprint,
+                reusableAnchors, fitScope);
+        }
+        standingAnchors.replaceAnchors(fittedAnchors, fitFingerprint);
+
+        return ClusterNameDisturbance.compareFittedNames(standingNames, fittedAnchors);
+    }
+
+    // The rebuild for a path with no holder map at hand - the debug border-tracing view,
+    // which builds no production draw lists to borrow one from. Resolves holding from
+    // the sector itself, gated behind the toggle so the economy scan only runs while
+    // someone is actually looking at the anchors. Leaves the caller's pair labelled with what
+    // produced it exactly as the shared path does, so the caller holds one fact about its
+    // placements whichever view built them.
+    public static void rebuildClusterAnchorsFromSector(
+            StandingClusterAnchors standingAnchors,
+            RevisedCellGeometry cellGeometry,
+            SectorAPI sector,
+            PoliticalMapView view,
+            ContentInputs contentInputs) {
+
+        if (!KmuPoliticalMapDiagnosticsSettings.getPoliticalMapShowClusterAnchors()) {
+            // The economy scan is what the toggle is guarding, so it is skipped - but the
+            // list it leaves empty still has to say what produced it, which costs a settings
+            // read and no sector work at all. Emptying it and labelling it is the one write
+            // the pair takes, so this path's skip cannot leave the two disagreeing.
+            standingAnchors.replaceAnchors(
+                List.of(),
+                readFitFingerprint(cellGeometry.revision()));
+            return;
+        }
+
+        // Sample the view's grouping once and resolve holding under it, so the anchors
+        // key off the same snapshot their names and colours are classified against.
+        var grouping = view.resolveGrouping();
+
+        // This path builds no drawables to borrow the palette from, so resolve it here - through
+        // the same darkening seam the theme reads, so the debug names desaturate exactly as
+        // production does and the setting still has a single reader.
+        var desaturationPalette = MapPalettes.resolveDesaturationPalette(
+            sector,
+            RenderStyleReader.readGlobalStyle().desaturationDarkening());
+
+        // The debug border-tracing path never filters - it resolves real dominant holders from the
+        // sector - so the pick is dropped from the picks it goes in under and it recedes nothing
+        // and names no synthetic spotlight key. Dropped rather than the whole reading being
+        // replaced, since this path still draws the names in the format the player asked for.
+        // What the shared rebuild reports about the names it moved is dropped here rather than
+        // passed on: this view replaces the production draw lists outright, so there is nothing
+        // laid around the names for a moved one to oblige.
+        rebuildClusterAnchors(
+            standingAnchors,
+            cellGeometry,
+            sector,
+            new ClusterLabelStylingSnapshot(
+                SectorPolitics.resolveDominantHolderBySystemId(
+                    HolderPass.readFromLunaSettings(sector, grouping)),
+                desaturationPalette,
+                new ViewGrouping(view, grouping),
+                contentInputs.clearFilterPick()));
+    }
+
+    // The sweep itself, reporting what it ran onto the scope around it. The placements go back to
+    // the caller rather than into the standing pair here, so what a fit produced and what a
+    // rebuild does with it stay two statements.
+    private static List<ClusterAnchor> fitClusterAnchors(
+            RevisedCellGeometry cellGeometry,
+            SectorAPI sector,
+            ClusterLabelStylingSnapshot styling,
+            AnchorFitFingerprint fitFingerprint,
+            Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
+            ProfileScope fitScope) {
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
         // the system it draws as and that system to its bloc id; the holder map is still
@@ -208,83 +291,27 @@ public final class ClusterAnchorsBuilder {
                     viewGrouping.grouping(),
                     contentInputs)),
             reusableAnchors);
-        standingAnchors.replaceAnchors(fit.anchors(), fitFingerprint);
 
-        // The search's cost is the product of its inputs, so the sweep knobs and the keep-out
-        // count are reported beside the duration - a slow fit is read off which multiplicand
-        // grew, not off the total alone. Three levels are reported because each understates the
-        // next: the direction count reads as swept but is a tuning knob the fan adds fixed
-        // extras to, so it prints as swept-over-configured; the candidates are that fan crossed
-        // with the offsets over every cluster; and the band fits are what those candidates
-        // actually spent, many apiece, which is the level the duration tracks. Measured rather
-        // than recomputed from the knobs here, so a sweep that bailed out early reads as cheap.
-        LOG.debug("Political map cluster anchors fitted; clusters="
-            + partition.clusterMemberSystemIds().size()
-            + " anchors=" + fit.anchors().size()
+        // The placements are what the sweep is paid per, so they are the count. Its cost is the
+        // product of its inputs, so the sweep knobs and the keep-out count ride on the call - a
+        // slow fit is read off which multiplicand grew, not off the total alone. Three levels are
+        // named because each understates the next: the direction count reads as swept but is a
+        // tuning knob the fan adds fixed extras to, so it prints as swept-over-configured; the
+        // candidates are that fan crossed with the offsets over every cluster; and the band fits
+        // are what those candidates actually spent, many apiece, which is the level the duration
+        // tracks. Measured rather than recomputed from the knobs here, so a sweep that bailed out
+        // early reads as cheap.
+        fitScope.addCount(MapBuildCounters.LABELS, fit.anchors().size());
+        fitScope.tagCall("clusters=" + partition.clusterMemberSystemIds().size()
             + " directions="
             + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
             + "/" + spec.search().directionCount()
             + " offsets=" + spec.search().offsetCount()
             + " candidates=" + fit.candidateCount()
             + " bandFits=" + fit.bandFitCount()
-            + " keepOuts=" + partition.siteBySystemId().size()
-            + " took=" + Timings.formatMillis(System.nanoTime() - fitStart));
+            + " keepOuts=" + partition.siteBySystemId().size());
 
-        return ClusterNameDisturbance.compareFittedNames(standingNames, fit.anchors());
-    }
-
-    // The rebuild for a path with no holder map at hand - the debug border-tracing view,
-    // which builds no production draw lists to borrow one from. Resolves holding from
-    // the sector itself, gated behind the toggle so the economy scan only runs while
-    // someone is actually looking at the anchors. Leaves the caller's pair labelled with what
-    // produced it exactly as the shared path does, so the caller holds one fact about its
-    // placements whichever view built them.
-    public static void rebuildClusterAnchorsFromSector(
-            StandingClusterAnchors standingAnchors,
-            RevisedCellGeometry cellGeometry,
-            SectorAPI sector,
-            PoliticalMapView view,
-            ContentInputs contentInputs) {
-
-        if (!KmuPoliticalMapDiagnosticsSettings.getPoliticalMapShowClusterAnchors()) {
-            // The economy scan is what the toggle is guarding, so it is skipped - but the
-            // list it leaves empty still has to say what produced it, which costs a settings
-            // read and no sector work at all. Emptying it and labelling it is the one write
-            // the pair takes, so this path's skip cannot leave the two disagreeing.
-            standingAnchors.replaceAnchors(
-                List.of(),
-                readFitFingerprint(cellGeometry.revision()));
-            return;
-        }
-
-        // Sample the view's grouping once and resolve holding under it, so the anchors
-        // key off the same snapshot their names and colours are classified against.
-        var grouping = view.resolveGrouping();
-
-        // This path builds no drawables to borrow the palette from, so resolve it here - through
-        // the same darkening seam the theme reads, so the debug names desaturate exactly as
-        // production does and the setting still has a single reader.
-        var desaturationPalette = MapPalettes.resolveDesaturationPalette(
-            sector,
-            RenderStyleReader.readGlobalStyle().desaturationDarkening());
-
-        // The debug border-tracing path never filters - it resolves real dominant holders from the
-        // sector - so the pick is dropped from the picks it goes in under and it recedes nothing
-        // and names no synthetic spotlight key. Dropped rather than the whole reading being
-        // replaced, since this path still draws the names in the format the player asked for.
-        // What the shared rebuild reports about the names it moved is dropped here rather than
-        // passed on: this view replaces the production draw lists outright, so there is nothing
-        // laid around the names for a moved one to oblige.
-        rebuildClusterAnchors(
-            standingAnchors,
-            cellGeometry,
-            sector,
-            new ClusterLabelStylingSnapshot(
-                SectorPolitics.resolveDominantHolderBySystemId(
-                    HolderPass.readFromLunaSettings(sector, grouping)),
-                desaturationPalette,
-                new ViewGrouping(view, grouping),
-                contentInputs.clearFilterPick()));
+        return fit.anchors();
     }
 
     // The standing placements a fit made now may carry over, filed under the cluster each of

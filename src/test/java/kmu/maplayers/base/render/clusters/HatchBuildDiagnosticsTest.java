@@ -3,7 +3,9 @@ package kmu.maplayers.base.render.clusters;
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.hatch.HatchJoinTally;
 import kmlib.opengl.hatch.HatchRun;
+import kmlib.profiling.recording.RecordingProfiler;
 
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.theme.GlLineHatchStroke;
 import kmu.maplayers.base.theme.HatchStyle;
 
@@ -13,10 +15,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins how a rebuild's hatch reports itself, in the two kinds of line a capture is read from: the
- * settings once, then one row per body. The split is the subject - a value that cannot vary across
- * a rebuild belongs on the heading, and a row repeating it makes a reader compare values to notice
- * they never differ.
+ * Pins how a rebuild's hatch reports itself: the settings once as a line, then each body's cut as
+ * a count and a name on the scope it was cut under. The split is the subject - a value that cannot
+ * vary across a rebuild belongs on the heading, and a reading repeating it makes a reader compare
+ * values to notice they never differ.
  */
 final class HatchBuildDiagnosticsTest {
 
@@ -24,10 +26,6 @@ final class HatchBuildDiagnosticsTest {
     private static final double ANGLE_RADIANS = 0.75;
     private static final double JOIN_TOLERANCE = 0.001;
     private static final double WIDTH_PIXELS = 2.0;
-
-    // Three microseconds: a span the millisecond format every other build line uses would round to
-    // "0.00ms", so a row reporting the cut in milliseconds fails the expectations below.
-    private static final long ELAPSED_NANOS = 3_000L;
 
     @Nested
     class DescribeHatchSpecification {
@@ -48,44 +46,60 @@ final class HatchBuildDiagnosticsTest {
     }
 
     @Nested
-    class DescribeHatchRun {
+    class DescribeHatchJoins {
 
         @Test
-        void describeHatchRunCarriesOnlyWhatVariesPerBody() {
+        void describeHatchJoinsCarriesOnlyWhatVariesPerBody() {
             // Every reading here differs body to body, and none of them restates the tolerance
-            // they were measured against - the heading already gave it, once.
-            assertThat(HatchBuildDiagnostics.describeHatchRun(createTimedHatchRun()))
-                .isEqualTo("Cluster hatch built; segments=1 took=3.0us"
-                    + " exactJoins=7"
+            // they were measured against - the heading already gave it, once. Nor the segment
+            // count or the duration, which the call carries as a count and a span of its own.
+            assertThat(HatchBuildDiagnostics.describeHatchJoins(createHatchRun()))
+                .isEqualTo("exactJoins=7"
                     + " toleranceJoins=2"
                     + " overlappingJoins=1"
                     + " widestClosedGap=0.004"
                     + " narrowestOpenGap=0.06");
         }
+    }
+
+    @Nested
+    class ReportHatchRun {
 
         @Test
-        void describeHatchRunReportsTheSegmentCountInSegmentsRatherThanFloats() {
-            // Eight floats pack two segments, so a row reporting the array's own length reads 8.
-            var run = new TimedHatchRun(
-                new HatchRun(
-                    new float[] {0f, 0f, 1f, 1f, 2f, 2f, 3f, 3f},
-                    HatchJoinTally.NO_JOINS),
-                ELAPSED_NANOS);
+        void reportHatchRunCountsStrokesRatherThanTheFloatsPackingThem() {
+            // Eight floats pack two segments, so a row counting the array's own length reads 8.
+            var profiler = new RecordingProfiler();
+            var hatchRun = new HatchRun(
+                new float[] {0f, 0f, 1f, 1f, 2f, 2f, 3f, 3f},
+                HatchJoinTally.NO_JOINS);
 
-            assertThat(HatchBuildDiagnostics.describeHatchRun(run))
-                .startsWith("Cluster hatch built; segments=2 ");
+            try (var cutScope = profiler.open(HatchBuildDiagnostics.CUT_HATCH_SECTION)) {
+                HatchBuildDiagnostics.reportHatchRun(cutScope, hatchRun);
+            }
+
+            assertThat(readCutSegments(profiler))
+                .isEqualTo(2);
         }
     }
 
+    // What the one cut recorded above counted.
+    private static long readCutSegments(RecordingProfiler profiler) {
+        return profiler
+            .snapshot()
+            .get(0)
+            .getRoots()
+            .get(0)
+            .findCount(MapBuildCounters.HATCH_SEGMENTS)
+            .getTotals()
+            .getTotal();
+    }
+
     // One segment, with a tally distinctive enough that a reading threaded into the wrong slot is
-    // caught by value. Timed at a span milliseconds would round away, so a row that reported the
-    // cut in them fails here.
-    private static TimedHatchRun createTimedHatchRun() {
-        return new TimedHatchRun(
-            new HatchRun(
-                new float[] {0f, 0f, 1f, 1f},
-                new HatchJoinTally(7, 2, 1, 0.004, 0.06)),
-            ELAPSED_NANOS);
+    // caught by value.
+    private static HatchRun createHatchRun() {
+        return new HatchRun(
+            new float[] {0f, 0f, 1f, 1f},
+            new HatchJoinTally(7, 2, 1, 0.004, 0.06));
     }
 
     private static HatchStyle createHatchStyle() {

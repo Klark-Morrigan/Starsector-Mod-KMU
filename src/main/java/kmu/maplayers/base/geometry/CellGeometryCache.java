@@ -1,15 +1,15 @@
 package kmu.maplayers.base.geometry;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
-import kmlib.time.Timings;
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.CallLogThreshold;
+import kmlib.profiling.ProfileScope;
+import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +61,18 @@ import java.util.Set;
  * alone, independent of how the cells are drawn.
  */
 public final class CellGeometryCache {
-    private static final Logger LOG = Global.getLogger(CellGeometryCache.class);
+
+    // Every update writes its line: the cut runs when something moved rather than on a clock, so
+    // each of its calls is an event a reader following a rebuild through the log wants to see -
+    // the fast ones included, a cut that recomputed nothing being an answer in itself.
+    private static final ProfileSection UPDATE_SECTION = ProfileSection.registerSection(
+        "mapLayer.updateGeometry", CallLogThreshold.LOGGING_EVERY_CALL);
+
+    // What the two outcomes of an update are named on their row's slowest call and in its line,
+    // since the counts alone cannot say whether a scan that recomputed nothing found nothing to do
+    // or was handed nothing at all.
+    private static final String UNCHANGED_CALL = "unchanged";
+    private static final String REBUILT_CALL = "rebuilt";
 
     private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
 
@@ -123,9 +134,51 @@ public final class CellGeometryCache {
             Set<String> movingSystemIds,
             CellSeedInputs seedInputs) {
 
-        // Timed independently of the profiler so the per-update cost (the whole
-        // diff, or a full rebuild) reads straight from the log.
-        var start = System.nanoTime();
+        // The whole update under one scope: what the diff cost and what a rebuild it triggered
+        // cost are one duration, and the counts it is read against are added to the same scope
+        // rather than printed beside a clock read of this method's own.
+        try (var updateScope = ActiveProfiler.resolveProfiler().open(UPDATE_SECTION)) {
+            updateCellsFromSector(pass, movingSystemIds, seedInputs, updateScope);
+        }
+    }
+
+    /**
+     * @return the cell-adjacency graph keyed by cell id; each value is that cell's raw
+     *         edges, every edge tagged with what lies across it. An unmodifiable live view.
+     */
+    public Map<String, List<CellEdge>> getCellEdgesByCellId() {
+        return Collections.unmodifiableMap(cellEdgesByCellId);
+    }
+
+    /**
+     * @return the system each cell draws as, keyed by cell id - the map a consumer resolves a
+     *         cell's owner, palette, and name through. Every cell here is one star's own
+     *         cell, so each maps to the star it was seeded from. An unmodifiable live view.
+     */
+    public Map<String, String> getSystemIdByCellId() {
+        return Collections.unmodifiableMap(systemIdByCellId);
+    }
+
+    /**
+     * @return each on-map system's Voronoi site - its {@code {x, y}} hyperspace
+     *         position and the natural centre of its cell - keyed by system id. The
+     *         point cloud a cluster's label anchor is fitted to. An unmodifiable live
+     *         view.
+     */
+    public Map<String, double[]> getSiteBySystemId() {
+        return Collections.unmodifiableMap(siteBySystemId);
+    }
+
+    // The update itself, reporting what it did onto the scope the entry point opened: the cells
+    // it recomputed as a count, and which of its two outcomes this call was as the call's name.
+    // Both are what the row's duration is read against, and both reach the log through the scope
+    // rather than through a line of this class's own.
+    private void updateCellsFromSector(
+            MapVisibilityPass pass,
+            Set<String> movingSystemIds,
+            CellSeedInputs seedInputs,
+            ProfileScope updateScope) {
+
         var newSites = collectAccessibleSites(pass, movingSystemIds);
 
         // The seed inputs are what every cell is cut from, so a change to either of them
@@ -146,13 +199,11 @@ public final class CellGeometryCache {
 
         if (added.isEmpty() && removed.isEmpty()) {
             // A refresh was requested but the participating set is identical (e.g. a
-            // fingerprint collision, or a non-access change). Logged so a "why did
+            // fingerprint collision, or a non-access change). Named so a "why did
             // nothing rebuild" question has an answer - and the diff cost (scanning
-            // every system) shows even when nothing rebuilds.
-            LOG.debug("Map layer geometry unchanged; reachableSites="
-                + newSites.size()
-                + " took="
-                + Timings.formatMillis(System.nanoTime() - start));
+            // every system) is still the call's duration, so it shows even when nothing
+            // rebuilds.
+            updateScope.tagCall(UNCHANGED_CALL + " sites=" + newSites.size());
             return;
         }
 
@@ -205,50 +256,17 @@ public final class CellGeometryCache {
             recomputedCellEdges += edges.size();
         }
 
-        // The geometric diff: which systems entered/left the partition (an access
-        // change, or a system starting or stopping moving), how many cells were
-        // recomputed and at what edge cost, and how long it took. The primary trace
-        // for a cell that is misshapen, missing, or left behind after such a change,
-        // and for how heavy a rebuild it triggered.
-        LOG.debug("Map layer geometry rebuilt; added="
-            + added.size()
-            + " removed="
-            + removed.size()
-            + " recomputedCells="
-            + affected.size()
-            + " recomputedCellEdges="
-            + recomputedCellEdges
-            + " totalSites="
-            + siteBySystemId.size()
-            + " took="
-            + Timings.formatMillis(System.nanoTime() - start));
-    }
-
-    /**
-     * @return the cell-adjacency graph keyed by cell id; each value is that cell's raw
-     *         edges, every edge tagged with what lies across it. An unmodifiable live view.
-     */
-    public Map<String, List<CellEdge>> getCellEdgesByCellId() {
-        return Collections.unmodifiableMap(cellEdgesByCellId);
-    }
-
-    /**
-     * @return the system each cell draws as, keyed by cell id - the map a consumer resolves a
-     *         cell's owner, palette, and name through. Every cell here is one star's own
-     *         cell, so each maps to the star it was seeded from. An unmodifiable live view.
-     */
-    public Map<String, String> getSystemIdByCellId() {
-        return Collections.unmodifiableMap(systemIdByCellId);
-    }
-
-    /**
-     * @return each on-map system's Voronoi site - its {@code {x, y}} hyperspace
-     *         position and the natural centre of its cell - keyed by system id. The
-     *         point cloud a cluster's label anchor is fitted to. An unmodifiable live
-     *         view.
-     */
-    public Map<String, double[]> getSiteBySystemId() {
-        return Collections.unmodifiableMap(siteBySystemId);
+        // The geometric diff: how many cells were recomputed as the count this call's duration is
+        // read against, and beside it which systems entered or left the partition (an access
+        // change, or a system starting or stopping moving), at what edge cost, and over how large
+        // a partition. The primary trace for a cell that is misshapen, missing, or left behind
+        // after such a change, and for how heavy a rebuild it triggered.
+        updateScope.addCount(MapBuildCounters.CELLS, affected.size());
+        updateScope.tagCall(REBUILT_CALL
+            + " added=" + added.size()
+            + " removed=" + removed.size()
+            + " cellEdges=" + recomputedCellEdges
+            + " sites=" + siteBySystemId.size());
     }
 
     // The live sites the partition is built from: every drawn system's position,

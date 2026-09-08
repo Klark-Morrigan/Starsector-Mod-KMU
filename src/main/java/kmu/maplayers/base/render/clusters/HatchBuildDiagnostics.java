@@ -3,8 +3,12 @@ package kmu.maplayers.base.render.clusters;
 import com.fs.starfarer.api.Global;
 
 import kmlib.opengl.GlVertexRuns;
-import kmlib.time.Timings;
+import kmlib.opengl.hatch.HatchRun;
+import kmlib.profiling.CallLogThreshold;
+import kmlib.profiling.ProfileScope;
+import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.theme.HatchStyle;
 
 import org.apache.log4j.Logger;
@@ -19,6 +23,12 @@ import org.apache.log4j.Logger;
  * notice they never differ, and buries the few numbers that do differ among them. Stated once
  * ahead of the bodies, the specification is the heading its rows are read under - including their
  * units, which then need saying only in the one place.
+ *
+ * <p>The per-body reading rides on the scope the cut is measured under rather than on a line of
+ * its own: what a cut cost and what it produced are then one record, in the report as well as in
+ * the log, and the duration a reading is judged against is the profiler's own rather than a second
+ * clock read beside it. The specification stays a line, being a statement about the rebuild rather
+ * than a measurement of one call.
  */
 public final class HatchBuildDiagnostics {
 
@@ -27,6 +37,16 @@ public final class HatchBuildDiagnostics {
     private static final String GAP_UNITS_NOTE = " (tolerance and gaps as fractions of spacing)";
 
     private static final Logger LOG = Global.getLogger(HatchBuildDiagnostics.class);
+
+    /**
+     * The section one body's hatch cut is measured under.
+     *
+     * <p>Every cut writes its line: it happens on a rebuild rather than per frame, and a body that
+     * cut nothing is as much a part of the trace as one that cut thousands of strokes - the count
+     * beside the duration is what tells the two apart.
+     */
+    public static final ProfileSection CUT_HATCH_SECTION = ProfileSection.registerSection(
+        "mapLayer.cutHatch", CallLogThreshold.LOGGING_EVERY_CALL);
 
     // Reports only; never instantiated.
     private HatchBuildDiagnostics() {
@@ -42,11 +62,23 @@ public final class HatchBuildDiagnostics {
     }
 
     /**
-     * @return an observer recording each body's segment count, the cost of cutting it, and how its
-     *         joins closed
+     * Records one body's cut on the scope it was cut under: how many strokes it came back as, and
+     * the readings that settle whether the join tolerance is load-bearing.
+     *
+     * @param cutScope the open scope the cut was measured under
+     * @param hatchRun the segments cut for this body and how its joins closed
      */
-    public static HatchRunObserver createRunObserver() {
-        return timedHatchRun -> LOG.debug(describeHatchRun(timedHatchRun));
+    public static void reportHatchRun(ProfileScope cutScope, HatchRun hatchRun) {
+
+        var segments = hatchRun.segments().length / GlVertexRuns.FLOATS_PER_SEGMENT;
+
+        cutScope.addCount(MapBuildCounters.HATCH_SEGMENTS, segments);
+
+        // A body of a splitting owner that holds no hatched member cuts nothing, and there are no
+        // joins to read off a run that has no segments to join.
+        if (segments > 0) {
+            cutScope.tagCall(describeHatchJoins(hatchRun));
+        }
     }
 
     // The specification line. Both halves of the style are named: a capture is attributed to the
@@ -61,20 +93,18 @@ public final class HatchBuildDiagnostics {
             + GAP_UNITS_NOTE;
     }
 
-    // One body's row: how many primitives its fill came back as, what cutting them cost, and the
-    // readings that settle whether the join tolerance is load-bearing. The widest gap it closed is
-    // the reach it had to have; the narrowest one left open is what the next notch up would start
-    // joining, and is the only reading a run at zero tolerance can give, since nothing can be
-    // tolerated there.
+    // What one body's cut found: the readings that settle whether the join tolerance is
+    // load-bearing. The widest gap it closed is the reach it had to have; the narrowest one left
+    // open is what the next notch up would start joining, and is the only reading a run at zero
+    // tolerance can give, since nothing can be tolerated there.
     //
-    // The cost is stated in microseconds because a cut is a sub-pass - milliseconds at two decimals
-    // round most of them to zero, which compares against nothing.
-    static String describeHatchRun(TimedHatchRun timedHatchRun) {
-        var joins = timedHatchRun.hatchRun().joins();
-        return "Cluster hatch built; segments="
-            + timedHatchRun.hatchRun().segments().length / GlVertexRuns.FLOATS_PER_SEGMENT
-            + " took=" + Timings.formatMicros(timedHatchRun.elapsedNanos())
-            + " exactJoins=" + joins.exactJoinCount()
+    // Named on the call rather than counted, because none of it is a volume of work a duration is
+    // divided by - and two of the four are fractions, which a counter cannot hold at all.
+    static String describeHatchJoins(HatchRun hatchRun) {
+
+        var joins = hatchRun.joins();
+
+        return "exactJoins=" + joins.exactJoinCount()
             + " toleranceJoins=" + joins.toleranceJoinCount()
             + " overlappingJoins=" + joins.overlappingJoinCount()
             + " widestClosedGap=" + joins.widestToleranceGapFraction()

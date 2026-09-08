@@ -11,7 +11,6 @@ import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.FillSplit;
-import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.base.render.clusters.SplitFillBuilder;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
@@ -130,8 +129,7 @@ public final class FactionTerritoryBuilder {
                 geometryCache.getCellEdgesByCellId(),
                 cellGrouping,
                 borderTrace,
-                territories.getGlobalStyle().hatch(),
-                HatchBuildDiagnostics.createRunObserver())
+                territories.getGlobalStyle().hatch())
             .traceFill(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(

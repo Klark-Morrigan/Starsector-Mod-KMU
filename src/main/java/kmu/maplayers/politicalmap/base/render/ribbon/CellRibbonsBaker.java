@@ -1,18 +1,14 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.IterationScope;
-import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
-
-import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,8 +53,6 @@ import java.util.Map;
  * over the same snapshot rather than two calls that have to be handed matching inputs.
  */
 public final class CellRibbonsBaker {
-
-    private static final Logger LOG = Global.getLogger(CellRibbonsBaker.class);
 
     private final PoliticalMapTerritories territories;
     private final Map<String, String> systemIdByCellId;
@@ -126,25 +120,22 @@ public final class CellRibbonsBaker {
      */
     public void bakeCellRibbonsOf(Collection<String> cellIds) {
 
-        var bakeStart = System.nanoTime();
-        int bakedCells;
-
         // A band's count walks a system's colonies once per bake, and on the claims layer settles a
         // contest over them - so this is the one part of a rebuild that could rival the known
-        // label-fit stall, and it is profiled and timed on its own so a rebuild that slows down
-        // says which half slowed. One scope over the whole loop rather than one per cell, since a
-        // scope per cell would cost about what a cell costs.
+        // label-fit stall, and it is profiled on its own so a rebuild that slows down says which
+        // half slowed. One scope over the whole loop rather than one per cell, since a scope per
+        // cell would cost about what a cell costs.
         try (var bakeScope = ActiveProfiler
                 .resolveProfiler()
                 .openIterations(RibbonBakePhases.BAKE_SECTION)) {
 
-            bakedCells = bakeCellRibbons(cellIds, bakeScope);
-        }
+            var bakedCells = bakeCellRibbons(cellIds, bakeScope);
 
-        LOG.debug("Political map presence bands baked; cells="
-            + cellIds.size()
-            + " banded=" + bakedCells
-            + " took=" + Timings.formatMillis(System.nanoTime() - bakeStart));
+            // The cells asked for are what the bake is paid per; how many of them came back with
+            // anything to draw is a fact about this one call rather than a volume of work.
+            bakeScope.addCount(MapBuildCounters.CELLS, cellIds.size());
+            bakeScope.tagCall("banded=" + bakedCells);
+        }
     }
 
     // Bakes each named cell's band inside the shape that cell already records, reporting how many

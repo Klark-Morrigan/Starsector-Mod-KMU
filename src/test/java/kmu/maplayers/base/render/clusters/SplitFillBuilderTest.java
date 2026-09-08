@@ -186,16 +186,14 @@ final class SplitFillBuilderTest {
         }
     }
 
-    // Reads nothing off the hatches it cuts: this suite's subject is which cells each state
-    // fills, so a case asserts on the geometry that comes back rather than on anything observed
-    // along the way.
+    // This suite's subject is which cells each state fills, so a case asserts on the geometry that
+    // comes back rather than on what the cuts along the way recorded.
     private static SplitFillBuilder createSplitFillBuilder() {
         return new SplitFillBuilder(
             EDGES,
             GROUPING,
             new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
-            HATCH,
-            HatchRunObserver.IGNORED);
+            HATCH);
     }
 
     // Both members held outright - the common case, and the one the solid fast path is for.

@@ -4,9 +4,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.CallLogThreshold;
+import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SystemColoniesIndex;
-import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
@@ -76,6 +77,12 @@ import java.util.Objects;
  */
 final class PoliticalMapCache {
     private static final Logger LOG = Global.getLogger(PoliticalMapCache.class);
+
+    // Everything a rebuild derives from the cells. Writes its line on every call, a rebuild being
+    // an event rather than a per-frame cost: the line is what says a rebuild happened at all, and
+    // what it left for the render to paint.
+    private static final ProfileSection REBUILD_DRAWABLES_SECTION = ProfileSection.registerSection(
+        "politicalMap.rebuildDrawables", CallLogThreshold.LOGGING_EVERY_CALL);
 
     // The content revision's seed, below any revision the settings fold can report on a built
     // map, so this cache's first refresh finds the draw lists stale and builds them.
@@ -315,7 +322,31 @@ final class PoliticalMapCache {
         if (staleHalves.isCellCutStale()) {
             rebuildGeometry(staleHalves.cellCut(), sector, colonies);
         }
-        var drawablesStart = System.nanoTime();
+        // Everything derived from the cells under one scope, the cut having timed itself: what
+        // the draw lists cost this rebuild is this span, and every stage it drives sits inside it.
+        try (var drawablesScope = ActiveProfiler
+                .resolveProfiler()
+                .open(REBUILD_DRAWABLES_SECTION)) {
+
+            rebuildDrawables(staleHalves, view, sector, colonies);
+
+            // Traces the content rebuild's result: what the render will paint, so a wrong or empty
+            // render can be confirmed against what was built. The count reported is whichever view
+            // was built this rebuild - the normal styled cells or the debug overlay's base loops -
+            // which is why it is named rather than counted: the two are not one quantity.
+            drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
+                + " " + describeBuiltCounts()
+                + " geometryRebuilt=" + staleHalves.isCellCutStale());
+        }
+    }
+
+    // The draw lists themselves: one view or the other, the names minted from the placements they
+    // left, and the staleness this rebuild has just answered drained.
+    private void rebuildDrawables(
+            StaleHalves staleHalves,
+            PoliticalMapView view,
+            SectorAPI sector,
+            SystemColoniesIndex colonies) {
 
         // Build one view or the other, never both: the debug overlay replaces the normal
         // render, so in debug mode the production draw lists are not built at all, and the
@@ -353,11 +384,6 @@ final class PoliticalMapCache {
         // already reflected - drain and discard it rather than re-processing the same systems
         // immediately after.
         installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
-
-        logContentRebuild(
-            staleHalves.isCellCutStale(),
-            staleHalves.contentRevision(),
-            drawablesStart);
     }
 
     // The debug border-tracing view, which replaces the production draw lists outright. It reads
@@ -466,26 +492,11 @@ final class PoliticalMapCache {
             staleSystemIds);
     }
 
-    // Traces the content rebuild's result: the counts the render will paint and the whole-rebuild
-    // time, so a wrong or empty render can be confirmed against what was built. The count reported
-    // is whichever view was built this rebuild - the normal styled cells or the debug overlay's
-    // base loops.
-    private void logContentRebuild(
-            boolean isCellCutStale,
-            int contentRevision,
-            long drawablesStart) {
-
-        if (!LOG.isDebugEnabled()) {
-            return;
-        }
-        var builtCounts = borderStageOverlay != null
+    // What this rebuild left for the render to paint, in the terms of whichever view it built.
+    private String describeBuiltCounts() {
+        return borderStageOverlay != null
             ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
             : "styledCells=" + territories.getStyledCellByCellId().size();
-
-        LOG.debug("Political map territories rebuilt; contentRevision="
-            + contentRevision + " " + builtCounts
-            + " geometryRebuilt=" + isCellCutStale
-            + " took=" + Timings.formatMillis(System.nanoTime() - drawablesStart));
     }
 
     // Guards the render path after a failed first build: a rebuild that threw before completing can
@@ -555,15 +566,12 @@ final class PoliticalMapCache {
             VisibleStars.scan(sector),
             cellCut.visibilityRules());
 
-        var movingSystemIds = installation.resolveMovingSystems().getMovingSystemIds();
-        ActiveProfiler
-            .resolveProfiler()
-            .measure(
-                "politicalMap.updateGeometry",
-                () -> cellGeometry.cells().updateFromSector(
-                    pass,
-                    movingSystemIds,
-                    cellCut.seedInputs()));
+        // Not wrapped in a section of its own: the cut opens one, so a scope here would be a
+        // second row over the same span, differing only in which of the two names it carried.
+        cellGeometry.cells().updateFromSector(
+            pass,
+            installation.resolveMovingSystems().getMovingSystemIds(),
+            cellCut.seedInputs());
 
         // A fresh cut number the moment the cells are recut, whichever of the four inputs
         // drove it - so work derived from the previous cut can never read as derived from

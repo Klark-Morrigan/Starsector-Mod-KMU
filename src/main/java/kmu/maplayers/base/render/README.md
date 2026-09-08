@@ -183,10 +183,26 @@ section as it happens.
 Inside each beat sits one row per layer, `mapLayer.layer.<layer id>`, opened around the layer's
 callback rather than by the layer. So what a layer costs is read against the beat it cost it in, a
 layer that measures nothing of its own still has a row, and every section the layer's own work opens
-lands beneath its row instead of beside it - which is what puts `politicalMap.updateGeometry` and its
+lands beneath its row instead of beside it - which is what puts `mapLayer.updateGeometry` and its
 siblings under the refresh they ran in. The stand-down reads sit inside the beat and outside that
 row, so a frame with nothing to draw reports what standing down cost and opens no row for a layer
 that never ran.
+
+A rebuild's own steps say so in the log as they close. `mapLayer.updateGeometry`,
+`mapLayer.buildLabels`, `mapLayer.cutHatch` and the political map's `resolvePolitics`,
+`findInhabited`, `findSpotlitPresence`, `shapeAndStyleCells`, `fitClusterAnchors`, `bakeRibbons` and
+`rebuildDrawables` each state that every call of them is worth a debug line, and the line carries
+the duration the row was accumulated from, what the call counted, and what it named itself. That
+replaces the hand-written `took=` lines those steps used to print: one measurement, read in the log
+as a rebuild happens or in the report afterwards, rather than two that could disagree. The counts
+themselves are few on purpose - `cells`, `labels`, `hatchSegments` in `MapBuildCounters`, beside the
+library's own sector counters - since every counter a capture touches widens every reading of it;
+anything that is a detail of one call rides on that call's name instead.
+
+Those lines follow the profiler, which is the trade the single measurement is worth: with the level
+knob off, a rebuild says nothing at all, where the hand-written lines were written whenever the log
+was at debug. Turning the knob on is what a reader after them does, and it is the same switch that
+gives them the report.
 
 Nothing is recorded unless a profiler is bound: the library's default keeps nothing and allocates
 nothing, so an unmeasured frame pays a virtual call per beat and no more. Which one is bound follows

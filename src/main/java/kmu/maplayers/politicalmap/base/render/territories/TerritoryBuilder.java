@@ -1,17 +1,18 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.opengl.GlVertexRuns;
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.CallLogThreshold;
+import kmlib.profiling.ProfileScope;
+import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
 import kmlib.starsector.factions.StarsectorFactionColours;
-import kmlib.time.Timings;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -23,8 +24,6 @@ import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-
-import org.apache.log4j.Logger;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -47,7 +46,24 @@ import java.util.function.Supplier;
  * hide that order is a method whose reader has to reconstruct it.
  */
 public final class TerritoryBuilder {
-    private static final Logger LOG = Global.getLogger(TerritoryBuilder.class);
+
+    // The four stages that used to time and report themselves by hand. Each writes its line on
+    // every call: a rebuild happens when something changed rather than on a clock, so the trace a
+    // reader follows through the log wants every one of them, fast ones included.
+    private static final ProfileSection RESOLVE_POLITICS_SECTION = ProfileSection.registerSection(
+        "politicalMap.resolvePolitics", CallLogThreshold.LOGGING_EVERY_CALL);
+
+    private static final ProfileSection FIND_INHABITED_SECTION = ProfileSection.registerSection(
+        "politicalMap.findInhabited", CallLogThreshold.LOGGING_EVERY_CALL);
+
+    private static final ProfileSection FIND_SPOTLIT_PRESENCE_SECTION =
+        ProfileSection.registerSection(
+            "politicalMap.findSpotlitPresence", CallLogThreshold.LOGGING_EVERY_CALL);
+
+    // The shaping and everything spent on the shapes, which is what the hand-written line covered:
+    // the two profiled steps below it are parts of this call rather than the whole of it.
+    private static final ProfileSection SHAPE_AND_STYLE_SECTION = ProfileSection.registerSection(
+        "politicalMap.shapeAndStyleCells", CallLogThreshold.LOGGING_EVERY_CALL);
 
     // Builds only; never instantiated.
     private TerritoryBuilder() {
@@ -106,30 +122,28 @@ public final class TerritoryBuilder {
 
     // Who holds each system under this view, and - under a filter - which of the spotlit systems
     // are contested. The politics scan walks the whole economy, the priciest content step, so it is
-    // profiled and timed on its own and its counts logged independent of the profiler's accumulated
-    // view. The contested set is reported here because the whole spotlit footprint shares one key,
-    // leaving that set the only record of the dominant/contested split.
+    // profiled on its own and names what it resolved on the call, which is the reading its duration
+    // has to be judged against. The contested set is reported here because the whole spotlit
+    // footprint shares one key, leaving that set the only record of the dominant/contested split.
     private static HolderResolution resolveHolding(
             Profiler profiler,
             HolderPass pass,
             PoliticalMapView view,
             ContentInputs contentInputs) {
 
-        var politicsStart = System.nanoTime();
-        var resolution = profiler.measure(
-            "politicalMap.resolvePolitics",
-            () -> view
-                    .resolveHolderProvider()
-                    .resolveHolder(pass, contentInputs.selectedBlocId()));
+        try (var politicsScope = profiler.open(RESOLVE_POLITICS_SECTION)) {
 
-        LOG.debug("Political map politics resolved; ownedSystems="
-            + resolution.ownerBySystemId().size()
-            + " filtering=" + contentInputs.isFiltering()
-            + " contested=" + resolution.contestedSystemIds().size()
-            + " unfilled=" + resolution.unfilledSystemIds().size()
-            + " took=" + Timings.formatMillis(System.nanoTime() - politicsStart));
+            var resolution = view
+                .resolveHolderProvider()
+                .resolveHolder(pass, contentInputs.selectedBlocId());
 
-        return resolution;
+            politicsScope.tagCall("owned=" + resolution.ownerBySystemId().size()
+                + " filtering=" + contentInputs.isFiltering()
+                + " contested=" + resolution.contestedSystemIds().size()
+                + " unfilled=" + resolution.unfilledSystemIds().size());
+
+            return resolution;
+        }
     }
 
     // Who is in each system: the resolved holding, what stands there, and where the spotlit pick
@@ -154,8 +168,7 @@ public final class TerritoryBuilder {
         // anything - and each system is read once for both rather than once apiece.
         var inhabitedSystemIds = measureSystemScan(
             profiler,
-            "politicalMap.findInhabited",
-            "inhabitation scan",
+            FIND_INHABITED_SECTION,
             () -> PoliticalMapInhabitation.readInhabitedSystemIds(pass));
 
         var occupancy = SystemOccupancy.createCopyOf(
@@ -177,8 +190,7 @@ public final class TerritoryBuilder {
         // never one that scan called empty space.
         var spotlitPresenceSystemIds = measureSystemScan(
             profiler,
-            "politicalMap.findSpotlitPresence",
-            "spotlit presence scan",
+            FIND_SPOTLIT_PRESENCE_SECTION,
             () -> FilteredPolitics.findPresentSystemIds(
                 pass,
                 contentInputs.selectedBlocId(),
@@ -237,10 +249,22 @@ public final class TerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
 
+        try (var shapeScope = profiler.open(SHAPE_AND_STYLE_SECTION)) {
+            shapeAndStyleCellsUnder(profiler, territories, geometryCache, shapeScope);
+        }
+    }
+
+    // The shaping itself, reporting onto the scope above it. The two steps it profiles separately
+    // are parts of this call, so their spans and whatever they counted are inside its own.
+    private static void shapeAndStyleCellsUnder(
+            Profiler profiler,
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache,
+            ProfileScope shapeScope) {
+
         // Shape the raw cells into merged clusters once, holding-aware. The agnostic geometry
         // clusters by holder, so hand it each system's faction id as the key. Cells consumed by
         // the inset (fewer than three vertices left) drop out.
-        var shapeStart = System.nanoTime();
         var cellGrouping = resolveCellGrouping(territories, geometryCache);
         var shapedCells = profiler.measure(
             "politicalMap.shapeCells",
@@ -285,46 +309,33 @@ public final class TerritoryBuilder {
                 territories,
                 geometryCache));
 
-        LOG.debug("Political map cells shaped; shaped="
-            + shapedCells.size()
-            + " styledCells=" + territories.getStyledCellByCellId().size()
-            + " blocs=" + territories.getStyledClusterGroupByOwnerId().size()
-            + " hatchSegments=" + countHatchSegments(territories)
-            + " took=" + Timings.formatMillis(System.nanoTime() - shapeStart));
+        // The cells this pass shaped are what its duration is read against. What became of them -
+        // how many were styled, into how many blocs - is a fact about this one call, and the hatch
+        // strokes it cut reach the row from where they were cut rather than being summed back out
+        // of what was built.
+        shapeScope.addCount(MapBuildCounters.CELLS, shapedCells.size());
+        shapeScope.tagCall("styled=" + territories.getStyledCellByCellId().size()
+            + " blocs=" + territories.getStyledClusterGroupByOwnerId().size());
     }
 
-    // One profiled sector scan yielding a set of system ids, timed and logged on its own. The two
-    // such scans state their cost identically rather than each spelling out the clock, the profiler
-    // key, and the log line - three chances for one of them to report itself differently from the
-    // other. The holding resolve above keeps its own line, having four counts to report rather
-    // than one.
+    // One profiled sector scan yielding a set of system ids, naming what it selected on the call.
+    // The two such scans report identically rather than each spelling out a section and a reading
+    // of its own - two chances for one of them to state its cost differently from the other.
     private static Set<String> measureSystemScan(
             Profiler profiler,
-            String profileKey,
-            String scanLabel,
+            ProfileSection section,
             Supplier<Set<String>> scan) {
 
-        var start = System.nanoTime();
-        var systemIds = profiler.measure(profileKey, scan);
+        try (var scanScope = profiler.open(section)) {
 
-        LOG.debug("Political map " + scanLabel + "; systems="
-            + systemIds.size()
-            + " took=" + Timings.formatMillis(System.nanoTime() - start));
+            var systemIds = scan.get();
 
-        return systemIds;
-    }
+            // What it selected rather than what it examined: the systems it went over are counted
+            // by the readers it scans through, and appear on this row by the roll-up alone.
+            scanScope.tagCall("systems=" + systemIds.size());
 
-    // How many hatch strokes this pass baked, as a count of GL_LINES segments rather than of the
-    // floats that pack them. Summed across every territory because which one carries the run
-    // depends on the filter, and all but the spotlit bloc hatch nothing.
-    private static int countHatchSegments(PoliticalMapTerritories territories) {
-        var hatchSegments = 0;
-        for (var clusterGroup : territories.getStyledClusterGroupByOwnerId().values()) {
-            for (var cluster : clusterGroup.clusters()) {
-                hatchSegments += cluster.hatchSegments().length / GlVertexRuns.FLOATS_PER_SEGMENT;
-            }
+            return systemIds;
         }
-        return hatchSegments;
     }
 
     // The drawn cells' grouping this pass shapes and traces against: which system each cell draws
