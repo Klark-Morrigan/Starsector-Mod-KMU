@@ -8,6 +8,7 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.ui.buttons.VanillaActionIds;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
@@ -254,7 +255,7 @@ final class MapLayerArrangementDialogBody {
 
         var controlsCell = box.createUIElement(CONTROLS_WIDTH, ROW_HEIGHT, false);
         controlsCell.setActionListenerDelegate(
-            (buttonId, data) -> reportRowAction(row.layerId(), buttonId));
+            (buttonId, data) -> reportRowAction(row.layerId(), buttonId, data));
 
         var shownBox = controlsCell.addAreaCheckbox(
             KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_SHOWN),
@@ -301,12 +302,22 @@ final class MapLayerArrangementDialogBody {
             .inTL(BOX_WIDTH - BOX_PAD - CLOSE_BUTTON_WIDTH, boxHeight - FOOTER_HEIGHT);
     }
 
-    // A press on a row's controls, passed on once it is one of ours. A button carrying anything else -
+    // A press on a row's controls, passed on once it is one of ours. A press carrying anything else -
     // another mod's, or one left over from a column already rebuilt - is dropped here rather than
     // reaching the editor as a guess.
-    private void reportRowAction(String layerId, Object buttonId) {
+    //
+    // Both objects the delegate is handed are searched, because which of them carries the id is the
+    // engine's business and differs by widget: the panel passes the button and expects the id to be read
+    // off it, while other surfaces hand the id over directly. Reading one position alone is why this did
+    // nothing at all - the press arrived, the test failed, and there was nothing to report it.
+    private void reportRowAction(String layerId, Object firstArgument, Object secondArgument) {
 
-        if (buttonId instanceof ArrangementRowAction action) {
+        var action = VanillaActionIds.resolveActionId(
+            firstArgument,
+            secondArgument,
+            ArrangementRowAction.class);
+
+        if (action != null) {
             onRowAction.accept(layerId, action);
         }
     }
