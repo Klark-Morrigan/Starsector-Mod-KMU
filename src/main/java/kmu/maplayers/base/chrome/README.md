@@ -143,6 +143,14 @@ vanilla element lays its contents out top to bottom. A row is therefore cells si
 surface they all stand on is one painted rectangle rather than a fill per cell, which would leave the
 gaps between cells showing the map through.
 
+**A cell is placed for where it draws, not for where it is.** The engine sets an element's contents in
+from the element's own left edge, so a cell placed at the box's pad draws them further in again -
+which is why the frame once stood closer to the buttons on the right than to the words on the left.
+That inset is named once and both edges are taken from it: a cell reading from the left goes the pad
+less the inset, and a cell reading from the right is measured back from the box's far edge rather than
+accumulated rightward from what stands beside it, so the two edges cannot drift apart as a control's
+width moves.
+
 The body is built whole in its constructor and replaced whole on every change - the rows move, so a
 set of widgets each nudged into a new position would eventually disagree with the order they were
 drawn from.

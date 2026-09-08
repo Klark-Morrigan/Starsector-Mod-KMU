@@ -227,7 +227,7 @@ final class MapLayerArrangementDialogBody {
                 ArrangementBoxLayout.resolveFooterTop(boxHeight));
     }
 
-    // The head's own cell, standing a pad in from the box's top left corner.
+    // The head's own cell, standing so its title reads from the same left edge every row's name does.
     private static void addHeader(CustomPanelAPI box) {
 
         var header = box.createUIElement(
@@ -237,7 +237,8 @@ final class MapLayerArrangementDialogBody {
 
         fillHeader(header);
 
-        box.addUIElement(header).inTL(ArrangementBoxLayout.BOX_PAD, ArrangementBoxLayout.BOX_PAD);
+        box.addUIElement(header)
+            .inTL(ArrangementBoxLayout.resolveLeadingCellLeft(), ArrangementBoxLayout.BOX_PAD);
     }
 
     // The column, one row per layer, each told where its own top stands. The rows are what the box is

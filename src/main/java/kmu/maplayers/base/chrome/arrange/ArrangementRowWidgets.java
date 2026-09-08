@@ -111,7 +111,7 @@ final class ArrangementRowWidgets {
             false);
 
         addRowLabel(labelCell, row);
-        box.addUIElement(labelCell).inTL(ArrangementBoxLayout.BOX_PAD, rowTop);
+        box.addUIElement(labelCell).inTL(ArrangementBoxLayout.resolveLeadingCellLeft(), rowTop);
 
         var controlsCell = box.createUIElement(
             ArrangementBoxLayout.CONTROLS_WIDTH,

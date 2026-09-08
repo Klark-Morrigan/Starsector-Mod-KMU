@@ -18,9 +18,17 @@ package kmu.maplayers.base.chrome.arrange;
  */
 final class ArrangementBoxLayout {
 
-    // No pad of this layout's own above what a cell is given. A vanilla element still insets what it
-    // holds by a text padding of its own, which asking for none here does not remove.
+    // No pad of this layout's own above what a cell is given. That argument is the vertical space over
+    // a cell's contents; the horizontal inset the element adds regardless is stated separately below.
     static final float NO_PAD = 0f;
+
+    // How far in from its own left edge a vanilla element draws whatever it holds. The engine gives the
+    // first thing added to an element an x-align offset of five and lays every later one flush with it
+    // (com.fs.starfarer.ui.impl.StandardTooltipV2Expandable.addCustom), so a cell placed at the box's
+    // pad draws its contents that much further in again. Not ours to choose, only to account for: an
+    // edge measured without this term comes out narrower than one measured with it, which is the whole
+    // of why the box used to stand closer to the buttons than to the words.
+    static final float VANILLA_ELEMENT_CONTENT_INSET = 5f;
 
     // A row's parts, left to right, in UI units.
     static final float LABEL_WIDTH = 200f;
@@ -104,12 +112,41 @@ final class ArrangementBoxLayout {
     }
 
     /**
-     * @return how far the controls cell's left edge is in from the box's, which is the label column
-     *         and the channel between the two
+     * Where a cell reading from the box's left edge is placed - the head, and each row's name.
+     *
+     * <p>The pad is taken off rather than handed over, because what the player sees is not the cell
+     * but what the element draws inside it. Placed at the pad, a cell draws its contents a further
+     * {@link #VANILLA_ELEMENT_CONTENT_INSET} in.
+     *
+     * @return how far in from the box's left edge the cell itself goes
+     */
+    static float resolveLeadingCellLeft() {
+
+        return BOX_PAD - VANILLA_ELEMENT_CONTENT_INSET;
+    }
+
+    /**
+     * Where a cell reading from the box's right edge is placed - a row's controls, and the way out.
+     *
+     * <p>Measured back from the box's far edge rather than accumulated rightward from what stands to
+     * its left, so both edges of the box are reached by the one arithmetic and cannot drift apart as a
+     * control's width moves.
+     *
+     * @param contentsWidth how wide what the cell holds is
+     * @return how far in from the box's left edge the cell itself goes
+     */
+    static float resolveTrailingCellLeft(float contentsWidth) {
+
+        return BOX_WIDTH - BOX_PAD - contentsWidth - VANILLA_ELEMENT_CONTENT_INSET;
+    }
+
+    /**
+     * @return how far the controls cell is in from the box's left edge, so the pair of buttons ends a
+     *         pad in from the box's right edge - the same pad the row's name begins at
      */
     static float resolveControlsCellLeft() {
 
-        return BOX_PAD + LABEL_WIDTH + CONTROL_GAP;
+        return resolveTrailingCellLeft(CONTROLS_WIDTH);
     }
 
     /**
@@ -118,7 +155,7 @@ final class ArrangementBoxLayout {
      */
     static float resolveFooterLeft() {
 
-        return BOX_WIDTH - BOX_PAD - APPLY_BUTTON_WIDTH;
+        return resolveTrailingCellLeft(APPLY_BUTTON_WIDTH);
     }
 
     /**
