@@ -78,8 +78,8 @@ public final class MapLayerScreens {
 
     /**
      * Every screen's picks, for a pass that has to act on all of them rather than on the one being
-     * looked at - a self-heal clearing a stored choice that lapsed for both panels at once, since a
-     * bloc that stopped being on offer stopped being on offer wherever it was picked.
+     * looked at - a self-heal clearing a stored choice that lapsed for both panels at once, since
+     * something that stopped being on offer stopped being on offer wherever it was picked.
      *
      * <p>Answered here rather than assembled by such a caller, so how many screens there are stays a
      * fact this class holds. A caller naming the two itself is a second place that would have to learn

@@ -33,9 +33,10 @@ import java.util.List;
  *
  * <p><b>Modality is supplied here, because the game does not supply it.</b> A panel added this way is
  * an ordinary child: nothing dims behind it and nothing stops the screen underneath being dispatched
- * to. So the body paints its own backdrop and this claims the input its own widgets do not want. What
- * cannot be supplied is being recognised as a modal by anything reading the game's modal base, so the
- * map-side gates that stand down under one read {@link #isDialogRaised()} beside that reading.
+ * to. So the body paints its own backdrop, through this plugin's own render hook, and this claims the
+ * input its own widgets do not want. What cannot be supplied is being recognised as a modal by anything
+ * reading the game's modal base, so the map-side gates that stand down under one read
+ * {@link #isDialogRaised()} beside that reading.
  *
  * <p>Only mouse events inside the dialog's own box are left alone, and everything else is claimed.
  * That way round rather than "claim everything" because the order in which the game hands events to a
@@ -177,6 +178,14 @@ public final class MapLayerArrangementDialog {
 
         @Override
         public void renderBelow(float alphaMult) {
+
+            // Under every widget the panel holds, which is where the game draws the interiors of its own
+            // custom panels: the dim that stands the screen down and the box's own surface. Nothing else
+            // paints them - the game publishes a rectangle component that strokes and none that fills, so
+            // the rule around the box is a widget and the two filled areas are not.
+            if (body != null) {
+                body.renderFills(alphaMult);
+            }
         }
 
         @Override

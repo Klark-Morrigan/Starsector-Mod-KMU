@@ -21,16 +21,11 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
  */
 public final class ColumnSelection {
 
-    // One slot per screen, shared by every scope on it: the count is a layout preference over a list,
-    // not a statement about what the list holds, so it means the same thing under every picker - but a
-    // panel is a fixed width the player laid that list out inside, and the two panels are two widths.
-    // The screen's segment composes onto this base key, which is layer-neutral because every map
-    // layer's picker stores through this one class - a key naming one layer would have every other
-    // layer persisting its column count under that layer's key. A key is a save-serialised identity,
-    // not a description of where the class lives: a renamed key reads as absent and silently resets
-    // every existing save's column choice back to the default, so it stays frozen in this spelling.
-    // Absent until the player first picks a count, which the read reports as null for the column
-    // choice to default.
+    // The base key the screen's segment composes onto: one slot per screen, shared by every scope on
+    // it, since a panel is a fixed width the player laid the list out inside and the two panels are two
+    // widths. Layer-neutral and frozen for the reasons SortSelection's prefixes are. Absent
+    // until the player first picks a count, which the read reports as null for the column choice to
+    // default.
     private static final String SELECTED_COLUMN_COUNT_KEY = "$kmu_map_list_columns";
 
     private ColumnSelection() {

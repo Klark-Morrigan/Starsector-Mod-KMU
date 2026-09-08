@@ -199,10 +199,21 @@ is read - the click that selects, the lit tab, and `BaseSidebarHost.handleKeyPre
 so a cell in it that is not a layer would move all three one along. Outside it, the row's indexing is
 untouched and a press on the opener switches nothing.
 
-The band button is laid, styled and hit through the same header call the tabs are, so the map screen's
-strip and the intel visor's button row each get an opener that reads as part of what surrounds it, with
-no screen test anywhere in the renderer. It rides in the drawn band, so the fold wipes it with the tabs,
-`containsPoint` claims it from the map underneath, and `computeOuterBound` reaches it.
+It is laid and hit through the same header call the tabs are, but **not in the tabs' look**: it carries a
+`TabStyle` of its own, `SidebarStyles.buildBandButtonTabStyle`, which is the raised-button chrome on both
+screens. Two things follow, and both are the point. It reads as the button it is rather than as a tab that
+selects something - it is never the lit one and switches nothing, so drawing it as a tab invites a press
+that expects a switch. And it snaps to its own word: the sector map's tabs stand in a fixed box wide enough
+for a layer name, and a button inheriting that box would sit in one several times the width of "Edit". The
+one part of the look it does not choose is the band height, which the layout pins to the panel's - the band
+is the room the panel was given, not the button's to pick.
+
+On the intel visor, whose tabs are already raised buttons, that lands the opener in the same chrome as its
+neighbours; on the map screen it stands as a button beside a seamless strip. Either way there is no screen
+test in the renderer - the host states a band height and the button's look follows from what it is.
+
+It rides in the drawn band, so the fold wipes it with the tabs, `containsPoint` claims it from the map
+underneath, and `computeOuterBound` reaches it.
 
 Its words are the framework's own chrome rather than a layer's, so `KmuStrings` is read here - the same
 distinction the settings already make, and why this is not the bundle leak the tab label was.

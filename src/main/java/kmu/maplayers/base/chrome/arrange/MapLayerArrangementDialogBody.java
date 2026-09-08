@@ -7,7 +7,10 @@ import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
+import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
+import kmlib.starsector.ui.render.gl.UiElementPaint;
+import kmlib.starsector.ui.render.gl.UiFill;
 
 import kmu.util.KmuStrings;
 
@@ -35,12 +38,15 @@ import java.util.function.BiConsumer;
  */
 final class MapLayerArrangementDialogBody {
 
-    // How dark the backdrop stands the screen down to. Vanilla's own element fill rather than a quad of
-    // our own, so it dims exactly as the game's panels dim.
+    // How dark the backdrop stands the screen down to.
     private static final float BACKDROP_ALPHA = 0.7f;
 
     // The box's own fill over that backdrop - opaque enough to read a column of text against.
     private static final float BOX_ALPHA = 0.95f;
+
+    // How thick the box's frame is stroked, in UI units. One pixel, matching the rule the game draws
+    // around its own panels.
+    private static final float FRAME_THICKNESS = 1f;
 
     // A row's parts, left to right, in UI units.
     private static final float LABEL_WIDTH = 200f;
@@ -63,6 +69,10 @@ final class MapLayerArrangementDialogBody {
     // A vanilla element's own text padding, which is what a label added to one is inset by.
     private static final float NO_PAD = 0f;
 
+    // The dialog panel's own corner, which the screen-wide dim is drawn from. The panel is the size of
+    // the screen and sits at its corner, so the two coincide.
+    private static final float SCREEN_ORIGIN = 0f;
+
     // What a row's controls occupy beside its label. Named rather than subtracted back out of the box
     // width where the cell is built: the box is as wide as its parts, so the parts are what is stated
     // and the width is what follows - two expressions for the one measurement would have to be kept
@@ -83,9 +93,8 @@ final class MapLayerArrangementDialogBody {
 
     private final Runnable onClosePressed;
 
-    // The two children this added to the dialog's panel, held so they can be taken off again. The panel
-    // publishes no way to ask what it is holding, so what was added has to be remembered.
-    private final UIComponentAPI backdropElement;
+    // The child this added to the dialog's panel, held so it can be taken off again. The panel publishes
+    // no way to ask what it is holding, so what was added has to be remembered.
     private final UIComponentAPI boxPanel;
 
     private final PositionAPI boxPlacement;
@@ -108,8 +117,6 @@ final class MapLayerArrangementDialogBody {
         this.editor = editor;
         this.onRowAction = onRowAction;
         this.onClosePressed = onClosePressed;
-
-        this.backdropElement = buildBackdrop(dialogPanel);
 
         var rows = editor.getRows();
         var boxHeight = resolveBoxHeight(rows.size());
@@ -135,8 +142,44 @@ final class MapLayerArrangementDialogBody {
      */
     void removeFromPanel(CustomPanelAPI dialogPanel) {
 
-        dialogPanel.removeComponent(backdropElement);
         dialogPanel.removeComponent(boxPanel);
+    }
+
+    /**
+     * Paints what no widget paints: the dim over the whole screen, and the box's own fill under its
+     * contents. The frame around that fill is a widget like everything else - only the two filled areas
+     * are drawn, the game publishing a rectangle that strokes but none that fills.
+     *
+     * <p>Called from the dialog panel's own {@code renderBelow} hook, which is where the game draws the
+     * interiors of its own custom panels. So this runs in the panel's coordinates, under every widget the
+     * panel holds, and nothing of it reaches the map's render pass.
+     *
+     * @param alphaMult how far through its own fade the panel stands, which both fills honour so the
+     *                  dialog arrives and leaves as one piece
+     */
+    void renderFills(float alphaMult) {
+
+        UiFill.renderQuad(
+            new Rectangle(
+                SCREEN_ORIGIN,
+                SCREEN_ORIGIN,
+                Global.getSettings().getScreenWidth(),
+                Global.getSettings().getScreenHeight()),
+            new UiElementPaint(
+                StarsectorUiColour.BLACK.resolve(),
+                BACKDROP_ALPHA * alphaMult));
+
+        // Read off the placement the layout settled rather than the numbers it was laid out from, exactly
+        // as the input claim is, so a resized window moves the fill with the box.
+        UiFill.renderQuad(
+            new Rectangle(
+                boxPlacement.getX(),
+                boxPlacement.getY(),
+                boxPlacement.getWidth(),
+                boxPlacement.getHeight()),
+            new UiElementPaint(
+                StarsectorUiColour.BLACK.resolve(),
+                BOX_ALPHA * alphaMult));
     }
 
     // How tall the box stands for this many rows: its fixed furniture plus the column.
@@ -145,18 +188,22 @@ final class MapLayerArrangementDialogBody {
         return BOX_PAD * 2f + TITLE_HEIGHT + HINT_HEIGHT + FOOTER_HEIGHT + rowCount * ROW_HEIGHT;
     }
 
-    // The dim across the whole screen, which is what stands the screen underneath down visually. The
-    // game supplies no dimming for a panel added this way, so this is it.
-    private static UIComponentAPI buildBackdrop(CustomPanelAPI dialogPanel) {
+    // The rule around the box, as the game's own rectangle component rather than as anything drawn: a
+    // stroked rect of the given thickness on all four edges. It is added last so it rules over the cells
+    // rather than under them, children being drawn in the order they were added.
+    private static void addFrame(CustomPanelAPI box, float boxHeight) {
 
-        var backdrop = dialogPanel.createUIElement(
-            Global.getSettings().getScreenWidth(),
-            Global.getSettings().getScreenHeight(),
-            false);
-        backdrop.setBgAlpha(BACKDROP_ALPHA);
-        dialogPanel.addUIElement(backdrop).inTL(NO_PAD, NO_PAD);
+        var frameCell = box.createUIElement(BOX_WIDTH, boxHeight, false);
+        var frame = frameCell.createRect(
+            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
+            FRAME_THICKNESS);
 
-        return backdrop;
+        frameCell.addCustomDoNotSetPosition(frame)
+            .getPosition()
+            .inTL(NO_PAD, NO_PAD)
+            .setSize(BOX_WIDTH, boxHeight);
+
+        box.addUIElement(frameCell).inTL(NO_PAD, NO_PAD);
     }
 
     // One of the pair that moves a row, at the row's control size. Named apart because the two differ
@@ -179,12 +226,9 @@ final class MapLayerArrangementDialogBody {
     // and the way out.
     private void fillBox(CustomPanelAPI box, List<MapLayerArrangementRow> rows, float boxHeight) {
 
-        // First, so every cell after it draws on top. One fill behind the lot rather than a fill per
-        // cell, which would leave the gaps between cells showing the backdrop through.
-        var boxFill = box.createUIElement(BOX_WIDTH, boxHeight, false);
-        boxFill.setBgAlpha(BOX_ALPHA);
-        box.addUIElement(boxFill).inTL(NO_PAD, NO_PAD);
-
+        // The box's own fill is not a widget: the game publishes a rectangle that strokes and none that
+        // fills, so the surface these cells stand on is painted in renderFills and only the rule around
+        // it is composed here.
         var header = box.createUIElement(BOX_WIDTH - BOX_PAD * 2f, TITLE_HEIGHT + HINT_HEIGHT, false);
         header.addTitle(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_TITLE));
         header.addPara(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_HINT), NO_PAD);
@@ -198,6 +242,7 @@ final class MapLayerArrangementDialogBody {
                 BOX_PAD + TITLE_HEIGHT + HINT_HEIGHT + rowIndex * ROW_HEIGHT);
         }
         addCloseButton(box, boxHeight);
+        addFrame(box, boxHeight);
     }
 
     // One layer's row: what its tab says, whether that tab is on the bar, and the two move buttons.

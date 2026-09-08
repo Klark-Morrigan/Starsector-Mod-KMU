@@ -127,6 +127,25 @@ public final class SidebarStyles {
     }
 
     /**
+     * The look the band's own button wears - a raised button on every screen, whatever chrome the tabs
+     * beside it are drawn in.
+     *
+     * <p>Named apart from {@link #buildRaisedButtonTabStyle} though it answers the same value, because the
+     * two are chosen for different reasons and only one of them would follow a screen: that one is the
+     * intel visor's convention, taken because the row of map toggles beside it is drawn that way. This one
+     * is not about a screen at all. The button is not a tab - it selects nothing and is never the lit one -
+     * so drawing it as one invites a press that is expected to switch something, and the sector map's
+     * fixed-width tab box would stand it in a box several times the width of its word. A button's chrome
+     * is snapped to its own label, so the control ends where its word does.
+     *
+     * @param headerBandHeight the band the button stands in, which is the panel's rather than the button's
+     * @return the tab style the band button is measured and painted at
+     */
+    public static TabStyle buildBandButtonTabStyle(float headerBandHeight) {
+        return buildRaisedButtonTabStyle(headerBandHeight);
+    }
+
+    /**
      * The sidebar's look framed in its own control accent: whichever base shade the player's colour
      * scheme rules the controls in rules the frame too. What a panel floating free on its screen wants,
      * having no neighbouring chrome to match - so the one colour it does carry is its own.

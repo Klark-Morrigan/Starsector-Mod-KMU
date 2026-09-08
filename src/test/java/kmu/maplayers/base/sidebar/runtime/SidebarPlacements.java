@@ -5,6 +5,7 @@ import kmlib.starsector.ui.controls.Control;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.PanelPlacement;
 import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
+import kmlib.starsector.ui.widgets.tabs.BandButtonPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 
 import java.util.List;
@@ -29,6 +30,10 @@ final class SidebarPlacements {
     // The box a builder stands in for geometry its case never reads, sized to nothing so a stray
     // hit-test against it lands outside rather than reporting a hit the test never arranged.
     private static final Rectangle UNREAD_BOX = new Rectangle(0f, 0f, 0f, 0f);
+
+    // No band button on any shape here: every one of them is about what the panel's own gates and
+    // hit-tests answer, and the bar's opener takes no part in any of them.
+    private static final BandButtonPlacement NO_BAND_BUTTON = null;
 
     private SidebarPlacements() {
     }
@@ -111,9 +116,7 @@ final class SidebarPlacements {
 
         return new TabPanelPlacement(
             tabsHeader,
-            // No band button: every shape here is about what the panel's own gates and hit-tests answer,
-            // and the bar's opener takes no part in any of them.
-            null,
+            NO_BAND_BUTTON,
             drawnHeaderBand,
             new PanelPlacement(
                 bodyBox,
