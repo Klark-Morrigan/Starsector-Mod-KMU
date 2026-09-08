@@ -19,6 +19,7 @@ import kmu.maplayers.politicalmap.claims.ClaimsView;
 import kmu.maplayers.politicalmap.dominance.alliances.AlliancesView;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 
+import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.bu
 import static kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyFixture.clearRegistrations;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -200,5 +202,13 @@ final class MapLayersTest {
         globalMock.when(Global::getSettings).thenReturn(settingsMock);
         when(settingsMock.getModManager()).thenReturn(modManagerMock);
         when(modManagerMock.isModEnabled(NEXERELIN_MOD_ID)).thenReturn(isEnabled);
+
+        // The wiring this drives builds the arrangement store, whose logger is a static field taken
+        // from Global as its class loads. Loaded under a mock that answers nothing, that field is
+        // null for the rest of the JVM and every later case over that class dies in its own warn -
+        // wherever in the run the class happens to load first.
+        globalMock
+            .when(() -> Global.getLogger(any(Class.class)))
+            .thenReturn(Logger.getLogger(MapLayersTest.class));
     }
 }

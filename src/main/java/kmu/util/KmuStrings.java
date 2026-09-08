@@ -34,7 +34,6 @@ public final class KmuStrings {
     public static final String MAP_LAYER_ARRANGE_TITLE = "map_layer_arrange_title";
     public static final String MAP_LAYER_ARRANGE_HINT = "map_layer_arrange_hint";
     public static final String MAP_LAYER_ARRANGE_HINT_UNCHECK = "map_layer_arrange_hint_uncheck";
-    public static final String MAP_LAYER_ARRANGE_SHOWN = "map_layer_arrange_shown";
     public static final String MAP_LAYER_ARRANGE_MOVE_UP = "map_layer_arrange_move_up";
     public static final String MAP_LAYER_ARRANGE_MOVE_DOWN = "map_layer_arrange_move_down";
     public static final String MAP_LAYER_ARRANGE_APPLY = "map_layer_arrange_apply";

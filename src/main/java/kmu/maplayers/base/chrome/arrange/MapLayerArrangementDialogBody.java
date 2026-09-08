@@ -54,7 +54,6 @@ final class MapLayerArrangementDialogBody {
 
     // A row's parts, left to right, in UI units.
     private static final float LABEL_WIDTH = 200f;
-    private static final float SHOWN_BOX_WIDTH = 80f;
 
     // Wide enough for the longer of the two words rather than for a glyph, both buttons taking the one
     // width so the pair reads as a pair rather than as two controls that happen to sit together.
@@ -62,6 +61,11 @@ final class MapLayerArrangementDialogBody {
     private static final float CONTROL_HEIGHT = 20f;
     private static final float CONTROL_GAP = 8f;
     private static final float MOVE_BUTTON_GAP = 4f;
+
+    // Square at the row's control height, the box carrying no word to be wide enough for. Stated after
+    // the height it is taken from rather than up with the other widths, a constant being unable to
+    // read one declared below it.
+    private static final float SHOWN_BOX_WIDTH = CONTROL_HEIGHT;
 
     private static final float ROW_HEIGHT = 28f;
     private static final float BOX_PAD = 12f;
@@ -82,8 +86,13 @@ final class MapLayerArrangementDialogBody {
     private static final float FOOTER_HEIGHT = 34f;
     private static final float APPLY_BUTTON_WIDTH = 90f;
 
-    // A vanilla element's own text padding, which is what a label added to one is inset by.
+    // No pad of this layout's own above what a cell is given. A vanilla element still insets what it
+    // holds by a text padding of its own, which asking for none here does not remove.
     private static final float NO_PAD = 0f;
+
+    // What the shown box says, which is nothing. The line above the column already says what the box
+    // does, so a word inside it would be that sentence repeated once per row.
+    private static final String NO_LABEL = "";
 
     // What a row's controls occupy beside its label. Named rather than subtracted back out of the box
     // width where the cell is built: the box is as wide as its parts, so the parts are what is stated
@@ -217,12 +226,56 @@ final class MapLayerArrangementDialogBody {
      *
      * @param footer the cell the button is drawn in
      */
-    static void fillApplyFooter(TooltipMakerAPI footer) {
+    static void fillFooter(TooltipMakerAPI footer) {
 
         footer.addButton(
             KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_APPLY),
             KmuStrings.MAP_LAYER_ARRANGE_APPLY,
             APPLY_BUTTON_WIDTH,
+            CONTROL_HEIGHT,
+            NO_PAD);
+    }
+
+    /**
+     * Writes a row's name into {@code labelCell}, in the shade its state calls for.
+     *
+     * <p>A row whose tab is off the bar is drawn muted. The box beside it states the choice and the
+     * shade confirms it, so a column of rows answers "what have I taken off the bar" at a glance
+     * rather than one box at a time.
+     *
+     * <p>The shade is read off the row's own state rather than off what the editor will allow to
+     * change: the last row still on the bar cannot be taken off it, and it is nonetheless on it.
+     *
+     * @param labelCell the cell the name is drawn in
+     * @param row       the layer whose name is drawn
+     */
+    static void addRowLabel(TooltipMakerAPI labelCell, MapLayerArrangementRow row) {
+
+        var shade = row.isHidden()
+            ? StarsectorUiColour.VANILLA_GRAY
+            : StarsectorUiColour.VANILLA_TEXT;
+
+        labelCell.addPara(row.layerLabel(), shade.resolve(), NO_PAD);
+    }
+
+    /**
+     * Adds a row's shown box to {@code controlsCell}, square and wordless.
+     *
+     * <p>Its state is the caller's to set: whether the box is ticked and whether it may be pressed are
+     * both answered from the arrangement, which this does not hold.
+     *
+     * @param controlsCell the cell the box is drawn in
+     * @return the box, so the caller can state it and place the pair beside it
+     */
+    static ButtonAPI addShownBox(TooltipMakerAPI controlsCell) {
+
+        return controlsCell.addAreaCheckbox(
+            NO_LABEL,
+            ArrangementRowAction.TOGGLE_SHOWN,
+            StarsectorUiColour.VANILLA_BUTTON_BG_DARK.resolve(),
+            StarsectorUiColour.VANILLA_PLAYER_DARK.resolve(),
+            StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve(),
+            SHOWN_BOX_WIDTH,
             CONTROL_HEIGHT,
             NO_PAD);
     }
@@ -285,13 +338,11 @@ final class MapLayerArrangementDialogBody {
             NO_PAD);
     }
 
-    // The box's contents: its own fill, a title, a line saying what the controls do, one row per layer,
-    // and the way out.
+    // The box's widgets: its head, one row per layer, the way out, and the rule around them all. The
+    // surface they stand on is not among them - the game publishes a rectangle that strokes and none
+    // that fills, so the fill is painted in renderFills and only its rule is composed here.
     private void fillBox(CustomPanelAPI box, List<MapLayerArrangementRow> rows, float boxHeight) {
 
-        // The box's own fill is not a widget: the game publishes a rectangle that strokes and none that
-        // fills, so the surface these cells stand on is painted in renderFills and only the rule around
-        // it is composed here.
         var header = box.createUIElement(BOX_WIDTH - BOX_PAD * 2f, TITLE_HEIGHT + HINT_HEIGHT, false);
         fillHeader(header);
         box.addUIElement(header).inTL(BOX_PAD, BOX_PAD);
@@ -303,7 +354,7 @@ final class MapLayerArrangementDialogBody {
                 rows.get(rowIndex),
                 BOX_PAD + TITLE_HEIGHT + HINT_HEIGHT + rowIndex * ROW_HEIGHT);
         }
-        addApplyButton(box, boxHeight);
+        addFooter(box, boxHeight);
         addFrame(box, boxHeight);
     }
 
@@ -311,22 +362,14 @@ final class MapLayerArrangementDialogBody {
     private void addRow(CustomPanelAPI box, MapLayerArrangementRow row, float rowTop) {
 
         var labelCell = box.createUIElement(LABEL_WIDTH, ROW_HEIGHT, false);
-        labelCell.addPara(row.layerLabel(), NO_PAD);
+        addRowLabel(labelCell, row);
         box.addUIElement(labelCell).inTL(BOX_PAD, rowTop);
 
         var controlsCell = box.createUIElement(CONTROLS_WIDTH, ROW_HEIGHT, false);
         controlsCell.setActionListenerDelegate(
             (buttonId, data) -> reportRowAction(row.layerId(), buttonId, data));
 
-        var shownBox = controlsCell.addAreaCheckbox(
-            KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_SHOWN),
-            ArrangementRowAction.TOGGLE_SHOWN,
-            StarsectorUiColour.VANILLA_BUTTON_BG_DARK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_DARK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve(),
-            SHOWN_BOX_WIDTH,
-            CONTROL_HEIGHT,
-            NO_PAD);
+        var shownBox = addShownBox(controlsCell);
         shownBox.setChecked(!row.isHidden());
         shownBox.setEnabled(editor.canToggleRowHidden(row.layerId()));
 
@@ -347,12 +390,13 @@ final class MapLayerArrangementDialogBody {
         box.addUIElement(controlsCell).inTL(BOX_PAD + LABEL_WIDTH + CONTROL_GAP, rowTop);
     }
 
-    // The way out, in the box's bottom right corner where the game puts its own dialogs' buttons.
-    private void addApplyButton(CustomPanelAPI box, float boxHeight) {
+    // The way out, in the box's bottom right corner where the game puts its own dialogs' buttons. The
+    // cell is as wide as the one button it holds, that button being the whole of the foot.
+    private void addFooter(CustomPanelAPI box, float boxHeight) {
 
         var footer = box.createUIElement(APPLY_BUTTON_WIDTH, FOOTER_HEIGHT, false);
         footer.setActionListenerDelegate((buttonId, data) -> onClosePressed.run());
-        fillApplyFooter(footer);
+        fillFooter(footer);
 
         box.addUIElement(footer)
             .inTL(BOX_WIDTH - BOX_PAD - APPLY_BUTTON_WIDTH, boxHeight - FOOTER_HEIGHT);

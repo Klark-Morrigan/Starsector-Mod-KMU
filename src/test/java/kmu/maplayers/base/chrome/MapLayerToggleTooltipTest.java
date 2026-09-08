@@ -1,9 +1,9 @@
 package kmu.maplayers.base.chrome;
 
-import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
 import kmu.starsector.StarsectorSettingsFake;
+import kmu.starsector.ui.ParagraphLabelMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,11 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins what the box on the game's filter row says, and which of its words stand out.
@@ -78,7 +76,7 @@ final class MapLayerToggleTooltipTest {
         void describeToggleNamesTheLayersTheMapAndEveryViewItOffers() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
-            var labelMock = mockLabelOn(tooltipMock);
+            var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
 
             new MapLayerToggleTooltip(() -> true).describeToggle(tooltipMock);
 
@@ -107,7 +105,7 @@ final class MapLayerToggleTooltipTest {
         void describeToggleNamesTheModAnswerableForTheFeatureAndNothingElse() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
-            var labelMock = mockLabelOn(tooltipMock);
+            var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
 
             new MapLayerToggleTooltip(() -> true).describeToggle(tooltipMock);
 
@@ -130,7 +128,7 @@ final class MapLayerToggleTooltipTest {
         void describeToggleFlagsTheWarningThenGivesTheStepsThatAvoidIt() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
-            var labelMock = mockLabelOn(tooltipMock);
+            var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
 
             new MapLayerToggleTooltip(() -> true).describeToggle(tooltipMock);
 
@@ -164,7 +162,7 @@ final class MapLayerToggleTooltipTest {
         void describeToggleLeavesTheAlliancesViewOutWhereItIsNotOffered() {
 
             var tooltipMock = mock(TooltipMakerAPI.class);
-            var labelMock = mockLabelOn(tooltipMock);
+            var labelMock = ParagraphLabelMock.mockLabelOn(tooltipMock);
 
             new MapLayerToggleTooltip(() -> false).describeToggle(tooltipMock);
 
@@ -191,13 +189,13 @@ final class MapLayerToggleTooltipTest {
             var tooltip = new MapLayerToggleTooltip(isAllianceViewOffered::get);
 
             var firstTooltipMock = mock(TooltipMakerAPI.class);
-            mockLabelOn(firstTooltipMock);
+            ParagraphLabelMock.mockLabelOn(firstTooltipMock);
             tooltip.describeToggle(firstTooltipMock);
 
             isAllianceViewOffered.set(true);
 
             var secondTooltipMock = mock(TooltipMakerAPI.class);
-            mockLabelOn(secondTooltipMock);
+            ParagraphLabelMock.mockLabelOn(secondTooltipMock);
             tooltip.describeToggle(secondTooltipMock);
 
             // The engine rebuilds a body while the tooltip is up, so anything read once at
@@ -210,17 +208,5 @@ final class MapLayerToggleTooltipTest {
                     any(Color.class),
                     anyFloat());
         }
-    }
-
-    // The label the paragraph is tinted through. A tooltip that answered none would leave the runs
-    // nowhere to land, which is not a state the engine ever hands a body.
-    private static LabelAPI mockLabelOn(TooltipMakerAPI tooltipMock) {
-
-        var labelMock = mock(LabelAPI.class);
-
-        when(tooltipMock.addPara(anyString(), any(Color.class), anyFloat()))
-            .thenReturn(labelMock);
-
-        return labelMock;
     }
 }

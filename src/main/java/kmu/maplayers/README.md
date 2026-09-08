@@ -247,25 +247,20 @@ bar once does not order it again per save.
   bar and from nowhere else: no key is bound to it, a bar that is on screen needing no second way in.
   `MapLayerArrangementEditor` is the whole of what the dialog does - the rows in bar order with
   hidden tabs among them, since this is the only way one comes back; **Up** and **Down** buttons that
-  swap a row with its neighbour, disabled at the ends of their travel rather than absent, and worded
-  rather than drawn as glyphs like every other button in the game's UI; and a toggle that refuses the
-  last tab still on the bar, which is the same guard
-  `ArrangedLayers` keeps against a hand-edited store, made here so the click is never offered. Every
-  change is recorded at once rather than drafted: the bar behind the dialog is the thing being
-  arranged, which is why its one way out says **Apply** rather than Close - there is nothing held
-  back for it to commit, so the word names what the player is leaving with, and a Cancel beside it
-  would be a button that cannot do what it says. `MapLayerArrangementDialog` is the surface - a vanilla `CustomPanelAPI` stood in the core
-  UI's own tree by KMLib's `CoreUiOverlayPanels`, with vanilla labels, boxes and buttons inside it, and
-  nothing painted into the map's render pass. Every published route to a custom dialog hangs off an
-  interaction dialog, which these screens have none of, so the tree is what is left - and because a
-  panel added that way is an ordinary child, the dialog supplies its own backdrop and its own input
-  claim, and publishes `isDialogRaised()` for the gates that stand down under a modal. The game's own
-  modal reading cannot see it: it recognises modals by the base they descend from, and this descends
-  from nothing of the game's. The widgets themselves are `MapLayerArrangementDialogBody`, apart because
-  when the dialog stands up and what it claims is a question about a screen while how wide the label
-  column is and which cell sits beside which is a question about a layout. A change to the arrangement
-  builds a new body and takes the old one off rather than nudging widgets into new places, since a
-  column edited in place would eventually disagree with the order it was drawn from.
+  swap a row with its neighbour, disabled at the ends of their travel; and a toggle that refuses the
+  last tab still on the bar, which is the same guard `ArrangedLayers` keeps against a hand-edited
+  store, made here so the click is never offered. A row shows its state rather than saying it: the
+  box carries no word, the line over the column saying what it does once rather than once per row,
+  and a layer whose tab is off the bar has its name drawn in the muted shade - so the column answers
+  "what have I taken off" at a glance. Every change is recorded at once rather than
+  drafted, the bar behind the dialog being the thing arranged - so the one way out says **Apply**
+  rather than Close, and there is no Cancel beside it. `MapLayerArrangementDialog` is the surface, a
+  vanilla `CustomPanelAPI` stood in the core UI's own tree by KMLib's `CoreUiOverlayPanels` with
+  nothing painted into the map's render pass; it supplies its own backdrop and its own input claim,
+  the game dimming nothing behind a panel added that way, and publishes `isDialogRaised()` for the
+  map-side gates that stand down under a modal but cannot recognise this one.
+  `MapLayerArrangementDialogBody` is its widgets and the measurements they stand at, rebuilt whole on
+  every change.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the

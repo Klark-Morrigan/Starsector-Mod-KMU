@@ -1,9 +1,9 @@
 package kmu.maplayers.base.chrome.arrange;
 
-import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.starsector.StarsectorUiColoursMock;
+import kmu.starsector.ui.ParagraphLabelMock;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,11 +14,9 @@ import java.awt.Color;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins what the box says at its head and its foot, the two places its wording has to answer for
@@ -32,29 +30,28 @@ import static org.mockito.Mockito.when;
  * <p>The foot is held because its word is a claim about the box: nothing in it is held back to be
  * committed, so the way out names what the player leaves with. A button that said Close would say
  * the arrangement had merely been abandoned.
+ *
+ * <p>A row is held for the opposite reason: it says nothing, and shows its state instead. So what is
+ * pinned there is the shade its name takes and the absence of a word in its box - two things a reader
+ * of the class cannot tell from a widget call that would still compile either way.
  */
 final class MapLayerArrangementDialogBodyTest {
 
-    // The shade a failing assertion can tell from the default, standing in for the engine's own
-    // highlight. Every unnamed key answers with one default, which would make a highlighted run
-    // indistinguishable from an untinted one.
-    private static final Color HIGHLIGHT = new Color(255, 220, 80);
-
-    // The engine's own key for the shade it highlights a run in.
-    private static final String HIGHLIGHT_COLOUR_KEY = "buttonShortcut";
+    // The engine's palette, which also answers the wording lookups the head and foot make. Held for
+    // the shade a highlighted run takes: the assertions below tell it from the untinted body text,
+    // and which shade stands for which role is settled once there rather than per case.
+    private StarsectorUiColoursMock uiColoursMock;
 
     @BeforeEach
-    void installStarsectorSettings() {
+    void installStarsectorUiColours() {
 
-        StarsectorSettingsFake.installSettings(key -> HIGHLIGHT_COLOUR_KEY.equals(key)
-            ? HIGHLIGHT
-            : null);
+        uiColoursMock = StarsectorUiColoursMock.install();
     }
 
     @AfterEach
-    void clearStarsectorSettings() {
+    void clearStarsectorUiColours() {
 
-        StarsectorSettingsFake.clearSettings();
+        uiColoursMock.close();
     }
 
     @Nested
@@ -64,7 +61,7 @@ final class MapLayerArrangementDialogBodyTest {
         void fillHeaderNamesTheBoxInTheFaceTheGameHeadsItsOwnWith() {
 
             var headerMock = mock(TooltipMakerAPI.class);
-            mockLabelOn(headerMock);
+            ParagraphLabelMock.mockLabelOn(headerMock);
 
             MapLayerArrangementDialogBody.fillHeader(headerMock);
 
@@ -78,7 +75,7 @@ final class MapLayerArrangementDialogBodyTest {
         void fillHeaderPartsTheHintFromTheHeadingByAStatedGap() {
 
             var headerMock = mock(TooltipMakerAPI.class);
-            mockLabelOn(headerMock);
+            ParagraphLabelMock.mockLabelOn(headerMock);
 
             MapLayerArrangementDialogBody.fillHeader(headerMock);
 
@@ -94,7 +91,7 @@ final class MapLayerArrangementDialogBodyTest {
         void fillHeaderPicksOutOnlyTheWordsThatNameAControl() {
 
             var headerMock = mock(TooltipMakerAPI.class);
-            var labelMock = mockLabelOn(headerMock);
+            var labelMock = ParagraphLabelMock.mockLabelOn(headerMock);
 
             MapLayerArrangementDialogBody.fillHeader(headerMock);
 
@@ -105,34 +102,117 @@ final class MapLayerArrangementDialogBodyTest {
                 .setHighlight("Up", "Down", "uncheck");
 
             verify(labelMock)
-                .setHighlightColors(HIGHLIGHT, HIGHLIGHT, HIGHLIGHT);
+                .setHighlightColors(
+                    StarsectorUiColoursMock.HIGHLIGHT_GOLD,
+                    StarsectorUiColoursMock.HIGHLIGHT_GOLD,
+                    StarsectorUiColoursMock.HIGHLIGHT_GOLD);
         }
     }
 
     @Nested
-    class FillApplyFooter {
+    class FillFooter {
 
         @Test
-        void fillApplyFooterNamesWhatThePlayerIsLeavingWith() {
+        void fillFooterNamesWhatThePlayerIsLeavingWith() {
 
             var footerMock = mock(TooltipMakerAPI.class);
 
-            MapLayerArrangementDialogBody.fillApplyFooter(footerMock);
+            MapLayerArrangementDialogBody.fillFooter(footerMock);
 
             verify(footerMock)
                 .addButton(eq("Apply"), any(), anyFloat(), anyFloat(), anyFloat());
         }
     }
 
-    // The label a paragraph's highlights are set on. The engine hands one back from addPara and the
-    // runs are routed through it, so a surface that answers with nothing has nothing to tint.
-    private static LabelAPI mockLabelOn(TooltipMakerAPI tooltipMock) {
+    @Nested
+    class AddRowLabel {
 
-        var labelMock = mock(LabelAPI.class);
+        @Test
+        void addRowLabelMutesARowWhoseTabIsOffTheBar() {
 
-        when(tooltipMock.addPara(anyString(), any(Color.class), anyFloat()))
-            .thenReturn(labelMock);
+            var labelCellMock = mock(TooltipMakerAPI.class);
+            ParagraphLabelMock.mockLabelOn(labelCellMock);
 
-        return labelMock;
+            MapLayerArrangementDialogBody.addRowLabel(
+                labelCellMock,
+                new MapLayerArrangementRow("kmu_political", "Political", true));
+
+            verify(labelCellMock)
+                .addPara(eq("Political"), eq(StarsectorUiColoursMock.UI_GRAY), anyFloat());
+        }
+
+        @Test
+        void addRowLabelDrawsARowWhoseTabIsOnTheBarInTheOrdinaryShade() {
+
+            var labelCellMock = mock(TooltipMakerAPI.class);
+            ParagraphLabelMock.mockLabelOn(labelCellMock);
+
+            MapLayerArrangementDialogBody.addRowLabel(
+                labelCellMock,
+                new MapLayerArrangementRow("kmu_political", "Political", false));
+
+            verify(labelCellMock)
+                .addPara(eq("Political"), eq(StarsectorUiColoursMock.UI_TEXT), anyFloat());
+        }
+
+        @Test
+        void addRowLabelDrawsTheLastRowLeftOnTheBarUnmuted() {
+            // The row whose box the editor refuses, that box being the one that would empty the bar.
+            // Refused and off the bar are different things, and the shade answers the second: a row
+            // that cannot be taken off is still on.
+            var labelCellMock = mock(TooltipMakerAPI.class);
+            ParagraphLabelMock.mockLabelOn(labelCellMock);
+
+            MapLayerArrangementDialogBody.addRowLabel(
+                labelCellMock,
+                new MapLayerArrangementRow("kmu_political", "Political", false));
+
+            verify(labelCellMock)
+                .addPara(eq("Political"), eq(StarsectorUiColoursMock.UI_TEXT), anyFloat());
+        }
+    }
+
+    @Nested
+    class AddShownBox {
+
+        @Test
+        void addShownBoxCarriesNoWord() {
+            // The hint over the column already says what the box does, so a word in the box would be
+            // that sentence repeated once per row.
+            var controlsCellMock = mock(TooltipMakerAPI.class);
+
+            MapLayerArrangementDialogBody.addShownBox(controlsCellMock);
+
+            verify(controlsCellMock)
+                .addAreaCheckbox(
+                    eq(""),
+                    any(),
+                    any(Color.class),
+                    any(Color.class),
+                    any(Color.class),
+                    anyFloat(),
+                    anyFloat(),
+                    anyFloat());
+        }
+
+        @Test
+        void addShownBoxStandsSquareAtTheRowsControlHeight() {
+            // With the word gone the box has nothing to be wide for, and a box wider than it is tall
+            // would read as a button whose label failed to load.
+            var controlsCellMock = mock(TooltipMakerAPI.class);
+
+            MapLayerArrangementDialogBody.addShownBox(controlsCellMock);
+
+            verify(controlsCellMock)
+                .addAreaCheckbox(
+                    any(),
+                    any(),
+                    any(Color.class),
+                    any(Color.class),
+                    any(Color.class),
+                    eq(20f),
+                    eq(20f),
+                    anyFloat());
+        }
     }
 }
