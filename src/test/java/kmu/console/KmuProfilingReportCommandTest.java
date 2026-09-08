@@ -1,5 +1,6 @@
 package kmu.console;
 
+import kmlib.profiling.BudgetBreach;
 import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
@@ -57,6 +58,7 @@ final class KmuProfilingReportCommandTest {
                         TWO_MILLIS_IN_NANOS,
                         DurationBuckets.NO_CALLS),
                     WorstCall.NO_CALL,
+                    BudgetBreach.NO_BREACH,
                     ProfileIterations.NO_ITERATIONS,
                     List.of(),
                     List.of())))));

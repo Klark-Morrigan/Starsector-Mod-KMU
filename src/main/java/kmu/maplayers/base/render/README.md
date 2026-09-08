@@ -171,6 +171,15 @@ The refresh is the exception: it is opened *inside* the preparation rather than 
 own. The sequence puts it there, and a refresh hung off its own root would leave the preparation's
 inclusive total excluding the dearest thing it does.
 
+Each beat also states what one call of it is allowed, which is what turns the capture from a table
+into findings. Two bounds today. A beat may take the milliseconds the `Frame beat budget` knob on
+`Map - Dev` states, asked for as the beat ends so a knob moved mid-session holds the next frame,
+and 0 there states no bound at all. The refresh may make one traversal of the sector per call - the
+rule the framework's indexes exist to keep, so a second walk is a pass that went looking for the
+sector rather than asking for what had already been gathered. A broken bound marks the row, keeps
+the call that broke it as the row's worst whatever it took, and is written to the log once per
+section as it happens.
+
 Inside each beat sits one row per layer, `mapLayer.layer.<layer id>`, opened around the layer's
 callback rather than by the layer. So what a layer costs is read against the beat it cost it in, a
 layer that measures nothing of its own still has a row, and every section the layer's own work opens

@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -23,30 +24,45 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Written and read through the real memory rather than a stubbed one, so a value stored under one
  * key and read under another fails here rather than passing on two stubs that agree - which is the
- * whole of what a slot's two axes are for.
+ * whole of what a slot's three axes are for.
  */
 final class FilterSelectionTest {
 
-    // The slot these cases exercise, and the three that must stay invisible to it: the same scope on
-    // another screen, another scope on the same screen, and both moved at once. Stand-in screens,
-    // because this store's subject is that a slot is a slot and not which screens the mod has.
-    private static final SelectionSlot SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "scope_a");
+    // The slot these cases exercise, under this mod's own namespace so the frozen keys below are the
+    // ones every existing save holds. Stand-in screens, because this store's subject is that a slot is
+    // a slot and not which screens the mod has.
+    private static final ScreenSelectionSlot SCREEN_SLOT = new ScreenSelectionSlot(
+        KmuMod.MAP_STORE_NAMESPACE,
+        ScreenMemoryScopes.createStandInScreen());
 
-    private static final SelectionSlot OTHER_SCREEN_SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createOtherStandInScreen(), "scope_a");
+    private static final SelectionSlot SLOT = new SelectionSlot(SCREEN_SLOT, "scope_a");
 
-    private static final SelectionSlot OTHER_SCOPE_SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "scope_b");
+    // The three slots that must stay invisible to it: the same scope on another screen, another scope
+    // on the same screen, and the same scope on the same screen under another mod's namespace.
+    private static final SelectionSlot OTHER_SCREEN_SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(
+            KmuMod.MAP_STORE_NAMESPACE,
+            ScreenMemoryScopes.createOtherStandInScreen()),
+        "scope_a");
 
-    // The keys those slots compose, as literals: renaming the prefix drops every existing save's
-    // filter choice back to none, and dropping either axis puts two pickers back on one shared
+    private static final SelectionSlot OTHER_SCOPE_SLOT = new SelectionSlot(SCREEN_SLOT, "scope_b");
+
+    private static final SelectionSlot OTHER_MOD_SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(
+            MapLayerStoreNamespaces.createStandInNamespace(),
+            ScreenMemoryScopes.createStandInScreen()),
+        "scope_a");
+
+    // The keys those slots compose, as literals: renaming this mod's own segments drops every existing
+    // save's filter choice back to none, and dropping any axis puts two pickers back on one shared
     // spotlight, so any of those changes must break this test first.
     private static final String KEY = "$kmu_map_filter_bloc_scope_a_test";
 
     private static final String OTHER_SCREEN_KEY = "$kmu_map_filter_bloc_scope_a_other";
 
     private static final String OTHER_SCOPE_KEY = "$kmu_map_filter_bloc_scope_b_test";
+
+    private static final String OTHER_MOD_KEY = "$test_map_filter_bloc_scope_a_test";
 
     private static final String SELECTED_ID = "picked_a";
     private static final String OTHER_SELECTED_ID = "picked_b";
@@ -98,6 +114,17 @@ final class FilterSelectionTest {
         }
 
         @Test
+        void getSelectedIdOfDoesNotCrossReadAnotherModsSelection() {
+            // Per-namespace isolation: two mods whose pickers happen to list under the same scope
+            // string on the same panel still read their own picks, where before the namespace both
+            // read one.
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
+
+            assertThat(FilterSelection.getSelectedIdOf(OTHER_MOD_SLOT))
+                .isNull();
+        }
+
+        @Test
         void getSelectedIdOfReadsEachScreensOwnSelection() {
             // Per-screen isolation under one scope id: a bloc spotlighted on one panel and a different
             // one on the other read back as each panel left them.
@@ -139,13 +166,16 @@ final class FilterSelectionTest {
 
         @Test
         void selectIdWritesTheSlotItWasPickedOnAlone() {
-            // Both axes on the write side: a spotlight picked on one panel's list leaves the same list
-            // on the other panel, and every other list on this one, exactly as they were.
+            // Every axis on the write side: a spotlight picked on one panel's list leaves the same list
+            // on the other panel, every other list on this one, and another mod's list of the same
+            // name, exactly as they were.
             FilterSelection.selectId(SLOT, SELECTED_ID, board);
 
             assertThat(sectorMemoryFake.hasStoredValue(OTHER_SCREEN_KEY))
                 .isFalse();
             assertThat(sectorMemoryFake.hasStoredValue(OTHER_SCOPE_KEY))
+                .isFalse();
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_MOD_KEY))
                 .isFalse();
         }
 

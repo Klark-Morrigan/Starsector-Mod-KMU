@@ -27,6 +27,11 @@ public final class KmuMapLayerSettings {
     private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
         "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
 
+    // How long one beat of a map frame may take before the profiler reports it. Read only while a
+    // capture is running, so it costs nothing on a normal game.
+    private static final String FRAME_BEAT_BUDGET_MILLIS_FIELD =
+        "kmu_map_dev_profiling_frameBeat_budgetMillis";
+
     private static final String SIDEBAR_PADDING_TOP_FIELD =
         "kmu_map_visuals_sidebar_paddingTop";
     private static final String SIDEBAR_PADDING_LEFT_FIELD =
@@ -253,6 +258,12 @@ public final class KmuMapLayerSettings {
     // shown - so a player who never opens the settings would get a feature that draws with no way to
     // put it away. An escape hatch is reached for after something misbehaves, so it ships open.
     private static final boolean DEFAULT_FILTER_ROW_TOGGLE_ENABLED = true;
+
+    // A sixtieth of a second is the whole frame, and the map layers are one thing drawn in it beside
+    // the game's own sector map - so a quarter of it is the share a beat can take before the frame
+    // it sits in is the layers' fault. Zero states no bound, which is how a player who wants the
+    // numbers without the findings switches the check off.
+    private static final double DEFAULT_FRAME_BEAT_BUDGET_MILLIS = 4.0;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette
     // whatever faction the player flies, so a panel following the faction is the one thing on the
@@ -929,6 +940,18 @@ public final class KmuMapLayerSettings {
         return KmuLunaSettings.readBoolean(
             FILTER_ROW_TOGGLE_ENABLED_FIELD,
             DEFAULT_FILTER_ROW_TOGGLE_ENABLED);
+    }
+
+    /**
+     * @return how long one beat of a map frame - a preparation, a paint band, a cursor read, a
+     *         tooltip - may take before a running profile capture reports it as over budget, in
+     *         milliseconds; 4ms by default, and 0 for no bound at all. Read as each beat ends
+     *         while a capture is running, so moving it holds the next frame to what it now says
+     */
+    public static double getMapFrameBeatBudgetMillis() {
+        return KmuLunaSettings.readDouble(
+            FRAME_BEAT_BUDGET_MILLIS_FIELD,
+            DEFAULT_FRAME_BEAT_BUDGET_MILLIS);
     }
 
     /**

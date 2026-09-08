@@ -1,11 +1,16 @@
 package kmu.maplayers.base.render;
 
+import kmlib.profiling.ProfileBudget;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.SectorWalkCounters;
+import kmlib.time.Timings;
+
+import kmu.settings.KmuMapLayerSettings;
 
 /**
  * What each part of a frame is called in a profiling report - one section per beat of the sequence,
- * plus the row a layer's own work sits on inside whichever beat is running. Which beat covers what,
- * and why the refresh is not a beat of its own, is
+ * plus the row a layer's own work sits on inside whichever beat is running - and what one call of
+ * each is allowed. Which beat covers what, and why the refresh is not a beat of its own, is
  * <a href="README.md#what-a-frame-costs">what a frame costs</a>.
  *
  * <p>Published rather than spelled at each site because a row is only worth having if a reader can
@@ -14,32 +19,53 @@ import kmlib.profiling.ProfileSection;
  *
  * <p>Registered sections rather than strings because these are opened every frame, and a registered
  * section is found among the children of the open scope by reference rather than by hashing a name.
+ *
+ * <p>The bounds are here rather than at the sites that open the sections, because what the framework
+ * promises is a property of the beat and not of whoever happens to be running in it: a consumer
+ * reading its layer's rows under one of these beats is reading them against the same bound the
+ * framework holds itself to.
  */
 public final class MapFrameSections {
 
+    // Declared before the sections registered with them, since static fields initialise in the
+    // order they are written and a section cannot be handed a bound that does not exist yet.
+
+    // What a beat may take. Asked of the settings as each beat ends, so a player who has decided
+    // their machine can afford more moves the knob and the next frame is held to that.
+    private static final ProfileBudget FRAME_BEAT_BUDGET = ProfileBudget.allowingDurationPerCall(
+        () -> Timings.convertMillisToNanos(KmuMapLayerSettings.getMapFrameBeatBudgetMillis()));
+
+    // One traversal of the sector per refresh. The rule the framework's indexes exist to keep: a
+    // rebuild reads what it needs from one walk, so a second is a pass that went looking for the
+    // sector on its own rather than asking for what had already been gathered.
+    private static final long ONE_SECTOR_WALK = 1L;
+
+    private static final ProfileBudget REFRESH_BUDGET =
+        ProfileBudget.allowingCountPerCall(SectorWalkCounters.SECTOR_WALKS, ONE_SECTOR_WALK);
+
     /** The frame's single preparation. Its self time is what it costs outside {@link #REFRESH}. */
     public static final ProfileSection PREPARE =
-        ProfileSection.registerSection("mapLayer.prepare");
+        ProfileSection.registerSection("mapLayer.prepare", FRAME_BEAT_BUDGET);
 
     /** Bringing a layer's draw lists up to date, inside {@link #PREPARE}. */
     public static final ProfileSection REFRESH =
-        ProfileSection.registerSection("mapLayer.refresh");
+        ProfileSection.registerSection("mapLayer.refresh", REFRESH_BUDGET);
 
     /** One pass's cursor read, so a frame painted by several surfaces reports each read it made. */
     public static final ProfileSection HOVER_PUBLISH =
-        ProfileSection.registerSection("mapLayer.hoverPublish");
+        ProfileSection.registerSection("mapLayer.hoverPublish", FRAME_BEAT_BUDGET);
 
     /** The hover box a layer offers for the cell under the cursor, in the later UI pass. */
     public static final ProfileSection TOOLTIP =
-        ProfileSection.registerSection("mapLayer.tooltip");
+        ProfileSection.registerSection("mapLayer.tooltip", FRAME_BEAT_BUDGET);
 
     // The two paint beats, reached through resolveRenderSection so no caller holding a band spells
     // either name.
     private static final ProfileSection RENDER_BENEATH_STARSCAPE_NEBULAE =
-        ProfileSection.registerSection("mapLayer.render.beneathNebulae");
+        ProfileSection.registerSection("mapLayer.render.beneathNebulae", FRAME_BEAT_BUDGET);
 
     private static final ProfileSection RENDER_ABOVE_STARSCAPE_NEBULAE =
-        ProfileSection.registerSection("mapLayer.render.aboveNebulae");
+        ProfileSection.registerSection("mapLayer.render.aboveNebulae", FRAME_BEAT_BUDGET);
 
     // Under the framework's own namespace rather than bare, so every layer's row is found under one
     // prefix whoever registered the layer, and two mods picking the same layer id collide where the
