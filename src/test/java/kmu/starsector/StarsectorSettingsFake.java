@@ -96,6 +96,14 @@ public final class StarsectorSettingsFake {
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_TITLE, "Hidden");
         stringsByKey.put(KmuStrings.CONDITION_MANAGER_TOOLTIP_HIDDEN_BODY, "This condition is present on the market, but it's hidden and still applies its effects.");
         stringsByKey.put(KmuStrings.DIALOG_CLOSE, "Close");
+        stringsByKey.put(KmuStrings.MAP_LAYER_ARRANGE_TITLE, "Arrange Layer Bar");
+        stringsByKey.put(
+            KmuStrings.MAP_LAYER_ARRANGE_HINT,
+            "Move a layer with Up and Down, or uncheck its box to take its tab off the bar.");
+        stringsByKey.put(KmuStrings.MAP_LAYER_ARRANGE_HINT_UNCHECK, "uncheck");
+        stringsByKey.put(KmuStrings.MAP_LAYER_ARRANGE_MOVE_UP, "Up");
+        stringsByKey.put(KmuStrings.MAP_LAYER_ARRANGE_MOVE_DOWN, "Down");
+        stringsByKey.put(KmuStrings.MAP_LAYER_ARRANGE_APPLY, "Apply");
         stringsByKey.put(
             KmuStrings.MAP_LAYER_TOOLTIP_FILTER_ROW_TOGGLE,
             "Shows %s that draw a %s (%s) over the sector map.");

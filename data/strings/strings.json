@@ -21,10 +21,12 @@
     "dialog_close": "Close",
 
     "map_layer_arrange_title": "Arrange Layer Bar",
-    "map_layer_arrange_hint": "Move a layer with Up and Down, or clear its box to take its tab off the bar.",
+    "map_layer_arrange_hint": "Move a layer with Up and Down, or uncheck its box to take its tab off the bar.",
+    "map_layer_arrange_hint_uncheck": "uncheck",
     "map_layer_arrange_shown": "Shown",
     "map_layer_arrange_move_up": "Up",
     "map_layer_arrange_move_down": "Down",
+    "map_layer_arrange_apply": "Apply",
 
     "map_layer_tab_no_layer": "No Layer",
     "map_layer_ctl_columns_caption": "Columns",

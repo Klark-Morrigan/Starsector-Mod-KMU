@@ -252,7 +252,9 @@ bar once does not order it again per save.
   last tab still on the bar, which is the same guard
   `ArrangedLayers` keeps against a hand-edited store, made here so the click is never offered. Every
   change is recorded at once rather than drafted: the bar behind the dialog is the thing being
-  arranged. `MapLayerArrangementDialog` is the surface - a vanilla `CustomPanelAPI` stood in the core
+  arranged, which is why its one way out says **Apply** rather than Close - there is nothing held
+  back for it to commit, so the word names what the player is leaving with, and a Cancel beside it
+  would be a button that cannot do what it says. `MapLayerArrangementDialog` is the surface - a vanilla `CustomPanelAPI` stood in the core
   UI's own tree by KMLib's `CoreUiOverlayPanels`, with vanilla labels, boxes and buttons inside it, and
   nothing painted into the map's render pass. Every published route to a custom dialog hangs off an
   interaction dialog, which these screens have none of, so the tree is what is left - and because a

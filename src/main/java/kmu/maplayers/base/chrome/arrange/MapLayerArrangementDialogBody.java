@@ -9,6 +9,8 @@ import com.fs.starfarer.api.ui.UIComponentAPI;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.buttons.VanillaActionIds;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
+import kmlib.starsector.ui.highlight.Highlight;
+import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
 import kmlib.starsector.ui.screen.VanillaScreen;
@@ -63,10 +65,22 @@ final class MapLayerArrangementDialogBody {
 
     private static final float ROW_HEIGHT = 28f;
     private static final float BOX_PAD = 12f;
-    private static final float TITLE_HEIGHT = 28f;
-    private static final float HINT_HEIGHT = 40f;
+
+    // Tall enough for the larger face the box is headed in, which stands above what an element's
+    // default title size would have needed.
+    private static final float TITLE_HEIGHT = 34f;
+
+    // What parts the heading from the line under it. Stated rather than left at no pad: added back to
+    // back, the two read as one block and the box has nothing that looks like a head.
+    private static final float TITLE_GAP = 10f;
+
+    // The hint's own two lines, and the cell holding them plus the gap drawn above them - the box being
+    // as tall as its furniture, what the gap costs is carried here.
+    private static final float HINT_TEXT_HEIGHT = 40f;
+    private static final float HINT_HEIGHT = HINT_TEXT_HEIGHT + TITLE_GAP;
+
     private static final float FOOTER_HEIGHT = 34f;
-    private static final float CLOSE_BUTTON_WIDTH = 90f;
+    private static final float APPLY_BUTTON_WIDTH = 90f;
 
     // A vanilla element's own text padding, which is what a label added to one is inset by.
     private static final float NO_PAD = 0f;
@@ -176,6 +190,61 @@ final class MapLayerArrangementDialogBody {
                 BOX_ALPHA * alphaMult));
     }
 
+    /**
+     * Writes the box's head into {@code header}: what the box is called, and the line saying what the
+     * controls under it do.
+     *
+     * @param header the cell the head is drawn in, sized for both
+     */
+    static void fillHeader(TooltipMakerAPI header) {
+
+        // The face the game heads its own boxes with. An element's default title face is the size of
+        // the body text under it, which leaves the two reading as one paragraph rather than as a head
+        // and the line it heads.
+        header.setTitleOrbitronLarge();
+        header.addTitle(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_TITLE));
+
+        composeHint().addTo(header, TITLE_GAP);
+    }
+
+    /**
+     * Writes the way out into {@code footer}.
+     *
+     * <p>It says <b>Apply</b> rather than the shared close wording, because nothing in the box is held
+     * back to be committed: every press is recorded as it is made, so the word names what the player is
+     * leaving with. Under a key of its own rather than a reworded shared one, that one also closing the
+     * condition picker, where there is nothing to apply.
+     *
+     * @param footer the cell the button is drawn in
+     */
+    static void fillApplyFooter(TooltipMakerAPI footer) {
+
+        footer.addButton(
+            KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_APPLY),
+            KmuStrings.MAP_LAYER_ARRANGE_APPLY,
+            APPLY_BUTTON_WIDTH,
+            CONTROL_HEIGHT,
+            NO_PAD);
+    }
+
+    // The line under the heading, and the three words in it that name something on screen: the two
+    // buttons a row carries and the box beside them, in the shade the game highlights with. A hint is
+    // read once and skimmed thereafter, and what a skim should land on is the words naming a control.
+    //
+    // Each run is the very string its control is labelled from, so a reworded button carries its
+    // highlight with it - a run that merely matched the sentence would fall silent on the rewording,
+    // the substrate simply not drawing a run it cannot find.
+    private static HighlightedParagraph composeHint() {
+
+        var highlight = StarsectorUiColour.VANILLA_HIGHLIGHT_GOLD.resolve();
+
+        return new HighlightedParagraph(
+            KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_HINT),
+            Highlight.of(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_MOVE_UP), highlight),
+            Highlight.of(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_MOVE_DOWN), highlight),
+            Highlight.of(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_HINT_UNCHECK), highlight));
+    }
+
     // How tall the box stands for this many rows: its fixed furniture plus the column.
     private static float resolveBoxHeight(int rowCount) {
 
@@ -224,8 +293,7 @@ final class MapLayerArrangementDialogBody {
         // fills, so the surface these cells stand on is painted in renderFills and only the rule around
         // it is composed here.
         var header = box.createUIElement(BOX_WIDTH - BOX_PAD * 2f, TITLE_HEIGHT + HINT_HEIGHT, false);
-        header.addTitle(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_TITLE));
-        header.addPara(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_HINT), NO_PAD);
+        fillHeader(header);
         box.addUIElement(header).inTL(BOX_PAD, BOX_PAD);
 
         for (var rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
@@ -235,7 +303,7 @@ final class MapLayerArrangementDialogBody {
                 rows.get(rowIndex),
                 BOX_PAD + TITLE_HEIGHT + HINT_HEIGHT + rowIndex * ROW_HEIGHT);
         }
-        addCloseButton(box, boxHeight);
+        addApplyButton(box, boxHeight);
         addFrame(box, boxHeight);
     }
 
@@ -280,19 +348,14 @@ final class MapLayerArrangementDialogBody {
     }
 
     // The way out, in the box's bottom right corner where the game puts its own dialogs' buttons.
-    private void addCloseButton(CustomPanelAPI box, float boxHeight) {
+    private void addApplyButton(CustomPanelAPI box, float boxHeight) {
 
-        var footer = box.createUIElement(CLOSE_BUTTON_WIDTH, FOOTER_HEIGHT, false);
+        var footer = box.createUIElement(APPLY_BUTTON_WIDTH, FOOTER_HEIGHT, false);
         footer.setActionListenerDelegate((buttonId, data) -> onClosePressed.run());
-        footer.addButton(
-            KmuStrings.get(KmuStrings.DIALOG_CLOSE),
-            KmuStrings.DIALOG_CLOSE,
-            CLOSE_BUTTON_WIDTH,
-            CONTROL_HEIGHT,
-            NO_PAD);
+        fillApplyFooter(footer);
 
         box.addUIElement(footer)
-            .inTL(BOX_WIDTH - BOX_PAD - CLOSE_BUTTON_WIDTH, boxHeight - FOOTER_HEIGHT);
+            .inTL(BOX_WIDTH - BOX_PAD - APPLY_BUTTON_WIDTH, boxHeight - FOOTER_HEIGHT);
     }
 
     // A press on a row's controls, passed on once it is one of ours. A press carrying anything else -
