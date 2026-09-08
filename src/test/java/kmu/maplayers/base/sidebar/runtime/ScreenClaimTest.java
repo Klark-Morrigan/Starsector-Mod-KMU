@@ -5,6 +5,8 @@ import kmlib.starsector.ui.coreui.ModalDialogState;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
 import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
+import kmu.maplayers.base.chrome.arrange.ArrangementDialogState;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -91,6 +93,22 @@ class ScreenClaimTest {
         }
 
         @Test
+        void isScreenClaimedIsTrueForTheArrangementDialogStillFadingIn() {
+            // Raised is the half input reads, and it is true from the frame the dialog opens, when
+            // its paint is still at nothing.
+            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(true, 0f).isScreenClaimed())
+                .isTrue();
+        }
+
+        @Test
+        void isScreenClaimedIsFalseForTheArrangementDialogOnlyFadingOut() {
+            // The one claimant that lets go before its fade has run: dismissed on the press, it claims
+            // nothing over its own dissolving box, and neither may the panel on its behalf.
+            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(false, 0.5f).isScreenClaimed())
+                .isFalse();
+        }
+
+        @Test
         void isScreenClaimedLeavesTheModalReadUntakenWhileAConsoleIsUp() {
             // The modal read walks the core UI's children; the console read is a field. Asked in the other
             // order the walk is paid for on every frame, whatever else is on screen.
@@ -99,7 +117,7 @@ class ScreenClaimTest {
             var claim = new ScreenClaim(
                 new ConsoleCommandsOverlay(consolePresenceFake),
                 () -> false,
-                () -> false,
+                () -> ArrangementDialogState.DOWN,
                 () -> {
                     modalReadCount.incrementAndGet();
                     return ModalDialogState.NONE;
@@ -148,11 +166,54 @@ class ScreenClaimTest {
         }
 
         @Test
-        void resolveClaimStrengthIsFullForTheArrangementDialogThatArrivesWhole() {
-            // Its backdrop is the engine's own panel fill rather than something ramped, so there is no
-            // fade to ride and the panel should go with it at once.
-            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialog().resolveClaimStrength())
-                .isCloseTo(1f, within(TOLERANCE));
+        void resolveClaimStrengthFollowsTheArrangementDialogThroughItsOwnFade() {
+            // The dialog fades at the pace of the game's own prompts, so the panel rides it exactly as
+            // it rides a modal's - answered full here, the sidebar would snap where a prompt beside it
+            // dissolves.
+            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(true, 0.4f).resolveClaimStrength())
+                .isCloseTo(0.4f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveClaimStrengthFollowsTheArrangementDialogOutPastThePress() {
+            // Raised has gone false on the press, and the paint has not: the panel keeps thinning with
+            // a box still on screen rather than coming back under it.
+            assertThat(ScreenClaims.createScreenClaimedByTheArrangementDialogAt(false, 0.4f).resolveClaimStrength())
+                .isCloseTo(0.4f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveClaimStrengthTakesTheDeeperOfTheArrangementDialogAndAModal() {
+            // A prompt raised over the dialog is darker than either alone, so the panel is at least as
+            // far gone as the further of the two.
+            var claim = new ScreenClaim(
+                new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
+                () -> false,
+                () -> new ArrangementDialogState(true, 0.3f),
+                () -> new ModalDialogState(true, 0.6f));
+
+            assertThat(claim.resolveClaimStrength())
+                .isCloseTo(0.6f, within(TOLERANCE));
+        }
+
+        @Test
+        void resolveClaimStrengthLeavesTheModalReadUntakenWithTheArrangementDialogFullyUp() {
+            // A dialog wholly in place has taken everything the walk could add, so the walk is skipped
+            // on the frames it is standing.
+            var modalReadCount = new AtomicInteger();
+            var claim = new ScreenClaim(
+                new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
+                () -> false,
+                () -> new ArrangementDialogState(true, 1f),
+                () -> {
+                    modalReadCount.incrementAndGet();
+                    return ModalDialogState.NONE;
+                });
+
+            claim.resolveClaimStrength();
+
+            assertThat(modalReadCount)
+                .hasValue(0);
         }
 
         @Test

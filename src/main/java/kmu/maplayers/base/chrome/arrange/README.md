@@ -11,17 +11,19 @@ and the [mod README](../../../../../../../../README.md) for project context.
 ## Index
 
 - [How the package divides](#how-the-package-divides)
+- [Raised and painted part company](#raised-and-painted-part-company)
 - [Everything testable is outside the panel](#everything-testable-is-outside-the-panel)
 - [Element, never cell](#element-never-cell)
 - [What is not here](#what-is-not-here)
 
 ## How the package divides
 
-Five types, split along one line: what needs a running game, and what does not.
+Six types, split along one line: what needs a running game, and what does not.
 
 | Type | Owns |
 | --- | --- |
 | `MapLayerArrangementDialog` | the lifecycle - when it stands up, what it claims, when it comes down |
+| `ArrangementDialogFade` | whether the dialog is up, and how far onto the screen it is painted |
 | `MapLayerArrangementEditor` | the rows, the three things a press can do to one, and when it refuses |
 | `MapLayerArrangementDialogBody` | the furniture around the column, and the two areas no widget paints |
 | `ArrangementRowWidgets` | one row's name and its three controls |
@@ -32,17 +34,35 @@ say alone.
 
 `MapLayerArrangementRow` and `ArrangementRowAction` pass between the halves. The action is its own
 type rather than nested in either, since the column puts it on a button and the editor acts on it -
-nesting it would make one of those two the other's owner.
+nesting it would make one of those two the other's owner. `ArrangementDialogState` passes outward:
+the two answers the fade keeps, read as one value by whatever stands aside for the dialog.
+
+## Raised and painted part company
+
+The dialog fades in and out at the pace of the game's own prompts, because the sidebar dissolves in
+step with whatever claims the screen and a box arriving whole would snap it away instead. That fade
+is the dialog's own, the game fading nothing it did not raise, and it is written onto the panel as
+its opacity - which the engine multiplies into the alpha it hands every widget in the panel and the
+plugin's render hook alike, so the box, its controls and the dim beneath them move as one piece.
+
+What that costs is that the panel outlives the press. From the press until the end of the fall the
+dialog is on screen and must claim nothing, or it eats the click that follows; so `isRaised` moves on
+the press and the fraction moves over the frames after it, and the two are read together as
+`ArrangementDialogState` rather than through the game's own modal shape, whose presence holds until
+the fade has run. The panel comes off at the end of the fall; a reopen during it keeps the panel and
+comes up from where the fade stood.
 
 ## Everything testable is outside the panel
 
 A `CustomUIPanelPlugin` exists only inside a panel the game built, over a core UI that exists only
 while the game is running. Anything left inside one can be checked only by opening the dialog and
-clicking, so the package is arranged to leave as little there as possible - and the three things
-pulled out are the three that were each, at some point, the part nothing had verified:
+clicking, so the package is arranged to leave as little there as possible - and the four things
+pulled out are the four that were each, at some point, the part nothing had verified:
 
 - **`ArrangementDialogEventResponse`** is the claim rule, so the dialog's whole modality is a
   function of one event rather than a branch inside a render hook.
+- **`ArrangementDialogFade`** is the clock, so that raised moves on the press and the paint does
+  not is a fact about two fields rather than something watched for on screen.
 - **`MapLayerArrangementEditor.applyRowAction`** is the mapping from a press to what it does. A case
   wired to the wrong one of the three is silent - the button works, it simply does the other thing.
 - **`ArrangementBoxLayout`** is the arithmetic, because where an element sits and how tall the box

@@ -50,6 +50,18 @@ final class MapLayerArrangementDialogTest {
     }
 
     @Nested
+    class ResolveDialogState {
+
+        @Test
+        void resolveDialogStateIsDownWithNothingHavingOpenedIt() {
+            // Both halves at rest: a fraction left standing from nowhere would thin the sidebar over a
+            // box that is not there.
+            assertThat(dialog.resolveDialogState())
+                .isEqualTo(ArrangementDialogState.DOWN);
+        }
+    }
+
+    @Nested
     class OpenDialog {
 
         @Test

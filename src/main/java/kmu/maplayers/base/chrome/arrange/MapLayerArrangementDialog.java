@@ -34,10 +34,18 @@ import java.util.List;
  * to. So the body paints its own backdrop, through this plugin's own render hook, and this claims the
  * input its own widgets do not want. What cannot be supplied is being recognised as a modal by anything
  * reading the game's modal base, so the map-side gates that stand down under one read
- * {@link #isDialogRaised()} beside that reading.
+ * {@link #resolveDialogState()} beside that reading.
  *
  * <p>Which events that claim takes and which it leaves alone is
  * {@link ArrangementDialogEventResponse}'s; this acts on the answer.
+ *
+ * <p><b>Arrives and leaves on a fade of its own</b>, kept by {@link ArrangementDialogFade}, since the
+ * game fades nothing it did not raise. The panel's opacity is written from that fade each frame, which
+ * is what the engine multiplies into the alpha it hands every widget in the panel and this plugin's
+ * render hook alike - so the box, its controls and the dim behind them arrive as one piece, and a panel
+ * the engine is itself fading keeps that fade over ours rather than having it overwritten. The panel
+ * therefore outlives the press that dismisses it, coming off the screen at the end of the fall; for
+ * that length it is on screen and claims nothing.
  *
  * <p>Closes itself when the map goes off screen. The panel hangs from the core UI rather than from the
  * screen it was opened on, so nothing about leaving that screen takes it down - and a dialog left
@@ -55,12 +63,18 @@ public final class MapLayerArrangementDialog {
     // the screen and the core UI it hangs in is too, so the two corners coincide.
     private static final float NO_OFFSET = 0f;
 
+    // Whether the dialog is up, and how far onto the screen it is painted. The first is the dialog's
+    // "is it up" state; the panel below is not, since it stays for the fall after the press.
+    private final ArrangementDialogFade fade = new ArrangementDialogFade();
+
     // What the player is arranging, or null while the dialog is down. Seeded when the dialog opens and
-    // dropped when it closes, so a second visit reads the store again rather than the rows it left.
+    // dropped on the press that dismisses it, so a second visit reads the store again rather than the
+    // rows it left.
     private MapLayerArrangementEditor editor;
 
-    // The screen-sized panel standing in the core UI, or null while the dialog is down. Also the
-    // dialog's own "is it up" state, there being nothing else that can be up without it.
+    // The screen-sized panel standing in the core UI, or null while none does. Stood up on the first
+    // open and kept through the fall, so a reopen during the fall reuses it rather than standing a
+    // second one over the first.
     private CustomPanelAPI dialogPanel;
 
     // The widgets currently in that panel, replaced whole on every change.
@@ -70,11 +84,20 @@ public final class MapLayerArrangementDialog {
     }
 
     /**
-     * @return whether the dialog stands over the screen right now - which the map-side gates read
-     *         beside the game's own modal reading, this dialog being invisible to that one
+     * @return whether the dialog is up for input - which the map-side gates read beside the game's own
+     *         modal reading, this dialog being invisible to that one. False from the press that
+     *         dismisses it, while the panel is still fading off the screen
      */
     public boolean isDialogRaised() {
-        return dialogPanel != null;
+        return fade.isDialogRaised();
+    }
+
+    /**
+     * @return the crisp answer above beside how far the paint stands, on one frame, for a caller that
+     *         both stands its input down under the dialog and fades against it
+     */
+    public ArrangementDialogState resolveDialogState() {
+        return new ArrangementDialogState(fade.isDialogRaised(), fade.resolveFadeFraction());
     }
 
     /**
@@ -82,7 +105,8 @@ public final class MapLayerArrangementDialog {
      *
      * <p>Does nothing where it is already up, where no store is bound to write the arrangement to, and
      * where the core UI cannot be reached to stand a panel in - all three leaving the screen as it was
-     * rather than half-opening.
+     * rather than half-opening. A dialog reopened while it is still fading out keeps the panel it has
+     * and comes back up from where the fade stood.
      */
     public void openDialog() {
 
@@ -95,28 +119,21 @@ public final class MapLayerArrangementDialog {
             return;
         }
 
-        var settings = Global.getSettings();
-        var panel = settings.createCustom(
-            settings.getScreenWidth(),
-            settings.getScreenHeight(),
-            new DialogPanelPlugin());
-
-        var placement = CoreUiOverlayPanels.attachOverlayPanel(panel);
-        if (placement == null) {
+        if (dialogPanel == null && !standPanelUp()) {
             return;
         }
-        placement.inTL(NO_OFFSET, NO_OFFSET);
 
+        fade.raiseDialog();
         editor = new MapLayerArrangementEditor(arrangementSelection, MapLayerRegistry.getLayers());
-        dialogPanel = panel;
 
         rebuildBody();
     }
 
     /**
-     * Takes the dialog off the screen and drops what it was holding. Safe to call with the dialog
-     * already down, which is what lets every way it can end - the close button, Escape, the screen
-     * closing - say the same thing.
+     * Takes the dialog down for input and drops what it was holding; the panel stays for the length of
+     * its fall and comes off the screen at the end of it. Safe to call with the dialog already down,
+     * which is what lets every way it can end - the close button, Escape, the screen closing - say the
+     * same thing.
      */
     public void closeDialog() {
 
@@ -124,10 +141,7 @@ public final class MapLayerArrangementDialog {
             return;
         }
 
-        CoreUiOverlayPanels.detachOverlayPanel(dialogPanel);
-
-        dialogPanel = null;
-        body = null;
+        fade.dismissDialog();
         editor = null;
     }
 
@@ -145,7 +159,14 @@ public final class MapLayerArrangementDialog {
     // What a press on a row's controls does. The row is named by layer id rather than by position, the
     // position having moved by the time a second press arrives. Which control means what is the editor's,
     // leaving this with the half that only a standing dialog has: drawing the result.
+    //
+    // Ignored once the dialog is dismissed: its widgets stay on screen for the fall and the game goes on
+    // dispatching to them, but there is no editor left for a press to reach.
     private void applyRowAction(String layerId, ArrangementRowAction action) {
+
+        if (!isDialogRaised()) {
+            return;
+        }
 
         editor.applyRowAction(layerId, action);
 
@@ -162,8 +183,62 @@ public final class MapLayerArrangementDialog {
             && body.getBoxPlacement().containsEvent(event);
     }
 
-    // The dialog's own frame hooks: the claim that makes it modal, and the guard that takes it down
-    // with the screen it was opened on.
+    // Stands the screen-sized panel in the core UI, painted at nothing so its first frame is the start
+    // of the rise rather than a flash of the whole box before the fade has been stepped once.
+    private boolean standPanelUp() {
+
+        var settings = Global.getSettings();
+        var panel = settings.createCustom(
+            settings.getScreenWidth(),
+            settings.getScreenHeight(),
+            new DialogPanelPlugin());
+
+        var placement = CoreUiOverlayPanels.attachOverlayPanel(panel);
+        if (placement == null) {
+            return false;
+        }
+        placement.inTL(NO_OFFSET, NO_OFFSET);
+
+        dialogPanel = panel;
+        paintFadeOntoPanel();
+
+        return true;
+    }
+
+    // Takes the panel off the screen and forgets everything built into it, the fade included: what
+    // comes down here is not fading, it is gone.
+    private void takePanelDown() {
+
+        CoreUiOverlayPanels.detachOverlayPanel(dialogPanel);
+
+        dialogPanel = null;
+        body = null;
+        editor = null;
+        fade.dropFade();
+    }
+
+    // One frame of the fade: step it, show it, and take the panel down once there is nothing left of
+    // it to show.
+    private void advanceDialogFade(float elapsedSeconds) {
+
+        fade.advanceFade(elapsedSeconds);
+        paintFadeOntoPanel();
+
+        if (fade.isSettledDown()) {
+            takePanelDown();
+        }
+    }
+
+    // Where the paint stands, written onto the panel as its opacity. The engine multiplies that into
+    // the alpha it hands every widget the panel holds and the plugin's own render hook, so one write
+    // fades the box, its controls and the fills beneath them together, under whatever fade the engine
+    // is itself applying to the panel.
+    private void paintFadeOntoPanel() {
+        dialogPanel.setOpacity(fade.resolveFadeFraction());
+    }
+
+    // The dialog's own frame hooks: the claim that makes it modal, the fade that brings it in and out,
+    // and the guard that takes it down with the screen it was opened on.
     private final class DialogPanelPlugin implements CustomUIPanelPlugin {
 
         @Override
@@ -176,7 +251,8 @@ public final class MapLayerArrangementDialog {
             // Under every widget the panel holds, which is where the game draws the interiors of its own
             // custom panels: the dim that stands the screen down and the box's own surface. Nothing else
             // paints them - the game publishes a rectangle component that strokes and none that fills, so
-            // the rule around the box is a widget and the two filled areas are not.
+            // the rule around the box is a widget and the two filled areas are not. The alpha handed in
+            // already carries the dialog's own fade, the panel's opacity being where that is written.
             if (body != null) {
                 body.renderFills(alphaMult);
             }
@@ -190,14 +266,24 @@ public final class MapLayerArrangementDialog {
         public void advance(float amount) {
 
             // The panel hangs from the core UI, which outlives the screen the dialog was opened on -
-            // so leaving that screen has to be noticed rather than waited for.
+            // so leaving that screen has to be noticed rather than waited for. Down at once rather than
+            // faded: there is no screen left under it to fade against.
             if (!isMapShowing()) {
-                closeDialog();
+                takePanelDown();
+                return;
             }
+
+            advanceDialogFade(amount);
         }
 
         @Override
         public void processInput(List<InputEventAPI> events) {
+
+            // A dialog on its way down claims nothing. It is still on screen for the length of the fall,
+            // and a claim kept up for that length would eat the click that follows the press.
+            if (!isDialogRaised()) {
+                return;
+            }
 
             for (var event : events) {
 
@@ -210,8 +296,8 @@ public final class MapLayerArrangementDialog {
                 }
                 event.consume();
 
-                // Nothing after the dialog has come down is this plugin's to answer for: the panel it
-                // hangs in is already off the screen.
+                // Nothing after the dialog has been dismissed is this plugin's to answer for: from here
+                // on the panel is only fading, and the events under it are the screen's again.
                 if (response == ArrangementDialogEventResponse.CLOSE_DIALOG) {
                     closeDialog();
                     return;
