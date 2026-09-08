@@ -3,7 +3,8 @@ package kmu.maplayers.base.sidebar;
 import kmu.maplayers.base.layer.AddressedMemoryString;
 
 /**
- * How many columns a sidebar picker lays its list across, persisted per save and per screen. Like
+ * How many columns a sidebar picker lays its list across, persisted per save, per mod and per screen.
+ * Like
  * {@link SortSelection} it holds only the raw stored value - a bare column-count key - and the plumbing
  * to read and write it; what a key means (which column count it maps to, what it falls back to when
  * unset) is the column choice's concern, not this class's, so this stays a leaf that names no layout.

@@ -59,6 +59,8 @@ final class SortSelectionTest {
 
     private static final String OTHER_SCOPE_MODE_KEY = "$kmu_map_sort_mode_scope_b_test";
 
+    private static final String OTHER_MOD_MODE_KEY = "$test_map_sort_mode_scope_a_test";
+
     private static final String STORED_MODE = "presence";
     private static final String OTHER_STORED_MODE = "standing";
     private static final String STORED_DIRECTION = "asc";
@@ -152,13 +154,16 @@ final class SortSelectionTest {
 
         @Test
         void selectSortModeLeavesTheNeighbouringSlotsUntouched() {
-            // Both axes on the write side: a mode picked on one panel's list leaves the same list on
-            // the other panel, and every other list on this one, ranked as they were.
+            // Every axis on the write side: a mode picked on one panel's list leaves the same list on
+            // the other panel, every other list on this one, and another mod's list of the same name,
+            // ranked as they were.
             SortSelection.selectSortMode(SLOT, STORED_MODE);
 
             assertThat(sectorMemoryFake.hasStoredValue(OTHER_SCREEN_MODE_KEY))
                 .isFalse();
             assertThat(sectorMemoryFake.hasStoredValue(OTHER_SCOPE_MODE_KEY))
+                .isFalse();
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_MOD_MODE_KEY))
                 .isFalse();
         }
 

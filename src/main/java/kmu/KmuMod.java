@@ -23,13 +23,11 @@ public final class KmuMod {
 
     /**
      * The prefix this mod's sidebar spotlight, sort and column stores save their keys under, so a
-     * layer another mod registers keeps its picker's answers apart from these.
-     *
-     * <p>Here rather than beside those stores because it is a fact about which mod is asking rather
-     * than about what is stored: every KMU layer present and future shares it, and the stores
-     * themselves hold no mod's name at all. Frozen in this spelling - it is the leading segment of
-     * every key those three stores have ever written, so a rename reads as absent and silently
-     * resets every existing save's spotlight, sort and column picks.
+     * layer another mod registers keeps its picker's answers apart from these. Here rather than
+     * beside those stores because it says which mod is asking rather than what is stored: every KMU
+     * layer shares it, and the stores hold no mod's name at all. Frozen in this spelling - it leads
+     * every key those three have ever written, so a rename silently resets every existing save's
+     * spotlight, sort and column picks.
      */
     public static final MapLayerStoreNamespace MAP_STORE_NAMESPACE =
         new MapLayerStoreNamespace("$kmu_map_");

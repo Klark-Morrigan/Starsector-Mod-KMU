@@ -17,22 +17,13 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
  * the wrong mod is another mod's pick, and it compiles and reads as the feature working until the two
  * mods' panels move each other's lists.
  *
- * @param namespace   the mod whose store this answer belongs to; never null, since a namespace has no
- *                    default to stand in
+ * @param namespace   the mod whose store this answer belongs to; there is no default to stand in for
+ *                    a missing one
  * @param memoryScope the screen whose panel holds this answer
  */
 public record ScreenSelectionSlot(
     MapLayerStoreNamespace namespace,
     ScreenMemoryScope memoryScope) implements MemoryKeyAddress {
-
-    public ScreenSelectionSlot {
-        // Caught here rather than left to fault at the first read, which is a frame deep in a panel
-        // build: a namespace is chosen where a control is wired, and that is where a missing one is
-        // still readable as the wiring mistake it is.
-        if (namespace == null) {
-            throw new IllegalArgumentException("A screen's selection slot must name a store namespace");
-        }
-    }
 
     /**
      * @param storeKeySuffix the store's own key, carrying neither namespace nor screen

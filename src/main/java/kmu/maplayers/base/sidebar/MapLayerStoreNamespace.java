@@ -5,14 +5,12 @@ package kmu.maplayers.base.sidebar;
  * {@link SortSelection} and {@link ColumnSelection} compose their own suffix under, so the three
  * stores hold the plumbing while nothing about the mod holding the answer is written into them.
  *
- * <p>Without it the three stores are shared in the wrong sense: they already part one view from
- * another by scope id and one panel from another by screen, but both axes sit under a prefix spelled
- * inside the class, so two mods picking the scope string {@code "factions"} write the same key and a
- * second mod's column pick moves the first's column count. The mod is the axis that was missing.
- *
- * <p>One value rather than a prefix per store, because a caller passing three prefixes can pass two of
- * its own and one of somebody else's - a state nothing downstream can detect, surfacing as one mod's
- * picker silently moving another's sort direction. Passed once, the three cannot disagree.
+ * <p>Without it the three stores are shared in the wrong sense: they part one view from another by
+ * scope id and one panel from another by screen, but both axes sit under a prefix spelled inside the
+ * class, so two mods picking the scope string {@code "factions"} write the same key. One value rather
+ * than a prefix per store, because a caller passing three prefixes can pass two of its own and one of
+ * somebody else's - a state nothing downstream can detect, surfacing as one mod's picker silently
+ * moving another's sort direction. Passed once, the three cannot disagree.
  *
  * <p><b>It has no default and cannot be derived.</b> Standing one in from a layer's id would part one
  * mod's two layers into two namespaces, which is the partitioning the scope id already does correctly

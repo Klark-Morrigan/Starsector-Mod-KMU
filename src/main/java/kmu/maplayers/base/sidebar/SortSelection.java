@@ -4,8 +4,8 @@ import kmu.maplayers.base.layer.AddressedMemoryString;
 
 /**
  * The metric a sidebar picker list currently ranks its rows by and the direction that ranking runs in
- * - held per {@link SelectionSlot}, so each screen and scope keeps its own answer and moving between
- * either neither resets nor cross-reads another's. It holds only the raw stored values - a bare mode
+ * - held per {@link SelectionSlot}, so each mod, screen and scope keeps its own answer and moving
+ * between any of them neither resets nor cross-reads another's. It holds only the raw stored values - a bare mode
  * key and a bare direction key - and the plumbing to read and write them; what a key means (which
  * comparator or direction it maps to, what it falls back to when unset) is the sort mode's and sort
  * direction's concern, not this class's, so this stays a leaf that names no sort type. The two are
@@ -14,8 +14,8 @@ import kmu.maplayers.base.layer.AddressedMemoryString;
  *
  * <p>Partitioned exactly as {@link FilterSelection} is, and for the matching reasons: scopes rank their
  * rows by different vocabularies, so one scope's stored key read under another resolves against nothing
- * and makes every switch look like a reset, and a ranking is a pick made on one panel rather than a
- * fact about the list.
+ * and makes every switch look like a reset; a ranking is a pick made on one panel rather than a fact
+ * about the list; and the list ranked is one mod's.
  *
  * <p>Sidebar-only state: the mode is driven solely by a picker's sort selector, never a settings-screen
  * control, so it persists in sector memory (each save keeps its own choice and it survives reload)

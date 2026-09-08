@@ -375,13 +375,12 @@ about whose it is, so the leading segment arrives with the address.
 
 That is `MapLayerStoreNamespace`, the third axis: which mod's picker is asking. Without it the three
 stores are shared in the wrong sense, since two mods choosing the scope string `factions` write the
-same key and a second mod's column pick moves the first's count. It has no default and is derived
-from nothing - a namespace standing in from a layer id would part one mod's two layers, which the
-scope already does correctly, and a fixed fallback would put every consumer that forgot to name
-itself back in one shared namespace. It carries its own separator, so what it composes is exactly
-what the holding mod already ships. This mod's own is `KmuMod.MAP_STORE_NAMESPACE`, the frozen
-`$kmu_map_` prefix of every key below, named there because whose picks these are is a fact about the
-mod rather than about the map layers.
+same key. It has no default and is derived from nothing - a namespace standing in from a layer id
+would part one mod's two layers, which the scope already does correctly, and a fixed fallback would
+put every consumer that forgot to name itself back in one shared namespace. It carries its own
+separator, so what it composes is exactly what the holding mod already ships. This mod's own is
+`KmuMod.MAP_STORE_NAMESPACE`, the frozen `$kmu_map_` prefix of every key below, named there because
+whose picks these are is a fact about the mod rather than about the map layers.
 
 `FilterSelection` and `SortSelection` both hold their answer per `SelectionSlot` - a namespace, a
 screen and one opaque scope, the three that compose the key. The scope because an id read under the

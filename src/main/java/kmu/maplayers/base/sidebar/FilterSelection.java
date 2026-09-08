@@ -8,8 +8,8 @@ import java.util.function.Predicate;
 
 /**
  * The single id a sidebar filter currently selects, or none - held per {@link SelectionSlot}, so each
- * screen and scope keeps its own choice and moving between either neither clears nor cross-reads
- * another's. While an id is selected the layer reading it draws that one standing out and the rest
+ * mod, screen and scope keeps its own choice and moving between any of them neither clears nor
+ * cross-reads another's. While an id is selected the layer reading it draws that one standing out and the rest
  * receded; with none selected it renders exactly as it does un-filtered. This holds only the choice - a
  * bare id - and the plumbing to persist, clear, and invalidate on it; what the id names, and how it
  * resolves into anything drawn, is the reading layer's concern, not this class's.

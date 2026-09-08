@@ -15,18 +15,13 @@ public final class MapLayerStoreNamespaces {
     private MapLayerStoreNamespaces() {
     }
 
-    /** A mod of no particular identity, for slots whose subject is anything but whose store they are. */
+    /**
+     * A mod of no particular identity: the foreign side of every case whose subject is that two mods
+     * keep a store apart, and the whole namespace of a case whose subject is not whose store it is.
+     *
+     * @return a stand-in namespace, distinct from this mod's own and nothing else
+     */
     public static MapLayerStoreNamespace createStandInNamespace() {
         return new MapLayerStoreNamespace("$test_map_");
-    }
-
-    /**
-     * A second mod of no particular identity, for the cases whose subject is that two mods keep a store
-     * apart. Distinct from the first and nothing else.
-     *
-     * @return a stand-in namespace that is not {@link #createStandInNamespace()}'s
-     */
-    public static MapLayerStoreNamespace createOtherStandInNamespace() {
-        return new MapLayerStoreNamespace("$other_map_");
     }
 }
