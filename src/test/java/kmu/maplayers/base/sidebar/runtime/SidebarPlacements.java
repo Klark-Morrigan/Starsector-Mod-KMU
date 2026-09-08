@@ -111,6 +111,9 @@ final class SidebarPlacements {
 
         return new TabPanelPlacement(
             tabsHeader,
+            // No band button: every shape here is about what the panel's own gates and hit-tests answer,
+            // and the bar's opener takes no part in any of them.
+            null,
             drawnHeaderBand,
             new PanelPlacement(
                 bodyBox,

@@ -20,6 +20,7 @@
 
     "dialog_close": "Close",
 
+    "map_layer_arrange_open": "Edit",
     "map_layer_arrange_title": "Arrange Layer Bar",
     "map_layer_arrange_hint": "Move a layer with Up and Down, or clear its box to take its tab off the bar.",
     "map_layer_arrange_shown": "Shown",

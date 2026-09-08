@@ -2,6 +2,8 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.intel.IntelScreenView;
 
+import java.util.List;
+
 /**
  * The two screens the map layers draw on - the sector map and the intel screen's visor - each with its
  * own picks, and which of the two the player is looking at this frame.
@@ -72,6 +74,21 @@ public final class MapLayerScreens {
      */
     public static void registerIntelScreen(IntelScreenView intelScreen) {
         MapLayerScreens.intelScreen = intelScreen;
+    }
+
+    /**
+     * Every screen's picks, for a pass that has to act on all of them rather than on the one being
+     * looked at - a self-heal clearing a stored choice that lapsed for both panels at once, since a
+     * bloc that stopped being on offer stopped being on offer wherever it was picked.
+     *
+     * <p>Answered here rather than assembled by such a caller, so how many screens there are stays a
+     * fact this class holds. A caller naming the two itself is a second place that would have to learn
+     * about a third.
+     *
+     * @return the picks of both screens, the map screen's first
+     */
+    public static List<ScreenLayerPicks> getAllScreenPicks() {
+        return List.of(MAP_PICKS, INTEL_PICKS);
     }
 
     /**

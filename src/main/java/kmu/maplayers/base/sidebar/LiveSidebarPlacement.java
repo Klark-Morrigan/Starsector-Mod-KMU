@@ -16,11 +16,13 @@ import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
+import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapLayerSettings;
+import kmu.util.KmuStrings;
 import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
@@ -51,6 +53,10 @@ import java.util.Set;
  * callback. Layout snaps each tab to its measured label, so the placement needs the tab font's width
  * measurer; the face travels inside the same {@link TabStyle} the renderer paints from, so a snapped tab
  * width matches the text drawn into it.
+ *
+ * <p>Past the last tab stands the bar's own opener, the one way into the dialog the player arranges that bar
+ * in. It is the panel's band button rather than a tab, so it wears the row's look while the row's own
+ * indexing - the pick, the lit tab, the shortcut walk - is left exactly as it was.
  */
 public final class LiveSidebarPlacement {
 
@@ -147,6 +153,22 @@ public final class LiveSidebarPlacement {
             cell -> selection.selectLayer(layers.get(cell)));
     }
 
+    // The opener the bar carries at its own right end: the one way into the dialog the player arranges that
+    // bar in. Its own control rather than a segment of the tabs row, because the tabs row is indexed by
+    // layer everywhere it is read - the click that selects, the lit tab, the shortcut walk - and a cell in
+    // it that is not a layer would move all three one along.
+    //
+    // Its words are the framework's own chrome rather than a layer's, so they are read from KMU's bundle
+    // here, the same way the framework's settings sit on KMU's tabs. Nothing lit: it is a button standing in
+    // a row of tabs, not a tab, so no pick of the player's can be the one showing.
+    static ControlSpec.Tabs buildBarOpenerSpec() {
+        return new ControlSpec.Tabs(
+            List.of(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_OPEN)),
+            List.of(),
+            ControlSpec.NO_SELECTION,
+            cell -> MapLayerArrangementDialog.INSTANCE.openDialog());
+    }
+
     // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
     // control in that body writes the preference it stands for when clicked, and that write belongs to the
     // screen the panel draws for - so the screen is taken from the panel rather than resolved here, which
@@ -192,6 +214,7 @@ public final class LiveSidebarPlacement {
             buildChrome(panel.borderedEdges()),
             tabStyle,
             buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
+            buildBarOpenerSpec(),
             buildBodyControls(activeLayer, screenPicks),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch

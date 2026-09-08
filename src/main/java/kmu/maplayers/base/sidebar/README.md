@@ -11,6 +11,7 @@ Part of [map layers](../../README.md); see the
 
 - [Hosts: what differs per screen](#hosts-what-differs-per-screen)
 - [Placement: one resolve a frame, published to every pass](#placement-one-resolve-a-frame-published-to-every-pass)
+- [The opener on the band](#the-opener-on-the-band)
 - [Drawing and input outside the widget tree](#drawing-and-input-outside-the-widget-tree)
 - [Fold persistence](#fold-persistence)
 - [Picker state](#picker-state)
@@ -187,6 +188,24 @@ index, so the switch rides on the control and no tab callback is threaded throug
 The draw also clamps the controller's stored scroll offset to the freshly laid-out overflow, since it
 is the pass that owns the frame - the layout itself only reads that offset, and a hit-test that wrote
 it would be correcting state it had no part in moving.
+
+## The opener on the band
+
+Past the last tab stands the bar's opener, `buildBarOpenerSpec` - the one way into
+[the dialog the bar is arranged in](../chrome/arrange/MapLayerArrangementDialog.java), there being no
+key bound to it. It is KMLib's band button (`TabPanelPlacement.bandButton`) rather than a segment of
+the tabs control, which is the one thing it may not be: that control is indexed by layer everywhere it
+is read - the click that selects, the lit tab, and `BaseSidebarHost.handleKeyPress`'s shortcut walk -
+so a cell in it that is not a layer would move all three one along. Outside it, the row's indexing is
+untouched and a press on the opener switches nothing.
+
+The band button is laid, styled and hit through the same header call the tabs are, so the map screen's
+strip and the intel visor's button row each get an opener that reads as part of what surrounds it, with
+no screen test anywhere in the renderer. It rides in the drawn band, so the fold wipes it with the tabs,
+`containsPoint` claims it from the map underneath, and `computeOuterBound` reaches it.
+
+Its words are the framework's own chrome rather than a layer's, so `KmuStrings` is read here - the same
+distinction the settings already make, and why this is not the bundle leak the tab label was.
 
 ## Drawing and input outside the widget tree
 
