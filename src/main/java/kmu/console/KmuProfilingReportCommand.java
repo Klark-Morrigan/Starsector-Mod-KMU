@@ -17,9 +17,10 @@ import java.util.Objects;
  *
  * <p>The on-demand reporting surface for whichever profiler is bound: it
  * formats the section tree (count, average / min / max / self / total ms, each
- * row indented under the section it ran inside) so the cost of instrumented
- * work - geometry build, ownership scan, per-frame draw - can be read without
- * flooding the log, and a slow row can be told from a slow thing beneath it.
+ * row indented under the section it ran inside, each group of roots headed by
+ * the sector it was measured in) so the cost of instrumented work - geometry
+ * build, ownership scan, per-frame draw - can be read without flooding the log,
+ * and a slow row can be told from a slow thing beneath it.
  * The profiler and output sink arrive as
  * constructor arguments rather than being reached for, so a caller can point
  * the same formatting and reset rules at a different profiler or a different
