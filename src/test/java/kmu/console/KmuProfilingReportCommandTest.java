@@ -18,6 +18,7 @@ import org.lazywizard.console.BaseCommand.CommandResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -27,8 +28,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link KmuProfilingReportCommand}: a bare invocation prints the formatted
- * timings, {@code reset} clears the profiler and reports that it did, and a stray
- * argument is rejected as bad syntax without touching the profiler.
+ * timings, {@code reset} clears the profiler and reports that it did, a stray
+ * argument is rejected as bad syntax without touching the profiler, and every
+ * invocation acts on whichever profiler is bound at the moment it runs.
  */
 final class KmuProfilingReportCommandTest {
 
@@ -38,8 +40,12 @@ final class KmuProfilingReportCommandTest {
 
     private final Profiler profilerMock = mock(Profiler.class);
     private final List<String> output = new ArrayList<>();
+    // What the holder answers with, so a case can rebind between building the command and running
+    // it - which is what the level knob does in play.
+    private final AtomicReference<Profiler> boundProfiler = new AtomicReference<>(profilerMock);
+
     private final KmuProfilingReportCommand command =
-        new KmuProfilingReportCommand(profilerMock, output::add);
+        new KmuProfilingReportCommand(boundProfiler::get, output::add);
 
     @Nested
     class RunCommand {
@@ -88,6 +94,19 @@ final class KmuProfilingReportCommandTest {
             assertThat(result).isEqualTo(CommandResult.BAD_SYNTAX);
             assertThat(output).anyMatch(message -> message.contains("Too many arguments"));
             // A malformed invocation must not clear the timings it failed to read.
+            verify(profilerMock, never()).reset();
+        }
+
+        @Test
+        void readsWhicheverProfilerIsBoundWhenItRuns() {
+            // The level knob rebinds the profiler mid-session, so a command that held the one it
+            // was built with would report the capture the player has just switched away from.
+            var reboundProfilerMock = mock(Profiler.class);
+
+            boundProfiler.set(reboundProfilerMock);
+            command.runCommand("reset", CommandContext.CAMPAIGN_MAP);
+
+            verify(reboundProfilerMock).reset();
             verify(profilerMock, never()).reset();
         }
     }

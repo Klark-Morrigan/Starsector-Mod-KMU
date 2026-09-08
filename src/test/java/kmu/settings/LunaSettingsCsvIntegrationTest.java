@@ -221,6 +221,10 @@ final class LunaSettingsCsvIntegrationTest {
             "DEFAULT_DECIVILISED_WORLD_SURVEY_LEVEL",
             SurveyLevelChoice.values()),
         new ChoiceBackedRadio(
+            "kmu_map_dev_profiling_level",
+            "DEFAULT_PROFILING_LEVEL",
+            ProfilingLevelChoice.values()),
+        new ChoiceBackedRadio(
             "kmu_map_politics_visuals_presenceRibbons_nameClearance",
             "DEFAULT_RIBBON_NAME_CLEARANCE",
             RibbonNameClearanceChoice.values()),

@@ -189,7 +189,10 @@ row, so a frame with nothing to draw reports what standing down cost and opens n
 that never ran.
 
 Nothing is recorded unless a profiler is bound: the library's default keeps nothing and allocates
-nothing, so an unmeasured frame pays a virtual call per beat and no more.
+nothing, so an unmeasured frame pays a virtual call per beat and no more. Which one is bound follows
+the `Profiling level` knob on `Map - Dev`, which ships off - so a player who never opens the
+`kmu_profiling` readout is not measured at all. The beats above are coarse and so are timed by any
+capture that is running; what a level rules out is the finer work inside a per-item loop.
 
 ## Silencing a minimap parked off screen
 

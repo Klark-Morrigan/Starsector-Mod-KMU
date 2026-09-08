@@ -4,9 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.recording.RecordingProfiler;
-
+import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -92,18 +90,17 @@ public class KMU_ModPlugin extends BaseModPlugin {
     @Override
     public void onApplicationLoad() {
 
-        // First, so whatever the steps below time lands in a profiler that keeps it. KMLib's
-        // profiler is silent until a mod binds a recording one, and KMU is the mod whose console
-        // command reads the readout.
-        KmuWiringSteps.runGuardedStep(
-            () -> ActiveProfiler.bindProfiler(new RecordingProfiler()),
-            "Failed to bind KMU profiler");
-
         // App-scoped, once per launch: register KMU's LunaLib settings bindings before any save
         // loads. LunaLib is a hard dependency, so it has already loaded by the time this runs.
         KmuWiringSteps.runGuardedStep(
             KmuLunaSettings::installBindings,
             "Failed to install KMU LunaLib settings bindings");
+
+        // After the settings above, because which profiler is bound is itself a setting. Nothing
+        // before this point is measured, which is what the shipped state asks for anyway: the
+        // level ships off, so a player who never opens the readout binds nothing that keeps a
+        // capture.
+        ProfilingCaptureInstaller.installAll();
 
         // Wire the concrete map layers into the framework registry once per launch, before any
         // sector map can open. The registry stays agnostic to which views exist; this is the
