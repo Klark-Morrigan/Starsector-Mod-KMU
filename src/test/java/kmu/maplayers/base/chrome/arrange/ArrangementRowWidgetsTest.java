@@ -55,28 +55,28 @@ final class ArrangementRowWidgetsTest {
         @Test
         void addRowLabelMutesARowWhoseTabIsOffTheBar() {
 
-            var labelCellMock = mock(TooltipMakerAPI.class);
-            ParagraphLabelMock.mockLabelOn(labelCellMock);
+            var labelElementMock = mock(TooltipMakerAPI.class);
+            ParagraphLabelMock.mockLabelOn(labelElementMock);
 
             ArrangementRowWidgets.addRowLabel(
-                labelCellMock,
+                labelElementMock,
                 new MapLayerArrangementRow("alpha", "Alpha", true));
 
-            verify(labelCellMock)
+            verify(labelElementMock)
                 .addPara(eq("Alpha"), eq(StarsectorUiColoursMock.UI_GRAY), anyFloat());
         }
 
         @Test
         void addRowLabelDrawsARowWhoseTabIsOnTheBarInTheOrdinaryShade() {
 
-            var labelCellMock = mock(TooltipMakerAPI.class);
-            ParagraphLabelMock.mockLabelOn(labelCellMock);
+            var labelElementMock = mock(TooltipMakerAPI.class);
+            ParagraphLabelMock.mockLabelOn(labelElementMock);
 
             ArrangementRowWidgets.addRowLabel(
-                labelCellMock,
+                labelElementMock,
                 new MapLayerArrangementRow("alpha", "Alpha", false));
 
-            verify(labelCellMock)
+            verify(labelElementMock)
                 .addPara(eq("Alpha"), eq(StarsectorUiColoursMock.UI_TEXT), anyFloat());
         }
 
@@ -94,12 +94,12 @@ final class ArrangementRowWidgetsTest {
             assertThat(editor.canToggleRowHidden(lastRowOnTheBar.layerId()))
                 .isFalse();
 
-            var labelCellMock = mock(TooltipMakerAPI.class);
-            ParagraphLabelMock.mockLabelOn(labelCellMock);
+            var labelElementMock = mock(TooltipMakerAPI.class);
+            ParagraphLabelMock.mockLabelOn(labelElementMock);
 
-            ArrangementRowWidgets.addRowLabel(labelCellMock, lastRowOnTheBar);
+            ArrangementRowWidgets.addRowLabel(labelElementMock, lastRowOnTheBar);
 
-            verify(labelCellMock)
+            verify(labelElementMock)
                 .addPara(eq("Alpha"), eq(StarsectorUiColoursMock.UI_TEXT), anyFloat());
         }
     }
@@ -111,11 +111,11 @@ final class ArrangementRowWidgetsTest {
         void addShownBoxCarriesNoWord() {
             // The line over the column already says what the box does, so a word in the box would be
             // that sentence repeated once per row.
-            var controlsCellMock = mock(TooltipMakerAPI.class);
+            var controlsElementMock = mock(TooltipMakerAPI.class);
 
-            ArrangementRowWidgets.addShownBox(controlsCellMock);
+            ArrangementRowWidgets.addShownBox(controlsElementMock);
 
-            verify(controlsCellMock)
+            verify(controlsElementMock)
                 .addAreaCheckbox(
                     eq(""),
                     any(),
@@ -131,11 +131,11 @@ final class ArrangementRowWidgetsTest {
         void addShownBoxStandsSquareAtTheRowsControlHeight() {
             // With the word gone the box has nothing to be wide for, and a box wider than it is tall
             // would read as a button whose label failed to load.
-            var controlsCellMock = mock(TooltipMakerAPI.class);
+            var controlsElementMock = mock(TooltipMakerAPI.class);
 
-            ArrangementRowWidgets.addShownBox(controlsCellMock);
+            ArrangementRowWidgets.addShownBox(controlsElementMock);
 
-            verify(controlsCellMock)
+            verify(controlsElementMock)
                 .addAreaCheckbox(
                     any(),
                     any(),

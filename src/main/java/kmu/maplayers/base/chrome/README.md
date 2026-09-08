@@ -138,16 +138,20 @@ given number of rows are questions with answers, and asking them of a class that
 game to build a panel means they can only be answered by opening the dialog and looking. The box is as
 wide as its parts, so the parts are what is stated and the width is what follows.
 
-Every cell is a vanilla element placed by hand rather than one element told to run across, because a
-vanilla element lays its contents out top to bottom. A row is therefore cells side by side, and the
-surface they all stand on is one painted rectangle rather than a fill per cell, which would leave the
-gaps between cells showing the map through.
+Every part of the box is a vanilla element placed by hand rather than one element told to run across,
+because an element lays its contents out top to bottom. A row is therefore elements side by side, and
+the surface they all stand on is one painted rectangle rather than a fill per element, which would
+leave the gaps between them showing the map through.
 
-**A cell is placed for where it draws, not for where it is.** The engine sets an element's contents in
-from the element's own left edge, so a cell placed at the box's pad draws them further in again -
-which is why the frame once stood closer to the buttons on the right than to the words on the left.
-That inset is named once and both edges are taken from it: a cell reading from the left goes the pad
-less the inset, and a cell reading from the right is measured back from the box's far edge rather than
+**Element, never cell.** Under `kmu.maplayers.base` that word means a system's polygon on the map, and
+the modal's head and foot are cells of no row in any case - so `arrange` says *element*, the word the
+engine's own `createUIElement` gives it, and a build gate holds the tree to it.
+
+**An element is placed for where it draws, not for where it is.** The engine sets an element's
+contents in from its own left edge, so one placed at the box's pad draws them further in again - which
+is why the frame once stood closer to the buttons on the right than to the words on the left. That
+inset is named once and both edges are taken from it: an element reading from the left goes the pad
+less the inset, and one reading from the right is measured back from the box's far edge rather than
 accumulated rightward from what stands beside it, so the two edges cannot drift apart as a control's
 width moves.
 

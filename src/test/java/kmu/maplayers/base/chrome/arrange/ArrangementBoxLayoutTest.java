@@ -16,12 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class ArrangementBoxLayoutTest {
 
-    // Where a cell placed at the given x actually draws what it holds. Every assertion about an inset
-    // reads this rather than the placement, the placement being a number nobody sees: the game sets an
-    // element's contents in from its own edge, so a cell and its contents have different left edges.
-    private static float resolveDrawnLeft(float cellLeft) {
+    // Where an element placed at the given x actually draws what it holds. Every assertion about an
+    // inset reads this rather than the placement, the placement being a number nobody sees: the game
+    // sets an element's contents in from its own edge, so the two have different left edges.
+    private static float resolveDrawnLeft(float elementLeft) {
 
-        return cellLeft + ArrangementBoxLayout.VANILLA_ELEMENT_CONTENT_INSET;
+        return elementLeft + ArrangementBoxLayout.VANILLA_ELEMENT_CONTENT_INSET;
     }
 
     @Nested
@@ -77,27 +77,27 @@ final class ArrangementBoxLayoutTest {
     }
 
     @Nested
-    class ResolveLeadingCellLeft {
+    class ResolveLeadingElementLeft {
 
         @Test
-        void resolveLeadingCellLeftDrawsACellsContentsAPadInFromTheBoxsLeftEdge() {
-            // The cell goes 7 in and the element draws 5 further, so what the player reads starts at
+        void resolveLeadingElementLeftDrawsAnElementsContentsAPadInFromTheBoxsLeftEdge() {
+            // The element goes 7 in and draws 5 further in again, so what the player reads starts at
             // the pad rather than past it.
-            assertThat(resolveDrawnLeft(ArrangementBoxLayout.resolveLeadingCellLeft()))
+            assertThat(resolveDrawnLeft(ArrangementBoxLayout.resolveLeadingElementLeft()))
                 .isEqualTo(12f);
         }
     }
 
     @Nested
-    class ResolveTrailingCellLeft {
+    class ResolveTrailingElementLeft {
 
         @Test
-        void resolveTrailingCellLeftEndsACellsContentsAtTheSamePadALeadingCellsBeginAt() {
-            // The one thing this step is for: both edges land on the one pad, for a cell of any width,
-            // so a widening control moves the cell rather than the gap around the box's contents.
-            var leadingLeftInset = resolveDrawnLeft(ArrangementBoxLayout.resolveLeadingCellLeft());
+        void resolveTrailingElementLeftEndsItsContentsAtThePadALeadingElementsBeginAt() {
+            // The one thing this step is for: both edges land on the one pad, at any width, so a
+            // widening control moves the element rather than the gap around the box's contents.
+            var leadingLeftInset = resolveDrawnLeft(ArrangementBoxLayout.resolveLeadingElementLeft());
             var trailingRightInset = ArrangementBoxLayout.BOX_WIDTH
-                - (resolveDrawnLeft(ArrangementBoxLayout.resolveTrailingCellLeft(60f)) + 60f);
+                - (resolveDrawnLeft(ArrangementBoxLayout.resolveTrailingElementLeft(60f)) + 60f);
 
             assertThat(leadingLeftInset).isEqualTo(12f);
             assertThat(trailingRightInset).isEqualTo(12f);
@@ -105,20 +105,20 @@ final class ArrangementBoxLayoutTest {
     }
 
     @Nested
-    class ResolveControlsCellLeft {
+    class ResolveControlsElementLeft {
 
         @Test
-        void resolveControlsCellLeftStandsTheControlsAChannelBeyondTheLabelColumn() {
+        void resolveControlsElementLeftStandsTheControlsAChannelBeyondTheLabelColumn() {
             // The name is drawn at 12 across a 200-wide column, so an 8-unit channel puts the first
             // control at 220.
-            assertThat(resolveDrawnLeft(ArrangementBoxLayout.resolveControlsCellLeft()))
+            assertThat(resolveDrawnLeft(ArrangementBoxLayout.resolveControlsElementLeft()))
                 .isEqualTo(220f);
         }
 
         @Test
-        void resolveControlsCellLeftLeavesTheDrawnControlsEndingAPadInFromTheBoxEdge() {
+        void resolveControlsElementLeftLeavesTheDrawnControlsEndingAPadInFromTheBoxEdge() {
 
-            var controlsRightEdge = resolveDrawnLeft(ArrangementBoxLayout.resolveControlsCellLeft())
+            var controlsRightEdge = resolveDrawnLeft(ArrangementBoxLayout.resolveControlsElementLeft())
                 + ArrangementBoxLayout.CONTROLS_WIDTH;
 
             assertThat(ArrangementBoxLayout.BOX_WIDTH - controlsRightEdge)

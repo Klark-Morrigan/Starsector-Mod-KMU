@@ -3,8 +3,8 @@ package kmu.maplayers.base.chrome.arrange;
 /**
  * Every measurement the arranging dialog's box is built from, and the positions derived from them.
  *
- * <p>Apart from the widgets because arithmetic is checkable and widget calls are not. Where a cell
- * sits and how tall the box stands for a given number of rows are questions with answers; asking
+ * <p>Apart from the widgets because arithmetic is checkable and widget calls are not. Where an
+ * element sits and how tall the box stands for a given number of rows are questions with answers; asking
  * them of a class that also needs a running game to build a panel means they can only be answered by
  * opening the dialog and looking.
  *
@@ -18,14 +18,14 @@ package kmu.maplayers.base.chrome.arrange;
  */
 final class ArrangementBoxLayout {
 
-    // No pad of this layout's own above what a cell is given. That argument is the vertical space over
-    // a cell's contents; the horizontal inset the element adds regardless is stated separately below.
+    // No pad of this layout's own above what an element is given. That argument is the vertical space
+    // over an element's contents; the horizontal inset it adds regardless is stated separately below.
     static final float NO_PAD = 0f;
 
     // How far in from its own left edge a vanilla element draws whatever it holds. The engine gives the
     // first thing added to an element an x-align offset of five and lays every later one flush with it
-    // (com.fs.starfarer.ui.impl.StandardTooltipV2Expandable.addCustom), so a cell placed at the box's
-    // pad draws its contents that much further in again. Not ours to choose, only to account for: an
+    // (com.fs.starfarer.ui.impl.StandardTooltipV2Expandable.addCustom), so an element placed at the
+    // box's pad draws its contents that much further in again. Not ours to choose, only to account for: an
     // edge measured without this term comes out narrower than one measured with it, which is the whole
     // of why the box used to stand closer to the buttons than to the words.
     static final float VANILLA_ELEMENT_CONTENT_INSET = 5f;
@@ -60,7 +60,7 @@ final class ArrangementBoxLayout {
     static final float APPLY_BUTTON_WIDTH = 90f;
 
     // What a row's controls occupy beside its label. Named rather than subtracted back out of the box
-    // width where the cell is built: the box is as wide as its parts, so the parts are what is stated
+    // width where the element is built: the box is as wide as its parts, so the parts are what is stated
     // and the width is what follows.
     static final float CONTROLS_WIDTH =
         SHOWN_BOX_WIDTH + CONTROL_GAP + MOVE_BUTTON_WIDTH + MOVE_BUTTON_GAP + MOVE_BUTTON_WIDTH;
@@ -68,7 +68,7 @@ final class ArrangementBoxLayout {
     static final float BOX_WIDTH =
         BOX_PAD * 2f + LABEL_WIDTH + CONTROL_GAP + CONTROLS_WIDTH;
 
-    // The hint's own two lines, and the cell holding them plus the gap drawn above them - the box being
+    // The hint's own two lines, and the element holding them plus the gap above them - the box being
     // as tall as its furniture, what the gap costs is carried here.
     private static final float HINT_TEXT_HEIGHT = 40f;
     private static final float HINT_HEIGHT = HINT_TEXT_HEIGHT + TITLE_GAP;
@@ -86,7 +86,7 @@ final class ArrangementBoxLayout {
     }
 
     /**
-     * @return how wide the head's cell is - the box less the pad at either side of it
+     * @return how wide the head's element is - the box less the pad at either side of it
      */
     static float resolveHeaderWidth() {
 
@@ -94,7 +94,7 @@ final class ArrangementBoxLayout {
     }
 
     /**
-     * @return how tall the head's cell is, holding both the title and the line under it
+     * @return how tall the head's element is, holding both the title and the line under it
      */
     static float resolveHeaderHeight() {
 
@@ -112,50 +112,50 @@ final class ArrangementBoxLayout {
     }
 
     /**
-     * Where a cell reading from the box's left edge is placed - the head, and each row's name.
+     * Where an element reading from the box's left edge is placed - the head, and each row's name.
      *
-     * <p>The pad is taken off rather than handed over, because what the player sees is not the cell
-     * but what the element draws inside it. Placed at the pad, a cell draws its contents a further
+     * <p>The pad is taken off rather than handed over, because what the player sees is not the
+     * element's own edge but what it draws inside itself, a further
      * {@link #VANILLA_ELEMENT_CONTENT_INSET} in.
      *
-     * @return how far in from the box's left edge the cell itself goes
+     * @return how far in from the box's left edge the element itself goes
      */
-    static float resolveLeadingCellLeft() {
+    static float resolveLeadingElementLeft() {
 
         return BOX_PAD - VANILLA_ELEMENT_CONTENT_INSET;
     }
 
     /**
-     * Where a cell reading from the box's right edge is placed - a row's controls, and the way out.
+     * Where an element reading from the box's right edge is placed - a row's controls, and the way out.
      *
      * <p>Measured back from the box's far edge rather than accumulated rightward from what stands to
      * its left, so both edges of the box are reached by the one arithmetic and cannot drift apart as a
      * control's width moves.
      *
-     * @param contentsWidth how wide what the cell holds is
-     * @return how far in from the box's left edge the cell itself goes
+     * @param contentsWidth how wide what the element holds is
+     * @return how far in from the box's left edge the element itself goes
      */
-    static float resolveTrailingCellLeft(float contentsWidth) {
+    static float resolveTrailingElementLeft(float contentsWidth) {
 
         return BOX_WIDTH - BOX_PAD - contentsWidth - VANILLA_ELEMENT_CONTENT_INSET;
     }
 
     /**
-     * @return how far the controls cell is in from the box's left edge, so the pair of buttons ends a
+     * @return how far the controls element is in from the box's left edge, so the pair of buttons ends a
      *         pad in from the box's right edge - the same pad the row's name begins at
      */
-    static float resolveControlsCellLeft() {
+    static float resolveControlsElementLeft() {
 
-        return resolveTrailingCellLeft(CONTROLS_WIDTH);
+        return resolveTrailingElementLeft(CONTROLS_WIDTH);
     }
 
     /**
-     * @return how far the foot's cell is in from the box's left edge, the way out standing in the
+     * @return how far the foot's element is in from the box's left edge, the way out standing in the
      *         bottom right corner where the game puts its own dialogs' buttons
      */
     static float resolveFooterLeft() {
 
-        return resolveTrailingCellLeft(APPLY_BUTTON_WIDTH);
+        return resolveTrailingElementLeft(APPLY_BUTTON_WIDTH);
     }
 
     /**

@@ -54,6 +54,16 @@ enforcePackageVocabulary {
                 words: ['territory', 'territories', 'national border',
                         'contested fill', 'bloc', 'blocs']
 
+    // *Cell* means a system's polygon everywhere else under this root - the
+    // geometry that shapes one, the edges it is classified by, the hit test
+    // that finds one under the pointer. The arranging modal borrowed it for the
+    // vanilla elements its box is laid out from, which is a table's word for a
+    // thing that is not one: the modal's head and foot are cells of no row. The
+    // engine already names them - a `createUIElement` returns an element - so
+    // the modal says *element*, and the map keeps the word.
+    forbidWords under: 'kmu.maplayers.base.chrome.arrange',
+                words: ['cell', 'cells']
+
     // *Ground* is simply unclear. It stood for a cell, a cluster's fill,
     // a whole territory and the receded backdrop in different sentences of the
     // same file, so a reader had to guess which each time - and the words it

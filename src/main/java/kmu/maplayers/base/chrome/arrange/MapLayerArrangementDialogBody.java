@@ -37,8 +37,8 @@ import java.util.function.BiConsumer;
  * nothing here is edited in place, because the rows move and a set of widgets each nudged into a new
  * position would eventually disagree with the order they were drawn from.
  *
- * <p>The surface every cell stands on is one painted rectangle rather than a fill per cell, which
- * would leave the gaps between cells showing the map through.
+ * <p>The surface every element stands on is one painted rectangle rather than a fill per element,
+ * which would leave the gaps between them showing the map through.
  */
 final class MapLayerArrangementDialogBody {
 
@@ -78,7 +78,7 @@ final class MapLayerArrangementDialogBody {
         var box = dialogPanel.createCustomPanel(ArrangementBoxLayout.BOX_WIDTH, boxHeight, null);
 
         // In the order they are drawn, children being drawn in the order they were added - which is why
-        // the rule around the box is added last and rules over the cells rather than under them.
+        // the rule around the box is added last and rules over the widgets rather than under them.
         addHeader(box);
         addRows(box, rows, new ArrangementRowWidgets(editor, onRowAction));
         addFooter(box, boxHeight, onClosePressed);
@@ -139,7 +139,7 @@ final class MapLayerArrangementDialogBody {
      * Writes the box's head into {@code header}: what the box is called, and the line saying what the
      * controls under it do.
      *
-     * @param header the cell the head is drawn in, sized for both
+     * @param header the element the head is drawn in, sized for both
      */
     static void fillHeader(TooltipMakerAPI header) {
 
@@ -160,7 +160,7 @@ final class MapLayerArrangementDialogBody {
      * leaving with. Under a key of its own rather than a reworded shared one, that one also closing the
      * condition picker, where there is nothing to apply.
      *
-     * @param footer the cell the button is drawn in
+     * @param footer the element the button is drawn in
      */
     static void fillFooter(TooltipMakerAPI footer) {
 
@@ -191,26 +191,26 @@ final class MapLayerArrangementDialogBody {
     }
 
     // The rule around the box, as the game's own rectangle component rather than as anything drawn: a
-    // stroked rect of the given thickness on all four edges. It is added last so it rules over the cells
-    // rather than under them, children being drawn in the order they were added.
+    // stroked rect of the given thickness on all four edges. It is added last so it rules over the other
+    // widgets rather than under them, children being drawn in the order they were added.
     private static void addFrame(CustomPanelAPI box, float boxHeight) {
 
-        var frameCell = box.createUIElement(ArrangementBoxLayout.BOX_WIDTH, boxHeight, false);
-        var frame = frameCell.createRect(
+        var frameElement = box.createUIElement(ArrangementBoxLayout.BOX_WIDTH, boxHeight, false);
+        var frame = frameElement.createRect(
             StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
             FRAME_THICKNESS);
 
-        frameCell.addCustomDoNotSetPosition(frame)
+        frameElement.addCustomDoNotSetPosition(frame)
             .getPosition()
             .inTL(ArrangementBoxLayout.NO_PAD, ArrangementBoxLayout.NO_PAD)
             .setSize(ArrangementBoxLayout.BOX_WIDTH, boxHeight);
 
-        box.addUIElement(frameCell)
+        box.addUIElement(frameElement)
             .inTL(ArrangementBoxLayout.NO_PAD, ArrangementBoxLayout.NO_PAD);
     }
 
     // The way out, in the box's bottom right corner where the game puts its own dialogs' buttons. The
-    // cell is as wide as the one button it holds, that button being the whole of the foot.
+    // element is as wide as the one button it holds, that button being the whole of the foot.
     private static void addFooter(CustomPanelAPI box, float boxHeight, Runnable onClosePressed) {
 
         var footer = box.createUIElement(
@@ -227,7 +227,7 @@ final class MapLayerArrangementDialogBody {
                 ArrangementBoxLayout.resolveFooterTop(boxHeight));
     }
 
-    // The head's own cell, standing so its title reads from the same left edge every row's name does.
+    // The head's own element, standing so its title reads from the same left edge a row's name does.
     private static void addHeader(CustomPanelAPI box) {
 
         var header = box.createUIElement(
@@ -238,7 +238,7 @@ final class MapLayerArrangementDialogBody {
         fillHeader(header);
 
         box.addUIElement(header)
-            .inTL(ArrangementBoxLayout.resolveLeadingCellLeft(), ArrangementBoxLayout.BOX_PAD);
+            .inTL(ArrangementBoxLayout.resolveLeadingElementLeft(), ArrangementBoxLayout.BOX_PAD);
     }
 
     // The column, one row per layer, each told where its own top stands. The rows are what the box is
