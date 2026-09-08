@@ -1,16 +1,14 @@
 package kmu.maplayers.base.chrome.arrange;
 
-import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 
-import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.buttons.VanillaActionIds;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
+import kmlib.starsector.ui.layout.VanillaPositions;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
 import kmlib.starsector.ui.screen.VanillaScreen;
@@ -21,24 +19,26 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * The box the arranging dialog is made of: a title, one row per layer, the way out, and the rule around
- * them - with the dim over the screen and the box's own surface painted beneath, since the game publishes
- * a rectangle component that strokes and none that fills.
+ * The box the arranging dialog is made of: a title, a column of rows, the way out, and the rule
+ * around them - with the dim over the screen and the box's own surface painted beneath, since the
+ * game publishes a rectangle component that strokes and none that fills.
  *
- * <p>Apart from the dialog because the two change for different reasons. What the dialog is - when it
- * stands up, what it claims, when it comes down - is a question about a screen; how wide the label
- * column is and which cell sits beside which is a question about a layout. Together they were one class
- * carrying a dozen measurements and a lifecycle, and neither half could be read without the other.
+ * <p>Apart from the dialog because the two change for different reasons. What the dialog is - when
+ * it stands up, what it claims, when it comes down - is a question about a screen; what stands in
+ * the box is a question about a layout. Together they were one class carrying a lifecycle and a
+ * dozen measurements, and neither half could be read without the other.
  *
- * <p>Built whole in the constructor rather than assembled by a caller, so a body that exists is a body
- * that is on screen. A change to the arrangement makes a new one and takes the old one off; nothing
- * here is edited in place, because the rows move and a set of widgets each nudged into a new position
- * would eventually disagree with the order they were drawn from.
+ * <p>What a row is made of is {@link ArrangementRowWidgets}'s and where everything sits is
+ * {@link ArrangementBoxLayout}'s, so this is left with the furniture around the column and the two
+ * areas nothing else paints.
  *
- * <p>Every cell is a vanilla element placed by hand rather than one element told to run across, because
- * a vanilla element lays its contents out top to bottom. A row is therefore cells side by side, and the
- * surface they all stand on is one painted rectangle rather than a fill per cell, which would leave the
- * gaps between cells showing the map through.
+ * <p>Built whole in the constructor rather than assembled by a caller, so a body that exists is a
+ * body that is on screen. A change to the arrangement makes a new one and takes the old one off;
+ * nothing here is edited in place, because the rows move and a set of widgets each nudged into a new
+ * position would eventually disagree with the order they were drawn from.
+ *
+ * <p>The surface every cell stands on is one painted rectangle rather than a fill per cell, which
+ * would leave the gaps between cells showing the map through.
  */
 final class MapLayerArrangementDialogBody {
 
@@ -51,68 +51,6 @@ final class MapLayerArrangementDialogBody {
     // How thick the box's frame is stroked, in UI units. One pixel, matching the rule the game draws
     // around its own panels.
     private static final float FRAME_THICKNESS = 1f;
-
-    // A row's parts, left to right, in UI units.
-    private static final float LABEL_WIDTH = 200f;
-
-    // Wide enough for the longer of the two words rather than for a glyph, both buttons taking the one
-    // width so the pair reads as a pair rather than as two controls that happen to sit together.
-    private static final float MOVE_BUTTON_WIDTH = 54f;
-    private static final float CONTROL_HEIGHT = 20f;
-    private static final float CONTROL_GAP = 8f;
-    private static final float MOVE_BUTTON_GAP = 4f;
-
-    // Square at the row's control height, the box carrying no word to be wide enough for. Stated after
-    // the height it is taken from rather than up with the other widths, a constant being unable to
-    // read one declared below it.
-    private static final float SHOWN_BOX_WIDTH = CONTROL_HEIGHT;
-
-    private static final float ROW_HEIGHT = 28f;
-    private static final float BOX_PAD = 12f;
-
-    // Tall enough for the larger face the box is headed in, which stands above what an element's
-    // default title size would have needed.
-    private static final float TITLE_HEIGHT = 34f;
-
-    // What parts the heading from the line under it. Stated rather than left at no pad: added back to
-    // back, the two read as one block and the box has nothing that looks like a head.
-    private static final float TITLE_GAP = 10f;
-
-    // The hint's own two lines, and the cell holding them plus the gap drawn above them - the box being
-    // as tall as its furniture, what the gap costs is carried here.
-    private static final float HINT_TEXT_HEIGHT = 40f;
-    private static final float HINT_HEIGHT = HINT_TEXT_HEIGHT + TITLE_GAP;
-
-    private static final float FOOTER_HEIGHT = 34f;
-    private static final float APPLY_BUTTON_WIDTH = 90f;
-
-    // No pad of this layout's own above what a cell is given. A vanilla element still insets what it
-    // holds by a text padding of its own, which asking for none here does not remove.
-    private static final float NO_PAD = 0f;
-
-    // What the shown box says, which is nothing. The line above the column already says what the box
-    // does, so a word inside it would be that sentence repeated once per row.
-    private static final String NO_LABEL = "";
-
-    // What a row's controls occupy beside its label. Named rather than subtracted back out of the box
-    // width where the cell is built: the box is as wide as its parts, so the parts are what is stated
-    // and the width is what follows - two expressions for the one measurement would have to be kept
-    // agreeing by hand.
-    private static final float CONTROLS_WIDTH =
-        SHOWN_BOX_WIDTH + CONTROL_GAP + MOVE_BUTTON_WIDTH + MOVE_BUTTON_GAP + MOVE_BUTTON_WIDTH;
-
-    private static final float BOX_WIDTH =
-        BOX_PAD * 2f + LABEL_WIDTH + CONTROL_GAP + CONTROLS_WIDTH;
-
-    // What each row may do, and the labels its tab reads. Held for the length of the build alone - a
-    // change makes a new body rather than re-reading through this one.
-    private final MapLayerArrangementEditor editor;
-
-    // Where a press on a row's controls goes, by layer id rather than by position: the position has
-    // moved by the time a second press arrives.
-    private final BiConsumer<String, ArrangementRowAction> onRowAction;
-
-    private final Runnable onClosePressed;
 
     // The child this added to the dialog's panel, held so it can be taken off again. The panel publishes
     // no way to ask what it is holding, so what was added has to be remembered.
@@ -135,14 +73,16 @@ final class MapLayerArrangementDialogBody {
             BiConsumer<String, ArrangementRowAction> onRowAction,
             Runnable onClosePressed) {
 
-        this.editor = editor;
-        this.onRowAction = onRowAction;
-        this.onClosePressed = onClosePressed;
-
         var rows = editor.getRows();
-        var boxHeight = resolveBoxHeight(rows.size());
-        var box = dialogPanel.createCustomPanel(BOX_WIDTH, boxHeight, null);
-        fillBox(box, rows, boxHeight);
+        var boxHeight = ArrangementBoxLayout.resolveBoxHeight(rows.size());
+        var box = dialogPanel.createCustomPanel(ArrangementBoxLayout.BOX_WIDTH, boxHeight, null);
+
+        // In the order they are drawn, children being drawn in the order they were added - which is why
+        // the rule around the box is added last and rules over the cells rather than under them.
+        addHeader(box);
+        addRows(box, rows, new ArrangementRowWidgets(editor, onRowAction));
+        addFooter(box, boxHeight, onClosePressed);
+        addFrame(box, boxHeight);
 
         this.boxPlacement = dialogPanel.addComponent(box).inMid();
         this.boxPanel = box;
@@ -189,11 +129,7 @@ final class MapLayerArrangementDialogBody {
         // Read off the placement the layout settled rather than the numbers it was laid out from, exactly
         // as the input claim is, so a resized window moves the fill with the box.
         UiFill.renderQuad(
-            new Rectangle(
-                boxPlacement.getX(),
-                boxPlacement.getY(),
-                boxPlacement.getWidth(),
-                boxPlacement.getHeight()),
+            VanillaPositions.toRectangle(boxPlacement),
             new UiElementPaint(
                 StarsectorUiColour.BLACK.resolve(),
                 BOX_ALPHA * alphaMult));
@@ -213,7 +149,7 @@ final class MapLayerArrangementDialogBody {
         header.setTitleOrbitronLarge();
         header.addTitle(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_TITLE));
 
-        composeHint().addTo(header, TITLE_GAP);
+        composeHint().addTo(header, ArrangementBoxLayout.TITLE_GAP);
     }
 
     /**
@@ -231,53 +167,9 @@ final class MapLayerArrangementDialogBody {
         footer.addButton(
             KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_APPLY),
             KmuStrings.MAP_LAYER_ARRANGE_APPLY,
-            APPLY_BUTTON_WIDTH,
-            CONTROL_HEIGHT,
-            NO_PAD);
-    }
-
-    /**
-     * Writes a row's name into {@code labelCell}, in the shade its state calls for.
-     *
-     * <p>A row whose tab is off the bar is drawn muted. The box beside it states the choice and the
-     * shade confirms it, so a column of rows answers "what have I taken off the bar" at a glance
-     * rather than one box at a time.
-     *
-     * <p>The shade is read off the row's own state rather than off what the editor will allow to
-     * change: the last row still on the bar cannot be taken off it, and it is nonetheless on it.
-     *
-     * @param labelCell the cell the name is drawn in
-     * @param row       the layer whose name is drawn
-     */
-    static void addRowLabel(TooltipMakerAPI labelCell, MapLayerArrangementRow row) {
-
-        var shade = row.isHidden()
-            ? StarsectorUiColour.VANILLA_GRAY
-            : StarsectorUiColour.VANILLA_TEXT;
-
-        labelCell.addPara(row.layerLabel(), shade.resolve(), NO_PAD);
-    }
-
-    /**
-     * Adds a row's shown box to {@code controlsCell}, square and wordless.
-     *
-     * <p>Its state is the caller's to set: whether the box is ticked and whether it may be pressed are
-     * both answered from the arrangement, which this does not hold.
-     *
-     * @param controlsCell the cell the box is drawn in
-     * @return the box, so the caller can state it and place the pair beside it
-     */
-    static ButtonAPI addShownBox(TooltipMakerAPI controlsCell) {
-
-        return controlsCell.addAreaCheckbox(
-            NO_LABEL,
-            ArrangementRowAction.TOGGLE_SHOWN,
-            StarsectorUiColour.VANILLA_BUTTON_BG_DARK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_DARK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_BRIGHT.resolve(),
-            SHOWN_BOX_WIDTH,
-            CONTROL_HEIGHT,
-            NO_PAD);
+            ArrangementBoxLayout.APPLY_BUTTON_WIDTH,
+            ArrangementBoxLayout.CONTROL_HEIGHT,
+            ArrangementBoxLayout.NO_PAD);
     }
 
     // The line under the heading, and the three words in it that name something on screen: the two
@@ -298,127 +190,69 @@ final class MapLayerArrangementDialogBody {
             Highlight.of(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_HINT_UNCHECK), highlight));
     }
 
-    // How tall the box stands for this many rows: its fixed furniture plus the column.
-    private static float resolveBoxHeight(int rowCount) {
-
-        return BOX_PAD * 2f + TITLE_HEIGHT + HINT_HEIGHT + FOOTER_HEIGHT + rowCount * ROW_HEIGHT;
-    }
-
     // The rule around the box, as the game's own rectangle component rather than as anything drawn: a
     // stroked rect of the given thickness on all four edges. It is added last so it rules over the cells
     // rather than under them, children being drawn in the order they were added.
     private static void addFrame(CustomPanelAPI box, float boxHeight) {
 
-        var frameCell = box.createUIElement(BOX_WIDTH, boxHeight, false);
+        var frameCell = box.createUIElement(ArrangementBoxLayout.BOX_WIDTH, boxHeight, false);
         var frame = frameCell.createRect(
             StarsectorUiColour.VANILLA_PLAYER_BASE.resolve(),
             FRAME_THICKNESS);
 
         frameCell.addCustomDoNotSetPosition(frame)
             .getPosition()
-            .inTL(NO_PAD, NO_PAD)
-            .setSize(BOX_WIDTH, boxHeight);
+            .inTL(ArrangementBoxLayout.NO_PAD, ArrangementBoxLayout.NO_PAD)
+            .setSize(ArrangementBoxLayout.BOX_WIDTH, boxHeight);
 
-        box.addUIElement(frameCell).inTL(NO_PAD, NO_PAD);
-    }
-
-    // One of the pair that moves a row, at the row's control size. Named apart because the two differ
-    // only in their word and their action, and a second copy of the five-argument call would be a
-    // second place for the size to drift.
-    private static ButtonAPI addMoveButton(
-            TooltipMakerAPI controlsCell,
-            String labelKey,
-            ArrangementRowAction action) {
-
-        return controlsCell.addButton(
-            KmuStrings.get(labelKey),
-            action,
-            MOVE_BUTTON_WIDTH,
-            CONTROL_HEIGHT,
-            NO_PAD);
-    }
-
-    // The box's widgets: its head, one row per layer, the way out, and the rule around them all. The
-    // surface they stand on is not among them - the game publishes a rectangle that strokes and none
-    // that fills, so the fill is painted in renderFills and only its rule is composed here.
-    private void fillBox(CustomPanelAPI box, List<MapLayerArrangementRow> rows, float boxHeight) {
-
-        var header = box.createUIElement(BOX_WIDTH - BOX_PAD * 2f, TITLE_HEIGHT + HINT_HEIGHT, false);
-        fillHeader(header);
-        box.addUIElement(header).inTL(BOX_PAD, BOX_PAD);
-
-        for (var rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
-
-            addRow(
-                box,
-                rows.get(rowIndex),
-                BOX_PAD + TITLE_HEIGHT + HINT_HEIGHT + rowIndex * ROW_HEIGHT);
-        }
-        addFooter(box, boxHeight);
-        addFrame(box, boxHeight);
-    }
-
-    // One layer's row: what its tab says, whether that tab is on the bar, and the two move buttons.
-    private void addRow(CustomPanelAPI box, MapLayerArrangementRow row, float rowTop) {
-
-        var labelCell = box.createUIElement(LABEL_WIDTH, ROW_HEIGHT, false);
-        addRowLabel(labelCell, row);
-        box.addUIElement(labelCell).inTL(BOX_PAD, rowTop);
-
-        var controlsCell = box.createUIElement(CONTROLS_WIDTH, ROW_HEIGHT, false);
-        controlsCell.setActionListenerDelegate(
-            (buttonId, data) -> reportRowAction(row.layerId(), buttonId, data));
-
-        var shownBox = addShownBox(controlsCell);
-        shownBox.setChecked(!row.isHidden());
-        shownBox.setEnabled(editor.canToggleRowHidden(row.layerId()));
-
-        var upButton = addMoveButton(
-            controlsCell,
-            KmuStrings.MAP_LAYER_ARRANGE_MOVE_UP,
-            ArrangementRowAction.MOVE_UP);
-        upButton.getPosition().rightOfMid(shownBox, CONTROL_GAP);
-        upButton.setEnabled(editor.canMoveRowUp(row.layerId()));
-
-        var downButton = addMoveButton(
-            controlsCell,
-            KmuStrings.MAP_LAYER_ARRANGE_MOVE_DOWN,
-            ArrangementRowAction.MOVE_DOWN);
-        downButton.getPosition().rightOfMid(upButton, MOVE_BUTTON_GAP);
-        downButton.setEnabled(editor.canMoveRowDown(row.layerId()));
-
-        box.addUIElement(controlsCell).inTL(BOX_PAD + LABEL_WIDTH + CONTROL_GAP, rowTop);
+        box.addUIElement(frameCell)
+            .inTL(ArrangementBoxLayout.NO_PAD, ArrangementBoxLayout.NO_PAD);
     }
 
     // The way out, in the box's bottom right corner where the game puts its own dialogs' buttons. The
     // cell is as wide as the one button it holds, that button being the whole of the foot.
-    private void addFooter(CustomPanelAPI box, float boxHeight) {
+    private static void addFooter(CustomPanelAPI box, float boxHeight, Runnable onClosePressed) {
 
-        var footer = box.createUIElement(APPLY_BUTTON_WIDTH, FOOTER_HEIGHT, false);
+        var footer = box.createUIElement(
+            ArrangementBoxLayout.APPLY_BUTTON_WIDTH,
+            ArrangementBoxLayout.FOOTER_HEIGHT,
+            false);
+
         footer.setActionListenerDelegate((buttonId, data) -> onClosePressed.run());
         fillFooter(footer);
 
         box.addUIElement(footer)
-            .inTL(BOX_WIDTH - BOX_PAD - APPLY_BUTTON_WIDTH, boxHeight - FOOTER_HEIGHT);
+            .inTL(
+                ArrangementBoxLayout.resolveFooterLeft(),
+                ArrangementBoxLayout.resolveFooterTop(boxHeight));
     }
 
-    // A press on a row's controls, passed on once it is one of ours. A press carrying anything else -
-    // another mod's, or one left over from a column already rebuilt - is dropped here rather than
-    // reaching the editor as a guess.
-    //
-    // Both objects the delegate is handed are searched, because which of them carries the id is the
-    // engine's business and differs by widget: the panel passes the button and expects the id to be read
-    // off it, while other surfaces hand the id over directly. Reading one position alone is why this did
-    // nothing at all - the press arrived, the test failed, and there was nothing to report it.
-    private void reportRowAction(String layerId, Object firstArgument, Object secondArgument) {
+    // The head's own cell, standing a pad in from the box's top left corner.
+    private static void addHeader(CustomPanelAPI box) {
 
-        var action = VanillaActionIds.resolveActionId(
-            firstArgument,
-            secondArgument,
-            ArrangementRowAction.class);
+        var header = box.createUIElement(
+            ArrangementBoxLayout.resolveHeaderWidth(),
+            ArrangementBoxLayout.resolveHeaderHeight(),
+            false);
 
-        if (action != null) {
-            onRowAction.accept(layerId, action);
+        fillHeader(header);
+
+        box.addUIElement(header).inTL(ArrangementBoxLayout.BOX_PAD, ArrangementBoxLayout.BOX_PAD);
+    }
+
+    // The column, one row per layer, each told where its own top stands. The rows are what the box is
+    // sized around, so nothing here decides how far down they reach.
+    private static void addRows(
+            CustomPanelAPI box,
+            List<MapLayerArrangementRow> rows,
+            ArrangementRowWidgets rowWidgets) {
+
+        for (var rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+
+            rowWidgets.addRowTo(
+                box,
+                rows.get(rowIndex),
+                ArrangementBoxLayout.resolveRowTop(rowIndex));
         }
     }
 }

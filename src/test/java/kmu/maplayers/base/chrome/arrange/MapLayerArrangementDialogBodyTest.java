@@ -30,10 +30,6 @@ import static org.mockito.Mockito.verify;
  * <p>The foot is held because its word is a claim about the box: nothing in it is held back to be
  * committed, so the way out names what the player leaves with. A button that said Close would say
  * the arrangement had merely been abandoned.
- *
- * <p>A row is held for the opposite reason: it says nothing, and shows its state instead. So what is
- * pinned there is the shade its name takes and the absence of a word in its box - two things a reader
- * of the class cannot tell from a widget call that would still compile either way.
  */
 final class MapLayerArrangementDialogBodyTest {
 
@@ -121,98 +117,6 @@ final class MapLayerArrangementDialogBodyTest {
 
             verify(footerMock)
                 .addButton(eq("Apply"), any(), anyFloat(), anyFloat(), anyFloat());
-        }
-    }
-
-    @Nested
-    class AddRowLabel {
-
-        @Test
-        void addRowLabelMutesARowWhoseTabIsOffTheBar() {
-
-            var labelCellMock = mock(TooltipMakerAPI.class);
-            ParagraphLabelMock.mockLabelOn(labelCellMock);
-
-            MapLayerArrangementDialogBody.addRowLabel(
-                labelCellMock,
-                new MapLayerArrangementRow("kmu_political", "Political", true));
-
-            verify(labelCellMock)
-                .addPara(eq("Political"), eq(StarsectorUiColoursMock.UI_GRAY), anyFloat());
-        }
-
-        @Test
-        void addRowLabelDrawsARowWhoseTabIsOnTheBarInTheOrdinaryShade() {
-
-            var labelCellMock = mock(TooltipMakerAPI.class);
-            ParagraphLabelMock.mockLabelOn(labelCellMock);
-
-            MapLayerArrangementDialogBody.addRowLabel(
-                labelCellMock,
-                new MapLayerArrangementRow("kmu_political", "Political", false));
-
-            verify(labelCellMock)
-                .addPara(eq("Political"), eq(StarsectorUiColoursMock.UI_TEXT), anyFloat());
-        }
-
-        @Test
-        void addRowLabelDrawsTheLastRowLeftOnTheBarUnmuted() {
-            // The row whose box the editor refuses, that box being the one that would empty the bar.
-            // Refused and off the bar are different things, and the shade answers the second: a row
-            // that cannot be taken off is still on.
-            var labelCellMock = mock(TooltipMakerAPI.class);
-            ParagraphLabelMock.mockLabelOn(labelCellMock);
-
-            MapLayerArrangementDialogBody.addRowLabel(
-                labelCellMock,
-                new MapLayerArrangementRow("kmu_political", "Political", false));
-
-            verify(labelCellMock)
-                .addPara(eq("Political"), eq(StarsectorUiColoursMock.UI_TEXT), anyFloat());
-        }
-    }
-
-    @Nested
-    class AddShownBox {
-
-        @Test
-        void addShownBoxCarriesNoWord() {
-            // The hint over the column already says what the box does, so a word in the box would be
-            // that sentence repeated once per row.
-            var controlsCellMock = mock(TooltipMakerAPI.class);
-
-            MapLayerArrangementDialogBody.addShownBox(controlsCellMock);
-
-            verify(controlsCellMock)
-                .addAreaCheckbox(
-                    eq(""),
-                    any(),
-                    any(Color.class),
-                    any(Color.class),
-                    any(Color.class),
-                    anyFloat(),
-                    anyFloat(),
-                    anyFloat());
-        }
-
-        @Test
-        void addShownBoxStandsSquareAtTheRowsControlHeight() {
-            // With the word gone the box has nothing to be wide for, and a box wider than it is tall
-            // would read as a button whose label failed to load.
-            var controlsCellMock = mock(TooltipMakerAPI.class);
-
-            MapLayerArrangementDialogBody.addShownBox(controlsCellMock);
-
-            verify(controlsCellMock)
-                .addAreaCheckbox(
-                    any(),
-                    any(),
-                    any(Color.class),
-                    any(Color.class),
-                    any(Color.class),
-                    eq(20f),
-                    eq(20f),
-                    anyFloat());
         }
     }
 }

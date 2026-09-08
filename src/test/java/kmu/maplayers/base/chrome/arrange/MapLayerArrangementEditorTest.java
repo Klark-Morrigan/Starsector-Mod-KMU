@@ -1,14 +1,11 @@
 package kmu.maplayers.base.chrome.arrange;
 
 import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerArrangement;
-import kmu.maplayers.base.layer.MapLayerArrangementSelection;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -261,34 +258,5 @@ final class MapLayerArrangementEditorTest {
         return editor.getRows().stream()
             .map(MapLayerArrangementRow::layerId)
             .toList();
-    }
-
-    // A store that answers whatever a case posed and keeps whatever was written to it, so a test can
-    // say both what the player had arranged and what the dialog recorded over it.
-    private static final class ArrangementSelectionFake implements MapLayerArrangementSelection {
-
-        private MapLayerArrangement heldArrangement = MapLayerArrangement.UNARRANGED;
-
-        private MapLayerArrangement recordedArrangement;
-
-        void holdArrangement(List<String> orderedLayerIds, List<String> hiddenLayerIds) {
-            heldArrangement = new MapLayerArrangement(
-                new ArrayList<>(orderedLayerIds),
-                new ArrayList<>(hiddenLayerIds));
-        }
-
-        MapLayerArrangement getRecordedArrangement() {
-            return recordedArrangement;
-        }
-
-        @Override
-        public MapLayerArrangement readArrangement() {
-            return heldArrangement;
-        }
-
-        @Override
-        public void recordArrangement(MapLayerArrangement arrangement) {
-            recordedArrangement = arrangement;
-        }
     }
 }

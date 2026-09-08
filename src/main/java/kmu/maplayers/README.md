@@ -243,24 +243,9 @@ bar once does not order it again per save.
   the row being assembled on every frame the sidebar draws and every key it routes, which is more
   often than a file may be opened. An arrangement recorded through that holding is what the next
   frame reads, rather than what the next start does.
-- **The arranging dialog** - what writes that arrangement, in `base/chrome/arrange`. Opened from the
-  bar and from nowhere else: no key is bound to it, a bar that is on screen needing no second way in.
-  `MapLayerArrangementEditor` is the whole of what the dialog does - the rows in bar order with
-  hidden tabs among them, since this is the only way one comes back; **Up** and **Down** buttons that
-  swap a row with its neighbour, disabled at the ends of their travel; and a toggle that refuses the
-  last tab still on the bar, which is the same guard `ArrangedLayers` keeps against a hand-edited
-  store, made here so the click is never offered. A row shows its state rather than saying it: the
-  box carries no word, the line over the column saying what it does once rather than once per row,
-  and a layer whose tab is off the bar has its name drawn in the muted shade - so the column answers
-  "what have I taken off" at a glance. Every change is recorded at once rather than
-  drafted, the bar behind the dialog being the thing arranged - so the one way out says **Apply**
-  rather than Close, and there is no Cancel beside it. `MapLayerArrangementDialog` is the surface, a
-  vanilla `CustomPanelAPI` stood in the core UI's own tree by KMLib's `CoreUiOverlayPanels` with
-  nothing painted into the map's render pass; it supplies its own backdrop and its own input claim,
-  the game dimming nothing behind a panel added that way, and publishes `isDialogRaised()` for the
-  map-side gates that stand down under a modal but cannot recognise this one.
-  `MapLayerArrangementDialogBody` is its widgets and the measurements they stand at, rebuilt whole on
-  every change.
+- **[The arranging dialog](base/chrome/README.md#the-arranging-dialog)** - what writes that
+  arrangement, opened from the bar and from nowhere else. Its rules, its modality and the box it
+  stands in are [the map chrome README](base/chrome/README.md)'s.
 - **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
   that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
@@ -745,37 +730,9 @@ bar once does not order it again per save.
   [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
-- **`base/chrome`** - what the mod puts on the game's own map chrome rather than over it: one tick
-  box appended to the vanilla filter row, the strip carrying Starscape, Names and the rest, showing
-  and moving that screen's show-or-hide pick. So hiding the layers - the sidebar with them - is
-  where a player already looks for "show or hide this map furniture". `MapLayerToggleUpkeep` is the
-  standing pass that keeps the box on whichever row is up, the game rebuilding its row on every
-  open - stood up per sector by `MapChromeInstaller` behind the feature switch the rest of the
-  overlay is behind, and transient like the rest of it, two passes being two boxes over one pick;
-  `MapLayerToggleAttacher` is the write, held behind a seam because standing a control on
-  another party's widget is a reach into the running game's tree, and
-  `VanillaMapLayerToggleAttacher` is that reach, over KMLib's `MapFilterToggle`. Everything here
-  fails open - no row, no room, a shape that no longer builds a drivable button, a read that throws
-  - to no control, one line in the log, and a map behaving as it did before the box existed. Failing
-  open has a second half no log line covers: the upkeep is also the only thing that says a screen has
-  a control, said once a box is actually standing rather than when one is attempted, so a screen it
-  never writes to goes on showing its layers whatever the save holds. That word is what
-  `ControlBackedMapLayerVisibility` acts on, and a box is bound to the stored pick underneath it, so
-  it shows the choice the player made rather than the reading that rule gives everything else. The
-  same word withholds the No Layer tab from that screen, so the first box to stand on a screen still
-  set to it moves the pick to the default layer and stores a hide - the map is as blank as it was,
-  under a box that now says so. Once per screen, on the first box up, and never on a row that
-  refused one. The upkeep holds each screen's box rather than only recording that one went up, and
-  writes what it shows from the pick every frame: the pick moves under a standing box - that move
-  does it, and so does a hatch closed and reopened over one - and the row offers no way to take a
-  box off and put a fresh one up in its place.
-  Whether it is attempted at all is `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev hatch
-  rather than an appearance knob, since what it governs is the reach and not the look. Which key
-  ticks it is `kmu_map_keybinds_filters_mapLayersToggle`, default M, read afresh at each attachment
-  the way the box's words are - so a rebind reaches the next screen the player opens rather than
-  waiting for the next load - and cleared with Escape leaves the box answering no key at all. Not a
-  digit, the row's own six being digits and nothing in the game able to say which of them a screen
-  has already taken.
+- **[Map chrome](base/chrome/README.md)** - what the mod puts on the game's own map chrome rather
+  than over it, which is the two places the overlay reaches into a widget tree somebody else built:
+  the tick box appended to the vanilla filter row, and the dialog the layer bar is arranged in.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
   draw pipeline behind them.
 - **`MapLayers`** - the composition root, the single place every concrete layer, political-map view,

@@ -12,8 +12,6 @@ import kmlib.starsector.ui.map.probes.ShownMapTab;
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 
-import org.lwjgl.input.Keyboard;
-
 import java.util.List;
 
 /**
@@ -38,11 +36,8 @@ import java.util.List;
  * reading the game's modal base, so the map-side gates that stand down under one read
  * {@link #isDialogRaised()} beside that reading.
  *
- * <p>Only mouse events inside the dialog's own box are left alone, and everything else is claimed.
- * That way round rather than "claim everything" because the order in which the game hands events to a
- * panel's widgets and to its plugin is the game's business: leaving the box's own events untouched is
- * correct whichever way round it is, while claiming them first would leave the dialog's buttons dead
- * on a build that dispatches to the plugin first.
+ * <p>Which events that claim takes and which it leaves alone is
+ * {@link ArrangementDialogEventResponse}'s; this acts on the answer.
  *
  * <p>Closes itself when the map goes off screen. The panel hangs from the core UI rather than from the
  * screen it was opened on, so nothing about leaving that screen takes it down - and a dialog left
@@ -100,9 +95,10 @@ public final class MapLayerArrangementDialog {
             return;
         }
 
-        var panel = Global.getSettings().createCustom(
-            Global.getSettings().getScreenWidth(),
-            Global.getSettings().getScreenHeight(),
+        var settings = Global.getSettings();
+        var panel = settings.createCustom(
+            settings.getScreenWidth(),
+            settings.getScreenHeight(),
             new DialogPanelPlugin());
 
         var placement = CoreUiOverlayPanels.attachOverlayPanel(panel);
@@ -207,20 +203,20 @@ public final class MapLayerArrangementDialog {
 
             for (var event : events) {
 
-                // Asked first because a consumed event's own accessors throw, and every test below
-                // reads one.
-                if (event.isConsumed()) {
+                var response = ArrangementDialogEventResponse.resolveResponseTo(
+                    event,
+                    MapLayerArrangementDialog.this::isEventInsideDialogBox);
+
+                if (response == ArrangementDialogEventResponse.LEAVE_ALONE) {
                     continue;
                 }
+                event.consume();
 
-                if (event.isKeyDownEvent() && event.getEventValue() == Keyboard.KEY_ESCAPE) {
-                    event.consume();
+                // Nothing after the dialog has come down is this plugin's to answer for: the panel it
+                // hangs in is already off the screen.
+                if (response == ArrangementDialogEventResponse.CLOSE_DIALOG) {
                     closeDialog();
                     return;
-                }
-
-                if (!isEventInsideDialogBox(event)) {
-                    event.consume();
                 }
             }
         }
