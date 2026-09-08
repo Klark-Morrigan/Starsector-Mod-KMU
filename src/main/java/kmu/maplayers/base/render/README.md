@@ -12,6 +12,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 - [Who gets the frame](#who-gets-the-frame)
 - [Bands](#bands)
 - [One preparation per frame, one cursor read per pass](#one-preparation-per-frame-one-cursor-read-per-pass)
+- [What a frame costs](#what-a-frame-costs)
 - [Silencing a minimap parked off screen](#silencing-a-minimap-parked-off-screen)
 - [Three terrains, one draw](#three-terrains-one-draw)
 - [Where the Starscape surfaces sit in the draw order](#where-the-starscape-surfaces-sit-in-the-draw-order)
@@ -147,6 +148,36 @@ different cells is exactly what a foreign transform produces, so a latch stepped
 report a crossing on every frame the pointer rests still. `MapHoverPublisher` therefore keeps what
 its passes settled on and answers the moment once, from the preparation - one frame behind the read,
 which is 16ms and inaudible.
+
+## What a frame costs
+
+`MapFrameSections` names the beats a frame is profiled under, and the sequence above is what those
+names describe: `mapLayer.prepare` with `mapLayer.refresh` inside it, `mapLayer.hoverPublish` per
+pass, `mapLayer.render.beneathNebulae` / `mapLayer.render.aboveNebulae` per band, and
+`mapLayer.tooltip`. Published rather than spelled at each site, so a consumer layer names the beat
+it runs under from one place and a reader matching a name in a report finds the point in the
+sequence it belongs to.
+
+Each beat opens a **root** under the sector's profiling origin, which
+[the installed machinery](../installation/README.md) resolves once per sector. Roots rather than one
+tree per frame because the beats are separate calls from separate passes with nothing bracketing
+them, and grouping by origin is what lets a capture taken across two games say which one a row came
+from.
+
+The refresh is the exception: it is opened *inside* the preparation rather than as a root of its
+own. The sequence puts it there, and a refresh hung off its own root would leave the preparation's
+inclusive total excluding the dearest thing it does.
+
+Inside each beat sits one row per layer, `mapLayer.layer.<layer id>`, opened around the layer's
+callback rather than by the layer. So what a layer costs is read against the beat it cost it in, a
+layer that measures nothing of its own still has a row, and every section the layer's own work opens
+lands beneath its row instead of beside it - which is what puts `politicalMap.updateGeometry` and its
+siblings under the refresh they ran in. The stand-down reads sit inside the beat and outside that
+row, so a frame with nothing to draw reports what standing down cost and opens no row for a layer
+that never ran.
+
+Nothing is recorded unless a profiler is bound: the library's default keeps nothing and allocates
+nothing, so an unmeasured frame pays a virtual call per beat and no more.
 
 ## Silencing a minimap parked off screen
 

@@ -2,6 +2,9 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileOrigin;
+import kmlib.profiling.ProfileSection;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
@@ -13,6 +16,7 @@ import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -58,6 +62,13 @@ import java.util.function.Function;
  * and what moment the frame before settled on. None of those changes between two passes of one
  * frame, and the dearest of them walks the live widget tree, so a pass asks only what its own
  * transform can answer.
+ *
+ * <p>Each of those beats is also where a frame's profiling rows begin. Every beat opens a root
+ * under this sector's origin, so a capture taken across two games says which one a row was measured
+ * in, and this layer's own row is opened inside that root around the work - which is what puts every
+ * section the work opens beneath the beat it ran in rather than beside it. The stand-down reads sit
+ * inside the root and outside the layer's row, so a frame with nothing to draw reports what standing
+ * down cost and opens nothing for a layer that did not run.
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
@@ -74,6 +85,13 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // because the frame it is parked on is this sector's frame: a park taken against the running
     // game would leave the cell this sector had lit standing while clearing another sector's.
     private final MapHoverState hoverState;
+
+    // Which game this renderer's rows are grouped under, and the row its own work sits on inside
+    // each beat. Both are resolved once and held because they are opened several times a frame:
+    // the origin is composed from facts that do not change while a sector is loaded, and the layer
+    // section is a name concatenated from an id that never changes at all.
+    private final ProfileOrigin profilingOrigin;
+    private final ProfileSection layerSection;
 
     // Whether anything is drawn over the map where the cursor rests. Handed in rather than composed
     // here, so this layer neither names the things that can cover a map nor holds a set another
@@ -125,12 +143,16 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             MapCoverReader mapCoverReader,
             MapHoverState hoverState,
             Function<MapHoverState, MapHoverPublisher> hoverPublisherSource,
-            PoliticalMapPreviewHighlightRenderer previewHighlightRenderer) {
+            PoliticalMapPreviewHighlightRenderer previewHighlightRenderer,
+            ProfileOrigin profilingOrigin,
+            ProfileSection layerSection) {
 
         this.cache = cache;
         this.mapCoverReader = mapCoverReader;
         this.hoverState = hoverState;
         this.hoverPublisherSource = hoverPublisherSource;
+        this.profilingOrigin = profilingOrigin;
+        this.layerSection = layerSection;
         this.overlayRenderer =
             new PoliticalMapOverlayRenderer(hoverState, previewHighlightRenderer);
     }
@@ -142,16 +164,25 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      *
      * @param installation the machinery this renderer is being made for, whose sector its cache cuts
      *                     its cells from, whose movers that cut leaves out, whose hover holder the
-     *                     cursor read publishes into, and whose picker the preview is read off
+     *                     cursor read publishes into, whose picker the preview is read off, and
+     *                     whose origin its profiling rows are grouped under
+     * @param layerId      the id of the layer this renderer draws, which its rows are reported
+     *                     under - handed in by the layer rather than named here, so the renderer
+     *                     holds no second spelling of an id the layer already owns
      * @return a renderer for that installation, its cache empty until the first frame builds it
      */
-    public static PoliticalMapLayerRenderer createForLiveScreen(MapLayerInstallation installation) {
+    public static PoliticalMapLayerRenderer createForLiveScreen(
+            MapLayerInstallation installation,
+            String layerId) {
+
         return new PoliticalMapLayerRenderer(
             new PoliticalMapCache(installation),
             MapCoverReader.createForLiveScreen(),
             installation.resolveHoverState(),
             PoliticalMapLayerRenderer::buildLiveHoverPublisher,
-            new PoliticalMapPreviewHighlightRenderer(installation));
+            new PoliticalMapPreviewHighlightRenderer(installation),
+            installation.resolveProfilingOrigin(),
+            MapFrameSections.resolveLayerSection(layerId));
     }
 
     /**
@@ -168,53 +199,79 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     @Override
     public void prepareFrame(float factor) {
-        // Stands down when no political-map view is active - the tab is open with every view
-        // deselected. Gating the refresh on one view read keeps a dark overlay near-free per frame,
-        // and reading the view - not a named faction gate - is what lets any registered view draw
-        // here.
-        var view = PoliticalMapViewRegistry.getActiveView();
-        if (view == null) {
-            // The frame's passes stand down with it, or a deselected view would still pay for a
-            // matrix read per pass.
-            isHoverWantedThisFrame = false;
-            return;
+        var profiler = ActiveProfiler.resolveProfiler();
+
+        try (var beatScope = profiler.openRoot(profilingOrigin, MapFrameSections.PREPARE)) {
+            // Stands down when no political-map view is active - the tab is open with every view
+            // deselected. Gating the refresh on one view read keeps a dark overlay near-free per
+            // frame, and reading the view - not a named faction gate - is what lets any registered
+            // view draw here.
+            var view = PoliticalMapViewRegistry.getActiveView();
+            if (view == null) {
+                // The frame's passes stand down with it, or a deselected view would still pay for a
+                // matrix read per pass.
+                isHoverWantedThisFrame = false;
+                return;
+            }
+            try (var layerScope = profiler.open(layerSection)) {
+                iconOrderTrace.traceWhenChanged();
+                widgetsUnderCursorTrace.traceWhenChanged();
+                announceArrivalOnTheFrameJustClosed();
+                decideWhetherTheHoverIsWantedThisFrame();
+
+                try (var refreshScope = profiler.open(MapFrameSections.REFRESH)) {
+                    cache.refresh(view);
+                }
+            }
         }
-        iconOrderTrace.traceWhenChanged();
-        widgetsUnderCursorTrace.traceWhenChanged();
-        announceArrivalOnTheFrameJustClosed();
-        decideWhetherTheHoverIsWantedThisFrame();
-        cache.refresh(view);
     }
 
     @Override
     public void renderOnMap(float factor, float alphaMult, MapOverlayBand band) {
-        // The same view read the preparation above stands down on, repeated rather than remembered:
-        // it is a registry lookup, and a field holding the frame's answer would be render state on a
-        // renderer that deliberately holds none.
-        var view = PoliticalMapViewRegistry.getActiveView();
-        if (view == null) {
-            return;
+        var profiler = ActiveProfiler.resolveProfiler();
+
+        // Per band rather than per frame: each band is a pass of its own from a surface of its own,
+        // and what the two cost is the question the split exists to answer.
+        try (var beatScope = profiler.openRoot(
+                profilingOrigin,
+                MapFrameSections.resolveRenderSection(band))) {
+
+            // The same view read the preparation above stands down on, repeated rather than
+            // remembered: it is a registry lookup, and a field holding the frame's answer would be
+            // render state on a renderer that deliberately holds none.
+            var view = PoliticalMapViewRegistry.getActiveView();
+            if (view == null) {
+                return;
+            }
+            try (var layerScope = profiler.open(layerSection)) {
+                overlayRenderer.renderOnMap(cache, factor, alphaMult, band);
+            }
         }
-        overlayRenderer.renderOnMap(cache, factor, alphaMult, band);
     }
 
     @Override
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
-        // This layer's own tooltip switch, off means no box from it - and the framework draws
-        // whatever the other layers offer regardless, which is the point of scoping it here rather
-        // than at the dispatcher.
-        if (!PoliticalMapHoverGates.isHoverTooltipEnabled()) {
-            return Optional.empty();
+        var profiler = ActiveProfiler.resolveProfiler();
+
+        try (var beatScope = profiler.openRoot(profilingOrigin, MapFrameSections.TOOLTIP)) {
+            // This layer's own tooltip switch, off means no box from it - and the framework draws
+            // whatever the other layers offer regardless, which is the point of scoping it here
+            // rather than at the dispatcher.
+            if (!PoliticalMapHoverGates.isHoverTooltipEnabled()) {
+                return Optional.empty();
+            }
+            // The hover box is resolved through the active view for the same reason the paint is:
+            // which view is up decides what there is to say about a system - the faction and
+            // alliance views show the domination breakdown, the claims view none - and the
+            // dispatcher above learns only that this layer has a box, or has not.
+            var view = PoliticalMapViewRegistry.getActiveView();
+            if (view == null) {
+                return Optional.empty();
+            }
+            try (var layerScope = profiler.open(layerSection)) {
+                return view.resolveHoverTooltip();
+            }
         }
-        // The hover box is resolved through the active view for the same reason the paint is: which
-        // view is up decides what there is to say about a system - the faction and alliance views show
-        // the domination breakdown, the claims view none - and the dispatcher above learns only that
-        // this layer has a box, or has not.
-        var view = PoliticalMapViewRegistry.getActiveView();
-        if (view == null) {
-            return Optional.empty();
-        }
-        return view.resolveHoverTooltip();
     }
 
     /**
@@ -230,20 +287,25 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      */
     @Override
     public void publishHoverForPass(float factor) {
+        var profiler = ActiveProfiler.resolveProfiler();
 
-        if (!isHoverWantedThisFrame) {
-            return;
+        try (var beatScope = profiler.openRoot(profilingOrigin, MapFrameSections.HOVER_PUBLISH)) {
+            if (!isHoverWantedThisFrame) {
+                return;
+            }
+            if (hoverPublisher == null) {
+                hoverPublisher = hoverPublisherSource.apply(hoverState);
+            }
+            try (var layerScope = profiler.open(layerSection)) {
+                // The cursor read sits between the frame's refresh and this pass's draw: after the
+                // refresh, so it tests against the shapes the frame actually paints, and before the
+                // draw, so the highlight layers have an answer when they emit. It is the one point
+                // in a pass with both the live GL matrices it needs and the current draw lists. The
+                // draw lists are handed over as the hover targets they satisfy - null when nothing
+                // was painted, which the publisher parks on.
+                hoverPublisher.publishHoverFrom(cache.getTerritories(), factor);
+            }
         }
-        if (hoverPublisher == null) {
-            hoverPublisher = hoverPublisherSource.apply(hoverState);
-        }
-        // The cursor read sits between the frame's refresh and this pass's draw: after the refresh,
-        // so it tests against the shapes the frame actually paints, and before the draw, so the
-        // highlight layers have an answer when they emit. It is the one point in a pass with both
-        // the live GL matrices it needs and the current draw lists. The draw lists are handed over
-        // as the hover targets they satisfy - null when nothing was painted, which the publisher
-        // parks on.
-        hoverPublisher.publishHoverFrom(cache.getTerritories(), factor);
     }
 
     // Settles whether this frame's passes are to read the cursor, and parks the hover when they are

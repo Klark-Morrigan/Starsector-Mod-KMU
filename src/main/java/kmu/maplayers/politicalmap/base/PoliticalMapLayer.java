@@ -114,9 +114,13 @@ public final class PoliticalMapLayer implements MapLayer {
         // Held by the installation rather than by this tab, because everything behind the renderer -
         // the cut cells, the territories, the fitted labels - is one sector's. This tab is
         // registered once for the process and would otherwise be where two sectors met.
+        // The id goes over with the installation because the renderer reports its frame's rows
+        // under it: what a layer costs is read against the layer it was spent on, and the id is
+        // what this tab is known by everywhere else it is recorded. Handed down rather than looked
+        // up, so there is one spelling of it.
         return installation.resolveMachinery(
             PoliticalMapLayerRenderer.class,
-            () -> PoliticalMapLayerRenderer.createForLiveScreen(installation));
+            () -> PoliticalMapLayerRenderer.createForLiveScreen(installation, LAYER_ID));
     }
 
     // The spotlight picker for the selected view: its selectable blocs under the player's live
