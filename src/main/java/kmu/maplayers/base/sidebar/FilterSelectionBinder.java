@@ -16,17 +16,18 @@ import kmu.util.KmuStrings;
 import java.util.List;
 
 /**
- * Ties KMLib's spotlight picker to the save slots KMU keeps its three answers in - the last of the
+ * Ties KMLib's spotlight picker to the save slots a mod keeps its three answers in - the last of the
  * three binders, and the one that also builds the control. The picker holds no store: it takes the
  * live selection, sort, and column count as values and reports each pick back, so somewhere has to
- * read this mod's slots on the way in and write them on the way out. That is this class, and
+ * read the calling mod's slots on the way in and write them on the way out. That is this class, and
  * putting it here keeps a calling layer's signature free of every slot the picker touches.
  *
  * <p>It builds rather than only binds because the picker's three ties resolve at one point: the
  * item pick is {@link FilterSelection}'s and the sort is {@link SortSelectionBinder}'s, both under
  * the one {@link SelectionSlot} this class holds, while the column count routes to
- * {@link ColumnSelectionBinder} under that slot's screen alone. A layer that composed the picker
- * itself would have to name all three, which is exactly the knowledge the binders exist to hold.
+ * {@link ColumnSelectionBinder} under that slot's mod and screen alone. A layer that composed the
+ * picker itself would have to name all three, which is exactly the knowledge the binders exist to
+ * hold.
  *
  * <p>The slot is captured at the build for the reason the board is: a report can land after the
  * player has moved to the other screen, and a pick belongs to the panel it was clicked on rather
@@ -60,8 +61,9 @@ public final class FilterSelectionBinder {
      * rather than passed in - resolving it needs the vocabulary, which only arrives inside the
      * bundle.
      *
-     * @param slot             the screen and scope a pick, clear or hover is read from and written
-     *                         into, so the choice is remembered against that panel's list alone
+     * @param slot             the mod, screen and scope a pick, clear or hover is read from and
+     *                         written into, so the choice is remembered against that panel's list
+     *                         alone
      * @param picker           the layer's selectable items and the vocabulary that ranks them
      * @param columns          how many columns the item list wraps its rows across
      * @param trailingControls the controls filling the right half of the sort row; empty leaves the
@@ -154,7 +156,7 @@ public final class FilterSelectionBinder {
 
         @Override
         public void storeColumnsPick(ListColumns columns) {
-            ColumnSelectionBinder.storeColumns(slot.memoryScope(), columns);
+            ColumnSelectionBinder.storeColumns(slot.screenSlot(), columns);
         }
 
         @Override

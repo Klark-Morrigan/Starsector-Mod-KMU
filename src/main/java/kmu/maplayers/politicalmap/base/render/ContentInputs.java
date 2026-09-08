@@ -1,7 +1,9 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -62,8 +64,10 @@ public record ContentInputs(
      */
     public static ContentInputs sampleForView(PoliticalMapView view, ScreenMemoryScope memoryScope) {
 
-        var selectedBlocId =
-            FilterSelection.getSelectedIdOf(new SelectionSlot(memoryScope, view.getId()));
+        var selectedBlocId = FilterSelection.getSelectedIdOf(
+            new SelectionSlot(
+                new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, memoryScope),
+                view.getId()));
 
         return new ContentInputs(
             selectedBlocId,

@@ -1,6 +1,8 @@
 package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
@@ -19,6 +21,10 @@ import static org.mockito.Mockito.mockStatic;
  * incremental rebuild paths need a live sector and are covered by the integration tests.
  */
 final class PoliticalMapCacheTest {
+
+    // The screen a refresh is driven for. A stand-in rather than one of the two live screens: neither
+    // guarantee here turns on which panel the frame was prepared for.
+    private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 
     // The machinery the cache under test belongs to, installed on no sector - which is what makes
     // the rebuild throw part way through, the case below being about what a cache leaves drawable
@@ -42,7 +48,7 @@ final class PoliticalMapCacheTest {
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
 
-                cache.refresh(viewMock);
+                cache.refresh(viewMock, SCREEN);
             }
 
             assertThat(cache.getTerritories())
@@ -66,7 +72,7 @@ final class PoliticalMapCacheTest {
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
 
-                cache.refresh(viewMock);
+                cache.refresh(viewMock, SCREEN);
             }
 
             assertThat(cache.getTerritories())

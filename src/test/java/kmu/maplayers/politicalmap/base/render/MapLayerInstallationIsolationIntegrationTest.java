@@ -7,6 +7,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -95,6 +97,10 @@ final class MapLayerInstallationIsolationIntegrationTest {
     // Comfortably past the motion tracker's one-unit noise floor, so a staged drift is unambiguous
     // motion rather than something that could read as float jitter.
     private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
+
+    // The screen the rebuilds here are driven for. A stand-in rather than one of the two live screens:
+    // what these cases separate is two sectors, and both are drawn for the same panel throughout.
+    private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 
     // A cursor resting on the cell both sectors have an id for - the one hover that could be
     // mistaken for the other sector's.
@@ -465,7 +471,7 @@ final class MapLayerInstallationIsolationIntegrationTest {
 
         private PoliticalMapTerritories rebuild() {
 
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             return cache.getTerritories();
         }

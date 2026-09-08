@@ -14,10 +14,11 @@ import java.util.function.Predicate;
  * bare id - and the plumbing to persist, clear, and invalidate on it; what the id names, and how it
  * resolves into anything drawn, is the reading layer's concern, not this class's.
  *
- * <p>Partitioned because neither axis of a slot is optional: one scope's id read under another scope is
- * meaningless, and a spotlight is a pick the player made on one panel rather than a statement about the
- * sector. The class stays ignorant of what either axis is - it is handed a slot and appends its own
- * prefix to it, never a registry of scopes or a roster of screens.
+ * <p>Partitioned because no axis of a slot is optional: one scope's id read under another scope is
+ * meaningless, a spotlight is a pick the player made on one panel rather than a statement about the
+ * sector, and one mod's picker has no business reading a pick made on another's. The class stays
+ * ignorant of what any of the three is - it hands a slot its own key and takes back the key that slot
+ * composes, never a registry of scopes, a roster of screens or the name of the mod asking.
  *
  * <p>Sidebar-only like the sort and column stores: the selection is driven solely by a sidebar
  * picker, never a settings-screen control, so it persists in sector memory (each save keeps its own
@@ -34,20 +35,21 @@ import java.util.function.Predicate;
  */
 public final class FilterSelection {
 
-    // The selected id, under a key prefix a slot composes its own two axes onto. Layer-neutral because
-    // every map layer's picker stores through this one class - a prefix naming one layer would have
-    // every other layer persisting its selection under that layer's key. A key is a save-serialised
-    // identity, not a description of where the class lives: a renamed prefix reads as absent and
-    // silently drops every existing save's filter choice back to none, so it stays frozen in this
-    // spelling.
+    // The selected id, under the key a slot composes its namespace, scope and screen onto. Layer-neutral
+    // because every map layer's picker stores through this one class - a key naming one layer would have
+    // every other layer persisting its selection under that layer's. Mod-neutral for the reason
+    // MapLayerStoreNamespace exists: which mod's picker this is arrives with the slot, so this class
+    // spells only what the store itself is. A key is a save-serialised identity, not a description of
+    // where the class lives: a renamed key reads as absent and silently drops every existing save's
+    // filter choice back to none, so it stays frozen in this spelling.
     private static final AddressedMemoryString SELECTED_ID =
-        new AddressedMemoryString("$kmu_map_filter_bloc_");
+        new AddressedMemoryString("filter_bloc_");
 
     private FilterSelection() {
     }
 
     /**
-     * @param slot the screen and scope whose selection is read
+     * @param slot the mod, screen and scope whose selection is read
      * @return that slot's selected id, or null when it has no selection (the un-filtered state) - also
      *         null before a save exists, since there is nothing to have picked yet
      */
@@ -60,7 +62,7 @@ public final class FilterSelection {
      * the pick shows at once. A no-op before the sector exists, since there is no save to write into
      * and nothing painting to repaint.
      *
-     * @param slot       the screen and scope the pick belongs to
+     * @param slot       the mod, screen and scope the pick belongs to
      * @param selectedId the stable id to filter to
      * @param board      the refresh board of the sector whose picker made the pick, raised on so
      *                   that sector's overlay repaints
@@ -80,7 +82,7 @@ public final class FilterSelection {
      * layer returns to its un-filtered look at once. A no-op before the sector exists, or when that
      * slot had no id selected - nothing to unset and nothing to repaint.
      *
-     * @param slot  the screen and scope whose filter is cleared
+     * @param slot  the mod, screen and scope whose filter is cleared
      * @param board the refresh board of the sector whose picker made the clear, raised on so that
      *              sector's overlay repaints
      */
@@ -101,7 +103,7 @@ public final class FilterSelection {
      * every scope, since the screens offer the same layers - runs it once per screen, because an id
      * that lapsed lapsed for both panels while only the one being looked at would otherwise clear.
      *
-     * @param slot         the screen and scope whose selection is healed
+     * @param slot         the mod, screen and scope whose selection is healed
      * @param isSelectable reports whether a stored id is still selectable in that scope
      */
     public static void healStaleSelection(SelectionSlot slot, Predicate<String> isSelectable) {

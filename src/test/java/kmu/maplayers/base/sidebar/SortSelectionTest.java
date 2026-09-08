@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
 import org.junit.jupiter.api.AfterEach;
@@ -20,21 +21,34 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class SortSelectionTest {
 
-    // The slot these cases exercise, and the two that must stay invisible to it: the same scope on
-    // another screen, and another scope on the same screen. Stand-in screens, because this store's
-    // subject is that a slot is a slot and not which screens the mod has.
-    private static final SelectionSlot SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "scope_a");
+    // The slot these cases exercise, under this mod's own namespace so the frozen keys below are the
+    // ones every existing save holds. Stand-in screens, because this store's subject is that a slot is
+    // a slot and not which screens the mod has.
+    private static final ScreenSelectionSlot SCREEN_SLOT = new ScreenSelectionSlot(
+        KmuMod.MAP_STORE_NAMESPACE,
+        ScreenMemoryScopes.createStandInScreen());
 
-    private static final SelectionSlot OTHER_SCREEN_SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createOtherStandInScreen(), "scope_a");
+    private static final SelectionSlot SLOT = new SelectionSlot(SCREEN_SLOT, "scope_a");
 
-    private static final SelectionSlot OTHER_SCOPE_SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "scope_b");
+    // The three slots that must stay invisible to it: the same scope on another screen, another scope
+    // on the same screen, and the same scope on the same screen under another mod's namespace.
+    private static final SelectionSlot OTHER_SCREEN_SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(
+            KmuMod.MAP_STORE_NAMESPACE,
+            ScreenMemoryScopes.createOtherStandInScreen()),
+        "scope_a");
 
-    // The keys those slots compose, as literals: renaming either prefix resets every existing save's
-    // sort choice, and dropping either axis puts two pickers back on one shared ranking, so any of
-    // those changes must break this test first.
+    private static final SelectionSlot OTHER_SCOPE_SLOT = new SelectionSlot(SCREEN_SLOT, "scope_b");
+
+    private static final SelectionSlot OTHER_MOD_SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(
+            MapLayerStoreNamespaces.createStandInNamespace(),
+            ScreenMemoryScopes.createStandInScreen()),
+        "scope_a");
+
+    // The keys those slots compose, as literals: renaming any of this mod's own segments resets every
+    // existing save's sort choice, and dropping any axis puts two pickers back on one shared ranking,
+    // so any of those changes must break this test first.
     private static final String MODE_KEY = "$kmu_map_sort_mode_scope_a_test";
 
     private static final String DIRECTION_KEY = "$kmu_map_sort_direction_scope_a_test";
@@ -80,6 +94,16 @@ final class SortSelectionTest {
             sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
 
             assertThat(SortSelection.getSortModeKeyOf(OTHER_SCOPE_SLOT))
+                .isNull();
+        }
+
+        @Test
+        void getSortModeKeyOfIsNullForAnotherModsSlot() {
+            // Per-namespace isolation: two mods listing under the same scope string on the same panel
+            // rank their own lists, where before the namespace one mod's pick reordered both.
+            sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
+
+            assertThat(SortSelection.getSortModeKeyOf(OTHER_MOD_SLOT))
                 .isNull();
         }
 

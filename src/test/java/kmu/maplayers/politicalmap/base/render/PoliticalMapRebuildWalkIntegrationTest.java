@@ -8,6 +8,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -91,6 +93,11 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // motion rather than something that could read as float jitter.
     private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
 
+    // The screen each rebuild here is driven for. A stand-in rather than one of the two live screens:
+    // how many times a rebuild walks the sector is the same on either panel, and what a switch between
+    // them costs is PoliticalMapRebuildStalenessIntegrationTest's.
+    private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
+
     // A second sector's machinery, standing beside the one the cache under test is built against.
     // Its own sector reaches nothing here - what a case wants of it is its tracker, so that a claim
     // about whose movers a cut consults has somebody else's to be made against.
@@ -145,8 +152,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             var sector = buildContestedSectorWithAnEmptyNeighbour();
             var cache = new PoliticalMapCache(installation);
 
-            cache.refresh(FactionsView.INSTANCE);
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             for (var system : sector.getStarSystems()) {
                 verify(system, times(1)).getAllEntities();
@@ -173,10 +180,10 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             var sector = buildContestedSectorWithAnEmptyNeighbour();
             var cache = new PoliticalMapCache(installation);
 
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
             settleTheEmptyNeighbour(sector);
             requestTheNextRebuild();
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getTerritories().getInhabitedSystemIds())
                 .containsExactlyInAnyOrder(ALPHA_ID, BETA_ID);
@@ -191,12 +198,12 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             buildUndiscoveredSectorWithAnEmptyNeighbour();
             var cache = new PoliticalMapCache(installation);
 
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
             seams.resolveVisibilityRulesSeam()
                 .when(MapVisibilityRules::readFromLunaSettings)
                 .thenReturn(UNDISCOVERED_REVEALED);
             requestTheNextRebuild();
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             var territories = cache.getTerritories();
 
@@ -222,7 +229,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             observeSystemMovingInto(installation.resolveMovingSystems(), sector, ALPHA_ID);
             var cache = new PoliticalMapCache(installation);
 
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getTerritories().getStyledCellByCellId())
                 .containsKey(BETA_ID)
@@ -240,7 +247,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             observeSystemMovingInto(otherInstallation.resolveMovingSystems(), sector, ALPHA_ID);
             var cache = new PoliticalMapCache(installation);
 
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getTerritories().getStyledCellByCellId())
                 .containsKeys(ALPHA_ID, BETA_ID);
@@ -258,7 +265,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             installation.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
             otherInstallation.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
 
-            new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE);
+            new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE, SCREEN);
 
             assertThat(installation.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
@@ -278,7 +285,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             var cache = new PoliticalMapCache(installation);
 
-            cache.refresh(FactionsView.INSTANCE);
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
 
             assertThat(cache.getTerritories().getStyledCellByCellId())
                 .containsKeys(ALPHA_ID, BETA_ID)
@@ -289,7 +296,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // One rebuild of the real cache over whatever sector the global lookup was staged with - what
     // a case asserting on what the rebuild read, rather than on what it drew, wants.
     private void runOneRebuild() {
-        new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE);
+        new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE, SCREEN);
     }
 
     // Drifts one system far enough for two observations either side of the move to read it as

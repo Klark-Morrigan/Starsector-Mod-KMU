@@ -140,6 +140,11 @@ partitions by screen, and a picker's `SelectionSlot` by screen and by the scope 
 under. So a holder states what it stores and never how the key is spelled, and the segments cannot end
 up ordered one way in one holder and another way in the next.
 
+The build enforces it. `enforceRestrictedCalls` contains the three ways into a memory slot -
+`new SectorMemoryFlag(`, `new SectorMemoryString(` and `SectorMemoryAccess.readSectorMemory()` - to the
+holders that compose a key through a scope, so a preference added with a bare key fails the build
+rather than quietly sharing one slot between both panels.
+
 ```mermaid
 flowchart TD
     F([Frame]) --> Q{Is the intel<br/>screen up?}
@@ -167,7 +172,7 @@ to one panel, so it is filed against that panel.
 | How far the body is scrolled | per screen, for the session |
 | The picker's bloc spotlight, its sort, and its column count | per screen, persisted |
 | The name format, the recede styles, and the uninhabited outline | per screen, persisted |
-| Political-map view | shared, persisted once |
+| Political-map view | per screen, persisted |
 | How the bar is arranged - the tab order, and the tabs taken off it | shared, per user in common data |
 | Appearance and sound settings | shared, in LunaLib |
 

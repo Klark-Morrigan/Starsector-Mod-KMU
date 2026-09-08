@@ -4,7 +4,7 @@ import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 /**
- * Ties KMLib's sort model to the save slot KMU keeps its answer in. The model resolves a stored mode
+ * Ties KMLib's sort model to the save slot a mod keeps its answer in. The model resolves a stored mode
  * and direction against a caller's vocabulary but reads no save of its own, and {@link SortSelection}
  * holds the two raw keys but knows nothing of what they mean; this is the one place the two meet.
  *
@@ -23,7 +23,7 @@ public final class SortSelectionBinder {
      * caller's default mode and a save with no stored direction reads the stored mode's own default.
      *
      * @param <T>       the list item type the modes rank
-     * @param slot      the screen and scope whose stored sort is read
+     * @param slot      the mod, screen and scope whose stored sort is read
      * @param sortModes the caller's sort vocabulary - the set a stored key resolves against, and the
      *                  mode it falls back to
      * @return the stored sort
@@ -40,7 +40,7 @@ public final class SortSelectionBinder {
      * moved, so the save always holds the whole pair the selector reported rather than one key from
      * this pick and one left over from an earlier one.
      *
-     * @param slot the screen and scope the pick belongs to
+     * @param slot the mod, screen and scope the pick belongs to
      * @param sort the sort the picker reported, whose mode and direction keys are stored
      */
     public static void storeSort(SelectionSlot slot, ListSort<?> sort) {

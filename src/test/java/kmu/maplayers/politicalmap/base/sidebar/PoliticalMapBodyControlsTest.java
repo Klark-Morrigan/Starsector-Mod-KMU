@@ -40,10 +40,10 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the view selector's switch rule: each view remembers its own spotlight, so switching selects the
- * clicked view and heals the switched-in view's slot against its current blocs - never clearing another
- * view's stored selection. The registry, the strings, the filter selection, and the selection heal are
- * stubbed so this drives the selector's click action and pins only what it does, not how the view or the
- * filter persist.
+ * clicked view on the panel the radio sits on and heals the switched-in view's slot against its current
+ * blocs - never clearing another view's stored selection. The registry, the strings, the filter
+ * selection, and the selection heal are stubbed so this drives the selector's click action and pins only
+ * what it does, not how the view or the filter persist.
  *
  * <p>The shared sub-options are pinned the same way: each lights off its per-save preference and writes
  * the flipped or clicked value back through it, with the preferences stubbed so the wiring is what is
@@ -121,7 +121,8 @@ final class PoliticalMapBodyControlsTest {
 
                 clickViewSegment(1);
 
-                registryMock.verify(() -> PoliticalMapViewRegistry.selectView(alliancesViewMock));
+                registryMock.verify(() ->
+                        PoliticalMapViewRegistry.selectView(BUILT_SCREEN, alliancesViewMock));
                 healMock.verify(FilterSelectionHeal::healStaleSelectionAgainstActiveView);
             }
         }
@@ -157,8 +158,30 @@ final class PoliticalMapBodyControlsTest {
 
                 clickViewSegment(5);
 
-                registryMock.verify(() -> PoliticalMapViewRegistry.selectView(any()), never());
+                registryMock.verify(
+                        () -> PoliticalMapViewRegistry.selectView(any(), any()),
+                        never());
                 healMock.verifyNoInteractions();
+            }
+        }
+
+        @Test
+        void theRadioWritesTheScreenItWasBuiltOnRatherThanTheLiveOne() {
+            // The view is a pick made on one panel, so a click files it against the panel the radio sits
+            // on - which is settled when the body is built, not when the click lands. The intel screen
+            // is posed open throughout, so a selector resolving the showing screen would file a
+            // map-panel switch under the visor and fail here.
+            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
+                            mockStatic(PoliticalMapViewRegistry.class);
+                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<FilterSelectionHeal> healMock =
+                            mockStatic(FilterSelectionHeal.class)) {
+                stubSelectorViews(registryMock, stringsMock);
+
+                clickViewSegment(0);
+
+                registryMock.verify(() ->
+                        PoliticalMapViewRegistry.selectView(BUILT_SCREEN, factionsViewMock));
             }
         }
     }
@@ -331,7 +354,7 @@ final class PoliticalMapBodyControlsTest {
         when(alliancesViewMock.getSegmentLabelKey()).thenReturn("alliances_label");
         registryMock.when(PoliticalMapViewRegistry::getViews)
                 .thenReturn(List.of(factionsViewMock, alliancesViewMock));
-        registryMock.when(PoliticalMapViewRegistry::getSelectedViewIndex)
+        registryMock.when(() -> PoliticalMapViewRegistry.getSelectedViewIndex(BUILT_SCREEN))
                 .thenReturn(ControlSpec.NO_SELECTION);
         stringsMock.when(() -> KmuStrings.get("factions_label")).thenReturn("Factions");
         stringsMock.when(() -> KmuStrings.get("alliances_label")).thenReturn("Alliances");

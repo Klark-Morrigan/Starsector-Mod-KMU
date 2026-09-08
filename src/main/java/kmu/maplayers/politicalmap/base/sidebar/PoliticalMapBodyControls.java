@@ -87,7 +87,6 @@ public final class PoliticalMapBodyControls {
      */
     public static ControlSpec buildViewSelector(ScreenMemoryScope memoryScope) {
 
-        // TODO: hand memoryScope to the view registry - the selected view is still one slot per sector.
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
             labels.add(KmuStrings.get(view.getSegmentLabelKey()));
@@ -96,24 +95,26 @@ public final class PoliticalMapBodyControls {
         // what the row reads as.
         return ControlSpec.HorizontalRadio.of(
             labels,
-            PoliticalMapViewRegistry.getSelectedViewIndex(),
-            PoliticalMapBodyControls::selectViewSegment);
+            PoliticalMapViewRegistry.getSelectedViewIndex(memoryScope),
+            segmentIndex -> selectViewSegment(segmentIndex, memoryScope));
     }
 
-    // Activates the view its clicked segment names. Any index outside the registered views is ignored,
-    // so a stray hit changes nothing. Each view remembers its own spotlight (a faction id under the
-    // factions view, an alliance id under the alliances view), so a switch loads the switched-in view's
-    // stored bloc rather than clearing - the choice survives moving between views and the tab being
-    // switched away from. The switched-in view's slot is then healed against its current selectable
-    // blocs, so a bloc that lapsed since it was last shown (a faction removed, an alliance dissolved)
-    // does not spotlight an empty footprint; the switch itself repaints, so the cleared spotlight shows
-    // without its own refresh request.
-    private static void selectViewSegment(int segmentIndex) {
+    // Activates the view its clicked segment names, on the screen the radio was placed on - where the
+    // carried screen becomes the address of the slot written. Any index outside the registered views is
+    // ignored, so a stray hit changes nothing. Each view remembers its own spotlight (a faction id under
+    // the factions view, an alliance id under the alliances view), so a switch loads the switched-in
+    // view's stored bloc rather than clearing - the choice survives moving between views and the tab
+    // being switched away from. The switched-in view's slot is then healed against its current
+    // selectable blocs, so a bloc that lapsed since it was last shown (a faction removed, an alliance
+    // dissolved) does not spotlight an empty footprint; the switch itself repaints, so the cleared
+    // spotlight shows without its own refresh request. The heal covers every screen, this one included,
+    // since what lapsed lapsed for both panels.
+    private static void selectViewSegment(int segmentIndex, ScreenMemoryScope memoryScope) {
         List<PoliticalMapView> views = PoliticalMapViewRegistry.getViews();
         if (segmentIndex < 0 || segmentIndex >= views.size()) {
             return;
         }
-        PoliticalMapViewRegistry.selectView(views.get(segmentIndex));
+        PoliticalMapViewRegistry.selectView(memoryScope, views.get(segmentIndex));
         FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 

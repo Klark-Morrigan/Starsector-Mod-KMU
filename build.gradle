@@ -97,6 +97,8 @@ enforcePackageVocabulary {
             inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
 }
 
+// Two ambient reads the map layers contain, each at the seams named below.
+//
 // The map layers derive everything they draw from one sector, and each holds the
 // machinery of the sector it was handed. Reading the running game's sector
 // instead is how a pass ends up drawing, marking stale or previewing a map
@@ -117,6 +119,35 @@ enforceRestrictedCalls {
             'LiveVisibilityClaimBreakdownReader',
             'MapLayerInstallations',
             'PauseMenuMapCover']
+
+    // Every choice made on a sidebar panel is that screen's own, and a screen's
+    // key is the preference's base key with the screen's segment composed onto
+    // it. A holder reaching a memory slot by a bare key gets one slot per save
+    // instead: both panels then share the pick, which reads as the feature
+    // working right up until the player sets one panel and finds the other
+    // moved. Nothing about that is compile-visible, so the three ways into a
+    // slot are contained at the holders that compose a key through a
+    // ScreenMemoryScope.
+    //
+    // The two wrappers are the general road - AddressedMemoryFlag and
+    // AddressedMemoryString hold one slot per address and are what a new
+    // preference declares. The two named beside them build a slot directly
+    // because each is constructed per screen and holds one scope for life, so
+    // there is no address to take per call. The raw memory handle is contained
+    // at the active-layer pick, which reads and writes a key it composed in its
+    // own constructor.
+    restrictCall call: 'new SectorMemoryFlag(',
+        under: 'kmu.maplayers',
+        toTypes: [
+            'AddressedMemoryFlag',
+            'PersistedMapLayerVisibility',
+            'PersistedSidebarFold']
+    restrictCall call: 'new SectorMemoryString(',
+        under: 'kmu.maplayers',
+        toTypes: ['AddressedMemoryString']
+    restrictCall call: 'SectorMemoryAccess.readSectorMemory()',
+        under: 'kmu.maplayers',
+        toTypes: ['PersistedActiveLayerSelection']
 }
 
 // On-demand Java formatting (`gradlew spotlessApply`). Applied after the source

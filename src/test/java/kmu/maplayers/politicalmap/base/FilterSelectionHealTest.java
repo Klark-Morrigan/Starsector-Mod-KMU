@@ -32,10 +32,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the glue that heals a loaded save's spotlight selections against its active view: with no view
- * selected the heal is skipped (a persisted filter is left for a later view to judge), and with a view
- * selected the heal runs on every screen with a predicate that reports a bloc selectable exactly when
- * the active view still lists it. The view, the sector, and the filter selection are stubbed so this
+ * Pins the glue that heals a loaded save's spotlight selections against each screen's selected view:
+ * a screen with no view selected is skipped (its persisted filter is left for a later view to judge),
+ * and a screen with one is healed with a predicate that reports a bloc selectable exactly when that
+ * screen's view still lists it. The views, the sector, and the filter selection are stubbed so this
  * pins the wiring alone, not how the selection actually clears.
  *
  * <p>The settings registration is pinned here too, that being the moment a live game can lose a bloc
@@ -59,7 +59,7 @@ final class FilterSelectionHealTest {
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 registryMock
-                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .when(() -> PoliticalMapViewRegistry.getSelectedView(any()))
                     .thenReturn(null);
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
@@ -83,7 +83,7 @@ final class FilterSelectionHealTest {
                     .thenReturn(sectorMock);
 
                 registryMock
-                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .when(() -> PoliticalMapViewRegistry.getSelectedView(any()))
                     .thenReturn(viewMock);
 
                 when(viewMock.getId())
@@ -123,7 +123,7 @@ final class FilterSelectionHealTest {
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 registryMock
-                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .when(() -> PoliticalMapViewRegistry.getSelectedView(any()))
                     .thenReturn(viewMock);
 
                 when(viewMock.getId())
@@ -137,7 +137,7 @@ final class FilterSelectionHealTest {
                 // against two spelled-out screens, because which screens the mod has is that class's
                 // answer: a third one added there is a third panel this glue then owes a heal.
                 assertThat(healedSlots)
-                    .extracting(SelectionSlot::memoryScope)
+                    .extracting(slot -> slot.screenSlot().memoryScope())
                     .containsExactlyInAnyOrderElementsOf(
                         MapLayerScreens.getAllScreenPicks().stream()
                             .map(ScreenLayerPicks::memoryScope)
@@ -147,6 +147,53 @@ final class FilterSelectionHealTest {
                 assertThat(healedSlots)
                     .extracting(SelectionSlot::scopeId)
                     .containsOnly("factions");
+            }
+        }
+
+        @Test
+        void healStaleSelectionAgainstActiveViewJudgesEachScreenUnderItsOwnView() {
+            // The view is that panel's pick as much as the spotlight is, so each slot is judged under
+            // the view its own panel is set to. Judged under the other panel's view instead, a
+            // perfectly live faction spotlight would be cleared for not appearing in an alliance list.
+            try (var registryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                var otherViewMock = mock(PoliticalMapView.class);
+
+                when(viewMock.getId())
+                    .thenReturn("factions");
+                when(otherViewMock.getId())
+                    .thenReturn("alliances");
+
+                stubOneViewPerScreen(registryMock, viewMock, otherViewMock);
+
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView();
+
+                // Each screen's slot under its own screen's view id, which is the pairing a shared view
+                // read would collapse onto one id.
+                assertThat(captureHealedSlots(selectionMock))
+                    .extracting(SelectionSlot::scopeId)
+                    .containsExactly("factions", "alliances");
+            }
+        }
+
+        @Test
+        void healStaleSelectionAgainstActiveViewSkipsAScreenWithNoViewSelectedAndHealsTheRest() {
+            // A panel with its map off has no grouping to judge its slot under, so its stored spotlight
+            // waits for a view - while the panel beside it, which has one, is healed in the same pass.
+            try (var registryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                when(viewMock.getId())
+                    .thenReturn("factions");
+
+                stubOneViewPerScreen(registryMock, null, viewMock);
+
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView();
+
+                selectionMock.verify(
+                    () -> FilterSelection.healStaleSelection(any(), any()),
+                    times(1));
             }
         }
 
@@ -165,7 +212,7 @@ final class FilterSelectionHealTest {
                     .thenReturn(sectorMock);
 
                 registryMock
-                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .when(() -> PoliticalMapViewRegistry.getSelectedView(any()))
                     .thenReturn(viewMock);
 
                 when(viewMock.getId())
@@ -202,7 +249,7 @@ final class FilterSelectionHealTest {
                     var registryMock = mockStatic(PoliticalMapViewRegistry.class)) {
 
                 registryMock
-                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .when(() -> PoliticalMapViewRegistry.getSelectedView(any()))
                     .thenReturn(null);
 
                 FilterSelectionHeal.installHealOnSettingsChange();
@@ -215,8 +262,31 @@ final class FilterSelectionHealTest {
                 // read is what identifies the registered reaction.
                 captor.getValue().run();
 
-                registryMock.verify(PoliticalMapViewRegistry::getSelectedView);
+                registryMock.verify(
+                    () -> PoliticalMapViewRegistry.getSelectedView(any()),
+                    times(SCREEN_COUNT));
             }
+        }
+    }
+
+    // Sets each screen's own selected view, in the order the screens are walked, so a case can pose two
+    // panels on different views - or one with its map off. Which screens those are stays
+    // MapLayerScreens' answer: the views are handed out against the scopes it names rather than against
+    // two spelled-out screens.
+    private static void stubOneViewPerScreen(
+            MockedStatic<PoliticalMapViewRegistry> registryMock,
+            PoliticalMapView... viewPerScreen) {
+
+        var screenPicks = MapLayerScreens.getAllScreenPicks();
+
+        for (var screenIndex = 0; screenIndex < screenPicks.size(); screenIndex++) {
+
+            var memoryScope = screenPicks.get(screenIndex).memoryScope();
+            var view = viewPerScreen[screenIndex];
+
+            registryMock
+                .when(() -> PoliticalMapViewRegistry.getSelectedView(memoryScope))
+                .thenReturn(view);
         }
     }
 
@@ -233,8 +303,8 @@ final class FilterSelectionHealTest {
     }
 
     // Captures the predicate passed to FilterSelection.healStaleSelection, so a test can exercise the
-    // selectability rule the glue built from the active view's blocs. Every screen is handed the same
-    // rule - which blocs a view offers is the view's answer, not a panel's - so the last one captured
+    // selectability rule the glue built from a screen's view's blocs. Used by the cases that pose one
+    // view across both screens, where every rule captured is built from that one view, so the last one
     // stands for all of them.
     private static Predicate<String> capturePredicate(MockedStatic<FilterSelection> selectionMock) {
         @SuppressWarnings("unchecked")

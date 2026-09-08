@@ -13,6 +13,7 @@ import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapLayerRenderer;
@@ -193,11 +194,17 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     @Override
     public void prepareFrame(float factor) {
         try (var beatScope = frameBeats.openBeat(MapFrameSections.PREPARE)) {
-            // Stands down when no political-map view is active - the tab is open with every view
-            // deselected. Gating the refresh on one view read keeps a dark overlay near-free per
-            // frame, and reading the view - not a named faction gate - is what lets any registered
-            // view draw here.
-            var view = PoliticalMapViewRegistry.getActiveView();
+            // Which screen is showing, read once and carried: the view this frame paints and the
+            // sidebar preferences the rebuild bakes under are both that screen's, so resolving the
+            // screen twice could paint one panel's view under the other panel's picks - a map neither
+            // panel was ever set to.
+            var livePicks = MapLayerScreens.resolveLivePicks();
+
+            // Stands down when no political-map view is active on that screen - its tab is open with
+            // every view deselected. Gating the refresh on one view read keeps a dark overlay
+            // near-free per frame, and reading the view - not a named faction gate - is what lets any
+            // registered view draw here.
+            var view = PoliticalMapViewRegistry.resolveActiveViewOn(livePicks);
             if (view == null) {
                 // The frame's passes stand down with it, or a deselected view would still pay for a
                 // matrix read per pass.
@@ -211,7 +218,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
                 decideWhetherTheHoverIsWantedThisFrame();
 
                 try (var refreshScope = frameBeats.openStep(MapFrameSections.REFRESH)) {
-                    cache.refresh(view);
+                    cache.refresh(view, livePicks.memoryScope());
                 }
             }
         }

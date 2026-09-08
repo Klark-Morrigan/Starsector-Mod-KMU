@@ -1,7 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
 import kmu.maplayers.base.layer.AddressedMemoryString;
-import kmu.maplayers.base.layer.ScreenMemoryScope;
 
 /**
  * How many columns a sidebar picker lays its list across, persisted per save and per screen. Like
@@ -20,35 +19,37 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
  */
 public final class ColumnSelection {
 
-    // One slot per screen, shared by every scope on it, since a panel is a fixed width the player laid
-    // the list out inside and the two panels are two widths. The key is layer-neutral and frozen for the
-    // reasons SortSelection's prefixes are. Absent until the player first picks a count, which the read
-    // reports as null for the column choice to default.
+    // One slot per mod per screen, shared by every scope on it, since a panel is a fixed width the
+    // player laid the list out inside and the two panels are two widths. The scope is what this store
+    // deliberately does not partition by; the mod is what it must, or a second mod's picker would
+    // re-wrap the host's list. The key is layer-neutral and frozen for the reasons SortSelection's are.
+    // Absent until the player first picks a count, which the read reports as null for the column choice
+    // to default.
     private static final AddressedMemoryString SELECTED_COLUMN_COUNT =
-        new AddressedMemoryString("$kmu_map_list_columns");
+        new AddressedMemoryString("list_columns");
 
     private ColumnSelection() {
     }
 
     /**
-     * @param memoryScope the screen whose slot is read
-     * @return that screen's stored column-count key, or null when none is stored (a fresh save, or a
+     * @param slot the mod and screen whose count is read
+     * @return that slot's stored column-count key, or null when none is stored (a fresh save, or a
      *         read before the sector exists) - the caller resolves null to the default column count
      */
-    public static String getColumnCountKey(ScreenMemoryScope memoryScope) {
-        return SELECTED_COLUMN_COUNT.get(memoryScope);
+    public static String getColumnCountKey(ScreenSelectionSlot slot) {
+        return SELECTED_COLUMN_COUNT.get(slot);
     }
 
     /**
-     * Persists the chosen column count's key in this save, against the screen it was picked on. A
-     * no-op before the sector exists, since there is no save to write into yet. No repaint follows:
-     * the picker list re-wraps on the next per-frame body build, and nothing on the map depends on
-     * the column count.
+     * Persists the chosen column count's key in this save, against the mod and screen it was picked
+     * on. A no-op before the sector exists, since there is no save to write into yet. No repaint
+     * follows: the picker list re-wraps on the next per-frame body build, and nothing on the map
+     * depends on the column count.
      *
-     * @param memoryScope    the screen whose panel made the pick
+     * @param slot           the mod and screen whose panel made the pick
      * @param columnCountKey the save-stable key of the column count to lay the list out in
      */
-    public static void selectColumnCount(ScreenMemoryScope memoryScope, String columnCountKey) {
-        SELECTED_COLUMN_COUNT.set(memoryScope, columnCountKey);
+    public static void selectColumnCount(ScreenSelectionSlot slot, String columnCountKey) {
+        SELECTED_COLUMN_COUNT.set(slot, columnCountKey);
     }
 }

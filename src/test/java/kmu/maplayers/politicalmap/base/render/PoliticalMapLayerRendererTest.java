@@ -14,6 +14,12 @@ import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.layer.ActiveLayerSelection;
+import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
+import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapOverlayBand;
@@ -39,6 +45,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -136,7 +143,7 @@ final class PoliticalMapLayerRendererTest {
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
-                    .when(PoliticalMapViewRegistry::getActiveView)
+                    .when(() -> PoliticalMapViewRegistry.resolveActiveViewOn(any()))
                     .thenReturn(null);
 
                 buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
@@ -224,6 +231,37 @@ final class PoliticalMapLayerRendererTest {
         }
 
         @Test
+        void prepareFrameTakesTheViewAndTheRefreshsScreenOffOneReadOfTheShowingScreen() {
+            // The frame's whole per-screen contract in one case: the view it paints is resolved for the
+            // screen showing, and the refresh is handed that same screen's scope. Both are per-screen
+            // picks, so a frame resolving the screen twice could paint one panel's view under the other
+            // panel's preferences - a map neither panel was ever set to. Pinned on the two calls,
+            // because a second resolution is invisible in the picture until the two screens differ.
+            var cacheMock = mock(PoliticalMapCache.class);
+            var viewMock = mock(PoliticalMapView.class);
+            var showingScreen = createStandInScreenPicks();
+
+            try (var screensMock = mockStatic(MapLayerScreens.class);
+                    var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
+
+                screensMock
+                    .when(MapLayerScreens::resolveLivePicks)
+                    .thenReturn(showingScreen);
+                viewRegistryMock
+                    .when(() -> PoliticalMapViewRegistry.resolveActiveViewOn(showingScreen))
+                    .thenReturn(viewMock);
+                stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
+
+                buildRendererOver(cacheMock, NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
+
+                verify(cacheMock)
+                    .refresh(viewMock, showingScreen.memoryScope());
+            }
+        }
+
+        @Test
         void prepareFrameStandingDownMeasuresItsBeatAndNothingBeneathIt() {
             // A frame with every view deselected still costs the read that found that out, so the
             // beat is opened around it - but no layer ran, and a row for one that did not would
@@ -233,7 +271,7 @@ final class PoliticalMapLayerRendererTest {
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
-                    .when(PoliticalMapViewRegistry::getActiveView)
+                    .when(() -> PoliticalMapViewRegistry.resolveActiveViewOn(any()))
                     .thenReturn(null);
 
                 buildRenderer(NOT_COVERING_THE_MAP).prepareFrame(FACTOR);
@@ -423,6 +461,9 @@ final class PoliticalMapLayerRendererTest {
 
                 viewRegistryMock
                     .when(PoliticalMapViewRegistry::getActiveView)
+                    .thenReturn(viewMock);
+                viewRegistryMock
+                    .when(() -> PoliticalMapViewRegistry.resolveActiveViewOn(any()))
                     .thenReturn(viewMock);
 
                 var renderer = buildRenderer(NOT_COVERING_THE_MAP);
@@ -646,11 +687,17 @@ final class PoliticalMapLayerRendererTest {
     // The read's source records the holder it was handed instead of ignoring it, since what the
     // renderer passes down is the one thing about the wiring no other suite can see.
     private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
+        return buildRendererOver(new PoliticalMapCache(new MapLayerInstallation(null)), cover);
+    }
+
+    // The same renderer over a stated cache, for the case whose subject is what the frame hands the
+    // refresh rather than what the refresh then does with it.
+    private PoliticalMapLayerRenderer buildRendererOver(PoliticalMapCache cache, MapCover cover) {
 
         var installation = new MapLayerInstallation(null);
 
         return new PoliticalMapLayerRenderer(
-            new PoliticalMapCache(installation),
+            cache,
             new MapCoverReader(List.of(cover)),
             hoverState,
             handedHoverState -> {
@@ -692,13 +739,28 @@ final class PoliticalMapLayerRendererTest {
             .toList();
     }
 
-    // A view the player has picked, so the frame work gated behind one is reached. Which view it is
-    // decides only what would be painted, which none of these cases gets as far as.
+    // A view the player has picked, on whichever screen a case's frame is prepared for, so the frame
+    // work gated behind one is reached. Which view it is decides only what would be painted, which none
+    // of these cases gets as far as.
     private static void stubASelectedView(MockedStatic<PoliticalMapViewRegistry> viewRegistryMock) {
+
+        var viewMock = mock(PoliticalMapView.class);
 
         viewRegistryMock
             .when(PoliticalMapViewRegistry::getActiveView)
-            .thenReturn(mock(PoliticalMapView.class));
+            .thenReturn(viewMock);
+        viewRegistryMock
+            .when(() -> PoliticalMapViewRegistry.resolveActiveViewOn(any()))
+            .thenReturn(viewMock);
+    }
+
+    // One screen's picks, of no particular identity: the cases below are about the frame reading the
+    // showing screen once and carrying it, not about which of the mod's two screens that is.
+    private static ScreenLayerPicks createStandInScreenPicks() {
+        return new ScreenLayerPicks(
+            mock(ActiveLayerSelection.class),
+            new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
+            ScreenMemoryScopes.createStandInScreen());
     }
 
     // The three tiers the hover box is switched at, set together: the two above the layer left on,

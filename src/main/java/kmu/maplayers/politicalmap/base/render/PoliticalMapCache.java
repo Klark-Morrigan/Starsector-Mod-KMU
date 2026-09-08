@@ -16,7 +16,7 @@ import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
-import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
@@ -56,6 +56,11 @@ import java.util.Objects;
  * marks just its own system stale and drives an incremental re-shape. So switching a colour,
  * dragging an opacity slider or picking a spotlight takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
+ *
+ * <p>One cache serves both screens, and the frame says which it is drawing for. Since what the
+ * revision folds is the sampled preference <em>values</em>, two screens set alike are one bake and a
+ * switch between them rebuilds nothing; two set differently rebuild at the switch, which is the same
+ * rebuild changing that pick on one screen already costs, paid at a different moment.
  *
  * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
  * belongs to that sector's installed map machinery and goes with it, so no field needs transient
@@ -198,10 +203,16 @@ final class PoliticalMapCache {
      * per frame), and the catch leaves the cached revisions un-advanced so the next frame retries
      * rather than the overlay going permanently stale, plus installs an empty placeholder so the
      * renderer never dereferences a null draw list.
+     *
+     * @param view        the view being painted, whose rules the rebuild builds under
+     * @param memoryScope the screen being painted for, whose panel holds every sidebar preference the
+     *                    rebuild bakes under. Handed in rather than resolved here, so the view and the
+     *                    picks it is drawn under come off the frame's one reading of which screen is
+     *                    showing
      */
-    public void refresh(PoliticalMapView view) {
+    public void refresh(PoliticalMapView view, ScreenMemoryScope memoryScope) {
         try {
-            rebuildStaleHalves(view);
+            rebuildStaleHalves(view, memoryScope);
         } catch (RuntimeException exception) {
             if (!hasLoggedRebuildError) {
                 hasLoggedRebuildError = true;
@@ -218,9 +229,9 @@ final class PoliticalMapCache {
     // are separate steps with the gate between them, because the rebuild opens a reading of the
     // sector and nearly every frame must open none: the decision is answerable from revisions and
     // settings alone, so it runs first and most frames stop at it.
-    private void rebuildStaleHalves(PoliticalMapView view) {
+    private void rebuildStaleHalves(PoliticalMapView view, ScreenMemoryScope memoryScope) {
 
-        var staleHalves = decideWhatIsStale(view);
+        var staleHalves = decideWhatIsStale(view, memoryScope);
 
         if (!staleHalves.isContentStale()) {
             applyStandingMapUpdates();
@@ -231,7 +242,7 @@ final class PoliticalMapCache {
 
     // What this frame owes, decided off revisions and settings alone so it costs nothing on a frame
     // that owes nothing - which is nearly all of them.
-    private StaleHalves decideWhatIsStale(PoliticalMapView view) {
+    private StaleHalves decideWhatIsStale(PoliticalMapView view, ScreenMemoryScope memoryScope) {
 
         // What the cells would be cut from right now. The reachable-set revision alone does not
         // answer that: the frontier resolution, the cell reach and the two visibility overrides
@@ -254,12 +265,9 @@ final class PoliticalMapCache {
         // the same reason: every stage that bakes one reads this reading, and the staleness
         // question below is asked of the values rather than of the counters their flips raise.
         //
-        // The screen is resolved here because nothing hands this one yet: the preferences are read
-        // for whichever screen is up, which is the same rule every foreign surface reads under. Once
-        // the frame carries its screen, that answer arrives with the view instead and this read goes.
-        var contentInputs = ContentInputs.sampleForView(
-            view,
-            MapLayerScreens.resolveLivePicks().memoryScope());
+        // Sampled under the screen the frame handed over, which is the screen it also took the view
+        // off, so the picks a rebuild bakes and the view it builds under name one panel.
+        var contentInputs = ContentInputs.sampleForView(view, memoryScope);
 
         // TODO: when only geometry changed (isCellCutStale), reshape just the cells
         // CellGeometryCache rebuilt - the system that gained or lost access and every cell

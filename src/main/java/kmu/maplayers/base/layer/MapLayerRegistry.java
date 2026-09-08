@@ -148,18 +148,31 @@ public final class MapLayerRegistry {
      *         while the sector map keeps its own pick
      */
     public static MapLayer getActiveLayer() {
+        return resolveActiveLayerOn(MapLayerScreens.resolveLivePicks());
+    }
 
-        // One resolution for both readings, so the pick answered and the show-or-hide state gating it
-        // cannot come off different screens.
-        var livePicks = MapLayerScreens.resolveLivePicks();
+    /**
+     * The same answer as {@link #getActiveLayer()} for a screen already in hand, rather than for
+     * whichever is showing.
+     *
+     * <p>Taken by a caller that needs more of one screen than its tab - the political map's frame
+     * needs the tab and the scope its preferences are read under - so the screen is resolved once and
+     * carried. Resolved twice, a frame could paint the layer picked on one screen using the
+     * preferences set on the other, which is a picture neither panel was ever set to.
+     *
+     * @param screenPicks the screen being answered for
+     * @return that screen's active pick, or null before a composition root has registered any layers,
+     *         or once that screen's layers have wholly faded off it
+     */
+    public static MapLayer resolveActiveLayerOn(ScreenLayerPicks screenPicks) {
 
         // Hiding lands here rather than at each consumer, because every pass driven by the active pick
         // already treats "no pick" as nothing to draw: one read takes the overlay, the labels and the
         // hover box off the screen together.
-        if (!isAnythingOfTheLayersOn(livePicks.layerVisibility())) {
+        if (!isAnythingOfTheLayersOn(screenPicks.layerVisibility())) {
             return null;
         }
-        return livePicks.layerSelection().getActiveLayer();
+        return screenPicks.layerSelection().getActiveLayer();
     }
 
     /**
@@ -189,8 +202,20 @@ public final class MapLayerRegistry {
      *         layer's own state reads to decide whether it is the one in play
      */
     public static boolean isActive(MapLayer layer) {
+        return isActiveOn(MapLayerScreens.resolveLivePicks(), layer);
+    }
+
+    /**
+     * The same gate as {@link #isActive} for a screen already in hand, for a caller carrying one for
+     * the reason {@link #resolveActiveLayerOn} gives.
+     *
+     * @param screenPicks the screen being answered for
+     * @param layer       the layer asking whether it is that screen's pick
+     * @return whether {@code layer} is that screen's active pick
+     */
+    public static boolean isActiveOn(ScreenLayerPicks screenPicks, MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
-        return getActiveLayer() == layer;
+        return resolveActiveLayerOn(screenPicks) == layer;
     }
 
     /**

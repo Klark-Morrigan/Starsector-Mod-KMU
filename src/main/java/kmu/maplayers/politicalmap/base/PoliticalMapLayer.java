@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
@@ -9,6 +10,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
+import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
@@ -84,11 +86,12 @@ public final class PoliticalMapLayer implements MapLayer {
 
         // Then the spotlight picker and the selected view's own controls, so the body shows the
         // filter list plus any widgets specific to the active view (the alliances view's
-        // Mute/Desaturate checkboxes) and the layout grows downward to fit them. Use the selected
-        // view - the one the radio lights while the tab is up - not the active view, since
-        // getBodyControls is only reached for the active tab. No view selected means the map is off,
-        // so there is nothing to append.
-        var selectedView = PoliticalMapViewRegistry.getSelectedView();
+        // Mute/Desaturate checkboxes) and the layout grows downward to fit them. Use the asking
+        // panel's selected view - the one its radio lights while the tab is up - not the active view,
+        // since getBodyControls is only reached for the active tab and the body belongs to the screen
+        // that asked rather than to whichever is showing. No view selected means the map is off, so
+        // there is nothing to append.
+        var selectedView = PoliticalMapViewRegistry.getSelectedView(memoryScope);
 
         if (selectedView != null) {
             controls.addAll(buildSpotlightControls(selectedView, installation, target));
@@ -145,14 +148,19 @@ public final class PoliticalMapLayer implements MapLayer {
         var blocCache = SelectableBlocCache.resolveBlocCacheIn(installation);
 
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
-        // so a spotlight, a sort or a column count picked here is that panel's own. Paired with the
-        // view's id, since a view keeps its own picks: the two are the picker's whole address.
+        // so a spotlight, a sort or a column count picked here is that panel's own. It travels under
+        // this mod's store namespace, which is what keeps these picks off another mod's layer, and
+        // paired with the view's id, since a view keeps its own picks: the three are the picker's
+        // whole address. Composed once here, so the picker's slot and the column count below cannot
+        // name two different screens or two different mods.
+        var screenSlot = new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, target.memoryScope());
+
         return FilterSelectionBinder.buildPicker(
-            new SelectionSlot(target.memoryScope(), selectedView.getId()),
+            new SelectionSlot(screenSlot, selectedView.getId()),
             blocCache.resolveBlocPickerRead(selectedView).picker(),
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
-            ColumnSelectionBinder.resolveStoredColumns(target.memoryScope()),
+            ColumnSelectionBinder.resolveStoredColumns(screenSlot),
             RecedeControl.buildControls(
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
