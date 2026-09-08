@@ -27,8 +27,8 @@ public final class KmuMapLayerSettings {
     private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
         "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
 
-    // How long one beat of a map frame may take before the profiler reports it. Read only while a
-    // capture is running, so it costs nothing on a normal game.
+    // Dev rather than visuals: nothing on screen moves with it, and it is read only while a
+    // profile capture is running.
     private static final String FRAME_BEAT_BUDGET_MILLIS_FIELD =
         "kmu_map_dev_profiling_frameBeat_budgetMillis";
 
@@ -261,8 +261,7 @@ public final class KmuMapLayerSettings {
 
     // A sixtieth of a second is the whole frame, and the map layers are one thing drawn in it beside
     // the game's own sector map - so a quarter of it is the share a beat can take before the frame
-    // it sits in is the layers' fault. Zero states no bound, which is how a player who wants the
-    // numbers without the findings switches the check off.
+    // it sits in is the layers' fault.
     private static final double DEFAULT_FRAME_BEAT_BUDGET_MILLIS = 4.0;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette

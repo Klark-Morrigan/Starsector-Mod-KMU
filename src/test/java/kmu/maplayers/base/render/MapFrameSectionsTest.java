@@ -177,25 +177,17 @@ final class MapFrameSectionsTest {
     }
 
     // One refresh that walked the sector as often as asked, captured the way a frame would produce
-    // it: the counters arrive from the shared reads through the holder, not from the case.
+    // it: the counters arrive from the shared reads through the holder, not from the case. The
+    // process-wide holder is left silent however the walking ended.
     private static ProfileNode captureARefreshWalking(int walks) {
-
-        return captureRefreshWhile(() -> {
-            for (var walk = 0; walk < walks; walk++) {
-                SectorWalkCounters.countSectorWalk(SYSTEMS_IN_A_WALK);
-            }
-        });
-    }
-
-    // Runs the walking inside one open refresh against a recording profiler, leaving the
-    // process-wide holder silent however it ended.
-    private static ProfileNode captureRefreshWhile(Runnable walking) {
 
         var profiler = new RecordingProfiler(() -> FIXED_CLOCK_NANOS);
 
         ActiveProfiler.bindProfiler(profiler);
         try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
-            walking.run();
+            for (var walk = 0; walk < walks; walk++) {
+                SectorWalkCounters.countSectorWalk(SYSTEMS_IN_A_WALK);
+            }
         } finally {
             ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
         }
