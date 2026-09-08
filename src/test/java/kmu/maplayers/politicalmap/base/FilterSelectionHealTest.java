@@ -5,8 +5,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
-import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.settings.KmuLunaSettings;
@@ -21,7 +23,6 @@ import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -46,12 +47,6 @@ final class FilterSelectionHealTest {
     // leave one panel spotlighting a bloc the player can no longer unpick from the panel they are on.
     private static final int SCREEN_COUNT = 2;
 
-    // The two screens' scopes, spelled here rather than read back off the roster the glue walks, so a
-    // segment renamed on one side alone fails here.
-    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
-
-    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
-
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
@@ -72,7 +67,7 @@ final class FilterSelectionHealTest {
                 // No active view means no grouping to judge selectability under, so a persisted filter
                 // is left untouched rather than cleared against nothing.
                 selectionMock.verify(
-                    () -> FilterSelection.healStaleSelection(any(), any(), any()),
+                    () -> FilterSelection.healStaleSelection(any(), any()),
                     never());
             }
         }
@@ -136,8 +131,22 @@ final class FilterSelectionHealTest {
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 
-                assertThat(captureHealedScreens(selectionMock))
-                    .containsExactlyInAnyOrder(MAP_SCOPE, INTEL_SCOPE);
+                var healedSlots = captureHealedSlots(selectionMock);
+
+                // Every screen the roster names, and no other. Compared against the roster rather than
+                // against two spelled-out screens, because which screens the mod has is that class's
+                // answer: a third one added there is a third panel this glue then owes a heal.
+                assertThat(healedSlots)
+                    .extracting(SelectionSlot::memoryScope)
+                    .containsExactlyInAnyOrderElementsOf(
+                        MapLayerScreens.getAllScreenPicks().stream()
+                            .map(ScreenLayerPicks::memoryScope)
+                            .toList());
+
+                // Each under the active view's id, since a spotlight is per view as well as per screen.
+                assertThat(healedSlots)
+                    .extracting(SelectionSlot::scopeId)
+                    .containsOnly("factions");
             }
         }
 
@@ -213,12 +222,12 @@ final class FilterSelectionHealTest {
 
     // Captures the screens the heal was run for, in order, so a test can pin that every panel's slot
     // was judged rather than only the one being looked at.
-    private static List<ScreenMemoryScope> captureHealedScreens(
+    private static List<SelectionSlot> captureHealedSlots(
             MockedStatic<FilterSelection> selectionMock) {
 
-        ArgumentCaptor<ScreenMemoryScope> captor = ArgumentCaptor.forClass(ScreenMemoryScope.class);
+        ArgumentCaptor<SelectionSlot> captor = ArgumentCaptor.forClass(SelectionSlot.class);
         selectionMock.verify(
-            () -> FilterSelection.healStaleSelection(captor.capture(), anyString(), any()),
+            () -> FilterSelection.healStaleSelection(captor.capture(), any()),
             times(SCREEN_COUNT));
         return captor.getAllValues();
     }
@@ -231,7 +240,7 @@ final class FilterSelectionHealTest {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Predicate<String>> captor = ArgumentCaptor.forClass(Predicate.class);
         selectionMock.verify(
-            () -> FilterSelection.healStaleSelection(any(), anyString(), captor.capture()),
+            () -> FilterSelection.healStaleSelection(any(), captor.capture()),
             times(SCREEN_COUNT));
         return captor.getValue();
     }

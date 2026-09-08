@@ -1,58 +1,72 @@
 package kmu.maplayers.base.sidebar;
 
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
+import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
-import kmlib.starsector.memory.SectorMemoryAccess;
-
-import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
- * Pins the per-screen, per-scope filter selection state: the read reports one pair's stored id or
- * none, a pick persists that pair's frozen key and bumps the filter revision on the board it was
- * handed so that sector's reading layer repaints, a clear drops the key and bumps too, every mutation
- * no-ops cleanly before the sector exists, and the self-heal clears only a stored id that is no longer
- * selectable. The frozen keys are pinned as literals so a rename that would silently reset every
- * save's filter choice fails here rather than shipping.
+ * Pins the per-slot filter selection state: the read reports one slot's stored id or none, a pick
+ * persists that slot's frozen key and bumps the filter revision on the board it was handed so that
+ * sector's reading layer repaints, a clear drops the key and bumps too, every mutation no-ops cleanly
+ * before the sector exists, and the self-heal clears only a stored id that is no longer selectable.
+ * The keys are pinned as literals so a rename that would silently reset every save's filter choice
+ * fails here rather than shipping.
+ *
+ * <p>Written and read through the real memory rather than a stubbed one, so a value stored under one
+ * key and read under another fails here rather than passing on two stubs that agree - which is the
+ * whole of what a slot's two axes are for.
  */
 final class FilterSelectionTest {
 
-    // The screen whose slot these tests exercise, and a second one that must stay untouched; the
-    // segment composes last into the keys below.
-    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
+    // The slot these cases exercise, and the three that must stay invisible to it: the same scope on
+    // another screen, another scope on the same screen, and both moved at once. Stand-in screens,
+    // because this store's subject is that a slot is a slot and not which screens the mod has.
+    private static final SelectionSlot SLOT =
+        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "scope_a");
 
-    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
+    private static final SelectionSlot OTHER_SCREEN_SLOT =
+        new SelectionSlot(ScreenMemoryScopes.createOtherStandInScreen(), "scope_a");
 
-    // The scope whose slot these tests exercise; its opaque id composes into the per-scope key below.
-    private static final String SCOPE_ID = "scope_a";
+    private static final SelectionSlot OTHER_SCOPE_SLOT =
+        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "scope_b");
 
-    // A second scope no test ever selects in; reads and clears against it pin that one scope's slot
-    // is invisible to another.
-    private static final String OTHER_SCOPE_ID = "scope_b";
+    // The keys those slots compose, as literals: renaming the prefix drops every existing save's
+    // filter choice back to none, and dropping either axis puts two pickers back on one shared
+    // spotlight, so any of those changes must break this test first.
+    private static final String KEY = "$kmu_map_filter_bloc_scope_a_test";
 
-    // The save-serialised keys of the screen and scope under test, pinned as literals: renaming the
-    // prefix drops every existing save's filter choice back to none, and losing the screen segment
-    // would put both panels back on one shared spotlight, so either change must break this test first.
-    private static final String SELECTED_ID_KEY = "$kmu_map_filter_bloc_scope_a_map";
+    private static final String OTHER_SCREEN_KEY = "$kmu_map_filter_bloc_scope_a_other";
 
-    private static final String INTEL_SELECTED_ID_KEY = "$kmu_map_filter_bloc_scope_a_intel";
+    private static final String OTHER_SCOPE_KEY = "$kmu_map_filter_bloc_scope_b_test";
 
     private static final String SELECTED_ID = "picked_a";
-
     private static final String OTHER_SELECTED_ID = "picked_b";
+
+    private MapLayerRefreshBoard board;
+    private SectorMemoryFake sectorMemoryFake;
+
+    @BeforeEach
+    void openTheSave() {
+        // The board first, and not for tidiness: its logger is resolved once for the life of the JVM,
+        // on first use of the class, and a resolution taken while the game's static entry point is
+        // stood in for hands it a null that faults every later suite that logs a line.
+        board = new MapLayerRefreshBoard();
+        sectorMemoryFake = new SectorMemoryFake();
+    }
+
+    @AfterEach
+    void closeTheSave() {
+        sectorMemoryFake.close();
+    }
 
     @Nested
     class GetSelectedIdOf {
@@ -60,102 +74,49 @@ final class FilterSelectionTest {
         @Test
         void getSelectedIdOfReturnsTheStoredId() {
 
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(SELECTED_ID_KEY))
-                    .thenReturn(SELECTED_ID);
-
-                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
-                    .isEqualTo(SELECTED_ID);
-            }
+            assertThat(FilterSelection.getSelectedIdOf(SLOT))
+                .isEqualTo(SELECTED_ID);
         }
 
         @Test
         void getSelectedIdOfIsNullWhenNoIdIsStored() {
-            // A scope that never picked an id holds no key, which is the un-filtered state.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
-                    .isNull();
-            }
+            // A slot that never picked an id holds no key, which is the un-filtered state.
+            assertThat(FilterSelection.getSelectedIdOf(SLOT))
+                .isNull();
         }
 
         @Test
         void getSelectedIdOfDoesNotCrossReadAnotherScopesSelection() {
             // Per-scope isolation: a selection stored under one scope is invisible to another, so
             // switching scopes never inherits the previous scope's choice.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(SELECTED_ID_KEY))
-                    .thenReturn(SELECTED_ID);
-
-                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, OTHER_SCOPE_ID))
-                    .isNull();
-            }
+            assertThat(FilterSelection.getSelectedIdOf(OTHER_SCOPE_SLOT))
+                .isNull();
         }
 
         @Test
         void getSelectedIdOfReadsEachScreensOwnSelection() {
-            // Per-screen isolation under one scope id: a bloc spotlighted on the sector map and a
-            // different one on the intel visor read back as each panel left them.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            // Per-screen isolation under one scope id: a bloc spotlighted on one panel and a different
+            // one on the other read back as each panel left them.
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
+            sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, OTHER_SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(SELECTED_ID_KEY))
-                    .thenReturn(SELECTED_ID);
-                when(memoryMock.contains(INTEL_SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(INTEL_SELECTED_ID_KEY))
-                    .thenReturn(OTHER_SELECTED_ID);
-
-                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
-                    .isEqualTo(SELECTED_ID);
-                assertThat(FilterSelection.getSelectedIdOf(INTEL_SCOPE, SCOPE_ID))
-                    .isEqualTo(OTHER_SELECTED_ID);
-            }
+            assertThat(FilterSelection.getSelectedIdOf(SLOT))
+                .isEqualTo(SELECTED_ID);
+            assertThat(FilterSelection.getSelectedIdOf(OTHER_SCREEN_SLOT))
+                .isEqualTo(OTHER_SELECTED_ID);
         }
 
         @Test
         void getSelectedIdOfIsNullBeforeTheSectorExists() {
             // No sector means no save to read, so nothing can have been picked yet.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
-
-                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
-                    .isNull();
-            }
+            assertThat(FilterSelection.getSelectedIdOf(SLOT))
+                .isNull();
         }
     }
 
@@ -165,66 +126,39 @@ final class FilterSelectionTest {
         @Test
         void selectIdPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
 
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            FilterSelection.selectId(SLOT, SELECTED_ID, board);
 
-                var memoryMock = mock(MemoryAPI.class);
+            assertThat(sectorMemoryFake.readStoredValue(KEY))
+                .isEqualTo(SELECTED_ID);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                var board = new MapLayerRefreshBoard();
-
-                FilterSelection.selectId(MAP_SCOPE, SCOPE_ID, SELECTED_ID, board);
-
-                verify(memoryMock)
-                    .set(SELECTED_ID_KEY, SELECTED_ID);
-
-                // The pick must bump the filter revision, since this sidebar-only choice never moves
-                // settingsRevision - that bump is what repaints the reading layer live.
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
-                    .isEqualTo(1);
-            }
+            // The pick must bump the filter revision, since this sidebar-only choice never moves
+            // settingsRevision - that bump is what repaints the reading layer live.
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                .isEqualTo(1);
         }
 
         @Test
-        void selectIdWritesTheScreenItWasPickedOn() {
-            // Per-screen isolation on the write side: a spotlight picked on the intel panel writes
-            // that panel's slot alone, so the sector map keeps whatever it was left showing.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+        void selectIdWritesTheSlotItWasPickedOnAlone() {
+            // Both axes on the write side: a spotlight picked on one panel's list leaves the same list
+            // on the other panel, and every other list on this one, exactly as they were.
+            FilterSelection.selectId(SLOT, SELECTED_ID, board);
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                FilterSelection.selectId(INTEL_SCOPE, SCOPE_ID, SELECTED_ID, new MapLayerRefreshBoard());
-
-                verify(memoryMock)
-                    .set(INTEL_SELECTED_ID_KEY, SELECTED_ID);
-                verify(memoryMock, never())
-                    .set(eq(SELECTED_ID_KEY), anyString());
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_SCREEN_KEY))
+                .isFalse();
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_SCOPE_KEY))
+                .isFalse();
         }
 
         @Test
         void selectIdNoOpsBeforeTheSectorExists() {
             // No sector means no save to write into and nothing painting, so the write and the
             // refresh are both skipped rather than bumping a revision no layer would read.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
+            FilterSelection.selectId(SLOT, SELECTED_ID, board);
 
-                var board = new MapLayerRefreshBoard();
-
-                FilterSelection.selectId(MAP_SCOPE, SCOPE_ID, SELECTED_ID, board);
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
-                    .isEqualTo(0);
-            }
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                .isEqualTo(0);
         }
     }
 
@@ -234,97 +168,52 @@ final class FilterSelectionTest {
         @Test
         void clearSelectionDropsTheStoredIdAndRaisesOnTheBoardItWasHanded() {
 
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
+            FilterSelection.clearSelection(SLOT, board);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-
-                var board = new MapLayerRefreshBoard();
-
-                FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, board);
-
-                verify(memoryMock)
-                    .unset(SELECTED_ID_KEY);
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
-                    .isEqualTo(1);
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(KEY))
+                .isFalse();
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                .isEqualTo(1);
         }
 
         @Test
         void clearSelectionNoOpsWhenNoIdIsStored() {
             // Nothing to unset and nothing to repaint when the filter was already off, so a clear on
-            // an un-filtered scope neither touches memory nor bumps the revision.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            // an un-filtered slot bumps no revision.
+            FilterSelection.clearSelection(SLOT, board);
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                var board = new MapLayerRefreshBoard();
-
-                FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, board);
-
-                verify(memoryMock, never())
-                    .unset(anyString());
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
-                    .isEqualTo(0);
-            }
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                .isEqualTo(0);
         }
 
         @Test
-        void clearSelectionLeavesAnotherScopesSelectionUntouched() {
-            // Per-scope isolation on the write side: clearing a scope with no selection of its own
-            // unsets no key - in particular not the other scope's slot - and bumps no revision, even
-            // while that other scope holds an id.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+        void clearSelectionLeavesAnotherSlotsSelectionUntouched() {
+            // Isolation on the clear side: clearing a slot with no selection of its own drops nothing,
+            // in particular not the neighbouring slots' ids, and bumps no revision while they hold one.
+            sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, SELECTED_ID);
+            sectorMemoryFake.storeValue(OTHER_SCOPE_KEY, SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
+            FilterSelection.clearSelection(SLOT, board);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-
-                var board = new MapLayerRefreshBoard();
-
-                FilterSelection.clearSelection(MAP_SCOPE, OTHER_SCOPE_ID, board);
-
-                verify(memoryMock, never())
-                    .unset(anyString());
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
-                    .isEqualTo(0);
-            }
+            assertThat(sectorMemoryFake.readStoredValue(OTHER_SCREEN_KEY))
+                .isEqualTo(SELECTED_ID);
+            assertThat(sectorMemoryFake.readStoredValue(OTHER_SCOPE_KEY))
+                .isEqualTo(SELECTED_ID);
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                .isEqualTo(0);
         }
 
         @Test
         void clearSelectionNoOpsBeforeTheSectorExists() {
 
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
+            FilterSelection.clearSelection(SLOT, board);
 
-                var board = new MapLayerRefreshBoard();
-
-                FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, board);
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
-                    .isEqualTo(0);
-            }
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
+                .isEqualTo(0);
         }
     }
 
@@ -333,126 +222,70 @@ final class FilterSelectionTest {
 
         @Test
         void healStaleSelectionClearsAnIdThatIsNoLongerSelectable() {
-            // A scope whose stored selection stopped being on offer between sessions holds a dangling
+            // A slot whose stored selection stopped being on offer between sessions holds a dangling
             // id; the heal drops it so the filter falls back to none.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
+            FilterSelection.healStaleSelection(SLOT, storedId -> false);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(SELECTED_ID_KEY))
-                    .thenReturn(SELECTED_ID);
-
-                FilterSelection.healStaleSelection(MAP_SCOPE, SCOPE_ID, storedId -> false);
-
-                verify(memoryMock)
-                    .unset(SELECTED_ID_KEY);
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(KEY))
+                .isFalse();
         }
 
         @Test
         void healStaleSelectionKeepsAnIdThatIsStillSelectable() {
-            // A still-valid pick survives untouched, so the scope keeps filtering to the id the
-            // player last chose.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            // A still-valid pick survives untouched, so the slot keeps filtering to the id the player
+            // last chose.
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
+            FilterSelection.healStaleSelection(SLOT, storedId -> true);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(SELECTED_ID_KEY))
-                    .thenReturn(SELECTED_ID);
-
-                FilterSelection.healStaleSelection(MAP_SCOPE, SCOPE_ID, storedId -> true);
-
-                verify(memoryMock, never())
-                    .unset(anyString());
-            }
+            assertThat(sectorMemoryFake.readStoredValue(KEY))
+                .isEqualTo(SELECTED_ID);
         }
 
         @Test
-        void healStaleSelectionClearsOnlyTheScreenItWasNamedFor() {
-            // The heal is per screen, so a caller owing both panels runs it twice: healing the map
-            // screen leaves the intel screen's stored id standing until its own call comes.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+        void healStaleSelectionClearsOnlyTheSlotItWasNamedFor() {
+            // The heal is per slot, so a caller owing every screen runs it once each: healing one
+            // leaves the other's stored id standing until its own call comes.
+            sectorMemoryFake.storeValue(KEY, SELECTED_ID);
+            sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, OTHER_SELECTED_ID);
 
-                var memoryMock = mock(MemoryAPI.class);
+            FilterSelection.healStaleSelection(SLOT, storedId -> false);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(SELECTED_ID_KEY))
-                    .thenReturn(SELECTED_ID);
-                when(memoryMock.contains(INTEL_SELECTED_ID_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getString(INTEL_SELECTED_ID_KEY))
-                    .thenReturn(OTHER_SELECTED_ID);
-
-                FilterSelection.healStaleSelection(MAP_SCOPE, SCOPE_ID, storedId -> false);
-
-                verify(memoryMock)
-                    .unset(SELECTED_ID_KEY);
-                verify(memoryMock, never())
-                    .unset(INTEL_SELECTED_ID_KEY);
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(KEY))
+                .isFalse();
+            assertThat(sectorMemoryFake.readStoredValue(OTHER_SCREEN_KEY))
+                .isEqualTo(OTHER_SELECTED_ID);
         }
 
         @Test
         void healStaleSelectionNoOpsWhenNoIdIsStored() {
             // Nothing to validate when the filter was off, so the selectable check is never consulted
-            // and memory is left as it is.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            // and the save is left as it is.
+            FilterSelection.healStaleSelection(
+                SLOT,
+                storedId -> {
+                    throw new AssertionError("selectable check must not run without a stored id");
+                });
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                FilterSelection.healStaleSelection(
-                    MAP_SCOPE,
-                    SCOPE_ID,
-                    storedId -> {
-                        throw new AssertionError(
-                            "selectable check must not run without a stored id");
-                    });
-
-                verify(memoryMock, never())
-                    .unset(anyString());
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(KEY))
+                .isFalse();
         }
 
         @Test
         void healStaleSelectionNoOpsBeforeTheSectorExists() {
 
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
+            FilterSelection.healStaleSelection(
+                SLOT,
+                storedId -> {
+                    throw new AssertionError("selectable check must not run without a sector");
+                });
 
-                FilterSelection.healStaleSelection(
-                    MAP_SCOPE,
-                    SCOPE_ID,
-                    storedId -> {
-                        throw new AssertionError(
-                            "selectable check must not run without a sector");
-                    });
-
-                memoryAccessMock.verify(SectorMemoryAccess::readSectorMemory);
-            }
+            // Nothing to assert beyond it neither throwing nor consulting the check - there is no
+            // memory to have read a stored id from.
         }
     }
 }

@@ -102,6 +102,32 @@ final class MapLayerScreensTest {
     }
 
     @Nested
+    class GetAllScreenPicks {
+
+        @Test
+        void getAllScreenPicksHandsBackEveryScreenTheModHas() {
+            // The roster a pass owing every panel walks - a self-heal clearing a choice that lapsed for
+            // both at once. A screen missing from it is a panel that pass silently skips, so what is
+            // pinned is that the two named here are both on it and nothing else is.
+            assertThat(MapLayerScreens.getAllScreenPicks())
+                .containsExactlyInAnyOrder(
+                    MapLayerScreens.getMapPicks(),
+                    MapLayerScreens.getIntelPicks());
+        }
+
+        @Test
+        void getAllScreenPicksCarriesEachScreensOwnScope() {
+            // Each entry is the screen's whole picks rather than a bare scope, so a caller walking the
+            // roster to resolve a preference key cannot pair one screen's scope with another's tab.
+            assertThat(MapLayerScreens.getAllScreenPicks())
+                .extracting(picks -> picks.memoryScope().resolveKeyFor(PREFERENCE_KEY))
+                .containsExactlyInAnyOrder(
+                    "$kmu_political_preference_map",
+                    "$kmu_political_preference_intel");
+        }
+    }
+
+    @Nested
     class GetMapPicks {
 
         @Test

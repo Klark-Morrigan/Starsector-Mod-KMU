@@ -9,6 +9,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
+import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
@@ -147,10 +148,10 @@ public final class PoliticalMapLayer implements MapLayer {
         var board = installation.resolveRefreshBoard();
 
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
-        // so a spotlight, a sort or a column count picked here is that panel's own.
+        // so a spotlight, a sort or a column count picked here is that panel's own. Paired with the
+        // view's id, since a view keeps its own picks: the two are the picker's whole address.
         return FilterSelectionBinder.buildPicker(
-            memoryScope,
-            selectedView.getId(),
+            new SelectionSlot(memoryScope, selectedView.getId()),
             blocCache.resolveBlocPickerRead(selectedView).picker(),
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.

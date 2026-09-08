@@ -347,10 +347,10 @@ see [Styling](#styling).
 A layer whose body carries a sortable, column-laid list needs somewhere to keep how that list is
 ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSelection` are those
 stores, and `SortSelectionBinder`, `ColumnSelectionBinder`, and `FilterSelectionBinder` are what
-tie each to the widget that changes it. `FilterHoverSlot` stands beside them holding where the
-pointer rests rather than what was picked - not a fourth store, since what it holds belongs to a
-sector rather than to a save. Three stores, three binders and the hover slot is the whole of this
-half of the package.
+tie each to the widget that changes it. `SelectionSlot` is what two of the three are addressed by,
+and `FilterHoverSlot` stands beside them holding where the pointer rests rather than what was picked,
+which is no fourth store: what it holds belongs to a sector rather than to a save. Three stores,
+three binders, the address they take and the hover slot is the whole of this half of the package.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
@@ -368,27 +368,28 @@ kept** - a row states *that* it reads back, KMLib decides how far back that read
 The keys are why the split falls where it does. They are the frozen `$kmu_map_*` spellings below -
 save state this mod cannot move and a shared library has no business holding.
 
-`FilterSelection` and `SortSelection` both hold their answer per opaque scope, so each scope keeps
-its own and switching scopes neither clears nor cross-reads another's. The filter is scoped because
-an id read under the wrong scope names nothing; the sort because scopes rank their rows by different
-vocabularies, so a shared mode key would resolve against nothing under half of them and make every
-switch look like a reset. `ColumnSelection` takes no scope: how many columns a list wraps across is a
-layout preference, not a statement about what the list holds, so it means the same thing under every
-scope.
+`FilterSelection` and `SortSelection` both hold their answer per `SelectionSlot` - one screen and one
+opaque scope, the pair that composes the key. The scope half because an id read under the wrong scope
+names nothing and a mode key read under the wrong one resolves against nothing, making every switch
+look like a reset; the screen half because a pick is something the player did to one panel. Both are
+one value rather than two arguments, since a slot crossed one way and not the other compiles and
+reads as the feature working right up until the player sets the same preference twice.
 
-All three are additionally per screen, which is an axis none of them is handed by the picker: a pick
-is reported by a widget that knows only that it was clicked, and the binder files it under the panel
-it built the picker for. That is why the column count is unscoped and still per screen - the scope
-says nothing about where the list was laid out, and the two panels are two widths to lay it out in.
-The screen is captured at the build for the reason the refresh board is: a report can land after the
-player has moved to the other screen, and the pick belongs to the panel it was clicked on.
+`ColumnSelection` takes the screen alone: how many columns a list wraps across is a layout preference,
+not a statement about what the list holds, so it means the same thing under every scope - but a panel
+is a fixed width the list was laid out inside, and the two panels are two widths.
+
+The screen is an axis no picker is handed. A pick is reported by a widget that knows only that it was
+clicked, and the binder files it under the slot it built that picker for - captured at the build for
+the reason the refresh board is, since a report can land after the player has moved to the other
+screen.
 
 Beyond the read, pick, and clear, `FilterSelection` heals a stored id a caller-supplied predicate no
 longer accepts - a selection that stopped being on offer, whether between sessions or while the game
 runs. Binding that predicate to a live source of what is selectable *now* is the reading layer's,
 since the source is exactly the knowledge these classes refuse; so is deciding at which moments the
 offer can have moved. The predicate is asked only when a stored id is there to judge, so binding it
-to an expensive source costs nothing on a pair holding no pick.
+to an expensive source costs nothing on a slot holding no pick.
 
 One heal is one screen's, so a caller owing both runs it twice. That is deliberate: what lapsed is a
 fact about the sector rather than about a panel, so a bloc that stopped being on offer stopped being

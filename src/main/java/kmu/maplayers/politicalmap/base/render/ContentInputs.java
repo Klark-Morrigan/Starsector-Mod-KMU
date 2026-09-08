@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -61,7 +62,11 @@ public record ContentInputs(
      */
     public static ContentInputs sampleForView(PoliticalMapView view, ScreenMemoryScope memoryScope) {
 
-        var selectedBlocId = FilterSelection.getSelectedIdOf(memoryScope, view.getId());
+        var selectedBlocId =
+            FilterSelection.getSelectedIdOf(new SelectionSlot(memoryScope, view.getId()));
+
+        // TODO: read the four below under memoryScope too - the recede sets, the name format and the
+        // outline flag are still one slot per sector, so only the spotlight is this screen's own.
 
         return new ContentInputs(
             selectedBlocId,

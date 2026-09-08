@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.settings.KmuLunaSettings;
 
 /**
@@ -55,8 +56,7 @@ public final class FilterSelectionHeal {
         }
         for (var screenPicks : MapLayerScreens.getAllScreenPicks()) {
             FilterSelection.healStaleSelection(
-                screenPicks.memoryScope(),
-                view.getId(),
+                new SelectionSlot(screenPicks.memoryScope(), view.getId()),
                 spotlitBlocId -> isBlocOfferedBy(view, spotlitBlocId));
         }
     }

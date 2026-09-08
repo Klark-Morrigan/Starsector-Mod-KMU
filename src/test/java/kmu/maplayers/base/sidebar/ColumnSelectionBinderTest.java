@@ -3,6 +3,7 @@ package kmu.maplayers.base.sidebar;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,8 +19,9 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class ColumnSelectionBinderTest {
 
-    // The screen whose slot the read and the write land on.
-    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
+    // The screen whose slot the read and the write land on - a stand-in, since what this binder does
+    // is the same whichever panel asked.
+    private static final ScreenMemoryScope SCREEN_SCOPE = ScreenMemoryScopes.createStandInScreen();
 
     @Nested
     class ResolveStoredColumns {
@@ -30,10 +32,10 @@ final class ColumnSelectionBinderTest {
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
                 selectionMock
-                    .when(() -> ColumnSelection.getColumnCountKey(MAP_SCOPE))
+                    .when(() -> ColumnSelection.getColumnCountKey(SCREEN_SCOPE))
                     .thenReturn(ListColumns.TWO.persistenceKey());
 
-                assertThat(ColumnSelectionBinder.resolveStoredColumns(MAP_SCOPE))
+                assertThat(ColumnSelectionBinder.resolveStoredColumns(SCREEN_SCOPE))
                     .isEqualTo(ListColumns.TWO);
             }
         }
@@ -47,11 +49,11 @@ final class ColumnSelectionBinderTest {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
-                ColumnSelectionBinder.storeColumns(MAP_SCOPE, ListColumns.TWO);
+                ColumnSelectionBinder.storeColumns(SCREEN_SCOPE, ListColumns.TWO);
 
                 selectionMock.verify(
                     () -> ColumnSelection.selectColumnCount(
-                        MAP_SCOPE, ListColumns.TWO.persistenceKey()));
+                        SCREEN_SCOPE, ListColumns.TWO.persistenceKey()));
             }
         }
     }

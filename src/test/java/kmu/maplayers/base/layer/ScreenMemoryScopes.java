@@ -19,4 +19,16 @@ public final class ScreenMemoryScopes {
     public static ScreenMemoryScope createStandInScreen() {
         return new ScreenMemoryScope("test");
     }
+
+    /**
+     * A second screen of no particular identity, for the cases whose subject is that two screens hold a
+     * pick apart. Distinct from the first and nothing else: which two screens the mod actually has is
+     * {@link MapLayerScreens}' answer, and a case pinning "these two read apart" needs only that they
+     * are two.
+     *
+     * @return a stand-in screen that is not {@link #createStandInScreen()}'s
+     */
+    public static ScreenMemoryScope createOtherStandInScreen() {
+        return new ScreenMemoryScope("other");
+    }
 }

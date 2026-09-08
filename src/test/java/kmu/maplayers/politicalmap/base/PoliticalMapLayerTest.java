@@ -33,6 +33,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -215,7 +216,6 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
-                        any(),
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
@@ -368,8 +368,7 @@ final class PoliticalMapLayerTest {
 
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
-                        any(),
-                        eq(PICKER_VIEW_ID),
+                        argThat(slot -> PICKER_VIEW_ID.equals(slot.scopeId())),
                         any(),
                         any(),
                         any(),
@@ -412,7 +411,6 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
-                        any(),
                         eq(installation)));
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(eq(installedBoard), any());
@@ -434,8 +432,7 @@ final class PoliticalMapLayerTest {
                     () -> PoliticalMapBodyControls.buildViewSelector(BODY_SCREEN));
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
-                        eq(BODY_SCREEN),
-                        any(),
+                        argThat(slot -> BODY_SCREEN.equals(slot.memoryScope())),
                         any(),
                         any(),
                         any(),
@@ -538,7 +535,6 @@ final class PoliticalMapLayerTest {
             stubSharedControlsAndSelector(controlsMock);
             pickerMock
                 .when(() -> FilterSelectionBinder.buildPicker(
-                    any(),
                     any(),
                     any(),
                     any(),
