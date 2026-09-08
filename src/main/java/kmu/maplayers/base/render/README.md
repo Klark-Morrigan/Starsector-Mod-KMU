@@ -194,6 +194,19 @@ the `Profiling level` knob on `Map - Dev`, which ships off - so a player who nev
 `kmu_profiling` readout is not measured at all. The beats above are coarse and so are timed by any
 capture that is running; what a level rules out is the finer work inside a per-item loop.
 
+What the readout writes is a reading of the capture rather than the capture itself. `tree` is the
+beats as they were measured, each row under the one it ran inside; `flat` puts the rows that spent
+the time first, each named by its whole path; and `walks` keeps only the rows that traversed the
+sector, worst call first, which is the same witness the refresh's bound is stated against.
+`namespace=` narrows any of them to one layer's rows - the beats those rows sit inside kept, so a
+share is still readable against the whole - and `top=` keeps only as many as are wanted.
+
+`perframe` divides the totals by the calls of `mapLayer.prepare`, which is the beat that runs once
+a frame, so a figure means the same whether the map was left open for four seconds or four minutes;
+a capture holding no call of it says so and leaves the totals alone. `log` writes the same reading
+to `starsector.log` instead of the overlay, which is where a capture asked for in a bug report has
+to end up.
+
 ## Silencing a minimap parked off screen
 
 The last-wins rule above settles which pass a frame's hover comes from; it does not stop the pass.

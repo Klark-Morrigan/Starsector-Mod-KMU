@@ -4,12 +4,18 @@ import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.snapshot.BudgetBreach;
+import kmlib.profiling.snapshot.CountSpread;
+import kmlib.profiling.snapshot.CountTotals;
 import kmlib.profiling.snapshot.DurationBuckets;
+import kmlib.profiling.snapshot.ProfileCount;
 import kmlib.profiling.snapshot.ProfileIterations;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.profiling.snapshot.ProfileOriginTree;
 import kmlib.profiling.snapshot.ProfileTiming;
 import kmlib.profiling.snapshot.WorstCall;
+import kmlib.starsector.SectorWalkCounters;
+
+import kmu.maplayers.base.render.MapFrameSections;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,25 +33,36 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link KmuProfilingReportCommand}: a bare invocation prints the formatted
- * timings, {@code reset} clears the profiler and reports that it did, a stray
- * argument is rejected as bad syntax without touching the profiler, and every
- * invocation acts on whichever profiler is bound at the moment it runs.
+ * Pins {@link KmuProfilingReportCommand}: a bare invocation prints the capture as it was measured,
+ * a named view prints the reading it names, the frame flag divides the totals by the beat the
+ * framework opens once a frame, the log flag writes the report to the game log and says so instead
+ * of printing it, {@code reset} clears the profiler and reports that it did, a stray argument is
+ * rejected as bad syntax without touching the profiler, and every invocation acts on whichever
+ * profiler is bound at the moment it runs.
  */
 final class KmuProfilingReportCommandTest {
 
     private static final String SECTION = "politicalMap.render";
+    private static final String CHILD_SECTION = "politicalMap.walk";
     private static final String ORIGIN_LABEL = "MN-6220 - Marat";
     private static final long TWO_MILLIS_IN_NANOS = 2_000_000L;
+    private static final long ONE_MILLI_IN_NANOS = 1_000_000L;
+
+    // Two calls of the beat the framework opens once a frame, so a per-frame report divides by a
+    // number the rows themselves never state.
+    private static final long FRAMES = 2L;
+
+    private static final long TWO_WALKS = 2L;
 
     private final Profiler profilerMock = mock(Profiler.class);
     private final List<String> output = new ArrayList<>();
+    private final List<String> logged = new ArrayList<>();
     // What the holder answers with, so a case can rebind between building the command and running
     // it - which is what the level knob does in play.
     private final AtomicReference<Profiler> boundProfiler = new AtomicReference<>(profilerMock);
 
     private final KmuProfilingReportCommand command =
-        new KmuProfilingReportCommand(boundProfiler::get, output::add);
+        new KmuProfilingReportCommand(boundProfiler::get, output::add, logged::add);
 
     @Nested
     class RunCommand {
@@ -53,27 +70,65 @@ final class KmuProfilingReportCommandTest {
         @Test
         void printsTheFormattedTimingsForABareInvocation() {
 
-            when(profilerMock.snapshot()).thenReturn(List.of(new ProfileOriginTree(
-                ProfileOrigin.registerOrigin(ORIGIN_LABEL),
-                List.of(new ProfileNode(
-                    ProfileSection.registerSection(SECTION),
-                    new ProfileTiming(
-                        1,
-                        TWO_MILLIS_IN_NANOS,
-                        TWO_MILLIS_IN_NANOS,
-                        TWO_MILLIS_IN_NANOS,
-                        DurationBuckets.NO_CALLS),
-                    WorstCall.NO_CALL,
-                    BudgetBreach.NO_BREACH,
-                    ProfileIterations.NO_ITERATIONS,
-                    List.of(),
-                    List.of())))));
+            when(profilerMock.snapshot()).thenReturn(captureOf(nodeOf(SECTION)));
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.SUCCESS);
             assertThat(output).hasSize(1);
             assertThat(output.get(0)).contains(SECTION);
+        }
+
+        @Test
+        void printsTheListingWhenOneIsNamed() {
+            // The console word reaching the reading it names: a listing takes the rows out of the
+            // tree, so the child is named by its whole path rather than indented under its parent.
+            when(profilerMock.snapshot()).thenReturn(captureOf(parentHoldingOneChild()));
+
+            command.runCommand("flat", CommandContext.CAMPAIGN_MAP);
+
+            assertThat(output.get(0)).contains(SECTION + "/" + CHILD_SECTION);
+        }
+
+        @Test
+        void printsOnlyTheRowsThatWalkedWhenTheWalksListingIsNamed() {
+            // Which counter "walks" means is this command's to say: the library knows a row counted
+            // something and not that the something was a traversal of a sector.
+            when(profilerMock.snapshot()).thenReturn(captureOf(nodeCountingWalks(), nodeOf(
+                CHILD_SECTION)));
+
+            command.runCommand("walks", CommandContext.CAMPAIGN_MAP);
+
+            assertThat(output.get(0))
+                .contains(SECTION)
+                .doesNotContain(CHILD_SECTION);
+        }
+
+        @Test
+        void dividesTheTotalsByTheFrameBeatWhenAskedForPerFrameFigures() {
+            // Which beat a frame is counted by is this command's to say as well, and it is the one
+            // the framework opens once per frame.
+            when(profilerMock.snapshot()).thenReturn(captureOf(frameBeatNode()));
+
+            command.runCommand("perframe", CommandContext.CAMPAIGN_MAP);
+
+            assertThat(output.get(0))
+                .contains("per frame, over 2 of " + MapFrameSections.PREPARE.getName());
+        }
+
+        @Test
+        void writesTheReportToTheGameLogAndSaysSoWhenAskedTo() {
+            // Where a capture a player was asked for actually has to end up: the overlay scrolls
+            // away with the session, while the log file is the one they already attach.
+            when(profilerMock.snapshot()).thenReturn(captureOf(nodeOf(SECTION)));
+
+            var result = command.runCommand("log", CommandContext.CAMPAIGN_MAP);
+
+            assertThat(result).isEqualTo(CommandResult.SUCCESS);
+            assertThat(logged).hasSize(1);
+            assertThat(logged.get(0)).contains(SECTION);
+            assertThat(output).containsExactly(
+                "KMU timings written to the game log (starsector.log).");
         }
 
         @Test
@@ -92,7 +147,7 @@ final class KmuProfilingReportCommandTest {
             var result = command.runCommand("bogus", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.BAD_SYNTAX);
-            assertThat(output).anyMatch(message -> message.contains("Too many arguments"));
+            assertThat(output).anyMatch(message -> message.contains("Invalid view 'bogus'"));
             // A malformed invocation must not clear the timings it failed to read.
             verify(profilerMock, never()).reset();
         }
@@ -109,5 +164,60 @@ final class KmuProfilingReportCommandTest {
             verify(reboundProfilerMock).reset();
             verify(profilerMock, never()).reset();
         }
+    }
+
+    private static List<ProfileOriginTree> captureOf(ProfileNode... roots) {
+        return List.of(new ProfileOriginTree(
+            ProfileOrigin.registerOrigin(ORIGIN_LABEL), List.of(roots)));
+    }
+
+    private static ProfileNode nodeOf(String sectionName) {
+        return nodeOf(ProfileSection.registerSection(sectionName), 1, List.of(), List.of());
+    }
+
+    // One call of a section holding one call of another, which is the smallest capture whose rows
+    // are named differently by the tree and by a listing.
+    private static ProfileNode parentHoldingOneChild() {
+        return nodeOf(
+            ProfileSection.registerSection(SECTION),
+            1,
+            List.of(),
+            List.of(nodeOf(CHILD_SECTION)));
+    }
+
+    private static ProfileNode nodeCountingWalks() {
+        return nodeOf(
+            ProfileSection.registerSection(SECTION),
+            1,
+            List.of(new ProfileCount(
+                SectorWalkCounters.SECTOR_WALKS,
+                new CountTotals(TWO_WALKS, TWO_WALKS),
+                new CountSpread(TWO_WALKS, TWO_WALKS))),
+            List.of());
+    }
+
+    private static ProfileNode frameBeatNode() {
+        return nodeOf(MapFrameSections.PREPARE, FRAMES, List.of(), List.of());
+    }
+
+    private static ProfileNode nodeOf(
+            ProfileSection section,
+            long calls,
+            List<ProfileCount> counts,
+            List<ProfileNode> children) {
+
+        return new ProfileNode(
+            section,
+            new ProfileTiming(
+                calls,
+                TWO_MILLIS_IN_NANOS,
+                ONE_MILLI_IN_NANOS,
+                TWO_MILLIS_IN_NANOS,
+                DurationBuckets.NO_CALLS),
+            WorstCall.NO_CALL,
+            BudgetBreach.NO_BREACH,
+            ProfileIterations.NO_ITERATIONS,
+            counts,
+            children);
     }
 }
