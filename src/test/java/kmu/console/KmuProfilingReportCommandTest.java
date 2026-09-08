@@ -14,6 +14,7 @@ import kmlib.profiling.snapshot.ProfileOriginTree;
 import kmlib.profiling.snapshot.ProfileTiming;
 import kmlib.profiling.snapshot.WorstCall;
 import kmlib.starsector.SectorWalkCounters;
+import kmlib.testfixtures.console.output.CommandOutputFake;
 
 import kmu.maplayers.base.render.MapFrameSections;
 
@@ -22,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.lazywizard.console.BaseCommand.CommandContext;
 import org.lazywizard.console.BaseCommand.CommandResult;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,14 +55,14 @@ final class KmuProfilingReportCommandTest {
     private static final long TWO_WALKS = 2L;
 
     private final Profiler profilerMock = mock(Profiler.class);
-    private final List<String> output = new ArrayList<>();
-    private final List<String> logged = new ArrayList<>();
+    private final CommandOutputFake outputFake = new CommandOutputFake();
+    private final CommandOutputFake logFake = new CommandOutputFake();
     // What the holder answers with, so a case can rebind between building the command and running
     // it - which is what the level knob does in play.
     private final AtomicReference<Profiler> boundProfiler = new AtomicReference<>(profilerMock);
 
     private final KmuProfilingReportCommand command =
-        new KmuProfilingReportCommand(boundProfiler::get, output::add, logged::add);
+        new KmuProfilingReportCommand(boundProfiler::get, outputFake, logFake);
 
     @Nested
     class RunCommand {
@@ -75,8 +75,8 @@ final class KmuProfilingReportCommandTest {
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.SUCCESS);
-            assertThat(output).hasSize(1);
-            assertThat(output.get(0)).contains(SECTION);
+            assertThat(outputFake.getMessages()).hasSize(1);
+            assertThat(outputFake.getMessages().get(0)).contains(SECTION);
         }
 
         @Test
@@ -87,7 +87,7 @@ final class KmuProfilingReportCommandTest {
 
             command.runCommand("flat", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(output.get(0)).contains(SECTION + "/" + CHILD_SECTION);
+            assertThat(outputFake.getMessages().get(0)).contains(SECTION + "/" + CHILD_SECTION);
         }
 
         @Test
@@ -99,7 +99,7 @@ final class KmuProfilingReportCommandTest {
 
             command.runCommand("walks", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(output.get(0))
+            assertThat(outputFake.getMessages().get(0))
                 .contains(SECTION)
                 .doesNotContain(CHILD_SECTION);
         }
@@ -112,7 +112,7 @@ final class KmuProfilingReportCommandTest {
 
             command.runCommand("perframe", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(output.get(0))
+            assertThat(outputFake.getMessages().get(0))
                 .contains("per frame, over 2 of " + MapFrameSections.PREPARE.getName());
         }
 
@@ -125,9 +125,9 @@ final class KmuProfilingReportCommandTest {
             var result = command.runCommand("log", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.SUCCESS);
-            assertThat(logged).hasSize(1);
-            assertThat(logged.get(0)).contains(SECTION);
-            assertThat(output).containsExactly(
+            assertThat(logFake.getMessages()).hasSize(1);
+            assertThat(logFake.getMessages().get(0)).contains(SECTION);
+            assertThat(outputFake.getMessages()).containsExactly(
                 "KMU timings written to the game log (starsector.log).");
         }
 
@@ -137,7 +137,7 @@ final class KmuProfilingReportCommandTest {
             var result = command.runCommand("reset", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.SUCCESS);
-            assertThat(output).containsExactly("KMU timings reset.");
+            assertThat(outputFake.getMessages()).containsExactly("KMU timings reset.");
             verify(profilerMock).reset();
         }
 
@@ -147,7 +147,8 @@ final class KmuProfilingReportCommandTest {
             var result = command.runCommand("bogus", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.BAD_SYNTAX);
-            assertThat(output).anyMatch(message -> message.contains("Invalid view 'bogus'"));
+            assertThat(outputFake.getMessages())
+                .anyMatch(message -> message.contains("Invalid view 'bogus'"));
             // A malformed invocation must not clear the timings it failed to read.
             verify(profilerMock, never()).reset();
         }
