@@ -159,7 +159,8 @@ to one panel, so it is filed against that panel.
 | Whether the box is folded to its rail | per screen, persisted |
 | How far the body is scrolled | per screen, for the session |
 | The picker's bloc spotlight, its sort, and its column count | per screen, persisted |
-| Political-map view, name format, recede styles, uninhabited outline | shared, persisted once |
+| The name format, the recede styles, and the uninhabited outline | per screen, persisted |
+| Political-map view | shared, persisted once |
 | How the bar is arranged - the tab order, and the tabs taken off it | shared, per user in common data |
 | Appearance and sound settings | shared, in LunaLib |
 

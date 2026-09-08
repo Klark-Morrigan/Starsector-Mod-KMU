@@ -2,13 +2,14 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.SectorMemoryFlag;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuPoliticalMapTerritorySettings;
 
 /**
- * One receding context's per-save state: whether its backdrop is muted (dimmed) and whether
+ * One receding context's per-save, per-screen state: whether its backdrop is muted (dimmed) and whether
  * it is desaturated (recoloured to the desaturation profile), plus how those two toggles resolve into
  * a receded bloc's {@link ElementStyleAdjustment}. It is instantiable so each context that recedes
  * owns its own toggle set rather than sharing one - the filter recede (the "rest of the sector" behind
@@ -16,6 +17,11 @@ import kmu.settings.KmuPoliticalMapTerritorySettings;
  * independently, so each holds its own instance over its own memory keys. Within one instance the two
  * toggles still resolve through a single rule, so a receded bloc reads the same everywhere that
  * instance is applied.
+ *
+ * <p>The set names the context; the screen names the panel the toggles were flipped on. A set holds its
+ * two base keys and a {@link ScreenMemoryScope} arrives on every read and write, so one instance backs
+ * both screens without either seeing the other's flips - and no caller composes a screen-suffixed key of
+ * its own.
  *
  * <p>Sidebar-only: the toggles are driven solely by the overlay's tab-panel checkboxes, never a
  * settings-screen control, so they persist in sector memory (each save keeps its own choice and it
@@ -50,84 +56,105 @@ public final class RecedePreferences {
     private static final boolean MUTE_DEFAULT = false;
     private static final boolean DESATURATE_DEFAULT = true;
 
-    // The flags over this set's two frozen memory keys, each carrying its toggle's own default.
-    // Instance fields, not statics, so each set backs a distinct backdrop; renaming a key silently
-    // resets every existing save's choice for that set, so they stay stable once shipped.
-    private final SectorMemoryFlag muteFlag;
-    private final SectorMemoryFlag desaturateFlag;
+    // The base keys a screen's segment composes onto, one pair per set. Instance fields, not statics, so
+    // each set backs a distinct backdrop; renaming a key silently resets every existing save's choice for
+    // that set, so they stay stable once shipped.
+    private final String muteKey;
+    private final String desaturateKey;
 
     // Package-private: the only sets are the two constants above, each naming its own frozen keys, so
     // no other code composes a recede set with keys of its own.
     RecedePreferences(String muteKey, String desaturateKey) {
-        this.muteFlag = new SectorMemoryFlag(muteKey, MUTE_DEFAULT);
-        this.desaturateFlag = new SectorMemoryFlag(desaturateKey, DESATURATE_DEFAULT);
+        this.muteKey = muteKey;
+        this.desaturateKey = desaturateKey;
     }
 
     /**
-     * @return whether this set's receded backdrop dims by the muted-opacity modifier; false before a
-     *         save exists or while the toggle is untouched, since Mute defaults off
+     * @param memoryScope the screen whose toggle is read
+     * @return whether this set's receded backdrop dims by the muted-opacity modifier on that screen;
+     *         false before a save exists or while the toggle is untouched, since Mute defaults off
      */
-    public boolean isMuted() {
-        return muteFlag.isSet();
+    public boolean isMuted(ScreenMemoryScope memoryScope) {
+        return resolveMuteFlag(memoryScope).isSet();
     }
 
     /**
-     * @return whether this set's receded backdrop recolours to the desaturation profile; true before a
-     *         save exists or while the toggle is untouched, since Desaturate defaults on
+     * @param memoryScope the screen whose toggle is read
+     * @return whether this set's receded backdrop recolours to the desaturation profile on that screen;
+     *         true before a save exists or while the toggle is untouched, since Desaturate defaults on
      */
-    public boolean isDesaturated() {
-        return desaturateFlag.isSet();
+    public boolean isDesaturated(ScreenMemoryScope memoryScope) {
+        return resolveDesaturateFlag(memoryScope).isSet();
     }
 
     /**
-     * Sets whether this set's receded backdrop dims, persisting the choice in this save and repainting
-     * the overlay so the flip shows at once.
+     * Sets whether this set's receded backdrop dims, persisting the choice in this save against the
+     * screen the box was flipped on and repainting the overlay so the flip shows at once.
      *
-     * @param isMuted the new Mute state, as the sidebar checkbox reads it
-     * @param board   the refresh board of the sector whose checkbox was flipped, raised on so that
-     *                sector's backdrop repaints
+     * @param memoryScope the screen whose panel was flipped
+     * @param isMuted     the new Mute state, as the sidebar checkbox reads it
+     * @param board       the refresh board of the sector whose checkbox was flipped, raised on so that
+     *                    sector's backdrop repaints
      */
-    public void setMuted(boolean isMuted, MapLayerRefreshBoard board) {
+    public void setMuted(ScreenMemoryScope memoryScope, boolean isMuted, MapLayerRefreshBoard board) {
         // Repaint only on a real write: before the sector exists the flag no-ops and reports no
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
         // fields. The revision is one coarse signal every set shares, so a consumer only draws the
         // backdrop it owns even though any set's flip advances it.
-        if (muteFlag.set(isMuted)) {
+        if (resolveMuteFlag(memoryScope).set(isMuted)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
 
     /**
      * Sets whether this set's receded backdrop recolours to the desaturation profile, persisting the
-     * choice in this save and repainting the overlay so the flip shows at once.
+     * choice in this save against the screen the box was flipped on and repainting the overlay so the
+     * flip shows at once.
      *
+     * @param memoryScope      the screen whose panel was flipped
      * @param shouldDesaturate the new Desaturate state, as the sidebar checkbox reads it
      * @param board            the refresh board of the sector whose checkbox was flipped, raised on
      *                         so that sector's backdrop repaints
      */
-    public void setDesaturated(boolean shouldDesaturate, MapLayerRefreshBoard board) {
-        if (desaturateFlag.set(shouldDesaturate)) {
+    public void setDesaturated(
+            ScreenMemoryScope memoryScope,
+            boolean shouldDesaturate,
+            MapLayerRefreshBoard board) {
+
+        if (resolveDesaturateFlag(memoryScope).set(shouldDesaturate)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
 
     /**
-     * Resolves how a bloc this set recedes draws under the current toggles: Mute scales its opacity by
+     * Resolves how a bloc this set recedes draws under one screen's toggles: Mute scales its opacity by
      * the modifier (0 hides it, 1 leaves it), Desaturate recolours it, and the two combine. Both off is
      * {@link ElementStyleAdjustment#NONE}, so a bloc this set does not recede draws untouched.
      *
+     * @param memoryScope the screen being painted for, whose panel holds the two toggles
      * @return the styling every bloc this set recedes takes this pass, resolved in one place so the
      *         recede reads the same in every context that applies this set
      */
-    public ElementStyleAdjustment resolveRecedeAdjustment() {
+    public ElementStyleAdjustment resolveRecedeAdjustment(ScreenMemoryScope memoryScope) {
         // Mute scales by the Luna modifier reading, not a constant, so the screen knob tunes how far a
         // receded bloc dims; unread while Mute is off, which leaves opacity untouched at 1. The getter
         // keeps its shipped "alliance" spelling - a frozen LunaLib field id shared by every set, not a
         // claim about which set reads it.
-        double opacityMultiplier = isMuted()
+        double opacityMultiplier = isMuted(memoryScope)
             ? KmuPoliticalMapTerritorySettings.getPoliticalMapAllianceMutedOpacityModifier()
             : 1.0;
-        return new ElementStyleAdjustment(opacityMultiplier, isDesaturated());
+        return new ElementStyleAdjustment(opacityMultiplier, isDesaturated(memoryScope));
+    }
+
+    // This set's Mute flag on one screen. A fresh wrapper per call - the wrapper only holds its key and
+    // default, the value lives in sector memory - so no per-screen instance has to be cached here.
+    private SectorMemoryFlag resolveMuteFlag(ScreenMemoryScope memoryScope) {
+        return new SectorMemoryFlag(memoryScope.resolveKeyFor(muteKey), MUTE_DEFAULT);
+    }
+
+    // This set's Desaturate flag on one screen, built the same way as the Mute flag above.
+    private SectorMemoryFlag resolveDesaturateFlag(ScreenMemoryScope memoryScope) {
+        return new SectorMemoryFlag(memoryScope.resolveKeyFor(desaturateKey), DESATURATE_DEFAULT);
     }
 }

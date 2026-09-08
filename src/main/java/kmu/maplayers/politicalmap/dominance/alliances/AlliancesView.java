@@ -175,8 +175,6 @@ public final class AlliancesView implements DominancePaintedView {
         // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
         // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
         // alliances package with the view that owns them.
-        //
-        // TODO: hand memoryScope to those checkboxes - the non-allied recede is still one slot per sector.
-        return AllianceBodyControls.buildControls(board);
+        return AllianceBodyControls.buildControls(board, memoryScope);
     }
 }

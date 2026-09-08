@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.dominance.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
@@ -21,8 +23,8 @@ import static org.mockito.Mockito.mockStatic;
  * non-allied recede set and the {@code Non-allied factions are} caption, then returns exactly what the
  * control builds - so the checkbox shape and toggle wiring stay the shared control's concern while the
  * set and caption are the view's. The strings are stubbed so the caption is pinned by its key, not its
- * live text. The board it was handed travels through with them, so the flip a checkbox makes lands on
- * the sector whose sidebar the view is drawn in.
+ * live text. The board and the screen it was handed travel through with them, so the flip a checkbox
+ * makes lands on the sector whose sidebar the view is drawn in, and on the panel it was placed on.
  */
 final class AllianceBodyControlsTest {
     // A sentinel the shared control is stubbed to return, so the test proves the adapter passes it
@@ -32,11 +34,14 @@ final class AllianceBodyControlsTest {
     // The board the tab hands down, stood in for so the pass-through can be pinned by identity.
     private static final MapLayerRefreshBoard PASSED_BOARD = new MapLayerRefreshBoard();
 
+    // The screen the tab hands down, stood in for so the pass-through can be pinned by value.
+    private static final ScreenMemoryScope PASSED_SCREEN = ScreenMemoryScopes.createStandInScreen();
+
     @Nested
     class BuildControls {
 
         @Test
-        void buildControlsHandsTheNonAlliedSetCaptionAndBoardToTheSharedRecedeControl() {
+        void buildControlsHandsTheNonAlliedSetCaptionBoardAndScreenToTheSharedRecedeControl() {
             try (MockedStatic<RecedeControl> controlMock = mockStatic(RecedeControl.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
@@ -44,10 +49,11 @@ final class AllianceBodyControlsTest {
                 controlMock.when(() -> RecedeControl.buildControls(
                         RecedePreferences.ALLIANCE_NON_ALLIED,
                         "Non-allied factions are",
-                        PASSED_BOARD))
+                        PASSED_BOARD,
+                        PASSED_SCREEN))
                         .thenReturn(BUILT_CONTROLS);
 
-                assertThat(AllianceBodyControls.buildControls(PASSED_BOARD))
+                assertThat(AllianceBodyControls.buildControls(PASSED_BOARD, PASSED_SCREEN))
                         .isSameAs(BUILT_CONTROLS);
             }
         }

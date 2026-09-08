@@ -159,7 +159,8 @@ public final class PoliticalMapLayer implements MapLayer {
             RecedeControl.buildControls(
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
-                board),
+                board,
+                memoryScope),
             installation);
     }
 }

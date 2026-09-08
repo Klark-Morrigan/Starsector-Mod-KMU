@@ -114,7 +114,7 @@ final class PoliticalMapRebuildSeams {
         // font to measure with; the choice is sector-memory state as well.
         var nameFormatSeam = seams.openSeam(NameFormatPreference.class);
         nameFormatSeam
-            .when(NameFormatPreference::getSelectedNameFormat)
+            .when(() -> NameFormatPreference.getSelectedNameFormat(any()))
             .thenReturn(FactionNameFormatChoice.NONE);
     }
 

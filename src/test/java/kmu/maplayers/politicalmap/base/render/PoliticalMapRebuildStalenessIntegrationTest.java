@@ -152,7 +152,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
             var standingMap = cache.getTerritories();
 
             outlinePreferenceMock
-                .when(UninhabitedOutlinePreference::isOutlineDrawn)
+                .when(() -> UninhabitedOutlinePreference.isOutlineDrawn(any()))
                 .thenReturn(true);
             cache.refresh(FactionsView.INSTANCE);
 

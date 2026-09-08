@@ -51,13 +51,13 @@ public record ContentInputs(
      * paints: off filter there is no spotlight for a backdrop to sit behind, so the recede is the
      * identity and a Mute or Desaturate flip made while nothing is spotlighted rebuilds nothing.
      *
-     * <p>It is also per screen, since a spotlight is a pick made on one panel, so the screen the
-     * frame is painting for is what the pick is read under. The caller supplies it rather than this
-     * resolving one, so the picture a frame paints and the picks it paints from cannot name two
-     * screens.
+     * <p>Every one of the five is also per screen, since each is a pick made on one panel, so the
+     * screen the frame is painting for is what they are all read under. The caller supplies it rather
+     * than this resolving one, so the picture a frame paints and the picks it paints from cannot name
+     * two screens.
      *
      * @param view        the view being painted, whose picker holds the spotlight pick
-     * @param memoryScope the screen being painted for, whose panel holds that pick
+     * @param memoryScope the screen being painted for, whose panel holds every pick below
      * @return this frame's reading of the preferences the bake is under
      */
     public static ContentInputs sampleForView(PoliticalMapView view, ScreenMemoryScope memoryScope) {
@@ -65,17 +65,14 @@ public record ContentInputs(
         var selectedBlocId =
             FilterSelection.getSelectedIdOf(new SelectionSlot(memoryScope, view.getId()));
 
-        // TODO: read the four below under memoryScope too - the recede sets, the name format and the
-        // outline flag are still one slot per sector, so only the spotlight is this screen's own.
-
         return new ContentInputs(
             selectedBlocId,
             selectedBlocId == null
                 ? ElementStyleAdjustment.NONE
-                : RecedePreferences.FILTER.resolveRecedeAdjustment(),
-            RecedePreferences.ALLIANCE_NON_ALLIED.resolveRecedeAdjustment(),
-            NameFormatPreference.getSelectedNameFormat(),
-            UninhabitedOutlinePreference.isOutlineDrawn());
+                : RecedePreferences.FILTER.resolveRecedeAdjustment(memoryScope),
+            RecedePreferences.ALLIANCE_NON_ALLIED.resolveRecedeAdjustment(memoryScope),
+            NameFormatPreference.getSelectedNameFormat(memoryScope),
+            UninhabitedOutlinePreference.isOutlineDrawn(memoryScope));
     }
 
     /**

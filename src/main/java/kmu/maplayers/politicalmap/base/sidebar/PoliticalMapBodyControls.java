@@ -60,24 +60,22 @@ public final class PoliticalMapBodyControls {
             MapLayerRefreshBoard board,
             ScreenMemoryScope memoryScope) {
 
-        // TODO: hand memoryScope to the two preferences below - the outline flag and the name format
-        // are still one slot per sector.
         return List.of(
             ControlSpec.Checkbox.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
                 new TextSpan(
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
-                UninhabitedOutlinePreference.isOutlineDrawn(),
-                cellIndex -> toggleUninhabitedSystems(board)),
+                UninhabitedOutlinePreference.isOutlineDrawn(memoryScope),
+                cellIndex -> toggleUninhabitedSystems(board, memoryScope)),
             ControlSpec.HorizontalRadio
                 .of(
                     List.of(
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
-                    nameFormatRadioState(),
-                    segmentIndex -> selectNameFormatSegment(segmentIndex, board))
+                    nameFormatRadioState(memoryScope),
+                    segmentIndex -> selectNameFormatSegment(segmentIndex, board, memoryScope))
                 .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
     }
 
@@ -124,11 +122,16 @@ public final class PoliticalMapBodyControls {
         FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 
-    // Flips the uninhabited-systems outline on or off: if it currently draws, hide it; otherwise draw
-    // it. The preference persists the flip in this save and repaints through the board it is handed.
-    private static void toggleUninhabitedSystems(MapLayerRefreshBoard board) {
+    // Flips the uninhabited-systems outline on or off for the screen this box was placed on: if it
+    // currently draws there, hide it; otherwise draw it. The preference persists the flip under that
+    // screen and repaints through the board it is handed.
+    private static void toggleUninhabitedSystems(
+            MapLayerRefreshBoard board,
+            ScreenMemoryScope memoryScope) {
+
         UninhabitedOutlinePreference.setOutlineDrawn(
-            !UninhabitedOutlinePreference.isOutlineDrawn(),
+            memoryScope,
+            !UninhabitedOutlinePreference.isOutlineDrawn(memoryScope),
             board);
     }
 
@@ -136,20 +139,24 @@ public final class PoliticalMapBodyControls {
     // the labels are supplied in. No is a choice like the other two rather than a separate gate, so
     // turning the names off is the same one write. Any other index is ignored, so a stray hit outside
     // the three known segments changes nothing.
-    private static void selectNameFormatSegment(int segmentIndex, MapLayerRefreshBoard board) {
+    private static void selectNameFormatSegment(
+            int segmentIndex,
+            MapLayerRefreshBoard board,
+            ScreenMemoryScope memoryScope) {
+
         if (segmentIndex == NAME_FULL_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL, board);
+            NameFormatPreference.selectNameFormat(memoryScope, FactionNameFormatChoice.FULL, board);
         } else if (segmentIndex == NAME_SHORT_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT, board);
+            NameFormatPreference.selectNameFormat(memoryScope, FactionNameFormatChoice.SHORT, board);
         } else if (segmentIndex == NAME_NONE_SEGMENT) {
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE, board);
+            NameFormatPreference.selectNameFormat(memoryScope, FactionNameFormatChoice.NONE, board);
         }
     }
 
-    // The radio lights the segment for the active name choice, matching the Full-Short-No segment
+    // The radio lights the segment for the screen's own name choice, matching the Full-Short-No segment
     // order the labels are supplied in.
-    private static int nameFormatRadioState() {
-        return switch (NameFormatPreference.getSelectedNameFormat()) {
+    private static int nameFormatRadioState(ScreenMemoryScope memoryScope) {
+        return switch (NameFormatPreference.getSelectedNameFormat(memoryScope)) {
             case FULL -> NAME_FULL_SEGMENT;
             case SHORT -> NAME_SHORT_SEGMENT;
             case NONE -> NAME_NONE_SEGMENT;

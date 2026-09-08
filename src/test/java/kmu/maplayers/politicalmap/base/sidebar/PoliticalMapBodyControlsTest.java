@@ -4,7 +4,9 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.controls.ReselectBehaviour;
+import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -45,10 +47,12 @@ import static org.mockito.Mockito.when;
  *
  * <p>The shared sub-options are pinned the same way: each lights off its per-save preference and writes
  * the flipped or clicked value back through it, with the preferences stubbed so the wiring is what is
- * asserted rather than how either choice persists. Each write is verified against the board the
- * controls were built with, which is what fails if either writer were handed a board resolved when
- * the click landed: the repaint would then reach whichever sector was running rather than the one
- * whose sidebar is up.
+ * asserted rather than how either choice persists. Each write is verified against the board and the
+ * screen the controls were built with, which is what fails if either writer were handed one resolved
+ * when the click landed: the repaint would then reach whichever sector was running rather than the one
+ * whose sidebar is up, and the write would land on whichever panel was showing rather than the one the
+ * control sits on. The intel screen is posed open throughout, so the built screen is never the live
+ * one and a writer resolving its own could not pass by luck.
  */
 final class PoliticalMapBodyControlsTest {
 
@@ -80,10 +84,17 @@ final class PoliticalMapBodyControlsTest {
         miscMock
             .when(Misc::getTextColor)
             .thenReturn(TEXT);
+
+        // The intel screen posed open, so the live screen is a screen these controls were not built
+        // on. The holder is static, so a fresh fake per test also keeps a neighbour's wiring out.
+        var intelScreenFake = new IntelScreenViewFake();
+        intelScreenFake.setIntelTabOpen(true);
+        MapLayerScreens.registerIntelScreen(intelScreenFake);
     }
 
     @AfterEach
     void clearColours() {
+        MapLayerScreens.registerIntelScreen(null);
         miscMock.close();
         StarsectorSettingsFake.clearSettings();
     }
@@ -190,12 +201,15 @@ final class PoliticalMapBodyControlsTest {
         void theUninhabitedCheckboxLightsAndFlipsThePerSaveOutlinePreference() {
             // Both toggles are per-save preferences rather than settings fields, so the checkbox has
             // to light off the preference and write the opposite back through it - the wiring that
-            // keeps the sidebar the single control for the outline.
+            // keeps the sidebar the single control for the outline. Both halves go through the screen
+            // the body was built on, so the box reports and sets its own panel's outline.
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
                     MockedStatic<UninhabitedOutlinePreference> preferenceMock =
                             mockStatic(UninhabitedOutlinePreference.class)) {
                 stubControlLabels(stringsMock);
-                preferenceMock.when(UninhabitedOutlinePreference::isOutlineDrawn).thenReturn(true);
+                preferenceMock
+                        .when(() -> UninhabitedOutlinePreference.isOutlineDrawn(BUILT_SCREEN))
+                        .thenReturn(true);
 
                 var checkbox = (ControlSpec.Checkbox) PoliticalMapBodyControls
                         .buildSharedControls(BUILT_BOARD, BUILT_SCREEN)
@@ -203,7 +217,8 @@ final class PoliticalMapBodyControlsTest {
                 checkbox.action().activateCell(0);
 
                 assertThat(checkbox.isLit()).isTrue();
-                preferenceMock.verify(() -> UninhabitedOutlinePreference.setOutlineDrawn(false, BUILT_BOARD));
+                preferenceMock.verify(() ->
+                        UninhabitedOutlinePreference.setOutlineDrawn(BUILT_SCREEN, false, BUILT_BOARD));
             }
         }
 
@@ -216,7 +231,8 @@ final class PoliticalMapBodyControlsTest {
                     MockedStatic<NameFormatPreference> preferenceMock =
                             mockStatic(NameFormatPreference.class)) {
                 stubControlLabels(stringsMock);
-                preferenceMock.when(NameFormatPreference::getSelectedNameFormat)
+                preferenceMock
+                        .when(() -> NameFormatPreference.getSelectedNameFormat(BUILT_SCREEN))
                         .thenReturn(FactionNameFormatChoice.SHORT);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
@@ -224,8 +240,10 @@ final class PoliticalMapBodyControlsTest {
                 radio.action().activateCell(0);
 
                 assertThat(radio.selectedIndex()).isEqualTo(1);
-                preferenceMock.verify(() ->
-                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.FULL, BUILT_BOARD));
+                preferenceMock.verify(() -> NameFormatPreference.selectNameFormat(
+                        BUILT_SCREEN,
+                        FactionNameFormatChoice.FULL,
+                        BUILT_BOARD));
             }
         }
 
@@ -238,7 +256,8 @@ final class PoliticalMapBodyControlsTest {
                     MockedStatic<NameFormatPreference> preferenceMock =
                             mockStatic(NameFormatPreference.class)) {
                 stubControlLabels(stringsMock);
-                preferenceMock.when(NameFormatPreference::getSelectedNameFormat)
+                preferenceMock
+                        .when(() -> NameFormatPreference.getSelectedNameFormat(BUILT_SCREEN))
                         .thenReturn(FactionNameFormatChoice.NONE);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
@@ -246,8 +265,41 @@ final class PoliticalMapBodyControlsTest {
                 radio.action().activateCell(2);
 
                 assertThat(radio.selectedIndex()).isEqualTo(2);
-                preferenceMock.verify(() ->
-                        NameFormatPreference.selectNameFormat(FactionNameFormatChoice.NONE, BUILT_BOARD));
+                preferenceMock.verify(() -> NameFormatPreference.selectNameFormat(
+                        BUILT_SCREEN,
+                        FactionNameFormatChoice.NONE,
+                        BUILT_BOARD));
+            }
+        }
+
+        @Test
+        void theSubOptionsWriteTheScreenTheyWereBuiltOnRatherThanTheLiveOne() {
+            // The panel a control sits on is settled when the body is built, not when the click lands:
+            // a writer resolving the showing screen instead would file a map-panel flip under the intel
+            // screen, which is what the intel tab being posed open here would let through. Both
+            // sub-options are driven, since either one resolving its own screen is the same fault.
+            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<UninhabitedOutlinePreference> outlineMock =
+                            mockStatic(UninhabitedOutlinePreference.class);
+                    MockedStatic<NameFormatPreference> nameFormatMock =
+                            mockStatic(NameFormatPreference.class)) {
+                stubControlLabels(stringsMock);
+                nameFormatMock
+                        .when(() -> NameFormatPreference.getSelectedNameFormat(BUILT_SCREEN))
+                        .thenReturn(FactionNameFormatChoice.FULL);
+
+                var controls = PoliticalMapBodyControls.buildSharedControls(BUILT_BOARD, BUILT_SCREEN);
+                ((ControlSpec.Interactive) controls.get(0)).action().activateCell(0);
+                ((ControlSpec.Interactive) controls.get(1)).action().activateCell(1);
+
+                var liveScreen = MapLayerScreens.resolveLivePicks().memoryScope();
+                assertThat(liveScreen).isNotEqualTo(BUILT_SCREEN);
+                outlineMock.verify(() ->
+                        UninhabitedOutlinePreference.setOutlineDrawn(BUILT_SCREEN, true, BUILT_BOARD));
+                nameFormatMock.verify(() -> NameFormatPreference.selectNameFormat(
+                        BUILT_SCREEN,
+                        FactionNameFormatChoice.SHORT,
+                        BUILT_BOARD));
             }
         }
     }

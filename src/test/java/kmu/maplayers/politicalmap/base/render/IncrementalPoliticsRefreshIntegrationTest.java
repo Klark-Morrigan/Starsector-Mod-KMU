@@ -247,7 +247,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // choice is sector-memory state no test JVM has, so it comes off a seam.
             var nameFormatMock = seams.openSeam(NameFormatPreference.class);
             nameFormatMock
-                .when(NameFormatPreference::getSelectedNameFormat)
+                .when(() -> NameFormatPreference.getSelectedNameFormat(any()))
                 .thenReturn(FactionNameFormatChoice.NONE);
 
             // No bloc spotlighted, which the seam's own null answers - the pick is sector-memory

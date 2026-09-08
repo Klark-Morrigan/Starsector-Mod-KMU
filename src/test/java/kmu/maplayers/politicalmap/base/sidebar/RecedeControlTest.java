@@ -4,6 +4,8 @@ import com.fs.starfarer.api.util.Misc;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.starsector.StarsectorSettingsFake;
@@ -31,9 +33,9 @@ import static org.mockito.Mockito.when;
  * how a string resolves or how a set persists - and proves the control drives whichever set it is
  * handed rather than a fixed one.
  *
- * <p>Each click is verified against the board the control was built with, which is what fails if the
- * control ever resolved a board of its own instead: the flip would then repaint whichever sector was
- * running rather than the one the sidebar was placed over.
+ * <p>Each click is verified against the board and the screen the control was built with, which is what
+ * fails if the control ever resolved either of its own instead: the flip would then repaint whichever
+ * sector was running, or land on whichever panel was up, rather than the one the sidebar was placed over.
  */
 final class RecedeControlTest {
     // A sample caption the caller supplies, echoed into the first cell; a fixed value so the test
@@ -44,6 +46,10 @@ final class RecedeControlTest {
     // by identity rather than read for revisions: the set is a mock, so nothing raises on it here and
     // what each click case pins is that this exact board reached the setter.
     private static final MapLayerRefreshBoard BUILT_BOARD = new MapLayerRefreshBoard();
+
+    // The screen this control was placed on. A stand-in rather than one of the two live screens, since
+    // what the control does with the screen it was built under is the same on either.
+    private static final ScreenMemoryScope BUILT_SCREEN = ScreenMemoryScopes.createStandInScreen();
 
     // The three cell positions the controls are built in, so a test names the control it inspects
     // rather than reaching for a bare index.
@@ -84,7 +90,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
-                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD)
+                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD, BUILT_SCREEN)
                         .get(CAPTION);
 
                 // A caption is a text-only Label - drawn but never clicked, so it is not Interactive and
@@ -102,7 +108,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
-                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD);
+                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD, BUILT_SCREEN);
 
                 assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
@@ -118,7 +124,7 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isMuted()).thenReturn(true);
+                when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(true);
 
                 assertThat(buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex()).isEqualTo(0);
             }
@@ -129,7 +135,7 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isMuted()).thenReturn(false);
+                when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(false);
 
                 assertThat(buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).selectedIndex())
                         .isEqualTo(ControlSpec.NO_SELECTION);
@@ -141,7 +147,7 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isDesaturated()).thenReturn(true);
+                when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(true);
 
                 assertThat(buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
                         .isEqualTo(0);
@@ -153,7 +159,7 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isDesaturated()).thenReturn(false);
+                when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(false);
 
                 assertThat(buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).selectedIndex())
                         .isEqualTo(ControlSpec.NO_SELECTION);
@@ -167,11 +173,11 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isMuted()).thenReturn(false);
+                when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(false);
 
                 buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setMuted(true, BUILT_BOARD);
+                verify(preferencesMock).setMuted(BUILT_SCREEN, true, BUILT_BOARD);
             }
         }
 
@@ -180,11 +186,11 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isMuted()).thenReturn(true);
+                when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(true);
 
                 buildInteractiveAt(preferencesMock, MUTE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setMuted(false, BUILT_BOARD);
+                verify(preferencesMock).setMuted(BUILT_SCREEN, false, BUILT_BOARD);
             }
         }
 
@@ -193,11 +199,11 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isDesaturated()).thenReturn(false);
+                when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(false);
 
                 buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setDesaturated(true, BUILT_BOARD);
+                verify(preferencesMock).setDesaturated(BUILT_SCREEN, true, BUILT_BOARD);
             }
         }
 
@@ -206,11 +212,11 @@ final class RecedeControlTest {
             try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
-                when(preferencesMock.isDesaturated()).thenReturn(true);
+                when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(true);
 
                 buildInteractiveAt(preferencesMock, DESATURATE_CHECKBOX).action().activateCell(0);
 
-                verify(preferencesMock).setDesaturated(false, BUILT_BOARD);
+                verify(preferencesMock).setDesaturated(BUILT_SCREEN, false, BUILT_BOARD);
             }
         }
     }
@@ -220,7 +226,7 @@ final class RecedeControlTest {
     // click action a test drives. Rebuilt fresh each call, so a test reads the state its stubs set.
     private static ControlSpec.Interactive buildInteractiveAt(RecedePreferences preferences, int index) {
         return (ControlSpec.Interactive) RecedeControl
-                .buildControls(preferences, CAPTION_LABEL, BUILT_BOARD)
+                .buildControls(preferences, CAPTION_LABEL, BUILT_BOARD, BUILT_SCREEN)
                 .get(index);
     }
 

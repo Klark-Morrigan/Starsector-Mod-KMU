@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.dominance.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
@@ -23,16 +24,22 @@ public final class AllianceBodyControls {
     }
 
     /**
-     * @param board the refresh board of the sector the tab is being built for, carried through to
-     *              the two checkboxes so a flip repaints that sector's map
+     * @param board       the refresh board of the sector the tab is being built for, carried through to
+     *                    the two checkboxes so a flip repaints that sector's map
+     * @param memoryScope the scope of the screen this body was opened on, carried through so a flip is
+     *                    that panel's own
      * @return the alliances view's recede control captioned {@code Non-allied factions are}: the
      *         Mute checkbox (lit when non-allied factions are dimmed) and the Desaturate checkbox
      *         (lit when they are recoloured to the desaturation profile)
      */
-    public static List<ControlSpec> buildControls(MapLayerRefreshBoard board) {
+    public static List<ControlSpec> buildControls(
+            MapLayerRefreshBoard board,
+            ScreenMemoryScope memoryScope) {
+
         return RecedeControl.buildControls(
             RecedePreferences.ALLIANCE_NON_ALLIED,
             KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),
-            board);
+            board,
+            memoryScope);
     }
 }

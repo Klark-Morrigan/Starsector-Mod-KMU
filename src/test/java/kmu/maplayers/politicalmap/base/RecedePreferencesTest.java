@@ -1,112 +1,119 @@
 package kmu.maplayers.politicalmap.base;
 
-import com.fs.starfarer.api.campaign.rules.MemoryAPI;
+import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
-import kmlib.starsector.memory.SectorMemoryAccess;
-
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.settings.KmuPoliticalMapTerritorySettings;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Pins the recede preferences set: each read falls back to its own toggle's default while no choice is
  * stored - Mute off, Desaturate on - and a stored value always outranks it, each write persists
- * its instance's frozen key to sector memory and bumps the recede-style revision on the board it was
- * handed so that sector's overlay repaints, both no-op cleanly before the sector exists, and the
- * toggles resolve into the adjustment
- * every context this set backs applies. The generic behaviour is exercised through a test-keyed set,
- * while the two live sets' frozen keys are pinned through their writes so a rename that would silently
- * reset every existing save's choice fails here rather than shipping. The migrations that carry an
- * older save's choice up to the current keys are pinned too.
+ * its instance's key composed under the screen it was flipped on and bumps the recede-style revision on
+ * the board it was handed so that sector's overlay repaints, the two screens read and write apart, both
+ * no-op cleanly before the sector exists, and the toggles resolve into the adjustment
+ * every context this set backs applies. The generic behaviour is exercised through a set keyed for this
+ * suite, while the two live sets' frozen base keys are pinned through their writes so a rename that would
+ * silently reset every existing save's choice fails here rather than shipping.
  */
 final class RecedePreferencesTest {
 
-    // The two live sets' frozen keys, pinned as literals: renaming one resets every existing save's
-    // choice for that set to off, so a change must break this test first. The filter set and the
-    // alliance non-allied set must not collide, which distinct literals guarantee.
-    private static final String FILTER_MUTE_KEY = "$kmu_political_filter_recede_mute";
-    private static final String FILTER_DESATURATE_KEY = "$kmu_political_filter_recede_desaturate";
-    private static final String ALLIANCE_MUTE_KEY = "$kmu_political_alliance_recede_mute";
-    private static final String ALLIANCE_DESATURATE_KEY = "$kmu_political_alliance_recede_desaturate";
+    // Two screens of no particular identity: this store's subject is that a backdrop is tuned per panel,
+    // not which screens the mod has - that is MapLayerScreens' answer and is pinned there.
+    private static final ScreenMemoryScope SCREEN_SCOPE = ScreenMemoryScopes.createStandInScreen();
 
-    // A test-keyed set for the generic read/write/resolve behaviour, so those tests exercise the
-    // instance logic without asserting against any live set's frozen keys - the live keys are pinned
+    private static final ScreenMemoryScope OTHER_SCREEN_SCOPE =
+        ScreenMemoryScopes.createOtherStandInScreen();
+
+    // The two live sets' keys as one screen composes them, pinned as literals: renaming a base key resets
+    // every existing save's choice for that set, so a change must break this test first. The filter set
+    // and the alliance non-allied set must not collide, which distinct literals guarantee.
+    private static final String FILTER_MUTE_KEY = "$kmu_political_filter_recede_mute_test";
+    private static final String FILTER_DESATURATE_KEY =
+        "$kmu_political_filter_recede_desaturate_test";
+    private static final String ALLIANCE_MUTE_KEY = "$kmu_political_alliance_recede_mute_test";
+    private static final String ALLIANCE_DESATURATE_KEY =
+        "$kmu_political_alliance_recede_desaturate_test";
+
+    // A set keyed for this suite for the generic read/write/resolve behaviour, so those cases exercise
+    // the instance logic without asserting against any live set's frozen keys - the live keys are pinned
     // separately through the two constants' writes.
-    private static final String TEST_MUTE_KEY = "$test_recede_mute";
-    private static final String TEST_DESATURATE_KEY = "$test_recede_desaturate";
-    private static final RecedePreferences TEST_SET =
-        new RecedePreferences(TEST_MUTE_KEY, TEST_DESATURATE_KEY);
+    private static final RecedePreferences SAMPLE_SET =
+        new RecedePreferences("$sample_recede_mute", "$sample_recede_desaturate");
+
+    // That set's slots under the two screens, composed the way the set composes them.
+    private static final String SAMPLE_MUTE_KEY = "$sample_recede_mute_test";
+    private static final String SAMPLE_DESATURATE_KEY = "$sample_recede_desaturate_test";
+    private static final String OTHER_SAMPLE_MUTE_KEY = "$sample_recede_mute_other";
+    private static final String OTHER_SAMPLE_DESATURATE_KEY = "$sample_recede_desaturate_other";
 
     // A distinct, non-default modifier reading so a test that expects it to flow through is not
     // satisfied by the fallback value.
     private static final double MUTED_MODIFIER = 0.3;
+
+    private SectorMemoryFake sectorMemoryFake;
+
+    @BeforeEach
+    void openTheSave() {
+        sectorMemoryFake = new SectorMemoryFake();
+    }
+
+    @AfterEach
+    void closeTheSave() {
+        sectorMemoryFake.close();
+    }
 
     @Nested
     class IsMuted {
 
         @Test
         void isMutedReadsTheMuteKeyFromSectorMemory() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                var memoryMock = mock(MemoryAPI.class);
+            sectorMemoryFake.storeValue(SAMPLE_MUTE_KEY, true);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
+            assertThat(SAMPLE_SET.isMuted(SCREEN_SCOPE))
+                .isTrue();
+        }
 
-                when(memoryMock.contains(TEST_MUTE_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(TEST_MUTE_KEY))
-                    .thenReturn(true);
+        @Test
+        void isMutedReadsEachScreensOwnToggle() {
+            // Per-screen isolation: the backdrop is tuned on the panel it is being looked at from, so a
+            // Mute set on one panel leaves the other's backdrop as it was.
+            sectorMemoryFake.storeValue(SAMPLE_MUTE_KEY, true);
 
-                assertThat(TEST_SET.isMuted())
-                    .isTrue();
-            }
+            assertThat(SAMPLE_SET.isMuted(SCREEN_SCOPE))
+                .isTrue();
+            assertThat(SAMPLE_SET.isMuted(OTHER_SCREEN_SCOPE))
+                .isFalse();
         }
 
         @Test
         void isMutedIsFalseBeforeTheSectorExists() {
             // No sector means no save to read, so the read falls back to Mute's default of off.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
-
-                assertThat(TEST_SET.isMuted())
-                    .isFalse();
-            }
+            assertThat(SAMPLE_SET.isMuted(SCREEN_SCOPE))
+                .isFalse();
         }
 
         @Test
         void isMutedIsFalseWhenTheKeyWasNeverSet() {
             // Mute keeps the un-receded default: dimming and recolouring are separate asks, and only
             // the recolour is wanted out of the box.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(TEST_MUTE_KEY))
-                    .thenReturn(false);
-
-                assertThat(TEST_SET.isMuted())
-                    .isFalse();
-            }
+            assertThat(SAMPLE_SET.isMuted(SCREEN_SCOPE))
+                .isFalse();
         }
     }
 
@@ -115,78 +122,50 @@ final class RecedePreferencesTest {
 
         @Test
         void isDesaturatedReadsTheDesaturateKeyFromSectorMemory() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                var memoryMock = mock(MemoryAPI.class);
+            sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, true);
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
+            assertThat(SAMPLE_SET.isDesaturated(SCREEN_SCOPE))
+                .isTrue();
+        }
 
-                when(memoryMock.contains(TEST_DESATURATE_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(TEST_DESATURATE_KEY))
-                    .thenReturn(true);
+        @Test
+        void isDesaturatedReadsEachScreensOwnToggle() {
+            // The same isolation as Mute, posed against the on default: one screen's explicit clear
+            // must not clear the other, which still opens desaturated.
+            sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, false);
 
-                assertThat(TEST_SET.isDesaturated())
-                    .isTrue();
-            }
+            assertThat(SAMPLE_SET.isDesaturated(SCREEN_SCOPE))
+                .isFalse();
+            assertThat(SAMPLE_SET.isDesaturated(OTHER_SCREEN_SCOPE))
+                .isTrue();
         }
 
         @Test
         void isDesaturatedIsTrueBeforeTheSectorExists() {
             // No sector means no save to read, so the read falls back to Desaturate's default of on.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
-
-                assertThat(TEST_SET.isDesaturated())
-                    .isTrue();
-            }
+            assertThat(SAMPLE_SET.isDesaturated(SCREEN_SCOPE))
+                .isTrue();
         }
 
         @Test
         void isDesaturatedIsTrueWhenTheKeyWasNeverSet() {
             // An untouched save opens desaturated, so a spotlight recedes the sector from the first
             // click rather than after a hunt through the sidebar checkboxes.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(TEST_DESATURATE_KEY))
-                    .thenReturn(false);
-
-                assertThat(TEST_SET.isDesaturated())
-                    .isTrue();
-            }
+            assertThat(SAMPLE_SET.isDesaturated(SCREEN_SCOPE))
+                .isTrue();
         }
 
         @Test
         void isDesaturatedIsFalseWhenTheStoredChoiceIsOff() {
             // Clearing the box writes a real false, which outranks the on default on every later
             // load - the default describes an untouched save only, never a player's own answer.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, false);
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                when(memoryMock.contains(TEST_DESATURATE_KEY))
-                    .thenReturn(true);
-                when(memoryMock.getBoolean(TEST_DESATURATE_KEY))
-                    .thenReturn(false);
-
-                assertThat(TEST_SET.isDesaturated())
-                    .isFalse();
-            }
+            assertThat(SAMPLE_SET.isDesaturated(SCREEN_SCOPE))
+                .isFalse();
         }
     }
 
@@ -195,101 +174,75 @@ final class RecedePreferencesTest {
 
         @Test
         void setMutedPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                var memoryMock = mock(MemoryAPI.class);
+            var board = new MapLayerRefreshBoard();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
+            SAMPLE_SET.setMuted(SCREEN_SCOPE, true, board);
 
-                var board = new MapLayerRefreshBoard();
+            assertThat(sectorMemoryFake.readStoredValue(SAMPLE_MUTE_KEY))
+                .isEqualTo(true);
 
-                TEST_SET.setMuted(true, board);
-
-                verify(memoryMock)
-                    .set(TEST_MUTE_KEY, true);
-
-                // The flip must bump the recede-style revision, since these sidebar-only toggles
-                // never move settingsRevision - that bump is what repaints the overlay live.
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
-                    .isEqualTo(1);
-            }
+            // The flip must bump the recede-style revision, since these sidebar-only toggles
+            // never move settingsRevision - that bump is what repaints the overlay live.
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                .isEqualTo(1);
         }
 
         @Test
         void setMutedWritesTheOffChoiceToo() {
             // A clear is persisted as readily as a set, so turning muting off survives reload.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            SAMPLE_SET.setMuted(SCREEN_SCOPE, false, new MapLayerRefreshBoard());
 
-                var memoryMock = mock(MemoryAPI.class);
+            assertThat(sectorMemoryFake.readStoredValue(SAMPLE_MUTE_KEY))
+                .isEqualTo(false);
+        }
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
+        @Test
+        void setMutedLeavesAnotherScreensToggleUntouched() {
+            // Per-screen isolation on the write side: a flip made on one panel writes that panel's slot
+            // alone, so the other's backdrop keeps the tuning it was given.
+            SAMPLE_SET.setMuted(SCREEN_SCOPE, true, new MapLayerRefreshBoard());
 
-                TEST_SET.setMuted(false, new MapLayerRefreshBoard());
-
-                verify(memoryMock)
-                    .set(TEST_MUTE_KEY, false);
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_SAMPLE_MUTE_KEY))
+                .isFalse();
         }
 
         @Test
         void setMutedNoOpsBeforeTheSectorExists() {
             // No sector means no save to write into and nothing painting, so the write and the
             // refresh are both skipped rather than bumping a revision no overlay would read.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            sectorMemoryFake.removeSector();
+            var board = new MapLayerRefreshBoard();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
+            SAMPLE_SET.setMuted(SCREEN_SCOPE, true, board);
 
-                var board = new MapLayerRefreshBoard();
-
-                TEST_SET.setMuted(true, board);
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
-                    .isEqualTo(0);
-            }
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                .isEqualTo(0);
         }
 
         @Test
         void filterSetWritesItsOwnFrozenMuteKey() {
             // The filter set's mute key is frozen: it is what a save serialises, so a rename resets
             // every filter-recede choice. Pinned through the write so the read shares the same key.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            RecedePreferences.FILTER.setMuted(SCREEN_SCOPE, true, new MapLayerRefreshBoard());
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                RecedePreferences.FILTER.setMuted(true, new MapLayerRefreshBoard());
-
-                verify(memoryMock)
-                    .set(FILTER_MUTE_KEY, true);
-            }
+            assertThat(sectorMemoryFake.readStoredValue(FILTER_MUTE_KEY))
+                .isEqualTo(true);
         }
 
         @Test
         void allianceSetWritesItsOwnFrozenMuteKey() {
             // The alliance non-allied set writes a key distinct from the filter set's, so a flip in
             // one never moves the other - the two backdrops are tuned independently.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            RecedePreferences.ALLIANCE_NON_ALLIED.setMuted(
+                SCREEN_SCOPE,
+                true,
+                new MapLayerRefreshBoard());
 
-                var memoryMock = mock(MemoryAPI.class);
-
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                RecedePreferences.ALLIANCE_NON_ALLIED.setMuted(true, new MapLayerRefreshBoard());
-
-                verify(memoryMock)
-                    .set(ALLIANCE_MUTE_KEY, true);
-            }
+            assertThat(sectorMemoryFake.readStoredValue(ALLIANCE_MUTE_KEY))
+                .isEqualTo(true);
+            assertThat(sectorMemoryFake.hasStoredValue(FILTER_MUTE_KEY))
+                .isFalse();
         }
     }
 
@@ -298,96 +251,69 @@ final class RecedePreferencesTest {
 
         @Test
         void setDesaturatedPersistsTheChoiceAndRaisesOnTheBoardItWasHanded() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                var memoryMock = mock(MemoryAPI.class);
+            var board = new MapLayerRefreshBoard();
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
+            SAMPLE_SET.setDesaturated(SCREEN_SCOPE, true, board);
 
-                var board = new MapLayerRefreshBoard();
-
-                TEST_SET.setDesaturated(true, board);
-
-                verify(memoryMock)
-                    .set(TEST_DESATURATE_KEY, true);
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
-                    .isEqualTo(1);
-            }
+            assertThat(sectorMemoryFake.readStoredValue(SAMPLE_DESATURATE_KEY))
+                .isEqualTo(true);
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                .isEqualTo(1);
         }
 
         @Test
         void setDesaturatedWritesTheOffChoiceToo() {
             // The explicit false is what lets a player overrule the on default: an unset key would
             // read back as desaturated again on the next load.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+            SAMPLE_SET.setDesaturated(SCREEN_SCOPE, false, new MapLayerRefreshBoard());
 
-                var memoryMock = mock(MemoryAPI.class);
+            assertThat(sectorMemoryFake.readStoredValue(SAMPLE_DESATURATE_KEY))
+                .isEqualTo(false);
+        }
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
+        @Test
+        void setDesaturatedLeavesAnotherScreensToggleUntouched() {
 
-                TEST_SET.setDesaturated(false, new MapLayerRefreshBoard());
+            SAMPLE_SET.setDesaturated(SCREEN_SCOPE, false, new MapLayerRefreshBoard());
 
-                verify(memoryMock)
-                    .set(TEST_DESATURATE_KEY, false);
-            }
+            assertThat(sectorMemoryFake.hasStoredValue(OTHER_SAMPLE_DESATURATE_KEY))
+                .isFalse();
         }
 
         @Test
         void setDesaturatedNoOpsBeforeTheSectorExists() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(null);
+            sectorMemoryFake.removeSector();
+            var board = new MapLayerRefreshBoard();
 
-                var board = new MapLayerRefreshBoard();
+            SAMPLE_SET.setDesaturated(SCREEN_SCOPE, true, board);
 
-                TEST_SET.setDesaturated(true, board);
-
-                assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
-                    .isEqualTo(0);
-            }
+            assertThat(board.getRevision(MapLayerCommonRefreshSignal.RECEDE_STYLE))
+                .isEqualTo(0);
         }
 
         @Test
         void filterSetWritesItsOwnFrozenDesaturateKey() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                var memoryMock = mock(MemoryAPI.class);
+            RecedePreferences.FILTER.setDesaturated(SCREEN_SCOPE, true, new MapLayerRefreshBoard());
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                RecedePreferences.FILTER.setDesaturated(true, new MapLayerRefreshBoard());
-
-                verify(memoryMock)
-                    .set(FILTER_DESATURATE_KEY, true);
-            }
+            assertThat(sectorMemoryFake.readStoredValue(FILTER_DESATURATE_KEY))
+                .isEqualTo(true);
         }
 
         @Test
         void allianceSetWritesItsOwnFrozenDesaturateKey() {
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
 
-                var memoryMock = mock(MemoryAPI.class);
+            RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(
+                SCREEN_SCOPE,
+                true,
+                new MapLayerRefreshBoard());
 
-                memoryAccessMock
-                    .when(SectorMemoryAccess::readSectorMemory)
-                    .thenReturn(memoryMock);
-
-                RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(
-                    true,
-                    new MapLayerRefreshBoard());
-
-                verify(memoryMock)
-                    .set(ALLIANCE_DESATURATE_KEY, true);
-            }
+            assertThat(sectorMemoryFake.readStoredValue(ALLIANCE_DESATURATE_KEY))
+                .isEqualTo(true);
+            assertThat(sectorMemoryFake.hasStoredValue(FILTER_DESATURATE_KEY))
+                .isFalse();
         }
     }
 
@@ -398,12 +324,11 @@ final class RecedePreferencesTest {
         void resolveRecedeAdjustmentMutesOnlyWhenOnlyMuteIsSet() {
             // Mute alone dims by the modifier and keeps the colour, so a receded bloc recedes
             // without a palette change.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
-                stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, false);
+                storeToggles(settingsMock, true, MUTED_MODIFIER, false);
 
-                assertThat(TEST_SET.resolveRecedeAdjustment())
+                assertThat(SAMPLE_SET.resolveRecedeAdjustment(SCREEN_SCOPE))
                     .isEqualTo(new ElementStyleAdjustment(MUTED_MODIFIER, false));
             }
         }
@@ -411,12 +336,11 @@ final class RecedePreferencesTest {
         @Test
         void resolveRecedeAdjustmentDesaturatesOnlyWhenOnlyDesaturateIsSet() {
             // Desaturate alone recolours at full opacity, so the modifier is left unread.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
-                stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, true);
+                storeToggles(settingsMock, false, MUTED_MODIFIER, true);
 
-                assertThat(TEST_SET.resolveRecedeAdjustment())
+                assertThat(SAMPLE_SET.resolveRecedeAdjustment(SCREEN_SCOPE))
                     .isEqualTo(new ElementStyleAdjustment(1.0, true));
             }
         }
@@ -424,12 +348,11 @@ final class RecedePreferencesTest {
         @Test
         void resolveRecedeAdjustmentBothMutesAndDesaturatesWhenBothAreSet() {
             // The two knobs combine: a receded bloc dims and recolours at once.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
-                stubToggles(memoryAccessMock, settingsMock, true, MUTED_MODIFIER, true);
+                storeToggles(settingsMock, true, MUTED_MODIFIER, true);
 
-                assertThat(TEST_SET.resolveRecedeAdjustment())
+                assertThat(SAMPLE_SET.resolveRecedeAdjustment(SCREEN_SCOPE))
                     .isEqualTo(new ElementStyleAdjustment(MUTED_MODIFIER, true));
             }
         }
@@ -437,13 +360,25 @@ final class RecedePreferencesTest {
         @Test
         void resolveRecedeAdjustmentIsNoneWhenNeitherIsSet() {
             // Both toggles off is the identity adjustment, so an un-receded look is preserved.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
-                stubToggles(memoryAccessMock, settingsMock, false, MUTED_MODIFIER, false);
+                storeToggles(settingsMock, false, MUTED_MODIFIER, false);
 
-                assertThat(TEST_SET.resolveRecedeAdjustment())
+                assertThat(SAMPLE_SET.resolveRecedeAdjustment(SCREEN_SCOPE))
                     .isEqualTo(ElementStyleAdjustment.NONE);
+            }
+        }
+
+        @Test
+        void resolveRecedeAdjustmentResolvesEachScreenUnderItsOwnToggles() {
+            // The adjustment is composed per screen, so one panel's dimmed backdrop leaves the other's
+            // at the untouched reading rather than both painting alike.
+            try (var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
+
+                storeToggles(settingsMock, true, MUTED_MODIFIER, true);
+
+                assertThat(SAMPLE_SET.resolveRecedeAdjustment(OTHER_SCREEN_SCOPE))
+                    .isEqualTo(new ElementStyleAdjustment(1.0, true));
             }
         }
 
@@ -451,42 +386,26 @@ final class RecedePreferencesTest {
         void resolveRecedeAdjustmentTracksTheMutedModifierValue() {
             // The muted multiplier is the modifier reading, not a constant, so a different modifier
             // value flows straight through to the adjustment.
-            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class);
-                    var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
+            try (var settingsMock = mockStatic(KmuPoliticalMapTerritorySettings.class)) {
 
-                stubToggles(memoryAccessMock, settingsMock, true, 0.72, false);
+                storeToggles(settingsMock, true, 0.72, false);
 
-                assertThat(TEST_SET.resolveRecedeAdjustment().opacityMultiplier())
+                assertThat(SAMPLE_SET.resolveRecedeAdjustment(SCREEN_SCOPE).opacityMultiplier())
                     .isEqualTo(0.72);
             }
         }
     }
 
-    // Stubs the test set's two toggle reads through a memory mock and the muted modifier through the
-    // settings mock, so resolveRecedeAdjustment runs its real composition over controlled inputs.
-    private static void stubToggles(
-            MockedStatic<SectorMemoryAccess> memoryAccessMock,
+    // Stores the sample set's two toggles under the first screen and stubs the muted modifier, so
+    // resolveRecedeAdjustment runs its real composition over controlled inputs.
+    private void storeToggles(
             MockedStatic<KmuPoliticalMapTerritorySettings> settingsMock,
             boolean isMuted,
             double mutedModifier,
             boolean shouldDesaturate) {
 
-        var memoryMock = mock(MemoryAPI.class);
-
-        memoryAccessMock
-            .when(SectorMemoryAccess::readSectorMemory)
-            .thenReturn(memoryMock);
-
-        // isSet gates on the key being present, so a stored value is contains=true plus its boolean;
-        // this pins both toggles present so getBoolean is what the read reflects.
-        when(memoryMock.contains(TEST_MUTE_KEY))
-            .thenReturn(true);
-        when(memoryMock.contains(TEST_DESATURATE_KEY))
-            .thenReturn(true);
-        when(memoryMock.getBoolean(TEST_MUTE_KEY))
-            .thenReturn(isMuted);
-        when(memoryMock.getBoolean(TEST_DESATURATE_KEY))
-            .thenReturn(shouldDesaturate);
+        sectorMemoryFake.storeValue(SAMPLE_MUTE_KEY, isMuted);
+        sectorMemoryFake.storeValue(SAMPLE_DESATURATE_KEY, shouldDesaturate);
 
         settingsMock
             .when(KmuPoliticalMapTerritorySettings::getPoliticalMapAllianceMutedOpacityModifier)

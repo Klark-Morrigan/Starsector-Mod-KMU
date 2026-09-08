@@ -26,11 +26,12 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the two things the bake's reading of the sidebar preferences has to get right.
  *
- * <p>The first is what it reads. Each pick is stored per save under a key of its own, and one of
- * them - the spotlight - is stored per view, so a reading that crossed two of those keys would
- * paint the map by a pick the player made somewhere else. The picks are written here through the
- * very holders the sidebar writes them through, over a memory that really stores, so a value
- * written under one key and read under another fails rather than passing on two stubs that agree.
+ * <p>The first is what it reads. Each pick is stored per save under a key of its own, all five are
+ * stored per screen, and one of them - the spotlight - is stored per view as well, so a reading that
+ * crossed two of those keys would paint the map by a pick the player made somewhere else. The picks
+ * are written here through the very holders the sidebar writes them through, over a memory that really
+ * stores, so a value written under one key and read under another fails rather than passing on two
+ * stubs that agree.
  *
  * <p>The second is its equality, and everything the rebuild decision rests on is that: a reading
  * equal to the one the map was baked under is a reading the map is entitled to skip the rebuild
@@ -124,7 +125,7 @@ final class ContentInputsTest {
             // The two backdrops are tuned independently, so they must come off separate keys: with
             // the alliance set cleared and a bloc spotlit, one reading has to answer the identity
             // and the other the recolour. Read from one key they would answer alike.
-            RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(false, board);
+            RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(SCREEN_SCOPE, false, board);
             FilterSelection.selectId(new SelectionSlot(SCREEN_SCOPE, VIEW_ID), SPOTLIT_BLOC_ID, board);
 
             var inputs = ContentInputs.sampleForView(viewMock, SCREEN_SCOPE);
@@ -139,8 +140,8 @@ final class ContentInputsTest {
         void sampleForViewReadsTheNameFormatAndTheUninhabitedOutline() {
             // The two picks that are neither spotlight nor recede, both moved off their defaults so
             // a reading that failed to consult either would answer FULL and off.
-            NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT, board);
-            UninhabitedOutlinePreference.setOutlineDrawn(true, board);
+            NameFormatPreference.selectNameFormat(SCREEN_SCOPE, FactionNameFormatChoice.SHORT, board);
+            UninhabitedOutlinePreference.setOutlineDrawn(SCREEN_SCOPE, true, board);
 
             var inputs = ContentInputs.sampleForView(viewMock, SCREEN_SCOPE);
 
@@ -148,6 +149,28 @@ final class ContentInputsTest {
                 .isEqualTo(FactionNameFormatChoice.SHORT);
             assertThat(inputs.isUninhabitedOutlineDrawn())
                 .isTrue();
+        }
+
+        @Test
+        void sampleForViewReadsEveryPickUnderTheScreenBeingPaintedFor() {
+            // Every one of the five is a pick made on one panel, so a frame painting for one screen
+            // must not pick up what the player set on the other. Posed with the whole set moved off
+            // its default on a second screen: a reading that resolved a screen of its own, or left any
+            // one pick screen-blind, would answer with one of these rather than the defaults.
+            var otherScreen = ScreenMemoryScopes.createOtherStandInScreen();
+            FilterSelection.selectId(new SelectionSlot(otherScreen, VIEW_ID), SPOTLIT_BLOC_ID, board);
+            RecedePreferences.FILTER.setMuted(otherScreen, true, board);
+            RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(otherScreen, false, board);
+            NameFormatPreference.selectNameFormat(otherScreen, FactionNameFormatChoice.NONE, board);
+            UninhabitedOutlinePreference.setOutlineDrawn(otherScreen, true, board);
+
+            assertThat(ContentInputs.sampleForView(viewMock, SCREEN_SCOPE))
+                .isEqualTo(new ContentInputs(
+                    null,
+                    ElementStyleAdjustment.NONE,
+                    DESATURATING,
+                    FactionNameFormatChoice.FULL,
+                    false));
         }
 
         @Test
