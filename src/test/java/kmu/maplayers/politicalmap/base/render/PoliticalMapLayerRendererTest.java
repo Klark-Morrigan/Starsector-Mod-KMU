@@ -138,6 +138,8 @@ final class PoliticalMapLayerRendererTest {
             // The tab is open with every view deselected. Standing down on that one read is what
             // keeps a dark overlay near-free per frame: nothing downstream is consulted, not even the
             // hover toggle that gates the cheapest of the work below it.
+            recordNothingInThisCase();
+
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
@@ -296,6 +298,8 @@ final class PoliticalMapLayerRendererTest {
             // nothing to say about either side of the map's nebulae. Driven per band because
             // each is a separate pass from a separate surface, so a band that read the view
             // differently would paint on a frame the others left alone.
+            recordNothingInThisCase();
+
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
@@ -620,6 +624,8 @@ final class PoliticalMapLayerRendererTest {
         void publishHoverForPassReadsNothingWhileTheFrameWantsNoHover() {
             // The frame's decision is what the passes stand down on, so the read - and with it the
             // publisher and the renderer binding it holds - is never reached at all.
+            recordNothingInThisCase();
+
             buildRenderer(NOT_COVERING_THE_MAP)
                 .publishHoverForPass(FACTOR);
 
@@ -655,15 +661,22 @@ final class PoliticalMapLayerRendererTest {
             // A pass of a frame that wants no hover still costs the gate that stood it down, and
             // several passes stand down per frame - so the beat says how much a switched-off hover
             // is costing, and opens no row for a read that never ran.
-            buildRenderer(NOT_COVERING_THE_MAP)
-                .publishHoverForPass(FACTOR);
+            //
+            // The framework's settings are stood in for because the beat is recorded: closing one
+            // asks what it was allowed to take, and that knob is read through LunaLib, which no
+            // test classpath carries.
+            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class)) {
 
-            var beat = readOnlyRootOfThisSector();
+                buildRenderer(NOT_COVERING_THE_MAP)
+                    .publishHoverForPass(FACTOR);
 
-            assertThat(beat.getSection())
-                .isEqualTo(MapFrameSections.HOVER_PUBLISH);
-            assertThat(beat.getChildren())
-                .isEmpty();
+                var beat = readOnlyRootOfThisSector();
+
+                assertThat(beat.getSection())
+                    .isEqualTo(MapFrameSections.HOVER_PUBLISH);
+                assertThat(beat.getChildren())
+                    .isEmpty();
+            }
         }
     }
 
@@ -677,6 +690,16 @@ final class PoliticalMapLayerRendererTest {
             assertThatCode(buildRenderer(NOT_COVERING_THE_MAP)::disposeMachinery)
                 .doesNotThrowAnyException();
         }
+    }
+
+    // Puts the capture the class binds by default back to the silent one, for a case whose subject
+    // is what the layer consults rather than what a frame costs.
+    //
+    // A recording capture reads a knob of its own as each beat closes - what that beat was allowed
+    // to take - so a case holding the framework's settings to no interaction at all would be
+    // reading a measurement it never asked for as the layer consulting them.
+    private static void recordNothingInThisCase() {
+        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
     }
 
     // The renderer under test, over one stated cover and a read it hands out rather than builds.

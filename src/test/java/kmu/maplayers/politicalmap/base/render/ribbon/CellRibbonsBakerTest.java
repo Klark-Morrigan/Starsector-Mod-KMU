@@ -163,9 +163,14 @@ final class CellRibbonsBakerTest {
             // and leave the number a rebuild scales with to be divided out by hand.
             var profiler = new RecordingProfiler();
 
-            ActiveProfiler.bindProfiler(profiler);
+            // The pass is posed before anything is recording. Posing it reads the sector, and those
+            // reads count what they walked onto the reserved row - which, arriving first, would
+            // head the capture and leave the bake's own row behind it. In play the same reads
+            // happen inside the refresh that mints the pass, on that beat's own row.
+            var baker = bakeThrough(buildTwoDrawnCells());
 
-            bakeEveryCellThrough(buildTwoDrawnCells());
+            ActiveProfiler.bindProfiler(profiler);
+            baker.bakeAllCellRibbons();
 
             var bakeRow = profiler.snapshot().get(0).getRoots().get(0);
 
