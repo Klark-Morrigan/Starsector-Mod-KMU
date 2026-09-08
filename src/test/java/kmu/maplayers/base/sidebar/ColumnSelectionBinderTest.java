@@ -28,15 +28,15 @@ final class ColumnSelectionBinderTest {
     class ResolveStoredColumns {
 
         @Test
-        void resolveStoredColumnsPassesTheScreensStoredKeyToTheChoice() {
+        void resolveStoredColumnsPassesTheSlotsStoredKeyToTheChoice() {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
                 selectionMock
-                    .when(() -> ColumnSelection.getColumnCountKey(SCREEN_SCOPE))
+                    .when(() -> ColumnSelection.getColumnCountKey(SLOT))
                     .thenReturn(ListColumns.TWO.persistenceKey());
 
-                assertThat(ColumnSelectionBinder.resolveStoredColumns(SCREEN_SCOPE))
+                assertThat(ColumnSelectionBinder.resolveStoredColumns(SLOT))
                     .isEqualTo(ListColumns.TWO);
             }
         }
@@ -46,15 +46,15 @@ final class ColumnSelectionBinderTest {
     class StoreColumns {
 
         @Test
-        void storeColumnsWritesThePickedChoicesKeyUnderTheScreen() {
+        void storeColumnsWritesThePickedChoicesKeyUnderTheSlot() {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
-                ColumnSelectionBinder.storeColumns(SCREEN_SCOPE, ListColumns.TWO);
+                ColumnSelectionBinder.storeColumns(SLOT, ListColumns.TWO);
 
                 selectionMock.verify(
                     () -> ColumnSelection.selectColumnCount(
-                        SCREEN_SCOPE, ListColumns.TWO.persistenceKey()));
+                        SLOT, ListColumns.TWO.persistenceKey()));
             }
         }
     }

@@ -99,8 +99,9 @@ one of those words was available. Say what is meant instead.
 
 The handful of files that may still say one of the political words are named in `build.gradle`
 rather than marked in place, so an exemption is something a reviewer reads in the diff. All of them
-name an identifier rather than make a claim about the framework - the `$kmu_map_filter_bloc*`
-sector-memory keys, whose spelling is fixed by every save already holding it, and the political
+name an identifier rather than make a claim about the framework - the `filter_bloc_` store key, which
+composes into the `$kmu_map_filter_bloc*` sector-memory keys and whose spelling is fixed by every save
+already holding one, and the political
 class names the geometry viewer lists as pipeline stages it does not exercise.
 
 Two words that are **not** synonyms, despite looking alike:
@@ -136,9 +137,10 @@ than a central list of keys that could only ever hold some of them.
 A holder does not compose the key itself. It declares `AddressedMemoryFlag` or `AddressedMemoryString`
 with its base key (and, for a flag, its default) and names an address on every read and write; the two
 build the sector-memory slot behind it. `MemoryKeyAddress` is what an address is: `ScreenMemoryScope`
-partitions by screen, and a picker's `SelectionSlot` by screen and by the scope its list was listed
-under. So a holder states what it stores and never how the key is spelled, and the segments cannot end
-up ordered one way in one holder and another way in the next.
+partitions by screen, the sidebar's `ScreenSelectionSlot` by the mod whose store it is and by screen,
+and a picker's `SelectionSlot` by those two and by the scope its list was listed under. So a holder
+states what it stores and never how the key is spelled, and the segments cannot end up ordered one way
+in one holder and another way in the next.
 
 The build enforces it. `enforceRestrictedCalls` contains the three ways into a memory slot -
 `new SectorMemoryFlag(`, `new SectorMemoryString(` and `SectorMemoryAccess.readSectorMemory()` - to the

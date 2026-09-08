@@ -28,7 +28,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -220,24 +219,6 @@ final class PoliticalMapViewRegistryTest {
             }
         }
 
-        @Test
-        void getSelectedViewIndexLightsTheGivenScreensOwnSegment() {
-            // The radio on each panel lights that panel's pick, so two panels on different views
-            // light different segments at the same time.
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-                storeViewIdAt(memoryMock, ACTIVE_VIEW_KEY, "second");
-                storeViewIdAt(memoryMock, OTHER_SCREEN_ACTIVE_VIEW_KEY, "first");
-
-                assertThat(PoliticalMapViewRegistry.getSelectedViewIndex(SCREEN))
-                    .isEqualTo(1);
-                assertThat(PoliticalMapViewRegistry.getSelectedViewIndex(OTHER_SCREEN))
-                    .isZero();
-            }
-        }
     }
 
     @Nested
@@ -380,24 +361,6 @@ final class PoliticalMapViewRegistryTest {
             }
         }
 
-        @Test
-        void selectViewLeavesEveryOtherScreensPickAlone() {
-            // A click lands on one panel's radio, so it writes that panel's slot and no other - the
-            // other panel stays on whatever it was set to.
-            try (var globalMock = mockStatic(Global.class)) {
-
-                var memoryMock = mock(MemoryAPI.class);
-
-                linkSectorMemoryTo(globalMock, memoryMock);
-
-                PoliticalMapViewRegistry.selectView(SCREEN, secondViewMock);
-
-                verify(memoryMock)
-                    .set(ACTIVE_VIEW_KEY, "second");
-                verify(memoryMock, never())
-                    .set(OTHER_SCREEN_ACTIVE_VIEW_KEY, "second");
-            }
-        }
     }
 
     // One screen's picks with the political-map tab as its active pick, which is the arrangement the

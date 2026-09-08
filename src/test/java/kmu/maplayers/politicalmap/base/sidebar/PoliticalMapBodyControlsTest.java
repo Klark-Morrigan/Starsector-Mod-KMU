@@ -109,9 +109,12 @@ final class PoliticalMapBodyControlsTest {
 
         @Test
         void switchingToAViewSelectsItThenHealsTheSwitchedInViewsSlot() {
-            // The click selects the clicked view, then heals that view's own slot so a bloc it stored
-            // but that has since lapsed does not spotlight an empty footprint. It does not clear - each
-            // view keeps its own selection across the switch.
+            // The click selects the clicked view on the panel the radio sits on, then heals that view's
+            // own slot so a bloc it stored but that has since lapsed does not spotlight an empty
+            // footprint. It does not clear - each view keeps its own selection across the switch. The
+            // screen is asserted here rather than in a case of its own: the intel screen is posed open
+            // throughout, so a selector resolving the showing screen files the switch under the visor
+            // and fails this.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
@@ -165,25 +168,6 @@ final class PoliticalMapBodyControlsTest {
             }
         }
 
-        @Test
-        void theRadioWritesTheScreenItWasBuiltOnRatherThanTheLiveOne() {
-            // The view is a pick made on one panel, so a click files it against the panel the radio sits
-            // on - which is settled when the body is built, not when the click lands. The intel screen
-            // is posed open throughout, so a selector resolving the showing screen would file a
-            // map-panel switch under the visor and fail here.
-            try (MockedStatic<PoliticalMapViewRegistry> registryMock =
-                            mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
-                    MockedStatic<FilterSelectionHeal> healMock =
-                            mockStatic(FilterSelectionHeal.class)) {
-                stubSelectorViews(registryMock, stringsMock);
-
-                clickViewSegment(0);
-
-                registryMock.verify(() ->
-                        PoliticalMapViewRegistry.selectView(BUILT_SCREEN, factionsViewMock));
-            }
-        }
     }
 
     @Nested

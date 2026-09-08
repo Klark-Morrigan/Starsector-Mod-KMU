@@ -152,30 +152,6 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * The same answer as {@link #getActiveLayer()} for a screen already in hand, rather than for
-     * whichever is showing.
-     *
-     * <p>Taken by a caller that needs more of one screen than its tab - the political map's frame
-     * needs the tab and the scope its preferences are read under - so the screen is resolved once and
-     * carried. Resolved twice, a frame could paint the layer picked on one screen using the
-     * preferences set on the other, which is a picture neither panel was ever set to.
-     *
-     * @param screenPicks the screen being answered for
-     * @return that screen's active pick, or null before a composition root has registered any layers,
-     *         or once that screen's layers have wholly faded off it
-     */
-    public static MapLayer resolveActiveLayerOn(ScreenLayerPicks screenPicks) {
-
-        // Hiding lands here rather than at each consumer, because every pass driven by the active pick
-        // already treats "no pick" as nothing to draw: one read takes the overlay, the labels and the
-        // hover box off the screen together.
-        if (!isAnythingOfTheLayersOn(screenPicks.layerVisibility())) {
-            return null;
-        }
-        return screenPicks.layerSelection().getActiveLayer();
-    }
-
-    /**
      * What draws for the screen showing this frame, over {@code installation}'s sector, or null when
      * nothing does - because no layer is picked yet (before a composition root has registered any),
      * because that screen's layers have faded off it, or because the active one draws nothing. They
@@ -206,8 +182,12 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * The same gate as {@link #isActive} for a screen already in hand, for a caller carrying one for
-     * the reason {@link #resolveActiveLayerOn} gives.
+     * The same gate as {@link #isActive} for a screen already in hand, rather than for whichever is
+     * showing.
+     *
+     * <p>For a caller that needs more of one screen than its tab, and so has resolved which screen it
+     * is answering for once and carried it. Resolved again here, the gate could answer a different
+     * screen from the rest of that caller's frame.
      *
      * @param screenPicks the screen being answered for
      * @param layer       the layer asking whether it is that screen's pick
@@ -250,6 +230,21 @@ public final class MapLayerRegistry {
             }
         }
         return -1;
+    }
+
+    // One screen's active pick, for a screen already in hand rather than for whichever is showing. Both
+    // readings above are this applied to a screen: the live ones resolve which that is first, and the
+    // carried gate is handed one.
+    //
+    // Null for a screen whose layers have wholly faded off it. Hiding lands here rather than at each
+    // consumer, because every pass driven by the active pick already treats "no pick" as nothing to
+    // draw: one read takes the overlay, the labels and the hover box off the screen together.
+    private static MapLayer resolveActiveLayerOn(ScreenLayerPicks screenPicks) {
+
+        if (!isAnythingOfTheLayersOn(screenPicks.layerVisibility())) {
+            return null;
+        }
+        return screenPicks.layerSelection().getActiveLayer();
     }
 
     // Whether anything of the given screen's layers is on it at all: a screen switched off goes on being

@@ -2,10 +2,12 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.FilterSelection;
+import kmu.maplayers.base.sidebar.ScreenSelectionSlot;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -89,7 +91,7 @@ final class ContentInputsTest {
         void sampleForViewReadsTheSpotlightPickMadeOnTheViewsOwnPicker() {
             // The spotlight is the one pick stored per view, so it is read under the view being
             // painted rather than under whatever the map happens to hold elsewhere.
-            FilterSelection.selectId(new SelectionSlot(SCREEN_SCOPE, VIEW_ID), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
 
             assertThat(ContentInputs.sampleForView(viewMock, SCREEN_SCOPE).selectedBlocId())
                 .isEqualTo(SPOTLIT_BLOC_ID);
@@ -114,7 +116,7 @@ final class ContentInputsTest {
             // With a bloc spotlit the rest of the sector recedes by the filter set's own toggles,
             // resolved here rather than by whoever paints, so the pick and the recede it implies
             // are one reading.
-            FilterSelection.selectId(new SelectionSlot(SCREEN_SCOPE, VIEW_ID), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
 
             assertThat(ContentInputs.sampleForView(viewMock, SCREEN_SCOPE).filterRecedeAdjustment())
                 .isEqualTo(DESATURATING);
@@ -126,7 +128,7 @@ final class ContentInputsTest {
             // the alliance set cleared and a bloc spotlit, one reading has to answer the identity
             // and the other the recolour. Read from one key they would answer alike.
             RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(SCREEN_SCOPE, false, board);
-            FilterSelection.selectId(new SelectionSlot(SCREEN_SCOPE, VIEW_ID), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(SCREEN_SCOPE), SPOTLIT_BLOC_ID, board);
 
             var inputs = ContentInputs.sampleForView(viewMock, SCREEN_SCOPE);
 
@@ -158,7 +160,7 @@ final class ContentInputsTest {
             // its default on a second screen: a reading that resolved a screen of its own, or left any
             // one pick screen-blind, would answer with one of these rather than the defaults.
             var otherScreen = ScreenMemoryScopes.createOtherStandInScreen();
-            FilterSelection.selectId(new SelectionSlot(otherScreen, VIEW_ID), SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(createSpotlightSlot(otherScreen), SPOTLIT_BLOC_ID, board);
             RecedePreferences.FILTER.setMuted(otherScreen, true, board);
             RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(otherScreen, false, board);
             NameFormatPreference.selectNameFormat(otherScreen, FactionNameFormatChoice.NONE, board);
@@ -300,6 +302,16 @@ final class ContentInputsTest {
             assertThat(cleared.isUninhabitedOutlineDrawn())
                 .isTrue();
         }
+    }
+
+    // The slot a spotlight is seeded into, addressed as the sidebar addresses it: this mod's store
+    // namespace, the screen the pick was made on, and the view whose picker made it. Written through
+    // the real holder rather than stubbed, so a sampling that composed any of the three differently
+    // reads back nothing.
+    private static SelectionSlot createSpotlightSlot(ScreenMemoryScope memoryScope) {
+        return new SelectionSlot(
+            new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, memoryScope),
+            VIEW_ID);
     }
 
     // The reading the equality cases vary one pick of: a bloc spotlit with both backdrops

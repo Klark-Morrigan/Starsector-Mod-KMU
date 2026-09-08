@@ -349,10 +349,12 @@ see [Styling](#styling).
 A layer whose body carries a sortable, column-laid list needs somewhere to keep how that list is
 ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSelection` are those
 stores, and `SortSelectionBinder`, `ColumnSelectionBinder`, and `FilterSelectionBinder` are what
-tie each to the widget that changes it. `SelectionSlot` is what two of the three are addressed by,
-and `FilterHoverSlot` stands beside them holding where the pointer rests rather than what was picked,
+tie each to the widget that changes it. `ScreenSelectionSlot` and `SelectionSlot` are what they are
+addressed by, over the `MapLayerStoreNamespace` that says whose answers a slot holds, and
+`FilterHoverSlot` stands beside them holding where the pointer rests rather than what was picked,
 which is no fourth store: what it holds belongs to a sector rather than to a save. Three stores,
-three binders, the address they take and the hover slot is the whole of this half of the package.
+three binders, the two addresses they take and the hover slot is the whole of this half of the
+package.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
@@ -367,19 +369,34 @@ since a sortable, column-laid, spotlight-picking list knows nothing about a map.
 **KMLib owns the model, the composition, and the resolution rule; KMU owns where the answer is
 kept** - a row states *that* it reads back, KMLib decides how far back that reads.
 
-The keys are why the split falls where it does. They are the frozen `$kmu_map_*` spellings below -
-save state this mod cannot move and a shared library has no business holding.
+The keys are why the split falls where it does. They are save state a shared library has no business
+holding - and they are not this package's to spell either: a store holds its own key and nothing
+about whose it is, so the leading segment arrives with the address.
 
-`FilterSelection` and `SortSelection` both hold their answer per `SelectionSlot` - one screen and one
-opaque scope, the pair that composes the key. The scope half because an id read under the wrong scope
-names nothing and a mode key read under the wrong one resolves against nothing, making every switch
-look like a reset; the screen half because a pick is something the player did to one panel. Both are
-one value rather than two arguments, since a slot crossed one way and not the other compiles and
-reads as the feature working right up until the player sets the same preference twice.
+That is `MapLayerStoreNamespace`, the third axis: which mod's picker is asking. Without it the three
+stores are shared in the wrong sense, since two mods choosing the scope string `factions` write the
+same key and a second mod's column pick moves the first's count. It has no default and is derived
+from nothing - a namespace standing in from a layer id would part one mod's two layers, which the
+scope already does correctly, and a fixed fallback would put every consumer that forgot to name
+itself back in one shared namespace. It carries its own separator, so what it composes is exactly
+what the holding mod already ships. This mod's own is `KmuMod.MAP_STORE_NAMESPACE`, the frozen
+`$kmu_map_` prefix of every key below, named there because whose picks these are is a fact about the
+mod rather than about the map layers.
 
-`ColumnSelection` takes the screen alone: how many columns a list wraps across is a layout preference,
-not a statement about what the list holds, so it means the same thing under every scope - but a panel
-is a fixed width the list was laid out inside, and the two panels are two widths.
+`FilterSelection` and `SortSelection` both hold their answer per `SelectionSlot` - a namespace, a
+screen and one opaque scope, the three that compose the key. The scope because an id read under the
+wrong scope names nothing and a mode key read under the wrong one resolves against nothing, making
+every switch look like a reset; the screen because a pick is something the player did to one panel;
+the namespace because one mod's picker has no business reading a pick made on another's. All three
+are one value rather than loose arguments, since a slot crossed one way and not the other compiles
+and reads as the feature working right up until the player sets the same preference twice.
+
+`ColumnSelection` takes `ScreenSelectionSlot` - the namespace and the screen, which is `SelectionSlot`
+minus the scope and the address it narrows. How many columns a list wraps across is a layout
+preference, not a statement about what the list holds, so it means the same thing under every scope -
+but a panel is a fixed width the list was laid out inside, and the two panels are two widths. Dropping
+the scope is what made the namespace load-bearing here first: with nothing else parting two mods'
+counts, a foreign picker's column pick re-wrapped this one's list.
 
 The screen is an axis no picker is handed. A pick is reported by a widget that knows only that it was
 clicked, and the binder files it under the slot it built that picker for - captured at the build for
@@ -448,18 +465,22 @@ the way the hover slot above is, by the sector's `MapLayerInstallation` through
 `SelectableBlocCache.resolveBlocCacheIn`. [The caching
 notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
-| Key | Holds |
-| --- | --- |
-| `$kmu_map_sort_mode_<scope>_<screen>` | one screen's picked sort mode key in one scope, absent until first picked |
-| `$kmu_map_sort_direction_<scope>_<screen>` | one screen's picked direction (`asc` / `desc`) in one scope, absent until first flipped |
-| `$kmu_map_list_columns_<screen>` | one screen's picked column count key, absent until first picked |
-| `$kmu_map_filter_bloc_<scope>_<screen>` | one screen's filtered-to id in one scope, absent while un-filtered |
+Each store's own key, and what the address composes it into - shown under this mod's namespace, since
+these are the spellings every existing save holds:
 
-The prefixes are layer-neutral because every map layer's picker stores through these classes - one
-naming a layer would have every other layer persisting under it. Like the fold keys they are
-save-serialised identities and frozen, so renaming one would reset every existing save to the
-default. The screen segment composes last, through the same `ScreenMemoryScope` the fold resolves
-through, so every per-screen key in the mod has one shape.
+| Store key | Composed | Holds |
+| --- | --- | --- |
+| `sort_mode_` | `$kmu_map_sort_mode_<scope>_<screen>` | one screen's picked sort mode key in one scope, absent until first picked |
+| `sort_direction_` | `$kmu_map_sort_direction_<scope>_<screen>` | one screen's picked direction (`asc` / `desc`) in one scope, absent until first flipped |
+| `list_columns` | `$kmu_map_list_columns_<screen>` | one screen's picked column count key, absent until first picked |
+| `filter_bloc_` | `$kmu_map_filter_bloc_<scope>_<screen>` | one screen's filtered-to id in one scope, absent while un-filtered |
+
+The store keys are layer-neutral because every map layer's picker stores through these classes - one
+naming a layer would have every other layer persisting under it - and mod-neutral for the reason the
+namespace exists. Like the fold keys the composed spellings are save-serialised identities and frozen,
+so renaming any segment of one would reset every existing save to the default. The namespace composes
+first and the screen segment last, through the same `ScreenMemoryScope` the fold resolves through, so
+every per-screen key in the mod has one shape.
 
 The sort and column stores raise no refresh: both values are read on the per-frame body build, so
 the next frame re-sorts or re-wraps on its own, and nothing on the map depends on either.

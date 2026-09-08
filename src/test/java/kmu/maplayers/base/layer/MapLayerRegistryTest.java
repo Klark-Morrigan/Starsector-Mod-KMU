@@ -345,33 +345,6 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
-    class ResolveActiveLayerOn {
-
-        @Test
-        void resolveActiveLayerOnAnswersTheScreenHandedInRatherThanTheShowingOne() {
-            // What a caller carrying a screen is carrying it for: it needs more of one panel than its
-            // tab, and a second resolution could answer a different panel from the first. Posed with
-            // the visor up over a sector map on another tab, so a read resolving its own screen would
-            // answer the intel pick and fail here.
-            storeADifferentPickOnEachScreen();
-            intelScreenFake.setIntelTabOpen(true);
-
-            assertThat(MapLayerRegistry.resolveActiveLayerOn(MapLayerScreens.getMapPicks()))
-                .isSameAs(secondLayerMock);
-        }
-
-        @Test
-        void resolveActiveLayerOnIsNullOnceThatScreensLayersHaveFadedOff() {
-            // The hide fold is that screen's as well: a panel switched off has no layer in play there
-            // whatever the panel beside it is showing.
-            hideTheMapScreensLayers();
-
-            assertThat(MapLayerRegistry.resolveActiveLayerOn(MapLayerScreens.getMapPicks()))
-                .isNull();
-        }
-    }
-
-    @Nested
     class ResolveActiveMapRenderer {
 
         @Test

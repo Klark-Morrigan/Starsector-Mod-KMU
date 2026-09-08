@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 /**
- * Pins the join between the sort model and this mod's save slots, which is the whole of what the
+ * Pins the join between the sort model and the calling mod's save slots, which is the whole of what the
  * binder does: the read hands one slot's two stored keys to the model, and the write puts both of a
  * picked sort's keys back under that same slot. What the keys mean is the model's and is pinned
  * there; the store is mocked, so this reads the pass-through alone.
@@ -25,10 +25,13 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class SortSelectionBinderTest {
 
-    // The slot the read and the write land on - a stand-in screen, since what this binder does is the
-    // same whichever panel asked.
-    private static final SelectionSlot SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "hazards");
+    // The slot the read and the write land on - a stand-in mod on a stand-in screen, since what this
+    // binder does is the same whichever mod's panel asked.
+    private static final SelectionSlot SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(
+            MapLayerStoreNamespaces.createStandInNamespace(),
+            ScreenMemoryScopes.createStandInScreen()),
+        "hazards");
 
     private static final ListSortModes<Hazard> MODES =
         new ListSortModes<>(List.of(HazardSortMode.values()), HazardSortMode.ALPHA);

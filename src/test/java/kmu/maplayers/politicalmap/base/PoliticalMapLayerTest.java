@@ -9,6 +9,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
@@ -64,10 +65,6 @@ import static org.mockito.Mockito.when;
  */
 final class PoliticalMapLayerTest {
 
-    // The frozen sector-memory key the active-view selection serialises under, pinned as a literal so
-    // a rename that would reset every save to the default fails here rather than shipping.
-    private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
-
     // The live LunaLib field id, pinned as a literal: a rename here silently drops the player's rebind
     // and leaves the tab keyless.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
@@ -80,6 +77,18 @@ final class PoliticalMapLayerTest {
     // live screens: what this tab does with the screen it is handed is to pass it on, which is the same
     // whichever one it is.
     private static final ScreenMemoryScope BODY_SCREEN = ScreenMemoryScopes.createStandInScreen();
+
+    // The view slot of the panel that asks for the body, and of the screen showing while it does - the
+    // active-view key composed under each. Pinned as literals so a rename of either half, which would
+    // reset every save to the default, fails here rather than shipping. Two of them because posing the
+    // showing screen holding no view while the asking panel holds one is what tells "reads the panel
+    // that asked" apart from "reads whichever screen is up". No intel screen is registered in this
+    // suite, so the sector map is the showing one.
+    private static final String BODY_SCREEN_ACTIVE_VIEW_KEY = "$kmu_political_active_view_test";
+    private static final String LIVE_SCREEN_ACTIVE_VIEW_KEY = "$kmu_political_active_view_map";
+
+    // The stored value meaning no view paints - the tab showing with the map dark.
+    private static final String VIEW_OFF_SENTINEL = "";
 
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents. Their tone is
@@ -264,8 +273,8 @@ final class PoliticalMapLayerTest {
 
         @Test
         void getBodyControlsAppendsNoViewControlsWhenTheMapIsOff() {
-            // The off sentinel is stored, so no view is selected; even a view that has controls
-            // contributes none, since the tab is showing but the map is dark.
+            // The off sentinel is stored for the asking panel, so no view is selected there; even a view
+            // that has controls contributes none, since the tab is showing but that panel's map is dark.
             registerDefaultView(viewWithControlsMock);
 
             try (var globalMock = mockStatic(Global.class);
@@ -281,10 +290,10 @@ final class PoliticalMapLayerTest {
                     .when(Global::getSector)
                     .thenReturn(sectorMock);
 
-                when(memoryMock.contains(ACTIVE_VIEW_KEY))
+                when(memoryMock.contains(BODY_SCREEN_ACTIVE_VIEW_KEY))
                     .thenReturn(true);
-                when(memoryMock.getString(ACTIVE_VIEW_KEY))
-                    .thenReturn("");
+                when(memoryMock.getString(BODY_SCREEN_ACTIVE_VIEW_KEY))
+                    .thenReturn(VIEW_OFF_SENTINEL);
 
                 stubSharedControlsAndSelector(controlsMock);
 
@@ -432,6 +441,10 @@ final class PoliticalMapLayerTest {
             // file its click under whichever panel happened to be up when it was pressed. Every seam the
             // body composes is asked for, since one of them dropping the screen is exactly one control set
             // silently landing on the other panel's slots.
+            //
+            // The view read the body branches on is covered by the arrangement rather than by a verify:
+            // the showing screen's map is posed off, so reaching the picker and the view's own controls
+            // at all is only possible for a build that resolved the asking panel's view.
             buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock, recedeMock) -> {
 
                 controlsMock.verify(
@@ -446,7 +459,7 @@ final class PoliticalMapLayerTest {
                         argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
-                        argThat(slot -> BODY_SCREEN.equals(slot.memoryScope())),
+                        argThat(slot -> BODY_SCREEN.equals(slot.screenSlot().memoryScope())),
                         any(),
                         any(),
                         any(),
@@ -454,6 +467,22 @@ final class PoliticalMapLayerTest {
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(argThat(target -> BODY_SCREEN.equals(target.memoryScope())));
             });
+        }
+
+        @Test
+        void getBodyControlsFilesThePickersPicksUnderThisModsOwnStoreNamespace() {
+            // The shared stores hold no mod's name, so which mod's spotlight, sort and column count a
+            // picker reads and writes is decided here. A slot built under any other namespace reads
+            // back nothing every existing save holds, which no store's own suite can catch.
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock, recedeMock) ->
+                pickerMock.verify(
+                    () -> FilterSelectionBinder.buildPicker(
+                        argThat(slot ->
+                            KmuMod.MAP_STORE_NAMESPACE.equals(slot.screenSlot().namespace())),
+                        any(),
+                        any(),
+                        any(),
+                        any())));
         }
     }
 
@@ -522,9 +551,19 @@ final class PoliticalMapLayerTest {
         registerViewWithOneBloc(viewWithoutControlsMock);
 
         var sectorMock = mock(SectorAPI.class);
+        var memoryMock = mock(MemoryAPI.class);
 
         when(sectorMock.getMemoryWithoutUpdate())
-            .thenReturn(mock(MemoryAPI.class));
+            .thenReturn(memoryMock);
+
+        // The showing screen's own view turned off, while the asking panel's slot stays absent and so
+        // resolves the registered default. That makes every claim below a discriminator for which
+        // screen the body read: a build resolving the live screen instead of the one that asked finds
+        // no view, appends neither the picker nor the view's own controls, and fails.
+        when(memoryMock.contains(LIVE_SCREEN_ACTIVE_VIEW_KEY))
+            .thenReturn(true);
+        when(memoryMock.getString(LIVE_SCREEN_ACTIVE_VIEW_KEY))
+            .thenReturn(VIEW_OFF_SENTINEL);
 
         // Installing machinery registers a profiling origin describing the sector, which a real one
         // always has a seed for. Left unstubbed the install faults before the body is ever built, so

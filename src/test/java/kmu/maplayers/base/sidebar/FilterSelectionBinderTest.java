@@ -31,8 +31,8 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 
 /**
- * Pins the join between KMLib's picker and this mod's save slots, which is the whole of what the
- * binder does: the spotlighted id and the stored sort are read off this mod's stores for the slot on
+ * Pins the join between KMLib's picker and the calling mod's save slots, which is the whole of what the
+ * binder does: the spotlighted id and the stored sort are read off the shared stores for the slot on
  * the way in, and each of the picker's three picks reaches the store that keeps it on the way out. The
  * picker's own shape and click rules are KMLib's and are pinned there; the stores are mocked, so this
  * reads the wiring alone.
@@ -53,14 +53,20 @@ import static org.mockito.Mockito.never;
  */
 final class FilterSelectionBinderTest {
 
-    // The slot a pick, clear or hover is read from and written into: the panel this picker is built
-    // for, and the list it lists. Stand-in screens, since which panel it is changes nothing here.
-    private static final SelectionSlot SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createStandInScreen(), "hazards");
+    // The slot a pick, clear or hover is read from and written into: the mod and panel this picker is
+    // built for, and the list it lists. A stand-in mod on a stand-in screen, since neither which mod
+    // nor which panel it is changes anything here.
+    private static final MapLayerStoreNamespace NAMESPACE =
+        MapLayerStoreNamespaces.createStandInNamespace();
+
+    private static final SelectionSlot SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(NAMESPACE, ScreenMemoryScopes.createStandInScreen()),
+        "hazards");
 
     // The same list on the other panel, for the case that pins a pick landing where it was clicked.
-    private static final SelectionSlot OTHER_SCREEN_SLOT =
-        new SelectionSlot(ScreenMemoryScopes.createOtherStandInScreen(), "hazards");
+    private static final SelectionSlot OTHER_SCREEN_SLOT = new SelectionSlot(
+        new ScreenSelectionSlot(NAMESPACE, ScreenMemoryScopes.createOtherStandInScreen()),
+        "hazards");
 
     private static final ListSortModes<Hazard> MODES =
         new ListSortModes<>(List.of(HazardSortMode.values()), HazardSortMode.ALPHA);
@@ -286,7 +292,7 @@ final class FilterSelectionBinderTest {
                     List.of(ListColumns.values()).indexOf(ListColumns.TWO));
 
                 binderMock.verify(
-                    () -> ColumnSelectionBinder.storeColumns(SLOT.memoryScope(), ListColumns.TWO));
+                    () -> ColumnSelectionBinder.storeColumns(SLOT.screenSlot(), ListColumns.TWO));
             }
         }
 
