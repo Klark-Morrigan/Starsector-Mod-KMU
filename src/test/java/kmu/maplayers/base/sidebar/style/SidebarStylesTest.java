@@ -9,6 +9,7 @@ import kmlib.starsector.ui.sound.UiSoundCue;
 import kmlib.starsector.ui.sound.UiSoundScheme;
 import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabChrome;
+import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.settings.SidebarColourSchemeChoice;
 import kmu.settings.SidebarSettingsMock;
@@ -443,6 +444,81 @@ final class SidebarStylesTest {
                 .isTrue();
             assertThat(textHalo.colour())
                 .isEqualTo(Color.BLACK);
+        }
+    }
+
+    @Nested
+    class BuildBandButtonTabStyle {
+
+        // A row whose tabs stand in a box far wider and shorter than the band, which is the sector map's
+        // shape: wide enough for a layer name, one pixel short of the band for the line its tabs rule on.
+        // A button inheriting either would be wrong in a way a square band could not show.
+        private static final float HOST_TAB_WIDTH = 130f;
+        private static final float HOST_TAB_HEIGHT = 18f;
+        private static final float HOST_TAB_GAP = 1f;
+
+        // Half again as wide as it is tall, so a width taken from the wrong dimension is a different number
+        // from the right one.
+        private static final float WIDE_ICON_ASPECT = 1.5f;
+
+        @Test
+        void buildBandButtonTabStyleSizesTheBoxToTheImageOverTheTabHeight() {
+            // The whole of what this factory decides. The image is shrunk to the height the tabs stand at
+            // and the box follows the width that leaves it, so the control ends where its picture does.
+            assertThat(buildBandButtonStyle().tabBox().width())
+                .isEqualTo(HOST_TAB_HEIGHT * WIDE_ICON_ASPECT);
+        }
+
+        @Test
+        void buildBandButtonTabStyleKeepsTheRowsOwnHeightAndChannel() {
+            // Everything about the box except its width is the row's, so the button sits level with the
+            // tabs and is parted from them exactly as they are parted from each other.
+            var tabBox = buildBandButtonStyle().tabBox();
+
+            assertThat(tabBox.height())
+                .isEqualTo(HOST_TAB_HEIGHT);
+            assertThat(tabBox.neighbourGap())
+                .isEqualTo(HOST_TAB_GAP);
+        }
+
+        @Test
+        void buildBandButtonTabStyleWearsTheHostsOwnChromeAndFace() {
+            // It is a button standing in a row of tabs, not furniture from another screen: it takes the
+            // strip's chrome on the map and the button row's on the visor, because it takes whatever the
+            // host handed in. Drawing it in a chrome of its own is what made it read as the intel screen's.
+            var hostStyle = buildStripHostStyle();
+            var buttonStyle = SidebarStyles.buildBandButtonTabStyle(hostStyle, WIDE_ICON_ASPECT);
+
+            assertThat(buttonStyle.chrome())
+                .isEqualTo(hostStyle.chrome());
+            assertThat(buttonStyle.face())
+                .isEqualTo(hostStyle.face());
+            assertThat(buttonStyle.palette())
+                .isEqualTo(hostStyle.palette());
+        }
+
+        @Test
+        void buildBandButtonTabStyleStandsInTheHostsOwnBand() {
+            assertThat(buildBandButtonStyle().headerBandHeight())
+                .isEqualTo(HEADER_BAND_HEIGHT);
+        }
+
+        @Test
+        void buildBandButtonTabStyleSizesASquareImageToTheTabHeightBothWays() {
+            // The fallback shape a caller answers for an asset it could not measure, pinned here so that
+            // fallback lands on a button the player can still press rather than one of no width.
+            assertThat(SidebarStyles.buildBandButtonTabStyle(buildStripHostStyle(), 1f).tabBox().width())
+                .isEqualTo(HOST_TAB_HEIGHT);
+        }
+
+        // The host row this factory is asked about: the strip's own style, boxed as the sector map boxes it.
+        private static TabStyle buildStripHostStyle() {
+            return SidebarStyles.buildStripTabStyle(HEADER_BAND_HEIGHT)
+                .withTabBox(new TabBox(HOST_TAB_WIDTH, HOST_TAB_HEIGHT, HOST_TAB_GAP));
+        }
+
+        private static TabStyle buildBandButtonStyle() {
+            return SidebarStyles.buildBandButtonTabStyle(buildStripHostStyle(), WIDE_ICON_ASPECT);
         }
     }
 

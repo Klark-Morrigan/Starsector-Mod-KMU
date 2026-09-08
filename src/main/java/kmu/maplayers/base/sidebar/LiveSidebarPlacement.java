@@ -15,6 +15,7 @@ import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.PanelChrome;
 import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
 import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
+import kmlib.starsector.ui.widgets.tabs.HeaderBandSpec;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
@@ -30,7 +31,6 @@ import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
 
-import java.awt.Color;
 import java.util.List;
 import java.util.Set;
 
@@ -67,10 +67,6 @@ public final class LiveSidebarPlacement {
     // The mark the bar's opener carries: the game's own storage crate, which reads as "the things you
     // keep, arranged" and needs no bundle entry to say so in every language the game ships in.
     private static final String OPENER_ICON_PATH = "graphics/factions/storage.png";
-
-    // The image is drawn in its own colours - it was authored as a picture rather than as a glyph a
-    // caller shades.
-    private static final Color AS_AUTHORED_TINT = null;
 
     // What the opener says in words, which is nothing: the picture is the whole of it.
     private static final String NO_LABEL = "";
@@ -191,7 +187,8 @@ public final class LiveSidebarPlacement {
                 ControlSpec.NO_SELECTION,
                 cell -> MapLayerArrangementDialog.INSTANCE.openDialog()),
             SidebarStyles.buildBandButtonTabStyle(hostStyle, resolveOpenerIconAspect()),
-            new ImageSpan(OPENER_ICON_PATH, AS_AUTHORED_TINT));
+            // Untinted: it was authored as a picture rather than as a glyph a caller shades.
+            new ImageSpan(OPENER_ICON_PATH));
     }
 
     // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
@@ -237,9 +234,10 @@ public final class LiveSidebarPlacement {
             VanillaScreen.resolveUiHeight(),
             padding,
             buildChrome(panel.borderedEdges()),
-            tabStyle,
-            buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
-            buildBarOpenerSpec(tabStyle),
+            new HeaderBandSpec(
+                tabStyle,
+                buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
+                buildBarOpenerSpec(tabStyle)),
             buildBodyControls(activeLayer, screenPicks),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch

@@ -56,9 +56,9 @@ public final class MapLayerArrangementDialog {
     /** The one dialog, opened from whichever screen's bar the player reached for it on. */
     public static final MapLayerArrangementDialog INSTANCE = new MapLayerArrangementDialog();
 
-    // Where the panel sits in the core UI's own coordinates. It is the size of the screen, so its
-    // corner is the screen's corner.
-    private static final float SCREEN_ORIGIN = 0f;
+    // How far the panel is offset from the corner it hangs off, which is not at all: it is the size of
+    // the screen and the core UI it hangs in is too, so the two corners coincide.
+    private static final float NO_OFFSET = 0f;
 
     // What the player is arranging, or null while the dialog is down. Seeded when the dialog opens and
     // dropped when it closes, so a second visit reads the store again rather than the rows it left.
@@ -109,7 +109,7 @@ public final class MapLayerArrangementDialog {
         if (placement == null) {
             return;
         }
-        placement.inTL(SCREEN_ORIGIN, SCREEN_ORIGIN);
+        placement.inTL(NO_OFFSET, NO_OFFSET);
 
         editor = new MapLayerArrangementEditor(arrangementSelection, MapLayerRegistry.getLayers());
         dialogPanel = panel;

@@ -1,6 +1,5 @@
 package kmu.maplayers.base.chrome.arrange;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
@@ -12,6 +11,7 @@ import kmlib.starsector.ui.buttons.VanillaActionIds;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 import kmlib.starsector.ui.render.gl.UiFill;
+import kmlib.starsector.ui.screen.VanillaScreen;
 
 import kmu.util.KmuStrings;
 
@@ -19,8 +19,9 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * The widgets the arranging dialog is made of: the backdrop across the screen, and the box on it
- * holding a title, one row per layer and the way out.
+ * The box the arranging dialog is made of: a title, one row per layer, the way out, and the rule around
+ * them - with the dim over the screen and the box's own surface painted beneath, since the game publishes
+ * a rectangle component that strokes and none that fills.
  *
  * <p>Apart from the dialog because the two change for different reasons. What the dialog is - when it
  * stands up, what it claims, when it comes down - is a question about a screen; how wide the label
@@ -34,8 +35,8 @@ import java.util.function.BiConsumer;
  *
  * <p>Every cell is a vanilla element placed by hand rather than one element told to run across, because
  * a vanilla element lays its contents out top to bottom. A row is therefore cells side by side, and the
- * box's own fill is one element behind all of them - a fill per cell would leave the gaps between cells
- * showing the backdrop through.
+ * surface they all stand on is one painted rectangle rather than a fill per cell, which would leave the
+ * gaps between cells showing the map through.
  */
 final class MapLayerArrangementDialogBody {
 
@@ -69,10 +70,6 @@ final class MapLayerArrangementDialogBody {
 
     // A vanilla element's own text padding, which is what a label added to one is inset by.
     private static final float NO_PAD = 0f;
-
-    // The dialog panel's own corner, which the screen-wide dim is drawn from. The panel is the size of
-    // the screen and sits at its corner, so the two coincide.
-    private static final float SCREEN_ORIGIN = 0f;
 
     // What a row's controls occupy beside its label. Named rather than subtracted back out of the box
     // width where the cell is built: the box is as wide as its parts, so the parts are what is stated
@@ -161,11 +158,7 @@ final class MapLayerArrangementDialogBody {
     void renderFills(float alphaMult) {
 
         UiFill.renderQuad(
-            new Rectangle(
-                SCREEN_ORIGIN,
-                SCREEN_ORIGIN,
-                Global.getSettings().getScreenWidth(),
-                Global.getSettings().getScreenHeight()),
+            VanillaScreen.resolveScreenBox(),
             new UiElementPaint(
                 StarsectorUiColour.BLACK.resolve(),
                 BACKDROP_ALPHA * alphaMult));
