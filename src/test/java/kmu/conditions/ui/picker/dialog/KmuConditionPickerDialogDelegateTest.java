@@ -13,7 +13,10 @@ import kmu.conditions.ui.picker.action.KmuConditionPickerFeedbackSink;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntry;
 import kmu.conditions.ui.picker.model.KmuConditionPickerEntryState;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModelFactory;
+import kmu.starsector.StarsectorSettingsFake;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -168,6 +171,40 @@ class KmuConditionPickerDialogDelegateTest {
 
             assertThat(marketFake.conditionIds).containsExactly("hot");
             assertThat(feedbackSink.messages).isEmpty();
+        }
+    }
+
+    @Nested
+    class GetConfirmText {
+
+        @BeforeEach
+        void installStarsectorSettings() {
+            StarsectorSettingsFake.installSettings();
+        }
+
+        @AfterEach
+        void clearStarsectorSettings() {
+            StarsectorSettingsFake.clearSettings();
+        }
+
+        @Test
+        void confirmTextIsTheSharedCloseWording() {
+            // The picker's one button dismisses a list nothing was staged in, so it keeps the shared
+            // wording that any dialog with nothing to commit can read. The bar-arranging dialog wants
+            // a word of its own precisely because it does have something to leave the player with.
+            var service = new KmuConditionService(new ConditionRepositoryFake(
+                    new KmuConditionSpec("hot", "Hot", "graphics/icons/markets/hot.png", true)));
+            var delegate = new KmuConditionPickerDialogDelegate(
+                    new KmuConditionPickerActionHandler(
+                            service,
+                            new KmuConditionPickerModelFactory(service),
+                            new EditableMarketFake()),
+                    new RecordingFeedbackSink(),
+                    720f,
+                    560f);
+
+            assertThat(delegate.getConfirmText())
+                    .isEqualTo("Close");
         }
     }
 

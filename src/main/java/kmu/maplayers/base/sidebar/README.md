@@ -351,10 +351,10 @@ ranked, wrapped, and filtered. `SortSelection`, `ColumnSelection`, and `FilterSe
 stores, and `SortSelectionBinder`, `ColumnSelectionBinder`, and `FilterSelectionBinder` are what
 tie each to the widget that changes it. `ScreenSelectionSlot` and `SelectionSlot` are what they are
 addressed by, over the `MapLayerStoreNamespace` that says whose answers a slot holds, and
-`FilterHoverSlot` stands beside them holding where the pointer rests rather than what was picked,
-which is no fourth store: what it holds belongs to a sector rather than to a save. Three stores,
-three binders, the two addresses they take and the hover slot is the whole of this half of the
-package.
+`FilterHoverSlot` stands beside them under a `PickerScope`, holding where the pointer rests rather
+than what was picked - which is no fourth store: what it holds belongs to a sector rather than to a
+save. Three stores, three binders, the three addresses they take and the hover slot is the whole of
+this half of the package.
 
 The stores are leaves: they hold the raw stored keys and nothing that resolves one. What a
 filtered-to id points at stays with the layer that offers the choices, and a stored sort or
@@ -415,12 +415,21 @@ on offer wherever it was picked - and a screen healed only when it is next up wo
 receding the sector behind a bloc the player cannot unpick from the panel they are on. The screens
 are walked off `MapLayerScreens`, which is where how many there are is known.
 
-`FilterHoverSlot` is the transient counterpart: the same per-scope shape - and the one tie of the
-four that takes no screen, since only one screen is ever up to preview on - holding the id a pointer
-rests on instead of the id that was picked, so a reading layer can preview what picking it would
-spotlight. It persists nothing and raises no refresh, and both follow from what a hover is - a place
-the pointer happens to be this frame, previewed over paint that is already on the map, where a pick
-has the reading layer rebuild everything it draws.
+`FilterHoverSlot` is the transient counterpart: holding the id a pointer rests on instead of the id
+that was picked, so a reading layer can preview what picking it would spotlight. It persists nothing
+and raises no refresh, and both follow from what a hover is - a place the pointer happens to be this
+frame, previewed over paint that is already on the map, where a pick has the reading layer rebuild
+everything it draws.
+
+Its address is `PickerScope` - the mod and the list, `SelectionSlot` without the screen. **The one
+tie of the four that takes no screen**, since only one screen is ever up to preview on and the pass
+that reads a hover back is drawing that screen with no pick of its own to resolve one from. The mod
+half is not optional even so: the scope id is opaque and every consumer picks its own, so two mods
+listing under `factions` would preview each other's rows - the persisted stores' collision arriving
+unpersisted and per sector. A scope is resolved off the slot the picker was built for
+(`PickerScope.resolveScopeOf`) rather than composed beside it, so the list a hover previews and the
+list a pick files under cannot come apart. It is a map key rather than a stored one, so it is the
+value itself that is compared and there is no key here to spell.
 
 Which is why it is the one thing here that is not stored at all. A hover names a bloc one sector's
 walk surfaced and is read back against that sector's presence, so it is a fact about a sector rather
@@ -435,10 +444,10 @@ at one point: it reads the scope's spotlighted id and the scope's stored sort on
 resolves the columns caption out of this mod's strings, and routes each of the picker's three
 reported picks to the slot that keeps it - the item pick to `FilterSelection` under that scope, the
 other two through the binders beside it, the sort under that same scope. The row the pointer rests
-on routes the same way, into `FilterHoverSlot` under that scope, and it is the one report that
-raises nothing and persists nothing: a preview is drawn over paint already on the map. One scope
-covers every one of those answers, so a layer cannot bind its filter, its sort and its preview to
-different slots. A layer that composed
+on routes the same way, into `FilterHoverSlot` under the `PickerScope` that slot resolves to, and it
+is the one report that raises nothing and persists nothing: a preview is drawn over paint already on
+the map. One slot covers every one of those answers, so a layer cannot bind its filter, its sort and
+its preview to different lists. A layer that composed
 the picker itself would have to name all three slots, which is exactly the knowledge these binders
 exist to hold, so a calling layer hands over its `ListPicker`, its column count, and whatever it
 pairs beside the sort selector, and names no store at all.

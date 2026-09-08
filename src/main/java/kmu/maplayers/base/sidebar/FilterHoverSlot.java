@@ -7,9 +7,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The single id a sidebar filter picker's pointer currently rests on, or none - held per scope, so
- * each scope keeps its own and one scope's hover is never read under another. A layer reading it
- * previews what picking that id would spotlight, without picking it.
+ * The single id a sidebar filter picker's pointer currently rests on, or none - held per
+ * {@link PickerScope}, so each mod's every list keeps its own and one list's hover is never read
+ * under another. A layer reading it previews what picking that id would spotlight, without picking
+ * it.
  *
  * <p>Nothing is persisted and no refresh signal is raised, which is the whole of what separates it
  * from {@link FilterSelection}: a hover is where a pointer happens to be this frame, previewed over
@@ -26,10 +27,11 @@ import java.util.Map;
  */
 public final class FilterHoverSlot implements InstalledMachinery {
 
-    // One live id per scope, keyed by the scope's opaque id. A plain map rather than a persisted
-    // slot because the value dies with the sector: an entry exists only while a pointer rests on a
-    // row, and absence is the resting state every scope starts and ends in.
-    private final Map<String, String> hoveredIdByScopeId = new HashMap<>();
+    // One live id per picker, keyed by the scope value rather than by a composed string: nothing
+    // here is serialised, so there is no key to spell and no chance of two holders spelling it
+    // differently. A plain map because the value dies with the sector - an entry exists only while a
+    // pointer rests on a row, and absence is the resting state every list starts and ends in.
+    private final Map<PickerScope, String> hoveredIdByPickerScope = new HashMap<>();
 
     // Reached through resolveHoverSlotIn, so the only slots that exist are ones an installation
     // holds - and so goes with the sector it was made for.
@@ -51,46 +53,47 @@ public final class FilterHoverSlot implements InstalledMachinery {
     }
 
     /**
-     * Drops one scope's hover, returning it to resting on no row. A no-op on a scope that already
+     * Drops one picker's hover, returning it to resting on no row. A no-op on a picker that already
      * rests there, so a stand-down needs no check of its own.
      *
-     * @param scopeId the scope whose slot is cleared
+     * @param pickerScope the list whose hover is cleared
      */
-    public void clearHoveredId(String scopeId) {
-        hoveredIdByScopeId.remove(scopeId);
+    public void clearHoveredId(PickerScope pickerScope) {
+        hoveredIdByPickerScope.remove(pickerScope);
     }
 
     /**
-     * Drops every scope's hover. Holds nothing a collector would not free, so this is about the
+     * Drops every picker's hover. Holds nothing a collector would not free, so this is about the
      * answer rather than the memory: a caller still holding a slot resolved before the disposal
      * reads no hover rather than the gone sector's.
      */
     @Override
     public void disposeMachinery() {
-        hoveredIdByScopeId.clear();
+        hoveredIdByPickerScope.clear();
     }
 
     /**
-     * @param scopeId the scope whose slot is read
-     * @return the id the pointer rests on in that scope, or null when it rests on no row - which is
-     *         also the answer for a scope no hover was ever reported for
+     * @param pickerScope the list whose hover is read
+     * @return the id the pointer rests on in that list, or null when it rests on no row - which is
+     *         also the answer for a list no hover was ever reported for
      */
-    public String getHoveredIdOf(String scopeId) {
-        return hoveredIdByScopeId.get(scopeId);
+    public String getHoveredIdOf(PickerScope pickerScope) {
+        return hoveredIdByPickerScope.get(pickerScope);
     }
 
     /**
-     * Records the id the pointer now rests on in one scope, replacing whatever it rested on before.
+     * Records the id the pointer now rests on in one picker's list, replacing whatever it rested on
+     * before.
      *
-     * @param scopeId   the scope the hover belongs to
-     * @param hoveredId the stable id under the pointer; null clears the scope, so a hover channel
-     *                  reporting a leave needs no second call to make
+     * @param pickerScope the list the hover belongs to
+     * @param hoveredId   the stable id under the pointer; null clears the list, so a hover channel
+     *                    reporting a leave needs no second call to make
      */
-    public void recordHoveredId(String scopeId, String hoveredId) {
+    public void recordHoveredId(PickerScope pickerScope, String hoveredId) {
         if (hoveredId == null) {
-            clearHoveredId(scopeId);
+            clearHoveredId(pickerScope);
             return;
         }
-        hoveredIdByScopeId.put(scopeId, hoveredId);
+        hoveredIdByPickerScope.put(pickerScope, hoveredId);
     }
 }

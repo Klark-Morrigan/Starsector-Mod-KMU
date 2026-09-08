@@ -33,10 +33,12 @@ import java.util.List;
  * player has moved to the other screen, and a pick belongs to the panel it was clicked on rather
  * than to whichever screen happens to be up when the click is handled.
  *
- * <p>The row the pointer rests on routes the same way, into {@link FilterHoverSlot} under the slot's
- * scope, and it is the one report that neither persists nor raises: a hover is a preview over paint
- * already on the map, and only one screen is ever up to preview on, so it is also the one tie that
- * takes no screen. It is why the sector arrives as its whole {@link MapLayerInstallation} rather than
+ * <p>The row the pointer rests on routes the same way, into {@link FilterHoverSlot} under the
+ * {@link PickerScope} this slot resolves to, and it is the one report that neither persists nor
+ * raises: a hover is a preview over paint already on the map, and only one screen is ever up to
+ * preview on, so it is also the one tie that takes no screen. Resolved off the slot rather than
+ * captured beside it, so the list a hover previews and the list a pick files under are one.
+ * It is why the sector arrives as its whole {@link MapLayerInstallation} rather than
  * as the board alone - the slot and the board are both that sector's, and handed over side by side
  * they would be two chances to name two sectors.
  *
@@ -139,7 +141,7 @@ public final class FilterSelectionBinder {
 
         @Override
         public void clearItemHover() {
-            hoverSlot.clearHoveredId(slot.scopeId());
+            hoverSlot.clearHoveredId(PickerScope.resolveScopeOf(slot));
         }
 
         @Override
@@ -151,7 +153,7 @@ public final class FilterSelectionBinder {
         public void reportItemHover(String itemId) {
             // No signal is raised and nothing is persisted: a hover is a preview over paint already
             // on screen, where a pick has the reading layer rebuild everything it draws.
-            hoverSlot.recordHoveredId(slot.scopeId(), itemId);
+            hoverSlot.recordHoveredId(PickerScope.resolveScopeOf(slot), itemId);
         }
 
         @Override

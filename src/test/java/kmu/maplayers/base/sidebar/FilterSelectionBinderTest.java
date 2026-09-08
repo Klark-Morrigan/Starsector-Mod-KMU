@@ -250,7 +250,7 @@ final class FilterSelectionBinderTest {
                 var picker = buildPickerFor(buildPicker());
                 picker.hoverReport().reportHoveredCell(0);
 
-                assertThat(builtHoverSlot.getHoveredIdOf(SLOT.scopeId()))
+                assertThat(builtHoverSlot.getHoveredIdOf(PickerScope.resolveScopeOf(SLOT)))
                     .isEqualTo("drift_1");
             }
         }
@@ -270,7 +270,7 @@ final class FilterSelectionBinderTest {
                 picker.hoverReport().reportHoveredCell(0);
                 picker.hoverReport().reportHoveredCell(ControlHoverReport.NO_CELL_HOVERED);
 
-                assertThat(builtHoverSlot.getHoveredIdOf(SLOT.scopeId()))
+                assertThat(builtHoverSlot.getHoveredIdOf(PickerScope.resolveScopeOf(SLOT)))
                     .isNull();
             }
         }

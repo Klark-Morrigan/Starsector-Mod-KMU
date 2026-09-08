@@ -1,9 +1,11 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.PreviewHighlightGeometry;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
+import kmu.maplayers.base.sidebar.PickerScope;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.SectorBlocPalettes;
@@ -87,9 +89,13 @@ public final class PoliticalMapPreviewHighlightRenderer {
     PreviewHighlightPaint resolvePreviewPaint(PoliticalMapTerritories territories) {
 
         var view = territories.getView();
+
+        // The view's id under this mod's own store namespace, which is how the picker reported the
+        // hover: the id is opaque, so a view named the same by another mod's picker is a different
+        // list and must not preview here.
         var previewedBlocId = FilterHoverSlot
             .resolveHoverSlotIn(installation)
-            .getHoveredIdOf(view.getId());
+            .getHoveredIdOf(new PickerScope(KmuMod.MAP_STORE_NAMESPACE, view.getId()));
 
         if (previewedBlocId == null) {
             return PreviewHighlightPaint.NONE;

@@ -4,8 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
+import kmu.maplayers.base.sidebar.MapLayerStoreNamespaces;
+import kmu.maplayers.base.sidebar.PickerScope;
 import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.base.theme.HoverWashStyle;
@@ -130,7 +133,27 @@ final class PoliticalMapPreviewHighlightRendererTest {
 
             FilterHoverSlot
                 .resolveHoverSlotIn(installation)
-                .recordHoveredId("alliances", BLOC_ID);
+                .recordHoveredId(createScopeOfView("alliances"), BLOC_ID);
+
+            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+                .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
+
+            assertThat(paint.isPainting())
+                .isFalse();
+        }
+
+        @Test
+        void resolvePreviewPaintLightsNothingForAHoverReportedByAnotherModsPicker() {
+            // The view id is opaque and shared by nobody's agreement, so a foreign layer whose own
+            // picker lists a view under this one's name is a different list: its hovered row names a
+            // bloc this view never surfaced, and lighting it would paint that mod's answer here.
+            var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
+
+            FilterHoverSlot
+                .resolveHoverSlotIn(installation)
+                .recordHoveredId(
+                    new PickerScope(MapLayerStoreNamespaces.createStandInNamespace(), VIEW_ID),
+                    BLOC_ID);
 
             var paint = new PoliticalMapPreviewHighlightRenderer(installation)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
@@ -149,7 +172,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
 
             FilterHoverSlot
                 .resolveHoverSlotIn(installationWithoutTheFaction)
-                .recordHoveredId(VIEW_ID, BLOC_ID);
+                .recordHoveredId(createScopeOfView(VIEW_ID), BLOC_ID);
 
             var paint = new PoliticalMapPreviewHighlightRenderer(installationWithoutTheFaction)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
@@ -176,12 +199,18 @@ final class PoliticalMapPreviewHighlightRendererTest {
         }
     }
 
+    // The scope the sidebar's picker reports a hovered row under: a view's id under this mod's own
+    // store namespace, which is what the binder composes from the slot the picker was built for.
+    private static PickerScope createScopeOfView(String viewId) {
+        return new PickerScope(KmuMod.MAP_STORE_NAMESPACE, viewId);
+    }
+
     // Records the pointer resting on one bloc's row, through the same slot the sidebar's picker
-    // writes into - the scope being the painted view's id, as the binder reports it under.
+    // writes into - the scope being the painted view's, as the binder reports it under.
     private void hover(String blocId) {
         FilterHoverSlot
             .resolveHoverSlotIn(installation)
-            .recordHoveredId(VIEW_ID, blocId);
+            .recordHoveredId(createScopeOfView(VIEW_ID), blocId);
     }
 
     // One frame's draw lists: the stated view and preview tier, plus a shape for each cell named,
