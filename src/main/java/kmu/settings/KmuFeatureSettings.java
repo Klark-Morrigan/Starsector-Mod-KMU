@@ -32,8 +32,8 @@ public final class KmuFeatureSettings {
 
     /**
      * @return whether the sector map's overlays are wired - the layers, their render surfaces, the
-     *         sidebar and the hover box; on by default, and switched off leaves the sector map
-     *         exactly as vanilla draws it
+     *         sidebar and the hover box, for every layer registered with KMU whichever mod ships it;
+     *         on by default, and switched off leaves the sector map exactly as vanilla draws it
      */
     public static boolean areMapLayersEnabled() {
         return KmuLunaSettings.readBoolean(MAP_LAYERS_FIELD, DEFAULT_MAP_LAYERS);

@@ -48,6 +48,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
     // The switches this mod answers, each holding what it was last applied as so a settings change
     // can tell which of them moved. Listed here because deciding what runs is the entry point's
     // whole subject; what each half does is its installers'.
+    //
+    // This one is every layer's - a layer another mod registers with KMU draws through the same
+    // installers, and this switch takes it down with KMU's own.
     private static final KmuToggledFeature mapLayers = new KmuToggledFeature(
         KmuFeatureSettings::areMapLayersEnabled,
         KMU_ModPlugin::installMapLayers,
