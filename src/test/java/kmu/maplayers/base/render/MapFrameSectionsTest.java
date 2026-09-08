@@ -1,9 +1,9 @@
 package kmu.maplayers.base.render;
 
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.BudgetBreach;
 import kmlib.profiling.SilentProfiler;
 import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.profiling.snapshot.BudgetBreach;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 

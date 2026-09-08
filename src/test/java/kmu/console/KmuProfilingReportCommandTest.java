@@ -1,9 +1,9 @@
 package kmu.console;
 
-import kmlib.profiling.BudgetBreach;
 import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
+import kmlib.profiling.snapshot.BudgetBreach;
 import kmlib.profiling.snapshot.DurationBuckets;
 import kmlib.profiling.snapshot.ProfileIterations;
 import kmlib.profiling.snapshot.ProfileNode;

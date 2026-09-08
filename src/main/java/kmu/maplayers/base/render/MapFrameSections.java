@@ -1,7 +1,7 @@
 package kmu.maplayers.base.render;
 
-import kmlib.profiling.ProfileBudget;
 import kmlib.profiling.ProfileSection;
+import kmlib.profiling.budget.ProfileBudget;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.time.Timings;
 
