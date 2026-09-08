@@ -69,6 +69,11 @@ final class PoliticalMapBodyControlsTest {
     // screens, since what a control does with the screen it was built under is the same on either.
     private static final ScreenMemoryScope BUILT_SCREEN = ScreenMemoryScopes.createStandInScreen();
 
+    // The panel the shared controls are built on, pairing the two above the way the tab's body build
+    // does.
+    private static final BodyControlTarget BUILT_TARGET =
+        new BodyControlTarget(BUILT_BOARD, BUILT_SCREEN);
+
     private final PoliticalMapView factionsViewMock = mock(PoliticalMapView.class);
     private final PoliticalMapView alliancesViewMock = mock(PoliticalMapView.class);
 
@@ -212,7 +217,7 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(true);
 
                 var checkbox = (ControlSpec.Checkbox) PoliticalMapBodyControls
-                        .buildSharedControls(BUILT_BOARD, BUILT_SCREEN)
+                        .buildSharedControls(BUILT_TARGET)
                         .get(0);
                 checkbox.action().activateCell(0);
 
@@ -236,7 +241,7 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(FactionNameFormatChoice.SHORT);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
-                        .buildSharedControls(BUILT_BOARD, BUILT_SCREEN).get(1);
+                        .buildSharedControls(BUILT_TARGET).get(1);
                 radio.action().activateCell(0);
 
                 assertThat(radio.selectedIndex()).isEqualTo(1);
@@ -261,7 +266,7 @@ final class PoliticalMapBodyControlsTest {
                         .thenReturn(FactionNameFormatChoice.NONE);
 
                 var radio = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls
-                        .buildSharedControls(BUILT_BOARD, BUILT_SCREEN).get(1);
+                        .buildSharedControls(BUILT_TARGET).get(1);
                 radio.action().activateCell(2);
 
                 assertThat(radio.selectedIndex()).isEqualTo(2);
@@ -288,12 +293,10 @@ final class PoliticalMapBodyControlsTest {
                         .when(() -> NameFormatPreference.getSelectedNameFormat(BUILT_SCREEN))
                         .thenReturn(FactionNameFormatChoice.FULL);
 
-                var controls = PoliticalMapBodyControls.buildSharedControls(BUILT_BOARD, BUILT_SCREEN);
+                var controls = PoliticalMapBodyControls.buildSharedControls(BUILT_TARGET);
                 ((ControlSpec.Interactive) controls.get(0)).action().activateCell(0);
                 ((ControlSpec.Interactive) controls.get(1)).action().activateCell(1);
 
-                var liveScreen = MapLayerScreens.resolveLivePicks().memoryScope();
-                assertThat(liveScreen).isNotEqualTo(BUILT_SCREEN);
                 outlineMock.verify(() ->
                         UninhabitedOutlinePreference.setOutlineDrawn(BUILT_SCREEN, true, BUILT_BOARD));
                 nameFormatMock.verify(() -> NameFormatPreference.selectNameFormat(

@@ -1,7 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmlib.starsector.memory.SectorMemoryString;
-
+import kmu.maplayers.base.layer.AddressedMemoryString;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
@@ -35,12 +34,14 @@ import java.util.function.Predicate;
  */
 public final class FilterSelection {
 
-    // The key prefix a slot composes its own two axes onto. Layer-neutral because every map layer's
-    // picker stores through this one class - a prefix naming one layer would have every other layer
-    // persisting its selection under that layer's key. A key is a save-serialised identity, not a
-    // description of where the class lives: a renamed prefix reads as absent and silently drops every
-    // existing save's filter choice back to none, so it stays frozen in this spelling.
-    private static final String SELECTED_ID_KEY_PREFIX = "$kmu_map_filter_bloc_";
+    // The selected id, under a key prefix a slot composes its own two axes onto. Layer-neutral because
+    // every map layer's picker stores through this one class - a prefix naming one layer would have
+    // every other layer persisting its selection under that layer's key. A key is a save-serialised
+    // identity, not a description of where the class lives: a renamed prefix reads as absent and
+    // silently drops every existing save's filter choice back to none, so it stays frozen in this
+    // spelling.
+    private static final AddressedMemoryString SELECTED_ID =
+        new AddressedMemoryString("$kmu_map_filter_bloc_");
 
     private FilterSelection() {
     }
@@ -51,7 +52,7 @@ public final class FilterSelection {
      *         null before a save exists, since there is nothing to have picked yet
      */
     public static String getSelectedIdOf(SelectionSlot slot) {
-        return resolveMemorySlot(slot).get();
+        return SELECTED_ID.get(slot);
     }
 
     /**
@@ -69,7 +70,7 @@ public final class FilterSelection {
             String selectedId,
             MapLayerRefreshBoard board) {
 
-        if (resolveMemorySlot(slot).set(selectedId)) {
+        if (SELECTED_ID.set(slot, selectedId)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
         }
     }
@@ -84,7 +85,7 @@ public final class FilterSelection {
      *              sector's overlay repaints
      */
     public static void clearSelection(SelectionSlot slot, MapLayerRefreshBoard board) {
-        if (resolveMemorySlot(slot).clear()) {
+        if (SELECTED_ID.clear(slot)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
         }
     }
@@ -105,17 +106,9 @@ public final class FilterSelection {
      */
     public static void healStaleSelection(SelectionSlot slot, Predicate<String> isSelectable) {
 
-        var memorySlot = resolveMemorySlot(slot);
-        String selectedId = memorySlot.get();
+        String selectedId = SELECTED_ID.get(slot);
         if (selectedId != null && !isSelectable.test(selectedId)) {
-            memorySlot.clear();
+            SELECTED_ID.clear(slot);
         }
-    }
-
-    // The sector-memory slot holding one selection, at the key its screen and scope compose. A fresh
-    // wrapper per call - the wrapper only holds its key, the value lives in sector memory - so no
-    // per-slot instance has to be cached here.
-    private static SectorMemoryString resolveMemorySlot(SelectionSlot slot) {
-        return new SectorMemoryString(slot.resolveKeyFor(SELECTED_ID_KEY_PREFIX));
     }
 }

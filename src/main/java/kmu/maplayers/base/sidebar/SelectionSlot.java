@@ -1,5 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
+import kmu.maplayers.base.layer.MemoryKeyAddress;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 
 /**
@@ -24,7 +25,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
  */
 public record SelectionSlot(
     ScreenMemoryScope memoryScope,
-    String scopeId) {
+    String scopeId) implements MemoryKeyAddress {
 
     public SelectionSlot {
         // A blank id composes every scope to one key, which is half the partitioning this type carries:
@@ -38,6 +39,7 @@ public record SelectionSlot(
      * @param preferenceKeyPrefix the preference's own key prefix, carrying neither scope nor screen
      * @return the key that preference is saved under for this screen and scope
      */
+    @Override
     public String resolveKeyFor(String preferenceKeyPrefix) {
         return memoryScope.resolveKeyFor(preferenceKeyPrefix + scopeId);
     }

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmlib.starsector.memory.SectorMemoryString;
+import kmu.maplayers.base.layer.AddressedMemoryString;
 
 /**
  * The metric a sidebar picker list currently ranks its rows by and the direction that ranking runs in
@@ -28,21 +28,23 @@ import kmlib.starsector.memory.SectorMemoryString;
  */
 public final class SortSelection {
 
-    // The key prefixes a slot composes its own two axes onto, one per half. Both are layer-neutral
+    // The two halves' key prefixes, which a slot composes its own two axes onto. Both are layer-neutral
     // because every map layer's picker stores through this one class - a prefix naming one layer would
     // have every other layer persisting its sort under that layer's key. A key is a save-serialised
     // identity, not a description of where the class lives: a renamed prefix reads as absent and
     // silently resets every existing save's sort choice back to the default, so both stay frozen in
     // this spelling.
     //
-    // Prefix of the chosen sort mode's slot. Absent until the player first picks a mode in that
-    // slot, which the read reports as null for the sort mode to default.
-    private static final String SELECTED_SORT_MODE_KEY_PREFIX = "$kmu_map_sort_mode_";
+    // The chosen sort mode. Absent until the player first picks a mode in that slot, which the read
+    // reports as null for the sort mode to default.
+    private static final AddressedMemoryString SELECTED_SORT_MODE =
+        new AddressedMemoryString("$kmu_map_sort_mode_");
 
-    // Prefix of the chosen sort direction's slot. Absent until the player first flips a direction
-    // (or picks a mode) in that slot, which the read reports as null for the caller to resolve to
-    // the active mode's default direction.
-    private static final String SELECTED_SORT_DIRECTION_KEY_PREFIX = "$kmu_map_sort_direction_";
+    // The chosen sort direction. Absent until the player first flips a direction (or picks a mode) in
+    // that slot, which the read reports as null for the caller to resolve to the active mode's default
+    // direction.
+    private static final AddressedMemoryString SELECTED_SORT_DIRECTION =
+        new AddressedMemoryString("$kmu_map_sort_direction_");
 
     private SortSelection() {
     }
@@ -54,7 +56,7 @@ public final class SortSelection {
      *         default mode
      */
     public static String getSortModeKeyOf(SelectionSlot slot) {
-        return resolveModeMemorySlot(slot).get();
+        return SELECTED_SORT_MODE.get(slot);
     }
 
     /**
@@ -63,7 +65,7 @@ public final class SortSelection {
      *         was never flipped) - the caller resolves null to the active mode's default direction
      */
     public static String getSortDirectionKeyOf(SelectionSlot slot) {
-        return resolveDirectionMemorySlot(slot).get();
+        return SELECTED_SORT_DIRECTION.get(slot);
     }
 
     /**
@@ -76,7 +78,7 @@ public final class SortSelection {
      * @param modeKey the save-stable key of the mode to sort by
      */
     public static void selectSortMode(SelectionSlot slot, String modeKey) {
-        resolveModeMemorySlot(slot).set(modeKey);
+        SELECTED_SORT_MODE.set(slot, modeKey);
     }
 
     /**
@@ -87,19 +89,6 @@ public final class SortSelection {
      * @param directionKey the save-stable key of the direction to sort in
      */
     public static void selectSortDirection(SelectionSlot slot, String directionKey) {
-        resolveDirectionMemorySlot(slot).set(directionKey);
-    }
-
-    // The sector-memory slot holding one sort direction, at the key its screen and scope compose. A
-    // fresh wrapper per call - the wrapper only holds its key, the value lives in sector memory - so no
-    // per-slot instance has to be cached here.
-    private static SectorMemoryString resolveDirectionMemorySlot(SelectionSlot slot) {
-        return new SectorMemoryString(slot.resolveKeyFor(SELECTED_SORT_DIRECTION_KEY_PREFIX));
-    }
-
-    // The sector-memory slot holding one sort mode, keyed the same way. Built per call for the same
-    // reason the direction slot is.
-    private static SectorMemoryString resolveModeMemorySlot(SelectionSlot slot) {
-        return new SectorMemoryString(slot.resolveKeyFor(SELECTED_SORT_MODE_KEY_PREFIX));
+        SELECTED_SORT_DIRECTION.set(slot, directionKey);
     }
 }

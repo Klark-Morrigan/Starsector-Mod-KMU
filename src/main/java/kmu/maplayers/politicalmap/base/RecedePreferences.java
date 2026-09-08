@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.memory.SectorMemoryFlag;
-
+import kmu.maplayers.base.layer.AddressedMemoryFlag;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -18,10 +17,8 @@ import kmu.settings.KmuPoliticalMapTerritorySettings;
  * toggles still resolve through a single rule, so a receded bloc reads the same everywhere that
  * instance is applied.
  *
- * <p>The set names the context; the screen names the panel the toggles were flipped on. A set holds its
- * two base keys and a {@link ScreenMemoryScope} arrives on every read and write, so one instance backs
- * both screens without either seeing the other's flips - and no caller composes a screen-suffixed key of
- * its own.
+ * <p>The set names the context and the screen names the panel, so one instance backs both screens
+ * without either seeing the other's flips.
  *
  * <p>Sidebar-only: the toggles are driven solely by the overlay's tab-panel checkboxes, never a
  * settings-screen control, so they persist in sector memory (each save keeps its own choice and it
@@ -56,17 +53,17 @@ public final class RecedePreferences {
     private static final boolean MUTE_DEFAULT = false;
     private static final boolean DESATURATE_DEFAULT = true;
 
-    // The base keys a screen's segment composes onto, one pair per set. Instance fields, not statics, so
-    // each set backs a distinct backdrop; renaming a key silently resets every existing save's choice for
-    // that set, so they stay stable once shipped.
-    private final String muteKey;
-    private final String desaturateKey;
+    // This set's two toggles. Instance fields, not statics, so each set backs a distinct backdrop;
+    // renaming a key silently resets every existing save's choice for that set, so they stay stable
+    // once shipped.
+    private final AddressedMemoryFlag muteFlag;
+    private final AddressedMemoryFlag desaturateFlag;
 
     // Package-private: the only sets are the two constants above, each naming its own frozen keys, so
     // no other code composes a recede set with keys of its own.
     RecedePreferences(String muteKey, String desaturateKey) {
-        this.muteKey = muteKey;
-        this.desaturateKey = desaturateKey;
+        this.muteFlag = new AddressedMemoryFlag(muteKey, MUTE_DEFAULT);
+        this.desaturateFlag = new AddressedMemoryFlag(desaturateKey, DESATURATE_DEFAULT);
     }
 
     /**
@@ -75,7 +72,7 @@ public final class RecedePreferences {
      *         false before a save exists or while the toggle is untouched, since Mute defaults off
      */
     public boolean isMuted(ScreenMemoryScope memoryScope) {
-        return resolveMuteFlag(memoryScope).isSet();
+        return muteFlag.isSet(memoryScope);
     }
 
     /**
@@ -84,7 +81,7 @@ public final class RecedePreferences {
      *         true before a save exists or while the toggle is untouched, since Desaturate defaults on
      */
     public boolean isDesaturated(ScreenMemoryScope memoryScope) {
-        return resolveDesaturateFlag(memoryScope).isSet();
+        return desaturateFlag.isSet(memoryScope);
     }
 
     /**
@@ -102,7 +99,7 @@ public final class RecedePreferences {
         // settingsRevision, which these sidebar-only toggles never move since they are not LunaLib
         // fields. The revision is one coarse signal every set shares, so a consumer only draws the
         // backdrop it owns even though any set's flip advances it.
-        if (resolveMuteFlag(memoryScope).set(isMuted)) {
+        if (muteFlag.set(memoryScope, isMuted)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
@@ -122,7 +119,7 @@ public final class RecedePreferences {
             boolean shouldDesaturate,
             MapLayerRefreshBoard board) {
 
-        if (resolveDesaturateFlag(memoryScope).set(shouldDesaturate)) {
+        if (desaturateFlag.set(memoryScope, shouldDesaturate)) {
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
         }
     }
@@ -145,16 +142,5 @@ public final class RecedePreferences {
             ? KmuPoliticalMapTerritorySettings.getPoliticalMapAllianceMutedOpacityModifier()
             : 1.0;
         return new ElementStyleAdjustment(opacityMultiplier, isDesaturated(memoryScope));
-    }
-
-    // This set's Mute flag on one screen. A fresh wrapper per call - the wrapper only holds its key and
-    // default, the value lives in sector memory - so no per-screen instance has to be cached here.
-    private SectorMemoryFlag resolveMuteFlag(ScreenMemoryScope memoryScope) {
-        return new SectorMemoryFlag(memoryScope.resolveKeyFor(muteKey), MUTE_DEFAULT);
-    }
-
-    // This set's Desaturate flag on one screen, built the same way as the Mute flag above.
-    private SectorMemoryFlag resolveDesaturateFlag(ScreenMemoryScope memoryScope) {
-        return new SectorMemoryFlag(memoryScope.resolveKeyFor(desaturateKey), DESATURATE_DEFAULT);
     }
 }

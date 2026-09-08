@@ -14,9 +14,15 @@ package kmu.maplayers.base.layer;
  * screen's picks and is compared, never identified, so a holder built under a copy of a screen's scope
  * reads and writes the same slots as one built under the original.
  *
+ * <p>Where it sits in a signature says which of its two jobs it is doing. A store takes it first, because
+ * there it is the address - {@code set(scope, value, board)} reads "in this slot, put this value". A
+ * control builder takes it inside whatever value carries the panel's context down, because there it is
+ * not addressing anything yet, only being carried to the store that will. The two meet at a control's
+ * click, which unpacks the context and addresses the slot.
+ *
  * @param screenSegment the screen's segment of the key, appended after the preference's own; never blank
  */
-public record ScreenMemoryScope(String screenSegment) {
+public record ScreenMemoryScope(String screenSegment) implements MemoryKeyAddress {
 
     // What separates the preference's key from the screen's segment: the same separator the keys already
     // use between their own words, so a composed key reads as one.
@@ -34,6 +40,7 @@ public record ScreenMemoryScope(String screenSegment) {
      * @param preferenceKey the preference's own sector-memory key, carrying no screen segment
      * @return the key that preference is saved under for this screen
      */
+    @Override
     public String resolveKeyFor(String preferenceKey) {
         return preferenceKey + SEGMENT_SEPARATOR + screenSegment;
     }

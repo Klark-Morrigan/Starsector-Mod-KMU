@@ -20,6 +20,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
+import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStrings;
 
@@ -153,7 +154,7 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsAppendsTheSelectedViewsControlsAfterTheSelector() {
 
-            when(viewWithControlsMock.getViewBodyControls(any(), any()))
+            when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
             registerDefaultView(viewWithControlsMock);
@@ -187,7 +188,7 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsPlacesTheSpotlightPickerBetweenTheSelectorAndTheViewControls() {
 
-            when(viewWithControlsMock.getViewBodyControls(any(), any()))
+            when(viewWithControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of(VIEW_MARKER));
 
             registerDefaultView(viewWithControlsMock);
@@ -231,7 +232,7 @@ final class PoliticalMapLayerTest {
 
             // The faction view adds no controls of its own, so the body is only the shared rows and
             // the selector - nothing trails the selector.
-            when(viewWithoutControlsMock.getViewBodyControls(any(), any()))
+            when(viewWithoutControlsMock.getViewBodyControls(any()))
                 .thenReturn(List.of());
 
             registerDefaultView(viewWithoutControlsMock);
@@ -383,7 +384,7 @@ final class PoliticalMapLayerTest {
             // above resolves no sector at all, under which a build reaching any other installation
             // would answer identically; only a build over a really installed sector can tell them
             // apart.
-            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock) ->
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock, recedeMock) ->
                 // The walk ran against the installed sector, which it can only have done through
                 // that sector's own memo - the machinery of no sector reads no economy at all.
                 verify(viewWithoutControlsMock)
@@ -396,15 +397,22 @@ final class PoliticalMapLayerTest {
             // raising a signal rather than by moving settingsRevision - so each is handed the board
             // of the machinery this build resolved. Handed any other, a flip would repaint a map the
             // player is not looking at and leave the one they are as it was.
-            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock) -> {
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock, recedeMock) -> {
 
                 var installedBoard = installation.resolveRefreshBoard();
 
-                // The two seams the body hands a board to - the shared sub-options and the selected
-                // view's own controls - and the picker, which takes the machinery whole: both of
-                // its writers are that sector's, so it derives them rather than being handed them.
+                // The three seams the body hands a panel to - the shared sub-options, the filter recede
+                // paired with the picker's sort, and the selected view's own controls - and the picker
+                // itself, which takes the machinery whole: both of its writers are that sector's, so it
+                // derives them rather than being handed them.
                 controlsMock.verify(
-                    () -> PoliticalMapBodyControls.buildSharedControls(eq(installedBoard), any()));
+                    () -> PoliticalMapBodyControls.buildSharedControls(
+                        argThat(target -> installedBoard.equals(target.board()))));
+                recedeMock.verify(
+                    () -> RecedeControl.buildControls(
+                        any(),
+                        any(),
+                        argThat(target -> installedBoard.equals(target.board()))));
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
                         any(),
@@ -413,7 +421,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         eq(installation)));
                 verify(viewWithoutControlsMock)
-                    .getViewBodyControls(eq(installedBoard), any());
+                    .getViewBodyControls(argThat(target -> installedBoard.equals(target.board())));
             });
         }
 
@@ -424,12 +432,18 @@ final class PoliticalMapLayerTest {
             // file its click under whichever panel happened to be up when it was pressed. Every seam the
             // body composes is asked for, since one of them dropping the screen is exactly one control set
             // silently landing on the other panel's slots.
-            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock) -> {
+            buildBodyOverInstalledSector((sector, installation, controlsMock, pickerMock, recedeMock) -> {
 
                 controlsMock.verify(
-                    () -> PoliticalMapBodyControls.buildSharedControls(any(), eq(BODY_SCREEN)));
+                    () -> PoliticalMapBodyControls.buildSharedControls(
+                        argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
                 controlsMock.verify(
                     () -> PoliticalMapBodyControls.buildViewSelector(BODY_SCREEN));
+                recedeMock.verify(
+                    () -> RecedeControl.buildControls(
+                        any(),
+                        any(),
+                        argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
                         argThat(slot -> BODY_SCREEN.equals(slot.memoryScope())),
@@ -438,7 +452,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         any()));
                 verify(viewWithoutControlsMock)
-                    .getViewBodyControls(any(), eq(BODY_SCREEN));
+                    .getViewBodyControls(argThat(target -> BODY_SCREEN.equals(target.memoryScope())));
             });
         }
     }
@@ -512,6 +526,12 @@ final class PoliticalMapLayerTest {
         when(sectorMock.getMemoryWithoutUpdate())
             .thenReturn(mock(MemoryAPI.class));
 
+        // Installing machinery registers a profiling origin describing the sector, which a real one
+        // always has a seed for. Left unstubbed the install faults before the body is ever built, so
+        // every claim below would fail for a reason none of them is about.
+        when(sectorMock.getSeedString())
+            .thenReturn("body-build-sector");
+
         // The recede paired with the sort selector reads the engine's text tone off the live
         // settings, and it is built as an argument, so even a stubbed picker needs a settings proxy
         // that answers a colour. Built before the static stubbing opens, since its own stubbing
@@ -522,7 +542,8 @@ final class PoliticalMapLayerTest {
 
         try (var globalMock = mockStatic(Global.class);
                 var controlsMock = mockStatic(PoliticalMapBodyControls.class);
-                var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+                var pickerMock = mockStatic(FilterSelectionBinder.class);
+                var recedeMock = mockStatic(RecedeControl.class)) {
 
             globalMock
                 .when(Global::getSector)
@@ -544,7 +565,12 @@ final class PoliticalMapLayerTest {
 
             PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
-            assertion.assertOverBodyBuild(sectorMock, installation, controlsMock, pickerMock);
+            assertion.assertOverBodyBuild(
+                sectorMock,
+                installation,
+                controlsMock,
+                pickerMock,
+                recedeMock);
 
         } finally {
             MapLayerInstallations.uninstallMachineryFrom(sectorMock);
@@ -564,7 +590,7 @@ final class PoliticalMapLayerTest {
         when(view.getContentRevision(any()))
             .thenReturn(1);
 
-        when(view.getViewBodyControls(any(), any()))
+        when(view.getViewBodyControls(any()))
             .thenReturn(List.of());
 
         // Stubbed through doReturn because the seam answers a wildcarded read, whose captured item
@@ -623,7 +649,7 @@ final class PoliticalMapLayerTest {
             MockedStatic<PoliticalMapBodyControls> controlsMock) {
 
         controlsMock
-            .when(() -> PoliticalMapBodyControls.buildSharedControls(any(), any()))
+            .when(() -> PoliticalMapBodyControls.buildSharedControls(any()))
             .thenReturn(List.of(SHARED_MARKER));
 
         controlsMock
@@ -667,6 +693,7 @@ final class PoliticalMapLayerTest {
                 SectorAPI sector,
                 MapLayerInstallation installation,
                 MockedStatic<PoliticalMapBodyControls> controlsMock,
-                MockedStatic<FilterSelectionBinder> pickerMock);
+                MockedStatic<FilterSelectionBinder> pickerMock,
+                MockedStatic<RecedeControl> recedeMock);
     }
 }

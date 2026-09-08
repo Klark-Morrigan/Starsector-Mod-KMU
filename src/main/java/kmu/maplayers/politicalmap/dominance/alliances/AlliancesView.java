@@ -6,7 +6,6 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
 
-import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -15,6 +14,7 @@ import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
+import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.starsector.nexerelin.NexerelinAlliances;
@@ -168,13 +168,11 @@ public final class AlliancesView implements DominancePaintedView {
     }
 
     @Override
-    public List<ControlSpec> getViewBodyControls(
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+    public List<ControlSpec> getViewBodyControls(BodyControlTarget target) {
 
         // The Mute/Desaturate checkboxes belong only to this view, so they show solely while it is
         // selected; keeping them behind AllianceBodyControls keeps every alliance-only control in the
         // alliances package with the view that owns them.
-        return AllianceBodyControls.buildControls(board, memoryScope);
+        return AllianceBodyControls.buildControls(target);
     }
 }

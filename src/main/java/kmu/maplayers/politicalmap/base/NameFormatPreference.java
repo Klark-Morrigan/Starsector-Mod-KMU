@@ -1,7 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.memory.SectorMemoryString;
-
+import kmu.maplayers.base.layer.AddressedMemoryString;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -11,11 +10,8 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
  * screen. Layer-agnostic: every view labels its clusters the same way, so one stored choice backs them all
  * rather than each view holding its own.
  *
- * <p>Per screen because the format is a pick the player made on one panel: the two screens frame the sector
- * at different sizes, so the form that fits one is not the form that fits the other, and a pick made on
- * either is that panel's own. The screen arrives as a {@link ScreenMemoryScope} on every call rather than
- * being resolved here, so a control writes the panel it was placed on and a bake reads the screen it is
- * painting for.
+ * <p>Per screen because the two panels frame the sector at different sizes, so the form that fits one is
+ * not the form that fits the other.
  *
  * <p>Sidebar-only: the choice is driven solely by the overlay's Full/Short/No radio, never a
  * settings-screen control, so it persists in sector memory (each save keeps its own choice and it
@@ -28,10 +24,10 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
  */
 public final class NameFormatPreference {
 
-    // The base key the screen's segment composes onto; frozen once shipped, since renaming it silently
-    // resets every existing save's choice back to the default. Absent until the player first picks a
-    // format on that screen, which the read resolves to the default.
-    private static final String SELECTED_NAME_FORMAT_KEY = "$kmu_political_name_format";
+    // Absent until the player first picks a format on that screen, which the read resolves to the
+    // default.
+    private static final AddressedMemoryString SELECTED_NAME_FORMAT =
+        new AddressedMemoryString("$kmu_political_name_format");
 
     // Full names by default: the long form is the authored name a player recognises, and the short
     // form is the deliberate trade for fitting a tighter cluster at a larger font.
@@ -47,7 +43,7 @@ public final class NameFormatPreference {
      */
     public static FactionNameFormatChoice getSelectedNameFormat(ScreenMemoryScope memoryScope) {
         return FactionNameFormatChoice.fromKeyOrDefault(
-            resolveSlot(memoryScope).get(),
+            SELECTED_NAME_FORMAT.get(memoryScope),
             DEFAULT_NAME_FORMAT);
     }
 
@@ -70,15 +66,8 @@ public final class NameFormatPreference {
         // write, so nothing bumps a revision no overlay would read. The refresh stands in for
         // settingsRevision, which this sidebar-only choice never moves since it is not a LunaLib
         // field.
-        if (resolveSlot(memoryScope).set(choice.persistenceKey())) {
+        if (SELECTED_NAME_FORMAT.set(memoryScope, choice.persistenceKey())) {
             board.requestRefresh(MapLayerCommonRefreshSignal.MAP_STYLE);
         }
-    }
-
-    // The sector-memory slot holding one screen's name format. A fresh wrapper per call - the wrapper
-    // only holds its key, the value lives in sector memory - so no per-screen instance has to be cached
-    // here.
-    private static SectorMemoryString resolveSlot(ScreenMemoryScope memoryScope) {
-        return new SectorMemoryString(memoryScope.resolveKeyFor(SELECTED_NAME_FORMAT_KEY));
     }
 }

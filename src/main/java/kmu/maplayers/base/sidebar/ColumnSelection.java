@@ -1,7 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmlib.starsector.memory.SectorMemoryString;
-
+import kmu.maplayers.base.layer.AddressedMemoryString;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 
 /**
@@ -21,12 +20,12 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
  */
 public final class ColumnSelection {
 
-    // The base key the screen's segment composes onto: one slot per screen, shared by every scope on
-    // it, since a panel is a fixed width the player laid the list out inside and the two panels are two
-    // widths. Layer-neutral and frozen for the reasons SortSelection's prefixes are. Absent
-    // until the player first picks a count, which the read reports as null for the column choice to
-    // default.
-    private static final String SELECTED_COLUMN_COUNT_KEY = "$kmu_map_list_columns";
+    // One slot per screen, shared by every scope on it, since a panel is a fixed width the player laid
+    // the list out inside and the two panels are two widths. The key is layer-neutral and frozen for the
+    // reasons SortSelection's prefixes are. Absent until the player first picks a count, which the read
+    // reports as null for the column choice to default.
+    private static final AddressedMemoryString SELECTED_COLUMN_COUNT =
+        new AddressedMemoryString("$kmu_map_list_columns");
 
     private ColumnSelection() {
     }
@@ -37,7 +36,7 @@ public final class ColumnSelection {
      *         read before the sector exists) - the caller resolves null to the default column count
      */
     public static String getColumnCountKey(ScreenMemoryScope memoryScope) {
-        return resolveSlot(memoryScope).get();
+        return SELECTED_COLUMN_COUNT.get(memoryScope);
     }
 
     /**
@@ -50,13 +49,6 @@ public final class ColumnSelection {
      * @param columnCountKey the save-stable key of the column count to lay the list out in
      */
     public static void selectColumnCount(ScreenMemoryScope memoryScope, String columnCountKey) {
-        resolveSlot(memoryScope).set(columnCountKey);
-    }
-
-    // The sector-memory slot holding one screen's column count. A fresh wrapper per call - the
-    // wrapper only holds its key, the value lives in sector memory - so no per-screen instance has to
-    // be cached here.
-    private static SectorMemoryString resolveSlot(ScreenMemoryScope memoryScope) {
-        return new SectorMemoryString(memoryScope.resolveKeyFor(SELECTED_COLUMN_COUNT_KEY));
+        SELECTED_COLUMN_COUNT.set(memoryScope, columnCountKey);
     }
 }

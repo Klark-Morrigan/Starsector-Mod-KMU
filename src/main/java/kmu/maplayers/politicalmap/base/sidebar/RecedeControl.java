@@ -4,8 +4,6 @@ import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
-import kmu.maplayers.base.layer.ScreenMemoryScope;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.util.KmuStrings;
 
@@ -18,11 +16,11 @@ import java.util.List;
  * alliances view each build it - so one control shape and one toggle-wiring live in one place.
  *
  * <p>The caller supplies the target preferences set - what its context recedes - the caption naming
- * it, the board a flip repaints through, and the screen the flip is filed under, while the two checkbox
- * labels and their toggle wiring are fixed here, so the recede reads and behaves identically wherever it
- * is placed and only the set it drives differs. Each
- * checkbox reads its lit state live from the passed set when the spec is built (specs are rebuilt each
- * frame), so a flip - from this checkbox or a reload of the save's stored choice - shows at once.
+ * it, and the panel it is being placed on, while the two checkbox labels and their toggle wiring are
+ * fixed here, so the recede reads and behaves identically wherever it is placed and only the set it
+ * drives differs. Each checkbox reads its lit state live from the passed set when the spec is built
+ * (specs are rebuilt each frame), so a flip - from this checkbox or a reload of the save's stored
+ * choice - shows at once.
  */
 public final class RecedeControl {
 
@@ -34,10 +32,8 @@ public final class RecedeControl {
      *                     view's non-allied recede - read for its lit state and written on a click
      * @param captionLabel the resolved caption naming what this context recedes, shown ahead of
      *                     the two checkboxes
-     * @param board        the refresh board of the sector this control was built for, carried into
-     *                     both checkboxes so a flip repaints that sector's backdrop
-     * @param memoryScope  the scope of the screen this control was placed on, carried into both
-     *                     checkboxes so a flip is read back and stored as that panel's own
+     * @param target       the panel this control was placed on, carried into both checkboxes so a flip
+     *                     repaints that sector's backdrop and is stored as that screen's own
      * @return the recede control, top to bottom: the caption, the Mute checkbox (lit when the set's
      *         receded backdrop is dimmed on that screen), and the Desaturate checkbox (lit when it is
      *         recoloured there)
@@ -45,8 +41,7 @@ public final class RecedeControl {
     public static List<ControlSpec> buildControls(
             RecedePreferences preferences,
             String captionLabel,
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+            BodyControlTarget target) {
 
         // The caption and both boxes read in the engine's plain text tone - the control block calls
         // nothing out, so every run of it is the same one colour, resolved once here.
@@ -56,32 +51,32 @@ public final class RecedeControl {
             ControlSpec.Label.createLabel(new TextSpan(captionLabel, textColour)),
             ControlSpec.Checkbox.lit(
                 new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED), textColour),
-                preferences.isMuted(memoryScope),
-                cellIndex -> toggleMuted(preferences, board, memoryScope)),
+                preferences.isMuted(target.memoryScope()),
+                cellIndex -> toggleMuted(preferences, target)),
             ControlSpec.Checkbox.lit(
                 new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED), textColour),
-                preferences.isDesaturated(memoryScope),
-                cellIndex -> toggleDesaturated(preferences, board, memoryScope)));
+                preferences.isDesaturated(target.memoryScope()),
+                cellIndex -> toggleDesaturated(preferences, target)));
     }
 
-    // Flips the set's Mute toggle to the opposite of its current state on the screen this control was
-    // placed on, so the checkbox is a plain on/off. The setter persists the choice under that screen and
-    // repaints through the board it is handed.
-    private static void toggleMuted(
-            RecedePreferences preferences,
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+    // Flips the set's Mute toggle to the opposite of its current state on the panel this control was
+    // placed on, so the checkbox is a plain on/off. This is where the panel's screen stops being carried
+    // and becomes the address of the slot written.
+    private static void toggleMuted(RecedePreferences preferences, BodyControlTarget target) {
 
-        preferences.setMuted(memoryScope, !preferences.isMuted(memoryScope), board);
+        preferences.setMuted(
+            target.memoryScope(),
+            !preferences.isMuted(target.memoryScope()),
+            target.board());
     }
 
     // Flips the set's Desaturate toggle to the opposite of its current state, matching the Mute
     // checkbox.
-    private static void toggleDesaturated(
-            RecedePreferences preferences,
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+    private static void toggleDesaturated(RecedePreferences preferences, BodyControlTarget target) {
 
-        preferences.setDesaturated(memoryScope, !preferences.isDesaturated(memoryScope), board);
+        preferences.setDesaturated(
+            target.memoryScope(),
+            !preferences.isDesaturated(target.memoryScope()),
+            target.board());
     }
 }

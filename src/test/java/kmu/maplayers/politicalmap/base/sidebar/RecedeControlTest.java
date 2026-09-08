@@ -51,6 +51,10 @@ final class RecedeControlTest {
     // what the control does with the screen it was built under is the same on either.
     private static final ScreenMemoryScope BUILT_SCREEN = ScreenMemoryScopes.createStandInScreen();
 
+    // The panel the control is built on, pairing the two above the way the tab's body build does.
+    private static final BodyControlTarget BUILT_TARGET =
+        new BodyControlTarget(BUILT_BOARD, BUILT_SCREEN);
+
     // The three cell positions the controls are built in, so a test names the control it inspects
     // rather than reaching for a bare index.
     private static final int CAPTION = 0;
@@ -90,7 +94,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
-                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD, BUILT_SCREEN)
+                var caption = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_TARGET)
                         .get(CAPTION);
 
                 // A caption is a text-only Label - drawn but never clicked, so it is not Interactive and
@@ -108,7 +112,7 @@ final class RecedeControlTest {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
-                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_BOARD, BUILT_SCREEN);
+                var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_TARGET);
 
                 assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
@@ -226,7 +230,7 @@ final class RecedeControlTest {
     // click action a test drives. Rebuilt fresh each call, so a test reads the state its stubs set.
     private static ControlSpec.Interactive buildInteractiveAt(RecedePreferences preferences, int index) {
         return (ControlSpec.Interactive) RecedeControl
-                .buildControls(preferences, CAPTION_LABEL, BUILT_BOARD, BUILT_SCREEN)
+                .buildControls(preferences, CAPTION_LABEL, BUILT_TARGET)
                 .get(index);
     }
 

@@ -5,7 +5,6 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
-import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
 import kmu.maplayers.politicalmap.base.NameFormatPreference;
@@ -29,10 +28,10 @@ import java.util.List;
  * snaps each control to its measured text and the renderer draws each in its current state; they
  * are rebuilt per call so a flipped toggle shows immediately.
  *
- * <p>The sub-options are handed the refresh board of the sector they are built for, since each
- * repaints by raising a signal. The selector is handed no board: switching views writes a selection the
- * overlay reads directly and raises nothing. Both are handed the screen whose panel opened the body,
- * which is what a control's write is filed under.
+ * <p>The sub-options are handed the panel they were placed on, since each repaints by raising a signal on
+ * that sector's board and stores under that screen. The selector is handed the screen alone: switching
+ * views writes a selection the overlay reads directly and raises nothing, so there is no board for it to
+ * be given.
  */
 public final class PoliticalMapBodyControls {
 
@@ -48,17 +47,13 @@ public final class PoliticalMapBodyControls {
     }
 
     /**
-     * @param board       the refresh board of the sector these controls are built for, carried into both
-     *                    writers so a flip or a pick repaints that sector's overlay
-     * @param memoryScope the scope of the screen this body was opened on, for the writers to save under
-     *                    so a flip or a pick is that panel's own
+     * @param target the panel these controls are being placed on, carried into both writers so a flip or
+     *               a pick repaints that sector's overlay and is filed as that screen's own
      * @return the tab's view-agnostic sub-options, top to bottom: the uninhabited-systems checkbox
      *         (lit when uninhabited systems draw), then the Full/Short/No name radio (its lit
      *         segment the active choice) with its trailing "faction names" label
      */
-    public static List<ControlSpec> buildSharedControls(
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+    public static List<ControlSpec> buildSharedControls(BodyControlTarget target) {
 
         return List.of(
             ControlSpec.Checkbox.lit(
@@ -66,16 +61,16 @@ public final class PoliticalMapBodyControls {
                 new TextSpan(
                     KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
-                UninhabitedOutlinePreference.isOutlineDrawn(memoryScope),
-                cellIndex -> toggleUninhabitedSystems(board, memoryScope)),
+                UninhabitedOutlinePreference.isOutlineDrawn(target.memoryScope()),
+                cellIndex -> toggleUninhabitedSystems(target)),
             ControlSpec.HorizontalRadio
                 .of(
                     List.of(
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
                         KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
-                    nameFormatRadioState(memoryScope),
-                    segmentIndex -> selectNameFormatSegment(segmentIndex, board, memoryScope))
+                    nameFormatRadioState(target.memoryScope()),
+                    segmentIndex -> selectNameFormatSegment(segmentIndex, target))
                 .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
     }
 
@@ -122,35 +117,36 @@ public final class PoliticalMapBodyControls {
         FilterSelectionHeal.healStaleSelectionAgainstActiveView();
     }
 
-    // Flips the uninhabited-systems outline on or off for the screen this box was placed on: if it
-    // currently draws there, hide it; otherwise draw it. The preference persists the flip under that
-    // screen and repaints through the board it is handed.
-    private static void toggleUninhabitedSystems(
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+    // Flips the uninhabited-systems outline on or off for the panel this box was placed on: if it
+    // currently draws there, hide it; otherwise draw it. This is where the panel's screen stops being
+    // carried and becomes the address of the slot written.
+    private static void toggleUninhabitedSystems(BodyControlTarget target) {
 
         UninhabitedOutlinePreference.setOutlineDrawn(
-            memoryScope,
-            !UninhabitedOutlinePreference.isOutlineDrawn(memoryScope),
-            board);
+            target.memoryScope(),
+            !UninhabitedOutlinePreference.isOutlineDrawn(target.memoryScope()),
+            target.board());
     }
 
     // Writes the name choice for the clicked radio segment, matching the Full-Short-No segment order
     // the labels are supplied in. No is a choice like the other two rather than a separate gate, so
     // turning the names off is the same one write. Any other index is ignored, so a stray hit outside
     // the three known segments changes nothing.
-    private static void selectNameFormatSegment(
-            int segmentIndex,
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
+    private static void selectNameFormatSegment(int segmentIndex, BodyControlTarget target) {
 
         if (segmentIndex == NAME_FULL_SEGMENT) {
-            NameFormatPreference.selectNameFormat(memoryScope, FactionNameFormatChoice.FULL, board);
+            selectNameFormat(FactionNameFormatChoice.FULL, target);
         } else if (segmentIndex == NAME_SHORT_SEGMENT) {
-            NameFormatPreference.selectNameFormat(memoryScope, FactionNameFormatChoice.SHORT, board);
+            selectNameFormat(FactionNameFormatChoice.SHORT, target);
         } else if (segmentIndex == NAME_NONE_SEGMENT) {
-            NameFormatPreference.selectNameFormat(memoryScope, FactionNameFormatChoice.NONE, board);
+            selectNameFormat(FactionNameFormatChoice.NONE, target);
         }
+    }
+
+    // Files one name choice against the panel the radio was placed on, where the carried screen becomes
+    // the address of the slot written.
+    private static void selectNameFormat(FactionNameFormatChoice choice, BodyControlTarget target) {
+        NameFormatPreference.selectNameFormat(target.memoryScope(), choice, target.board());
     }
 
     // The radio lights the segment for the screen's own name choice, matching the Full-Short-No segment

@@ -2,10 +2,10 @@ package kmu.maplayers.politicalmap.dominance.alliances;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
-import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
+import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.util.KmuStrings;
 
@@ -34,14 +34,15 @@ final class AllianceBodyControlsTest {
     // The board the tab hands down, stood in for so the pass-through can be pinned by identity.
     private static final MapLayerRefreshBoard PASSED_BOARD = new MapLayerRefreshBoard();
 
-    // The screen the tab hands down, stood in for so the pass-through can be pinned by value.
-    private static final ScreenMemoryScope PASSED_SCREEN = ScreenMemoryScopes.createStandInScreen();
+    // The panel the tab hands down, stood in for so the pass-through can be pinned by value.
+    private static final BodyControlTarget PASSED_TARGET =
+        new BodyControlTarget(PASSED_BOARD, ScreenMemoryScopes.createStandInScreen());
 
     @Nested
     class BuildControls {
 
         @Test
-        void buildControlsHandsTheNonAlliedSetCaptionBoardAndScreenToTheSharedRecedeControl() {
+        void buildControlsHandsTheNonAlliedSetCaptionAndPanelToTheSharedRecedeControl() {
             try (MockedStatic<RecedeControl> controlMock = mockStatic(RecedeControl.class);
                     MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
                 stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
@@ -49,11 +50,10 @@ final class AllianceBodyControlsTest {
                 controlMock.when(() -> RecedeControl.buildControls(
                         RecedePreferences.ALLIANCE_NON_ALLIED,
                         "Non-allied factions are",
-                        PASSED_BOARD,
-                        PASSED_SCREEN))
+                        PASSED_TARGET))
                         .thenReturn(BUILT_CONTROLS);
 
-                assertThat(AllianceBodyControls.buildControls(PASSED_BOARD, PASSED_SCREEN))
+                assertThat(AllianceBodyControls.buildControls(PASSED_TARGET))
                         .isSameAs(BUILT_CONTROLS);
             }
         }

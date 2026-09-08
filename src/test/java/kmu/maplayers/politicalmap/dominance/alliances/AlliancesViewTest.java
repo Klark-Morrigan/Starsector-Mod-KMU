@@ -30,6 +30,7 @@ import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProv
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
+import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -161,25 +162,25 @@ final class AlliancesViewTest {
     class GetViewBodyControls {
 
         @Test
-        void getViewBodyControlsHandsTheBoardAndScreenItWasGivenToTheRecedeAdapter() {
+        void getViewBodyControlsHandsThePanelItWasGivenToTheRecedeAdapter() {
             // This view's Mute/Desaturate checkboxes repaint by raising a signal and store under the
-            // panel they were placed on, so both the board and the screen have to reach them from the
-            // tab that placed them. Dropped here - a delegation short enough to look incapable of
-            // losing anything - the checkboxes would fall back to the running sector's board and to
-            // whichever screen was up, and a flip would repaint a map the player is not looking at or
-            // land on the other panel.
-            var passedBoard = new MapLayerRefreshBoard();
-            var passedScreen = ScreenMemoryScopes.createStandInScreen();
+            // panel they were placed on, so the panel has to reach them from the tab that placed them.
+            // Dropped here - a delegation short enough to look incapable of losing anything - the
+            // checkboxes would fall back to the running sector's board and whichever screen was up, and
+            // a flip would repaint a map the player is not looking at, or land on the other panel.
+            var passedTarget = new BodyControlTarget(
+                new MapLayerRefreshBoard(),
+                ScreenMemoryScopes.createStandInScreen());
 
             try (var controlsMock = mockStatic(AllianceBodyControls.class)) {
 
                 var builtControls = List.<ControlSpec>of();
 
                 controlsMock
-                    .when(() -> AllianceBodyControls.buildControls(passedBoard, passedScreen))
+                    .when(() -> AllianceBodyControls.buildControls(passedTarget))
                     .thenReturn(builtControls);
 
-                assertThat(AlliancesView.INSTANCE.getViewBodyControls(passedBoard, passedScreen))
+                assertThat(AlliancesView.INSTANCE.getViewBodyControls(passedTarget))
                     .isSameAs(builtControls);
             }
         }

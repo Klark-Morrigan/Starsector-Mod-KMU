@@ -133,6 +133,13 @@ and resolves its own key under it. That is the only arrangement open to the hold
 not import - the political map's own preferences - so it is the arrangement all of them use, rather
 than a central list of keys that could only ever hold some of them.
 
+A holder does not compose the key itself. It declares `AddressedMemoryFlag` or `AddressedMemoryString`
+with its base key (and, for a flag, its default) and names an address on every read and write; the two
+build the sector-memory slot behind it. `MemoryKeyAddress` is what an address is: `ScreenMemoryScope`
+partitions by screen, and a picker's `SelectionSlot` by screen and by the scope its list was listed
+under. So a holder states what it stores and never how the key is spelled, and the segments cannot end
+up ordered one way in one holder and another way in the next.
+
 ```mermaid
 flowchart TD
     F([Frame]) --> Q{Is the intel<br/>screen up?}
@@ -174,7 +181,9 @@ bar once does not order it again per save.
 - **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, shortcut key),
   `MapLayerRegistry` (the roster, and what is in play on the screen showing this frame),
   `MapLayerScreens` (both screens' picks under their frozen keys, and which screen is up),
-  `ScreenMemoryScope` (a screen's segment of a key, and the one place one is composed), `NoLayer`,
+  `ScreenMemoryScope` (a screen's segment of a key, and the one place one is composed),
+  `MemoryKeyAddress` with `AddressedMemoryFlag` and `AddressedMemoryString` (what a preference is
+  partitioned by, and the two holders that store one slot per partition), `NoLayer`,
   and
   `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
   beside its tab and handed out with it and that screen's scope as one `ScreenLayerPicks`, so nothing

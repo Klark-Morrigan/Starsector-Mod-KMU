@@ -8,7 +8,6 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
-import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -22,6 +21,7 @@ import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
+import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -351,24 +351,15 @@ public interface PoliticalMapView {
      * The sidebar body grows downward to fit whatever rows a view adds, so a view opts into its own
      * controls without any layout knowing which view asked.
      *
-     * <p>The board arrives as an argument for the reason it does on {@link #getContentRevision}: a
-     * view is a stateless strategy every sector's machinery shares, so a control it builds has no
-     * sector of its own to raise on.
+     * <p>The panel arrives as an argument for the reason the board does on {@link #getContentRevision}:
+     * a view is a stateless strategy every sector's machinery shares, so a control it builds has no
+     * sector of its own to raise on and no screen of its own to write under.
      *
-     * <p>The screen arrives beside it for the same reason, one axis over: a control the view contributes
-     * writes a preference the panel it was placed on owns, and a view has no screen of its own to write
-     * under any more than it has a sector.
-     *
-     * @param board       the refresh board of the sector this tab is being built for, carried into
-     *                    whatever controls the view contributes so their writes repaint that sector
-     * @param memoryScope the scope of the screen this body was opened on, carried into those same
-     *                    controls so their writes are that panel's own
+     * @param target the panel this body was opened on, carried into whatever controls the view
+     *               contributes so their writes repaint that sector and are filed as that screen's own
      * @return this view's own body controls, top to bottom; empty when the view adds none
      */
-    default List<ControlSpec> getViewBodyControls(
-            MapLayerRefreshBoard board,
-            ScreenMemoryScope memoryScope) {
-
+    default List<ControlSpec> getViewBodyControls(BodyControlTarget target) {
         return List.of();
     }
 

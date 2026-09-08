@@ -11,6 +11,7 @@ import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
 import kmu.maplayers.base.sidebar.SelectionSlot;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
+import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
@@ -66,21 +67,19 @@ public final class PoliticalMapLayer implements MapLayer {
 
         // Which sector this body is being built for has to be resolved off the running game here: a
         // body build is an adapter onto a vanilla screen, which hands it none. This is the one
-        // resolution the whole build makes, and every control below is handed its board rather than
-        // resolving one when it is clicked - a control writes a sidebar-only preference, which
-        // repaints by raising a signal, so a board found at the click would repaint whichever sector
-        // was running by then instead of the map the control was placed over.
+        // resolution the whole build makes, and it is paired with the asking panel's screen into the
+        // target every control below is handed - a control writes a sidebar-only preference, which
+        // repaints by raising a signal, so a sector or a screen found at the click would repaint
+        // whichever map was running by then and file the write under whichever panel was showing,
+        // rather than the map the control was placed over.
         var installation = MapLayerInstallations.resolveInstallationForLiveSector();
-        var board = installation.resolveRefreshBoard();
+        var target = new BodyControlTarget(installation.resolveRefreshBoard(), memoryScope);
 
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
-        // radio only switches between views; turning the map off is the tab bar's No Layer pick.
-        //
-        // The asking panel's screen travels beside the board and for the same reason: a control writes
-        // the screen it was placed on, not the one up when it is clicked.
-        var controls = new ArrayList<>(
-            PoliticalMapBodyControls.buildSharedControls(board, memoryScope));
+        // radio only switches between views; turning the map off is the tab bar's No Layer pick. The
+        // selector takes the screen alone, since a view switch raises nothing on the board.
+        var controls = new ArrayList<>(PoliticalMapBodyControls.buildSharedControls(target));
         controls.add(PoliticalMapBodyControls.buildViewSelector(memoryScope));
 
         // Then the spotlight picker and the selected view's own controls, so the body shows the
@@ -92,8 +91,8 @@ public final class PoliticalMapLayer implements MapLayer {
         var selectedView = PoliticalMapViewRegistry.getSelectedView();
 
         if (selectedView != null) {
-            controls.addAll(buildSpotlightControls(selectedView, installation, memoryScope));
-            controls.addAll(selectedView.getViewBodyControls(board, memoryScope));
+            controls.addAll(buildSpotlightControls(selectedView, installation, target));
+            controls.addAll(selectedView.getViewBodyControls(target));
         }
         return List.copyOf(controls);
     }
@@ -114,10 +113,9 @@ public final class PoliticalMapLayer implements MapLayer {
         // Held by the installation rather than by this tab, because everything behind the renderer -
         // the cut cells, the territories, the fitted labels - is one sector's. This tab is
         // registered once for the process and would otherwise be where two sectors met.
-        // The id goes over with the installation because the renderer reports its frame's rows
-        // under it: what a layer costs is read against the layer it was spent on, and the id is
-        // what this tab is known by everywhere else it is recorded. Handed down rather than looked
-        // up, so there is one spelling of it.
+        //
+        // The id goes over beside it because the renderer reports its frame's rows under it. Handed
+        // down rather than looked up, so there is one spelling of it.
         return installation.resolveMachinery(
             PoliticalMapLayerRenderer.class,
             () -> PoliticalMapLayerRenderer.createForLiveScreen(installation, LAYER_ID));
@@ -137,34 +135,28 @@ public final class PoliticalMapLayer implements MapLayer {
     private static List<ControlSpec> buildSpotlightControls(
             PoliticalMapView selectedView,
             MapLayerInstallation installation,
-            ScreenMemoryScope memoryScope) {
+            BodyControlTarget target) {
 
         // The list is read through the memo the sector's installed machinery holds, so this
         // per-frame body build reads a cached list rather than re-walking the economy every frame
-        // the map is open.
+        // the map is open. The installation goes over whole for the same reason the target does: the
+        // memo, the picker's own writers and the recede control below must not end up naming two
+        // different sectors, which passing a board beside it would allow.
         var blocCache = SelectableBlocCache.resolveBlocCacheIn(installation);
-
-        // The installation's own board, taken from it rather than passed beside it, so the memo
-        // above and the recede control below cannot end up naming two different sectors. The
-        // picker's own writers come off the same installation, which it takes whole for that
-        // reason - a board and a hover slot handed over side by side are two chances to name two
-        // sectors.
-        var board = installation.resolveRefreshBoard();
 
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
         // so a spotlight, a sort or a column count picked here is that panel's own. Paired with the
         // view's id, since a view keeps its own picks: the two are the picker's whole address.
         return FilterSelectionBinder.buildPicker(
-            new SelectionSlot(memoryScope, selectedView.getId()),
+            new SelectionSlot(target.memoryScope(), selectedView.getId()),
             blocCache.resolveBlocPickerRead(selectedView).picker(),
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
-            ColumnSelectionBinder.resolveStoredColumns(memoryScope),
+            ColumnSelectionBinder.resolveStoredColumns(target.memoryScope()),
             RecedeControl.buildControls(
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
-                board,
-                memoryScope),
+                target),
             installation);
     }
 }
