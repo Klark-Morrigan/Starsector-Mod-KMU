@@ -64,6 +64,14 @@ enforcePackageVocabulary {
     forbidWords under: 'kmu.maplayers.base.chrome.arrange',
                 words: ['cell', 'cells']
 
+    // The one file that may say it, for the reason the map-layer README may say
+    // *ground*: the package's own README is where this rule is written down, and
+    // a rule that cannot name the word it forbids cannot be read. The singular
+    // alone - the prose there states the rule rather than discussing a column of
+    // them, so the plural stays closed even in the file that explains it.
+    allowWord word: 'cell',
+            inFile: 'src/main/java/kmu/maplayers/base/chrome/arrange/README.md'
+
     // *Ground* is simply unclear. It stood for a cell, a cluster's fill,
     // a whole territory and the receded backdrop in different sentences of the
     // same file, so a reader had to guess which each time - and the words it
