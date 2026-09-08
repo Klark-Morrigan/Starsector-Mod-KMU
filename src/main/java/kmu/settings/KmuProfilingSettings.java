@@ -6,9 +6,10 @@ import kmlib.profiling.ProfileLevel;
  * How much of what the mod does is measured.
  *
  * <p>Its own class beside the knob classes {@link KmuLunaSettings} lists, and split from them by
- * the same rule: this is read by the composition root rather than by any feature. Which profiler is
- * bound is a decision about the whole mod, and the map layers - which are what a capture mostly
- * measures - must not be the ones deciding whether they are being watched.
+ * the same rule: this is read where the mod's start-up wiring is composed rather than by any
+ * feature. Which profiler is bound is a decision about the whole mod, and the map layers - which
+ * are what a capture mostly measures - must not be the ones deciding whether they are being
+ * watched.
  *
  * <p>What the knob does for the player is stated once, in the description column of
  * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose

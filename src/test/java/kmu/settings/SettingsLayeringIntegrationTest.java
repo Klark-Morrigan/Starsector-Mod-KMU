@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the one rule the settings split exists to buy: the map-layer framework does not name a
- * layer's settings class. Splitting {@link KmuLunaSettings} by which package reads a knob only
+ * Pins the one rule the settings split exists to buy: the map-layer framework names no settings
+ * class but its own. Splitting {@link KmuLunaSettings} by which package reads a knob only
  * holds while nothing under {@code kmu.maplayers.base} reaches back across the line, and an import
  * added in passing would put a feature's vocabulary back into the framework with nothing to say so
  * - the class would still compile and the knob would still read.
@@ -54,11 +54,15 @@ final class SettingsLayeringIntegrationTest {
     }
 
     /**
-     * The settings classes that belong to one feature apiece, the political map's seven sections
-     * among them - the split into sections is the feature's own housekeeping and buys nothing here,
-     * so each is listed and none stands in for the rest. {@link KmuLunaSettings} is absent on
-     * purpose: the framework reads the settings revision off it, which is mod-wide wiring rather
-     * than a feature's knob.
+     * The settings classes the framework may not name: those belonging to one feature apiece, the
+     * political map's seven sections among them - the split into sections is the feature's own
+     * housekeeping and buys nothing here, so each is listed and none stands in for the rest - plus
+     * {@link KmuProfilingSettings}, which belongs to no feature but is read by the composition root
+     * for the same reason a feature toggle is. What it decides is whether the framework is being
+     * measured, and a framework that could read that could also act on it.
+     *
+     * <p>{@link KmuLunaSettings} is absent on purpose: the framework reads the settings revision
+     * off it, which is mod-wide wiring rather than a feature's knob.
      *
      * <p>Named through the classes themselves rather than as text, so a rename that misses this list
      * breaks it at compile time. A literal would still read as a class name after the rename and
@@ -84,7 +88,8 @@ final class SettingsLayeringIntegrationTest {
                     KmuPoliticalMapDominanceSettings.class,
                     KmuPoliticalMapGeometrySettings.class,
                     KmuPoliticalMapDiagnosticsSettings.class,
-                    KmuMarketConditionSettings.class)
+                    KmuMarketConditionSettings.class,
+                    KmuProfilingSettings.class)
                 .map(Class::getSimpleName)
                 .map(Arguments::of);
         }

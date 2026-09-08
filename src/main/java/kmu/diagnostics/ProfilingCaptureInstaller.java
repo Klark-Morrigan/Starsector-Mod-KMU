@@ -15,18 +15,14 @@ import kmu.settings.KmuProfilingSettings;
  * it wherever they move that knob.
  *
  * <p>The library is silent until a mod binds otherwise, and KMU is the mod whose console command
- * reads the readout - so this is the one place a profiler is chosen. Which one it is follows from
- * the level alone: off is the silent profiler, and anything else is a recording one keeping detail
- * to that level.
+ * reads the readout - so this is the one place a profiler is chosen. Off is what makes the choice
+ * worth having: a capture holds a tree of every measured call for as long as it is bound, so a
+ * profiler bound once at load would measure every player who never opens the readout.
  *
- * <p>Rebinding is what makes off real. A capture holds a tree of every measured call for as long as
- * it is bound, so a mod that bound a recording profiler at load and left it there would measure
- * every player who never opens the readout.
- *
- * <p>A rebind starts a fresh capture: what the previous profiler accumulated stays with it and is
- * no longer reachable. That is why the level is compared against what is already bound rather than
- * applied on every announcement - LunaLib says that the settings changed rather than which setting
- * did, so acting on each one would throw a capture away whenever an unrelated slider moved.
+ * <p>A rebind starts a fresh capture, what the previous profiler accumulated staying with it and
+ * out of reach. That is why the level is compared against what is already bound rather than applied
+ * on every announcement: LunaLib says that the settings changed rather than which setting did, so
+ * acting on each would throw a running capture away whenever an unrelated slider moved.
  */
 public final class ProfilingCaptureInstaller {
 
@@ -53,8 +49,8 @@ public final class ProfilingCaptureInstaller {
     /**
      * Binds a profiler keeping detail to {@code wantedLevel}, unless one already is.
      *
-     * <p>Apart from the knob it is usually driven by, because what to bind for a level and where
-     * the level came from are two decisions - and only the first of them is about profiling.
+     * <p>Takes the level rather than reading it, so which profiler answers for a level is settled
+     * apart from where that level came from.
      *
      * @param wantedLevel the finest detail a capture should be keeping from now on
      */

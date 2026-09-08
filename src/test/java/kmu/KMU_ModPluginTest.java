@@ -3,10 +3,7 @@ package kmu;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.SilentProfiler;
-import kmlib.profiling.recording.RecordingProfiler;
-
+import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -18,7 +15,6 @@ import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -56,14 +52,6 @@ class KMU_ModPluginTest {
     // lookup fails loudly when it is renamed rather than quietly finding nothing.
     private static final String APPLIED_SWITCHES_FIELD = "switchedFeatures";
 
-    // The profiler binding is the one launch step left to really run, so a case can say which
-    // profiler a launch bound rather than only that it bound one. The holder it writes is
-    // process-wide, so it is put back afterwards.
-    @AfterEach
-    void restoreSilentProfiler() {
-        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
-    }
-
     @Nested
     class ModIdentity {
 
@@ -87,16 +75,15 @@ class KMU_ModPluginTest {
             try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
                     var mapLayersMock = mockStatic(MapLayers.class);
                     var filterHealMock = mockStatic(FilterSelectionHeal.class);
+                    var profilingMock = mockStatic(ProfilingCaptureInstaller.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
-                ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
 
                 new KMU_ModPlugin().onApplicationLoad();
 
-                // The fifth step, asserted as its effect rather than as a call: a launch that bound
-                // nothing leaves the library silent and the readout empty, which reads as a mod
-                // that instrumented nothing rather than as wiring that was dropped.
-                assertThat(ActiveProfiler.resolveProfiler())
-                    .isInstanceOf(RecordingProfiler.class);
+                // The profiling step is pinned as a call rather than as a binding, because what it
+                // binds is a setting: the shipped level is off, so a launch that ran it leaves the
+                // library exactly as silent as one that dropped it.
+                profilingMock.verify(ProfilingCaptureInstaller::installAll);
                 lunaSettingsMock.verify(KmuLunaSettings::installBindings);
                 mapLayersMock.verify(MapLayers::registerAll);
                 filterHealMock.verify(FilterSelectionHeal::installHealOnSettingsChange);
