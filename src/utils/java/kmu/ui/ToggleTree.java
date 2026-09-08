@@ -49,7 +49,7 @@ public final class ToggleTree {
     private static final int ROW_PADDING = 2;
 
     // How far one level of nesting shifts a row, in pixels. Enough to read as a level at a
-    // glance without pushing the deepest labels into the panel's scroll bar.
+    // glance without pushing the deepest labels into the panel's scrollbar.
     private static final int INDENT_STEP = 14;
 
     // The rows are laid one per line, so the grid is one column of however many rows there
