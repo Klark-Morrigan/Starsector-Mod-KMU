@@ -2,6 +2,9 @@ package kmu.maplayers.base.installation;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.profiling.ProfileOrigin;
+import kmlib.starsector.SectorLabels;
+
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -34,6 +37,10 @@ import java.util.function.Supplier;
  * running game which sector it is looking at - and would read the loaded sector's colonies while
  * drawing another sector's cells. Taken from the installation rather than passed alongside it, so
  * the sector a stage reads and the holders it reads beside it cannot name two different sectors.
+ *
+ * <p>The profiling origin is here for that same reason: it is what a capture groups this sector's
+ * rows under, and one resolved anywhere else could describe a sector other than the one whose
+ * frame is being measured.
  */
 public final class MapLayerInstallation {
 
@@ -50,6 +57,12 @@ public final class MapLayerInstallation {
     // The sector this machinery was installed on, and so the sector everything below derives from.
     // Null for the detached installation, which is nobody's sector.
     private final SectorAPI sector;
+
+    // The label every profiling root opened for this sector is grouped under. Composed once here
+    // rather than per beat, because a frame opens several roots and none of them may spend its
+    // time building a string; and because the two facts it is made of do not change while a
+    // sector is loaded.
+    private final ProfileOrigin profilingOrigin;
 
     // What the cursor is over on this sector's map, carried from the render pass that can resolve
     // it to the highlight and the box that report it.
@@ -78,6 +91,7 @@ public final class MapLayerInstallation {
      */
     public MapLayerInstallation(SectorAPI sector) {
         this.sector = sector;
+        this.profilingOrigin = resolveOriginOf(sector);
     }
 
     /**
@@ -148,6 +162,15 @@ public final class MapLayerInstallation {
     }
 
     /**
+     * @return the label this sector's profiling roots are grouped under, so a capture taken across
+     *         two sectors states which of them each row was measured in rather than averaging the
+     *         two into rows that describe neither
+     */
+    public ProfileOrigin resolveProfilingOrigin() {
+        return profilingOrigin;
+    }
+
+    /**
      * @return the board this sector's producers raise refresh signals on and its overlays read them
      *         from, so a change in one sector cannot mark another sector's cache stale
      */
@@ -163,5 +186,15 @@ public final class MapLayerInstallation {
      */
     public SectorAPI resolveSector() {
         return sector;
+    }
+
+    // The detached installation is nobody's sector, so there is nothing to describe and nothing a
+    // reader could match a row back to: what it opens belongs where every unattributed span
+    // belongs, which is the reserved origin.
+    private static ProfileOrigin resolveOriginOf(SectorAPI sector) {
+
+        return sector == null
+            ? ProfileOrigin.UNSCOPED
+            : ProfileOrigin.registerOrigin(SectorLabels.describeSector(sector));
     }
 }

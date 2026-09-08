@@ -1,5 +1,10 @@
 package kmu.maplayers.base.installation;
 
+import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.characters.PersonAPI;
+
+import kmlib.profiling.ProfileOrigin;
+
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovableSystemSectorFake;
@@ -17,13 +22,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins what an installation holds: a refresh board, a motion tracker and a hover holder of its own,
  * so that what went stale in one sector is not what any other sector rebuilds for, that a system's
  * drift is judged against where its own sector last saw it, and that a cursor read over one sector's
  * map is not reported over another's. Beside those sits what a layer hands it to hold - one per
- * kind per sector, released when the installation is.
+ * kind per sector, released when the installation is - and the profiling origin its rows are
+ * grouped under, so a capture says which sector each beat was measured in.
  *
  * <p>Built here rather than resolved through {@link MapLayerInstallations}, since the claim is
  * about the holder itself and not about the index that hands one out.
@@ -38,6 +46,12 @@ class MapLayerInstallationTest {
     // system under one id, and it is the case a shared holder gets wrong rather than merely
     // draws twice.
     private static final String SHARED_SYSTEM_ID = "a";
+
+    // Two games one session could load in turn, and the character playing both - the seed is what
+    // tells them apart, so it is what differs.
+    private static final String SEED = "MN-6220";
+    private static final String OTHER_SEED = "PQ-1183";
+    private static final String PLAYER_NAME = "Marat";
 
     // How many asks meet inside one resolution. Several threads rather than two, so the window a
     // read-then-write make-if-absent leaves open is entered from more than one side at once.
@@ -172,6 +186,40 @@ class MapLayerInstallationTest {
     }
 
     @Nested
+    class ResolveProfilingOrigin {
+
+        @Test
+        void composesTheLabelFromWhatTheSectorIsRecognisedBy() {
+            // The pair a save browser shows, since a reader who cannot take a slow row back to a
+            // save cannot go and reproduce it.
+            var installationOnSector = new MapLayerInstallation(mockSectorSeeded(SEED));
+
+            assertThat(installationOnSector.resolveProfilingOrigin().getLabel())
+                .isEqualTo("MN-6220 - Marat");
+        }
+
+        @Test
+        void yieldsAnOriginOfItsOwnSoOneSectorsRowsAreNotAnothers() {
+            // Two sectors through one origin would put both sets of beats in one group of rows,
+            // which is the state a capture exists to tell apart.
+            var installationOnSector = new MapLayerInstallation(mockSectorSeeded(SEED));
+            var installationOnOtherSector =
+                new MapLayerInstallation(mockSectorSeeded(OTHER_SEED));
+
+            assertThat(installationOnSector.resolveProfilingOrigin())
+                .isNotSameAs(installationOnOtherSector.resolveProfilingOrigin());
+        }
+
+        @Test
+        void leavesTheDetachedInstallationsSpansUnattributed() {
+            // Nobody's sector, so there is nothing to describe and nothing a reader could match a
+            // row back to - which is exactly what the reserved origin says.
+            assertThat(installation.resolveProfilingOrigin())
+                .isSameAs(ProfileOrigin.UNSCOPED);
+        }
+    }
+
+    @Nested
     class ResolveRefreshBoard {
 
         @Test
@@ -253,6 +301,19 @@ class MapLayerInstallationTest {
             assertThat(installation.isDisposed())
                 .isTrue();
         }
+    }
+
+    // A sector carrying the two facts a save browser shows about it, which is all the origin's
+    // label is composed from.
+    private static SectorAPI mockSectorSeeded(String seed) {
+
+        var sectorMock = mock(SectorAPI.class);
+        var playerMock = mock(PersonAPI.class);
+
+        when(playerMock.getNameString()).thenReturn(PLAYER_NAME);
+        when(sectorMock.getSeedString()).thenReturn(seed);
+        when(sectorMock.getPlayerPerson()).thenReturn(playerMock);
+        return sectorMock;
     }
 
     // Holds the make open for a moment, which is what a real one does: a renderer builds a cover

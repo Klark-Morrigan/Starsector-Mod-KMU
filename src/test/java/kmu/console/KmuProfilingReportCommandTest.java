@@ -1,10 +1,12 @@
 package kmu.console;
 
+import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.snapshot.DurationBuckets;
 import kmlib.profiling.snapshot.ProfileIterations;
 import kmlib.profiling.snapshot.ProfileNode;
+import kmlib.profiling.snapshot.ProfileOriginTree;
 import kmlib.profiling.snapshot.ProfileTiming;
 import kmlib.profiling.snapshot.WorstCall;
 
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.when;
 final class KmuProfilingReportCommandTest {
 
     private static final String SECTION = "politicalMap.render";
+    private static final String ORIGIN_LABEL = "MN-6220 - Marat";
     private static final long TWO_MILLIS_IN_NANOS = 2_000_000L;
 
     private final Profiler profilerMock = mock(Profiler.class);
@@ -43,8 +46,9 @@ final class KmuProfilingReportCommandTest {
         @Test
         void printsTheFormattedTimingsForABareInvocation() {
 
-            when(profilerMock.snapshot()).thenReturn(List.of(
-                new ProfileNode(
+            when(profilerMock.snapshot()).thenReturn(List.of(new ProfileOriginTree(
+                ProfileOrigin.registerOrigin(ORIGIN_LABEL),
+                List.of(new ProfileNode(
                     ProfileSection.registerSection(SECTION),
                     new ProfileTiming(
                         1,
@@ -55,7 +59,7 @@ final class KmuProfilingReportCommandTest {
                     WorstCall.NO_CALL,
                     ProfileIterations.NO_ITERATIONS,
                     List.of(),
-                    List.of())));
+                    List.of())))));
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
 

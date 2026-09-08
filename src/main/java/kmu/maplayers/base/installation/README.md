@@ -39,7 +39,7 @@ Every holder here once had a per-load discard; disposal replaced all of them.
 
 ## What an installation holds
 
-`MapLayerInstallation` holds four things directly. The first three are the framework's own state:
+`MapLayerInstallation` holds five things directly. The first three are the framework's own state:
 
 | Holder | What it remembers |
 | --- | --- |
@@ -59,6 +59,15 @@ at - correct only while the sector it holds cells for and the sector that is loa
 one. Taking it off the installation rather than passing it alongside is what stops a rebuild cutting
 cells from one sector while reading holders out of another - which the draw cache and staleness poll
 of [the political map](../../politicalmap/README.md) both rely on.
+
+The fifth is the **profiling origin**, answered by `resolveProfilingOrigin()`: the label every
+profiling root opened for this sector is grouped under, so a capture taken across two sectors says
+which of them each row was measured in rather than averaging the two into rows that describe
+neither. Composed once with the installation, out of the seed and the player's name -
+`kmlib.starsector.SectorLabels` is what pairs them, being the pair a save browser shows and so the
+pair a reader can match a slow row back to a save by. Once rather than per beat, because a frame
+opens several roots and none of them may spend its time building a string. The detached
+installation is nobody's sector and takes the reserved origin unattributed spans land in.
 
 ## How a layer's own machinery gets in
 

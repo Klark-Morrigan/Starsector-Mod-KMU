@@ -167,7 +167,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(buildTwoDrawnCells());
 
-            var bakeRow = profiler.snapshot().get(0);
+            var bakeRow = profiler.snapshot().get(0).getRoots().get(0);
 
             assertThat(bakeRow.getSection().getName())
                 .isEqualTo("politicalMap.bakeRibbons");
