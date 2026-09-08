@@ -27,8 +27,8 @@ import kmu.settings.KmuMapLayerSettings;
  */
 public final class MapFrameSections {
 
-    // Declared before the sections registered with them, since static fields initialise in the
-    // order they are written and a section cannot be handed a bound that does not exist yet.
+    // The two bounds, declared above the sections that take them: static fields initialise in the
+    // order they are written, and a section cannot be handed a bound that does not exist yet.
 
     // What a beat may take. Asked of the settings as each beat ends, so a player who has decided
     // their machine can afford more moves the knob and the next frame is held to that.

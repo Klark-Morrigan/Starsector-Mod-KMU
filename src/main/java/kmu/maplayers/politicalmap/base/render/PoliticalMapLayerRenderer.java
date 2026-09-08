@@ -227,9 +227,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     @Override
     public void renderOnMap(float factor, float alphaMult, MapOverlayBand band) {
         try (var beatScope = frameBeats.openBeat(MapFrameSections.resolveRenderSection(band))) {
-            // The same view read the preparation above stands down on, repeated rather than
-            // remembered: it is a registry lookup, and a field holding the frame's answer would be
-            // render state on a renderer that deliberately holds none.
+            // The live view read, asked again rather than remembered: it is a registry lookup, and a
+            // field holding the frame's answer would be render state on a renderer that deliberately
+            // holds none. It agrees with the preparation's carried read because a pass and the frame
+            // that prepared it are the same screen - the player cannot change screens mid-frame - so
+            // this pays only for resolving which screen that is.
             var view = PoliticalMapViewRegistry.getActiveView();
             if (view == null) {
                 return;
