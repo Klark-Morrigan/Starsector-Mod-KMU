@@ -2,6 +2,8 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -10,25 +12,28 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the join between the column choice and this mod's save slot, which is the whole of what the
- * binder does: the read hands the stored key to the choice, and the write puts a picked choice's key
- * back. What the key means is the choice's and is pinned there; the store is mocked, so this reads
- * the pass-through alone.
+ * binder does: the read hands the screen's stored key to the choice, and the write puts a picked
+ * choice's key back under the screen it was picked on. What the key means is the choice's and is
+ * pinned there; the store is mocked, so this reads the pass-through alone.
  */
 final class ColumnSelectionBinderTest {
+
+    // The screen whose slot the read and the write land on.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
 
     @Nested
     class ResolveStoredColumns {
 
         @Test
-        void resolveStoredColumnsPassesTheStoredKeyToTheChoice() {
+        void resolveStoredColumnsPassesTheScreensStoredKeyToTheChoice() {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
                 selectionMock
-                    .when(ColumnSelection::getColumnCountKey)
+                    .when(() -> ColumnSelection.getColumnCountKey(MAP_SCOPE))
                     .thenReturn(ListColumns.TWO.persistenceKey());
 
-                assertThat(ColumnSelectionBinder.resolveStoredColumns())
+                assertThat(ColumnSelectionBinder.resolveStoredColumns(MAP_SCOPE))
                     .isEqualTo(ListColumns.TWO);
             }
         }
@@ -38,14 +43,15 @@ final class ColumnSelectionBinderTest {
     class StoreColumns {
 
         @Test
-        void storeColumnsWritesThePickedChoicesKey() {
+        void storeColumnsWritesThePickedChoicesKeyUnderTheScreen() {
 
             try (var selectionMock = mockStatic(ColumnSelection.class)) {
 
-                ColumnSelectionBinder.storeColumns(ListColumns.TWO);
+                ColumnSelectionBinder.storeColumns(MAP_SCOPE, ListColumns.TWO);
 
                 selectionMock.verify(
-                    () -> ColumnSelection.selectColumnCount(ListColumns.TWO.persistenceKey()));
+                    () -> ColumnSelection.selectColumnCount(
+                        MAP_SCOPE, ListColumns.TWO.persistenceKey()));
             }
         }
     }

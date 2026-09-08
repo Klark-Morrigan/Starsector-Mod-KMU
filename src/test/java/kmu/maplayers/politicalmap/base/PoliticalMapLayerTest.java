@@ -215,6 +215,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         any()))
                     .thenReturn(List.of(PICKER_MARKER));
 
@@ -367,6 +368,7 @@ final class PoliticalMapLayerTest {
 
                 pickerMock.verify(
                     () -> FilterSelectionBinder.buildPicker(
+                        any(),
                         eq(PICKER_VIEW_ID),
                         any(),
                         any(),
@@ -410,6 +412,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         any(),
                         any(),
+                        any(),
                         eq(installation)));
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(eq(installedBoard), any());
@@ -429,6 +432,14 @@ final class PoliticalMapLayerTest {
                     () -> PoliticalMapBodyControls.buildSharedControls(any(), eq(BODY_SCREEN)));
                 controlsMock.verify(
                     () -> PoliticalMapBodyControls.buildViewSelector(BODY_SCREEN));
+                pickerMock.verify(
+                    () -> FilterSelectionBinder.buildPicker(
+                        eq(BODY_SCREEN),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()));
                 verify(viewWithoutControlsMock)
                     .getViewBodyControls(any(), eq(BODY_SCREEN));
             });
@@ -527,6 +538,7 @@ final class PoliticalMapLayerTest {
             stubSharedControlsAndSelector(controlsMock);
             pickerMock
                 .when(() -> FilterSelectionBinder.buildPicker(
+                    any(),
                     any(),
                     any(),
                     any(),

@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -49,12 +50,18 @@ public record ContentInputs(
      * paints: off filter there is no spotlight for a backdrop to sit behind, so the recede is the
      * identity and a Mute or Desaturate flip made while nothing is spotlighted rebuilds nothing.
      *
-     * @param view the view being painted, whose picker holds the spotlight pick
+     * <p>It is also per screen, since a spotlight is a pick made on one panel, so the screen the
+     * frame is painting for is what the pick is read under. The caller supplies it rather than this
+     * resolving one, so the picture a frame paints and the picks it paints from cannot name two
+     * screens.
+     *
+     * @param view        the view being painted, whose picker holds the spotlight pick
+     * @param memoryScope the screen being painted for, whose panel holds that pick
      * @return this frame's reading of the preferences the bake is under
      */
-    public static ContentInputs sampleForView(PoliticalMapView view) {
+    public static ContentInputs sampleForView(PoliticalMapView view, ScreenMemoryScope memoryScope) {
 
-        var selectedBlocId = FilterSelection.getSelectedIdOf(view.getId());
+        var selectedBlocId = FilterSelection.getSelectedIdOf(memoryScope, view.getId());
 
         return new ContentInputs(
             selectedBlocId,

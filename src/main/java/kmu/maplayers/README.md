@@ -149,8 +149,8 @@ first registered layer that offered itself as one.
 
 ## What is per screen
 
-Only the box's own state. Everything the controls set is shared, so the two screens cannot disagree
-about what the overlay means.
+The box's own state, and the picks made on the picker inside it - a pick is something the player did
+to one panel, so it is filed against that panel.
 
 | State | Scope |
 | --- | --- |
@@ -158,7 +158,8 @@ about what the overlay means.
 | Whether the layers are shown at all | per screen, persisted |
 | Whether the box is folded to its rail | per screen, persisted |
 | How far the body is scrolled | per screen, for the session |
-| Political-map view, bloc spotlight, sort, columns, and every other control value | shared, persisted once |
+| The picker's bloc spotlight, its sort, and its column count | per screen, persisted |
+| Political-map view, name format, recede styles, uninhabited outline | shared, persisted once |
 | How the bar is arranged - the tab order, and the tabs taken off it | shared, per user in common data |
 | Appearance and sound settings | shared, in LunaLib |
 

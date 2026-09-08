@@ -361,18 +361,32 @@ save state this mod cannot move and a shared library has no business holding.
 its own and switching scopes neither clears nor cross-reads another's. The filter is scoped because
 an id read under the wrong scope names nothing; the sort because scopes rank their rows by different
 vocabularies, so a shared mode key would resolve against nothing under half of them and make every
-switch look like a reset. `ColumnSelection` stays one shared slot: how many columns a list wraps
-across is a layout preference, not a statement about what the list holds, so it means the same thing
-under every scope.
+switch look like a reset. `ColumnSelection` takes no scope: how many columns a list wraps across is a
+layout preference, not a statement about what the list holds, so it means the same thing under every
+scope.
+
+All three are additionally per screen, which is an axis none of them is handed by the picker: a pick
+is reported by a widget that knows only that it was clicked, and the binder files it under the panel
+it built the picker for. That is why the column count is unscoped and still per screen - the scope
+says nothing about where the list was laid out, and the two panels are two widths to lay it out in.
+The screen is captured at the build for the reason the refresh board is: a report can land after the
+player has moved to the other screen, and the pick belongs to the panel it was clicked on.
 
 Beyond the read, pick, and clear, `FilterSelection` heals a stored id a caller-supplied predicate no
 longer accepts - a selection that stopped being on offer, whether between sessions or while the game
 runs. Binding that predicate to a live source of what is selectable *now* is the reading layer's,
 since the source is exactly the knowledge these classes refuse; so is deciding at which moments the
 offer can have moved. The predicate is asked only when a stored id is there to judge, so binding it
-to an expensive source costs nothing on a scope holding no pick.
+to an expensive source costs nothing on a pair holding no pick.
 
-`FilterHoverSlot` is the transient counterpart: the same per-scope shape, holding the id a pointer
+One heal is one screen's, so a caller owing both runs it twice. That is deliberate: what lapsed is a
+fact about the sector rather than about a panel, so a bloc that stopped being on offer stopped being
+on offer wherever it was picked - and a screen healed only when it is next up would meanwhile go on
+receding the sector behind a bloc the player cannot unpick from the panel they are on. The screens
+are walked off `MapLayerScreens`, which is where how many there are is known.
+
+`FilterHoverSlot` is the transient counterpart: the same per-scope shape - and the one tie of the
+four that takes no screen, since only one screen is ever up to preview on - holding the id a pointer
 rests on instead of the id that was picked, so a reading layer can preview what picking it would
 spotlight. It persists nothing and raises no refresh, and both follow from what a hover is - a place
 the pointer happens to be this frame, previewed over paint that is already on the map, where a pick
@@ -422,15 +436,16 @@ notes](../../../../../../../docs/dev/caching.md) own that model in full.
 
 | Key | Holds |
 | --- | --- |
-| `$kmu_map_sort_mode_<scope>` | one scope's picked sort mode key, absent until first picked |
-| `$kmu_map_sort_direction_<scope>` | one scope's picked direction (`asc` / `desc`), absent until first flipped |
-| `$kmu_map_list_columns` | the picked column count's key, absent until first picked |
-| `$kmu_map_filter_bloc_<scope>` | one scope's filtered-to id, absent while un-filtered |
+| `$kmu_map_sort_mode_<scope>_<screen>` | one screen's picked sort mode key in one scope, absent until first picked |
+| `$kmu_map_sort_direction_<scope>_<screen>` | one screen's picked direction (`asc` / `desc`) in one scope, absent until first flipped |
+| `$kmu_map_list_columns_<screen>` | one screen's picked column count key, absent until first picked |
+| `$kmu_map_filter_bloc_<scope>_<screen>` | one screen's filtered-to id in one scope, absent while un-filtered |
 
 The prefixes are layer-neutral because every map layer's picker stores through these classes - one
 naming a layer would have every other layer persisting under it. Like the fold keys they are
 save-serialised identities and frozen, so renaming one would reset every existing save to the
-default.
+default. The screen segment composes last, through the same `ScreenMemoryScope` the fold resolves
+through, so every per-screen key in the mod has one shape.
 
 The sort and column stores raise no refresh: both values are read on the per-frame body build, so
 the next frame re-sorts or re-wraps on its own, and nothing on the map depends on either.

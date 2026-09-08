@@ -146,14 +146,15 @@ public final class PoliticalMapLayer implements MapLayer {
         // sectors.
         var board = installation.resolveRefreshBoard();
 
-        // TODO: hand memoryScope to the picker's stores - spotlight, sort and columns are still one
-        // slot per sector.
+        // The asking panel's screen goes to the picker's stores as well as to the controls above it,
+        // so a spotlight, a sort or a column count picked here is that panel's own.
         return FilterSelectionBinder.buildPicker(
+            memoryScope,
             selectedView.getId(),
             blocCache.resolveBlocPickerRead(selectedView).picker(),
             // The stored column count, resolved to the default (one column) when a save has never
             // picked one, so the list always lays out under a live count.
-            ColumnSelectionBinder.resolveStoredColumns(),
+            ColumnSelectionBinder.resolveStoredColumns(memoryScope),
             RecedeControl.buildControls(
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),

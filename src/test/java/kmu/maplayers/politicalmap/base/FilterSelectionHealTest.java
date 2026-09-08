@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -25,20 +26,31 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the glue that heals a loaded save's spotlight selection against its active view: with no view
+ * Pins the glue that heals a loaded save's spotlight selections against its active view: with no view
  * selected the heal is skipped (a persisted filter is left for a later view to judge), and with a view
- * selected the heal runs with a predicate that reports a bloc selectable exactly when the active view
- * still lists it. The view, the sector, and the filter selection are stubbed so this pins the wiring
- * alone, not how the selection actually clears.
+ * selected the heal runs on every screen with a predicate that reports a bloc selectable exactly when
+ * the active view still lists it. The view, the sector, and the filter selection are stubbed so this
+ * pins the wiring alone, not how the selection actually clears.
  *
  * <p>The settings registration is pinned here too, that being the moment a live game can lose a bloc
  * from the picker without a load or a view switch to heal against.
  */
 final class FilterSelectionHealTest {
+
+    // How many screens a heal is owed, pinned as a literal: a screen added without its heal would
+    // leave one panel spotlighting a bloc the player can no longer unpick from the panel they are on.
+    private static final int SCREEN_COUNT = 2;
+
+    // The two screens' scopes, spelled here rather than read back off the roster the glue walks, so a
+    // segment renamed on one side alone fails here.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
+
+    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
 
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -60,7 +72,7 @@ final class FilterSelectionHealTest {
                 // No active view means no grouping to judge selectability under, so a persisted filter
                 // is left untouched rather than cleared against nothing.
                 selectionMock.verify(
-                    () -> FilterSelection.healStaleSelection(any(), any()),
+                    () -> FilterSelection.healStaleSelection(any(), any(), any()),
                     never());
             }
         }
@@ -104,6 +116,28 @@ final class FilterSelectionHealTest {
 
                 assertThat(predicate.test("hegemony")).isTrue();
                 assertThat(predicate.test("vanished")).isFalse();
+            }
+        }
+
+        @Test
+        void healStaleSelectionAgainstActiveViewHealsEveryScreensSlot() {
+            // A bloc that lapsed lapsed for both panels, so both are judged in the one pass. Healing
+            // only the screen being looked at would leave the other spotlighting a footprint that is
+            // no longer on the map, and no way to unpick it from the panel the player is on.
+            try (var registryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                registryMock
+                    .when(PoliticalMapViewRegistry::getSelectedView)
+                    .thenReturn(viewMock);
+
+                when(viewMock.getId())
+                    .thenReturn("factions");
+
+                FilterSelectionHeal.healStaleSelectionAgainstActiveView();
+
+                assertThat(captureHealedScreens(selectionMock))
+                    .containsExactlyInAnyOrder(MAP_SCOPE, INTEL_SCOPE);
             }
         }
 
@@ -177,12 +211,28 @@ final class FilterSelectionHealTest {
         }
     }
 
+    // Captures the screens the heal was run for, in order, so a test can pin that every panel's slot
+    // was judged rather than only the one being looked at.
+    private static List<ScreenMemoryScope> captureHealedScreens(
+            MockedStatic<FilterSelection> selectionMock) {
+
+        ArgumentCaptor<ScreenMemoryScope> captor = ArgumentCaptor.forClass(ScreenMemoryScope.class);
+        selectionMock.verify(
+            () -> FilterSelection.healStaleSelection(captor.capture(), anyString(), any()),
+            times(SCREEN_COUNT));
+        return captor.getAllValues();
+    }
+
     // Captures the predicate passed to FilterSelection.healStaleSelection, so a test can exercise the
-    // selectability rule the glue built from the active view's blocs.
+    // selectability rule the glue built from the active view's blocs. Every screen is handed the same
+    // rule - which blocs a view offers is the view's answer, not a panel's - so the last one captured
+    // stands for all of them.
     private static Predicate<String> capturePredicate(MockedStatic<FilterSelection> selectionMock) {
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Predicate<String>> captor = ArgumentCaptor.forClass(Predicate.class);
-        selectionMock.verify(() -> FilterSelection.healStaleSelection(anyString(), captor.capture()));
+        selectionMock.verify(
+            () -> FilterSelection.healStaleSelection(any(), anyString(), captor.capture()),
+            times(SCREEN_COUNT));
         return captor.getValue();
     }
 }

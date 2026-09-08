@@ -16,6 +16,7 @@ import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
@@ -252,7 +253,13 @@ final class PoliticalMapCache {
         // The rebuild's one sampling of the sidebar preferences, taken here beside the cut's for
         // the same reason: every stage that bakes one reads this reading, and the staleness
         // question below is asked of the values rather than of the counters their flips raise.
-        var contentInputs = ContentInputs.sampleForView(view);
+        //
+        // The screen is resolved here because nothing hands this one yet: the preferences are read
+        // for whichever screen is up, which is the same rule every foreign surface reads under. Once
+        // the frame carries its screen, that answer arrives with the view instead and this read goes.
+        var contentInputs = ContentInputs.sampleForView(
+            view,
+            MapLayerScreens.resolveLivePicks().memoryScope());
 
         // TODO: when only geometry changed (isCellCutStale), reshape just the cells
         // CellGeometryCache rebuilt - the system that gained or lost access and every cell

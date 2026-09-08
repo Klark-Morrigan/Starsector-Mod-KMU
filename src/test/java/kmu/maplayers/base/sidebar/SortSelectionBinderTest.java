@@ -4,6 +4,8 @@ import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -14,14 +16,17 @@ import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins the join between the sort model and this mod's save slots, which is the whole of what the
- * binder does: the read hands the scope's two stored keys to the model, and the write puts both of a
- * picked sort's keys back into that same scope. What the keys mean is the model's and is pinned
- * there; the store is mocked, so this reads the pass-through alone.
+ * binder does: the read hands one screen's two stored keys in one scope to the model, and the write
+ * puts both of a picked sort's keys back under that same pair. What the keys mean is the model's and
+ * is pinned there; the store is mocked, so this reads the pass-through alone.
  *
  * <p>Run over the foreign {@link HazardSortMode} vocabulary, since the binder is no more the
  * political map's than the model it binds.
  */
 final class SortSelectionBinderTest {
+
+    // The screen whose slots the read and the write land on.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
 
     // The scope whose slots the read and the write land on.
     private static final String SCOPE_ID = "hazards";
@@ -33,18 +38,18 @@ final class SortSelectionBinderTest {
     class ResolveStoredSort {
 
         @Test
-        void resolveStoredSortPassesTheScopesStoredKeysToTheModel() {
+        void resolveStoredSortPassesTheScreensStoredKeysToTheModel() {
 
             try (var selectionMock = mockStatic(SortSelection.class)) {
 
                 selectionMock
-                    .when(() -> SortSelection.getSortModeKeyOf(SCOPE_ID))
+                    .when(() -> SortSelection.getSortModeKeyOf(MAP_SCOPE, SCOPE_ID))
                     .thenReturn(HazardSortMode.SEVERITY.persistenceKey());
                 selectionMock
-                    .when(() -> SortSelection.getSortDirectionKeyOf(SCOPE_ID))
+                    .when(() -> SortSelection.getSortDirectionKeyOf(MAP_SCOPE, SCOPE_ID))
                     .thenReturn(SortDirection.ASCENDING.persistenceKey());
 
-                assertThat(SortSelectionBinder.resolveStoredSort(SCOPE_ID, MODES))
+                assertThat(SortSelectionBinder.resolveStoredSort(MAP_SCOPE, SCOPE_ID, MODES))
                     .isEqualTo(new ListSort<>(HazardSortMode.SEVERITY, SortDirection.ASCENDING, MODES));
             }
         }
@@ -54,22 +59,23 @@ final class SortSelectionBinderTest {
     class StoreSort {
 
         @Test
-        void storeSortWritesBothOfThePickedSortsKeysUnderTheScope() {
+        void storeSortWritesBothOfThePickedSortsKeysUnderTheScreensScope() {
             // Both halves are written whichever one a click moved, so the save never holds this
-            // pick's direction beside an earlier pick's mode, and both land in the one scope so a
-            // pick made under one picker never reorders another's list.
+            // pick's direction beside an earlier pick's mode, and both land under the one screen and
+            // scope so a pick made on one panel never reorders the other's list.
             try (var selectionMock = mockStatic(SortSelection.class)) {
 
                 SortSelectionBinder.storeSort(
+                    MAP_SCOPE,
                     SCOPE_ID,
                     new ListSort<>(HazardSortMode.RADIUS, SortDirection.ASCENDING, MODES));
 
                 selectionMock.verify(
                     () -> SortSelection.selectSortMode(
-                        SCOPE_ID, HazardSortMode.RADIUS.persistenceKey()));
+                        MAP_SCOPE, SCOPE_ID, HazardSortMode.RADIUS.persistenceKey()));
                 selectionMock.verify(
                     () -> SortSelection.selectSortDirection(
-                        SCOPE_ID, SortDirection.ASCENDING.persistenceKey()));
+                        MAP_SCOPE, SCOPE_ID, SortDirection.ASCENDING.persistenceKey()));
             }
         }
     }

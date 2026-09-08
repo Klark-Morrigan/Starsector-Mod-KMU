@@ -2,11 +2,12 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.settings.KmuLunaSettings;
 
 /**
- * Heals a save's spotlight selection against the view that is active in it: the glue that binds
+ * Heals a save's spotlight selections against the view that is active in it: the glue that binds
  * {@link FilterSelection#healStaleSelection}'s pure "clear if not selectable" rule to a concrete
  * source of which blocs are selectable now. {@link FilterSelection} stays ignorant of views (it takes
  * only a predicate); this supplies that predicate from the active view's {@link
@@ -27,26 +28,37 @@ public final class FilterSelectionHeal {
     }
 
     /**
-     * Clears the active view's stored spotlight selection when that view no longer offers it, a no-op
-     * when no view is selected or the stored bloc is still selectable. Runs on game load, on a view
-     * switch, and on a settings change, before the overlay repaints, so it clears without requesting a
-     * refresh - each of those already repaints, so there is nothing extra to invalidate. Reads the live
-     * sector and the player's current dominance and visibility settings, the same gate the picker lists
-     * blocs under, so a bloc is healed away exactly when it would no longer appear in the picker.
+     * Clears every screen's stored spotlight selection in the active view when that view no longer
+     * offers it, a no-op when no view is selected or a screen's stored bloc is still selectable. Runs
+     * on game load, on a view switch, and on a settings change, before the overlay repaints, so it
+     * clears without requesting a refresh - each of those already repaints, so there is nothing extra
+     * to invalidate. Reads the live sector and the player's current dominance and visibility settings,
+     * the same gate the picker lists blocs under, so a bloc is healed away exactly when it would no
+     * longer appear in the picker.
+     *
+     * <p>Every screen rather than the one being looked at, because what lapsed is a fact about the
+     * sector: a faction removed or an alliance dissolved is gone from both panels' pickers, and a
+     * screen healed only when it is next up would go on receding the sector behind a bloc the player
+     * cannot unpick from the panel they are on. The screens are walked off {@link MapLayerScreens},
+     * which is where how many there are is known.
      *
      * <p>Costs nothing while no bloc is spotlighted. Judging selectability is a whole grouped
      * dominance pass over the sector, so it is left inside the predicate rather than prepared for it:
      * {@link FilterSelection#healStaleSelection} asks only when a stored id is there to judge, which
-     * is the minority of the calls now that every settings change arrives here.
+     * is the minority of the calls now that every settings change arrives here - and the second
+     * screen's call asks nothing at all unless it too has a spotlight of its own.
      */
     public static void healStaleSelectionAgainstActiveView() {
         var view = PoliticalMapViewRegistry.getSelectedView();
         if (view == null) {
             return;
         }
-        FilterSelection.healStaleSelection(
-            view.getId(),
-            spotlitBlocId -> isBlocOfferedBy(view, spotlitBlocId));
+        for (var screenPicks : MapLayerScreens.getAllScreenPicks()) {
+            FilterSelection.healStaleSelection(
+                screenPicks.memoryScope(),
+                view.getId(),
+                spotlitBlocId -> isBlocOfferedBy(view, spotlitBlocId));
+        }
     }
 
     /**

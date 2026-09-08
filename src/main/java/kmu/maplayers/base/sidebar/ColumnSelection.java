@@ -2,8 +2,10 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.memory.SectorMemoryString;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
+
 /**
- * How many columns a sidebar picker lays its list across, persisted per save. Like
+ * How many columns a sidebar picker lays its list across, persisted per save and per screen. Like
  * {@link SortSelection} it holds only the raw stored value - a bare column-count key - and the plumbing
  * to read and write it; what a key means (which column count it maps to, what it falls back to when
  * unset) is the column choice's concern, not this class's, so this stays a leaf that names no layout.
@@ -19,36 +21,47 @@ import kmlib.starsector.memory.SectorMemoryString;
  */
 public final class ColumnSelection {
 
-    // One shared slot rather than one per scope: the count is a layout preference over a list, not a
-    // statement about what the list holds, so it means the same thing under every picker. The key is
-    // layer-neutral because every map layer's picker stores through this one class - a key naming one
-    // layer would have every other layer persisting its column count under that layer's key. A key is
-    // a save-serialised identity, not a description of where the class lives: a renamed key reads as
-    // absent and silently resets every existing save's column choice back to the default, so it stays
-    // frozen in this spelling. Absent until the player first picks a count, which the read reports as
-    // null for the column choice to default.
-    private static final SectorMemoryString selectedColumnCount =
-        new SectorMemoryString("$kmu_map_list_columns");
+    // One slot per screen, shared by every scope on it: the count is a layout preference over a list,
+    // not a statement about what the list holds, so it means the same thing under every picker - but a
+    // panel is a fixed width the player laid that list out inside, and the two panels are two widths.
+    // The screen's segment composes onto this base key, which is layer-neutral because every map
+    // layer's picker stores through this one class - a key naming one layer would have every other
+    // layer persisting its column count under that layer's key. A key is a save-serialised identity,
+    // not a description of where the class lives: a renamed key reads as absent and silently resets
+    // every existing save's column choice back to the default, so it stays frozen in this spelling.
+    // Absent until the player first picks a count, which the read reports as null for the column
+    // choice to default.
+    private static final String SELECTED_COLUMN_COUNT_KEY = "$kmu_map_list_columns";
 
     private ColumnSelection() {
     }
 
     /**
-     * @return the stored column-count key, or null when none is stored (a fresh save, or a read before
-     *         the sector exists) - the caller resolves null to the default column count
+     * @param memoryScope the screen whose slot is read
+     * @return that screen's stored column-count key, or null when none is stored (a fresh save, or a
+     *         read before the sector exists) - the caller resolves null to the default column count
      */
-    public static String getColumnCountKey() {
-        return selectedColumnCount.get();
+    public static String getColumnCountKey(ScreenMemoryScope memoryScope) {
+        return resolveSlot(memoryScope).get();
     }
 
     /**
-     * Persists the chosen column count's key in this save. A no-op before the sector exists, since
-     * there is no save to write into yet. No repaint follows: the picker list re-wraps on the next
-     * per-frame body build, and nothing on the map depends on the column count.
+     * Persists the chosen column count's key in this save, against the screen it was picked on. A
+     * no-op before the sector exists, since there is no save to write into yet. No repaint follows:
+     * the picker list re-wraps on the next per-frame body build, and nothing on the map depends on
+     * the column count.
      *
+     * @param memoryScope    the screen whose panel made the pick
      * @param columnCountKey the save-stable key of the column count to lay the list out in
      */
-    public static void selectColumnCount(String columnCountKey) {
-        selectedColumnCount.set(columnCountKey);
+    public static void selectColumnCount(ScreenMemoryScope memoryScope, String columnCountKey) {
+        resolveSlot(memoryScope).set(columnCountKey);
+    }
+
+    // The sector-memory slot holding one screen's column count. A fresh wrapper per call - the
+    // wrapper only holds its key, the value lives in sector memory - so no per-screen instance has to
+    // be cached here.
+    private static SectorMemoryString resolveSlot(ScreenMemoryScope memoryScope) {
+        return new SectorMemoryString(memoryScope.resolveKeyFor(SELECTED_COLUMN_COUNT_KEY));
     }
 }

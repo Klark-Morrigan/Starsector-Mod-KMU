@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.starsector.memory.SectorMemoryAccess;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -19,16 +21,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the per-scope filter selection state: the read reports one scope's stored id or none, a pick
- * persists that scope's frozen key and bumps the filter revision on the board it was handed so that
- * sector's reading layer repaints, a clear drops the key and bumps too, every mutation no-ops
- * cleanly before the sector exists, the
- * self-heal clears only a stored id that is no longer selectable, and the legacy migration carries a
- * pre-per-scope save's single shared choice into a scope slot. The frozen key prefix is pinned as a
- * literal so a rename that would silently reset every save's filter choice fails here rather than
- * shipping.
+ * Pins the per-screen, per-scope filter selection state: the read reports one pair's stored id or
+ * none, a pick persists that pair's frozen key and bumps the filter revision on the board it was
+ * handed so that sector's reading layer repaints, a clear drops the key and bumps too, every mutation
+ * no-ops cleanly before the sector exists, and the self-heal clears only a stored id that is no longer
+ * selectable. The frozen keys are pinned as literals so a rename that would silently reset every
+ * save's filter choice fails here rather than shipping.
  */
 final class FilterSelectionTest {
+
+    // The screen whose slot these tests exercise, and a second one that must stay untouched; the
+    // segment composes last into the keys below.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
+
+    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
 
     // The scope whose slot these tests exercise; its opaque id composes into the per-scope key below.
     private static final String SCOPE_ID = "scope_a";
@@ -37,11 +43,16 @@ final class FilterSelectionTest {
     // is invisible to another.
     private static final String OTHER_SCOPE_ID = "scope_b";
 
-    // The save-serialised per-scope key, pinned as a literal: renaming the prefix drops every existing
-    // save's filter choice back to none, so a change must break this test first.
-    private static final String SELECTED_ID_KEY = "$kmu_map_filter_bloc_scope_a";
+    // The save-serialised keys of the screen and scope under test, pinned as literals: renaming the
+    // prefix drops every existing save's filter choice back to none, and losing the screen segment
+    // would put both panels back on one shared spotlight, so either change must break this test first.
+    private static final String SELECTED_ID_KEY = "$kmu_map_filter_bloc_scope_a_map";
+
+    private static final String INTEL_SELECTED_ID_KEY = "$kmu_map_filter_bloc_scope_a_intel";
 
     private static final String SELECTED_ID = "picked_a";
+
+    private static final String OTHER_SELECTED_ID = "picked_b";
 
     @Nested
     class GetSelectedIdOf {
@@ -62,7 +73,7 @@ final class FilterSelectionTest {
                 when(memoryMock.getString(SELECTED_ID_KEY))
                     .thenReturn(SELECTED_ID);
 
-                assertThat(FilterSelection.getSelectedIdOf(SCOPE_ID))
+                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
                     .isEqualTo(SELECTED_ID);
             }
         }
@@ -78,7 +89,7 @@ final class FilterSelectionTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(memoryMock);
 
-                assertThat(FilterSelection.getSelectedIdOf(SCOPE_ID))
+                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
                     .isNull();
             }
         }
@@ -100,8 +111,36 @@ final class FilterSelectionTest {
                 when(memoryMock.getString(SELECTED_ID_KEY))
                     .thenReturn(SELECTED_ID);
 
-                assertThat(FilterSelection.getSelectedIdOf(OTHER_SCOPE_ID))
+                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, OTHER_SCOPE_ID))
                     .isNull();
+            }
+        }
+
+        @Test
+        void getSelectedIdOfReadsEachScreensOwnSelection() {
+            // Per-screen isolation under one scope id: a bloc spotlighted on the sector map and a
+            // different one on the intel visor read back as each panel left them.
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(SELECTED_ID_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(SELECTED_ID_KEY))
+                    .thenReturn(SELECTED_ID);
+                when(memoryMock.contains(INTEL_SELECTED_ID_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(INTEL_SELECTED_ID_KEY))
+                    .thenReturn(OTHER_SELECTED_ID);
+
+                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
+                    .isEqualTo(SELECTED_ID);
+                assertThat(FilterSelection.getSelectedIdOf(INTEL_SCOPE, SCOPE_ID))
+                    .isEqualTo(OTHER_SELECTED_ID);
             }
         }
 
@@ -114,7 +153,7 @@ final class FilterSelectionTest {
                     .when(SectorMemoryAccess::readSectorMemory)
                     .thenReturn(null);
 
-                assertThat(FilterSelection.getSelectedIdOf(SCOPE_ID))
+                assertThat(FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
                     .isNull();
             }
         }
@@ -136,7 +175,7 @@ final class FilterSelectionTest {
 
                 var board = new MapLayerRefreshBoard();
 
-                FilterSelection.selectId(SCOPE_ID, SELECTED_ID, board);
+                FilterSelection.selectId(MAP_SCOPE, SCOPE_ID, SELECTED_ID, board);
 
                 verify(memoryMock)
                     .set(SELECTED_ID_KEY, SELECTED_ID);
@@ -145,6 +184,27 @@ final class FilterSelectionTest {
                 // settingsRevision - that bump is what repaints the reading layer live.
                 assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
                     .isEqualTo(1);
+            }
+        }
+
+        @Test
+        void selectIdWritesTheScreenItWasPickedOn() {
+            // Per-screen isolation on the write side: a spotlight picked on the intel panel writes
+            // that panel's slot alone, so the sector map keeps whatever it was left showing.
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                FilterSelection.selectId(INTEL_SCOPE, SCOPE_ID, SELECTED_ID, new MapLayerRefreshBoard());
+
+                verify(memoryMock)
+                    .set(INTEL_SELECTED_ID_KEY, SELECTED_ID);
+                verify(memoryMock, never())
+                    .set(eq(SELECTED_ID_KEY), anyString());
             }
         }
 
@@ -160,7 +220,7 @@ final class FilterSelectionTest {
 
                 var board = new MapLayerRefreshBoard();
 
-                FilterSelection.selectId(SCOPE_ID, SELECTED_ID, board);
+                FilterSelection.selectId(MAP_SCOPE, SCOPE_ID, SELECTED_ID, board);
 
                 assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
                     .isEqualTo(0);
@@ -187,7 +247,7 @@ final class FilterSelectionTest {
 
                 var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(SCOPE_ID, board);
+                FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, board);
 
                 verify(memoryMock)
                     .unset(SELECTED_ID_KEY);
@@ -211,7 +271,7 @@ final class FilterSelectionTest {
 
                 var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(SCOPE_ID, board);
+                FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, board);
 
                 verify(memoryMock, never())
                     .unset(anyString());
@@ -239,7 +299,7 @@ final class FilterSelectionTest {
 
                 var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(OTHER_SCOPE_ID, board);
+                FilterSelection.clearSelection(MAP_SCOPE, OTHER_SCOPE_ID, board);
 
                 verify(memoryMock, never())
                     .unset(anyString());
@@ -260,7 +320,7 @@ final class FilterSelectionTest {
 
                 var board = new MapLayerRefreshBoard();
 
-                FilterSelection.clearSelection(SCOPE_ID, board);
+                FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, board);
 
                 assertThat(board.getRevision(MapLayerCommonRefreshSignal.FILTER))
                     .isEqualTo(0);
@@ -288,7 +348,7 @@ final class FilterSelectionTest {
                 when(memoryMock.getString(SELECTED_ID_KEY))
                     .thenReturn(SELECTED_ID);
 
-                FilterSelection.healStaleSelection(SCOPE_ID, storedId -> false);
+                FilterSelection.healStaleSelection(MAP_SCOPE, SCOPE_ID, storedId -> false);
 
                 verify(memoryMock)
                     .unset(SELECTED_ID_KEY);
@@ -312,10 +372,40 @@ final class FilterSelectionTest {
                 when(memoryMock.getString(SELECTED_ID_KEY))
                     .thenReturn(SELECTED_ID);
 
-                FilterSelection.healStaleSelection(SCOPE_ID, storedId -> true);
+                FilterSelection.healStaleSelection(MAP_SCOPE, SCOPE_ID, storedId -> true);
 
                 verify(memoryMock, never())
                     .unset(anyString());
+            }
+        }
+
+        @Test
+        void healStaleSelectionClearsOnlyTheScreenItWasNamedFor() {
+            // The heal is per screen, so a caller owing both panels runs it twice: healing the map
+            // screen leaves the intel screen's stored id standing until its own call comes.
+            try (var memoryAccessMock = mockStatic(SectorMemoryAccess.class)) {
+
+                var memoryMock = mock(MemoryAPI.class);
+
+                memoryAccessMock
+                    .when(SectorMemoryAccess::readSectorMemory)
+                    .thenReturn(memoryMock);
+
+                when(memoryMock.contains(SELECTED_ID_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(SELECTED_ID_KEY))
+                    .thenReturn(SELECTED_ID);
+                when(memoryMock.contains(INTEL_SELECTED_ID_KEY))
+                    .thenReturn(true);
+                when(memoryMock.getString(INTEL_SELECTED_ID_KEY))
+                    .thenReturn(OTHER_SELECTED_ID);
+
+                FilterSelection.healStaleSelection(MAP_SCOPE, SCOPE_ID, storedId -> false);
+
+                verify(memoryMock)
+                    .unset(SELECTED_ID_KEY);
+                verify(memoryMock, never())
+                    .unset(INTEL_SELECTED_ID_KEY);
             }
         }
 
@@ -332,6 +422,7 @@ final class FilterSelectionTest {
                     .thenReturn(memoryMock);
 
                 FilterSelection.healStaleSelection(
+                    MAP_SCOPE,
                     SCOPE_ID,
                     storedId -> {
                         throw new AssertionError(
@@ -353,6 +444,7 @@ final class FilterSelectionTest {
                     .thenReturn(null);
 
                 FilterSelection.healStaleSelection(
+                    MAP_SCOPE,
                     SCOPE_ID,
                     storedId -> {
                         throw new AssertionError(

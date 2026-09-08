@@ -10,6 +10,7 @@ import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStrings;
@@ -31,10 +32,14 @@ import static org.mockito.Mockito.never;
 
 /**
  * Pins the join between KMLib's picker and this mod's save slots, which is the whole of what the
- * binder does: the spotlighted id and the stored sort are read off this mod's stores for the scope
- * on the way in, and each of the picker's three picks reaches the slot that keeps it on the way
- * out. The picker's own shape and click rules are KMLib's and are pinned there; the stores are
+ * binder does: the spotlighted id and the stored sort are read off this mod's stores for the screen
+ * and scope on the way in, and each of the picker's three picks reaches the slot that keeps it on the
+ * way out. The picker's own shape and click rules are KMLib's and are pinned there; the stores are
  * mocked, so this reads the wiring alone.
+ *
+ * <p>The screen is pinned as the one the picker was built for rather than the one that happens to be
+ * up, since a report can land after the player has moved: a pick belongs to the panel it was clicked
+ * on.
  *
  * <p>Each item pick is verified against the board of the installation the picker was built over,
  * and each hover read back off that same installation's slot. Both are what fails if the store ever
@@ -47,6 +52,13 @@ import static org.mockito.Mockito.never;
  * capture that only worked over the first layer's own item type would not compile here.
  */
 final class FilterSelectionBinderTest {
+
+    // The screen whose panel this picker is built for, which every pick and clear below is filed
+    // under.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
+
+    // The other screen, for the case that pins a pick landing on the panel it was clicked on.
+    private static final ScreenMemoryScope INTEL_SCOPE = new ScreenMemoryScope("intel");
 
     // The scope whose slot a pick or clear is read from and written into.
     private static final String SCOPE_ID = "hazards";
@@ -103,7 +115,7 @@ final class FilterSelectionBinderTest {
 
         sortBinderMock = Mockito.mockStatic(SortSelectionBinder.class);
         sortBinderMock
-            .when(() -> SortSelectionBinder.resolveStoredSort(SCOPE_ID, MODES))
+            .when(() -> SortSelectionBinder.resolveStoredSort(MAP_SCOPE, SCOPE_ID, MODES))
             .thenReturn(sortOf(HazardSortMode.ALPHA));
     }
 
@@ -129,7 +141,7 @@ final class FilterSelectionBinderTest {
                 stubLabels(stringsMock);
 
                 selectionMock
-                    .when(() -> FilterSelection.getSelectedIdOf(SCOPE_ID))
+                    .when(() -> FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
                     .thenReturn("storm_1");
 
                 var picker = buildPickerFor(buildPicker());
@@ -169,7 +181,34 @@ final class FilterSelectionBinderTest {
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
-                    () -> FilterSelection.selectId(SCOPE_ID, "drift_1", builtBoard));
+                    () -> FilterSelection.selectId(MAP_SCOPE, SCOPE_ID, "drift_1", builtBoard));
+            }
+        }
+
+        @Test
+        void buildPickerWritesAnItemPickUnderTheScreenItWasBuiltFor() {
+            // The screen is captured at the build, so a picker stood on the intel panel files its
+            // pick there whatever screen is up when the click is handled.
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var selectionMock = mockStatic(FilterSelection.class)) {
+
+                stubLabels(stringsMock);
+
+                sortBinderMock
+                    .when(() -> SortSelectionBinder.resolveStoredSort(INTEL_SCOPE, SCOPE_ID, MODES))
+                    .thenReturn(sortOf(HazardSortMode.ALPHA));
+
+                var picker = buildPickerFor(FilterSelectionBinder.buildPicker(
+                    INTEL_SCOPE,
+                    SCOPE_ID,
+                    HAZARD_PICKER,
+                    ListColumns.ONE,
+                    List.of(),
+                    installation));
+                picker.action().activateCell(0);
+
+                selectionMock.verify(
+                    () -> FilterSelection.selectId(INTEL_SCOPE, SCOPE_ID, "drift_1", builtBoard));
             }
         }
 
@@ -183,14 +222,14 @@ final class FilterSelectionBinderTest {
                 stubLabels(stringsMock);
 
                 selectionMock
-                    .when(() -> FilterSelection.getSelectedIdOf(SCOPE_ID))
+                    .when(() -> FilterSelection.getSelectedIdOf(MAP_SCOPE, SCOPE_ID))
                     .thenReturn("drift_1");
 
                 var picker = buildPickerFor(buildPicker());
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
-                    () -> FilterSelection.clearSelection(SCOPE_ID, builtBoard));
+                    () -> FilterSelection.clearSelection(MAP_SCOPE, SCOPE_ID, builtBoard));
             }
         }
 
@@ -249,7 +288,7 @@ final class FilterSelectionBinderTest {
                     List.of(ListColumns.values()).indexOf(ListColumns.TWO));
 
                 binderMock.verify(
-                    () -> ColumnSelectionBinder.storeColumns(ListColumns.TWO));
+                    () -> ColumnSelectionBinder.storeColumns(MAP_SCOPE, ListColumns.TWO));
             }
         }
 
@@ -269,7 +308,7 @@ final class FilterSelectionBinderTest {
 
                 sortBinderMock.verify(
                     () -> SortSelectionBinder.storeSort(
-                        SCOPE_ID, sortOf(HazardSortMode.SEVERITY)));
+                        MAP_SCOPE, SCOPE_ID, sortOf(HazardSortMode.SEVERITY)));
             }
         }
 
@@ -286,7 +325,7 @@ final class FilterSelectionBinderTest {
                 buildPicker();
 
                 sortBinderMock.verify(
-                    () -> SortSelectionBinder.resolveStoredSort(SCOPE_ID, MODES));
+                    () -> SortSelectionBinder.resolveStoredSort(MAP_SCOPE, SCOPE_ID, MODES));
             }
         }
 
@@ -301,6 +340,7 @@ final class FilterSelectionBinderTest {
                 stubLabels(stringsMock);
 
                 assertThat(FilterSelectionBinder.buildPicker(
+                        MAP_SCOPE,
                         SCOPE_ID,
                         ListPicker.empty(),
                         ListColumns.ONE,
@@ -309,7 +349,7 @@ final class FilterSelectionBinderTest {
                     .isEmpty();
 
                 sortBinderMock.verify(
-                    () -> SortSelectionBinder.resolveStoredSort(any(), any()),
+                    () -> SortSelectionBinder.resolveStoredSort(any(), any(), any()),
                     never());
             }
         }
@@ -325,6 +365,7 @@ final class FilterSelectionBinderTest {
     // this suite varies.
     private List<ControlSpec> buildPicker() {
         return FilterSelectionBinder.buildPicker(
+            MAP_SCOPE,
             SCOPE_ID,
             HAZARD_PICKER,
             ListColumns.ONE,

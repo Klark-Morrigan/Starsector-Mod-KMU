@@ -14,6 +14,7 @@ import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
+import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.sidebar.FilterSelection;
@@ -472,7 +473,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // The rebuild's one sampling of the sidebar picks, taken here as the plugin's cache
             // takes it and carried through every stage below, so the fills, the fit, the bands and
             // the labels are all baked under one reading of them.
-            var contentInputs = ContentInputs.sampleForView(FactionsView.INSTANCE);
+            var contentInputs = ContentInputs.sampleForView(
+                FactionsView.INSTANCE,
+                MapLayerScreens.resolveLivePicks().memoryScope());
 
             var territories = TerritoryBuilder.buildTerritories(
                 cellsMock,

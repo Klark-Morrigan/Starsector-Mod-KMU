@@ -130,7 +130,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
             var standingMap = cache.getTerritories();
 
             seams.resolveFilterSelectionSeam()
-                .when(() -> FilterSelection.getSelectedIdOf(any()))
+                .when(() -> FilterSelection.getSelectedIdOf(any(), any()))
                 .thenReturn(HEGEMONY_ID);
             cache.refresh(FactionsView.INSTANCE);
 

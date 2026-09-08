@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 
+import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -35,6 +36,10 @@ import static org.mockito.Mockito.when;
  * them moves the settings revision.
  */
 final class ContentInputsTest {
+
+    // The screen the frame is painting for, which is the other half of what scopes the spotlight: a
+    // second screen reads a slot of its own, which is FilterSelection's own suite to pin.
+    private static final ScreenMemoryScope MAP_SCOPE = new ScreenMemoryScope("map");
 
     // The view whose picker the spotlight is read under. Its id is what scopes the pick, so a
     // second view would read a slot of its own - which is FilterSelection's own suite to pin.
@@ -80,9 +85,9 @@ final class ContentInputsTest {
         void sampleForViewReadsTheSpotlightPickMadeOnTheViewsOwnPicker() {
             // The spotlight is the one pick stored per view, so it is read under the view being
             // painted rather than under whatever the map happens to hold elsewhere.
-            FilterSelection.selectId(VIEW_ID, SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(MAP_SCOPE, VIEW_ID, SPOTLIT_BLOC_ID, board);
 
-            assertThat(ContentInputs.sampleForView(viewMock).selectedBlocId())
+            assertThat(ContentInputs.sampleForView(viewMock, MAP_SCOPE).selectedBlocId())
                 .isEqualTo(SPOTLIT_BLOC_ID);
         }
 
@@ -92,7 +97,7 @@ final class ContentInputsTest {
             // identity however the toggles are set - which is what keeps a Mute or Desaturate flip
             // made with nothing spotlighted from rebuilding a map it would not change. The
             // desaturate default is on, so this is the recede being gated and not merely absent.
-            var inputs = ContentInputs.sampleForView(viewMock);
+            var inputs = ContentInputs.sampleForView(viewMock, MAP_SCOPE);
 
             assertThat(inputs.selectedBlocId())
                 .isNull();
@@ -105,9 +110,9 @@ final class ContentInputsTest {
             // With a bloc spotlit the rest of the sector recedes by the filter set's own toggles,
             // resolved here rather than by whoever paints, so the pick and the recede it implies
             // are one reading.
-            FilterSelection.selectId(VIEW_ID, SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(MAP_SCOPE, VIEW_ID, SPOTLIT_BLOC_ID, board);
 
-            assertThat(ContentInputs.sampleForView(viewMock).filterRecedeAdjustment())
+            assertThat(ContentInputs.sampleForView(viewMock, MAP_SCOPE).filterRecedeAdjustment())
                 .isEqualTo(DESATURATING);
         }
 
@@ -117,9 +122,9 @@ final class ContentInputsTest {
             // the alliance set cleared and a bloc spotlit, one reading has to answer the identity
             // and the other the recolour. Read from one key they would answer alike.
             RecedePreferences.ALLIANCE_NON_ALLIED.setDesaturated(false, board);
-            FilterSelection.selectId(VIEW_ID, SPOTLIT_BLOC_ID, board);
+            FilterSelection.selectId(MAP_SCOPE, VIEW_ID, SPOTLIT_BLOC_ID, board);
 
-            var inputs = ContentInputs.sampleForView(viewMock);
+            var inputs = ContentInputs.sampleForView(viewMock, MAP_SCOPE);
 
             assertThat(inputs.allianceRecedeAdjustment())
                 .isEqualTo(ElementStyleAdjustment.NONE);
@@ -134,7 +139,7 @@ final class ContentInputsTest {
             NameFormatPreference.selectNameFormat(FactionNameFormatChoice.SHORT, board);
             UninhabitedOutlinePreference.setOutlineDrawn(true, board);
 
-            var inputs = ContentInputs.sampleForView(viewMock);
+            var inputs = ContentInputs.sampleForView(viewMock, MAP_SCOPE);
 
             assertThat(inputs.nameFormat())
                 .isEqualTo(FactionNameFormatChoice.SHORT);
@@ -147,7 +152,7 @@ final class ContentInputsTest {
             // What a fresh campaign bakes under, pinned as literals: nothing spotlighted, full
             // names, no uninhabited outline, and the non-allied backdrop already recolouring so the
             // alliances view opens reading as the figure.
-            var inputs = ContentInputs.sampleForView(viewMock);
+            var inputs = ContentInputs.sampleForView(viewMock, MAP_SCOPE);
 
             assertThat(inputs)
                 .isEqualTo(new ContentInputs(
