@@ -24,6 +24,13 @@ enforcePackageLayering {
     forbidImport under: 'kmu.maplayers.base.geometry.render',
                  of: 'kmu.maplayers.base.geometry.output'
     forbidImport under: 'kmu.maplayers.base.geometry.render',
+                 of: 'kmu.maplayers.base.geometry.settings'
+    forbidImport under: 'kmu.maplayers.base.geometry.render',
+                 of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport under: 'kmu.maplayers.base.geometry.settings',
+                 of: 'kmu.maplayers.base.geometry.output'
+    forbidImport under: 'kmu.maplayers.base.geometry.settings',
                  of: 'kmu.maplayers.base.geometry.ui'
 
     forbidImport under: 'kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2',
@@ -62,6 +69,8 @@ enforcePackageLayering {
                  of: 'kmu.maplayers.base.geometry.output'
     forbidImport exactly: 'kmu.maplayers.base.geometry',
                  of: 'kmu.maplayers.base.geometry.render'
+    forbidImport exactly: 'kmu.maplayers.base.geometry',
+                 of: 'kmu.maplayers.base.geometry.settings'
     forbidImport exactly: 'kmu.maplayers.base.geometry',
                  of: 'kmu.maplayers.base.geometry.ui'
 
