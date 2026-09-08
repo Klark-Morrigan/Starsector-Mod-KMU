@@ -10,94 +10,53 @@ and the [mod README](../../../../../../../../README.md) for project context.
 
 ## Index
 
-- [What it does](#what-it-does)
-- [Where it stands](#where-it-stands)
-- [Modality, supplied here](#modality-supplied-here)
-- [What a row says, and what it shows](#what-a-row-says-and-what-it-shows)
-- [The box it all stands in](#the-box-it-all-stands-in)
+- [How the package divides](#how-the-package-divides)
+- [Everything testable is outside the panel](#everything-testable-is-outside-the-panel)
 - [Element, never cell](#element-never-cell)
-- [An element is placed for where it draws](#an-element-is-placed-for-where-it-draws)
 - [What is not here](#what-is-not-here)
 
-## What it does
+## How the package divides
 
-`MapLayerArrangementEditor` is the whole of what the dialog *does* - the rows in bar order with
-hidden tabs among them, since this is the only way one comes back; **Up** and **Down** buttons that
-swap a row with its neighbour, disabled at the ends of their travel; and a toggle that refuses the
-last tab still on the bar, which is the same guard `ArrangedLayers` keeps against a hand-edited
-store, made here so the click is never offered.
+Five types, split along one line: what needs a running game, and what does not.
 
-Every change is recorded at once rather than drafted, the bar behind the dialog being the thing
-arranged - so the one way out says **Apply** rather than Close, and there is no Cancel beside it.
+| Type | Owns |
+| --- | --- |
+| `MapLayerArrangementDialog` | the lifecycle - when it stands up, what it claims, when it comes down |
+| `MapLayerArrangementEditor` | the rows, the three things a press can do to one, and when it refuses |
+| `MapLayerArrangementDialogBody` | the furniture around the column, and the two areas no widget paints |
+| `ArrangementRowWidgets` | one row's name and its three controls |
+| `ArrangementBoxLayout` | every measurement, and the positions derived from them |
 
-## Where it stands
+The reasoning behind each sits in its own class Javadoc; what follows is only what none of them can
+say alone.
 
-`MapLayerArrangementDialog` is the surface: a vanilla `CustomPanelAPI` stood in the core UI's own
-tree by KMLib's `CoreUiOverlayPanels`, with nothing painted into the map's render pass. Every
-published route to a custom dialog hangs off an interaction dialog and the screens this is opened
-from have none, so the core UI tree is what is left - a reach rather than an API, which is why the
-dialog simply does not open where that reach comes up empty.
+`MapLayerArrangementRow` and `ArrangementRowAction` pass between the halves. The action is its own
+type rather than nested in either, since the column puts it on a button and the editor acts on it -
+nesting it would make one of those two the other's owner.
 
-The parent is resolved at each open and never held, the core UI being rebuilt when the player leaves
-the screen. The dialog also closes itself when the map goes off screen: the panel hangs from the core
-UI rather than from the screen it was opened on, so nothing about leaving that screen takes it down.
+## Everything testable is outside the panel
 
-## Modality, supplied here
+A `CustomUIPanelPlugin` exists only inside a panel the game built, over a core UI that exists only
+while the game is running. Anything left inside one can be checked only by opening the dialog and
+clicking, so the package is arranged to leave as little there as possible - and the three things
+pulled out are the three that were each, at some point, the part nothing had verified:
 
-A panel added that way is an ordinary child - nothing dims behind it and nothing stops the screen
-underneath being dispatched to - so the dialog supplies its own modality in three parts: it paints
-its own backdrop, it claims the input its widgets do not want, and it publishes `isDialogRaised()`
-for the map-side gates that stand down under a modal but cannot recognise this one, the game's own
-`CoreUiDialogView` knowing a modal by a member a custom panel does not carry.
+- **`ArrangementDialogEventResponse`** is the claim rule, so the dialog's whole modality is a
+  function of one event rather than a branch inside a render hook.
+- **`MapLayerArrangementEditor.applyRowAction`** is the mapping from a press to what it does. A case
+  wired to the wrong one of the three is silent - the button works, it simply does the other thing.
+- **`ArrangementBoxLayout`** is the arithmetic, because where an element sits and how tall the box
+  stands are questions with answers, and a class that also needs a running game to build a panel can
+  only answer them by being looked at.
 
-`ArrangementDialogEventResponse` is the claim rule, apart from the panel plugin that acts on it
-because a plugin exists only inside a panel the game built. **Only mouse events inside the dialog's
-own box are left alone; everything else is claimed.** That way round rather than "claim everything"
-because the order in which the game hands events to a panel's widgets and to its plugin is the game's
-business: leaving the box's own events untouched is correct whichever way round it is, while claiming
-them first would leave the dialog's buttons dead on a build that dispatches to the plugin first. An
-event something else has already consumed is left alone before anything measures it, six of
-`InputEventAPI`'s accessors throwing once that has happened.
+What is left in `MapLayerArrangementDialog.DialogPanelPlugin` is glue: it reads those answers and
+acts. Its one rule of its own is that a core UI it cannot walk reads as no map, so the dialog comes
+down rather than standing over a screen it can no longer see.
 
-## What a row says, and what it shows
-
-`ArrangementRowWidgets` is one layer's row. **It shows its state rather than saying it**: the box
-carries no word, the line over the column saying what it does once rather than once per row, and a
-layer whose tab is off the bar has its name drawn in the muted shade - so the column answers "what
-have I taken off" at a glance rather than one box at a time.
-
-The muting is read off the row's own state and never off what the editor will allow to change. The
-two part company on exactly one row - the last tab still on the bar, whose box is refused because
-taking it off would leave no way back to this dialog - and that row is on the bar, so it draws
-unmuted.
-
-Words rather than glyphs on the pair that moves a row, matching how every other button in the game's
-UI names what it does, and **no drag**: vanilla furnishes no drag idiom anywhere, so a drag list
-would be a plugin painting and hit-testing a column of its own - the GL pass back in the one place
-this is built to keep it out of.
-
-## The box it all stands in
-
-`MapLayerArrangementDialogBody` is the furniture around the column - the head, the way out, the rule
-around them, and the two areas nothing else paints. The game publishes a rectangle component that
-strokes and none that fills, so the frame is a widget while the screen dim and the box's own surface
-are drawn from the panel's own `renderBelow` hook, in the panel's coordinates and under every widget
-it holds.
-
-`ArrangementBoxLayout` is every measurement and the positions derived from them, kept apart because
-arithmetic is checkable and widget calls are not: where an element sits and how tall the box stands
-for a given number of rows are questions with answers, and asking them of a class that also needs a
-running game to build a panel means they can only be answered by opening the dialog and looking. The
-box is as wide as its parts, so the parts are what is stated and the width is what follows.
-
-Every part of the box is a vanilla element placed by hand rather than one element told to run across,
-because an element lays its contents out top to bottom. A row is therefore elements side by side, and
-the surface they all stand on is one painted rectangle rather than a fill per element, which would
-leave the gaps between them showing the map through.
-
-The body is built whole in its constructor and replaced whole on every change - the rows move, so a
-set of widgets each nudged into a new position would eventually disagree with the order they were
-drawn from.
+The same line explains the seam at the other end. The editor is seeded once and is thereafter its own
+source of truth - re-reading the store between clicks would read back what it just wrote, and
+re-reading the roster would let a mod registering a layer mid-dialog shuffle the row under the
+player's pointer.
 
 ## Element, never cell
 
@@ -106,19 +65,15 @@ shapes one, the edges it is classified by, the hit test that finds one under the
 package borrowed it for the vanilla elements its box is laid out from, which is a table's word for
 something that is not one: the head and the foot are part of no row at all. The engine already names
 them - a `createUIElement` returns an element - so this tree says *element*, and
-`enforcePackageVocabulary` in the build holds it to that.
+`enforcePackageVocabulary` in [`build.gradle`](../../../../../../../../build.gradle) holds it to
+that, with this file exempted so the rule can name the word it forbids.
 
-The rule is declared in [`build.gradle`](../../../../../../../../build.gradle), with this file
-exempted so the rule can name the word it forbids.
-
-## An element is placed for where it draws
-
-The engine sets an element's contents in from its own left edge, so one placed at the box's pad draws
-them further in again - which is why the frame once stood closer to the buttons on the right than to
-the words on the left. That inset is `VANILLA_ELEMENT_CONTENT_INSET`, named once, and both edges are
-taken from it: an element reading from the left goes the pad less the inset, and one reading from the
-right is measured back from the box's far edge rather than accumulated rightward from what stands
-beside it, so the two edges cannot drift apart as a control's width moves.
+The vocabulary matters here beyond tidiness, because an element has two left edges. The engine draws
+an element's contents inset from the element's own edge, so a placement and a drawn position are
+different numbers - which is why the frame once stood closer to the buttons on the right than to the
+words on the left. `ArrangementBoxLayout` names that inset once and takes both of the box's edges
+from it; `resolveElementWidth` is the other half, and its Javadoc records the one case that must not
+use it.
 
 ## What is not here
 

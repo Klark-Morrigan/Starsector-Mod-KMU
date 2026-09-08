@@ -143,14 +143,12 @@ public final class MapLayerArrangementDialog {
     }
 
     // What a press on a row's controls does. The row is named by layer id rather than by position, the
-    // position having moved by the time a second press arrives.
+    // position having moved by the time a second press arrives. Which control means what is the editor's,
+    // leaving this with the half that only a standing dialog has: drawing the result.
     private void applyRowAction(String layerId, ArrangementRowAction action) {
 
-        switch (action) {
-            case MOVE_UP -> editor.moveRowUp(layerId);
-            case MOVE_DOWN -> editor.moveRowDown(layerId);
-            case TOGGLE_SHOWN -> editor.toggleRowHidden(layerId);
-        }
+        editor.applyRowAction(layerId, action);
+
         rebuildBody();
     }
 

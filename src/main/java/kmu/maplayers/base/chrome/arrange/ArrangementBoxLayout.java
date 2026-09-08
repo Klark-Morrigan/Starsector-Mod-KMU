@@ -141,6 +141,26 @@ final class ArrangementBoxLayout {
     }
 
     /**
+     * How wide to build an element holding controls of a stated width.
+     *
+     * <p>Wider than what it holds by the inset the engine draws that at, so the element's stated size
+     * is the room its contents actually occupy. One asked for the bare width holds them with their
+     * last five units hanging outside itself - which nothing clips today, and anything given a
+     * scroller would.
+     *
+     * <p><b>Not for an element holding text.</b> There the width is the wrap width the engine measures
+     * the paragraph against, so widening it would widen the column itself rather than the room around
+     * it - and the label column is one of the parts {@link #BOX_WIDTH} is the sum of.
+     *
+     * @param contentsWidth how wide what the element holds is
+     * @return the width to build the element at
+     */
+    static float resolveElementWidth(float contentsWidth) {
+
+        return contentsWidth + VANILLA_ELEMENT_CONTENT_INSET;
+    }
+
+    /**
      * @return how far the controls element is in from the box's left edge, so the pair of buttons ends a
      *         pad in from the box's right edge - the same pad the row's name begins at
      */
@@ -159,11 +179,15 @@ final class ArrangementBoxLayout {
     }
 
     /**
-     * @param boxHeight how tall this box stands, which turns on how many rows it carries
+     * Asked in row counts like everything else here, rather than in the box height a caller would have
+     * to compute first: the foot stands at the bottom of a box the column's length settles, so a height
+     * no row count produces is not a box this dialog can be in.
+     *
+     * @param rowCount how many layers the column shows
      * @return how far the foot's top is below the box's own top
      */
-    static float resolveFooterTop(float boxHeight) {
+    static float resolveFooterTop(int rowCount) {
 
-        return boxHeight - FOOTER_HEIGHT;
+        return resolveBoxHeight(rowCount) - FOOTER_HEIGHT;
     }
 }

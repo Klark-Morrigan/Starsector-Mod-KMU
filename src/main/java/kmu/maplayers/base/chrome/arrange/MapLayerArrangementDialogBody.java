@@ -81,7 +81,7 @@ final class MapLayerArrangementDialogBody {
         // the rule around the box is added last and rules over the widgets rather than under them.
         addHeader(box);
         addRows(box, rows, new ArrangementRowWidgets(editor, onRowAction));
-        addFooter(box, boxHeight, onClosePressed);
+        addFooter(box, rows.size(), onClosePressed);
         addFrame(box, boxHeight);
 
         this.boxPlacement = dialogPanel.addComponent(box).inMid();
@@ -211,10 +211,10 @@ final class MapLayerArrangementDialogBody {
 
     // The way out, in the box's bottom right corner where the game puts its own dialogs' buttons. The
     // element is as wide as the one button it holds, that button being the whole of the foot.
-    private static void addFooter(CustomPanelAPI box, float boxHeight, Runnable onClosePressed) {
+    private static void addFooter(CustomPanelAPI box, int rowCount, Runnable onClosePressed) {
 
         var footer = box.createUIElement(
-            ArrangementBoxLayout.APPLY_BUTTON_WIDTH,
+            ArrangementBoxLayout.resolveElementWidth(ArrangementBoxLayout.APPLY_BUTTON_WIDTH),
             ArrangementBoxLayout.FOOTER_HEIGHT,
             false);
 
@@ -224,7 +224,7 @@ final class MapLayerArrangementDialogBody {
         box.addUIElement(footer)
             .inTL(
                 ArrangementBoxLayout.resolveFooterLeft(),
-                ArrangementBoxLayout.resolveFooterTop(boxHeight));
+                ArrangementBoxLayout.resolveFooterTop(rowCount));
     }
 
     // The head's own element, standing so its title reads from the same left edge a row's name does.

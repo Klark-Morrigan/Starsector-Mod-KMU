@@ -249,6 +249,58 @@ final class MapLayerArrangementEditorTest {
         }
     }
 
+    @Nested
+    class ApplyRowAction {
+
+        @Test
+        void applyRowActionMovesTheRowUpForAPressOnUp() {
+            // Each case is pinned against the direction the button is labelled for, because two cases
+            // transposed compile, run, and move the row the other way with nothing to say so.
+            var editor = buildEditor();
+
+            editor.applyRowAction("beta", ArrangementRowAction.MOVE_UP);
+
+            assertThat(rowIdsOf(editor))
+                .containsExactly("beta", "alpha", "gamma");
+        }
+
+        @Test
+        void applyRowActionMovesTheRowDownForAPressOnDown() {
+
+            var editor = buildEditor();
+
+            editor.applyRowAction("beta", ArrangementRowAction.MOVE_DOWN);
+
+            assertThat(rowIdsOf(editor))
+                .containsExactly("alpha", "gamma", "beta");
+        }
+
+        @Test
+        void applyRowActionTakesTheTabOffTheBarForAPressOnTheBox() {
+
+            var editor = buildEditor();
+
+            editor.applyRowAction("beta", ArrangementRowAction.TOGGLE_SHOWN);
+
+            assertThat(arrangementSelectionFake.getRecordedArrangement().hiddenLayerIds())
+                .containsExactly("beta");
+        }
+
+        @Test
+        void applyRowActionLeavesTheOrderAloneForARefusedPress() {
+            // A press that the control which raised it was disabled for, which is reachable by holding
+            // a button from a column that has since been rebuilt.
+            var editor = buildEditor();
+
+            editor.applyRowAction("alpha", ArrangementRowAction.MOVE_UP);
+
+            assertThat(rowIdsOf(editor))
+                .containsExactly("alpha", "beta", "gamma");
+            assertThat(arrangementSelectionFake.getRecordedArrangement())
+                .isNull();
+        }
+    }
+
     private MapLayerArrangementEditor buildEditor() {
         return new MapLayerArrangementEditor(arrangementSelectionFake, rosterLayers);
     }

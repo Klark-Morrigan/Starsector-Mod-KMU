@@ -105,6 +105,30 @@ final class ArrangementBoxLayoutTest {
     }
 
     @Nested
+    class ResolveElementWidth {
+
+        @Test
+        void resolveElementWidthHoldsItsContentsInsideTheElementsOwnEdges() {
+            // 140 of controls, which the engine draws 5 in: an element built at the bare 140 ends five
+            // units short of what it is holding.
+            assertThat(ArrangementBoxLayout.resolveElementWidth(ArrangementBoxLayout.CONTROLS_WIDTH))
+                .isEqualTo(145f);
+        }
+
+        @Test
+        void resolveElementWidthLeavesTheContentsEndingWhereTheyWerePlacedTo() {
+            // The width is room, not position: a trailing element widened for the inset still ends its
+            // contents a pad in from the box's right edge.
+            var elementLeft = ArrangementBoxLayout.resolveTrailingElementLeft(60f);
+            var elementRightEdge =
+                elementLeft + ArrangementBoxLayout.resolveElementWidth(60f);
+
+            assertThat(ArrangementBoxLayout.BOX_WIDTH - elementRightEdge)
+                .isEqualTo(12f);
+        }
+    }
+
+    @Nested
     class ResolveControlsElementLeft {
 
         @Test
@@ -144,21 +168,20 @@ final class ArrangementBoxLayoutTest {
     class ResolveFooterTop {
 
         @Test
-        void resolveFooterTopStandsTheFootAtTheBottomOfWhateverBoxItIsIn() {
-            // A 34-tall foot in a 300-tall box.
-            assertThat(ArrangementBoxLayout.resolveFooterTop(300f))
-                .isEqualTo(266f);
+        void resolveFooterTopStandsTheFootAtTheBottomOfTheBoxTheColumnMakes() {
+            // Three rows make a 226-tall box, and the 34-tall foot reaches its lower edge.
+            assertThat(ArrangementBoxLayout.resolveFooterTop(3))
+                .isEqualTo(192f);
         }
 
         @Test
         void resolveFooterTopLeavesThePadBetweenTheLastRowAndTheFoot() {
             // The pad at the box's bottom is what parts the column from the way out, the foot itself
             // reaching the box's lower edge.
-            var boxHeight = ArrangementBoxLayout.resolveBoxHeight(3);
             var lastRowBottom =
                 ArrangementBoxLayout.resolveRowTop(2) + ArrangementBoxLayout.ROW_HEIGHT;
 
-            assertThat(ArrangementBoxLayout.resolveFooterTop(boxHeight) - lastRowBottom)
+            assertThat(ArrangementBoxLayout.resolveFooterTop(3) - lastRowBottom)
                 .isEqualTo(12f);
         }
     }

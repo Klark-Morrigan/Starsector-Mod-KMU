@@ -78,7 +78,7 @@ public final class MapLayerArrangementEditor {
      * @return whether this row has anywhere above it to go
      */
     public boolean canMoveRowUp(String layerId) {
-        return indexOfRow(layerId) > 0;
+        return canMoveRowBy(indexOfRow(layerId), ONE_PLACE_UP);
     }
 
     /**
@@ -86,10 +86,7 @@ public final class MapLayerArrangementEditor {
      * @return whether this row has anywhere below it to go
      */
     public boolean canMoveRowDown(String layerId) {
-
-        var rowIndex = indexOfRow(layerId);
-
-        return rowIndex != NO_ROW && rowIndex < rows.size() - 1;
+        return canMoveRowBy(indexOfRow(layerId), ONE_PLACE_DOWN);
     }
 
     /**
@@ -145,6 +142,25 @@ public final class MapLayerArrangementEditor {
         recordArrangement();
     }
 
+    /**
+     * Applies what a press on one of a row's controls means.
+     *
+     * <p>The mapping lives here rather than in the dialog that receives the press, so it can be read
+     * without a running game: a press arrives through a vanilla panel's delegate, and a case wired to
+     * the wrong one of these is silent - the button works, it simply does the other thing.
+     *
+     * @param layerId the row's layer id
+     * @param action  what was pressed
+     */
+    void applyRowAction(String layerId, ArrangementRowAction action) {
+
+        switch (action) {
+            case MOVE_UP -> moveRowUp(layerId);
+            case MOVE_DOWN -> moveRowDown(layerId);
+            case TOGGLE_SHOWN -> toggleRowHidden(layerId);
+        }
+    }
+
     // The seed: every registered layer in the player's order, each row carrying the label its tab reads
     // and whether that tab is currently off the bar. Hidden layers are ordered with the rest, the stored
     // order being about where a tab stands rather than about whether it is standing.
@@ -170,16 +186,29 @@ public final class MapLayerArrangementEditor {
     private void moveRow(String layerId, int offset) {
 
         var rowIndex = indexOfRow(layerId);
-        var targetIndex = rowIndex + offset;
 
-        if (rowIndex == NO_ROW || targetIndex < 0 || targetIndex >= rows.size()) {
+        if (!canMoveRowBy(rowIndex, offset)) {
             return;
         }
+        var targetIndex = rowIndex + offset;
 
         var movedRow = rows.set(targetIndex, rows.get(rowIndex));
         rows.set(rowIndex, movedRow);
 
         recordArrangement();
+    }
+
+    // The move rule itself, over a row its caller has already found. Shared by the question and the act
+    // for the reason the toggle's is: a button disabled by one rule and a press refused by another are
+    // two statements of one bound, and they drift.
+    private boolean canMoveRowBy(int rowIndex, int offset) {
+
+        if (rowIndex == NO_ROW) {
+            return false;
+        }
+        var targetIndex = rowIndex + offset;
+
+        return targetIndex >= 0 && targetIndex < rows.size();
     }
 
     // Where this layer's row stands, or NO_ROW for an id the dialog is not showing - which a caller
