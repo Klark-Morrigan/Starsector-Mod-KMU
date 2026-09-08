@@ -127,22 +127,29 @@ public final class SidebarStyles {
     }
 
     /**
-     * The look the band's own button wears - a raised button on every screen, whatever chrome the tabs
-     * beside it are drawn in.
+     * The look the band's own button wears: the host's own tab style, so the button stands in the same
+     * chrome and colours as the tabs beside it, with one thing changed - its box is as wide as the image
+     * it carries rather than as wide as a layer name.
      *
-     * <p>Named apart from {@link #buildRaisedButtonTabStyle} though it answers the same value, because the
-     * two are chosen for different reasons and only one of them would follow a screen: that one is the
-     * intel visor's convention, taken because the row of map toggles beside it is drawn that way. This one
-     * is not about a screen at all. The button is not a tab - it selects nothing and is never the lit one -
-     * so drawing it as one invites a press that is expected to switch something, and the sector map's
-     * fixed-width tab box would stand it in a box several times the width of its word. A button's chrome
-     * is snapped to its own label, so the control ends where its word does.
+     * <p>The width is the only thing that can differ. A tab row states a box wide enough for the longest
+     * label it will ever hold, which for the sector map is a fixed 130; a button showing a mark instead of
+     * a word would stand in that box several times over. So the box is rebuilt at the image's own width -
+     * the tab height scaled by the image's proportions, which is what "shrunk to fit the band" comes to -
+     * while its height and the channel to its neighbour stay the row's, so the button sits level with the
+     * tabs and is parted from them exactly as they are parted from each other.
      *
-     * @param headerBandHeight the band the button stands in, which is the panel's rather than the button's
+     * @param hostStyle   the tab style the panel's own row is drawn in
+     * @param iconAspect  the image's width over its height, which the tab height is scaled by
      * @return the tab style the band button is measured and painted at
      */
-    public static TabStyle buildBandButtonTabStyle(float headerBandHeight) {
-        return buildRaisedButtonTabStyle(headerBandHeight);
+    public static TabStyle buildBandButtonTabStyle(TabStyle hostStyle, float iconAspect) {
+
+        var hostBox = hostStyle.tabBox();
+
+        return hostStyle.withTabBox(new TabBox(
+            hostStyle.resolveTabHeight() * iconAspect,
+            hostBox.height(),
+            hostBox.neighbourGap()));
     }
 
     /**

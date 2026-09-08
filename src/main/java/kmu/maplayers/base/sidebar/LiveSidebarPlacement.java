@@ -2,6 +2,7 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
+import kmlib.starsector.graphics.StarsectorSprites;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
@@ -9,6 +10,7 @@ import kmlib.starsector.ui.font.LineWidthMeasurer;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.screen.VanillaScreen;
+import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.PanelChrome;
 import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
@@ -24,11 +26,11 @@ import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapLayerSettings;
-import kmu.util.KmuStrings;
 import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
 
+import java.awt.Color;
 import java.util.List;
 import java.util.Set;
 
@@ -61,6 +63,21 @@ import java.util.Set;
  * indexing - the pick, the lit tab, the shortcut walk - is left exactly as it was.
  */
 public final class LiveSidebarPlacement {
+
+    // The mark the bar's opener carries: the game's own storage crate, which reads as "the things you
+    // keep, arranged" and needs no bundle entry to say so in every language the game ships in.
+    private static final String OPENER_ICON_PATH = "graphics/factions/storage.png";
+
+    // The image is drawn in its own colours - it was authored as a picture rather than as a glyph a
+    // caller shades.
+    private static final Color AS_AUTHORED_TINT = null;
+
+    // What the opener says in words, which is nothing: the picture is the whole of it.
+    private static final String NO_LABEL = "";
+
+    // What an image that cannot be measured is assumed to be, so a missing asset costs the drawing and
+    // not the control.
+    private static final float SQUARE_ICON_ASPECT = 1f;
 
     private LiveSidebarPlacement() {
     }
@@ -160,21 +177,21 @@ public final class LiveSidebarPlacement {
     // layer everywhere it is read - the click that selects, the lit tab, the shortcut walk - and a cell in
     // it that is not a layer would move all three one along.
     //
-    // Its words are the framework's own chrome rather than a layer's, so they are read from KMU's bundle
-    // here, the same way the framework's settings sit on KMU's tabs. Nothing lit: it is a button standing in
-    // a row of tabs, not a tab, so no pick of the player's can be the one showing.
+    // It shows a mark rather than a word: the bar it arranges is right beside it, so a label would only
+    // repeat what the picture already says, and a word wide enough to read would be wider than the control
+    // needs to be. Its label is therefore empty and its width comes from the image.
     //
-    // Drawn in the band button's own look rather than the panel's, which is what makes it read as a button
-    // and lets it end where its word does - the sector map's tabs stand in a fixed box wide enough for a
-    // layer name, and a button sized to that would be mostly empty.
-    static BandButtonSpec buildBarOpenerSpec(float headerBandHeight) {
+    // Nothing lit: it is a button standing in a row of tabs, not a tab, so no pick of the player's can be
+    // the one showing. It wears the row's own look otherwise, so it reads as part of the strip it stands on.
+    static BandButtonSpec buildBarOpenerSpec(TabStyle hostStyle) {
         return new BandButtonSpec(
             new ControlSpec.Tabs(
-                List.of(KmuStrings.get(KmuStrings.MAP_LAYER_ARRANGE_OPEN)),
+                List.of(NO_LABEL),
                 List.of(),
                 ControlSpec.NO_SELECTION,
                 cell -> MapLayerArrangementDialog.INSTANCE.openDialog()),
-            SidebarStyles.buildBandButtonTabStyle(headerBandHeight));
+            SidebarStyles.buildBandButtonTabStyle(hostStyle, resolveOpenerIconAspect()),
+            new ImageSpan(OPENER_ICON_PATH, AS_AUTHORED_TINT));
     }
 
     // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
@@ -222,7 +239,7 @@ public final class LiveSidebarPlacement {
             buildChrome(panel.borderedEdges()),
             tabStyle,
             buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
-            buildBarOpenerSpec(tabStyle.headerBandHeight()),
+            buildBarOpenerSpec(tabStyle),
             buildBodyControls(activeLayer, screenPicks),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch
@@ -275,6 +292,22 @@ public final class LiveSidebarPlacement {
 
         var index = layers.indexOf(activeLayer);
         return index < 0 ? ControlSpec.NO_SELECTION : index;
+    }
+
+    // How wide the opener's image stands per unit of height. Read from the sprite rather than written
+    // down, so the button fits whatever the asset actually is and nothing has to be corrected here when
+    // the game ships a differently-proportioned one.
+    //
+    // A square is the fallback for an asset that will not resolve, which leaves a button the size of one
+    // tab height with nothing drawn in it - a control the player can still press, where a zero width would
+    // be a control that had silently left the bar.
+    private static float resolveOpenerIconAspect() {
+
+        var sprite = StarsectorSprites.loadSprite(OPENER_ICON_PATH);
+
+        return sprite == null || sprite.getHeight() <= 0f
+            ? SQUARE_ICON_ASPECT
+            : sprite.getWidth() / sprite.getHeight();
     }
 
     // The display name of the key a layer answers to, or null when it has none: an unbound keycode,

@@ -199,18 +199,20 @@ is read - the click that selects, the lit tab, and `BaseSidebarHost.handleKeyPre
 so a cell in it that is not a layer would move all three one along. Outside it, the row's indexing is
 untouched and a press on the opener switches nothing.
 
-It is laid and hit through the same header call the tabs are, but **not in the tabs' look**: it carries a
-`TabStyle` of its own, `SidebarStyles.buildBandButtonTabStyle`, which is the raised-button chrome on both
-screens. Two things follow, and both are the point. It reads as the button it is rather than as a tab that
-selects something - it is never the lit one and switches nothing, so drawing it as a tab invites a press
-that expects a switch. And it snaps to its own word: the sector map's tabs stand in a fixed box wide enough
-for a layer name, and a button inheriting that box would sit in one several times the width of "Edit". The
-one part of the look it does not choose is the band height, which the layout pins to the panel's - the band
-is the room the panel was given, not the button's to pick.
+It is laid and hit through the same header call the tabs are, and drawn in **the host's own tab style**, so
+it stands in the chrome and colours of the strip it sits on rather than reading as furniture from another
+screen. `SidebarStyles.buildBandButtonTabStyle` changes exactly one thing about that style: the box. A tab
+row states a box wide enough for the longest layer name it will ever carry - a fixed 130 on the sector map -
+and the opener is as wide as the one thing it shows, so its box is rebuilt at the image's own width while
+its height and the channel to its neighbour stay the row's. The band height is not its to choose either;
+the layout pins it to the panel's, the band being the room the panel was given.
 
-On the intel visor, whose tabs are already raised buttons, that lands the opener in the same chrome as its
-neighbours; on the map screen it stands as a button beside a seamless strip. Either way there is no screen
-test in the renderer - the host states a band height and the button's look follows from what it is.
+**It shows a mark, not a word** - the game's own `graphics/factions/storage.png`, scaled to the tab height
+with the box following the resulting width. The bar it arranges is right beside it, so a label would only
+repeat what the picture says, and it needs no bundle entry to say it in every language the game ships in.
+The proportions are read off the sprite rather than written down, so a differently-shaped asset needs no
+correction here; an asset that will not resolve falls back to a square, leaving a pressable control with
+nothing drawn in it rather than one that has silently left the bar.
 
 It rides in the drawn band, so the fold wipes it with the tabs, `containsPoint` claims it from the map
 underneath, and `computeOuterBound` reaches it.
