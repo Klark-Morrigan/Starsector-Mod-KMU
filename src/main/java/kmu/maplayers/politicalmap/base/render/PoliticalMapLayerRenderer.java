@@ -2,9 +2,6 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.ProfileOrigin;
-import kmlib.profiling.ProfileSection;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
@@ -16,6 +13,7 @@ import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.render.MapOverlayBand;
@@ -63,12 +61,10 @@ import java.util.function.Function;
  * frame, and the dearest of them walks the live widget tree, so a pass asks only what its own
  * transform can answer.
  *
- * <p>Each of those beats is also where a frame's profiling rows begin. Every beat opens a root
- * under this sector's origin, so a capture taken across two games says which one a row was measured
- * in, and this layer's own row is opened inside that root around the work - which is what puts every
- * section the work opens beneath the beat it ran in rather than beside it. The stand-down reads sit
- * inside the root and outside the layer's row, so a frame with nothing to draw reports what standing
- * down cost and opens nothing for a layer that did not run.
+ * <p>Each of those beats is also where a frame's profiling rows begin, opened through the
+ * {@link MapFrameBeats} this renderer was made with. The stand-down reads sit between a beat and
+ * the layer's row inside it, so a frame with nothing to draw still reports what standing down cost
+ * and opens no row for a layer that never ran.
  */
 public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
@@ -86,12 +82,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // game would leave the cell this sector had lit standing while clearing another sector's.
     private final MapHoverState hoverState;
 
-    // Which game this renderer's rows are grouped under, and the row its own work sits on inside
-    // each beat. Both are resolved once and held because they are opened several times a frame:
-    // the origin is composed from facts that do not change while a sector is loaded, and the layer
-    // section is a name concatenated from an id that never changes at all.
-    private final ProfileOrigin profilingOrigin;
-    private final ProfileSection layerSection;
+    // Where this frame's profiling rows are opened - this sector's group, and this layer's row
+    // inside each beat. Composed once and held, both halves being answers that do not change while
+    // a sector is loaded.
+    private final MapFrameBeats frameBeats;
 
     // Whether anything is drawn over the map where the cursor rests. Handed in rather than composed
     // here, so this layer neither names the things that can cover a map nor holds a set another
@@ -144,15 +138,13 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             MapHoverState hoverState,
             Function<MapHoverState, MapHoverPublisher> hoverPublisherSource,
             PoliticalMapPreviewHighlightRenderer previewHighlightRenderer,
-            ProfileOrigin profilingOrigin,
-            ProfileSection layerSection) {
+            MapFrameBeats frameBeats) {
 
         this.cache = cache;
         this.mapCoverReader = mapCoverReader;
         this.hoverState = hoverState;
         this.hoverPublisherSource = hoverPublisherSource;
-        this.profilingOrigin = profilingOrigin;
-        this.layerSection = layerSection;
+        this.frameBeats = frameBeats;
         this.overlayRenderer =
             new PoliticalMapOverlayRenderer(hoverState, previewHighlightRenderer);
     }
@@ -181,8 +173,9 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             installation.resolveHoverState(),
             PoliticalMapLayerRenderer::buildLiveHoverPublisher,
             new PoliticalMapPreviewHighlightRenderer(installation),
-            installation.resolveProfilingOrigin(),
-            MapFrameSections.resolveLayerSection(layerId));
+            new MapFrameBeats(
+                installation.resolveProfilingOrigin(),
+                MapFrameSections.resolveLayerSection(layerId)));
     }
 
     /**
@@ -199,9 +192,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     @Override
     public void prepareFrame(float factor) {
-        var profiler = ActiveProfiler.resolveProfiler();
-
-        try (var beatScope = profiler.openRoot(profilingOrigin, MapFrameSections.PREPARE)) {
+        try (var beatScope = frameBeats.openBeat(MapFrameSections.PREPARE)) {
             // Stands down when no political-map view is active - the tab is open with every view
             // deselected. Gating the refresh on one view read keeps a dark overlay near-free per
             // frame, and reading the view - not a named faction gate - is what lets any registered
@@ -213,13 +204,13 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
                 isHoverWantedThisFrame = false;
                 return;
             }
-            try (var layerScope = profiler.open(layerSection)) {
+            try (var layerScope = frameBeats.openLayerRow()) {
                 iconOrderTrace.traceWhenChanged();
                 widgetsUnderCursorTrace.traceWhenChanged();
                 announceArrivalOnTheFrameJustClosed();
                 decideWhetherTheHoverIsWantedThisFrame();
 
-                try (var refreshScope = profiler.open(MapFrameSections.REFRESH)) {
+                try (var refreshScope = frameBeats.openStep(MapFrameSections.REFRESH)) {
                     cache.refresh(view);
                 }
             }
@@ -228,14 +219,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     @Override
     public void renderOnMap(float factor, float alphaMult, MapOverlayBand band) {
-        var profiler = ActiveProfiler.resolveProfiler();
-
-        // Per band rather than per frame: each band is a pass of its own from a surface of its own,
-        // and what the two cost is the question the split exists to answer.
-        try (var beatScope = profiler.openRoot(
-                profilingOrigin,
-                MapFrameSections.resolveRenderSection(band))) {
-
+        try (var beatScope = frameBeats.openBeat(MapFrameSections.resolveRenderSection(band))) {
             // The same view read the preparation above stands down on, repeated rather than
             // remembered: it is a registry lookup, and a field holding the frame's answer would be
             // render state on a renderer that deliberately holds none.
@@ -243,7 +227,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             if (view == null) {
                 return;
             }
-            try (var layerScope = profiler.open(layerSection)) {
+            try (var layerScope = frameBeats.openLayerRow()) {
                 overlayRenderer.renderOnMap(cache, factor, alphaMult, band);
             }
         }
@@ -251,9 +235,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     @Override
     public Optional<MapHoverTooltip> resolveHoverTooltip() {
-        var profiler = ActiveProfiler.resolveProfiler();
-
-        try (var beatScope = profiler.openRoot(profilingOrigin, MapFrameSections.TOOLTIP)) {
+        try (var beatScope = frameBeats.openBeat(MapFrameSections.TOOLTIP)) {
             // This layer's own tooltip switch, off means no box from it - and the framework draws
             // whatever the other layers offer regardless, which is the point of scoping it here
             // rather than at the dispatcher.
@@ -268,7 +250,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             if (view == null) {
                 return Optional.empty();
             }
-            try (var layerScope = profiler.open(layerSection)) {
+            try (var layerScope = frameBeats.openLayerRow()) {
                 return view.resolveHoverTooltip();
             }
         }
@@ -287,16 +269,14 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      */
     @Override
     public void publishHoverForPass(float factor) {
-        var profiler = ActiveProfiler.resolveProfiler();
-
-        try (var beatScope = profiler.openRoot(profilingOrigin, MapFrameSections.HOVER_PUBLISH)) {
+        try (var beatScope = frameBeats.openBeat(MapFrameSections.HOVER_PUBLISH)) {
             if (!isHoverWantedThisFrame) {
                 return;
             }
             if (hoverPublisher == null) {
                 hoverPublisher = hoverPublisherSource.apply(hoverState);
             }
-            try (var layerScope = profiler.open(layerSection)) {
+            try (var layerScope = frameBeats.openLayerRow()) {
                 // The cursor read sits between the frame's refresh and this pass's draw: after the
                 // refresh, so it tests against the shapes the frame actually paints, and before the
                 // draw, so the highlight layers have an answer when they emit. It is the one point

@@ -14,6 +14,7 @@ import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
@@ -199,9 +200,7 @@ final class PoliticalMapLayerRendererTest {
         void prepareFrameMeasuresTheCacheRefreshInsideThisLayersRowOfItsOwnBeat() {
             // The whole shape of a prepared frame's capture, read in one case because it is one
             // arrangement: the beat is a root of this sector, the layer's row is what the beat
-            // opens around the work, and the refresh sits inside that row rather than beside it.
-            // A refresh hung off a root of its own would leave the preparation's total excluding
-            // the dearest thing it does, which is the one number this beat exists to report.
+            // opens around the work, and the refresh sits inside that row.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
                     var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
@@ -279,9 +278,7 @@ final class PoliticalMapLayerRendererTest {
         @ParameterizedTest
         @EnumSource(MapOverlayBand.class)
         void renderOnMapMeasuresEachBandAsASeparateRootOfThisSector(MapOverlayBand band) {
-            // Each band is a pass of its own from a surface of its own, so each gets a root of its
-            // own: one row averaging the two would describe neither, and which of them a frame is
-            // spending its paint in is the question the split exists to answer. Driven on the
+            // Each band is a pass of its own, so each gets a root of its own. Driven on the
             // stand-down path because that is the one this suite can reach without GL - what is
             // pinned here is the naming and the root, the layer's row inside a beat being pinned
             // where a beat can be driven through.
@@ -405,6 +402,37 @@ final class PoliticalMapLayerRendererTest {
                     .isEqualTo(MapFrameSections.TOOLTIP);
                 assertThat(readSectionsOfChildrenOf(beat))
                     .containsExactly(LAYER_SECTION);
+            }
+        }
+
+        @Test
+        void resolveHoverTooltipMeasuresItsBeatBesideThePreparationsRatherThanInsideIt() {
+            // Two beats of one frame are two roots, in the order they ran. They are separate calls
+            // from separate passes with nothing bracketing them, so a beat opened as a child would
+            // report the box as part of what the preparation cost - and every beat after the first
+            // would disappear into whichever one happened to run first.
+            var viewMock = mock(PoliticalMapView.class);
+
+            try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
+                    var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
+                    var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
+
+                stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
+
+                viewRegistryMock
+                    .when(PoliticalMapViewRegistry::getActiveView)
+                    .thenReturn(viewMock);
+
+                var renderer = buildRenderer(NOT_COVERING_THE_MAP);
+
+                renderer.prepareFrame(FACTOR);
+                renderer.resolveHoverTooltip();
+
+                assertThat(readRootsOfThisSector())
+                    .extracting(ProfileNode::getSection)
+                    .containsExactly(MapFrameSections.PREPARE, MapFrameSections.TOOLTIP);
             }
         }
     }
@@ -630,25 +658,30 @@ final class PoliticalMapLayerRendererTest {
                 return hoverPublisherMock;
             },
             new PoliticalMapPreviewHighlightRenderer(installation),
-            SECTOR_ORIGIN,
-            LAYER_SECTION);
+            new MapFrameBeats(SECTOR_ORIGIN, LAYER_SECTION));
     }
 
-    // The one beat the case just drove, taken from this sector's group of the capture. Asserted to
-    // be the only root rather than searched for, so a beat opened where none was meant to be is a
-    // failure here rather than a row nobody looked at.
+    // The one beat the case just drove, asserted to be the only root rather than searched for, so a
+    // beat opened where none was meant to be is a failure here rather than a row nobody looked at.
     private ProfileNode readOnlyRootOfThisSector() {
 
-        var rootsOfThisSector = profiler.snapshot().stream()
+        var roots = readRootsOfThisSector();
+
+        assertThat(roots)
+            .hasSize(1);
+
+        return roots.get(0);
+    }
+
+    // This sector's group of the capture, empty when nothing was opened under it - which is itself
+    // a failure worth reading as one, since a beat that named another origin would otherwise pass
+    // as a beat that opened nothing.
+    private List<ProfileNode> readRootsOfThisSector() {
+        return profiler.snapshot().stream()
             .filter(originTree -> originTree.getOrigin() == SECTOR_ORIGIN)
             .map(ProfileOriginTree::getRoots)
             .findFirst()
             .orElse(List.of());
-
-        assertThat(rootsOfThisSector)
-            .hasSize(1);
-
-        return rootsOfThisSector.get(0);
     }
 
     // What a row opened inside another, so a case states the shape it expects as sections rather

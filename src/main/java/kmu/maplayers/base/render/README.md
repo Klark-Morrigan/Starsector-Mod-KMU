@@ -158,6 +158,9 @@ pass, `mapLayer.render.beneathNebulae` / `mapLayer.render.aboveNebulae` per band
 it runs under from one place and a reader matching a name in a report finds the point in the
 sequence it belongs to.
 
+`MapFrameBeats` is what opens them, held by whatever sequences the frame - the renderer today, the
+framework once the roster takes foreign layers - so the sequence names a beat and nothing else.
+
 Each beat opens a **root** under the sector's profiling origin, which
 [the installed machinery](../installation/README.md) resolves once per sector. Roots rather than one
 tree per frame because the beats are separate calls from separate passes with nothing bracketing
