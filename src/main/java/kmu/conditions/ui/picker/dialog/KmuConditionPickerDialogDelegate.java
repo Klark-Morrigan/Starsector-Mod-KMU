@@ -3,11 +3,12 @@ package kmu.conditions.ui.picker.dialog;
 import com.fs.starfarer.api.campaign.CustomDialogDelegate;
 import com.fs.starfarer.api.campaign.CustomUIPanelPlugin;
 import com.fs.starfarer.api.input.InputEventAPI;
-import com.fs.starfarer.api.ui.ButtonAPI;
 import com.fs.starfarer.api.ui.CustomPanelAPI;
 import com.fs.starfarer.api.ui.PositionAPI;
 import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
+
+import kmlib.starsector.ui.buttons.VanillaActionIds;
 
 import kmu.conditions.domain.KmuConditionAddResult;
 import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
@@ -127,21 +128,15 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         updateRenderedState(result);
     }
 
+    // Where the id sits among the two objects a vanilla action delegate is handed is a fact about the
+    // engine's widgets rather than about this picker, so the search lives in KMLib beside the rest of what
+    // is known about a button the game built. Wrapped here because this end already answers in Optional.
     static Optional<KmuConditionPickerAction> resolveActionFromUiEvent(Object buttonId, Object data) {
-        var directAction = asAction(buttonId);
-        if (directAction.isPresent()) {
-            return directAction;
-        }
 
-        var dataAction = asAction(data);
-        if (dataAction.isPresent()) {
-            return dataAction;
-        }
-
-        if (buttonId instanceof ButtonAPI) {
-            return asAction(((ButtonAPI) buttonId).getCustomData());
-        }
-        return Optional.empty();
+        return Optional.ofNullable(VanillaActionIds.resolveActionId(
+            buttonId,
+            data,
+            KmuConditionPickerAction.class));
     }
 
     private void refreshBody() {
@@ -217,13 +212,6 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         }
         renderedCustomComponents.clear();
         renderResult = null;
-    }
-
-    private static Optional<KmuConditionPickerAction> asAction(Object value) {
-        if (value instanceof KmuConditionPickerAction) {
-            return Optional.of((KmuConditionPickerAction) value);
-        }
-        return Optional.empty();
     }
 
     private final class ActionPanelPlugin implements CustomUIPanelPlugin {
