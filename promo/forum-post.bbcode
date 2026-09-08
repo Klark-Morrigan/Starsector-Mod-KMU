@@ -1,0 +1,132 @@
+## Title
+
+[0.98a] [Pre-release] Political Map - Sector Map Layers
+
+## Body
+
+[center]
+[img height=250][/img]
+
+[color=maroon][size=30pt][b]Political Map[/b][/size][/color]
+as the headline feature of [color=maroon][size=12pt][b]Sector Map Layers[/b][/size][/color]
+
+[color=red][i]This is the [size=12pt][b]pre-release[/b][/size] stage intended for public testing and feedback collection.
+You can try this mod early and share your experiences, so I can improve this mod.[/i][/color]
+[hr]
+Are you struggling to [b]keep track of faction presence and growth[/b]?
+Do you want to know [b]which systems are claimed and by who[/b] before you even take the trip there?
+Do you want to [b]paint the map[/b] with your conquests?
+Or do you just want to [b]see all that border gore[/b] factions in your mod list produce?
+[hr]
+[size=18pt][b][url=https://github.com/Klark-Morrigan/Starsector-Mod-KMU/releases]Download[/url][/b][/size]
+the latest release of [color=maroon][b]KMU[/b][/color] which comes with [color=maroon][b]KMLib[/b][/color] bundled in.
+This mod requires [url=https://fractalsoftworks.com/forum/index.php?topic=5444.0][b]LazyLib[/b][/url], [b][url=https://fractalsoftworks.com/forum/index.php?topic=25658.0]LunaLib[/url][/b], and [url=https://github.com/MagicLibStarsector/MagicLib/releases/]1.5.8-dev05 or newer[/url] of [url=https://fractalsoftworks.com/forum/index.php?topic=25868.0][b]MagicLib[/b][/url].
+[hr]
+It's [b][color=green]safe[/color] to install mid-run[/b],
+and there's a short [b][color=green]uninstall procedure[/color][/b] you will need to follow if you decide to keep your save after uninstalling the mod.
+[/center]
+[hr]
+[center]
+This mod is made compatible with [b][url=https://fractalsoftworks.com/forum/index.php?topic=9175.0]Nexerelin[/url][/b], [b][url=https://fractalsoftworks.com/forum/index.php?topic=33870.0]Fast Rendering[/url][/b], [b][url=https://fractalsoftworks.com/forum/index.php?topic=26260.0]Random Assortment of Things[/url][/b].
+[/center]
+[hr]
+[color=maroon][b]Sector Map Layers[/b][/color] is an overlay for the map screen [b](Tab, Q)[/b], the intel screen [b](E, 1)[/b], the minimap in the bottom right corner of the screen if you have [b]Random Assortment of Things[/b] installed. Map widgets mods add elsewhere will show the layers, but will will lack interactivity without a compatibility patch.
+
+[spoiler=How to access map layers:]
+[color=maroon][b]KMU[/b][/color] comes with [color=maroon][b]Sector Map Layers[/b][/color] feature [color=green]turned on by default[/color]. After loading a save or starting a new game, when you open the [b]map screen[/b] or the [b]intel screen[/b], you'll see a new [b]Map layers[/b] button among map filter buttons. Clicking that button or pressing [b](M)[/b] enables the map layer overlay and its sidebar.
+[/spoiler]
+
+The main control surface of map layers is the collapsible [b]sidebar[/b] that lists all available layers and related knobs and toggles.
+
+The only available layer right now is the [color=maroon][b]Political Map[/b][/color] [b](P)[/b].
+[list]
+[li]Focuses on [b]populated colonies[/b] and their affiliation.[/li]
+[li]Any given system can be painted by only a single faction, so each system draws a [b]presence ribbon[/b] hugging its border that represents each populated colony with the color of the faction holding them.[/li]
+[li]Expandable [b]system tooltips[/b] provide detailed information on how each market affects the balance of power.[/li]
+[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. In the domination mode ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color] views) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems. On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.[/li]
+[/list]
+The political map comes with 3 views:
+[list]
+[li][color=maroon][b]Factions[/b][/color] - paints faction territory based on a custom [b]domination algorithm[/b] (highly customisable in settings) that weighs markets sizes, stability, whether a market is hidden, presence of an orbital station (or if a station is militarised), and the number of patrol fleets generated (by their sizes).[/li]
+[li][color=maroon][b]Alliances[/b][/color] (only visible with [b]Nexerelin[/b] installed) - same as [color=maroon][b]Factions[/b][/color] but allied factions stand as a single political entity with their holdings combined.[/li]
+[li][color=maroon][b]Claims[/b][/color] - paints faction territory based on the vanilla [b]system claim[/b] mechanic - dynamic or forced. [b]Forced claims[/b] are set via sector memory and are the highest authority. [b]Unless a claim is forced, system claim is resolved dynamically[/b] - the single biggest market (that participates in the economy) wins, boosted by the presence of same-faction markets (of any kind) and any military industry constructed. [color=red]The player faction and non-territorial factions cannot lay claims dynamically.[/color] If you filter by a non-territorial faction, unclaimed systems with their presence will be spotlit.[/li]
+[/list]
+
+To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] system:
+[list]
+[li][b]Hidden systems[/b] (with no hyperspace anchor) are not revealed unless there's a visible population center present or it holds an active gate.[/li]
+[li]Entities marked as [b]discoverable[/b] (hidden on the system map until in range of player fleet sensors) are not revealed. They are also listed on [color=maroon][b]Claims[/b][/color] tooltips because vanilla uses them in claim calculations, but are redacted.[/li]
+[li]Markets marked as [b]hidden[/b] are not revealed if there are no visible colonies held by other non-allied factions, or until the player visits their system. They are also listed on [color=maroon][b]Claims[/b][/color] tooltips because vanilla uses them in claim calculations, but are redacted.[/li]
+[li][b]Decivilised markets[/b] are not revealed unless they start so, or until the player visits their system.[/li]
+[li]Unowned markets with the [b]Abandoned Station[/b] condition follow visibility rules of [b]hidden markets[/b].[/li]
+[/list]
+
+This mod comes with a suite of [b]LunaLib[/b] settings that allow you to tweak, visuals, sound volume, keybinds, underlying mechanics.
+
+[spoiler=Console commands:]
+If you've got [b][url=https://fractalsoftworks.com/forum/index.php?topic=4106.0]Console Commands[/url][/b] installed you can make use of the following commands.
+
+Provided by [color=maroon][b]KMLib[/b][/color]:
+[list]
+[li][b]kmlib_activate_gate <id>[/b] - Activates the gate with that id in the current system.[/li]
+[li][b]kmlib_colonise [entity-id] [faction-id][/b] - Founds a colony. [b][entity-id][/b] defaults to the nearest colonisable market. [b][faction-id][/b] defaults to the player faction.[/li]
+[li][b]kmlib_list_factions [markets|hidden|discoverable|no_markets][/b] - Lists every faction with what it holds - how many places, how many hidden, how many discoverable, and the systems they sit in. By default no filter is applied.[/li]
+[li][b]kmlib_list_map_spoilers[/b] - Lists faction-owned systems as a tree of system, entities and factions, flagging cut-off systems and undiscovered markets.[/li]
+[li][b]kmlib_list_system_entities [gates][/b] - Lists the current system's entities as an orbit tree, then the unorbited ones and fleets with coordinates. By default the [b][gates][/b] filter is not applied.[/li]
+[li][b]kmlib_spawn <gate|jump_point> [orbit_focus_id] [speed] [jitter=<frac>][/b] - Spawns a gate or a jump point at the fleet position. [b][orbit_focus_id][/b] defaults to system center. [b][speed][/b] is derived from radius by default. [b][jitter][/b] defaults to 0.25.[/li]
+[li][b]kmlib_transfer_market [entity-id] [faction-id][/b] - Hands an existing colony to another owner. [b][entity-id][/b] defaults to the nearest colonisable market. [b][faction-id][/b] defaults to the player faction.[/li]
+[/list]
+[/spoiler]
+[spoiler=Compatibility]
+[color=maroon][b]KMU[/b][/color] injects map layers into the map widget as map-only terrain. And to be visible in the Starscape mode, the starscape terrain variant is tagged as a slipstream. Custom terrain is the only thing that has to be serialised into saves as Java class references, and that's why a clean uninstall is required for disabling the mod.
+
+The game reuses the map widget, and so do many mods. Those custom placements of the widget get map layers for free, but they should come with no mouseover detection and no controls (borrowing selections from the map screen as the main instance).
+
+Additionally, the mod has been made specifically compatible with:
+[list]
+[li][b][url=https://fractalsoftworks.com/forum/index.php?topic=33870.0]Fast Rendering[/url][/b] and its [b]optimisations[/b].[/li]
+[li][b][url=https://fractalsoftworks.com/forum/index.php?topic=9175.0]Nexerelin[/url][/b] to support its [b]alliance[/b] mechanics.[/li]
+[li][b][url=https://fractalsoftworks.com/forum/index.php?topic=26260.0]Random Assortment of Things[/url][/b] and its [b]minimap replacement[/b]. The minimap draws the map widget via a tooltip in the corner of the screen. This mod comes with a RAT compatibility mode enabled by default that scopes mouse detection to the widget. Layer selection is inherited from the map screen. As a bonus, the map widget is made invisible when it's docked off-screen (docking is RAT's way of hiding the map widget when the player docks at markets or opens any UI screens) - that disables any related rendering and should provide a marginal performance improvement (more so when in hyperspace) in the menus that don't show the sector map.[/li]
+[/list]
+[/spoiler]
+[hr]
+While playing with this pre-release, please report if you think it relates to this mod:
+[list]
+[li]what kind of visual or technical issues you've got,[/li]
+[li]how's your performance,[/li]
+[li]how's your user experience,[/li]
+[li]if you see mod incompatibilities or if the map ignores any modded content,[/li]
+[li]if the map spoils anything you think it's not supposed to.[/li]
+[/list]
+For better diagnostics set the logging level to [b]DEBUG[/b] in [color=maroon][b]KMLib[/b][/color] and [color=maroon][b]KMU[/b][/color] settings (first setting on the [b]Dev[/b] tab).
+
+And feel free to share suggestions, ideas, requests - those will affect this mod's direction and priorities. While I have ideated and planned out some info-layers I want to implement next, and some of their conception - that covers my own vision, and I'd like to hear what's yours.
+[hr]
+[spoiler=Post-release roadmap]
+[list]
+[li]Processing [b]non-market entities[/b] and showing what's visible on system tooltips.[/li]
+[li]Incorporating some [b]modded entities[/b] into the domination algorithm, like watchtowers and artillery implemented in [b][url=https://fractalsoftworks.com/forum/index.php?topic=18011.0]Industial Evolution[/url][/b].[/li]
+[li]A [b]diplomatic map[/b] derived from the [b]political map[/b] but focused on relations.
+[list]
+[li]An [b]Enemies[/b] view that paints the map by the lowest relations in a system, and a [b]Friends[/b] view that paints only systems with factions above a chosen threshold.[/li]
+[li]Targets player faction relations by default, and applying the [b]faction filter[/b] applies the focus to a specific faction.[/li]
+[li][b]Presence ribbons[/b] are painted with relation colors instead of faction colors.[/li]
+[li]The [b]political map[/b] is extended with [b]Friends[/b] and [b]Enemies[/b] filter recede modes - when a faction filter is applied, the rest of the sector paints relations instead of being muted or desaturated.[/li]
+[/list]
+[/li]
+[li]An [b]infrastructure map[/b] focused on non-market entities. For example a [b]comm relay network[/b] view that shows detected network coverage.[/li]
+[li]An [b]economy map[/b] focused on markets, industries, and commodities.[/li]
+[li]A [b]faction management layer[/b] focused on player faction markets and fleets.[/li]
+[li]A [b]framework[/b] for modders defining and supplying their own custom layers based on existing ones or brand new.[/li]
+[/list]
+[/spoiler]
+[spoiler=AI usage disclaimer:]
+this mod has been made with usage of LLMs - for research, brainstorming, code generation, code review, code refactoring. Each step was performed with human oversight and playtesting, with as much human code review as can be reasonably performed for a mod project.
+[/spoiler]
+[center]
+[size=12pt][b]Thanks:[/b][/size]
+To the [b]Fractal Softworks[/b] team for bringing us Starsector and continuously improving it.
+To the [b]modding community[/b] for producing awesome and inspiring mods that bring me back to Starsector every time.
+To developers and maintainers of [b]LazyLib[/b], [b]LunaLib[/b], [b]MagicLib[/b], [b]Console Commands[/b] for providing features this mod relies on.
+To awesome folks over at [b]r/Starsector[/b] and in [b]Discord[/b] communities for feedback and support.
+[/center]
