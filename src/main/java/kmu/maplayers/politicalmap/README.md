@@ -242,10 +242,11 @@ the held/claim resolvers, under the ownership link above), `refresh`, `render` a
 ### Refresh (`base/refresh`)
 
 The economy-event listeners, and `PoliticalMapStalenessSource` - what this layer counts as a change
-the engine fired no event for, answered into the framework's poll - plus the one passenger that
-writes rather than reads: each system's own inhabitants observing the colonies a revelation gate
-holds back, recorded here because nothing in the engine announces a derelict arriving among
-witnesses. The economy-event listeners record the same thing for the one system they name
+the engine fired no event for, answered into the framework's poll. Its four baselines are the
+staleness of this layer's own picture and nothing else: the sector-wide sweep that records what each
+system's own inhabitants can see used to ride the same poll and is now
+[the substrate's](../README.md), the register it writes being shared by every map family rather than
+this one's. The economy-event listeners still record that observation for the one system they name
 (`MarketPoliticsRefresh`), the event being the moment the observation is worth dating rather than a
 poll cycle later - and a decivilisation is recorded on the `aboutToBe` phase, since once the colony
 has died there is nobody left to date what it vouched for. Where an event fires too late to read the

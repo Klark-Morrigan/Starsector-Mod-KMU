@@ -70,11 +70,16 @@ emits the same log line.
 **The sector watcher** catches everything the engine fires no event for - a gate
 activating, a system being cut off, a decivilised world surveyed, an AI faction quietly
 capturing a colony. It is split across the framework/layer line:
-[`MapLayerSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerSectorWatcher.java)
+[`StalenessPollLoop`](../../src/main/java/kmu/maplayers/base/refresh/StalenessPollLoop.java)
 owns only the throttled campaign-thread loop, and asks a
 [`MapLayerStalenessSource`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerStalenessSource.java)
 what has changed since it last asked, so what counts as a change never has to be
-named by the framework.
+named by the framework. Two scripts drive that loop, and they are two classes because
+the engine registers and clears transient scripts by exact class:
+[`MapLayerSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapLayerSectorWatcher.java)
+per layer that has something to poll, and
+[`MapSubstrateSectorWatcher`](../../src/main/java/kmu/maplayers/base/refresh/MapSubstrateSectorWatcher.java)
+once per sector for the substrate's own.
 
 The political map answers through
 [`PoliticalMapStalenessSource`](../../src/main/java/kmu/maplayers/politicalmap/base/refresh/PoliticalMapStalenessSource.java),
@@ -87,15 +92,13 @@ owner map is diffed to mark exactly the systems whose owner changed. It also tra
 the moving-system set and fingerprints the live alliance set. All four baselines are
 its own, so nothing about the diff lives in the loop.
 
-The poll is a pass, and is read as one. Each of its passengers - the snapshot, the
-moving-set walk, and the write that records what a system's own inhabitants can see -
-asks every system who lives there, so the poll opens one
-[`MapVisibilityPass`](../../src/main/java/kmu/maplayers/base/visibility/systems/MapVisibilityPass.java)
-- a KMLib `SystemColoniesIndex`, a hyperspace scan, and the rules the three are read under - and
+The poll is a pass, and is read as one. Both of its passengers - the snapshot and the
+moving-set walk - ask every system who lives there, so the poll opens one
+[`MapVisibilityPass`](../../src/main/java/kmu/maplayers/base/visibility/systems/MapVisibilityPass.java) -
+a KMLib `SystemColoniesIndex`, a hyperspace scan, and the rules the two are read under - and
 hands it down. That is what keeps the cost at one selection per system per poll: a passenger
-given the sector instead would walk every entity in every system again, and there are three of
-them. The pass is discarded with the poll, a kept one being a reading of the sector the
-*previous* poll saw.
+given the sector instead would walk every entity in every system again. The pass is discarded
+with the poll, a kept one being a reading of the sector the *previous* poll saw.
 
 The pass answers rather than merely carrying: `isDrawn(system)` is the drawn-set rule applied
 over its own reading, so the geometry sites, the motion tracker and the fingerprint scan share
@@ -103,10 +106,9 @@ one statement of it instead of each re-deriving it off the same three values.
 
 ```mermaid
 sequenceDiagram
-    participant Poll as Staleness poll
+    participant Poll as Political staleness poll
     participant Snapshot
     participant Motion as Moving-set walk
-    participant Register as Sighting register
     participant Pass as MapVisibilityPass
     participant Sector as The live sector
 
@@ -125,19 +127,41 @@ sequenceDiagram
         Pass-->>Motion: the memo answers, and the system is not walked
     end
 
-    loop each star system
-        Poll->>Pass: colonies().readColoniesIn(system)
-        Pass-->>Poll: the memo answers, and the system is not walked
-        Poll->>Register: recordSightingsByInhabitants(sector, system, colonies)
-    end
-
-    Note over Poll,Sector: One getAllEntities per system per poll.<br/>Each passenger reaching for the sector itself would make it three.
+    Note over Poll,Sector: One getAllEntities per system per poll.<br/>Either passenger reaching for the sector itself would make it two.
 ```
 
-Two shapes in that picture are the arrangement rather than incidental. The register is
-handed a place and its colonies instead of the pass, because `SystemColoniesIndex` reads
-the colonies package and a register living in it could not take one without the layering
-gate refusing the cycle - so the sector loop is the poll's, which is where the cadence was
+The substrate's poll is the same shape over a narrower reading. It sweeps the sector to
+record what each system's own inhabitants can see, opening a bare `SystemColoniesIndex`
+rather than a whole pass - the sweep asks only who lives where, so the hyperspace scan a
+pass opens beside the index would be paid for and never read.
+
+```mermaid
+sequenceDiagram
+    participant Poll as Substrate staleness poll
+    participant Index as SystemColoniesIndex
+    participant Register as Sighting register
+    participant Sector as The live sector
+
+    Poll->>Index: open over the sector
+
+    loop each star system
+        Poll->>Index: readColoniesIn(system)
+        Index->>Sector: system.getAllEntities()
+        Index-->>Poll: the system's colonies
+        Poll->>Register: recordSightingsByInhabitants(sector, system, colonies)
+    end
+```
+
+That is a second reading of the sector's colonies where one served both while the sweep
+rode the political poll, and it is taken knowingly: a reading handed from the framework
+down to a layer belongs to the frame sequence rather than to either poll. What the split
+buys is that the register goes on accruing under whichever layer the player is looking at,
+the record being shared by every map family that keeps observations.
+
+Two shapes in those pictures are the arrangement rather than incidental. The register is
+handed a place and its colonies instead of a pass, because `MapVisibilityPass` reads the
+colonies package and a register living in it could not take one without the layering gate
+refusing the cycle - so the sector loop is the poll's, which is where the cadence was
 decided anyway. And the membership rule takes an inhabitation *answer* rather than a sector
 to read one from, which is what keeps a second walk from hiding inside the drawn-set test
 the moving-set walk applies per system.

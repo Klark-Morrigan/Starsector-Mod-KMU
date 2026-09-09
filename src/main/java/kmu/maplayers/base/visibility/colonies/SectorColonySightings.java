@@ -27,11 +27,11 @@ import java.util.Map;
  * caller has already opened, rather than sweeping the sector a second time from in here or opening
  * a reading of it per place.
  *
- * <p>That sweep rides the political map's staleness poll, which already walks every system once a
- * tick and holds each system's colonies as it goes. A cadence of its own would be a second reading
- * of the whole sector to reach sets a walk already in progress is holding - and the gate keeps its
- * live reading of a place precisely so that a sector whose poll never ran still shows what the
- * player can plainly see.
+ * <p>That sweep is driven by the map substrate's own poll rather than by any one layer's, the
+ * register being shared by every map family that keeps observations: accrual that followed one
+ * layer would have its gaps decided by whichever map the player last chose to look at. The gate
+ * keeps its live reading of a place regardless, precisely so that a sector whose poll never ran
+ * still shows what the player can plainly see.
  *
  * <p>Only the shapes an observation decides are recorded at all: those a {@link RevelationGate}
  * holds back until somebody has seen them, and those a report from the inhabitants can find because
@@ -132,9 +132,9 @@ public final class SectorColonySightings {
      *
      * <p>Written one place at a time, over a colony set the caller already holds, rather than swept
      * for here. This route has to be noticed by a walk - nothing in the engine announces a colony
-     * arriving among witnesses - and every caller in a position to run it is a pass that has just
-     * walked the sector for its own reasons. Sweeping again here would walk every system a second
-     * time to reach sets already in hand.
+     * arriving among witnesses - and the caller driving that walk holds one reading of the sector
+     * for the whole of it. Sweeping again here would open a second reading to reach sets already in
+     * hand.
      *
      * <p>Nothing depends on this having run: the rule keeps its own live reading of the place for
      * exactly that reason, so a caller that never writes still shows what stands among witnesses

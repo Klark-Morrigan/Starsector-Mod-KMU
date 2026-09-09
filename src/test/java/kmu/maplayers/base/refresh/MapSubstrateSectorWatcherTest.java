@@ -14,11 +14,12 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 /**
- * Pins a layer's share of the engine's script list: it never retires, it does not run while the
- * game is paused, and every frame it is advanced reaches the poll. The throttle, the fault guard
- * and what a fault costs are {@link StalenessPollLoop}'s to pin.
+ * Pins the substrate's share of the engine's script list: it never retires, it does not sweep
+ * while the game is paused, and every frame it is advanced reaches the poll. Why it is a class of
+ * its own rather than a second {@link MapLayerSectorWatcher} shows where a layer is taken back -
+ * {@code PoliticalMapInstallerTest} - and the loop itself is {@link StalenessPollLoop}'s to pin.
  */
-final class MapLayerSectorWatcherTest {
+final class MapSubstrateSectorWatcherTest {
 
     // Comfortably past the poll interval, so one advance elapses it and the source is reached.
     private static final float ADVANCE_PAST_POLL_INTERVAL = 10f;
@@ -27,13 +28,13 @@ final class MapLayerSectorWatcherTest {
     class IsDone {
 
         @Test
-        void neverFinishesSoTheEngineKeepsPollingForTheLifeOfTheSave() {
-            // The engine drops a script that reports done, and nothing reinstalls one before
-            // the next load - so this answering true would silently stop live refresh for the
-            // rest of the save, with no crash to point at it.
+        void neverFinishesSoTheSweepRunsForTheLifeOfTheSave() {
+            // The engine drops a script that reports done, and nothing reinstalls one before the
+            // next load - so this answering true would stop the shared record accruing for the
+            // rest of the save, and the gap would only show cycles later.
             try (var globalMock = stubGlobalLogger()) {
 
-                var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
+                var watcher = new MapSubstrateSectorWatcher(mock(MapLayerStalenessSource.class));
 
                 assertThat(watcher.isDone())
                     .isFalse();
@@ -45,12 +46,13 @@ final class MapLayerSectorWatcherTest {
     class RunWhilePaused {
 
         @Test
-        void doesNotPollWhileTheGameIsPaused() {
-            // Nothing the poll watches for can happen while the game is paused, so polling
-            // then would only spend a sector walk on the campaign thread to find no change.
+        void doesNotSweepWhileTheGameIsPaused() {
+            // No colony arrives among witnesses while the game is paused, so sweeping then
+            // would only spend a sector walk on the campaign thread to record what is already
+            // recorded.
             try (var globalMock = stubGlobalLogger()) {
 
-                var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
+                var watcher = new MapSubstrateSectorWatcher(mock(MapLayerStalenessSource.class));
 
                 assertThat(watcher.runWhilePaused())
                     .isFalse();
@@ -62,15 +64,13 @@ final class MapLayerSectorWatcherTest {
     class Advance {
 
         @Test
-        void handsTheEnginesFrameToTheLayersPoll() {
-            // The whole of what this class does with a frame. A watcher that kept the amount
-            // to itself would never elapse an interval, and the layer would refresh only on
-            // reload with nothing on screen to say so.
+        void handsTheEnginesFrameToTheSubstratesPoll() {
+
             try (var globalMock = stubGlobalLogger()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
-                new MapLayerSectorWatcher(stalenessSourceMock)
+                new MapSubstrateSectorWatcher(stalenessSourceMock)
                     .advance(ADVANCE_PAST_POLL_INTERVAL);
 
                 verify(stalenessSourceMock)

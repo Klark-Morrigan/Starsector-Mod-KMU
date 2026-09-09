@@ -4,13 +4,10 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.Colonies;
-
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -29,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 /**
@@ -42,9 +39,9 @@ import static org.mockito.Mockito.when;
  * the snapshot scan and the alliance fingerprint across polls. The board is the one its own
  * installation holds, so a run reads only what it raised.
  *
- * <p>Also pins the one passenger that writes rather than reads: the observation each system's own
- * inhabitants make of the colonies a revelation gate holds back, which rides this sweep because
- * nothing in the engine announces one.
+ * <p>Also pins what this poll no longer does: the observation each system's own inhabitants make of
+ * the colonies a revelation gate holds back rode it while this was the only sector-wide sweep
+ * running, and is the substrate's now.
  */
 final class PoliticalMapStalenessSourceTest {
 
@@ -219,26 +216,27 @@ final class PoliticalMapStalenessSourceTest {
         }
 
         @Test
-        void everyPollWritesWhatEachSystemsInhabitantsCanSee() {
-            // The one passenger that writes rather than reads. Nothing announces a derelict
-            // arriving among witnesses, so the observation rides this sweep - on every poll,
-            // the first included, having no baseline to seed and nothing to diff against.
+        void writesNoObservationsTheSubstratesSweepOwns() {
+            // The sweep that records what each system's own inhabitants can see used to ride this
+            // poll. It is the substrate's now, the register being shared by every map family - so
+            // a layer left writing it too would double the write, and would go on deciding when
+            // the record accrued from behind a preference about which map is on screen.
             try (var sightingsMock = mockStatic(SectorColonySightings.class)) {
 
                 pollThenReadRefreshOutcome(
                     PollInputs.buildForSnapshotChange(STEADY_SNAPSHOT, STEADY_SNAPSHOT),
                     2);
 
-                // Once per system per poll, the sweep being the poll's own now: the register is
-                // handed a place and the set already selected for it rather than walking the
-                // sector for either.
+                // The write alone, not every reach: this poll still opens the register to read
+                // it, the visibility rule its pass carries being answered against what has been
+                // observed. What moved is who writes it.
                 sightingsMock.verify(
                     () -> SectorColonySightings.recordSightingsByInhabitants(
-                        any(SectorAPI.class),
-                        any(StarSystemAPI.class),
-                        any(Colonies.class),
-                        any(ColonyKnowledge.class)),
-                    times(2));
+                        any(),
+                        any(),
+                        any(),
+                        any()),
+                    never());
             }
         }
 
@@ -312,10 +310,9 @@ final class PoliticalMapStalenessSourceTest {
         }
     }
 
-    // One empty star system and nothing else. The snapshot scan and the motion walk are both
-    // stubbed away, so the only passenger that reads this is the observation write - which
-    // needs a system to be handed, having stopped sweeping for one. Nothing is staged in it:
-    // what each poll writes is the register's own suite's business, not this one's.
+    // One empty star system and nothing else, so a poll opened over this sector reaches the pass
+    // it is meant to be read through. Nothing is staged in it: the snapshot scan and the motion
+    // walk are both stubbed away, and what a poll decides off them is stated by each case.
     private static SectorAPI buildOneSystemSector() {
 
         var sectorMock = mock(SectorAPI.class);

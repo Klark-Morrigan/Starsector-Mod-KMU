@@ -8,6 +8,7 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
@@ -187,6 +188,11 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // this is where that sector's share of it is held.
         MapLayerInstallations.installMachineryOn(sector);
 
+        // Beside that machinery and above every layer: the sweep it drives keeps a record several
+        // map families read, so it accrues for as long as the layers are standing at all rather
+        // than for as long as one particular layer is on the bar.
+        MapSubstrateRefreshInstaller.installAll(sector);
+
         // Before the render surfaces, because its save heal repairs what the terrain then reads.
         PoliticalMapInstaller.installAll(sector);
 
@@ -204,7 +210,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         MapChromeInstaller.installAll(sector);
     }
 
-    // Everything those five stand up, taken back. All of them and not only the surfaces: across a
+    // Everything those six stand up, taken back. All of them and not only the surfaces: across a
     // load their listeners and scripts would be gone by themselves, being transient, but a player
     // switching the overlay off mid-campaign is still running every one of them.
     static void uninstallMapLayers(SectorAPI sector) {
@@ -214,8 +220,9 @@ public class KMU_ModPlugin extends BaseModPlugin {
         SidebarInstaller.uninstallAll(sector);
         MapSurfaceInstaller.uninstallAll(sector);
         PoliticalMapInstaller.uninstallAll(sector);
+        MapSubstrateRefreshInstaller.uninstallAll(sector);
 
-        // Last, mirroring the install: the five above are taken back through the state this holds,
+        // Last, mirroring the install: the six above are taken back through the state this holds,
         // so releasing it first would leave them undoing their work against nothing. Reached with a
         // sector nothing was ever installed on too, since a load with the overlay switched off
         // takes it back rather than declining to stand it up.

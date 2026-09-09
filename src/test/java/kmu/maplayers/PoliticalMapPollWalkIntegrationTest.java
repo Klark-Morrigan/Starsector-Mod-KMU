@@ -2,7 +2,6 @@ package kmu.maplayers;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.recording.RecordingProfiler;
@@ -16,7 +15,6 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
 import kmu.maplayers.base.visibility.colonies.FactionAlliances;
-import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -43,16 +41,15 @@ import static org.mockito.Mockito.when;
  * the whole poll however many passengers ride it, and each sector-wide fact folded once for the
  * whole poll however many systems it walks.
  *
- * <p>Three of them ask each system who lives there - the snapshot that fingerprints the drawn
- * set, the motion walk that follows a drifting system, and the observation write that records
- * what a system's own inhabitants can see - and each is handed the poll's own pass rather than
- * the sector it was opened over. What that costs, if it is ever undone, is a walk of every
- * entity in every system in the sector, twice over, every four to five campaign seconds.
+ * <p>Two of them ask each system who lives there - the snapshot that fingerprints the drawn set
+ * and the motion walk that follows a drifting system - and each is handed the poll's own pass
+ * rather than the sector it was opened over. What that costs, if it is ever undone, is a walk of
+ * every entity in every system in the sector, twice over, every four to five campaign seconds.
  *
  * <p>No unit can make this claim. How many times a system was walked is a fact about the
  * composition rather than about any part of it: each passenger, handed a mock, walks precisely
- * what it is told to and passes either way. So the poll, the snapshot, the motion walk and the
- * register are all real here, and the count is read off the profiler's own walk counters, which
+ * what it is told to and passes either way. So the poll, the snapshot and the motion walk are all
+ * real here, and the count is read off the profiler's own walk counters, which
  * the library's shared reads add as they traverse - the same witness a reader of a capture has in
  * play, rather than however many times one vanilla method happened to be called.
  *
@@ -115,10 +112,10 @@ final class PoliticalMapPollWalkIntegrationTest {
 
         @Test
         void selectsEachSystemsColoniesOnceForTheWholePoll() {
-            // The step's own claim. Every passenger asks the same question of the same systems,
-            // so the poll opens one reading of the sector and hands it down; three readers each
-            // opening a selection of their own is what this stops, and each would show here as
-            // another reading of every colony in the sector.
+            // The step's own claim. Both passengers ask the same question of the same systems,
+            // so the poll opens one reading of the sector and hands it down; a reader opening a
+            // selection of its own is what this stops, and would show here as another reading of
+            // every colony in the sector.
             var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
 
             assertThat(ProfileCounts.readTotalOf(poll, SectorWalkCounters.COLONIES_READ))
@@ -145,24 +142,6 @@ final class PoliticalMapPollWalkIntegrationTest {
 
             assertThat(ProfileCounts.readTotalOf(polls, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK_PER_POLL);
-        }
-
-        @Test
-        void recordsWhatEachSystemsInhabitantsSeeFromThatSameSelection() {
-            // The passenger that inverted: the register stopped sweeping the sector for itself
-            // and now writes over the set the poll hands it, place by place. Asserted through
-            // the register because that is what says the write ran on the real walk rather than
-            // merely being reachable from it.
-            var sector = buildSettledSectorWithAnEmptyNeighbour();
-            var derelict = findOnlyDerelictIn(sector);
-
-            SectorPoliticsFixtures.openSectorMemory(sector);
-            runOnePoll(sector);
-
-            assertThat(SectorColonySightings.readSightings(sector)
-                    .readObservation(derelict.getId())
-                    .locationId())
-                .isEqualTo(ALPHA_ID);
         }
 
         @Test
@@ -362,16 +341,6 @@ final class PoliticalMapPollWalkIntegrationTest {
 
         when(sector.getEconomy().getMarkets(beta))
             .thenReturn(List.of(colony));
-    }
-
-    // The one market hung on a system entity rather than listed - the derelict, since a listed
-    // hulk is an outpost rather than a wreck. Read back off the fixture so the case names the
-    // register's key without a second builder stating what was staged.
-    private static MarketAPI findOnlyDerelictIn(SectorAPI sector) {
-        return SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID)
-            .getAllEntities()
-            .get(0)
-            .getMarket();
     }
 
 }

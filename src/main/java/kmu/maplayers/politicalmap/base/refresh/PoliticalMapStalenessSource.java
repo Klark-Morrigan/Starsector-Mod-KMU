@@ -2,14 +2,10 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
-import kmlib.starsector.systems.SystemColoniesIndex;
-
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
-import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
@@ -50,14 +46,8 @@ import java.util.Map;
  * the map while a colour lead swap does.
  *
  * <p>All four baselines live here rather than in the framework's poll, so the whole of "what
- * changed" is decided against this layer's own last read. The first poll only establishes them.
- *
- * <p>One further passenger writes rather than reads. A colony a revelation gate holds back is
- * observed by the people living around it, and that observation has to be recorded or the colony
- * drops off the map the day its last neighbour dies - yet nothing in the engine announces a
- * derelict arriving among witnesses. So the observation write rides this poll, which is already
- * the sector-wide sweep running on the cadence such an arrival deserves, in the way
- * {@link MovingSystems} already rides it. It stales nothing and no baseline turns on it.
+ * changed" is decided against this layer's own last read. Each is the staleness of this layer's own
+ * picture and belongs to the layer that draws it. The first poll only establishes them.
  *
  * <p>A poll is a pass, and is read as one: every passenger is handed the same reading of the
  * sector rather than a sector it could walk again for itself. What that buys is stated where
@@ -102,8 +92,8 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // the live rules before it walks anything, so a toggle flipped mid-poll cannot leave the
         // snapshot's drawn set and the motion walk's disagreeing - and so the motion walk
         // observes the revealed systems the geometry draws rather than only the normally visible
-        // ones. Its colony index then bounds what the poll costs: each passenger asks every
-        // system who lives there, so one selection per system serves all three.
+        // ones. Its colony index then bounds what the poll costs: both passengers ask every
+        // system who lives there, so one selection per system serves the pair.
         //
         // Discarded with the poll. A kept pass would answer the next poll off the sector this
         // one saw, which is the change a poll exists to notice.
@@ -118,8 +108,6 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
             .resolveMovingSystems()
             .updateMovingSystems(pass);
 
-        recordObservationsByInhabitants(pass.colonies());
-
         // One call per axis, each handed the same first-poll flag and each owning its own
         // baseline, so no axis can be read without seeing how it treats a baseline poll.
         var isFirstPoll = !hasPolled;
@@ -129,42 +117,6 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         markAllianceSetChange(isFirstPoll);
 
         hasPolled = true;
-    }
-
-    // Writes down what each system's own inhabitants can see of the colonies a revelation gate
-    // holds back. It rides this poll because a colony arriving among witnesses raises no event
-    // to listen for, and this is already the sector-wide walk running on the cadence such an
-    // arrival deserves. Nothing downstream waits on it: the gate keeps its own live reading of
-    // the place, so an install where this never ran still shows what the player can plainly see
-    // - what the write buys is that the reading survives the witnesses.
-    //
-    // The loop is here rather than inside the register because the register cannot be handed
-    // the index: it lives in the colonies package the index reads, so taking one would make a
-    // cycle of the layering. Owning the sweep here costs nothing, the cadence having been this
-    // poll's decision in the first place.
-    //
-    // One knowledge for the whole sweep, on the same reasoning as the index above it: opening one
-    // folds the sector's alliances, and a sweep opening one per place would refold them for every
-    // system in the sector on every poll. It is the fog-only reading rather than the pass's,
-    // because what a place's inhabitants can see is a fact about the place - a reveal reaching it
-    // would write down observations nobody made.
-    private static void recordObservationsByInhabitants(SystemColoniesIndex colonies) {
-
-        var sector = colonies.getSector();
-        var systems = sector == null ? null : sector.getStarSystems();
-
-        if (systems == null) {
-            return;
-        }
-        var observing = ColonyKnowledge.observingUnderTheFog();
-
-        for (var system : systems) {
-            SectorColonySightings.recordSightingsByInhabitants(
-                sector,
-                system,
-                colonies.readColoniesIn(system),
-                observing);
-        }
     }
 
     // Requests a whole-map geometry rebuild when either trigger fired: the drawn set moved

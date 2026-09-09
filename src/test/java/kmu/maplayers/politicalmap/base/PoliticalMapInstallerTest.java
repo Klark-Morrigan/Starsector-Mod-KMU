@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
+import kmu.maplayers.base.refresh.MapSubstrateSectorWatcher;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
@@ -196,6 +197,23 @@ class PoliticalMapInstallerTest {
 
             verify(sectorMock)
                 .removeTransientScriptsOfClass(MapLayerSectorWatcher.class);
+        }
+
+        @Test
+        void leavesTheSubstratesSweepStanding() {
+            // What this layer takes back is its own. The sweep that records what a system's
+            // inhabitants can see keeps a register several map families read, so a layer switching
+            // off must not stop it accruing - the gap would surface cycles later, as a colony
+            // dropping off a map the player had since put back.
+            var sectorMock = mock(SectorAPI.class);
+
+            when(sectorMock.getListenerManager())
+                .thenReturn(new RecordingListenerManager());
+
+            PoliticalMapInstaller.uninstallAll(sectorMock);
+
+            verify(sectorMock, never())
+                .removeTransientScriptsOfClass(MapSubstrateSectorWatcher.class);
         }
 
         @Test
