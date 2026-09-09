@@ -1,5 +1,6 @@
 package kmu.maplayers.base.layer;
 
+import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
@@ -7,16 +8,12 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapSidebarSettings;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,10 +59,6 @@ final class MapLayerRegistryTest {
     private final MapLayer secondLayerMock = mock(MapLayer.class);
 
     private final IntelScreenViewFake intelScreenFake = new IntelScreenViewFake();
-
-    // Records what the registry writes to the log, the arbitration line being the one thing a
-    // duplicate registration produces that leaves nothing behind in state a case could read back.
-    private final LogAppenderFake appenderFake = new LogAppenderFake();
 
     // The hide ramp is paced by a shipped knob, and that read reaches LunaLib, which no test has. Stood
     // in for the class so every case names a pace: Mockito's own default answers a pace of nothing, which
@@ -537,25 +530,15 @@ final class MapLayerRegistryTest {
 
     // Registers one layer with the registry's own log captured, and hands back what it wrote.
     //
-    // The logger is reached through log4j's own cache rather than through Global, which the
-    // sector-memory fake is standing in for while a case runs: the registry resolved this same logger
-    // by name before any of that, so the two are one object. Additivity goes off with the attachment,
-    // so a run's console output carries none of what a case plants.
-    private List<String> recordLinesWrittenWhileRegistering(MapLayer layer) {
+    // The capture is KMLib's, which owns the attachment, the level and the additivity for the length
+    // of the call: the arbitration line is written at a level the running game decides, so a capture
+    // reading it off whatever level happened to be in force would report silence for a line the
+    // registry did write.
+    private static List<String> recordLinesWrittenWhileRegistering(MapLayer layer) {
 
-        var log = Logger.getLogger(MapLayerRegistry.class);
-
-        try {
-            log.setAdditivity(false);
-            log.addAppender(appenderFake);
-
-            MapLayerRegistry.registerLayer(layer);
-
-            return List.copyOf(appenderFake.getMessages());
-        } finally {
-            log.removeAppender(appenderFake);
-            log.setAdditivity(true);
-        }
+        return LogAppenderFake
+            .captureLogOf(MapLayerRegistry.class, () -> MapLayerRegistry.registerLayer(layer))
+            .getMessages();
     }
 
     // A layer answering nothing but the id it registers under, which is all the registration cases
@@ -570,28 +553,4 @@ final class MapLayerRegistryTest {
         return layerMock;
     }
 
-    // Records what reached the log, an arbitration line leaving nothing behind in state a case could
-    // read back.
-    private static final class LogAppenderFake extends AppenderSkeleton {
-
-        private final List<String> messages = new ArrayList<>();
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public boolean requiresLayout() {
-            return false;
-        }
-
-        List<String> getMessages() {
-            return messages;
-        }
-
-        @Override
-        protected void append(LoggingEvent event) {
-            messages.add(String.valueOf(event.getMessage()));
-        }
-    }
 }

@@ -17,6 +17,8 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
+import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
+import kmu.maplayers.base.refresh.RefreshSignalRevisions;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -84,6 +86,14 @@ final class PoliticalMapCache {
     // cache, so no two cuts of these cells can be mistaken for each other.
     private static final int FIRST_CUT_NUMBER = 0;
 
+    // The sidebar preferences whose raises are traced onto a rebuild's tag. These three and no
+    // others, because these are the ones nothing folds into staleness any more: a signal a
+    // consumer does read is already accounted for by the rebuild it caused.
+    private static final MapLayerRefreshSignal[] TRACED_PREFERENCE_SIGNALS = {
+        MapLayerCommonRefreshSignal.FILTER,
+        MapLayerCommonRefreshSignal.RECEDE_STYLE,
+        MapLayerCommonRefreshSignal.MAP_STYLE};
+
     // The machinery installed on the sector this cache draws. The sector a rebuild cuts cells from,
     // the movers that cut leaves out and the board it reads staleness off all come off this one
     // handle, so none of the three can name a different sector - a cut taken from the running game
@@ -127,8 +137,18 @@ final class PoliticalMapCache {
     // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
     private boolean hasLoggedRebuildError;
 
+    // Where the traced preference signals stood when this cache last rebuilt, so a rebuild can name
+    // which of them a player has touched since. Seeded at construction rather than left empty: the
+    // board outlives no cache but may already carry raises from a load, and reporting those against
+    // this cache's first rebuild would name flips that happened before it existed.
+    private RefreshSignalRevisions signalsAtLastRebuild;
+
     PoliticalMapCache(MapLayerInstallation installation) {
+
         this.installation = installation;
+        this.signalsAtLastRebuild = RefreshSignalRevisions.readRevisionsOf(
+            installation.resolveRefreshBoard(),
+            TRACED_PREFERENCE_SIGNALS);
     }
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
@@ -299,10 +319,34 @@ final class PoliticalMapCache {
             // render can be confirmed against what was built. The count reported is whichever view
             // was built this rebuild - the normal styled cells or the debug overlay's base loops -
             // which is why it is named rather than counted: the two are not one quantity.
+            //
+            // Beside it, which sidebar preference a player touched since the last rebuild. Those
+            // signals decide nothing - the bake folds the sampled values - so this is the only
+            // place the answer lands where the rebuild it preceded can be read against it. It is
+            // context rather than cause: a signal may be raised with no rebuild owed, and a
+            // rebuild may be owed with none raised.
             drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
                 + " " + drawables.describeBuiltCounts()
-                + " geometryRebuilt=" + staleHalves.isCellCutStale());
+                + " geometryRebuilt=" + staleHalves.isCellCutStale()
+                + " signalsRaised=" + describeSignalsRaisedSinceTheLastRebuild());
         }
+    }
+
+    // Which of the traced signals moved since the rebuild before this one, and the reading advanced
+    // to this rebuild. Advanced here rather than where the reading is taken, so a rebuild that
+    // threw before reaching its tag leaves the raises for the retry to report rather than swallowing
+    // them.
+    private String describeSignalsRaisedSinceTheLastRebuild() {
+
+        var raisedNow = RefreshSignalRevisions.readRevisionsOf(
+            installation.resolveRefreshBoard(),
+            TRACED_PREFERENCE_SIGNALS);
+
+        var raisedSince = raisedNow.describeSignalsRaisedSince(signalsAtLastRebuild);
+
+        signalsAtLastRebuild = raisedNow;
+
+        return raisedSince;
     }
 
     // The draw lists themselves: one view or the other, the names minted from the placements it
@@ -402,8 +446,11 @@ final class PoliticalMapCache {
     // under. Folding the values asks the only question worth asking: would this build come out the
     // same. Two readings holding the same picks are one bake whatever has been clicked between
     // them, and a pick that really moved rebuilds under whichever view is up with no view naming
-    // it. Nothing reads those three counters now; whether they are worth keeping raised is a
-    // question for the board, not for this fold.
+    // it.
+    //
+    // TODO: nothing reads the filter, recede-style and map-style counters now that this fold reads
+    // the values instead. Decide on the refresh board whether they are still worth raising, and
+    // stop raising them where they are not.
     //
     // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
     // combine here. The view is handed this cache's own board to fold its own live inputs from, so

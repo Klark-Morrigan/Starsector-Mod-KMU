@@ -5,12 +5,12 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.profiling.ProfileCounter;
 import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.profiling.snapshot.BudgetBreach;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
@@ -165,7 +165,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             var refresh = captureOneRebuild();
 
-            assertThat(readCount(refresh, SectorWalkCounters.COLONIES_READ))
+            assertThat(ProfileCounts.readTotalOf(refresh, SectorWalkCounters.COLONIES_READ))
                 .isEqualTo(TWO_COLONIES_SELECTED_ONCE);
         }
 
@@ -202,7 +202,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             var refresh = captureRebuildsAcrossARefreshSignal();
 
-            assertThat(readCount(refresh, SectorWalkCounters.SECTOR_WALKS))
+            assertThat(ProfileCounts.readTotalOf(refresh, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK_PER_REBUILD);
         }
 
@@ -407,16 +407,6 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         return RecordedCapture
             .recordWhile(profiler, () -> refreshes.accept(profiler))
             .findNode(MapFrameSections.REFRESH.getName());
-    }
-
-    // What one row counted of one counter. A counter nothing touched is absent from the row rather
-    // than present at nought, and reading it as nought is what turns "never counted" into the
-    // number a case names - which is the failure a case about a walk that stopped happening wants.
-    private static long readCount(ProfileNode row, ProfileCounter counter) {
-
-        var count = row.findCount(counter);
-
-        return count == null ? 0L : count.getTotals().getTotal();
     }
 
     // Drifts one system far enough for two observations either side of the move to read it as

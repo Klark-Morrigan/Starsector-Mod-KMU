@@ -9,6 +9,12 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.profiling.ProfileSection;
+import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.starsector.SectorWalkCounters;
+import kmlib.testfixtures.profiling.ProfileCounts;
+import kmlib.testfixtures.profiling.RecordedCapture;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
@@ -45,6 +51,12 @@ class DrawnSystemPositionsTest {
     private static final int COLONY_SIZE = 5;
 
     private static final String OWNING_FACTION = "hegemony";
+
+    // Nothing about a traversal count is a duration, so one reading answers every clock read.
+    private static final long FIXED_CLOCK_NANOS = 0L;
+
+    // The one the pass itself makes, which is what everything reading through it shares.
+    private static final long THE_PASSES_OWN_TRAVERSAL = 1L;
 
     @Nested
     class CollectLivePositions {
@@ -109,6 +121,27 @@ class DrawnSystemPositionsTest {
 
             assertThat(collectPositionsUnder(sector, MapVisibilityRules.BASE))
                 .containsOnlyKeys("a");
+        }
+
+        @Test
+        void opensNoTraversalOfTheSystemListItsPassHasNotAlreadyMade() {
+            // What holds a rebuild inside the one traversal the frame allows it. The band bake
+            // resolves its systems off the same pass, so a traversal opened here would be the
+            // second in a rebuild whichever of the two ran first - and the bound is per call,
+            // so it would break on every full rebuild rather than on an unlucky one.
+            var pass = MapVisibilityPass.over(
+                buildSectorHolding(buildSystemAt("a", 3f, 4f)),
+                FORCED_ONTO_MAP);
+
+            var counts = RecordedCapture
+                .recordWhile(new RecordingProfiler(() -> FIXED_CLOCK_NANOS), () -> {
+                    pass.colonies().readSystemsById();
+                    DrawnSystemPositions.collectLivePositions(pass);
+                })
+                .findNode(ProfileSection.UNSCOPED_COUNTS.getName());
+
+            assertThat(ProfileCounts.readTotalOf(counts, SectorWalkCounters.SECTOR_WALKS))
+                .isEqualTo(THE_PASSES_OWN_TRAVERSAL);
         }
     }
 

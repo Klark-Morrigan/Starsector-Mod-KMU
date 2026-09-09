@@ -3,6 +3,9 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.testfixtures.profiling.RecordedCapture;
+
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -62,6 +65,13 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
     private static final String ALPHA_ID = "alpha";
     private static final String BETA_ID = "beta";
     private static final String HEGEMONY_ID = "hegemony";
+
+    // The row a rebuild's own span is measured on, named as a reader of a capture finds it rather
+    // than read off the cache, which holds the section privately.
+    private static final String REBUILD_DRAWABLES_ROW = "politicalMap.rebuildDrawables";
+
+    // Nothing this suite claims is a duration, so one reading answers every clock read.
+    private static final long FIXED_CLOCK_NANOS = 0L;
 
     // One colony, sized so it holds its system: the map has to build something for a second frame
     // to be able to leave it standing.
@@ -133,6 +143,27 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
 
             assertThat(cache.getTerritories())
                 .isSameAs(standingMap);
+        }
+
+        @Test
+        void refreshNamesTheSidebarFlipsMadeSinceTheLastRebuildOnTheRowThatMeasuresIt() {
+            // The other half of the case above. Those counters decide nothing now, so the row the
+            // rebuild is measured on is the only place a reader meets them at all - which is what
+            // separates a rebuild a player asked for from one a settings change or a view switch
+            // caused, and the counters are the only record of the first.
+            installation.resolveRefreshBoard()
+                .requestRefresh(MapLayerCommonRefreshSignal.FILTER);
+
+            seams.resolveFilterSelectionSeam()
+                .when(() -> FilterSelection.getSelectedIdOf(any()))
+                .thenReturn(HEGEMONY_ID);
+
+            var capture = RecordedCapture.recordWhile(
+                new RecordingProfiler(() -> FIXED_CLOCK_NANOS),
+                () -> cache.refresh(FactionsView.INSTANCE, SCREEN));
+
+            assertThat(capture.findNode(REBUILD_DRAWABLES_ROW).getWorstCall().getTag())
+                .contains("signalsRaised=FILTER");
         }
 
         @Test

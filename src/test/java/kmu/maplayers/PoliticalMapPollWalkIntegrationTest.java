@@ -4,11 +4,11 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.profiling.ProfileCounter;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
+import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
@@ -121,7 +121,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // another reading of every colony in the sector.
             var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
 
-            assertThat(readCount(poll, SectorWalkCounters.COLONIES_READ))
+            assertThat(ProfileCounts.readTotalOf(poll, SectorWalkCounters.COLONIES_READ))
                 .isEqualTo(TWO_COLONIES_SELECTED_ONCE);
         }
 
@@ -132,7 +132,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // whether or not it then re-selects anybody's colonies.
             var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
 
-            assertThat(readCount(poll, SectorWalkCounters.SECTOR_WALKS))
+            assertThat(ProfileCounts.readTotalOf(poll, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK);
         }
 
@@ -143,7 +143,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // change a poll exists to notice - and would show here as the walk that never happened.
             var polls = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), TWO_POLLS);
 
-            assertThat(readCount(polls, SectorWalkCounters.SECTOR_WALKS))
+            assertThat(ProfileCounts.readTotalOf(polls, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK_PER_POLL);
         }
 
@@ -232,16 +232,6 @@ final class PoliticalMapPollWalkIntegrationTest {
                 profiler,
                 () -> runPollsAndReadGeometryRevision(sector, pollCount, () -> { }))
             .findNode(ProfileSection.UNSCOPED_COUNTS.getName());
-    }
-
-    // What one row counted of one counter. A counter nothing touched is absent from the row rather
-    // than present at nought, and reading it as nought is what turns "never counted" into the
-    // number a case names - which is the failure a case about a walk that stopped happening wants.
-    private static long readCount(ProfileNode row, ProfileCounter counter) {
-
-        var count = row.findCount(counter);
-
-        return count == null ? 0L : count.getTotals().getTotal();
     }
 
     // Drives the real poll pollCount times and reports the geometry revision it left standing. The
