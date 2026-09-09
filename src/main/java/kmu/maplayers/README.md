@@ -677,33 +677,12 @@ bar once does not order it again per save.
   factory answers it, so a caller resolving a mark it may not have never branches first. Its table
   shapes are the block's alone, so a body cannot author a look of its own. So two layers' boxes differ
   only in what they say.
-- **`base/refresh`** - what says a cached overlay has gone stale, and the throttled polls that
-  find the changes the engine announces to nobody. `StalenessPollLoop` is the cadence - a throttle,
-  a fault guard, and the call - and asks a `MapLayerStalenessSource` what moved since it last asked,
-  so which changes count, and which signal each one raises, stay the source's answer - a signal
-  being a `MapLayerRefreshSignal`, declared by the framework or by the layer that alone means
-  anything by it. Two scripts drive that loop and they are two classes on purpose: the engine
-  registers and clears transient scripts by *exact* class, so a poll that must be installed and
-  taken back on its own timetable needs an identity of its own. `MapLayerSectorWatcher` is a
-  layer's, installed per layer that has something to poll. `MapSubstrateSectorWatcher` is the
-  substrate's, installed once per sector beside its machinery by `MapSubstrateRefreshInstaller`,
-  and driving `MapSubstrateStalenessSource`. That one stales nothing: it sweeps the sector for what
-  each system's own inhabitants can see of the colonies a revelation gate holds back, which is a
-  write onto the shared sighting register (`SectorColonySightings`) and not a claim about any
-  drawing. It is the substrate's rather than a layer's because the record is shared and a layer is
-  something the player can take off the bar - accrual following one layer would have its gaps
-  decided by an unrelated preference, and nothing would report that, what is lost being a colony's
-  witnesses months later on a map since put back. The cost taken knowingly is a second reading:
-  this poll opens a colony index of its own where the sweep used to ride the political map's pass,
-  so two polls now read what one served. A reading handed from the framework down to a layer would
-  belong to the frame sequence rather than to either poll, and the profiling scopes are what would
-  say whether it is worth arranging.
-  `MapLayerRefreshBoard` is what a signal is raised on, one per sector held by [that sector's
-  installation](base/installation/README.md), since the stale set names systems by bare id;
-  every producer is handed the board it means, and this package is gated from importing the
-  installation one so none can resolve a board of its own. The signals themselves, who declares
-  which, and the four rebuild paths they drive are
-  [the caching notes](../../../../../docs/dev/caching.md).
+- **[Refresh](base/refresh/README.md)** - what says a cached overlay has gone stale
+  (`MapLayerRefreshSignal`, `MapLayerRefreshBoard`), the throttled poll that finds the changes the
+  engine announces to nobody (`StalenessPollLoop` over a `MapLayerStalenessSource`), why the two
+  scripts that drive it are two classes, and the one poll that is nobody's layer - the substrate's
+  sweep of what each system's inhabitants can see. The signals, who declares which, and the four
+  rebuild paths they drive are [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
 - **[Map chrome](base/chrome/README.md)** - the controls the player moves the layers with from

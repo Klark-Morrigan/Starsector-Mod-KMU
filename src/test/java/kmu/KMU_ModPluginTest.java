@@ -7,6 +7,7 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
@@ -202,6 +203,8 @@ class KMU_ModPluginTest {
 
         private final MockedStatic<MapLayerInstallations> installationsMock =
             mockStatic(MapLayerInstallations.class);
+        private final MockedStatic<MapSubstrateRefreshInstaller> substrateRefreshMock =
+            mockStatic(MapSubstrateRefreshInstaller.class);
         private final MockedStatic<PoliticalMapInstaller> politicalMapMock =
             mockStatic(PoliticalMapInstaller.class);
         private final MockedStatic<MapSurfaceInstaller> surfaceMock =
@@ -221,6 +224,8 @@ class KMU_ModPluginTest {
 
             installationsMock.verify(
                 () -> MapLayerInstallations.installMachineryOn(sector), howOften);
+            substrateRefreshMock.verify(
+                () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
             politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
@@ -232,6 +237,8 @@ class KMU_ModPluginTest {
 
             installationsMock.verify(
                 () -> MapLayerInstallations.uninstallMachineryFrom(sector), howOften);
+            substrateRefreshMock.verify(
+                () -> MapSubstrateRefreshInstaller.uninstallAll(sector), howOften);
             politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), howOften);
@@ -247,6 +254,7 @@ class KMU_ModPluginTest {
             sidebarMock.close();
             surfaceMock.close();
             politicalMapMock.close();
+            substrateRefreshMock.close();
             installationsMock.close();
         }
     }

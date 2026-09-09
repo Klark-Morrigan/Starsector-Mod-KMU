@@ -3,6 +3,8 @@ package kmu.maplayers.base.refresh;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.util.IntervalUtil;
 
+import kmlib.logging.SessionWarning;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -28,12 +30,11 @@ final class StalenessPollLoop {
     private static final Logger LOG = Global.getLogger(StalenessPollLoop.class);
 
     private final IntervalUtil pollInterval = new IntervalUtil(POLL_MIN_SECONDS, POLL_MAX_SECONDS);
-    private final MapLayerStalenessSource stalenessSource;
 
-    // One-shot guard: this polls on the campaign thread every few seconds, so a
-    // recurring fault would flood the log. The first failure is recorded, the
-    // rest silenced.
-    private boolean hasLoggedPollError;
+    // Said once per session: this polls on the campaign thread every few seconds, so a recurring
+    // fault would otherwise flood the log, and the second line says nothing the first did not.
+    private final SessionWarning pollFaultWarning = new SessionWarning(LOG);
+    private final MapLayerStalenessSource stalenessSource;
 
     /**
      * @param stalenessSource the source whose staleness this poll drives
@@ -64,13 +65,10 @@ final class StalenessPollLoop {
         try {
             stalenessSource.markChangesSinceLastPoll();
         } catch (RuntimeException exception) {
-            if (!hasLoggedPollError) {
-                hasLoggedPollError = true;
-                LOG.error(
-                    "Map layer staleness poll failed; source="
-                        + stalenessSource.getClass().getSimpleName(),
-                    exception);
-            }
+            pollFaultWarning.warnOnce(
+                "Map layer staleness poll failed; source="
+                    + stalenessSource.getClass().getSimpleName(),
+                exception);
         }
     }
 }

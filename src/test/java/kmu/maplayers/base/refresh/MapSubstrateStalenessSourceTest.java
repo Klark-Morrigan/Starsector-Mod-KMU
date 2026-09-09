@@ -11,7 +11,7 @@ import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -102,20 +102,17 @@ final class MapSubstrateStalenessSourceTest {
     // each on to the register.
     private static SectorAPI buildSectorWithSystems(String... systemIds) {
 
-        var systems = new StarSystemAPI[systemIds.length];
-
-        for (var index = 0; index < systemIds.length; index++) {
-            systems[index] = mockSystem(systemIds[index]);
-        }
-        return buildSectorHolding(systems);
-    }
-
-    private static SectorAPI buildSectorHolding(StarSystemAPI... systems) {
+        // Built before the sector is stubbed: a mock made inside another mock's stubbing is what
+        // Mockito reports as an unfinished stubbing.
+        var systems = Arrays
+            .stream(systemIds)
+            .map(MapSubstrateStalenessSourceTest::mockSystem)
+            .toList();
 
         var sectorMock = mock(SectorAPI.class);
 
         when(sectorMock.getStarSystems())
-            .thenReturn(List.of(systems));
+            .thenReturn(systems);
 
         return sectorMock;
     }
