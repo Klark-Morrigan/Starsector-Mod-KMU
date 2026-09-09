@@ -105,8 +105,9 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
      * reading: the intel screen's faction panel draws the reputation level and number as
      * {@code "Attitude: Friendly (35 / 100)"}. Vanilla keeps "relationship" for the prose that
      * reports a change, so a column showing the number is an attitude and a line reporting a move in
-     * it is a relationship. The code around this says "standing" throughout, which is the
-     * mod-neutral noun for the value; the label is the player's word for it.
+     * it is a relationship. The code around this says "relation" for one faction pair's reading and
+     * "standing" for the position a whole bloc holds on the scale; the label is the player's word
+     * for what the column shows, which is the pair reading.
      *
      * @return the drawn label for this mode's selector row
      */
@@ -192,7 +193,7 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
             BlocStanding.Measured range,
             Color defaultColour) {
 
-        var lowestRun = resolveStandingRun(range.lowest());
+        var lowestRun = resolveRelationRun(range.lowest());
 
         if (range.lowest().reputation() == range.highest().reputation()) {
             return List.of(lowestRun);
@@ -202,18 +203,18 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
             new TextSpan(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR),
                 defaultColour).joinsPreviousRun(),
-            resolveStandingRun(range.highest()).joinsPreviousRun());
+            resolveRelationRun(range.highest()).joinsPreviousRun());
     }
 
     // One end of a range as its drawn run: the reputation in that relation's own colour, with its
-    // sign shown so a friendly bloc's value reads as a positive standing rather than as a bare number
-    // sitting beside negative ones. Neutral draws unsigned, this being a reading on a scale rather
-    // than a movement along one.
-    private static TextSpan resolveStandingRun(FactionRelation standing) {
+    // sign shown so a friendly bloc's value reads as a positive relation rather than as a bare
+    // number sitting beside negative ones. Neutral draws unsigned, this being a reading on a scale
+    // rather than a movement along one.
+    private static TextSpan resolveRelationRun(FactionRelation relation) {
 
         return new TextSpan(
-            KmlibNumbers.formatSignedNonZero(standing.reputation()),
-            standing.colour());
+            KmlibNumbers.formatSignedNonZero(relation.reputation()),
+            relation.colour());
     }
 
     // Two blocs by the standings they hold right now, read at comparison time for the reason the

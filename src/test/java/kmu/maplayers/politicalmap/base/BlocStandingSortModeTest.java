@@ -337,6 +337,6 @@ final class BlocStandingSortModeTest {
 
         return new BlocStandingSortMode<>(new BlocStandingReader(
             grouping,
-            new PlayerStandingSourceFake(establishedPlayerFactionId, standingByFactionId)));
+            new PlayerRelationSourceFake(establishedPlayerFactionId, standingByFactionId)));
     }
 }

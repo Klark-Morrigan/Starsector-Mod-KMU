@@ -17,10 +17,10 @@ import java.util.Optional;
  *                                   faction is established yet
  * @param standingByFactionId        each faction that answers, and what it answers
  */
-record PlayerStandingSourceFake(
+record PlayerRelationSourceFake(
     String establishedPlayerFactionId,
     Map<String, FactionRelation> standingByFactionId)
-    implements BlocStandingReader.PlayerStandingSource {
+    implements BlocStandingReader.PlayerRelationSource {
 
     @Override
     public Optional<String> resolveEstablishedPlayerFactionId() {
@@ -28,7 +28,7 @@ record PlayerStandingSourceFake(
     }
 
     @Override
-    public Optional<FactionRelation> readStandingWithPlayer(String factionId) {
+    public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
         return Optional.ofNullable(standingByFactionId.get(factionId));
     }
 }

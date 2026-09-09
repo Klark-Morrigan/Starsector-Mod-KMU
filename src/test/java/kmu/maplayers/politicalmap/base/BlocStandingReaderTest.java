@@ -58,11 +58,11 @@ final class BlocStandingReaderTest {
         @Test
         void readBlocStandingFoldsALoneFactionToARangeWhoseEndsCoincide() {
 
-            var standingSourceFake = new PlayerStandingSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
                 null,
                 Map.of("hegemony", HOSTILE));
 
-            var reader = new BlocStandingReader(HolderGrouping.identity(), standingSourceFake);
+            var reader = new BlocStandingReader(HolderGrouping.identity(), relationSourceFake);
 
             // Both ends are the one member's standing, which is what lets a lone faction's value
             // collapse to a single number without a case of its own.
@@ -73,11 +73,11 @@ final class BlocStandingReaderTest {
         @Test
         void readBlocStandingFoldsAnAlliancesMembersToTheTwoEndsTheyHold() {
 
-            var standingSourceFake = new PlayerStandingSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
                 null,
                 Map.of("hegemony", HOSTILE, "tritachyon", FRIENDLY));
 
-            var reader = new BlocStandingReader(PACT_GROUPING, standingSourceFake);
+            var reader = new BlocStandingReader(PACT_GROUPING, relationSourceFake);
 
             assertThat(reader.readBlocStanding("pact"))
                 .isEqualTo(new BlocStanding.Measured(HOSTILE, FRIENDLY));
@@ -88,11 +88,11 @@ final class BlocStandingReaderTest {
 
             // Tritachyon is absent from the sector, so the range is the one member that answered
             // rather than one end dragged to the scale's centre by a faction nothing is known about.
-            var standingSourceFake = new PlayerStandingSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
                 null,
                 Map.of("hegemony", FRIENDLY));
 
-            var reader = new BlocStandingReader(PACT_GROUPING, standingSourceFake);
+            var reader = new BlocStandingReader(PACT_GROUPING, relationSourceFake);
 
             assertThat(reader.readBlocStanding("pact"))
                 .isEqualTo(new BlocStanding.Measured(FRIENDLY, FRIENDLY));
@@ -101,8 +101,8 @@ final class BlocStandingReaderTest {
         @Test
         void readBlocStandingReportsABlocNoMemberAnsweredForAsUnreadable() {
 
-            var standingSourceFake = new PlayerStandingSourceFake(null, Map.of());
-            var reader = new BlocStandingReader(PACT_GROUPING, standingSourceFake);
+            var relationSourceFake = new PlayerRelationSourceFake(null, Map.of());
+            var reader = new BlocStandingReader(PACT_GROUPING, relationSourceFake);
 
             assertThat(reader.readBlocStanding("pact"))
                 .isEqualTo(BlocStanding.UNREADABLE);
@@ -113,8 +113,8 @@ final class BlocStandingReaderTest {
 
             // The player faction is established here, so the case also pins that a bloc nothing
             // named is not matched against the player's own bloc by two absent ids agreeing.
-            var standingSourceFake = new PlayerStandingSourceFake("player", Map.of());
-            var reader = new BlocStandingReader(HolderGrouping.identity(), standingSourceFake);
+            var relationSourceFake = new PlayerRelationSourceFake("player", Map.of());
+            var reader = new BlocStandingReader(HolderGrouping.identity(), relationSourceFake);
 
             assertThat(reader.readBlocStanding(null))
                 .isEqualTo(BlocStanding.UNREADABLE);
@@ -123,11 +123,11 @@ final class BlocStandingReaderTest {
         @Test
         void readBlocStandingRecognisesThePlayersOwnFactionAsTheirBloc() {
 
-            var standingSourceFake = new PlayerStandingSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
                 "player",
                 Map.of("player", FRIENDLY));
 
-            var reader = new BlocStandingReader(HolderGrouping.identity(), standingSourceFake);
+            var reader = new BlocStandingReader(HolderGrouping.identity(), relationSourceFake);
 
             // The engine answers a standing for the player with themselves; the bloc the scale is
             // measured from takes its own case rather than that number.
@@ -138,11 +138,11 @@ final class BlocStandingReaderTest {
         @Test
         void readBlocStandingRecognisesTheAllianceThePlayersFactionFoldsInto() {
 
-            var standingSourceFake = new PlayerStandingSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
                 "player",
                 Map.of("hegemony", HOSTILE));
 
-            var reader = new BlocStandingReader(PLAYER_PACT_GROUPING, standingSourceFake);
+            var reader = new BlocStandingReader(PLAYER_PACT_GROUPING, relationSourceFake);
 
             // The map paints this bloc as the player's, so ranking it by how its other members feel
             // about them would rank a bloc against itself.
@@ -153,11 +153,11 @@ final class BlocStandingReaderTest {
         @Test
         void readBlocStandingMeasuresThePlayersFactionBeforeAnIdentityIsEstablished() {
 
-            var standingSourceFake = new PlayerStandingSourceFake(
+            var relationSourceFake = new PlayerRelationSourceFake(
                 null,
                 Map.of("player", FRIENDLY));
 
-            var reader = new BlocStandingReader(HolderGrouping.identity(), standingSourceFake);
+            var reader = new BlocStandingReader(HolderGrouping.identity(), relationSourceFake);
 
             // With no established faction there is nobody for a bloc to be recognised as, so the
             // bloc is measured like any other.

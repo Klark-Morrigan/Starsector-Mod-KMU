@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
 import kmlib.starsector.relation.FactionRelation;
-import kmlib.starsector.relation.StarsectorPlayerStandings;
+import kmlib.starsector.relation.StarsectorPlayerRelations;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -17,7 +17,7 @@ import java.util.Optional;
 
 /**
  * Reads a bloc's {@link BlocStanding}: which of the three positions it holds, and - where it holds
- * a measured one - the two ends its members' standings fold to.
+ * a measured one - the two ends its members' relations fold to.
  *
  * <p>Relations with the player are the one thing a picker ranks blocs by that no per-system fold
  * computes. They are a bloc-level fact, read off the sector rather than summed over systems, and
@@ -30,31 +30,31 @@ import java.util.Optional;
  * on the same reasoning every other bloc-level rule reads it whole - a range over whichever subset
  * happened to be present is not the fact it claims to be.
  *
- * <p>The sector reads bind behind {@link PlayerStandingSource}, so the fold itself is arithmetic
- * over hand-built standings. Stateless past that seam and the grouping - both are read afresh on
+ * <p>The sector reads bind behind {@link PlayerRelationSource}, so the fold itself is arithmetic
+ * over hand-built relations. Stateless past that seam and the grouping - both are read afresh on
  * every call, so a reader outlives the reputations it is asked about.
  */
 public final class BlocStandingReader {
 
     // The scale the two ends are picked off: the signed reputation, rather than the level the game
     // names it, that being the finer of the two - two members a level apart in name and a point
-    // apart in fact still order, and the level rides along on whichever standing won an end.
+    // apart in fact still order, and the level rides along on whichever relation won an end.
     private static final Comparator<FactionRelation> REPUTATION_ORDER =
         Comparator.comparingInt(FactionRelation::reputation);
 
     private final HolderGrouping grouping;
-    private final PlayerStandingSource standingSource;
+    private final PlayerRelationSource relationSource;
 
     /**
      * Binds the two things a bloc's standing is read from.
      *
      * @param grouping       the fold naming each bloc's membership - the one the map painted by
-     * @param standingSource where the player's own faction and each member's standing come from
+     * @param relationSource where the player's own faction and each member's relation come from
      */
-    public BlocStandingReader(HolderGrouping grouping, PlayerStandingSource standingSource) {
+    public BlocStandingReader(HolderGrouping grouping, PlayerRelationSource relationSource) {
 
         this.grouping = Objects.requireNonNull(grouping, "grouping");
-        this.standingSource = Objects.requireNonNull(standingSource, "standingSource");
+        this.relationSource = Objects.requireNonNull(relationSource, "relationSource");
     }
 
     /**
@@ -69,7 +69,7 @@ public final class BlocStandingReader {
 
         Objects.requireNonNull(sector, "sector");
 
-        return new BlocStandingReader(grouping, new SectorPlayerStandingSource(sector));
+        return new BlocStandingReader(grouping, new SectorPlayerRelationSource(sector));
     }
 
     /**
@@ -93,7 +93,7 @@ public final class BlocStandingReader {
         if (isPlayersOwnBloc(blocId)) {
             return BlocStanding.PLAYERS_OWN;
         }
-        return foldMemberStandings(blocId);
+        return foldMemberRelations(blocId);
     }
 
     // Whether this bloc is the one the player's own faction folds into - false while no player
@@ -105,29 +105,29 @@ public final class BlocStandingReader {
     // by how its other members feel about them.
     private boolean isPlayersOwnBloc(String blocId) {
 
-        return standingSource.resolveEstablishedPlayerFactionId()
+        return relationSource.resolveEstablishedPlayerFactionId()
             .map(grouping::resolveBlocId)
             .filter(blocId::equals)
             .isPresent();
     }
 
     // The bloc's members folded to the two ends of the range they hold, or unreadable where not one
-    // of them answered a standing. A member the sector cannot look up is passed over rather than
+    // of them answered a relation. A member the sector cannot look up is passed over rather than
     // counted at nought, which would drag an end to the scale's centre on a faction nothing is known
     // about.
-    private BlocStanding foldMemberStandings(String blocId) {
+    private BlocStanding foldMemberRelations(String blocId) {
 
-        var memberStandings = new ArrayList<FactionRelation>();
+        var memberRelations = new ArrayList<FactionRelation>();
 
         for (var memberFactionId : grouping.resolveMemberFactionIds(blocId)) {
-            standingSource.readStandingWithPlayer(memberFactionId).ifPresent(memberStandings::add);
+            relationSource.readRelationWithPlayer(memberFactionId).ifPresent(memberRelations::add);
         }
-        if (memberStandings.isEmpty()) {
+        if (memberRelations.isEmpty()) {
             return BlocStanding.UNREADABLE;
         }
         return new BlocStanding.Measured(
-            Collections.min(memberStandings, REPUTATION_ORDER),
-            Collections.max(memberStandings, REPUTATION_ORDER));
+            Collections.min(memberRelations, REPUTATION_ORDER),
+            Collections.max(memberRelations, REPUTATION_ORDER));
     }
 
     /**
@@ -138,7 +138,7 @@ public final class BlocStandingReader {
      * same sector at the same moment - handed over separately, a fold could recognise one sector's
      * player faction and rank another sector's relations.
      */
-    public interface PlayerStandingSource {
+    public interface PlayerRelationSource {
 
         /**
          * The player's own faction, once they have an identity to be recognised by.
@@ -152,13 +152,13 @@ public final class BlocStandingReader {
          * Where one faction stands with the player.
          *
          * @param factionId the faction to read
-         * @return its standing, or nothing where the faction cannot be looked up at all
+         * @return its relation, or nothing where the faction cannot be looked up at all
          */
-        Optional<FactionRelation> readStandingWithPlayer(String factionId);
+        Optional<FactionRelation> readRelationWithPlayer(String factionId);
     }
 
     // The live reads, over one sector.
-    private record SectorPlayerStandingSource(SectorAPI sector) implements PlayerStandingSource {
+    private record SectorPlayerRelationSource(SectorAPI sector) implements PlayerRelationSource {
 
         @Override
         public Optional<String> resolveEstablishedPlayerFactionId() {
@@ -177,12 +177,12 @@ public final class BlocStandingReader {
         }
 
         @Override
-        public Optional<FactionRelation> readStandingWithPlayer(String factionId) {
+        public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
 
             // An id naming nobody is looked up as nobody rather than handed to the sector, which is
             // free to fault on it.
             return KmlibStrings.hasText(factionId)
-                ? StarsectorPlayerStandings.readPlayerStanding(sector.getFaction(factionId))
+                ? StarsectorPlayerRelations.readPlayerRelation(sector.getFaction(factionId))
                 : Optional.empty();
         }
     }
