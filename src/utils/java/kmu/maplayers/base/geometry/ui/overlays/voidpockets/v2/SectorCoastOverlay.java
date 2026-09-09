@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2;
 
 import kmu.maplayers.base.geometry.CoastCrossings;
 import kmu.maplayers.base.geometry.CoastPocketFaults;
+import kmu.maplayers.base.geometry.CoastRounding;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SettledCoast;
@@ -75,17 +76,18 @@ public final class SectorCoastOverlay {
         if (!settings.showSectorVoid
                 || (!settings.showCoastline && !settings.showCoastalFill)) {
 
-            coast.acceptTrace(null);
+            coast.acceptTrace(null, CoastRounding.RoundedCoasts.NONE);
             penetrations = List.of();
             spills = List.of();
             return;
         }
 
         // The two lines that make this v2: bridges laid, settled rules.
-        coast.acceptTrace(SettledCoast.traceAcrossBridges(
-            fixture.getSites(),
-            settings.parameters,
-            settings.resolveCoastRules()));
+        var rules = settings.resolveCoastRules();
+        var traced = SettledCoast.traceAcrossBridges(
+            fixture.getSites(), settings.parameters, rules);
+
+        coast.acceptTrace(traced, CoastRounding.roundTracedCoasts(traced, rules.rounding()));
 
         coast.findPockets(fixture);
 

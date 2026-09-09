@@ -46,6 +46,7 @@ public final class BridgedContinents {
     // nothing" - an empty list is a real answer here, and the two have to be told apart or a
     // sector with no lakes pays for the lake search on every frame that mentions it.
     private Coastlines.TracedCoasts traced;
+    private CoastRounding.RoundedCoasts rounded;
     private List<CellGap> inletSpans;
     private List<CellGap> lakeSpans;
     private List<CellGap> puddleSpans;
@@ -107,6 +108,51 @@ public final class BridgedContinents {
             traced = Coastlines.traceContinentCoasts(sites, parameters, coastRules);
         }
         return traced;
+    }
+
+    /**
+     * The knobs this laying was opened under, which everything measured against it shares.
+     *
+     * @return the geometry knobs
+     */
+    public SectorGeometryParameters parameters() {
+        return parameters;
+    }
+
+    /**
+     * Every line of the trace with its sharp joins taken off, which is what a drawing strokes.
+     *
+     * <p>Rounded once for the whole laying rather than at each drawing. A sector's coasts are
+     * tens of thousands of points, so a pass per drawing is paid for per drawing - and holding
+     * one answer is what stops the stroke, the lake margins and an exported picture from being
+     * three roundings of one border.
+     *
+     * @return the rounded lines, one ring for one ring and in the trace's own order
+     */
+    public CoastRounding.RoundedCoasts roundCoasts() {
+
+        if (rounded == null) {
+            rounded = CoastRounding.roundTracedCoasts(traceCoasts(), coastRules.rounding());
+        }
+        return rounded;
+    }
+
+    /**
+     * The water this construction fills, under one colouring and one shaping.
+     *
+     * <p>Opened rather than found: what the caller gets is the question settled, so a drawing
+     * showing three layers and a report asking about all six are reading one inventory.
+     *
+     * @param ownerBySite each site's owner, or null where it has none - which moves the shapes,
+     *                    since a pocket one owner rings is pushed out into that owner's fills
+     * @param shaping     whether to ask of the map as drawn or of the void's true extent
+     * @return the water, with nothing found yet
+     */
+    public FilledWater fillWater(
+            List<String> ownerBySite,
+            VoidPockets.PocketShaping shaping) {
+
+        return new FilledWater(this, ownerBySite, shaping);
     }
 
     /**

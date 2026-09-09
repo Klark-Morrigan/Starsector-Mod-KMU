@@ -7,7 +7,6 @@ import kmu.maplayers.base.geometry.LandableFrontages;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
-import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
@@ -69,18 +68,23 @@ public final class CoastalPocketsOverlay {
      * Takes the trace a construction has just made, and forgets whatever came before it.
      *
      * <p>The pockets go with it. They are a fact about a particular trace, and keeping the old
-     * ones alongside a new coast would draw the void one line shut in underneath another. So is
-     * the rounding, which is this trace's borders taken to the line the map strokes.
+     * ones alongside a new coast would draw the void one line shut in underneath another.
      *
-     * @param traced the trace, or null where the construction is switched off entirely
+     * <p>The rounded lines come in beside the trace rather than being made here. A construction
+     * that holds a rounding already - because its fills are measured from one - would otherwise
+     * pay for a second pass over the same tens of thousands of points, and the two answers could
+     * drift apart under different knobs while both looked right.
+     *
+     * @param traced  the trace, or null where the construction is switched off entirely
+     * @param rounded that trace's lines as the map strokes them, one ring for one ring
      */
-    public void acceptTrace(Coastlines.TracedCoasts traced) {
+    public void acceptTrace(
+            Coastlines.TracedCoasts traced,
+            CoastRounding.RoundedCoasts rounded) {
 
         this.traced = traced;
         this.pockets = List.of();
-        this.rounded = traced == null
-            ? CoastRounding.RoundedCoasts.NONE
-            : CoastRounding.roundTracedCoasts(traced, settings.resolveCoastRules().rounding());
+        this.rounded = traced == null ? CoastRounding.RoundedCoasts.NONE : rounded;
         this.landable = traced == null || !settings.showLandableFrontage
             ? List.of()
             : LandableFrontages.collectLandableRuns(
@@ -149,32 +153,6 @@ public final class CoastalPocketsOverlay {
     }
 
     /**
-     * The void behind the coast as bare rings, for a construction that fills it together with
-     * water of its own rather than on its own.
-     *
-     * @return one ring per outline, empty until {@link #findPockets} has been asked for
-     */
-    public List<List<double[]>> collectPocketRings() {
-        return MapPainting.collectPocketOutlines(pockets);
-    }
-
-    /**
-     * Every puddle's whole water, as the ring that bounds it.
-     *
-     * <p>The whole of it, where a lake gives up its own {@link #addLakeMargins margin}, because
-     * the two say different things. A lake's open water is left to the backdrop the way the
-     * sector's open void is - the margin marks what the drawn shore conceded against the cells'
-     * true edge. A puddle has no shore to concede anything, and water drawn as backdrop reads
-     * as open void, which is exactly what a puddle is not.
-     *
-     * @return one ring per puddle
-     */
-    public List<List<double[]>> collectPuddleRings() {
-
-        return traced.puddles().stream().map(Coastlines.Puddle::waterEdge).toList();
-    }
-
-    /**
      * Draws each coast, over the top of everything.
      *
      * @param g2     what to draw with
@@ -183,37 +161,6 @@ public final class CoastalPocketsOverlay {
     public void paintCoastRings(Graphics2D g2, Color colour) {
 
         MapPainting.paintLineRings(g2, rounded.coasts(), colour);
-    }
-
-    /**
-     * Adds every lake's margin to a sheet: the water between the drawn shore and the cells'
-     * own arcs, with the water inside the shore left out.
-     *
-     * <p>The margin rather than the whole lake, because that is what the coastal fill shows
-     * of the outer shore - what the drawn line gave up against the cells' true edge - and a
-     * lake filled solid answers a different question in the same colour.
-     *
-     * <p>Into a sheet rather than painted here, because a margin is a claim about water some
-     * other layer may also be filling. Painted on its own it would lay a second translucent
-     * body over that layer's, and the concession band would come out darker than the water
-     * either side of it - the band reading as a third kind of thing rather than as the edge of
-     * one. In the sheet the two are one body, and a lake nothing else fills keeps the bare
-     * middle a margin has always meant.
-     *
-     * <p>Against the ROUNDED shore, which is the one place a fill is measured from a rounded
-     * line rather than from a border: the margin exists to meet the stroke on screen, so a band
-     * ending at the border would show a sliver of bare water wherever the rounding stepped
-     * inside it.
-     *
-     * @param sheet the sheet to add them to
-     */
-    public void addLakeMargins(FillSheet sheet) {
-
-        var lakes = traced.lakes();
-
-        for (var index = 0; index < lakes.size(); index++) {
-            sheet.addMargin(lakes.get(index).waterEdge(), rounded.lakes().get(index));
-        }
     }
 
     /**
