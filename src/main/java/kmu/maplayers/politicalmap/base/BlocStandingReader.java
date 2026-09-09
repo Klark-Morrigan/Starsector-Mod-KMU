@@ -3,8 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
-import kmlib.starsector.relation.FactionRelation;
-import kmlib.starsector.relation.StarsectorPlayerRelations;
+import kmlib.starsector.factions.relation.FactionRelation;
+import kmlib.starsector.factions.relation.StarsectorPlayerRelations;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;

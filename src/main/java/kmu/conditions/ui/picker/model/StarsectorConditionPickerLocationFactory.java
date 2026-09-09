@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.factions.FactionCrests;
-import kmlib.starsector.relation.StarsectorPlayerRelations;
+import kmlib.starsector.factions.relation.StarsectorPlayerRelations;
 
 import kmu.conditions.domain.KmuEditableMarket;
 import kmu.conditions.domain.StarsectorEditableMarket;
@@ -14,7 +14,7 @@ import kmu.starsector.StarsectorGravityWellResolver;
 
 import java.util.Objects;
 
-import static kmlib.starsector.relation.StarsectorRelationFormatter.formatRelation;
+import static kmlib.starsector.factions.relation.StarsectorRelationFormatter.formatRelation;
 
 import static kmu.util.KmuValues.normalizeText;
 

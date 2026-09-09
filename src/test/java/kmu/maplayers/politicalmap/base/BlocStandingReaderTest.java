@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.RelationshipAPI;
 
-import kmlib.starsector.relation.FactionRelation;
+import kmlib.starsector.factions.relation.FactionRelation;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 

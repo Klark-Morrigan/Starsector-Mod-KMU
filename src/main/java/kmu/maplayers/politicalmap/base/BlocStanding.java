@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.relation.FactionRelation;
+import kmlib.starsector.factions.relation.FactionRelation;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
