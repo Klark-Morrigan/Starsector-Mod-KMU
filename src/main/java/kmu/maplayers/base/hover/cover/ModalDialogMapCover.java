@@ -2,8 +2,6 @@ package kmu.maplayers.base.hover.cover;
 
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
 
-import java.util.function.BooleanSupplier;
-
 /**
  * The cover a modal raised over a core screen lays over the map - a confirmation prompt, a picker.
  * It takes every event outside its own box and dims the rest of the screen behind it, so while one
@@ -27,23 +25,13 @@ import java.util.function.BooleanSupplier;
  * <p>Fails open per the role's rule - a core UI that cannot be walked reports no modal - which the
  * reading behind it guarantees and documents.
  */
-public final class ModalDialogMapCover implements MapCover {
+public final class ModalDialogMapCover extends FlagMapCover {
 
-    private final BooleanSupplier isModalDialogShowing;
-
-    /** Reads the live core UI - the pairing a running game gets. */
+    /**
+     * Reads the live core UI - a walk of its own children, which is what puts this above the settled
+     * flags and below the covers that resolve a layout or walk down into a tab.
+     */
     public ModalDialogMapCover() {
-        this(CoreUiDialogView::isModalDialogShowing);
-    }
-
-    ModalDialogMapCover(BooleanSupplier isModalDialogShowing) {
-        this.isModalDialogShowing = isModalDialogShowing;
-    }
-
-    @Override
-    public boolean isCoveringCursor() {
-        // A walk of the core UI's own children, which is what puts it above the settled flags and
-        // below the covers that resolve a layout or walk down into a tab.
-        return isModalDialogShowing.getAsBoolean();
+        super(CoreUiDialogView::isModalDialogShowing);
     }
 }

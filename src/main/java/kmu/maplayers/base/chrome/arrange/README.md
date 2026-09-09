@@ -94,12 +94,15 @@ pulled out are the four that were each, at some point, the part nothing had veri
 - **`ArrangementBoxLayout`** is the arithmetic, because where an element sits and how tall the box
   stands are questions with answers, and a class that also needs a running game to build a panel can
   only answer them by being looked at.
+- **`ArrangementDialogPanel.isMapShowing`** is the one reading in this mod that fails *closed*, and
+  the direction is the whole of it: a reach that raises means the widget tree cannot be walked, and a
+  dialog that cannot find the screen it was opened over comes down rather than standing on it. It
+  takes the reach rather than making it, so only the raise needs a screen nothing can be built on.
 
-What is left in `MapLayerArrangementDialog.DialogPanelPlugin` is glue: it reads those answers and
-acts. Its two rules of its own are both about a panel that has stopped being the dialog's - a core UI
-it cannot walk reads as no map, so the dialog comes down rather than standing over a screen it can no
-longer see; and a panel whose detach did not take goes on being advanced by whoever still holds it,
-with nothing left to paint through.
+What is left in the panel's own plugin is glue: it reads those answers and acts. One rule of its own
+stays unverified, and is the last thing here that could only be checked by opening the dialog - a
+panel whose detach did not take goes on being advanced by whoever still holds it, with nothing left
+to paint through, so the advance stands down before writing through a panel it no longer has.
 
 The same line explains the seam at the other end. The editor is seeded once and is thereafter its own
 source of truth - re-reading the store between clicks would read back what it just wrote, and

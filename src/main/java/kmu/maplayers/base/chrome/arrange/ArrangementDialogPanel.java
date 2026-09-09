@@ -12,6 +12,7 @@ import kmlib.starsector.ui.map.probes.ShownMapTab;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * The surface the arranging dialog stands on: a screen-sized panel in the core UI, what it claims
@@ -113,6 +114,30 @@ final class ArrangementDialogPanel {
         fade.raiseDialog();
 
         return true;
+    }
+
+    /**
+     * Whether a map is still on screen to have a bar to arrange.
+     *
+     * <p>Fails closed, which is the opposite way round from the covers: a reach that raises means the
+     * widget tree cannot be walked at all, and a dialog nobody can place should come down rather than
+     * stand over a screen it can no longer see.
+     *
+     * <p>Takes the reach rather than making it, so the rule is answerable without a running game -
+     * the raise is the half that only ever happens on a screen nothing can be built on.
+     *
+     * @param resolveShownMapTab the reach for the map tab currently on screen, which answers null
+     *                           where none is and raises where the tree cannot be walked
+     * @return whether a map is showing
+     */
+    static boolean isMapShowing(Supplier<Object> resolveShownMapTab) {
+
+        try {
+            return resolveShownMapTab.get() != null;
+
+        } catch (RuntimeException cannotReachMap) {
+            return false;
+        }
     }
 
     /**
@@ -219,7 +244,7 @@ final class ArrangementDialogPanel {
             // The panel hangs from the core UI, which outlives the screen the dialog was opened on -
             // so leaving that screen has to be noticed rather than waited for. Down at once rather than
             // faded: there is no screen left under it to fade against.
-            if (!isMapShowing()) {
+            if (!isMapShowing(ShownMapTab::resolveShownMapTab)) {
                 takePanelDown();
                 onPanelLost.run();
                 return;
@@ -258,19 +283,6 @@ final class ArrangementDialogPanel {
 
         @Override
         public void buttonPressed(Object buttonId) {
-        }
-
-        // Whether a map is still on screen to have a bar to arrange. The reach raises where the widget
-        // tree cannot be walked at all, and that reads as no map: a dialog nobody can place should come
-        // down rather than stay up over a screen it can no longer see.
-        private boolean isMapShowing() {
-
-            try {
-                return ShownMapTab.resolveShownMapTab() != null;
-
-            } catch (RuntimeException cannotReachMap) {
-                return false;
-            }
         }
     }
 }

@@ -13,10 +13,12 @@ package kmu.maplayers.base.hover.cover;
  * answers "the cursor is outside the only surface worth pointing at" reaches the same conclusion by
  * the other route, and the composition has no reason to tell the two apart.
  *
- * <p>A role rather than a list of reads, because the covers have nothing in common but their
- * answer: one is a flag published by an optional mod, one is arithmetic over a box this mod laid
- * out, one is a walk of the live widget tree. Stated as a role, each carries its own cost and its
- * own failure rule, and {@link MapCoverReader} composes them without learning either.
+ * <p>A role rather than a list of reads, because what the covers do to answer has nothing in common:
+ * one is a flag published by an optional mod, one is arithmetic over a box this mod laid out, one is
+ * a walk of the live widget tree. Stated as a role, each carries its own cost and its own failure
+ * rule, and {@link MapCoverReader} composes them without learning either. Where several do reach
+ * their answer the same way they share that much and no more - see {@link FlagMapCover} - which is a
+ * saving among those implementations rather than anything this role knows about.
  *
  * <p><b>A cover fails open unless it says otherwise</b> - whatever it cannot establish reads as "not
  * covering", because a read taken to refine a hover must not be able to switch off a hover that was

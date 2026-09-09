@@ -459,6 +459,13 @@ bar once does not order it again per save.
   cover cannot answer for them. `ModalDialogMapCover` and `CodexMapCover` state what follows for
   their existence and `MapCoverReader` what follows for the order.
 
+  Those two, the pause menu's and the arranging dialog's are four names over one shape: each is a
+  flag read somewhere else, with no geometry and no cursor test, so `FlagMapCover` holds the
+  delegation and each of the four is a body of reasoning plus the reading it binds. They stay four
+  classes because what makes one of them its own is exactly the argument in its Javadoc - which walk
+  cannot see it, what silences it and what does not - and none of that is expressible as an entry in
+  a list. What is not four times over is the delegation itself, nor the test of it.
+
   Two more belong to optional mods, live with those mods' own integrations, and join the set only
   where the mod is installed - presence being the one condition that cannot move within a run, so
   the factory settles it once instead of asking a cover that could only ever answer no.

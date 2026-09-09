@@ -66,12 +66,7 @@ public final class MapCoverReader {
      *         only surface on the frame that could be pointed at
      */
     public boolean isMapCoveredAtCursor() {
-        for (var cover : covers) {
-            if (cover.isCoveringCursor()) {
-                return true;
-            }
-        }
-        return false;
+        return covers.stream().anyMatch(MapCover::isCoveringCursor);
     }
 
     // The composition itself, named apart from the reader it is handed to so which covers a given

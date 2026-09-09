@@ -2,8 +2,6 @@ package kmu.maplayers.base.hover.cover;
 
 import com.fs.starfarer.api.Global;
 
-import java.util.function.BooleanSupplier;
-
 /**
  * The cover the campaign's pause menu lays over the map: it takes the whole screen, so while one is
  * up nothing the cursor rests on is the map.
@@ -20,28 +18,22 @@ import java.util.function.BooleanSupplier;
  * <p>No cursor test, for the same reason the console needs none: a menu over the screen covers the
  * cursor wherever it is.
  */
-public final class PauseMenuMapCover implements MapCover {
-
-    private final BooleanSupplier isPauseMenuShowing;
+public final class PauseMenuMapCover extends FlagMapCover {
 
     /** Reads the live campaign UI - the pairing a running game gets. */
     public PauseMenuMapCover() {
-        this(PauseMenuMapCover::readLiveMenuState);
+        super(PauseMenuMapCover::readLiveMenuState);
     }
 
-    PauseMenuMapCover(BooleanSupplier isPauseMenuShowing) {
-        this.isPauseMenuShowing = isPauseMenuShowing;
-    }
-
-    @Override
-    public boolean isCoveringCursor() {
-        return isPauseMenuShowing.getAsBoolean();
-    }
-
-    // Fails open on a campaign that is not stood up yet, per the role's rule: what cannot be
-    // established is not covering. There is no map to hover in that state either, so the open
-    // answer costs nothing.
-    private static boolean readLiveMenuState() {
+    /**
+     * Fails open on a campaign that is not stood up yet, per the role's rule: what cannot be
+     * established is not covering. There is no map to hover in that state either, so the open answer
+     * costs nothing.
+     *
+     * @return whether the campaign is showing its menu, and {@code false} wherever that cannot be
+     *         asked
+     */
+    static boolean readLiveMenuState() {
 
         var sector = Global.getSector();
 

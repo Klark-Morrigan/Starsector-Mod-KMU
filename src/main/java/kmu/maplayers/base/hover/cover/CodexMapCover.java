@@ -2,8 +2,6 @@ package kmu.maplayers.base.hover.cover;
 
 import kmlib.starsector.ui.coreui.CodexView;
 
-import java.util.function.BooleanSupplier;
-
 /**
  * The cover the codex lays over the map: while it is up nothing the cursor rests on is the map.
  *
@@ -28,23 +26,14 @@ import java.util.function.BooleanSupplier;
  * <p>Fails open per the role's rule - a game whose state cannot be read reports no codex - which the
  * reading behind it guarantees and documents.
  */
-public final class CodexMapCover implements MapCover {
+public final class CodexMapCover extends FlagMapCover {
 
-    private final BooleanSupplier isCodexShowing;
-
-    /** Reads the live app state - the pairing a running game gets. */
+    /**
+     * Reads the live app state - one hop off it and a memoised name lookup, which puts this beside
+     * the modal cover's walk of the core UI's own children rather than among the settled flags above
+     * it.
+     */
     public CodexMapCover() {
-        this(CodexView::isCodexShowing);
-    }
-
-    CodexMapCover(BooleanSupplier isCodexShowing) {
-        this.isCodexShowing = isCodexShowing;
-    }
-
-    @Override
-    public boolean isCoveringCursor() {
-        // One hop off the app state and a memoised name lookup, which puts it beside the modal
-        // cover's walk of the core UI's own children rather than among the settled flags above it.
-        return isCodexShowing.getAsBoolean();
+        super(CodexView::isCodexShowing);
     }
 }

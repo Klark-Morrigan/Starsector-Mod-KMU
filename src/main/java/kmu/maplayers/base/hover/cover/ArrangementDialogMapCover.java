@@ -2,8 +2,6 @@ package kmu.maplayers.base.hover.cover;
 
 import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
 
-import java.util.function.BooleanSupplier;
-
 /**
  * The cover this mod's own bar-arranging dialog lays over the map. It stands across the screen, dims
  * what is behind it and claims every event its own widgets have not taken, so while it is up nothing
@@ -25,23 +23,14 @@ import java.util.function.BooleanSupplier;
  * <p>Fails open per the role's rule, and cannot fail otherwise: the reading is a field on a dialog this
  * mod owns, so there is no tree to walk and nothing to be unable to establish.
  */
-public final class ArrangementDialogMapCover implements MapCover {
+public final class ArrangementDialogMapCover extends FlagMapCover {
 
-    private final BooleanSupplier isArrangementDialogShowing;
-
-    /** Reads the live dialog - the pairing a running game gets. */
+    /**
+     * Reads the live dialog - a field on a panel this mod put on screen itself, which is what puts
+     * this among the cheapest covers rather than beside the walks that go looking for somebody
+     * else's widgets.
+     */
     public ArrangementDialogMapCover() {
-        this(MapLayerArrangementDialog.INSTANCE::isDialogRaised);
-    }
-
-    ArrangementDialogMapCover(BooleanSupplier isArrangementDialogShowing) {
-        this.isArrangementDialogShowing = isArrangementDialogShowing;
-    }
-
-    @Override
-    public boolean isCoveringCursor() {
-        // A field read on a panel this mod put on screen itself, which is what puts it among the
-        // cheapest covers rather than beside the walks that go looking for somebody else's widgets.
-        return isArrangementDialogShowing.getAsBoolean();
+        super(MapLayerArrangementDialog.INSTANCE::isDialogRaised);
     }
 }
