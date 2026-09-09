@@ -10,7 +10,9 @@ import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The void, named.
@@ -42,11 +44,10 @@ public final class VoidSectionsOverlay {
 
     private final ViewerSettings settings;
 
-    // What the last naming produced, held rather than recomputed while painting: a frame that
-    // redid it would be drawing marks measured against geometry the rest of the frame is not
-    // being drawn from.
-    private List<NamedRegion> inland = List.of();
-    private List<NamedRegion> coastal = List.of();
+    // What the last naming produced, by the layer that shut each piece in, held rather than
+    // recomputed while painting: a frame that redid it would be drawing marks measured against
+    // geometry the rest of the frame is not being drawn from.
+    private Map<VoidSection.SectionKind, List<NamedRegion>> byKind = Map.of();
 
     public VoidSectionsOverlay(ViewerSettings settings) {
         this.settings = settings;
@@ -61,8 +62,7 @@ public final class VoidSectionsOverlay {
      */
     public void refresh(SectorFixture fixture, BridgedContinents laid) {
 
-        inland = List.of();
-        coastal = List.of();
+        byKind = Map.of();
 
         // Nothing reads the sections but the readout and the written names, so with every one
         // of those off the walls below would be laid for an answer no one receives.
@@ -74,39 +74,34 @@ public final class VoidSectionsOverlay {
         // pieces are sections like any other - and every set of them, drawn or not, since what
         // divides a piece of void off is not a question about what is on screen.
         var walled = laid.layEveryWall();
-
-        var foundInland = new ArrayList<NamedRegion>();
-        var foundCoastal = new ArrayList<NamedRegion>();
+        var found = new EnumMap<VoidSection.SectionKind, List<NamedRegion>>(
+            VoidSection.SectionKind.class);
 
         for (var named : VoidSections.collectNamedSections(walled, fixture.getSystemIds())) {
 
-            if (named.section().kind() == VoidSection.SectionKind.COASTAL) {
-                foundCoastal.add(named.region());
-            } else {
-                foundInland.add(named.region());
-            }
+            found.computeIfAbsent(named.section().kind(), kind -> new ArrayList<>())
+                .add(named.region());
         }
-        inland = List.copyOf(foundInland);
-        coastal = List.copyOf(foundCoastal);
+        byKind = found;
     }
 
     /**
      * The sections a reader could be pointing at: those whose pocket is on screen.
      *
-     * <p>Each kind on its own terms, so a reader who has put one construction aside is not
-     * told about it by the pointer while looking at the other.
+     * <p>Each kind on its own terms, so a reader who has put one layer aside is not told about
+     * it by the pointer while looking at another.
      *
      * @return the named sections of every pocket the map is drawing
      */
     public List<NamedRegion> collectShownSections() {
 
-        var shown = new ArrayList<NamedRegion>(inland.size() + coastal.size());
+        var shown = new ArrayList<NamedRegion>();
 
-        if (isInlandPocketShown()) {
-            shown.addAll(inland);
-        }
-        if (isCoastalPocketShown()) {
-            shown.addAll(coastal);
+        for (var kind : VoidSection.SectionKind.values()) {
+
+            if (settings.isSectionOnScreen(kind)) {
+                shown.addAll(byKind.getOrDefault(kind, List.of()));
+            }
         }
         return shown;
     }
@@ -119,69 +114,29 @@ public final class VoidSectionsOverlay {
      */
     public void paintNames(Graphics2D g2, AffineTransform worldToScreen) {
 
-        if (!settings.showContinentVoid) {
-            return;
+        for (var kind : VoidSection.SectionKind.values()) {
+
+            if (settings.shouldWriteSectionNames(kind)) {
+
+                NamedRegions.paintNames(
+                    g2,
+                    worldToScreen,
+                    byKind.getOrDefault(kind, List.of()),
+                    settings.regionNameColour);
+            }
         }
-
-        if (settings.showInlandNames) {
-            NamedRegions.paintNames(g2, worldToScreen, inland, settings.regionNameColour);
-        }
-        if (settings.showCoastalNames) {
-            NamedRegions.paintNames(g2, worldToScreen, coastal, settings.regionNameColour);
-        }
-    }
-
-    // Whether an inland pocket is on screen, which is what makes it something to point at.
-    //
-    // Any span and any inland fill rather than one named pair, because this construction lays
-    // its walls in four sets and fills the water in five layers, and which of them holds a
-    // given section is a fact about that section rather than about the kind. Named to one pair,
-    // the pointer would go silent over a lake it is plainly drawing because the switch it was
-    // told to watch belongs to the puddles.
-    private boolean isInlandPocketShown() {
-
-        return settings.showContinentVoid
-            && isAnySpanDrawn()
-            && isAnyInlandWaterFilled();
-    }
-
-    // The coastal pocket's own answer. Its wall is the coastline where the inland pocket's is
-    // a span, which is the whole of the difference between the two.
-    private boolean isCoastalPocketShown() {
-
-        return settings.showContinentVoid
-            && settings.showContinentCoastline
-            && settings.showContinentCoastFill;
-    }
-
-    // Whether any of the walls an inland section can close on is being drawn.
-    private boolean isAnySpanDrawn() {
-
-        return settings.showContinentBridges
-            || settings.showContinentLakeBridges
-            || settings.showContinentPuddleBridges
-            || settings.showIntercontinentalBridges;
-    }
-
-    // Whether any of the layers an inland section's water can be drawn in is filled. The outer
-    // shores' own fill is not among them: water behind a coast reach is a coastal section, and
-    // counting it here would offer inland names over a map drawing none of their water.
-    private boolean isAnyInlandWaterFilled() {
-
-        return settings.showContinentInletFill
-            || settings.showContinentLakeFill
-            || settings.showContinentLakePocketFill
-            || settings.showContinentPuddleFill
-            || settings.showIntercontinentalFill;
     }
 
     // Whether anything will ask for the sections at all: a pointer can name a pocket that is
-    // on screen, and either kind's names can be written across it.
+    // on screen, and any kind's names can be written across it.
     private boolean isAnySectionWanted() {
 
-        return isInlandPocketShown()
-            || isCoastalPocketShown()
-            || (settings.showContinentVoid
-                && (settings.showInlandNames || settings.showCoastalNames));
+        for (var kind : VoidSection.SectionKind.values()) {
+
+            if (settings.isSectionOnScreen(kind) || settings.shouldWriteSectionNames(kind)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

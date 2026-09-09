@@ -38,18 +38,19 @@ public record LaidCoast(
      * read only the trace would give that map a set of sections its own spans do not divide.
      *
      * @param traced     the coast
-     * @param spans      the lines laid across the water afterwards, which wall it as surely as
-     *                   anything the trace itself carried
+     * @param spans      the lines laid across the water afterwards, as the walls they become -
+     *                   each still saying which water it crossed, since that is what a hole it
+     *                   closes is read as
      * @param parameters the knobs it was traced under
      * @return the coast with its walls down
      */
     public static LaidCoast layCoast(
             Coastlines.TracedCoasts traced,
-            List<CellGap> spans,
+            List<DiscUnionBoundary.Chord> spans,
             SectorGeometryParameters parameters) {
 
         var offered = CoastPockets.buildCoastWalls(traced);
-        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(spans));
+        var laid = new ArrayList<>(spans);
         laid.addAll(offered);
 
         return new LaidCoast(

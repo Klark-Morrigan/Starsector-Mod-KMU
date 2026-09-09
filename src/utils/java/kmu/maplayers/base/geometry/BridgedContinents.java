@@ -194,16 +194,36 @@ public final class BridgedContinents {
      * anyone is drawing it, and a laying that left out the idle sets would hand back sections
      * that merge and split as layers are turned on.
      *
+     * <p>Each span goes in saying which water it crossed. The walk never asks, but a hole it
+     * closes is read as the kind of piece its walls say it is, and that is the only way the
+     * naming can tell a bay from a lake from the sea between two continents.
+     *
+     * <p>TODO: the coast's reaches pass a channel filter in {@code Coastlines} that reads the
+     * channel off the trace's own walls, and a continent trace carries none - so the filter is
+     * zero there and passes every cell-to-cell step. Today every step it should have refused
+     * is exactly zero length and the edge-length floor in {@code CoastPockets} catches all of
+     * them, but a genuine sub-channel reach would be laid. The filter should read the channel
+     * off the knobs, the way the pocket walk already does.
+     *
+     * <p>TODO: the coastline the links make of the sector - the second trace with them laid,
+     * cut down to what the first does not carry - is not laid as walls here, and nothing fills
+     * behind it yet. Void that only the linked shore shuts in is therefore read by whichever
+     * span or reach of the first trace also touches it, or left as a lake.
+     *
      * @return the coasts, their own reaches, and every span, laid together
      */
     public LaidCoast layEveryWall() {
 
-        var spans = new ArrayList<CellGap>();
+        var spans = new ArrayList<DiscUnionBoundary.Chord>();
 
-        spans.addAll(layInletSpans());
-        spans.addAll(layLakeSpans());
-        spans.addAll(claimPuddleSpans());
-        spans.addAll(layLinks());
+        spans.addAll(DiscUnionBoundary.buildChordsFrom(
+            layInletSpans(), DiscUnionBoundary.WallKind.INLET_SPAN));
+        spans.addAll(DiscUnionBoundary.buildChordsFrom(
+            layLakeSpans(), DiscUnionBoundary.WallKind.LAKE_SPAN));
+        spans.addAll(DiscUnionBoundary.buildChordsFrom(
+            claimPuddleSpans(), DiscUnionBoundary.WallKind.PUDDLE_SPAN));
+        spans.addAll(DiscUnionBoundary.buildChordsFrom(
+            layLinks(), DiscUnionBoundary.WallKind.LINK));
 
         return LaidCoast.layCoast(traceCoasts(), spans, parameters);
     }

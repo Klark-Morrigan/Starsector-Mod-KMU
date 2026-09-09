@@ -129,13 +129,18 @@ public final class DiscUnionBoundary {
     }
 
     /**
-     * The two sorts of wall, which sit on the boundary in different ways.
+     * The sorts of wall, which sit on the boundary in two different ways.
      *
      * <p>A named kind rather than a flag, and carried by the wall rather than passed to the
-     * test, because it is a fact about how the line was arrived at: a bridge is the line
+     * test, because it is a fact about how the line was arrived at: a span is the line
      * joining two sites and a reach of coast is a tangent the smoothing drew. Nothing else in
-     * the walk asks - both open a mouth, both take a stretch of circle out of the boundary,
-     * and both close a cycle.
+     * the walk asks - every kind opens a mouth, takes a stretch of circle out of the boundary,
+     * and closes a cycle.
+     *
+     * <p>The spans are told apart by which water they were laid over, which the walk never
+     * asks and everything reading a hole it closed does: a piece of void is the kind of piece
+     * its walls say it is, and a wall that had forgotten where it came from would leave that
+     * unanswerable.
      */
     public enum WallKind {
 
@@ -143,8 +148,24 @@ public final class DiscUnionBoundary {
          * The line joining two sites, spanning the gap between their cells. It crosses its
          * circles steeply and squarely between them, so the two edges of its mouth say
          * whether the gap it spans is still there: buried, and the cells have closed over it.
+         *
+         * <p>The span the settled search lays over the cells alone, with no shore consulted.
+         * Every span below sits on the boundary exactly as this one does.
          */
         BRIDGE,
+
+        /** A span across an inlet of an outer shore: water between two cells of one continent
+         * on the side that faces the open void. */
+        INLET_SPAN,
+
+        /** A span across a lake: water a continent's own cells closed around unaided. */
+        LAKE_SPAN,
+
+        /** A span across a puddle: a hole too small to have been drawn a shore. */
+        PUDDLE_SPAN,
+
+        /** A span between two continents, joining what tracing without bridges took apart. */
+        LINK,
 
         /**
          * A straight run the coast smoothing drew from one cell's frontage to another's. It
@@ -167,20 +188,32 @@ public final class DiscUnionBoundary {
      * @return one chord per bridge, in the order they were offered
      */
     static List<Chord> buildChordsFrom(List<CellGap> bridges) {
+        return buildChordsFrom(bridges, WallKind.BRIDGE);
+    }
 
-        var chords = new ArrayList<Chord>(bridges.size());
+    /**
+     * Spans as the chords they become on the boundary, each carrying the water it was laid
+     * over.
+     *
+     * @param spans the spans
+     * @param kind  which water they cross, which is what a hole they close is later read as
+     * @return one chord per span, on the line joining its two sites
+     */
+    static List<Chord> buildChordsFrom(List<CellGap> spans, WallKind kind) {
 
-        for (var bridge : bridges) {
+        var chords = new ArrayList<Chord>(spans.size());
+
+        for (var span : spans) {
 
             chords.add(new Chord(
-                bridge.fromSite(),
-                bridge.toSite(),
+                span.fromSite(),
+                span.toSite(),
                 new DirectedLine(
-                    bridge.start()[0],
-                    bridge.start()[1],
-                    bridge.end()[0] - bridge.start()[0],
-                    bridge.end()[1] - bridge.start()[1]),
-                WallKind.BRIDGE));
+                    span.start()[0],
+                    span.start()[1],
+                    span.end()[0] - span.start()[0],
+                    span.end()[1] - span.start()[1]),
+                kind));
         }
         return chords;
     }

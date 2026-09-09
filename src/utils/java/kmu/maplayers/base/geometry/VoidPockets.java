@@ -5,6 +5,7 @@ import kmlib.math.geometry.PolygonRegions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The pockets of void between cells, as the holes in the union of the cells' reach discs.
@@ -236,12 +237,16 @@ public final class VoidPockets {
             List<List<double[]>> outlines,
             String absorbingOwner) {
 
+        // With no puddles to match against: a pocket walk carries no trace to ask which unwalled
+        // holes the floor refused a shore, and nothing reads a pocket's kind - what a pocket
+        // wants of its section is the cells and the outline. The naming, which does read the
+        // kind, walks the holes itself with the trace in hand.
         return new VoidPocket(
             outlines,
             Points.computeMean(hole.boundary()),
             hole.measureSpan(),
             absorbingOwner,
-            VoidSection.buildFromHole(hole));
+            VoidSection.buildFromHole(hole, Set.of()));
     }
 
     /**

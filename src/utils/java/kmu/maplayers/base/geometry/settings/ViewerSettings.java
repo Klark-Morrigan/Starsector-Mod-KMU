@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.StraightRuns;
 import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.maplayers.base.geometry.VoidSection;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
@@ -292,16 +293,16 @@ public final class ViewerSettings {
     public boolean showIntercontinentalFill;
     public boolean showIntercontinentalShores;
 
-    // Whether each piece of void has its name written across it, by the kind of wall that shut
-    // it in. Two switches rather than one because the kinds are read for different reasons: the
-    // coastal ones say what the shores took in, the inland ones what the spans and the cells
-    // divided among themselves, and a map with every name on at once is unreadable.
-    //
-    // Apart from the layers above and not under any of them, because a section is a reading of
-    // the whole laying rather than of one layer - a name stays where it is while the water it
-    // is written over is switched between fills.
-    public boolean showInlandNames;
-    public boolean showCoastalNames;
+    // Whether each piece of void has its name written across it, one switch per kind of piece.
+    // A kind is the layer that shut the piece in, so these sit one under each layer above: a
+    // reader judging that layer's water wants its names and no other's, and a map with every
+    // name on at once is unreadable.
+    public boolean showContinentPuddleNames;
+    public boolean showContinentLakeNames;
+    public boolean showContinentLakePocketNames;
+    public boolean showContinentCoastNames;
+    public boolean showContinentInletNames;
+    public boolean showIntercontinentalNames;
 
     // The same spans laid over the interior coastlines instead - across water the cells closed
     // around unaided rather than across the void between continents. One search over two shores
@@ -515,6 +516,53 @@ public final class ViewerSettings {
                 || showIntercontinentalBridges
                 || showIntercontinentalFill
                 || showIntercontinentalShores);
+    }
+
+    /**
+     * Whether a piece of void of the given kind is on screen, which is what makes it something
+     * a reader could be pointing at.
+     *
+     * <p>On screen means its wall drawn AND its water filled. Either alone leaves nothing to
+     * point at: a fill with no wall is water whose edge the map never drew, and a wall with no
+     * fill is a line with nothing behind it. A puddle has no wall of its own - the cells are
+     * its edge, and those are always drawn - so its fill alone puts it on screen.
+     *
+     * <p>Asked of the settings rather than worked out where the pointer is, for the reason
+     * the continent roll-up is: the answer is a pairing of the switches declared here, and a
+     * kind whose pair is named elsewhere is a kind that silently stops being pointable when
+     * one of them is renamed.
+     *
+     * @param kind which kind of piece
+     * @return true where both halves of that kind are drawn
+     */
+    public boolean isSectionOnScreen(VoidSection.SectionKind kind) {
+
+        return showContinentVoid && switch (kind) {
+            case PUDDLE -> showContinentPuddleFill;
+            case LAKE -> showContinentLakeCoastline && showContinentLakeFill;
+            case LAKE_POCKET -> showContinentLakeBridges && showContinentLakePocketFill;
+            case COASTAL -> showContinentCoastline && showContinentCoastFill;
+            case INLET -> showContinentBridges && showContinentInletFill;
+            case INTERCONTINENTAL -> showIntercontinentalBridges && showIntercontinentalFill;
+        };
+    }
+
+    /**
+     * Whether pieces of the given kind have their names written on them.
+     *
+     * @param kind which kind of piece
+     * @return true where that kind's name switch is on
+     */
+    public boolean shouldWriteSectionNames(VoidSection.SectionKind kind) {
+
+        return showContinentVoid && switch (kind) {
+            case PUDDLE -> showContinentPuddleNames;
+            case LAKE -> showContinentLakeNames;
+            case LAKE_POCKET -> showContinentLakePocketNames;
+            case COASTAL -> showContinentCoastNames;
+            case INLET -> showContinentInletNames;
+            case INTERCONTINENTAL -> showIntercontinentalNames;
+        };
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with

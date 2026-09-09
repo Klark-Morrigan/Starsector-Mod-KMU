@@ -1,7 +1,9 @@
 package kmu.maplayers.base.geometry;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Every piece of void in a sector, named.
@@ -55,10 +57,18 @@ public final class VoidSections {
         var sites = laid.sites();
         var named = new ArrayList<NamedSection>();
 
+        // The trace's own verdict on which unwalled holes are puddles, by the ring of cells
+        // around each, so a section is not measured against a second floor.
+        var puddleRings = new HashSet<Set<Integer>>();
+
+        for (var puddle : laid.traced().puddles()) {
+            puddleRings.add(Set.copyOf(puddle.ringCells()));
+        }
+
         for (var hole : DiscUnionBoundary.traceHolesAcrossWalls(
                 laid.atCells(), laid.walls(), laid.parameters().boundSegments())) {
 
-            var section = VoidSection.buildFromHole(hole);
+            var section = VoidSection.buildFromHole(hole, puddleRings);
 
             named.add(new NamedSection(
                 section,

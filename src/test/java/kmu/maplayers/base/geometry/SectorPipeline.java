@@ -63,9 +63,10 @@ final class SectorPipeline {
         ANCHOR_SEPARATION);
 
     private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> INLET_SPANS = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> LINKS = new ConcurrentHashMap<>();
+
+    // One laying per sector, which keeps each of its searches once it has run it - so the
+    // trace, the spans and the links below are one answer each however many suites ask.
+    private static final Map<String, BridgedContinents> LAYINGS = new ConcurrentHashMap<>();
 
     private SectorPipeline() {
     }
@@ -102,9 +103,7 @@ final class SectorPipeline {
      * @return its continent coasts, traced once under the shipped knobs
      */
     static Coastlines.TracedCoasts traceContinentCoast(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            loadFixture(named).getSites(), PARAMETERS, COAST_RULES));
+        return layContinents(sector).traceCoasts();
     }
 
     /**
@@ -114,9 +113,7 @@ final class SectorPipeline {
      * @return the inlet spans, laid once
      */
     static List<CellGap> layInletSpans(String sector) {
-
-        return INLET_SPANS.computeIfAbsent(sector, named -> ContinentBridges.findAnchoredBridges(
-            traceContinentCoast(named), CoastFrontages.Shore.EXTERIOR, PARAMETERS, SPAN_RULES));
+        return layContinents(sector).layInletSpans();
     }
 
     /**
@@ -126,9 +123,29 @@ final class SectorPipeline {
      * @return the links, laid once
      */
     static List<CellGap> layLinks(String sector) {
+        return layContinents(sector).layLinks();
+    }
 
-        return LINKS.computeIfAbsent(sector, named ->
-            IntercontinentalBridges.findIntercontinentalBridges(
-                traceContinentCoast(named), layInletSpans(named), PARAMETERS, SPAN_RULES));
+    /**
+     * The coasts with every wall the construction lays, as the pieces of void are named off.
+     *
+     * @param sector which sector
+     * @return the laid coast, with every span set down
+     */
+    static LaidCoast layEveryWall(String sector) {
+        return layContinents(sector).layEveryWall();
+    }
+
+    // The whole laying for one sector, opened once. Its own bridge search rather than a shared
+    // one: the puddle spans are the only thing that asks it, and one sector's cache is of no
+    // use to another's.
+    private static BridgedContinents layContinents(String sector) {
+
+        return LAYINGS.computeIfAbsent(sector, named -> BridgedContinents.layContinents(
+            loadFixture(named).getSites(),
+            PARAMETERS,
+            COAST_RULES,
+            SPAN_RULES,
+            new VoidBridgeCache()));
     }
 }

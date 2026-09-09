@@ -63,9 +63,12 @@ public final class VoidSectionIds {
     // keyed into the same map as the cells, so the one thing its name must never do is collide
     // with a system's - and it is shaped like one of vanilla's own generated ids so that it
     // reads as a key rather than as a sentence.
-    private static final String INLAND_PREFIX = "void_in";
-
-    private static final String COASTAL_PREFIX = "void_c";
+    private static final String PUDDLE_PREFIX = "void_puddle";
+    private static final String LAKE_PREFIX = "void_lake";
+    private static final String LAKE_POCKET_PREFIX = "void_lakepocket";
+    private static final String COASTAL_PREFIX = "void_coast";
+    private static final String INLET_PREFIX = "void_inlet";
+    private static final String INTERCONTINENTAL_PREFIX = "void_sea";
 
     // Doubled, so the joiner stands out from the underscores INSIDE a part. A single hyphen
     // would already be unambiguous - one cannot survive the reduction below - but a key is read
@@ -124,9 +127,14 @@ public final class VoidSectionIds {
 
     private static String readPrefix(VoidSection.SectionKind kind) {
 
-        return kind == VoidSection.SectionKind.COASTAL
-            ? COASTAL_PREFIX
-            : INLAND_PREFIX;
+        return switch (kind) {
+            case PUDDLE -> PUDDLE_PREFIX;
+            case LAKE -> LAKE_PREFIX;
+            case LAKE_POCKET -> LAKE_POCKET_PREFIX;
+            case COASTAL -> COASTAL_PREFIX;
+            case INLET -> INLET_PREFIX;
+            case INTERCONTINENTAL -> INTERCONTINENTAL_PREFIX;
+        };
     }
 
     /**
