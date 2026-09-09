@@ -66,15 +66,20 @@ final class MarkedSystemRederive {
             DominancePass pass,
             Set<String> markedSystemIds) {
 
-        var systemById = SectorStarSystems.indexById(pass.sector());
+        // Off the batch's own reading rather than a traversal opened here: every other read below
+        // goes through that pass, and a second traversal for the ids alone is what the bound on a
+        // batch counts against it.
+        var systemById = pass.holding().colonies().readSystemsById();
         var disturbance = new StalePoliticsDisturbance();
 
         for (var systemId : markedSystemIds) {
 
-            var system = systemById.get(systemId);
+            // Null for a system the sector no longer lists, which each read below answers for
+            // itself - the id stays the key whether or not a system still stands behind it.
+            var markedSystem = new MarkedSystem(systemId, systemById.get(systemId));
 
-            rederiveSystemHolder(territories, geometryCache, pass, system, systemId, disturbance);
-            rederiveSystemInhabitation(territories, pass.holding(), system, systemId, disturbance);
+            rederiveSystemHolder(territories, geometryCache, pass, markedSystem, disturbance);
+            rederiveSystemInhabitation(territories, pass.holding(), markedSystem, disturbance);
         }
         rederiveSpotlitPresence(territories, pass, markedSystemIds, disturbance);
 
