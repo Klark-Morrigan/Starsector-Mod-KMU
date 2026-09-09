@@ -187,7 +187,9 @@ public final class LiveSidebarPlacement {
                 ControlSpec.NO_SELECTION,
                 cell -> MapLayerArrangementDialog.INSTANCE.openDialog()),
             SidebarStyles.buildBandButtonTabStyle(hostStyle, resolveOpenerIconAspect()),
-            // Untinted: it was authored as a picture rather than as a glyph a caller shades.
+            // Stating no tint of its own, so the row's own label shade is the whole of the mark's colour:
+            // the picture fills the button, so it is what has to answer the pointer rather than the fill
+            // behind it, and a colour named here would be one the strip could not light through.
             new ImageSpan(OPENER_ICON_PATH));
     }
 

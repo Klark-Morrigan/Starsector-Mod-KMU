@@ -217,6 +217,14 @@ The proportions are read off the sprite rather than written down, so a different
 correction here; an asset that will not resolve falls back to a square, leaving a pressable control with
 nothing drawn in it rather than one that has silently left the bar.
 
+**The mark itself answers the pointer.** It fills its box, so the chrome under it - the fill a tab lights
+by - is covered by the very image that would be showing it; what lights instead is the picture, washed by
+the shade the button's own word would read in (`BandButtonPlacement.resolveIconTint`). Nothing new is
+chosen here: the shade is the host's own tab style, so the mark travels as the labels beside it do, and
+the sprite states no tint of its own, so the wash is the whole of its colour. Nothing else either - no
+press lift and no lit state, since what the button opens covers the screen on the frame it is pressed, so
+a lift would run under a dialog and be seen by nobody.
+
 It rides in the drawn band, so the fold wipes it with the tabs, `containsPoint` claims it from the map
 underneath, and `computeOuterBound` reaches it.
 
