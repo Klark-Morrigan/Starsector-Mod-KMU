@@ -4,7 +4,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
-import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
@@ -232,11 +231,14 @@ public final class CellRibbonSource {
                 style.lengths(),
                 UncontestedRibbonRuns.readFromLunaSettings()));
 
+        // Off the pass's own index rather than a traversal of this bake's own: the cells were cut
+        // from that same index, and a second traversal here is what put a rebuild over the one
+        // the frame allows it.
         return new CellRibbonSource(
             view.resolveRibbonPlanner(inputs),
             style,
             surface,
-            SectorStarSystems.indexById(pass.sector()));
+            pass.colonies().readSystemsById());
     }
 
     // The ring this cell's band runs along: the one already traced inside the shape the cell holds
