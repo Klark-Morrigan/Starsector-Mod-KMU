@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.relation.PlayerStanding;
+import kmlib.starsector.relation.FactionRelation;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -69,8 +69,8 @@ public sealed interface BlocStanding {
      * @param highest the most friendly member's standing
      */
     record Measured(
-        PlayerStanding lowest,
-        PlayerStanding highest) implements BlocStanding {
+        FactionRelation lowest,
+        FactionRelation highest) implements BlocStanding {
 
         @Override
         public <R> R selectByCase(

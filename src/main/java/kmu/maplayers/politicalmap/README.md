@@ -197,7 +197,7 @@ active - the key being one across all three, the way every other mode's survives
 
 What every picker lists is who *lives* somewhere the map draws, which is the same reading of a system
 the cells are painted from and the bands counted from - not who the layer's mechanic weighed. So a
-faction whose only colony the economy never registered is offered, and so is `Neutral`, which is what
+faction whose only colony the economy never registered is offered, and so is **Neutral**, which is what
 a revealed dead world is owned by. A bloc whose only holding is a derelict nobody lives on is not:
 a spotlight lights territory, and there is none to light.
 
@@ -403,7 +403,7 @@ a system ranking none gives them nothing to account for. That is asked of the ra
 status line above it, the box reading the system through one `readRankedStandings`: the line and the
 listing answer different questions of the same pass - whether anybody *runs* the place, against
 everybody the player may be *told* about - so a system whose colonies have all collapsed is headed
-`Decivilised` and still ranks whoever holds them, and those colonies are exactly what a deeper level
+**Decivilised** and still ranks whoever holds them, and those colonies are exactly what a deeper level
 opens up. Judged off the line, that system - the one whose whole account is the collapse - is the
 one the detail is withheld on.
 
@@ -499,15 +499,15 @@ aggregate somebody worked out.
 The status line above that listing (`SystemStatusRow`) answers a different question of the same
 colony rule, and the two are meant to part over one shape. It asks habitation - whether anybody
 lives here - where the listing asks what the player may be told about, so a system whose only market
-is an abandoned station is headed `Unpopulated` over a box that names the station's owner at nought.
+is an abandoned station is headed **Unpopulated** over a box that names the station's owner at nought.
 That is the true reading of a system with one wreck in it rather than the contradiction the two lines
 look like side by side: nobody has ever been aboard a derelict, and somebody has seen it. The cell
 under the box reads habitation too, so the line and the backdrop it is drawn over always agree.
 The one shape habitation admits that nobody runs is the collapsed colony
 (`ColonyKind.UNGOVERNED_COLONY`), which is why the line reads the kinds out of that projection
 rather than asking its emptiness: a decivilised world is still populated - drawn as settled rather
-than dropped as empty space - and still headed `Decivilised`, since what it lacks is a polity and
-not people, and the status row keeps its capitalised `Decivilised` for the banner it is.
+than dropped as empty space - and still headed **Decivilised**, since what it lacks is a polity and
+not people, and the status row keeps its capitalised **Decivilised** for the banner it is.
 
 Both boxes then say what they have found out about the place on the line naming it
 (`ColonyQualifier`, gold, one read for the two families so neither can call a world dead the other
@@ -531,7 +531,7 @@ shape that most needs telling apart from an ordinary colony is not the one the b
 whatever about. The resolution is untouched: the same words in the same order, and a gilded word has
 qualified in every sense, drawn somewhere else. At most one stretch is gilded, the first the name
 carries, and the rest close the line as usual - so an *Abandoned Station* the player has not found
-gilds `Abandoned` and still reads `undiscovered`. What counts as the name saying a word is
+gilds **Abandoned** and still reads **undiscovered**. What counts as the name saying a word is
 `KmlibStrings.findWholeWordIndex`, and what is drawn is the name's own spelling of it.
 
 `hidden` is withheld from a colony the sector openly points at - Galatia Academy, whose station is
@@ -703,7 +703,7 @@ The knowledge half is the same rule the faction and alliance tabs fog by, so all
 the player knows. What that flag carries is the composed answer rather than the entity's own: the
 player has discovered the market **and**, for the shapes a bare fog would leak, somebody has seen it
 where it stands. Both halves of that are load-bearing here, because a listed row may be a concealed
-colony as well as an undiscovered one - which is why such a row says `hidden` where the entity has
+colony as well as an undiscovered one - which is why such a row says **hidden** where the entity has
 been found and `undiscovered` where it has not, the qualifier displacing one with the other.
 
 Such a row is drawn with its name blocked out. Whether a row may name its market, and what stands in

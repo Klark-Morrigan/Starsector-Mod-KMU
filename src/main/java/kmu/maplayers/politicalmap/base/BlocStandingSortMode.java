@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.relation.PlayerStanding;
+import kmlib.starsector.relation.FactionRelation;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
@@ -209,7 +209,7 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
     // sign shown so a friendly bloc's value reads as a positive standing rather than as a bare number
     // sitting beside negative ones. Neutral draws unsigned, this being a reading on a scale rather
     // than a movement along one.
-    private static TextSpan resolveStandingRun(PlayerStanding standing) {
+    private static TextSpan resolveStandingRun(FactionRelation standing) {
 
         return new TextSpan(
             KmlibNumbers.formatSignedNonZero(standing.reputation()),

@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.relation.PlayerStanding;
+import kmlib.starsector.relation.FactionRelation;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +19,7 @@ import java.util.Optional;
  */
 record PlayerStandingSourceFake(
     String establishedPlayerFactionId,
-    Map<String, PlayerStanding> standingByFactionId)
+    Map<String, FactionRelation> standingByFactionId)
     implements BlocStandingReader.PlayerStandingSource {
 
     @Override
@@ -28,7 +28,7 @@ record PlayerStandingSourceFake(
     }
 
     @Override
-    public Optional<PlayerStanding> readStandingWithPlayer(String factionId) {
+    public Optional<FactionRelation> readStandingWithPlayer(String factionId) {
         return Optional.ofNullable(standingByFactionId.get(factionId));
     }
 }

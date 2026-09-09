@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.StarsectorPlayerFactionResolver;
-import kmlib.starsector.relation.PlayerStanding;
+import kmlib.starsector.relation.FactionRelation;
 import kmlib.starsector.relation.StarsectorPlayerStandings;
 import kmlib.text.KmlibStrings;
 
@@ -39,8 +39,8 @@ public final class BlocStandingReader {
     // The scale the two ends are picked off: the signed reputation, rather than the level the game
     // names it, that being the finer of the two - two members a level apart in name and a point
     // apart in fact still order, and the level rides along on whichever standing won an end.
-    private static final Comparator<PlayerStanding> REPUTATION_ORDER =
-        Comparator.comparingInt(PlayerStanding::reputation);
+    private static final Comparator<FactionRelation> REPUTATION_ORDER =
+        Comparator.comparingInt(FactionRelation::reputation);
 
     private final HolderGrouping grouping;
     private final PlayerStandingSource standingSource;
@@ -117,7 +117,7 @@ public final class BlocStandingReader {
     // about.
     private BlocStanding foldMemberStandings(String blocId) {
 
-        var memberStandings = new ArrayList<PlayerStanding>();
+        var memberStandings = new ArrayList<FactionRelation>();
 
         for (var memberFactionId : grouping.resolveMemberFactionIds(blocId)) {
             standingSource.readStandingWithPlayer(memberFactionId).ifPresent(memberStandings::add);
@@ -154,7 +154,7 @@ public final class BlocStandingReader {
          * @param factionId the faction to read
          * @return its standing, or nothing where the faction cannot be looked up at all
          */
-        Optional<PlayerStanding> readStandingWithPlayer(String factionId);
+        Optional<FactionRelation> readStandingWithPlayer(String factionId);
     }
 
     // The live reads, over one sector.
@@ -177,7 +177,7 @@ public final class BlocStandingReader {
         }
 
         @Override
-        public Optional<PlayerStanding> readStandingWithPlayer(String factionId) {
+        public Optional<FactionRelation> readStandingWithPlayer(String factionId) {
 
             // An id naming nobody is looked up as nobody rather than handed to the sector, which is
             // free to fault on it.

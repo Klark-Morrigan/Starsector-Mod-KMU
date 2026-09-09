@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.RepLevel;
 
-import kmlib.starsector.relation.PlayerStanding;
+import kmlib.starsector.relation.FactionRelation;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
@@ -43,13 +43,13 @@ final class BlocStandingSortModeTest {
     private static final Color RED = new Color(200, 50, 50);
     private static final Color GREY = new Color(140, 140, 140);
 
-    private static final PlayerStanding FRIENDLY = new PlayerStanding(RepLevel.FRIENDLY, 60, GREEN);
-    private static final PlayerStanding HOSTILE = new PlayerStanding(RepLevel.HOSTILE, -40, RED);
-    private static final PlayerStanding NEUTRAL = new PlayerStanding(RepLevel.NEUTRAL, 0, GREY);
+    private static final FactionRelation FRIENDLY = new FactionRelation(RepLevel.FRIENDLY, 60, GREEN);
+    private static final FactionRelation HOSTILE = new FactionRelation(RepLevel.HOSTILE, -40, RED);
+    private static final FactionRelation NEUTRAL = new FactionRelation(RepLevel.NEUTRAL, 0, GREY);
 
     // A second friendly standing one point off the first, so a pair level on the low end of the range
     // has a high end left to break it.
-    private static final PlayerStanding WARMER = new PlayerStanding(RepLevel.FRIENDLY, 61, GREEN);
+    private static final FactionRelation WARMER = new FactionRelation(RepLevel.FRIENDLY, 61, GREEN);
 
     // An alliance of two, which is the smallest grouping in which a bloc's standing is a range over
     // more than one member.
@@ -324,7 +324,7 @@ final class BlocStandingSortModeTest {
     // not about the player's own bloc.
     private static ListSortMode<RankedBloc<HazardRating>> buildMode(
             HolderGrouping grouping,
-            Map<String, PlayerStanding> standingByFactionId) {
+            Map<String, FactionRelation> standingByFactionId) {
 
         return buildMode(grouping, null, standingByFactionId);
     }
@@ -333,7 +333,7 @@ final class BlocStandingSortModeTest {
     private static ListSortMode<RankedBloc<HazardRating>> buildMode(
             HolderGrouping grouping,
             String establishedPlayerFactionId,
-            Map<String, PlayerStanding> standingByFactionId) {
+            Map<String, FactionRelation> standingByFactionId) {
 
         return new BlocStandingSortMode<>(new BlocStandingReader(
             grouping,

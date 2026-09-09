@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.RelationshipAPI;
 
-import kmlib.starsector.relation.PlayerStanding;
+import kmlib.starsector.relation.FactionRelation;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
@@ -35,8 +35,8 @@ final class BlocStandingReaderTest {
     private static final Color GREEN = new Color(60, 180, 60);
     private static final Color RED = new Color(200, 50, 50);
 
-    private static final PlayerStanding FRIENDLY = new PlayerStanding(RepLevel.FRIENDLY, 60, GREEN);
-    private static final PlayerStanding HOSTILE = new PlayerStanding(RepLevel.HOSTILE, -40, RED);
+    private static final FactionRelation FRIENDLY = new FactionRelation(RepLevel.FRIENDLY, 60, GREEN);
+    private static final FactionRelation HOSTILE = new FactionRelation(RepLevel.HOSTILE, -40, RED);
 
     // An alliance of two, which is the smallest grouping in which a bloc's membership is anything
     // other than the bloc's own id.
