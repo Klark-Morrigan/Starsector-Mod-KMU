@@ -5,9 +5,6 @@ import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
-import java.util.EnumSet;
-import java.util.List;
-
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
@@ -16,6 +13,9 @@ import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.settings.KmuMapHoverSettings;
+
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass

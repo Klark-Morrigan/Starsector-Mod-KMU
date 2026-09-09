@@ -1,8 +1,5 @@
 package kmu.maplayers.base.sidebar;
 
-import java.util.List;
-import java.util.Set;
-
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
@@ -28,6 +25,9 @@ import kmu.settings.KmuMapSidebarSettings;
 import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Resolves a sidebar's placement from the live screen, settings, and active layer - the one placement

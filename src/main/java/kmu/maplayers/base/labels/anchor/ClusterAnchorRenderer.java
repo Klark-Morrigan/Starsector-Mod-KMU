@@ -1,9 +1,5 @@
 package kmu.maplayers.base.labels.anchor;
 
-import java.awt.Color;
-import java.util.List;
-import java.util.function.Function;
-
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
@@ -19,6 +15,10 @@ import kmlib.profiling.ProfileSection;
 import kmu.settings.KmuMapLabelSettings;
 
 import org.lwjgl.opengl.GL11;
+
+import java.awt.Color;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor

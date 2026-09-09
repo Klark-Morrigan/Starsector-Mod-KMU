@@ -1,11 +1,11 @@
 package kmu.starsector.rat;
 
-import java.util.function.BooleanSupplier;
-
 import kmlib.mods.rat.RandomAssortmentOfThingsMinimap;
 import kmlib.starsector.ui.map.presence.CampaignMinimap;
 
 import kmu.settings.KmuMapHoverSettings;
+
+import java.util.function.BooleanSupplier;
 
 /**
  * Whether the map layers should treat the minimap Random Assortment of Things draws in the

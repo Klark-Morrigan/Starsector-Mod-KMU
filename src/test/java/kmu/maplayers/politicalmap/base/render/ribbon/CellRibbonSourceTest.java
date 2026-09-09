@@ -3,11 +3,6 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import java.awt.Color;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
@@ -33,6 +28,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
+
+import java.awt.Color;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 

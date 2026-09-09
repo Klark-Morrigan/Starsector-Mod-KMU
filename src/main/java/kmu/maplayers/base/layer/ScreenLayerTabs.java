@@ -3,8 +3,8 @@ package kmu.maplayers.base.layer;
 import java.util.List;
 
 /**
- * The layers one screen offers as tabs, and what a control standing on that screen's own chrome does to a
- * pick the screen stops offering.
+ * The layers one screen offers as tabs, and what becomes of a pick that screen has stopped offering a tab
+ * for.
  *
  * <p>{@link NoLayer} is a tab whose whole job is to draw nothing, so a screen that has grown a tick box on
  * the game's own filter row carries two controls for one thought - and the box is the more discoverable of
@@ -29,10 +29,19 @@ import java.util.List;
  * construction: a strip that withheld or moved a tab while the key walk did not would switch to the layer
  * one along from the tab it lit.
  *
- * <p>A pick already sitting on a withheld tab is moved rather than left standing. Left, the two controls
- * would disagree in the one way that cannot be read off the screen: the map is empty because of the pick,
- * while the box - which has nothing to do with which layer is picked - stands ticked and says the layers
- * are shown. What the player chose is kept, expressed instead through the control that can reverse it.
+ * <p>A pick that is not among the tabs its screen offers is moved onto the leading one, and that screen's
+ * own show-or-hide control is set to whether the tab it lands on paints. Both halves, because the two
+ * controls have to end up saying one thing: a layer painting from a tab that is not on the bar is a map
+ * nothing on screen accounts for, and a lit tab standing over an empty map is the same disagreement read
+ * from the other end.
+ *
+ * <p>That reaches a tab the player took off the bar as well as one this screen's control took over, and
+ * the first of those is a deliberate reversal. A hidden layer used to go on painting for the save that
+ * had picked it, on the reading that hiding a tab is not switching a layer off - which is true of the
+ * store, the layer staying registered and its id staying resolvable, and which misses that the player is
+ * looking at a bar. The only way back to a map painting from a tab that is not there is a dialog they
+ * have to remember to open. The pick is preserved in the one way that shows, which is by following the
+ * tabs.
  */
 public final class ScreenLayerTabs {
 
@@ -59,54 +68,54 @@ public final class ScreenLayerTabs {
     }
 
     /**
-     * Moves a pick a control on this screen has taken over to the default layer, and stores the empty map
-     * it stood for as a hide - so the picture is unchanged and what the player chose is now held by the
-     * control that can reverse it.
+     * Moves a pick this screen offers no tab for onto the leading tab it does offer, and sets that
+     * screen's own show-or-hide control to whether the tab it lands on paints - so the bar, the map and
+     * the control end up saying one thing.
      *
-     * <p>Owed once, on the first control to stand on a screen; a pick nothing has taken over is left
-     * alone, which is every other call. A pick whose tab the player took off the bar themselves is left
-     * alone too, that being a tab they hid rather than a layer they switched off.
+     * <p>Asked every frame rather than at the moment a row changes. One dialog moves both screens' rows
+     * at once, a screen nobody is looking at still has to be right when they next look, and the pass that
+     * lays a row out may not write. A pick the row still offers is left alone, which is every call but
+     * the ones just after something moved.
      *
      * @param screenPicks the screen's own picks, both of which this may write
      */
-    public static void migratePickOffWithheldTab(ScreenLayerPicks screenPicks) {
+    public static void healPickOntoOfferedTabs(ScreenLayerPicks screenPicks) {
 
-        if (!isPickWithheldOnceControlStands(screenPicks)) {
+        var offeredLayers = resolveTabbedLayers(screenPicks);
+
+        // Nothing registered, so the bar is bare too: there is no tab to land on, and no pick that could
+        // be disagreeing with one.
+        if (offeredLayers.isEmpty()) {
             return;
         }
-        screenPicks.layerSelection().selectLayer(MapLayerRegistry.getDefaultLayer());
-        screenPicks.layerVisibility().showLayers(false);
-    }
-
-    // Whether this screen's pick is one the strip stops offering once a control stands on it. Stated as
-    // "not among the tabs" rather than as "is the empty view", so it cannot drift from what the strip
-    // withholds - the guard below included, which leaves a lone tab offered and so unmigrated.
-    //
-    // Asked of the roster rather than of the arranged row, which is the one place the two part company:
-    // taking a tab off the bar is not switching a layer off, so a pick the player has hidden goes on
-    // painting and must not be moved - while a pick the withholding took has a control standing in its
-    // place, which is the whole reason to move it.
-    //
-    // The pick is read off the selection rather than through the registry, which folds the screen's hide
-    // into its own answer: what is asked here is which tab the screen is set to, and a screen already
-    // hiding its layers is set to one just the same.
-    private static boolean isPickWithheldOnceControlStands(ScreenLayerPicks screenPicks) {
-
         var pick = screenPicks.layerSelection().getActiveLayer();
 
-        return pick != null
-            && !withholdEmptyViewTab(MapLayerRegistry.getLayers()).contains(pick);
+        // A null pick counts as one the row does not offer, so a selection seam that answers nothing over
+        // a populated bar is landed on a tab rather than left lighting none.
+        if (pick != null && offeredLayers.contains(pick)) {
+            return;
+        }
+        var leadingTab = offeredLayers.get(0);
+
+        screenPicks.layerSelection().selectLayer(leadingTab);
+        screenPicks.layerVisibility().showLayers(isLayerPainting(leadingTab));
     }
 
     // The given row without the empty view's tab, unless that would leave no tab at all: a row with no
-    // tabs has no way back to itself, so the last one standing is offered whatever else is true. Which
-    // row is asked about is each caller's, and the two ask about different ones deliberately.
+    // tabs has no way back to itself, so the last one standing is offered whatever else is true.
     private static List<MapLayer> withholdEmptyViewTab(List<MapLayer> offeredLayers) {
 
         var paintingLayers = offeredLayers.stream()
-            .filter(layer -> layer != NoLayer.INSTANCE)
+            .filter(ScreenLayerTabs::isLayerPainting)
             .toList();
 
         return paintingLayers.isEmpty() ? offeredLayers : paintingLayers;
+    }
+
+    // Whether a layer draws anything at all. One reading for both the tab the empty view's control takes
+    // over and the state a pick landing on that tab settles the control at, so the two cannot drift into
+    // a control saying the layers are shown over the one tab whose whole job is to show none.
+    private static boolean isLayerPainting(MapLayer layer) {
+        return layer != NoLayer.INSTANCE;
     }
 }

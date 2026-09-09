@@ -1,14 +1,14 @@
 package kmu.maplayers.base.layer;
 
-import java.util.function.DoubleSupplier;
-import java.util.function.LongSupplier;
-
 import kmlib.math.easing.Easing;
 import kmlib.math.ranges.Ranges;
 import kmlib.starsector.memory.SectorMemoryFlag;
 import kmlib.time.Timings;
 
 import kmu.settings.KmuMapSidebarSettings;
+
+import java.util.function.DoubleSupplier;
+import java.util.function.LongSupplier;
 
 /**
  * A screen's show-or-hide pick persisted in sector memory, so the pick survives reload, together with the

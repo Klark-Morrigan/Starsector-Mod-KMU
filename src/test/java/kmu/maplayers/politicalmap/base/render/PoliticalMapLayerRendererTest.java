@@ -1,8 +1,5 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import java.util.List;
-import java.util.Optional;
-
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
@@ -42,6 +39,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.MockedStatic;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;

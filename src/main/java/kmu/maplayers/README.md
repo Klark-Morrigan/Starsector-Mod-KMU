@@ -30,7 +30,7 @@ Part of Klark Morrigan's Utilities; see the
 No Layer leads the strip as a first-class tab rather than an off switch, so an empty map reads as a
 choice - on every screen that has no tick box of its own on the game's filter row. Where that box
 stands it does the same job more discoverably, so the tab is withheld from that screen's strip, and
-a pick already sitting on it moves to the default layer with the emptiness stored as a hide. It
+a pick already sitting on it follows the tabs onto the leading one that screen does offer. It
 comes back wherever there is no box, which is any screen the reach could not be made on. The
 political map is the pick an untouched save resolves to, so the overlay is up the first time the
 sector map opens. A tab may also
@@ -209,8 +209,18 @@ bar once does not order it again per save.
   take - two lists would switch to the layer one along from the tab they lit - and never withholds
   the last tab standing, a row emptied by hiding and a row emptied by withholding being the same
   unusable bar. Both subtractions are from the strip and never from the roster, a stored pick being
-  an id resolved against it: a layer the player hid goes on painting for the save that picked it, and
-  only the way to reach it by tab is gone. A layer is
+  an id resolved against it, so a hidden layer stays registered and its id goes on resolving. What
+  becomes of a pick the row no longer carries a tab for is `healPickOntoOfferedTabs`: it moves onto
+  the leading tab that is offered, and the screen's own show-or-hide control is set to whether that
+  tab paints - both halves, since the bar, the map and the control have to end up saying one thing.
+  That reverses what this file used to state, deliberately: hiding a tab was held not to be
+  switching a layer off, so a save left on a hidden layer went on painting it. It still is not
+  switching the layer off - it is that a layer painting from a tab that is not on the bar is a map
+  nothing on screen accounts for, reachable again only through a dialog the player has to remember
+  to open, so the pick is preserved in the one way that shows. The heal is asked per frame and for
+  every screen by [`MapLayerPickUpkeep`](base/chrome/README.md#the-pick-follows-the-bar) rather than
+  wherever a row moved: one dialog moves both screens' rows, a screen nobody is looking at still has
+  to be right when they next look, and the pass that lays a row out may not write. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own. A layer also letters and binds its own
@@ -742,9 +752,9 @@ bar once does not order it again per save.
   [the caching notes](../../../../../docs/dev/caching.md).
 - **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
   fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
-- **[Map chrome](base/chrome/README.md)** - what the mod puts on the game's own map chrome rather
-  than over it, which is the two places the overlay reaches into a widget tree somebody else built:
-  the tick box appended to the vanilla filter row, and the dialog the layer bar is arranged in.
+- **[Map chrome](base/chrome/README.md)** - the controls the player moves the layers with from
+  outside the sidebar: the tick box appended to the vanilla filter row, the dialog the layer bar is
+  arranged in, and the standing heal that keeps each screen's pick on a tab its bar still offers.
 - **[Political map](politicalmap/README.md)** - the one layer that paints, its three views, and the
   draw pipeline behind them.
 - **`MapLayers`** - the composition root, the single place every concrete layer, political-map view,

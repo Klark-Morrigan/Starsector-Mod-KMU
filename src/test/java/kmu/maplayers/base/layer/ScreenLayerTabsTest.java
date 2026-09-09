@@ -5,8 +5,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -28,10 +32,11 @@ import static org.mockito.Mockito.when;
  * {@link ArrangedLayersTest}'s - so what is pinned here is that the strip carries the arrangement at all,
  * and that a row either of them would empty keeps its last tab.
  *
- * <p>And the move that keeps the two controls agreeing: a pick already sitting on the withheld tab is
- * put on the default layer and stored as a hide, so the map stays as blank as it was and the box says
- * so. When that is owed - once, on the first control to stand - is
- * {@link kmu.maplayers.base.chrome.MapLayerToggleUpkeepTest}'s, this answering only what the move is.
+ * <p>And the heal that keeps the bar, the map and the control agreeing: a pick the row does not offer is
+ * put on the leading tab it does offer, and the control set to whether that tab paints. Both ways a row
+ * can strand a pick are posed here, since the point of stating the rule as "not among the tabs" is that
+ * they are one case. When the heal is asked - every frame, for every screen - is
+ * {@link kmu.maplayers.base.chrome.MapLayerPickUpkeepTest}'s, this answering only what it does.
  */
 final class ScreenLayerTabsTest {
 
@@ -167,50 +172,14 @@ final class ScreenLayerTabsTest {
     }
 
     @Nested
-    class MigratePickOffWithheldTab {
+    class HealPickOntoOfferedTabs {
 
         @Test
-        void migratePickOffWithheldTabMovesThePickToTheDefaultLayerAndStoresTheHide() {
-            // The picture does not change - blank map, blank map - and what the player chose is now
-            // expressed through the control that can reverse it, rather than through a tab this screen
-            // is no longer offered.
-            registerTheEmptyViewBesideALayerThatPaints();
-
-            var screenPicks = createPicksOnTheEmptyView();
-
-            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
-
-            verify(screenPicks.layerSelection())
-                .selectLayer(paintingLayerMock);
-            verify(screenPicks.layerVisibility().getStoredVisibility())
-                .showLayers(false);
-        }
-
-        @Test
-        void migratePickOffWithheldTabLeavesAPickTheStripStillOffersAlone() {
-            // Which is every call but the one that is owed: a screen already on a layer that paints has
-            // nothing to settle, and a hide written here would empty a map the player is looking at.
-            registerTheEmptyViewBesideALayerThatPaints();
-
-            var screenPicks = createPicksWithAControlStanding();
-
-            when(screenPicks.layerSelection().getActiveLayer())
-                .thenReturn(paintingLayerMock);
-
-            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
-
-            verify(screenPicks.layerSelection(), never())
-                .selectLayer(paintingLayerMock);
-            verify(screenPicks.layerVisibility().getStoredVisibility(), never())
-                .showLayers(false);
-        }
-
-        @Test
-        void migratePickOffWithheldTabLeavesAPickThePlayerHidTheTabOfAlone() {
-            // The one place the strip's row and this reading part company, and the rule that parts
-            // them: hiding a tab is not switching a layer off. Migrated, a player who tidied a layer's
-            // tab off their bar would find the map it paints gone from every save that had picked it -
-            // and nothing on screen saying which of their two acts did it.
+        void healPickOntoOfferedTabsMovesAPickOffATabThePlayerTookOffTheBar() {
+            // A layer painting from a tab that is not there is a map nothing on screen accounts for,
+            // and the only way back to it is a dialog the player has to remember to open. So the pick
+            // follows the tabs, and the control goes down with it because the tab it lands on paints
+            // nothing.
             registerTheEmptyViewBesideALayerThatPaints();
 
             MapLayerArrangements.arrangeBarWith(
@@ -222,29 +191,139 @@ final class ScreenLayerTabsTest {
             when(screenPicks.layerSelection().getActiveLayer())
                 .thenReturn(paintingLayerMock);
 
-            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
 
-            // The layer that paints is also the default pick, so a migration that fired here would
-            // select it afresh and hide the layers under it - which is the exact pair asserted against.
-            verify(screenPicks.layerSelection(), never())
-                .selectLayer(paintingLayerMock);
-            verify(screenPicks.layerVisibility().getStoredVisibility(), never())
+            verify(screenPicks.layerSelection())
+                .selectLayer(NoLayer.INSTANCE);
+            verify(screenPicks.layerVisibility().getStoredVisibility())
                 .showLayers(false);
         }
 
         @Test
-        void migratePickOffWithheldTabLeavesAPickOnTheLastTabStandingAlone() {
-            // The guard above, read from the other end: a tab that is not withheld is not migrated off
-            // either, so a strip of one leaves the player where they were rather than storing a hide
-            // over the only tab there is.
-            MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
+        void healPickOntoOfferedTabsPutsThePickBackOnATabThePlayerRestores() {
+            // The other half of the round trip, and the case that needs both halves of the rule: the
+            // pick left on the empty view has nowhere to sit once that tab is withheld again, and the
+            // tab it lands on would light over a map the control was still holding down.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithAControlStanding();
+            var pick = new AtomicReference<MapLayer>(paintingLayerMock);
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenAnswer(read -> pick.get());
+            doAnswer(selection -> {
+                pick.set(selection.getArgument(0));
+                return null;
+            }).when(screenPicks.layerSelection()).selectLayer(any());
+
+            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            MapLayerArrangements.arrangeBarWith(List.of(), List.of());
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            assertThat(pick.get())
+                .isSameAs(paintingLayerMock);
+            verify(screenPicks.layerVisibility().getStoredVisibility())
+                .showLayers(true);
+        }
+
+        @Test
+        void healPickOntoOfferedTabsMovesAPickOffTheTabAControlHasTakenOver() {
+            // The case the one-time migration used to cover, and the answer moved with the rule: the
+            // pick lands on the tab that is actually there and the control stands up under it, rather
+            // than the map staying blank beneath a lit tab.
+            registerTheEmptyViewBesideALayerThatPaints();
 
             var screenPicks = createPicksOnTheEmptyView();
 
-            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
 
+            verify(screenPicks.layerSelection())
+                .selectLayer(paintingLayerMock);
+            verify(screenPicks.layerVisibility().getStoredVisibility())
+                .showLayers(true);
+        }
+
+        @Test
+        void healPickOntoOfferedTabsLeavesAPickTheRowStillOffersAlone() {
+            // Which is every call but the ones just after something moved: a screen sitting on a tab
+            // its own bar carries has nothing to settle, and a write here would move a player off a
+            // map they are looking at.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithAControlStanding();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection(), never())
+                .selectLayer(any());
             verify(screenPicks.layerVisibility().getStoredVisibility(), never())
+                .showLayers(anyBoolean());
+        }
+
+        @Test
+        void healPickOntoOfferedTabsKeepsAnEmptyViewPickWhereThatTabStands() {
+            // The empty view is a first-class tab wherever no control has taken it over, so a screen
+            // set to it has made a choice its own bar still shows. Nothing to heal, and a heal that
+            // fired would start painting over the map of a player who asked for nothing.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithNoControl();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(NoLayer.INSTANCE);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection(), never())
+                .selectLayer(any());
+            verify(screenPicks.layerVisibility().getStoredVisibility(), never())
+                .showLayers(anyBoolean());
+        }
+
+        @Test
+        void healPickOntoOfferedTabsLandsThePickOnTheLastTabARowWasHidDownTo() {
+            // The row asked about is the offered one, guard and all, so a bar hidden down to its last
+            // tab lands the pick on that tab - the guard being the only reason anything is standing
+            // there to land on.
+            registerTwoLayersThatPaintBesideTheEmptyView();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(PAINTING_LAYER_ID, OTHER_PAINTING_LAYER_ID));
+
+            var screenPicks = createPicksWithNoControl();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(otherPaintingLayerMock);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection())
+                .selectLayer(NoLayer.INSTANCE);
+            verify(screenPicks.layerVisibility().getStoredVisibility())
                 .showLayers(false);
+        }
+
+        @Test
+        void healPickOntoOfferedTabsWritesNothingWithNothingRegistered() {
+            // A bare bar has no tab to land a pick on. Reachable before a composition root has
+            // registered anything, which is a frame the pass can run on rather than a state the
+            // player can be in.
+            MapLayerRosters.forgetEveryLayer();
+
+            var screenPicks = createPicksOnTheEmptyView();
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection(), never())
+                .selectLayer(any());
+            verify(screenPicks.layerVisibility().getStoredVisibility(), never())
+                .showLayers(anyBoolean());
         }
     }
 

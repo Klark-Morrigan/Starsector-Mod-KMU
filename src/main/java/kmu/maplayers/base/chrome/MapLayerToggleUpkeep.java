@@ -3,11 +3,6 @@ package kmu.maplayers.base.chrome;
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
-
 import kmlib.logging.SessionWarning;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
@@ -16,10 +11,14 @@ import kmlib.starsector.ui.map.controls.MapFilterToggle;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
-import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapSidebarSettings;
 
 import org.apache.log4j.Logger;
+
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * Keeps the map layers' tick box standing on whichever filter row the player is looking at, and
@@ -36,11 +35,11 @@ import org.apache.log4j.Logger;
  * screens and back.
  *
  * <p>What the box shows is a standing job for the same reason its standing is. One seeded as it
- * went up would tell the truth only until something moved the pick under it - the settling below
- * does exactly that, and so does a hatch closed and reopened over a box already up - and a box
- * saying the layers are shown over a map with none on it is worse than no box at all. So it is
- * written from the pick each frame rather than at the moment it goes up, which also leaves whatever
- * moves the pick free to know nothing about boxes.
+ * went up would tell the truth only until something moved the pick under it - {@link
+ * MapLayerPickUpkeep} does exactly that, and so does a hatch closed and reopened over a box already
+ * up - and a box saying the layers are shown over a map with none on it is worse than no box at all.
+ * So it is written from the pick each frame rather than at the moment it goes up, which also leaves
+ * whatever moves the pick free to know nothing about boxes.
  *
  * <p>A script rather than a render pass, the sidebar's own pass running only while the sidebar is
  * showing - and this control has to work its way out of exactly the state where nothing of the
@@ -52,10 +51,11 @@ import org.apache.log4j.Logger;
  * a screen it never writes to shows its layers whatever the save holds, and neither a broken reach
  * nor a closed hatch can leave a player in front of a blank map with nothing to reverse it.
  *
- * <p>Saying so is also what takes a tab off that screen's strip, so this is where the pick standing
- * on that tab is settled - once, on the first box to stand. It is the only place that knows when a
- * box went up, and the pick has to move before the box opens on the state it leaves behind, so both
- * halves belong to the frame that stands it rather than to whatever draws the strip afterwards.
+ * <p>Saying so is also what takes a tab off that screen's strip, so a box going up can leave that
+ * screen's pick on a tab it no longer offers. Settling that is {@link MapLayerPickUpkeep}'s and not
+ * this pass's: a pick is left stranded by a row the player arranged just as readily as by a box, on
+ * the screen they are looking at or on the one they are not, and a rule owned by whatever happened
+ * to strand it would be the same rule written twice.
  */
 public final class MapLayerToggleUpkeep implements EveryFrameScript {
 
@@ -160,10 +160,10 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
             return;
         }
 
-        standControlOn(screenPicks);
+        recordControlStandingOn(screenPicks);
 
-        // Written after the stand rather than before it, since standing can move the pick: the box
-        // shows where the screen ended up, on the very frame it goes up and on every frame after.
+        // Re-asserted every frame rather than seeded once: the pick moves under a standing box, and
+        // the row offers no way to take one off and put a fresh one up in its place.
         standingToggle.setChecked(readStoredVisibilityOf(screenPicks).areLayersShown());
     }
 
@@ -193,22 +193,12 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     }
 
     // What a box now standing on a screen is worth to that screen: its stored hide is acted on from
-    // here, and a pick the strip stops offering a screen with a box is moved off before the two can
-    // disagree - a blank map held by a tab, under a box saying the layers are shown.
+    // here, and the empty view's tab comes off its strip.
     //
-    // The move is owed on the first box to stand and on no later one, so the word is read before it
-    // is said. Re-asserted rather than assumed on every other frame, a closed hatch having taken the
+    // Re-asserted rather than assumed on every frame after the first, a closed hatch having taken the
     // word back while leaving the box itself standing.
-    private static void standControlOn(ScreenLayerPicks screenPicks) {
-
-        var layerControl = screenPicks.layerVisibility();
-        var isFirstControlOnThisScreen = !layerControl.hasControlBeenAttached();
-
-        layerControl.recordControlAttached();
-
-        if (isFirstControlOnThisScreen) {
-            ScreenLayerTabs.migratePickOffWithheldTab(screenPicks);
-        }
+    private static void recordControlStandingOn(ScreenLayerPicks screenPicks) {
+        screenPicks.layerVisibility().recordControlAttached();
     }
 
     // What closing the hatch means beyond attempting nothing further. The word is a latch, so one

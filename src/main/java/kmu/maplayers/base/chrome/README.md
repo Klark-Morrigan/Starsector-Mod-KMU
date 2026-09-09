@@ -1,8 +1,10 @@
 # Map chrome (`maplayers/base/chrome`)
 
-What the mod puts on the game's own map chrome rather than over it. Two controls live here, and they
-are the only places the overlay reaches into a widget tree somebody else built: a tick box appended
-to the vanilla filter row, and the dialog the layer bar is arranged in.
+The controls the player moves the layers with from outside the sidebar. Two of them live here, and
+they are the only places the overlay reaches into a widget tree somebody else built: a tick box
+appended to the vanilla filter row, and the dialog the layer bar is arranged in. A standing heal
+lives here beside them, because what those two controls leave behind is a pick that no longer
+matches the bar.
 
 Part of [the map layers framework](../../README.md); see there for the layer roster, the bar
 arrangement these two write, and the sidebar the dialog is opened from.
@@ -12,6 +14,7 @@ arrangement these two write, and the sidebar the dialog is opened from.
 - [The filter-row toggle](#the-filter-row-toggle)
   - [Failing open, and what it costs](#failing-open-and-what-it-costs)
   - [The hatch and the key](#the-hatch-and-the-key)
+- [The pick follows the bar](#the-pick-follows-the-bar)
 - [The arranging dialog](#the-arranging-dialog)
 
 ## The filter-row toggle
@@ -39,13 +42,12 @@ screen it never writes to goes on showing its layers whatever the save holds. Th
 `ControlBackedMapLayerVisibility` acts on, and a box is bound to the stored pick underneath it, so it
 shows the choice the player made rather than the reading that rule gives everything else.
 
-The same word withholds the No Layer tab from that screen, so the first box to stand on a screen
-still set to it moves the pick to the default layer and stores a hide - the map is as blank as it
-was, under a box that now says so. Once per screen, on the first box up, and never on a row that
-refused one.
+The same word withholds the No Layer tab from that screen, so a box going up can leave that screen's
+pick on a tab it has stopped offering. Settling that is [the heal below](#the-pick-follows-the-bar)
+rather than the upkeep's: a pick is stranded by a row the player arranged as readily as by a box.
 
 The upkeep holds each screen's box rather than only recording that one went up, and writes what it
-shows from the pick every frame: the pick moves under a standing box - that move does it, and so does
+shows from the pick every frame: the pick moves under a standing box - the heal does it, and so does
 a hatch closed and reopened over one - and the row offers no way to take a box off and put a fresh
 one up in its place.
 
@@ -59,6 +61,39 @@ attachment the way the box's words are - so a rebind reaches the next screen the
 than waiting for the next load - and cleared with Escape leaves the box answering no key at all. Not
 a digit, the row's own six being digits and nothing in the game able to say which of them a screen
 has already taken.
+
+## The pick follows the bar
+
+Two ways the bar and the map come to disagree, both a few clicks apart, and one rule heals both.
+Take the tab off the layer a screen is painting and that layer goes on painting with no tab lit, the
+one tab left standing showing unselected. Put the tab back on a screen whose own control has taken
+the No Layer tab over and the pick is still the empty view, the only tab there standing unlit over an
+empty map.
+
+**A pick that is not among the tabs its screen offers moves to the leading one, and that screen's own
+show-or-hide control is set to whether that tab paints.** Both halves, because the two controls have
+to end up saying one thing: landing on the empty view stands the control down so its box reads empty
+too, and landing on a layer that paints stands the control back up so the tab that just lit has
+something under it. The row it asks about is the offered one - the arrangement over the roster, then
+the withholding, then the last-tab-standing guard - which is what makes the two cases one question,
+and what explains why the second bites on the sector map alone: there the No Layer tab is taken by
+the withholding, while on a screen with no box that tab stands, so a pick resting on it is a choice
+and is left alone.
+
+This reverses a rule the framework used to state - that hiding a tab is not switching a layer off, so
+a save holding a hidden layer as its pick still painted it. That reading defended the pick and was
+right about the store, a hidden id being no more a lost one than a hidden layer is an unregistered
+one. What it missed is that the player is looking at a bar: a layer painting from a tab that is not
+there is a map nothing on screen accounts for, and the only way back to it is a dialog they have to
+remember to open. The pick is preserved in the one way that shows, which is by following the tabs.
+
+`MapLayerPickUpkeep` asks it per frame, for every screen, rather than at the moment a row changes.
+One dialog moves both screens' rows, a screen nobody is looking at still has to be right when they
+next look, and the pass that lays a row out is a layout and may not write. Registered per sector by
+`MapChromeInstaller` beside the box's own pass and behind a guarded step of its own, so a load that
+loses the box keeps the heal; it runs while paused, every screen the bar draws on pausing the
+campaign. A heal leaves the pick on a tab the row offers, so the next frame finds nothing to do and
+nothing is written until something moves again.
 
 ## The arranging dialog
 

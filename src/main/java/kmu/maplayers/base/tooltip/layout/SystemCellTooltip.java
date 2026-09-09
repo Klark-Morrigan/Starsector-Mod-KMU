@@ -3,10 +3,6 @@ package kmu.maplayers.base.tooltip.layout;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -26,6 +22,10 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.settings.KmuMapTooltipSettings;
 import kmu.util.KmuStrings;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own

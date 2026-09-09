@@ -1,7 +1,5 @@
 package kmu.maplayers.base.sidebar.style;
 
-import java.awt.Color;
-
 import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -23,6 +21,8 @@ import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 
 import kmu.settings.KmuMapSidebarSettings;
 import kmu.settings.KmuMapSoundSettings;
+
+import java.awt.Color;
 
 /**
  * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,

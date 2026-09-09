@@ -1,15 +1,15 @@
 package kmu.maplayers.base.render.clusters;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.settings.KmuMapLabelSettings;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The parameters of one cluster-border ring trace, and the trace itself - the single path every

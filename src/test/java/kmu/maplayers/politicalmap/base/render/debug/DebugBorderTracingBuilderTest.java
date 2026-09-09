@@ -2,12 +2,6 @@ package kmu.maplayers.politicalmap.base.render.debug;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import java.awt.Color;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import kmlib.math.geometry.CornerRounding;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -39,6 +33,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+
+import java.awt.Color;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

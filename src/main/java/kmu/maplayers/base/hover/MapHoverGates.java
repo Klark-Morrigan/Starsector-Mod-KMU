@@ -1,8 +1,8 @@
 package kmu.maplayers.base.hover;
 
-import java.util.function.BooleanSupplier;
-
 import kmu.settings.KmuMapHoverSettings;
+
+import java.util.function.BooleanSupplier;
 
 /**
  * The hover switches that answer for every map layer at once: whether the map answers the cursor at

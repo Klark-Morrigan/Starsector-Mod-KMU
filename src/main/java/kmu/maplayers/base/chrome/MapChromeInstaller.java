@@ -7,13 +7,18 @@ import kmu.maplayers.base.layer.MapLayerScreens;
 import static kmu.KmuWiringSteps.runGuardedStep;
 
 /**
- * Standing up the pass that keeps the map layers' tick box on the game's own filter row.
+ * Standing up the two passes that keep the map layers' controls honest: the tick box on the game's
+ * own filter row, and the heal that keeps each screen's pick on a tab its bar still offers.
  *
- * <p>One registration, so one guarded step - but its own installer rather than a line inside the
- * sidebar's, because what it stands up is not the sidebar: the box goes on a widget the game built,
- * outlives every frame the sidebar draws on, and is the one thing able to bring the sidebar back
- * once the player has switched the layers off. An installer per half of the feature is also what
- * lets a failure here cost the box alone.
+ * <p>Its own installer rather than a line inside the sidebar's, because what it stands up is not the
+ * sidebar: the box goes on a widget the game built, outlives every frame the sidebar draws on, and is
+ * the one thing able to bring the sidebar back once the player has switched the layers off. An
+ * installer per half of the feature is also what lets a failure here cost the box alone.
+ *
+ * <p>A guarded step each, and the heal after the box, so a sector that refuses one pass still gets
+ * the other. Their frame order is the same way round and for a reason: standing a box is what
+ * withholds a tab from that screen, so a box going up is healed against on the frame it goes up
+ * rather than the one after.
  *
  * <p>Registered per sector, the pass being a script the sector ticks, and transient like the rest of
  * the feature's wiring: a script that entered the save would be restored beside the one each load
@@ -34,19 +39,24 @@ public final class MapChromeInstaller {
     }
 
     /**
-     * Registers the pass that maintains the tick box, behind its own failure boundary.
+     * Registers the pass that maintains the tick box and the pass that heals the screens' picks, each
+     * behind its own failure boundary.
      *
-     * @param sector the loaded sector; null leaves the box unattempted rather than throwing
+     * @param sector the loaded sector; null leaves both unattempted rather than throwing
      */
     public static void installAll(SectorAPI sector) {
 
         runGuardedStep(
             () -> installMapLayerToggleUpkeep(sector),
             "Failed to install KMU map layer filter row control");
+
+        runGuardedStep(
+            () -> installMapLayerPickUpkeep(sector),
+            "Failed to install KMU map layer pick heal");
     }
 
     /**
-     * Stops the pass, for a player switching the map layers off.
+     * Stops both passes, for a player switching the map layers off.
      *
      * @param sector the loaded sector; null is a no-op
      */
@@ -55,6 +65,10 @@ public final class MapChromeInstaller {
         runGuardedStep(
             () -> removeMapLayerToggleUpkeep(sector),
             "Failed to remove KMU map layer filter row control");
+
+        runGuardedStep(
+            () -> removeMapLayerPickUpkeep(sector),
+            "Failed to remove KMU map layer pick heal");
     }
 
     // Registers the standing pass as this sector's own transient script, clearing whatever is
@@ -87,5 +101,26 @@ public final class MapChromeInstaller {
             return;
         }
         sector.removeTransientScriptsOfClass(MapLayerToggleUpkeep.class);
+    }
+
+    // The heal, registered the same way and for the same reason: two of them would ask one question
+    // twice and write one answer twice. Transient like the box's pass, a script that entered the save
+    // being restored beside the one each load adds.
+    static void installMapLayerPickUpkeep(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        removeMapLayerPickUpkeep(sector);
+
+        sector.addTransientScript(new MapLayerPickUpkeep());
+    }
+
+    static void removeMapLayerPickUpkeep(SectorAPI sector) {
+
+        if (sector == null) {
+            return;
+        }
+        sector.removeTransientScriptsOfClass(MapLayerPickUpkeep.class);
     }
 }

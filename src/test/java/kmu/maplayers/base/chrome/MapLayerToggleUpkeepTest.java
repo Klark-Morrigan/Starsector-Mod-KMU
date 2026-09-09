@@ -7,14 +7,10 @@ import kmlib.testfixtures.starsector.ui.map.controls.MapFilterRowFake;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
-import kmu.maplayers.base.layer.MapLayer;
-import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerVisibility;
-import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +23,6 @@ import java.util.function.Supplier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -57,10 +51,9 @@ import static org.mockito.Mockito.when;
  * to remove one, so reopening the switch has to restore the word rather than stand a second box
  * beside the first.
  *
- * <p>The first box to stand on a screen also settles a pick that screen's strip stops offering once it
- * has one, so the cases pinning that are here too: the move rides the same word, is owed once, and is
- * owed only where a box actually went up. What the move is and why the strip withholds anything is
- * {@link kmu.maplayers.base.layer.ScreenLayerTabs}'s.
+ * <p>What the word is then worth to the pick standing on the tab it withholds is not here at all:
+ * {@link MapLayerPickUpkeep} settles that, per frame and for both screens, a pick being stranded by a
+ * row the player arranged as readily as by a box.
  *
  * <p>Also the two answers that are not decisions of its own but which the whole control rests on:
  * that it goes on running for the session, and that it runs while the campaign is paused. Every
@@ -82,15 +75,6 @@ final class MapLayerToggleUpkeepTest {
     // The words on the box the stand-in attachment puts up. Arbitrary: which words the live one uses
     // is its own case, and nothing here reads them.
     private static final String BOX_LABEL = "Map layers";
-
-    private final MapLayer paintingLayerMock = mock(MapLayer.class);
-
-    @AfterEach
-    void restoreTheRosterTheCasesReplaced() {
-        // The registry is static, so a roster left standing would outlive its case; only the ones
-        // about the pick move register anything, and this covers them without each saying so.
-        MapLayerRosters.restoreNonEmptyRoster();
-    }
 
     @Nested
     class Advance {
@@ -273,8 +257,8 @@ final class MapLayerToggleUpkeepTest {
             areLayersShown.set(false);
             upkeep.advance(PAUSED_FRAME);
 
-            // The pick can move under a standing box - the settling below does it, and so does the
-            // hatch closed and reopened over one - and the row offers no way to take a box off and
+            // The pick can move under a standing box - the heal beside this pass does it, and so does
+            // the hatch closed and reopened over one - and the row offers no way to take a box off and
             // put a fresh one up. So it is written from the pick each frame rather than seeded once.
             assertThat(readAppendedButton(rowFake).isChecked())
                 .isFalse();
@@ -364,87 +348,6 @@ final class MapLayerToggleUpkeepTest {
             assertThat(screenPicks.layerVisibility().areLayersShown())
                 .isFalse();
             verify(toggleAttacherMock, times(1)).attachToggleTo(any(), any());
-        }
-
-        @Test
-        void advanceMovesAPickTheStripStopsOfferingOnceTheBoxStands() {
-
-            var screenPicks = buildScreenPicksOnTheEmptyView();
-
-            new MapLayerToggleUpkeep(
-                SWITCH_OPEN,
-                () -> screenPicks,
-                ShownFilterRows::createRowWithRoomToSpare,
-                buildAcceptingAttacherMock())
-                .advance(PAUSED_FRAME);
-
-            // The picture is unchanged - blank map, blank map - and what the player chose is now held
-            // by the control that can reverse it, rather than by a tab the strip no longer offers.
-            verify(screenPicks.layerSelection())
-                .selectLayer(paintingLayerMock);
-            verify(readStoredVisibility(screenPicks))
-                .showLayers(false);
-        }
-
-        @Test
-        void advanceOpensTheBoxOnTheStateTheMovedPickSettlesAt() {
-
-            var rowFake = ShownFilterRows.createRowFakeWithRoomToSpare();
-            var shownRow = ShownFilterRows.createRowOver(rowFake);
-            var areLayersShown = new AtomicBoolean(true);
-            var screenPicks = buildScreenPicksOnTheEmptyView(areLayersShown);
-
-            new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> screenPicks, () -> shownRow, buildAcceptingAttacherMock())
-                .advance(PAUSED_FRAME);
-
-            // The box goes up on the frame the pick it is taking over from is moved, so it shows
-            // where the screen ended up rather than what it held a moment before - a ticked box over
-            // the empty map it just took charge of is the one thing this whole move exists to avoid.
-            assertThat(readAppendedButton(rowFake).isChecked())
-                .isFalse();
-        }
-
-        @Test
-        void advanceMovesAWithheldPickOnceRatherThanAtEveryStand() {
-
-            var shownRow = new AtomicReference<>(ShownFilterRows.createRowWithRoomToSpare());
-            var screenPicks = buildScreenPicksOnTheEmptyView();
-            var storedVisibilityMock = readStoredVisibility(screenPicks);
-
-            var upkeep = new MapLayerToggleUpkeep(
-                SWITCH_OPEN, () -> screenPicks, shownRow::get, buildAcceptingAttacherMock());
-
-            upkeep.advance(PAUSED_FRAME);
-            shownRow.set(ShownFilterRows.createRowWithRoomToSpare());
-            upkeep.advance(PAUSED_FRAME);
-
-            // On the first box to stand and no later one. The pick this case leaves standing on the
-            // withheld tab is the arrangement a save can never be in after the first move, and it is
-            // posed precisely so a second move would show: every row a screen rebuilds would otherwise
-            // write the player's tab away again.
-            verify(storedVisibilityMock, times(1))
-                .showLayers(false);
-        }
-
-        @Test
-        void advanceLeavesTheScreensPickWhereItIsAfterARowRefusesAControl() {
-
-            var screenPicks = buildScreenPicksOnTheEmptyView();
-
-            new MapLayerToggleUpkeep(
-                SWITCH_OPEN,
-                () -> screenPicks,
-                ShownFilterRows::createRowWithRoomToSpare,
-                buildRefusingAttacherMock())
-                .advance(PAUSED_FRAME);
-
-            // The move is what a standing box is worth to a screen, so a screen that got none keeps
-            // both its tab and its picture: a player on the empty view whose row would not take a box
-            // must not find the map painted instead.
-            verifyNoInteractions(screenPicks.layerSelection());
-            verify(readStoredVisibility(screenPicks), never())
-                .showLayers(false);
         }
 
         @Test
@@ -578,44 +481,5 @@ final class MapLayerToggleUpkeepTest {
 
     private static MapFilterButtonFake readAppendedButton(MapFilterRowFake rowFake) {
         return (MapFilterButtonFake) rowFake.getChildrenCopy().get(APPENDED_BUTTON_INDEX);
-    }
-
-    // A screen sitting on the empty view, over a roster that offers a layer that paints beside it -
-    // the one arrangement a standing box has to settle, and the only one in which the strip withholds
-    // anything at all.
-    private ScreenLayerPicks buildScreenPicksOnTheEmptyView() {
-        return buildScreenPicksOnTheEmptyView(new AtomicBoolean(true));
-    }
-
-    // The same over a save that answers the given flag, for a case reading what the box the move
-    // settles under shows.
-    private ScreenLayerPicks buildScreenPicksOnTheEmptyView(AtomicBoolean areLayersShown) {
-
-        when(paintingLayerMock.isOfferedAsDefaultPick())
-            .thenReturn(true);
-
-        MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE, paintingLayerMock);
-
-        var storedVisibilityMock = mock(MapLayerVisibility.class);
-
-        when(storedVisibilityMock.areLayersShown())
-            .thenAnswer(read -> areLayersShown.get());
-
-        // The stand-in save actually holds what is written to it, so a case can read back what the
-        // box shows once the move has run rather than only that the move was asked for.
-        doAnswer(hide -> {
-            areLayersShown.set(hide.getArgument(0));
-            return null;
-        }).when(storedVisibilityMock).showLayers(anyBoolean());
-
-        var layerSelectionMock = mock(ActiveLayerSelection.class);
-
-        when(layerSelectionMock.getActiveLayer())
-            .thenReturn(NoLayer.INSTANCE);
-
-        return new ScreenLayerPicks(
-            layerSelectionMock,
-            new ControlBackedMapLayerVisibility(storedVisibilityMock),
-            ScreenMemoryScopes.createStandInScreen());
     }
 }

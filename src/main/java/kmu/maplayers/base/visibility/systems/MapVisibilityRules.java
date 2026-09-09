@@ -1,12 +1,12 @@
 package kmu.maplayers.base.visibility.systems;
 
-import java.util.EnumSet;
-import java.util.Objects;
-import java.util.Set;
-
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
 import kmu.settings.KmuMapVisibilitySettings;
+
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * The visibility rules in force for one map-layer pass: the rule the pass reads colonies under,

@@ -1,11 +1,11 @@
 package kmu.maplayers.base.hover;
 
-import java.util.function.BooleanSupplier;
-
 import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;

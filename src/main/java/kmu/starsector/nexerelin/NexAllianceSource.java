@@ -1,10 +1,10 @@
 package kmu.starsector.nexerelin;
 
-import exerelin.campaign.AllianceManager;
-import exerelin.campaign.alliances.Alliance;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import exerelin.campaign.AllianceManager;
+import exerelin.campaign.alliances.Alliance;
 
 /**
  * The only class that imports {@code exerelin.*}: it reads Nexerelin's live alliance
