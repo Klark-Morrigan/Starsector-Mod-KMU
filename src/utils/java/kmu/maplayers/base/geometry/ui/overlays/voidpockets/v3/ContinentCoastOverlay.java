@@ -6,7 +6,6 @@ import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.IntercontinentalCoasts;
 import kmu.maplayers.base.geometry.IntercontinentalPockets;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.FillSheet;
@@ -93,11 +92,6 @@ public final class ContinentCoastOverlay {
     // painting, since it is a second trace rather than a way of drawing the first.
     private List<List<double[]>> linkShores = List.of();
 
-    // The settled bridge search, shared with the construction that also asks it. Handed in
-    // rather than made here: two overlays asking one question of one sector have to be one
-    // search, and a cache each would be exactly the second answer it exists to prevent.
-    private final VoidBridgeCache sectorBridges;
-
     // The stretches of border a bridge may anchor on - exterior coasts, lake shores, or both,
     // as the switches asked - held beside the trace that decided them. One run per stretch
     // rather than one list per cell, because a cell facing the void twice is eligible in two
@@ -105,10 +99,9 @@ public final class ContinentCoastOverlay {
     // between them.
     private List<List<double[]>> frontages = List.of();
 
-    public ContinentCoastOverlay(ViewerSettings settings, VoidBridgeCache sectorBridges) {
+    public ContinentCoastOverlay(ViewerSettings settings) {
 
         this.settings = settings;
-        this.sectorBridges = sectorBridges;
         this.coast = new CoastalPocketsOverlay(settings);
     }
 
@@ -120,8 +113,9 @@ public final class ContinentCoastOverlay {
      * cells and the parameters they are built from - they are two readings of one sector.
      *
      * @param fixture the sector to trace in
+     * @param laid    the laying to draw, shared with whatever else reads this frame's walls
      */
-    public void refresh(SectorFixture fixture) {
+    public void refresh(SectorFixture fixture, BridgedContinents laid) {
 
         coast.acceptTrace(null);
         inletWater = SpanWater.NONE;
@@ -141,16 +135,6 @@ public final class ContinentCoastOverlay {
         if (!settings.isAnyContinentLayerShown()) {
             return;
         }
-
-        // The laying this overlay draws: the coasts, and every span the construction puts down
-        // across the water they leave. Opened rather than run - what each layer below costs is
-        // paid only where a switch asks for it.
-        var laid = BridgedContinents.layContinents(
-            fixture.getSites(),
-            settings.parameters,
-            settings.resolveContinentCoastRules(),
-            settings.resolveContinentBridgeRules(),
-            sectorBridges);
 
         coast.acceptTrace(laid.traceCoasts());
 

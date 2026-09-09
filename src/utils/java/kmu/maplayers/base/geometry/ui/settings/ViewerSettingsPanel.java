@@ -64,10 +64,8 @@ public final class ViewerSettingsPanel {
     // because a roll-up that named a key the switch does not would cover nothing, silently.
     private static final String INLAND_BRIDGES = "showInlandBridges";
     private static final String INLAND_FILL = "showInlandFill";
-    private static final String INLAND_NAMES = "showInlandNames";
     private static final String COASTLINE = "showCoastline";
     private static final String COASTAL_FILL = "showCoastalFill";
-    private static final String COASTAL_NAMES = "showCoastalNames";
 
     private static final String PUDDLE_BRIDGES = "showContinentPuddleBridges";
     private static final String PUDDLE_FILL = "showContinentPuddleFill";
@@ -84,6 +82,12 @@ public final class ViewerSettingsPanel {
     private static final String INTERCONTINENTAL_BRIDGES = "showIntercontinentalBridges";
     private static final String INTERCONTINENTAL_FILL = "showIntercontinentalFill";
     private static final String INTERCONTINENTAL_SHORES = "showIntercontinentalShores";
+
+    // The two section-name switches, keyed on the kind rather than on the construction that
+    // lays the walls. What a section is called does not change with which construction shut it
+    // in, so the keys outlive one and a reader's choice of names survives with them.
+    private static final String INLAND_NAMES = "showInlandNames";
+    private static final String COASTAL_NAMES = "showCoastalNames";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -826,7 +830,8 @@ public final class ViewerSettingsPanel {
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
             LAKE_BRIDGES, LAKE_POCKET_FILL,
             CONTINENT_BRIDGES, INLET_FILL,
-            INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES));
+            INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES,
+            INLAND_NAMES, COASTAL_NAMES));
 
         rows.addAll(buildContinentBranchRows());
         rows.addAll(buildContinentGlobalRows());
@@ -836,7 +841,8 @@ public final class ViewerSettingsPanel {
     }
 
     // The branches: one per thing the construction makes, each with the switches that thing
-    // has. In the order water gets smaller, then the spans laid over it.
+    // has. In the order water gets smaller, then the spans laid over it, and last what all of
+    // those together leave behind.
     private List<ToggleTree.Row> buildContinentBranchRows() {
 
         return List.of(
@@ -907,7 +913,16 @@ public final class ViewerSettingsPanel {
             // out of the way.
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_SHORES, "Coastline", false,
-                on -> settings.showIntercontinentalShores = on)));
+                on -> settings.showIntercontinentalShores = on)),
+
+            // A branch of its own rather than a row under any layer above, because a section is
+            // a reading of the WHOLE laying: the walls that shut one in come from every set on
+            // this list, and the two kinds below are told apart by which of them did it.
+            ToggleTree.Row.ofRollUp(1, "Section names", INLAND_NAMES, COASTAL_NAMES),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                INLAND_NAMES, "Inland", false, on -> settings.showInlandNames = on)),
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                COASTAL_NAMES, "Coastal", false, on -> settings.showCoastalNames = on)));
     }
 
     // The globals: one per KIND of thing, cutting across every branch above. No switches of
@@ -1066,11 +1081,11 @@ public final class ViewerSettingsPanel {
 
     // Everything there is to see of the void, under one head.
     //
-    // Two kinds of pocket, three things to see of each, and two roll-ups cutting the other way
-    // for the questions that are about a KIND OF THING rather than about a kind of pocket -
-    // "show me every wall", "take every name off". Those two cross the branches on purpose:
-    // a bridge and a reach of coast are the same kind of proposal seen in two places, and
-    // comparing them means having them under one switch.
+    // Two kinds of pocket, two things to see of each, and a roll-up cutting the other way for
+    // the question that is about a KIND OF THING rather than about a kind of pocket - "show me
+    // every wall". It crosses the branches on purpose: a bridge and a reach of coast are the
+    // same kind of proposal seen in two places, and comparing them means having them under one
+    // switch.
     //
     // Rebuilt rather than repainted, because both overlays are built only while something of
     // theirs is on screen - so turning one on is what makes it exist, not merely what shows it.
@@ -1084,26 +1099,21 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 0,
                 "Void pockets",
-                INLAND_BRIDGES, INLAND_FILL, INLAND_NAMES,
-                COASTLINE, COASTAL_FILL, COASTAL_NAMES),
+                INLAND_BRIDGES, INLAND_FILL,
+                COASTLINE, COASTAL_FILL),
             ToggleTree.Row.ofRollUp(
-                1, "Inland void pockets", INLAND_BRIDGES, INLAND_FILL, INLAND_NAMES),
+                1, "Inland void pockets", INLAND_BRIDGES, INLAND_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INLAND_BRIDGES, "Bridges", true, on -> settings.showInlandBridges = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INLAND_FILL, "Fill", true, on -> settings.showInlandFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                INLAND_NAMES, "Pocket names", false, on -> settings.showInlandNames = on)),
             ToggleTree.Row.ofRollUp(
-                1, "Coastal void pockets", COASTLINE, COASTAL_FILL, COASTAL_NAMES),
+                1, "Coastal void pockets", COASTLINE, COASTAL_FILL),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 COASTLINE, "Coastline", true, on -> settings.showCoastline = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 COASTAL_FILL, "Fill", true, on -> settings.showCoastalFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                COASTAL_NAMES, "Pocket names", false, on -> settings.showCoastalNames = on)),
-            ToggleTree.Row.ofRollUp(1, "Pocket borders", INLAND_BRIDGES, COASTLINE),
-            ToggleTree.Row.ofRollUp(1, "Pocket names", INLAND_NAMES, COASTAL_NAMES));
+            ToggleTree.Row.ofRollUp(1, "Pocket borders", INLAND_BRIDGES, COASTLINE));
     }
 
     // Every geometry knob rebuilds; that is what makes it a geometry knob rather than a

@@ -85,8 +85,11 @@ public final class VoidRegionsDump {
             // One laying of the coast for the whole sector. Everything below asks what the
             // walk did with a wall, and the walk answers about the walls it was handed - so a
             // second laying is a second map, however equal the lines look.
+            // No spans of its own: this construction finds its bridges first and carries them
+            // on the trace, so what it lays across the water is already in hand here.
             var laid = LaidCoast.layCoast(
                 SettledCoast.traceAcrossBridges(sites, SHIPPED, Coastlines.DEFAULT_RULES),
+                List.of(),
                 SHIPPED);
 
             reportCells(cells);

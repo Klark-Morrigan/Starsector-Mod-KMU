@@ -192,20 +192,18 @@ public final class ViewerSettings {
     public boolean showSectorVoid = true;
     public boolean showContinentVoid = true;
 
-    // The void, in the two kinds it comes in and the three things there are to see of each.
+    // The void, in the two kinds it comes in and the two things there are to see of each.
     //
-    // Split this finely because each of the six answers a different question. A wall is a
+    // Split this finely because each of the four answers a different question. A wall is a
     // proposal about where a boundary could go and the fill is what that proposal encloses, so
     // judging either means being able to see it without the other; and the two KINDS are
     // separate proposals entirely - the bridges are about the gaps between cells, the coast is
     // about the sector's outer shape - so a reader weighing one wants the other out of the way.
     public boolean showInlandBridges = true;
     public boolean showInlandFill = true;
-    public boolean showInlandNames;
 
     public boolean showCoastline = true;
     public boolean showCoastalFill = true;
-    public boolean showCoastalNames;
 
     // The cells' own names, whose system ids the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
@@ -293,6 +291,17 @@ public final class ViewerSettings {
     public boolean showIntercontinentalBridges;
     public boolean showIntercontinentalFill;
     public boolean showIntercontinentalShores;
+
+    // Whether each piece of void has its name written across it, by the kind of wall that shut
+    // it in. Two switches rather than one because the kinds are read for different reasons: the
+    // coastal ones say what the shores took in, the inland ones what the spans and the cells
+    // divided among themselves, and a map with every name on at once is unreadable.
+    //
+    // Apart from the layers above and not under any of them, because a section is a reading of
+    // the whole laying rather than of one layer - a name stays where it is while the water it
+    // is written over is switched between fills.
+    public boolean showInlandNames;
+    public boolean showCoastalNames;
 
     // The same spans laid over the interior coastlines instead - across water the cells closed
     // around unaided rather than across the void between continents. One search over two shores

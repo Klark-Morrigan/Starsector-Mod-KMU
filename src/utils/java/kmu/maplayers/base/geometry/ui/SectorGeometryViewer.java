@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.ui;
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 
+import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.DrawnSector;
@@ -192,15 +193,15 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     // Opened with the window and emptied there, so a session's picks are its own.
     private final PickLog picks = PickLog.startPickLog();
-    // One settled bridge search for the whole window. Both constructions that ask for it get
-    // this, so the answer is found once per rebuild however many of them want it.
+    // One settled bridge search for the whole window. Every overlay that asks for it gets this,
+    // so the answer is found once per rebuild however many of them want it.
     private final VoidBridgeCache sectorBridges = new VoidBridgeCache();
 
     private final VoidBridgesOverlay voidBridges =
         new VoidBridgesOverlay(settings, sectorBridges);
     private final SectorCoastOverlay sectorCoasts = new SectorCoastOverlay(settings);
     private final ContinentCoastOverlay continentCoasts =
-        new ContinentCoastOverlay(settings, sectorBridges);
+        new ContinentCoastOverlay(settings);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
 
     // The cells as named regions, so the pointer can be told which one it is over and a name
@@ -387,18 +388,29 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
         sectorCoasts.refresh(fixture);
 
+        // One laying for the frame, handed to both readers of it. Nothing is searched for
+        // here - what this settles is the question, so the drawing and the naming cannot end
+        // up describing sectors laid under settings a moment apart, and whichever of them asks
+        // for a set of spans first is the only one that pays for it.
+        var laid = BridgedContinents.layContinents(
+            fixture.getSites(),
+            settings.parameters,
+            settings.resolveContinentCoastRules(),
+            settings.resolveContinentBridgeRules(),
+            sectorBridges);
+
         // The preview rides the same refresh because it is traced under the same coast knobs:
         // a knob that moved one line without the other would show two coasts that were never
         // traced from the same settings.
-        continentCoasts.refresh(fixture);
-        refreshVoidSections();
+        continentCoasts.refresh(fixture, laid);
+        refreshVoidSections(laid);
     }
 
     // Not on the refresh contract: the panel has no knob that moves the sections without
     // moving the walls first, so this is reached through the coast rather than asked for.
-    private void refreshVoidSections() {
+    private void refreshVoidSections(BridgedContinents laid) {
 
-        voidSections.refresh(fixture);
+        voidSections.refresh(fixture, laid);
         readout.nameRegionsFrom(cellNames, voidSections.collectShownSections());
         repaintMap();
     }

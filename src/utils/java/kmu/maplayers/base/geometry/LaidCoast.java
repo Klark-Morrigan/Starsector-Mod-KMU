@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,7 +20,8 @@ import java.util.List;
  * @param traced     the coast, as it was traced
  * @param parameters the knobs it was traced under
  * @param offered    its own straight reaches, as the walls they are offered as
- * @param walls      those reaches together with the bridges, which is what the walk lays
+ * @param walls      those reaches together with every span laid across the water, which is what
+ *                   the walk lays
  */
 public record LaidCoast(
     Coastlines.TracedCoasts traced,
@@ -30,21 +32,31 @@ public record LaidCoast(
     /**
      * Lays every wall across a traced coast.
      *
+     * <p>The spans come in rather than off the coast because a coast does not know them. A
+     * construction that finds its walls first carries them on the trace; one that traces first
+     * and spans the water afterwards has them nowhere but in the caller's hand, and a walk that
+     * read only the trace would give that map a set of sections its own spans do not divide.
+     *
      * @param traced     the coast
+     * @param spans      the lines laid across the water afterwards, which wall it as surely as
+     *                   anything the trace itself carried
      * @param parameters the knobs it was traced under
      * @return the coast with its walls down
      */
     public static LaidCoast layCoast(
             Coastlines.TracedCoasts traced,
+            List<CellGap> spans,
             SectorGeometryParameters parameters) {
 
         var offered = CoastPockets.buildCoastWalls(traced);
+        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(spans));
+        laid.addAll(offered);
 
         return new LaidCoast(
             traced,
             parameters,
             offered,
-            CoastPockets.layCoastWalls(traced, offered, parameters.borderInset()));
+            CoastPockets.layCoastWalls(traced, laid, parameters.borderInset()));
     }
 
     // The sites the coast was walked against, taken off the coast rather than carried

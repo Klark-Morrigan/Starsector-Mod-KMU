@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -182,6 +183,29 @@ public final class BridgedContinents {
                 traceCoasts(), layInletSpans(), parameters, bridgeRules);
         }
         return links;
+    }
+
+    /**
+     * The coasts with every wall this construction puts down, as the single value anything
+     * asking what the map shut in is asking about.
+     *
+     * <p>All four span sets, not the ones a picture happens to be showing. What a piece of void
+     * IS does not change with a switch: a span divides the water it stands over whether or not
+     * anyone is drawing it, and a laying that left out the idle sets would hand back sections
+     * that merge and split as layers are turned on.
+     *
+     * @return the coasts, their own reaches, and every span, laid together
+     */
+    public LaidCoast layEveryWall() {
+
+        var spans = new ArrayList<CellGap>();
+
+        spans.addAll(layInletSpans());
+        spans.addAll(layLakeSpans());
+        spans.addAll(claimPuddleSpans());
+        spans.addAll(layLinks());
+
+        return LaidCoast.layCoast(traceCoasts(), spans, parameters);
     }
 
     // One shore's spans, which is the same search either way once the shore has named the
