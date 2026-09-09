@@ -1,10 +1,8 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
-import kmlib.starsector.ui.coreui.ModalDialogState;
+import kmlib.starsector.ui.coreui.OverlayPresence;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
-
-import kmu.maplayers.base.chrome.arrange.ArrangementDialogState;
 
 /**
  * Screen claims in the states a host suite needs to put one in, so a test that is about a host says which
@@ -46,8 +44,8 @@ final class ScreenClaims {
         return new ScreenClaim(
             createClosedConsole(),
             () -> false,
-            () -> ArrangementDialogState.DOWN,
-            () -> new ModalDialogState(true, brightness));
+            () -> OverlayPresence.NONE,
+            () -> new OverlayPresence(true, brightness));
     }
 
     /** A screen claimed by the codex, with none of the other reads answering. */
@@ -55,8 +53,8 @@ final class ScreenClaims {
         return new ScreenClaim(
             createClosedConsole(),
             () -> true,
-            () -> ArrangementDialogState.DOWN,
-            () -> ModalDialogState.NONE);
+            () -> OverlayPresence.NONE,
+            () -> OverlayPresence.NONE);
     }
 
     /** A screen claimed by this mod's own bar-arranging dialog, fully in place, with no other read answering. */
@@ -76,8 +74,8 @@ final class ScreenClaims {
         return new ScreenClaim(
             createClosedConsole(),
             () -> false,
-            () -> new ArrangementDialogState(isRaised, fadeFraction),
-            () -> ModalDialogState.NONE);
+            () -> new OverlayPresence(isRaised, fadeFraction),
+            () -> OverlayPresence.NONE);
     }
 
     /**
@@ -91,13 +89,20 @@ final class ScreenClaims {
         return new ScreenClaim(
             consoleOverlay,
             () -> false,
-            () -> ArrangementDialogState.DOWN,
-            () -> ModalDialogState.NONE);
+            () -> OverlayPresence.NONE,
+            () -> OverlayPresence.NONE);
     }
 
-    // A console read that answers shut, for the claims whose console half is not what they are about. Its
-    // own read rather than a shared instance, since a claim holding one is free to be driven by its caller.
-    private static ConsoleCommandsOverlay createClosedConsole() {
+    /**
+     * A console read that answers shut, for a claim whose console half is not what it is about - the ones
+     * built here, and the ones a caller composes itself around a read it wants to watch.
+     *
+     * <p>A fresh read each time rather than a shared instance, since a claim holding one is free to be
+     * driven by its caller.
+     *
+     * @return a console that reports nothing open
+     */
+    static ConsoleCommandsOverlay createClosedConsole() {
         return new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake());
     }
 }

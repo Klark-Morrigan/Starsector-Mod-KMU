@@ -1,11 +1,9 @@
 package kmu.maplayers.base.sidebar.runtime;
 
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
-import kmlib.starsector.ui.coreui.ModalDialogState;
+import kmlib.starsector.ui.coreui.OverlayPresence;
 import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
 import kmlib.testfixtures.starsector.settings.ModStateScopes;
-
-import kmu.maplayers.base.chrome.arrange.ArrangementDialogState;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -117,10 +115,10 @@ class ScreenClaimTest {
             var claim = new ScreenClaim(
                 new ConsoleCommandsOverlay(consolePresenceFake),
                 () -> false,
-                () -> ArrangementDialogState.DOWN,
+                () -> OverlayPresence.NONE,
                 () -> {
                     modalReadCount.incrementAndGet();
-                    return ModalDialogState.NONE;
+                    return OverlayPresence.NONE;
                 });
 
             consolePresenceFake.openConsole();
@@ -187,10 +185,10 @@ class ScreenClaimTest {
             // A prompt raised over the dialog is darker than either alone, so the panel is at least as
             // far gone as the further of the two.
             var claim = new ScreenClaim(
-                new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
+                ScreenClaims.createClosedConsole(),
                 () -> false,
-                () -> new ArrangementDialogState(true, 0.3f),
-                () -> new ModalDialogState(true, 0.6f));
+                () -> new OverlayPresence(true, 0.3f),
+                () -> new OverlayPresence(true, 0.6f));
 
             assertThat(claim.resolveClaimStrength())
                 .isCloseTo(0.6f, within(TOLERANCE));
@@ -202,12 +200,12 @@ class ScreenClaimTest {
             // on the frames it is standing.
             var modalReadCount = new AtomicInteger();
             var claim = new ScreenClaim(
-                new ConsoleCommandsOverlay(new ConsoleOverlayPresenceFake()),
+                ScreenClaims.createClosedConsole(),
                 () -> false,
-                () -> new ArrangementDialogState(true, 1f),
+                () -> new OverlayPresence(true, 1f),
                 () -> {
                     modalReadCount.incrementAndGet();
-                    return ModalDialogState.NONE;
+                    return OverlayPresence.NONE;
                 });
 
             claim.resolveClaimStrength();

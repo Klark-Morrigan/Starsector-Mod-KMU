@@ -3,9 +3,8 @@ package kmu.maplayers.base.sidebar.runtime;
 import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.coreui.CodexView;
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
-import kmlib.starsector.ui.coreui.ModalDialogState;
+import kmlib.starsector.ui.coreui.OverlayPresence;
 
-import kmu.maplayers.base.chrome.arrange.ArrangementDialogState;
 import kmu.maplayers.base.chrome.arrange.MapLayerArrangementDialog;
 
 import java.util.function.BooleanSupplier;
@@ -61,8 +60,8 @@ public final class ScreenClaim {
     public static final ScreenClaim INSTANCE = new ScreenClaim(
         ConsoleCommandsOverlay.INSTANCE,
         CodexView::isCodexShowing,
-        MapLayerArrangementDialog.INSTANCE::resolveDialogState,
-        CoreUiDialogView::resolveModalDialogState);
+        MapLayerArrangementDialog.INSTANCE::resolveDialogPresence,
+        CoreUiDialogView::resolveModalPresence);
 
     // A claimant wholly in place, which is what anything that cannot report a fade of its own counts as.
     private static final float FULLY_CLAIMED = 1f;
@@ -80,27 +79,26 @@ public final class ScreenClaim {
     // curve here to ride and none worth riding.
     private final BooleanSupplier isCodexShowing;
 
-    // What this mod's own bar-arranging dialog is doing - whether it is up for input, and how far its
-    // paint stands. One read rather than two for the reason the modal's below is, and a field read on
-    // the dialog itself, which is why it sits before the walk: nothing has to be searched for a panel
-    // this mod put there itself.
-    private final Supplier<ArrangementDialogState> arrangementDialogState;
+    // What this mod's own bar-arranging dialog is doing - whether it holds the screen, and how far its
+    // paint stands. A field read on the dialog itself, which is why it sits before the walk: nothing
+    // has to be searched for a panel this mod put there itself.
+    private final Supplier<OverlayPresence> arrangementDialogPresence;
 
-    // What a modal a core screen has raised in front of itself is doing - whether it is there, and how
-    // far through its fade. One read rather than two, so the presence a claim stands input down on and
-    // the fade it hands the draw cannot come off two walks taken either side of a modal being raised.
-    private final Supplier<ModalDialogState> modalDialogState;
+    // What a modal a core screen has raised in front of itself is doing. One read rather than two, so
+    // the presence a claim stands input down on and the fade it hands the draw cannot come off two
+    // walks taken either side of a modal being raised.
+    private final Supplier<OverlayPresence> modalPresence;
 
     ScreenClaim(
         ConsoleCommandsOverlay consoleOverlay,
         BooleanSupplier isCodexShowing,
-        Supplier<ArrangementDialogState> arrangementDialogState,
-        Supplier<ModalDialogState> modalDialogState) {
+        Supplier<OverlayPresence> arrangementDialogPresence,
+        Supplier<OverlayPresence> modalPresence) {
 
         this.consoleOverlay = consoleOverlay;
         this.isCodexShowing = isCodexShowing;
-        this.arrangementDialogState = arrangementDialogState;
-        this.modalDialogState = modalDialogState;
+        this.arrangementDialogPresence = arrangementDialogPresence;
+        this.modalPresence = modalPresence;
     }
 
     /**
@@ -118,8 +116,8 @@ public final class ScreenClaim {
     public boolean isScreenClaimed() {
 
         return isClaimantWithoutAFadeUp()
-            || arrangementDialogState.get().isRaised()
-            || modalDialogState.get().isShowing();
+            || arrangementDialogPresence.get().isRaised()
+            || modalPresence.get().isRaised();
     }
 
     /**
@@ -161,14 +159,14 @@ public final class ScreenClaim {
 
         // A dialog wholly in place has already taken everything the modal walk could add, so the walk
         // is skipped on the frames it is standing.
-        var arrangementFade = arrangementDialogState.get().fadeFraction();
+        var arrangementFade = arrangementDialogPresence.get().fadeFraction();
         if (arrangementFade >= FULLY_CLAIMED) {
             return FULLY_CLAIMED;
         }
 
-        var modal = modalDialogState.get();
-        var modalFade = modal.isShowing()
-            ? modal.brightness()
+        var modal = modalPresence.get();
+        var modalFade = modal.isRaised()
+            ? modal.fadeFraction()
             : UNCLAIMED;
 
         return Math.max(arrangementFade, modalFade);

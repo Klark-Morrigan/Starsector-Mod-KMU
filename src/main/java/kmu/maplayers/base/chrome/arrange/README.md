@@ -18,12 +18,13 @@ and the [mod README](../../../../../../../../README.md) for project context.
 
 ## How the package divides
 
-Six types, split along one line: what needs a running game, and what does not.
+Seven types, split along one line: what needs a running game, and what does not.
 
 | Type | Owns |
 | --- | --- |
-| `MapLayerArrangementDialog` | the lifecycle - when it stands up, what it claims, when it comes down |
-| `ArrangementDialogFade` | whether the dialog is up, and how far onto the screen it is painted |
+| `MapLayerArrangementDialog` | what is being arranged, when it may start, and what ends it |
+| `ArrangementDialogPanel` | the surface - the panel in the core UI, its claim, its paint, its lifetime |
+| `ArrangementDialogFade` | whether the dialog holds the screen, and how far onto it the box is painted |
 | `MapLayerArrangementEditor` | the rows, the three things a press can do to one, and when it refuses |
 | `MapLayerArrangementDialogBody` | the furniture around the column, and the two areas no widget paints |
 | `ArrangementRowWidgets` | one row's name and its three controls |
@@ -32,10 +33,18 @@ Six types, split along one line: what needs a running game, and what does not.
 The reasoning behind each sits in its own class Javadoc; what follows is only what none of them can
 say alone.
 
+The dialog and its panel divide on **what is being arranged** against **what it is arranged on**. The
+dialog holds the editor and decides when the player may start and stop; the panel holds the vanilla
+widget, the clock and the frame hooks. Neither reaches into the other: the panel is handed a builder
+when the widgets need replacing, and reports back the two things it cannot rule on - a press on the
+way out, and a screen gone out from under it - because whether either ends the arrangement is a
+question about an arrangement rather than about a surface.
+
 `MapLayerArrangementRow` and `ArrangementRowAction` pass between the halves. The action is its own
 type rather than nested in either, since the column puts it on a button and the editor acts on it -
-nesting it would make one of those two the other's owner. `ArrangementDialogState` passes outward:
-the two answers the fade keeps, read as one value by whatever stands aside for the dialog.
+nesting it would make one of those two the other's owner. Outward, the panel reports in KMLib's
+`OverlayPresence`, the shape anything raised over a screen answers in - so whatever stands aside for
+this dialog stands aside for a vanilla modal by the same reading.
 
 ## Raised and painted part company
 
@@ -47,10 +56,11 @@ plugin's render hook alike, so the box, its controls and the dim beneath them mo
 
 What that costs is that the panel outlives the press. From the press until the end of the fall the
 dialog is on screen and must claim nothing, or it eats the click that follows; so `isRaised` moves on
-the press and the fraction moves over the frames after it, and the two are read together as
-`ArrangementDialogState` rather than through the game's own modal shape, whose presence holds until
-the fade has run. The panel comes off at the end of the fall; a reopen during it keeps the panel and
-comes up from where the fade stood.
+the press and the fraction moves over the frames after it. That is the one place this parts company
+with a vanilla modal, which the game holds raised until its fade has run because that is how long it
+keeps it in the tree intercepting - the shared shape carries the flag precisely so each answerer can
+say which frames it covers. The panel comes off at the end of the fall; a reopen during it keeps the
+panel and comes up from where the fade stood.
 
 ## Everything testable is outside the panel
 

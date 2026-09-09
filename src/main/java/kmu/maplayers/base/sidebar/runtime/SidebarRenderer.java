@@ -7,7 +7,7 @@ import com.fs.starfarer.api.combat.ViewportAPI;
 import kmlib.logging.SessionWarning;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.coreui.CoreUiComponentRepainter;
-import kmlib.starsector.ui.input.HoverFade;
+import kmlib.starsector.ui.input.PanelMotionPaces;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.starsector.ui.render.gl.panel.NotchState;
 import kmlib.starsector.ui.render.gl.style.WidgetStyle;
@@ -197,7 +197,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         host.getController().advanceInputMotions(
             placement,
             elapsedSeconds,
-            HoverFade.DEFAULT_DURATIONS);
+            PanelMotionPaces.DEFAULT_DURATIONS);
 
         // The panel's look and its presence, kept apart: the first is the player's translucency setting,
         // worn for as long as the panel is up, the second how much of the panel is there at all this

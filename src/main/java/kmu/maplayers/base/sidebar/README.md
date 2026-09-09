@@ -692,7 +692,7 @@ light spilling onto them would shift the very edge the constant frame exists to 
 
 Which is why the palette answers on two channels and each rule uses one - a shade rule adds no light, a
 light rule leaves the look alone - so a tab is never brightened twice. Either way it travels onto its lit
-state rather than switching to it, paced by `HoverFade.DEFAULT_DURATIONS`.
+state rather than switching to it, paced by `PanelMotionPaces.DEFAULT_DURATIONS`.
 
 A press rides the `clicked` wash up over whatever look the tab has settled on and **holds there until
 the button comes up**, the way a vanilla tab does: a press is an act the player is still making, so
@@ -714,7 +714,7 @@ palette and so cannot skip a pulse it would paint nothing with. The two screens 
 gesture carries the feedback: the map's click leads and its blink echoes, intel's click is silent and
 its blink carries the press. Neither moves channel for it.
 
-`HoverFade.DEFAULT_DURATIONS` is a pair rather than one value, and the two halves are not equal: a tab
+`PanelMotionPaces.DEFAULT_DURATIONS` is a pair rather than one value, and the two halves are not equal: a tab
 arrives at the shade it is heading for in half the time it takes to let go of one. A rise answers
 something the player just did and has to land under the gesture that asked for it, while a fall
 answers nothing and reads better unhurried - at equal paces the whole motion feels like the slower

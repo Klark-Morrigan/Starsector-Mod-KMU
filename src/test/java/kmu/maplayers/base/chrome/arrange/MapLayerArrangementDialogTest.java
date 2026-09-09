@@ -1,5 +1,7 @@
 package kmu.maplayers.base.chrome.arrange;
 
+import kmlib.starsector.ui.coreui.OverlayPresence;
+
 import kmu.maplayers.base.layer.MapLayerArrangements;
 
 import org.junit.jupiter.api.AfterEach;
@@ -50,14 +52,14 @@ final class MapLayerArrangementDialogTest {
     }
 
     @Nested
-    class ResolveDialogState {
+    class ResolveDialogPresence {
 
         @Test
-        void resolveDialogStateIsDownWithNothingHavingOpenedIt() {
+        void resolveDialogPresenceIsNoneWithNothingHavingOpenedIt() {
             // Both halves at rest: a fraction left standing from nowhere would thin the sidebar over a
             // box that is not there.
-            assertThat(dialog.resolveDialogState())
-                .isEqualTo(ArrangementDialogState.DOWN);
+            assertThat(dialog.resolveDialogPresence())
+                .isEqualTo(OverlayPresence.NONE);
         }
     }
 
