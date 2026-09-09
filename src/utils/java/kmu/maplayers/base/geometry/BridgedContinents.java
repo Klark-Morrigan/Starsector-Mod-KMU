@@ -198,17 +198,10 @@ public final class BridgedContinents {
      * closes is read as the kind of piece its walls say it is, and that is the only way the
      * naming can tell a bay from a lake from the sea between two continents.
      *
-     * <p>TODO: the coast's reaches pass a channel filter in {@code Coastlines} that reads the
-     * channel off the trace's own walls, and a continent trace carries none - so the filter is
-     * zero there and passes every cell-to-cell step. Today every step it should have refused
-     * is exactly zero length and the edge-length floor in {@code CoastPockets} catches all of
-     * them, but a genuine sub-channel reach would be laid. The filter should read the channel
-     * off the knobs, the way the pocket walk already does.
-     *
-     * <p>TODO: the coastline the links make of the sector - the second trace with them laid,
-     * cut down to what the first does not carry - is not laid as walls here, and nothing fills
-     * behind it yet. Void that only the linked shore shuts in is therefore read by whichever
-     * span or reach of the first trace also touches it, or left as a lake.
+     * <p>Every span, and no other line. The coastline the links make of the sector - the second
+     * trace with them laid, which {@link IntercontinentalCoasts} cuts down to what the first
+     * does not already carry - is drawn but is not a wall here, so void only that shore shuts
+     * in is read by whichever span or reach of the first trace also touches it.
      *
      * @return the coasts, their own reaches, and every span, laid together
      */
