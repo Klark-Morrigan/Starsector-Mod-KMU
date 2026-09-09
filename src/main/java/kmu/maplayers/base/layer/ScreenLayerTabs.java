@@ -63,6 +63,25 @@ public final class ScreenLayerTabs {
     }
 
     /**
+     * What the row above is composed from this frame, for a standing pass that has to ask whether it
+     * could have moved rather than build it again to find out.
+     *
+     * <p>Every ingredient the method above reads, and nothing else: what a caller does with this is
+     * compare it against the one it last acted on, so an ingredient missing from it is a change no
+     * caller would see. That is why it is built here rather than assembled by whoever wants it.
+     *
+     * @param screenPicks the screen whose row is being asked about
+     * @return this frame's revision of that screen's offered row
+     */
+    public static OfferedTabsRevision readOfferedTabsRevision(ScreenLayerPicks screenPicks) {
+
+        return new OfferedTabsRevision(
+            LiveMapLayerArrangement.resolveArrangement(),
+            MapLayerRegistry.getLayers(),
+            screenPicks.layerVisibility().hasControlBeenAttached());
+    }
+
+    /**
      * Moves a pick this screen offers no tab for onto the leading tab it does offer, and sets that
      * screen's own show-or-hide control to whether the tab it lands on paints - so the bar, the map and
      * the control end up saying one thing.
@@ -73,27 +92,35 @@ public final class ScreenLayerTabs {
      * the ones just after something moved.
      *
      * @param screenPicks the screen's own picks, both of which this may write
+     * @return whether that screen is now on a tab its row offers. False where the move did not take -
+     *         a selection with nowhere to write drops it silently - so a caller holding off until the
+     *         row next moves knows not to hold off on this one
      */
-    public static void healPickOntoOfferedTabs(ScreenLayerPicks screenPicks) {
+    public static boolean healPickOntoOfferedTabs(ScreenLayerPicks screenPicks) {
 
         var offeredLayers = resolveTabbedLayers(screenPicks);
 
         // Nothing registered, so the bar is bare too: there is no tab to land on, and no pick that could
-        // be disagreeing with one.
+        // be disagreeing with one. Settled rather than unsettled - nothing here is owed a second look.
         if (offeredLayers.isEmpty()) {
-            return;
+            return true;
         }
         var pick = screenPicks.layerSelection().getActiveLayer();
 
         // A null pick counts as one the row does not offer, so a selection seam that answers nothing over
         // a populated bar is landed on a tab rather than left lighting none.
         if (pick != null && offeredLayers.contains(pick)) {
-            return;
+            return true;
         }
         var leadingTab = offeredLayers.get(0);
 
         screenPicks.layerSelection().selectLayer(leadingTab);
         screenPicks.layerVisibility().showLayers(isLayerPainting(leadingTab));
+
+        // Read back rather than assumed. A pick persisted in sector memory drops the write where there
+        // is no memory to write into, and a caller that took the attempt for the outcome would record
+        // this screen as settled and never come back to a bar still lit wrong.
+        return screenPicks.layerSelection().getActiveLayer() == leadingTab;
     }
 
     // The given row without the empty view's tab, unless that would leave no tab at all: a row with no

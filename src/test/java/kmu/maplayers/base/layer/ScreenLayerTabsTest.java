@@ -35,8 +35,12 @@ import static org.mockito.Mockito.when;
  * <p>And the heal that keeps the bar, the map and the control agreeing: a pick the row does not offer is
  * put on the leading tab it does offer, and the control set to whether that tab paints. Both ways a row
  * can strand a pick are posed here, since the point of stating the rule as "not among the tabs" is that
- * they are one case. When the heal is asked - every frame, for every screen - is
+ * they are one case. When the heal is asked is
  * {@link kmu.maplayers.base.chrome.MapLayerPickUpkeepTest}'s, this answering only what it does.
+ *
+ * <p>Beside it, the revision a holder skips that work on: one case per ingredient the row is built
+ * from, because an ingredient left out of the revision is a change no holder would ever see. Those
+ * cases are what makes the two move together rather than only being written side by side.
  */
 final class ScreenLayerTabsTest {
 
@@ -168,6 +172,69 @@ final class ScreenLayerTabsTest {
 
             assertThat(ScreenLayerTabs.resolveTabbedLayers(createPicksWithAControlStanding()))
                 .containsExactly(NoLayer.INSTANCE);
+        }
+    }
+
+    @Nested
+    class ReadOfferedTabsRevision {
+
+        @Test
+        void readOfferedTabsRevisionIsUnchangedWhileNothingTheRowIsMadeFromMoves() {
+            // What a holder skips work on. Two reads of a settled bar have to compare equal or the
+            // gate never closes and the saving is nil.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithNoControl();
+
+            assertThat(ScreenLayerTabs.readOfferedTabsRevision(screenPicks))
+                .isEqualTo(ScreenLayerTabs.readOfferedTabsRevision(screenPicks));
+        }
+
+        @Test
+        void readOfferedTabsRevisionMovesWhenThePlayerHidesATab() {
+            // The change the whole heal exists for, so a revision that missed it would be worse than
+            // no revision at all.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithNoControl();
+            var settledRevision = ScreenLayerTabs.readOfferedTabsRevision(screenPicks);
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(PAINTING_LAYER_ID));
+
+            assertThat(ScreenLayerTabs.readOfferedTabsRevision(screenPicks))
+                .isNotEqualTo(settledRevision);
+        }
+
+        @Test
+        void readOfferedTabsRevisionMovesWhenALayerRegisters() {
+            // A mod loading after KMU is the ordinary case rather than the exception, and its tab
+            // arriving is a row that moved.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithNoControl();
+            var settledRevision = ScreenLayerTabs.readOfferedTabsRevision(screenPicks);
+
+            registerTwoLayersThatPaintBesideTheEmptyView();
+
+            assertThat(ScreenLayerTabs.readOfferedTabsRevision(screenPicks))
+                .isNotEqualTo(settledRevision);
+        }
+
+        @Test
+        void readOfferedTabsRevisionMovesWhenAControlStandsOnTheScreen() {
+            // The third ingredient, and the one a revision built from the row's own two would miss:
+            // a box going up withholds a tab without touching the roster or the arrangement.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithNoControl();
+            var settledRevision = ScreenLayerTabs.readOfferedTabsRevision(screenPicks);
+
+            screenPicks.layerVisibility().recordControlAttached();
+
+            assertThat(ScreenLayerTabs.readOfferedTabsRevision(screenPicks))
+                .isNotEqualTo(settledRevision);
         }
     }
 
@@ -325,6 +392,54 @@ final class ScreenLayerTabsTest {
 
             verify(screenPicks.layerSelection())
                 .selectLayer(NoLayer.INSTANCE);
+        }
+
+        @Test
+        void healPickOntoOfferedTabsReportsAScreenSettledOnceThePickLands() {
+            // What a holder records on. The pick was written and read back as the tab it was sent to,
+            // so there is nothing owed at this row.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithAControlStanding();
+            var pick = new AtomicReference<MapLayer>(NoLayer.INSTANCE);
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenAnswer(read -> pick.get());
+            doAnswer(selection -> {
+                pick.set(selection.getArgument(0));
+                return null;
+            }).when(screenPicks.layerSelection()).selectLayer(any());
+
+            assertThat(ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks))
+                .isTrue();
+        }
+
+        @Test
+        void healPickOntoOfferedTabsReportsAScreenUnsettledWhereTheMoveIsDropped() {
+            // A pick persisted in sector memory drops the write where there is no memory to write
+            // into, and says nothing about having done so. Read back rather than assumed, because a
+            // holder that took the attempt for the outcome would never come back to this bar.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksOnTheEmptyView();
+
+            assertThat(ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks))
+                .isFalse();
+        }
+
+        @Test
+        void healPickOntoOfferedTabsReportsAScreenAlreadyOnAnOfferedTabSettled() {
+            // The common answer, and the one that has to be settled rather than merely quiet: a
+            // holder skipping only where something was written would ask again every frame.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithAControlStanding();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+
+            assertThat(ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks))
+                .isTrue();
         }
 
         @Test

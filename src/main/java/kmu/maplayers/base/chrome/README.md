@@ -92,14 +92,36 @@ One dialog moves both screens' rows, a screen nobody is looking at still has to 
 next look, and the pass that lays a row out is a layout and may not write. Registered per sector by
 `MapChromeInstaller` beside the box's own pass and behind a guarded step of its own, so a load that
 loses the box keeps the heal; it runs while paused, every screen the bar draws on pausing the
-campaign. A heal leaves the pick on a tab the row offers, so the next frame finds nothing to do and
-nothing is written until something moves again.
+campaign.
 
-It fails open the way the toggle does, and for a reason the toggle does not have: the row it reads
-is every registered layer's, so on an install carrying a foreign mod's layer this calls a stranger's
-`getId` sixty times a second - and on every frame rather than only where the bar is drawn, so a throw
-would reach the player nowhere near the map they could connect it to. A failed frame costs the heal,
-one line in the log, and nothing else; the frame after asks again.
+Asked every frame is not the same as answered every frame. Building the offered row costs an index of
+the roster by id, three lists and two stream passes - not a thing to spend sixty times a second on an
+answer that moves when the player opens a dialog. So the pass holds each screen's
+`OfferedTabsRevision` from the frame it last settled it at, and a frame whose revision has not moved
+does nothing at all. The revision is built beside the row it describes, in `ScreenLayerTabs`, so an
+ingredient added to one is added to the other, and it has a case per ingredient for the same reason.
+
+Held on the outcome and never on the attempt. The heal answers whether the screen ended up on a tab
+its row offers, and only that records the revision: a pick persisted in sector memory drops the write
+where there is no memory to write into and says nothing about it, so a pass that took having tried
+for having done it would leave that bar lit wrong until somebody opened the dialog. Unsettled means
+the next frame asks again.
+
+The pick itself is deliberately not in the revision, which would cost a save read per screen per
+frame. Nothing moves a pick to a tab that is not offered - the bar selects only tabs it draws, and
+the heal lands it only on tabs the row carries - so a pick that has stopped being offered *is* a row
+that moved. A pick written straight into the save from outside the bar is healed when the row next
+moves, or on the next load.
+
+A failure is held the same way a success is, and that is the whole of what stops it repeating. The
+row reaches every registered layer, so on an install carrying a foreign mod's layer this calls a
+stranger's `getId` - and unlike the box, which cannot reach a row the game has not built *yet*, a
+roster that throws throws again on the identical row. So the throwing row is recorded as done with:
+one attempt per row change rather than one per frame, said once per session however often it happens,
+and the bar behaving meanwhile as it did before the pass existed. The player arranging their bar
+afresh is what puts the screen back in play - whatever the fault was, it is not being asked the same
+question again. The pass itself never ends; one that did could not be brought back by anything the
+player does.
 
 ## The arranging dialog
 

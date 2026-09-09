@@ -82,6 +82,12 @@ against it, so a hidden layer stays registered and its id goes on resolving.
 What becomes of a pick the row no longer offers a tab for is `healPickOntoOfferedTabs`, stated in
 [the map chrome README](../chrome/README.md#the-pick-follows-the-bar) beside the pass that asks it.
 
+`readOfferedTabsRevision` is that row's ingredients as one `OfferedTabsRevision`, for a standing pass
+that has to ask whether the row could have moved without paying to build it. It is written beside
+`resolveTabbedLayers` rather than assembled by whoever wants it: an ingredient added to the row and
+not to the revision is a change no holder would see, so the two are one file's business and each
+ingredient has a case of its own.
+
 ## The bar arrangement
 
 What the player makes of that row, held apart from the roster and living here beside it.
