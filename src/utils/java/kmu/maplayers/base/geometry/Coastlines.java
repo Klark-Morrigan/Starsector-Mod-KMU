@@ -201,13 +201,6 @@ public final class Coastlines {
         StraightRuns.ReachAnchor reachAnchor) {
     }
 
-    /**
-     * What the viewer opens on, and so what every drawing of a coast describes.
-     *
-     * <p>Declared once here rather than beside each drawing. Three copies of these numbers is
-     * how a report comes to describe a different map from the one on screen without either of
-     * them saying so.
-     */
     // The window read on the turn the stretch begins, which is the answer that draws the better
     // map - not the arithmetically correct one. What each of the two costs is measured on
     // StraightRuns.ReachAnchor, and that is the note to read before moving this.
@@ -217,6 +210,13 @@ public final class Coastlines {
     private static final StraightRuns.ReachAnchor DEFAULT_REACH_ANCHOR =
         StraightRuns.ReachAnchor.AT_THE_STRETCH_START;
 
+    /**
+     * What the viewer opens on, and so what every drawing of a coast describes.
+     *
+     * <p>Declared once here rather than beside each drawing. Three copies of these numbers is
+     * how a report comes to describe a different map from the one on screen without either of
+     * them saying so.
+     */
     public static final CoastRules DEFAULT_RULES = new CoastRules(
         DEFAULT_BRIDGE_REACH_MULTIPLE,
         DEFAULT_MIN_FRONTAGE_SHARE,
