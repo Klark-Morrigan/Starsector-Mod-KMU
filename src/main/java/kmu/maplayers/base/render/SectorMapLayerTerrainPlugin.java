@@ -5,6 +5,9 @@ import com.fs.starfarer.api.campaign.CampaignEngineLayers;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 
+import java.util.EnumSet;
+import java.util.List;
+
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
@@ -12,10 +15,7 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.settings.KmuMapLayerSettings;
-
-import java.util.EnumSet;
-import java.util.List;
+import kmu.settings.KmuMapHoverSettings;
 
 /**
  * The map's render surface: the terrain plugin that owns the sector (M) map's overlay render pass
@@ -114,7 +114,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // Stands the whole pass down when the player has asked the layers to keep to the vanilla
         // maps and none is showing. Before the preparation rather than only the draw, so a foreign
         // pass cannot take the frame's single preparation from the map that is entitled to it.
-        if (KmuMapLayerSettings.getMapLayersOnlyOnTheirHosts()
+        if (KmuMapHoverSettings.areMapLayersOnlyOnTheirHosts()
                 && !MAP_PRESENCE.isAnyMapShowing()) {
             return;
         }

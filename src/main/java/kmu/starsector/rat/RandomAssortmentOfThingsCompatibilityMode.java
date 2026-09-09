@@ -1,11 +1,11 @@
 package kmu.starsector.rat;
 
+import java.util.function.BooleanSupplier;
+
 import kmlib.mods.rat.RandomAssortmentOfThingsMinimap;
 import kmlib.starsector.ui.map.presence.CampaignMinimap;
 
-import kmu.settings.KmuMapLayerSettings;
-
-import java.util.function.BooleanSupplier;
+import kmu.settings.KmuMapHoverSettings;
 
 /**
  * Whether the map layers should treat the minimap Random Assortment of Things draws in the
@@ -65,7 +65,7 @@ public final class RandomAssortmentOfThingsCompatibilityMode {
     public static RandomAssortmentOfThingsCompatibilityMode createForLiveGame() {
 
         return new RandomAssortmentOfThingsCompatibilityMode(
-            KmuMapLayerSettings::getRandomAssortmentOfThingsCompatibilityModeEnabled,
+            KmuMapHoverSettings::isRandomAssortmentOfThingsCompatibilityModeEnabled,
             new RandomAssortmentOfThingsMinimap());
     }
 

@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mockStatic;
  * it, a bar at no width is a control gone from the panel - and neither is something a player can see the
  * cause of once it has happened.
  */
-final class KmuMapLayerSettingsTest {
+final class KmuMapSidebarSettingsTest {
 
     // The live field ids, as the shipped table spells them. A rename in the reader would otherwise read a
     // row the table never writes, leaving the panel on its fallback with nothing to say why.
@@ -42,7 +42,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(eq(OPACITY_FIELD), anyInt()))
                     .thenReturn(80);
 
-                assertThat(KmuMapLayerSettings.getMapSidebarBackgroundOpacity())
+                assertThat(KmuMapSidebarSettings.getMapSidebarBackgroundOpacity())
                     .isEqualTo(0.8f);
             }
         }
@@ -56,7 +56,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(eq(OPACITY_FIELD), anyInt()))
                     .thenReturn(10);
 
-                assertThat(KmuMapLayerSettings.getMapSidebarBackgroundOpacity())
+                assertThat(KmuMapSidebarSettings.getMapSidebarBackgroundOpacity())
                     .isEqualTo(0.5f);
             }
         }
@@ -70,7 +70,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(eq(OPACITY_FIELD), anyInt()))
                     .thenReturn(140);
 
-                assertThat(KmuMapLayerSettings.getMapSidebarBackgroundOpacity())
+                assertThat(KmuMapSidebarSettings.getMapSidebarBackgroundOpacity())
                     .isEqualTo(1f);
             }
         }
@@ -87,7 +87,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(anyString(), anyInt()))
                     .thenAnswer(invocation -> invocation.getArgument(1));
 
-                assertThat(KmuMapLayerSettings.getMapSidebarBackgroundOpacity())
+                assertThat(KmuMapSidebarSettings.getMapSidebarBackgroundOpacity())
                     .isEqualTo(0.8f);
             }
         }
@@ -105,7 +105,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(eq(SCROLLBAR_THICKNESS_FIELD), anyInt()))
                     .thenReturn(7);
 
-                assertThat(KmuMapLayerSettings.getMapSidebarScrollbarThickness())
+                assertThat(KmuMapSidebarSettings.getMapSidebarScrollbarThickness())
                     .isEqualTo(7);
             }
         }
@@ -120,7 +120,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(eq(SCROLLBAR_THICKNESS_FIELD), anyInt()))
                     .thenReturn(0);
 
-                assertThat(KmuMapLayerSettings.getMapSidebarScrollbarThickness())
+                assertThat(KmuMapSidebarSettings.getMapSidebarScrollbarThickness())
                     .isEqualTo(1);
             }
         }
@@ -135,7 +135,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(eq(SCROLLBAR_THICKNESS_FIELD), anyInt()))
                     .thenReturn(400);
 
-                assertThat(KmuMapLayerSettings.getMapSidebarScrollbarThickness())
+                assertThat(KmuMapSidebarSettings.getMapSidebarScrollbarThickness())
                     .isEqualTo(12);
             }
         }
@@ -151,7 +151,7 @@ final class KmuMapLayerSettingsTest {
                     .when(() -> KmuLunaSettings.readInt(anyString(), anyInt()))
                     .thenAnswer(invocation -> invocation.getArgument(1));
 
-                assertThat(KmuMapLayerSettings.getMapSidebarScrollbarThickness())
+                assertThat(KmuMapSidebarSettings.getMapSidebarScrollbarThickness())
                     .isEqualTo(3);
             }
         }

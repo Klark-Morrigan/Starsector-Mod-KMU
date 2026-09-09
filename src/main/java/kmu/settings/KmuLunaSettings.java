@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the mod id every read is scoped by.
  *
  * <p>The knobs sit in classes beside this one, split first by which package reads them:
- * {@link KmuMapLayerSettings} and {@link KmuMapKeybindSettings} for what the map-layer
+ * the {@code KmuMap*Settings} readers and {@link KmuMapKeybindSettings} for what the map-layer
  * framework's own chrome, geometry and keys need, {@link KmuMarketConditionSettings} for the
  * condition picker, {@link KmuProfilingSettings} for how much of what the mod does is measured,
  * and the political map layer's own set. Splitting on the reader rather than on the settings tab

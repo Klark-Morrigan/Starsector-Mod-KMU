@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapHoverSettings;
 
 import static org.mockito.Mockito.mockStatic;
 
@@ -65,19 +65,19 @@ public final class HoverSwitchScopes {
 
     private static void runWithHoverSwitches(HoverSwitchState state, Runnable body) {
 
-        try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+        try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
             settingsMock
-                .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                .when(KmuMapHoverSettings::isMapHoveringEnabled)
                 .thenReturn(true);
             settingsMock
-                .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
                 .thenReturn(state.isTooltipEnabled());
             settingsMock
-                .when(KmuMapLayerSettings::getMapLayerMouseoverIsGlobal)
+                .when(KmuMapHoverSettings::isMapLayerMouseoverGlobal)
                 .thenReturn(false);
             settingsMock
-                .when(KmuMapLayerSettings::getMapLayerMouseoverIsEnabledInGameSpace)
+                .when(KmuMapHoverSettings::isMapLayerMouseoverEnabledInGameSpace)
                 .thenReturn(state.isGameSpacePermitted());
 
             body.run();

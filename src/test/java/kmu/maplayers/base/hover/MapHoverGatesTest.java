@@ -1,11 +1,11 @@
 package kmu.maplayers.base.hover;
 
-import kmu.settings.KmuMapLayerSettings;
+import java.util.function.BooleanSupplier;
+
+import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
@@ -34,13 +34,13 @@ final class MapHoverGatesTest {
         @Test
         void isHoverEffectsEnabledIsTrueWithBothTiersOn() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+                    .when(KmuMapHoverSettings::areMapHoverEffectsEnabled)
                     .thenReturn(true);
 
                 assertThat(MapHoverGates.isHoverEffectsEnabled()).isTrue();
@@ -50,13 +50,13 @@ final class MapHoverGatesTest {
         @Test
         void isHoverEffectsEnabledIsFalseWithTheHoveringMasterOff() {
             // The master reaches past its own kind: with it off there is no cursor read to draw off.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+                    .when(KmuMapHoverSettings::areMapHoverEffectsEnabled)
                     .thenReturn(true);
 
                 assertThat(MapHoverGates.isHoverEffectsEnabled())
@@ -67,13 +67,13 @@ final class MapHoverGatesTest {
         @Test
         void isHoverEffectsEnabledIsFalseWithTheGlobalEffectsSwitchOff() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+                    .when(KmuMapHoverSettings::areMapHoverEffectsEnabled)
                     .thenReturn(false);
 
                 assertThat(MapHoverGates.isHoverEffectsEnabled())
@@ -84,16 +84,16 @@ final class MapHoverGatesTest {
         @Test
         void isHoverEffectsEnabledIsUntouchedByTheGlobalTooltipSwitch() {
             // The pair is a pair, not a chain: switching the box off leaves the halo and wash alone.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+                    .when(KmuMapHoverSettings::areMapHoverEffectsEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
                     .thenReturn(false);
 
                 assertThat(MapHoverGates.isHoverEffectsEnabled())
@@ -108,13 +108,13 @@ final class MapHoverGatesTest {
         @Test
         void isHoverTooltipEnabledIsTrueWithBothTiersOn() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
                     .thenReturn(true);
 
                 assertThat(MapHoverGates.isHoverTooltipEnabled())
@@ -125,13 +125,13 @@ final class MapHoverGatesTest {
         @Test
         void isHoverTooltipEnabledIsFalseWithTheHoveringMasterOff() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
                     .thenReturn(true);
 
                 assertThat(MapHoverGates.isHoverTooltipEnabled())
@@ -142,13 +142,13 @@ final class MapHoverGatesTest {
         @Test
         void isHoverTooltipEnabledIsFalseWithTheGlobalTooltipSwitchOff() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
                     .thenReturn(false);
 
                 assertThat(MapHoverGates.isHoverTooltipEnabled())
@@ -160,16 +160,16 @@ final class MapHoverGatesTest {
         void isHoverTooltipEnabledIsUntouchedByTheGlobalEffectsSwitch() {
             // The other half of the pair: a player who wants the standings box without the map
             // lighting up under the cursor keeps the box.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+                    .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+                    .when(KmuMapHoverSettings::areMapHoverEffectsEnabled)
                     .thenReturn(false);
 
                 assertThat(MapHoverGates.isHoverTooltipEnabled())
@@ -235,13 +235,13 @@ final class MapHoverGatesTest {
                 boolean isInGameSpacePermitted,
                 Runnable body) {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapLayerMouseoverIsGlobal)
+                    .when(KmuMapHoverSettings::isMapLayerMouseoverGlobal)
                     .thenReturn(isGlobal);
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapLayerMouseoverIsEnabledInGameSpace)
+                    .when(KmuMapHoverSettings::isMapLayerMouseoverEnabledInGameSpace)
                     .thenReturn(isInGameSpacePermitted);
 
                 body.run();

@@ -4,6 +4,11 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
@@ -19,7 +24,7 @@ import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapTooltipSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,11 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.BUTTON_SHORTCUT;
 import static kmu.maplayers.base.tooltip.CellTooltipPaletteFake.GRAY;
@@ -188,7 +188,7 @@ final class SystemCellTooltipTest {
     // The density knobs the box reads each paint. Held over every case rather than opened per case,
     // because the box resolves them whenever it draws at all - including in the cases that assert it
     // draws nothing, which would otherwise read the live settings from outside the game.
-    private MockedStatic<KmuMapLayerSettings> settingsMock;
+    private MockedStatic<KmuMapTooltipSettings> settingsMock;
 
     @BeforeEach
     void installColours() {
@@ -198,19 +198,19 @@ final class SystemCellTooltipTest {
     @BeforeEach
     void installDensitySettings() {
 
-        settingsMock = mockStatic(KmuMapLayerSettings.class);
+        settingsMock = mockStatic(KmuMapTooltipSettings.class);
 
-        settingsMock.when(KmuMapLayerSettings::getMapTooltipNestingLevelShrink)
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipNestingLevelShrink)
             .thenReturn(NESTING_LEVEL_SHRINK);
-        settingsMock.when(KmuMapLayerSettings::getMapTooltipLineGap)
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipLineGap)
             .thenReturn(LINE_GAP);
-        settingsMock.when(KmuMapLayerSettings::getMapTooltipTier2LineGap)
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipTier2LineGap)
             .thenReturn(TIER_2_LINE_GAP);
-        settingsMock.when(KmuMapLayerSettings::getMapTooltipTier3LineGap)
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipTier3LineGap)
             .thenReturn(TIER_3_LINE_GAP);
-        settingsMock.when(KmuMapLayerSettings::getMapTooltipLeaderThickness)
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipLeaderThickness)
             .thenReturn(LEADER_THICKNESS);
-        settingsMock.when(KmuMapLayerSettings::getMapTooltipLeaderOpacity)
+        settingsMock.when(KmuMapTooltipSettings::getMapTooltipLeaderOpacity)
             .thenReturn(LEADER_OPACITY);
     }
 
@@ -432,7 +432,7 @@ final class SystemCellTooltipTest {
             assertThat(captureDrawnBox(tooltipFake).style().leaderLineStyle().alphaMult())
                 .isEqualTo(LEADER_OPACITY);
 
-            settingsMock.when(KmuMapLayerSettings::getMapTooltipLeaderOpacity)
+            settingsMock.when(KmuMapTooltipSettings::getMapTooltipLeaderOpacity)
                 .thenReturn(FADED_LEADER_OPACITY);
 
             assertThat(captureDrawnBox(tooltipFake).style().leaderLineStyle().alphaMult())
@@ -450,7 +450,7 @@ final class SystemCellTooltipTest {
                     IN_THE_BOXS_VOICE))
                 .isEqualTo(LINE_GAP);
 
-            settingsMock.when(KmuMapLayerSettings::getMapTooltipLineGap)
+            settingsMock.when(KmuMapTooltipSettings::getMapTooltipLineGap)
                 .thenReturn(TIGHTENED_LINE_GAP);
 
             assertThat(captureDrawnBox(tooltipFake).style().typography().resolveLineGapAfter(

@@ -3,7 +3,7 @@ package kmu.maplayers.base.render;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     // which no test has. Stubbed for the class rather than per case because every case here is about
     // the band and the preparation; Mockito's own default answers the constraint off, which is both
     // the shipped default and the state these cases mean to describe.
-    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+    private MockedStatic<KmuMapHoverSettings> mapLayerSettingsMock;
 
     // Stood in for the class, but left unstubbed until a case asks: the stand-aside case asserts that
     // the registry was never reached at all, which a stubbing set up for every case would spend.
@@ -64,7 +64,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     @BeforeEach
     void standInForTheLayerRegistryAndSettings() {
 
-        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapHoverSettings.class);
         layerRegistryMock = mockStatic(MapLayerRegistry.class);
         layerScreensMock = mockStatic(MapLayerScreens.class);
     }

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.sidebar.style;
 
+import java.awt.Color;
+
 import kmlib.starsector.ui.colour.AccentColours;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -19,9 +21,8 @@ import kmlib.starsector.ui.widgets.tabs.style.TabPalette;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 import kmlib.starsector.ui.widgets.tabs.style.TextHalo;
 
-import kmu.settings.KmuMapLayerSettings;
-
-import java.awt.Color;
+import kmu.settings.KmuMapSidebarSettings;
+import kmu.settings.KmuMapSoundSettings;
 
 /**
  * Composes the look bundles a sidebar host wears: the tab style its band is laid out and painted from,
@@ -208,9 +209,9 @@ public final class SidebarStyles {
     public static UiSoundScheme buildSidebarSoundScheme() {
 
         var arrivalVolumes = new PointerArrivalVolumes(
-            KmuMapLayerSettings.getMapSidebarPanelChromeArrivalVolume(),
-            KmuMapLayerSettings.getMapSidebarSingleOptionControlArrivalVolume(),
-            KmuMapLayerSettings.getMapSidebarListedItemArrivalVolume());
+            KmuMapSoundSettings.getMapSidebarPanelChromeArrivalVolume(),
+            KmuMapSoundSettings.getMapSidebarSingleOptionControlArrivalVolume(),
+            KmuMapSoundSettings.getMapSidebarListedItemArrivalVolume());
 
         return new UiSoundScheme(
             // The press keeps the engine's own level, having no slider of its own: it is one act the
@@ -232,7 +233,7 @@ public final class SidebarStyles {
     private static UiSoundCue resolveListScrollCue() {
         return UiSoundCue.createIfAudible(
             StarsectorUiSound.LIST_SCROLLED,
-            KmuMapLayerSettings.getMapSidebarListScrollVolume());
+            KmuMapSoundSettings.getMapSidebarListScrollVolume());
     }
 
     // Whether the pointer sounds at all, which is the balance's own answer: a player who has pulled every
@@ -261,7 +262,7 @@ public final class SidebarStyles {
     // value, so the two agree; what the single seam buys is that they agree by construction rather than
     // by two spellings of the same switch.
     private static AccentColours resolveAccentColours() {
-        return SidebarPalettes.resolveAccentColours(KmuMapLayerSettings.getMapSidebarColourScheme());
+        return SidebarPalettes.resolveAccentColours(KmuMapSidebarSettings.getMapSidebarColourScheme());
     }
 
     // Which step of the panel's accent a framing convention paints the border in. Both conventions read
@@ -361,8 +362,8 @@ public final class SidebarStyles {
     // the dial answers while the panel is on screen.
     private static float resolvePixelFaceSharpness(TabChrome chrome) {
         return switch (chrome) {
-            case STRIP -> (float) KmuMapLayerSettings.getMapSidebarPixelFontSharpness();
-            case RAISED_BUTTON -> (float) KmuMapLayerSettings.getIntelSidebarPixelFontSharpness();
+            case STRIP -> (float) KmuMapSidebarSettings.getMapSidebarPixelFontSharpness();
+            case RAISED_BUTTON -> (float) KmuMapSidebarSettings.getIntelSidebarPixelFontSharpness();
         };
     }
 
@@ -405,7 +406,7 @@ public final class SidebarStyles {
             BODY_FONT,
             tabStyle,
             SidebarPalettes.resolveNotchColours(
-                KmuMapLayerSettings.getMapSidebarChevronColour(),
+                KmuMapSidebarSettings.getMapSidebarChevronColour(),
                 accentColours.base(),
                 accentColours.bright()),
             buildSidebarSoundScheme());

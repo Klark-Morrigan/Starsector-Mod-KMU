@@ -1,15 +1,15 @@
 package kmu.maplayers;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
+import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapVisibilitySettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,11 +67,11 @@ final class SpoilerGateIntegrationTest {
     //
     // An unstubbed toggle answers false, which is the shipped state - so a case names only the
     // toggle it means to move, and a case that names none is posing a fresh install.
-    private MockedStatic<KmuMapLayerSettings> settingsMock;
+    private MockedStatic<KmuMapVisibilitySettings> settingsMock;
 
     @BeforeEach
     void installTheSettingsSeam() {
-        settingsMock = Mockito.mockStatic(KmuMapLayerSettings.class);
+        settingsMock = Mockito.mockStatic(KmuMapVisibilitySettings.class);
     }
 
     @AfterEach
@@ -122,7 +122,7 @@ final class SpoilerGateIntegrationTest {
             // the base beside it, which is what makes these two settings rather than one spoiler
             // switch - and what a transposed reading of them would fail on.
             settingsMock
-                .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                .when(KmuMapVisibilitySettings::shouldShowUnseenAbandonedStations)
                 .thenReturn(true);
 
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
@@ -135,7 +135,7 @@ final class SpoilerGateIntegrationTest {
         void namesTheConcealedBaseAloneOnceItsOwnGateIsTurnedOff() {
 
             settingsMock
-                .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                .when(KmuMapVisibilitySettings::shouldShowUnseenHiddenMarkets)
                 .thenReturn(true);
 
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
@@ -151,7 +151,7 @@ final class SpoilerGateIntegrationTest {
             // them, which is no answer at all to whether anybody has seen them standing here - so
             // both gates go on holding, and a player who asked for one thing is shown one thing.
             settingsMock
-                .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
+                .when(KmuMapVisibilitySettings::shouldShowUndiscoveredMarkets)
                 .thenReturn(true);
 
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
@@ -171,7 +171,7 @@ final class SpoilerGateIntegrationTest {
                 .isEmpty();
 
             settingsMock
-                .when(KmuMapLayerSettings::getDecivilisedWorldSurveyLevel)
+                .when(KmuMapVisibilitySettings::getDecivilisedWorldSurveyLevel)
                 .thenReturn(SurveyLevel.NONE);
 
             assertThat(readKnownOwnerIds(sector))
@@ -191,7 +191,7 @@ final class SpoilerGateIntegrationTest {
                 .containsExactlyInAnyOrder(OPEN_HOLDER, Factions.NEUTRAL);
 
             settingsMock
-                .when(KmuMapLayerSettings::getDecivilisedWorldSurveyLevel)
+                .when(KmuMapVisibilitySettings::getDecivilisedWorldSurveyLevel)
                 .thenReturn(SurveyLevel.PRELIMINARY);
 
             assertThat(readKnownOwnerIds(sector))

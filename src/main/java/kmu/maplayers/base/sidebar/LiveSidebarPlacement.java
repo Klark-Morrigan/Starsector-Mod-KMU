@@ -1,5 +1,8 @@
 package kmu.maplayers.base.sidebar;
 
+import java.util.List;
+import java.util.Set;
+
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
@@ -21,13 +24,10 @@ import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 import kmu.util.KmuValues;
 
 import org.lwjgl.input.Keyboard;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Resolves a sidebar's placement from the live screen, settings, and active layer - the one placement
@@ -215,18 +215,18 @@ public final class LiveSidebarPlacement {
     // thickness the body reserves its gutter for.
     private static PanelChrome buildChrome(Set<BoxEdge> borderedEdges) {
         return new PanelChrome(
-            new BoxBorder(KmuMapLayerSettings.getMapSidebarBorderWidth(), borderedEdges),
-            new ScrollbarThickness(KmuMapLayerSettings.getMapSidebarScrollbarThickness()));
+            new BoxBorder(KmuMapSidebarSettings.getMapSidebarBorderWidth(), borderedEdges),
+            new ScrollbarThickness(KmuMapSidebarSettings.getMapSidebarScrollbarThickness()));
     }
 
     // The on-map anchor: hang from the screen top-left by the player's padding. The right margin is
     // unused - the sidebar grows rightward to fit the widest content.
     private static Padding buildMapPadding() {
         return new Padding(
-            KmuMapLayerSettings.getMapSidebarPaddingTop(),
+            KmuMapSidebarSettings.getMapSidebarPaddingTop(),
             0,
-            KmuMapLayerSettings.getMapSidebarPaddingBottom(),
-            KmuMapLayerSettings.getMapSidebarPaddingLeft());
+            KmuMapSidebarSettings.getMapSidebarPaddingBottom(),
+            KmuMapSidebarSettings.getMapSidebarPaddingLeft());
     }
 
     // The intel-screen anchor from the live screen height and the player's top padding; the anchor math
@@ -235,7 +235,7 @@ public final class LiveSidebarPlacement {
         return computeIntelPadding(
             mapVisorRect,
             VanillaScreen.resolveUiHeight(),
-            KmuMapLayerSettings.getMapIntelSidebarPaddingTop());
+            KmuMapSidebarSettings.getMapIntelSidebarPaddingTop());
     }
 
     // Which tab is lit: the active layer's place in the row, or no tab at all when the row does not hold

@@ -1,14 +1,14 @@
 package kmu.maplayers.base.layer;
 
+import java.util.function.DoubleSupplier;
+import java.util.function.LongSupplier;
+
 import kmlib.math.easing.Easing;
 import kmlib.math.ranges.Ranges;
 import kmlib.starsector.memory.SectorMemoryFlag;
 import kmlib.time.Timings;
 
-import kmu.settings.KmuMapLayerSettings;
-
-import java.util.function.DoubleSupplier;
-import java.util.function.LongSupplier;
+import kmu.settings.KmuMapSidebarSettings;
 
 /**
  * A screen's show-or-hide pick persisted in sector memory, so the pick survives reload, together with the
@@ -75,7 +75,7 @@ public final class PersistedMapLayerVisibility implements MapLayerVisibility {
      * @param memoryScope the screen whose pick this is; its slot is this pick's base key resolved under it
      */
     public PersistedMapLayerVisibility(ScreenMemoryScope memoryScope) {
-        this(memoryScope, System::nanoTime, KmuMapLayerSettings::getMapLayerHideFadeSeconds);
+        this(memoryScope, System::nanoTime, KmuMapSidebarSettings::getMapLayerHideFadeSeconds);
     }
 
     /**

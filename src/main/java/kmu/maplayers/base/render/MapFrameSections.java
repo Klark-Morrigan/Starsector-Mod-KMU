@@ -6,7 +6,7 @@ import kmlib.profiling.budget.ProfileBudget;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.time.Timings;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 
 /**
  * What each part of a frame is called in a profiling report - one section per beat of the sequence,
@@ -35,7 +35,7 @@ public final class MapFrameSections {
     // their machine can afford more moves the knob and the next frame is held to that.
     private static final SectionTerms FRAME_BEAT_BUDGET_TERMS = SectionTerms.DEFAULT.withBudget(
         ProfileBudget.allowingDurationPerCall(
-            () -> Timings.convertMillisToNanos(KmuMapLayerSettings.getMapFrameBeatBudgetMillis())));
+            () -> Timings.convertMillisToNanos(KmuMapSidebarSettings.getMapFrameBeatBudgetMillis())));
 
     // One traversal of the sector per refresh. The rule the framework's indexes exist to keep: a
     // rebuild reads what it needs from one walk, so a second is a pass that went looking for the

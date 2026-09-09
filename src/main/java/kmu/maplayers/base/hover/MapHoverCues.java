@@ -3,7 +3,7 @@ package kmu.maplayers.base.hover;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundCue;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSoundSettings;
 
 /**
  * What the map answers the cursor with audibly: the tick as a new cell arrives under it, at the level
@@ -32,6 +32,6 @@ public final class MapHoverCues {
     public static UiSoundCue composeCellArrivalCue() {
         return UiSoundCue.createIfAudible(
             StarsectorUiSound.TEXT_TYPED,
-            KmuMapLayerSettings.getMapCellArrivalVolume());
+            KmuMapSoundSettings.getMapCellArrivalVolume());
     }
 }

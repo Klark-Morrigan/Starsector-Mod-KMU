@@ -5,7 +5,7 @@ import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapLabelSettings;
 
 /**
  * The modifiers the cluster-anchor search reads, gathered into one value so the search
@@ -55,24 +55,24 @@ public record LabelAnchorSpecification(
         return new LabelAnchorSpecification(
             new AnchorSearch(
                 ClusterBorderTrace.readFromLunaSettings(),
-                KmuMapLayerSettings.getMapAnchorDirectionCount(),
-                KmuMapLayerSettings.getMapAnchorOffsetCount()),
+                KmuMapLabelSettings.getMapAnchorDirectionCount(),
+                KmuMapLabelSettings.getMapAnchorOffsetCount()),
             new LeanScoring(
-                KmuMapLayerSettings.getMapAnchorVerticalPenaltyStrength(),
-                KmuMapLayerSettings.getMapAnchorVerticalPenaltyExponent(),
-                KmuMapLayerSettings.getMapAnchorMaxSlantDegrees()),
+                KmuMapLabelSettings.getMapAnchorVerticalPenaltyStrength(),
+                KmuMapLabelSettings.getMapAnchorVerticalPenaltyExponent(),
+                KmuMapLabelSettings.getMapAnchorMaxSlantDegrees()),
             new AnchorDiagnostics(
-                KmuMapLayerSettings.getMapShowRejectedAxes(),
-                KmuMapLayerSettings.getMapShowUnbiasedAxes()),
+                KmuMapLabelSettings.shouldShowRejectedAxes(),
+                KmuMapLabelSettings.shouldShowUnbiasedAxes()),
             new BandFitSpecification(
-                KmuMapLayerSettings.getMapAnchorIconClearance(),
-                KmuMapLayerSettings.getMapAnchorEndInsetMultiple() * CellShaper.BORDER_INSET_DISTANCE,
-                holdFontToleranceAboveFloor(KmuMapLayerSettings.getMapAnchorFontHeightTolerance())),
+                KmuMapLabelSettings.getMapAnchorIconClearance(),
+                KmuMapLabelSettings.getMapAnchorEndInsetMultiple() * CellShaper.BORDER_INSET_DISTANCE,
+                holdFontToleranceAboveFloor(KmuMapLabelSettings.getMapAnchorFontHeightTolerance())),
             new NameFitSpecification(
-                KmuMapLayerSettings.getMapNameMinFontSize(),
-                KmuMapLayerSettings.getMapNameMaxFontSize(),
-                KmuMapLayerSettings.getMapNameMaxLines(),
-                KmuMapLayerSettings.getMapNameLineSpacing()));
+                KmuMapLabelSettings.getMapNameMinFontSize(),
+                KmuMapLabelSettings.getMapNameMaxFontSize(),
+                KmuMapLabelSettings.getMapNameMaxLines(),
+                KmuMapLabelSettings.getMapNameLineSpacing()));
     }
 
     // Holds a stored tolerance to the floor. Compared rather than clamped with Math.max,

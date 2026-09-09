@@ -2,6 +2,12 @@ package kmu.maplayers.politicalmap.base.render.debug;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import java.awt.Color;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import kmlib.math.geometry.CornerRounding;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -26,19 +32,13 @@ import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-
-import java.awt.Color;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -139,7 +139,7 @@ final class DebugBorderTracingBuilderTest {
     // The sector is never read: every question the builder asks of it is stubbed at the resolver
     // that would have walked it, so this stands only for the argument those stubs match on.
     private final SectorAPI sectorMock = mock(SectorAPI.class);
-    private MockedStatic<KmuMapLayerSettings> settingsMock;
+    private MockedStatic<KmuMapLabelSettings> settingsMock;
     private MockedStatic<SectorPolitics> politicsMock;
     private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
     private MockedStatic<RenderStyleReader> styleReaderMock;
@@ -147,13 +147,13 @@ final class DebugBorderTracingBuilderTest {
 
     @BeforeEach
     void openTheSectorAndSettingsSeams() {
-        settingsMock = mockStatic(KmuMapLayerSettings.class);
+        settingsMock = mockStatic(KmuMapLabelSettings.class);
 
         settingsMock
-            .when(KmuMapLayerSettings::getMapBorderWeldTolerance)
+            .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
             .thenReturn(WELD_TOLERANCE);
         settingsMock
-            .when(KmuMapLayerSettings::getMapBorderMiterLimit)
+            .when(KmuMapLabelSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_SPIKE_LIMIT);
 
         politicsMock = mockStatic(SectorPolitics.class);

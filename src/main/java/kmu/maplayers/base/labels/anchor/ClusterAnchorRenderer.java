@@ -1,5 +1,9 @@
 package kmu.maplayers.base.labels.anchor;
 
+import java.awt.Color;
+import java.util.List;
+import java.util.function.Function;
+
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
@@ -12,13 +16,9 @@ import kmlib.opengl.GlQuads;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapLabelSettings;
 
 import org.lwjgl.opengl.GL11;
-
-import java.awt.Color;
-import java.util.List;
-import java.util.function.Function;
 
 /**
  * Paints the debug cluster-anchor overlay on the sector (M) map: each cluster's anchor
@@ -107,8 +107,8 @@ public final class ClusterAnchorRenderer {
             float factor,
             float alphaMult) {
 
-        var bandAlpha = (float) KmuMapLayerSettings.getMapAnchorBandOpacity() * alphaMult;
-        var lineAlpha = (float) KmuMapLayerSettings.getMapAnchorBandLineOpacity() * alphaMult;
+        var bandAlpha = (float) KmuMapLabelSettings.getMapAnchorBandOpacity() * alphaMult;
+        var lineAlpha = (float) KmuMapLabelSettings.getMapAnchorBandLineOpacity() * alphaMult;
 
         for (var layer : VERDICT_LAYERS) {
             drawBandLayer(anchors, layer, factor, bandAlpha, lineAlpha);

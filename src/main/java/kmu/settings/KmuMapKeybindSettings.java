@@ -3,7 +3,7 @@ package kmu.settings;
 /**
  * Every key the map overlay answers to: what the {@code Map - Keybinds} tab holds, and nothing else.
  *
- * <p>A section of {@link KmuMapLayerSettings} rather than a reader of its own. The split that
+ * <p>A section of the map-layer knobs rather than a reader of its own. The split that
  * matters is by which package reads a knob, and these are read from the same place the rest of the
  * framework's chrome settings are - so this buys no isolation and is not claiming to. What it buys
  * is that one screen of the settings dialog has one class behind it: a key added to the tab has one

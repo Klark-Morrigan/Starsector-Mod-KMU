@@ -64,25 +64,35 @@ public final class SidebarSettingsMock implements AutoCloseable {
     private static final PointerArrivalVolumes SILENT_ARRIVAL_VOLUMES =
         new PointerArrivalVolumes(0f, 0f, 0f);
 
-    private final MockedStatic<KmuMapLayerSettings> settingsMock;
+    // Two mocks because the look is composed from two readers: the panel's own chrome, and the
+    // levels its moments sound at. They are installed and taken down together, a case about the look
+    // needing both whichever half it is about.
+    private final MockedStatic<KmuMapSidebarSettings> sidebarSettingsMock;
 
-    private SidebarSettingsMock(MockedStatic<KmuMapLayerSettings> settingsMock) {
-        this.settingsMock = settingsMock;
+    private final MockedStatic<KmuMapSoundSettings> soundSettingsMock;
+
+    private SidebarSettingsMock(
+            MockedStatic<KmuMapSidebarSettings> sidebarSettingsMock,
+            MockedStatic<KmuMapSoundSettings> soundSettingsMock) {
+
+        this.sidebarSettingsMock = sidebarSettingsMock;
+        this.soundSettingsMock = soundSettingsMock;
     }
 
     /**
-     * Installs the pair. Close the result to take the static mock back down - a leaked one fails the
+     * Installs both. Close the result to take the static mocks back down - a leaked one fails the
      * next case in the class to touch the same type.
      *
      * @return the installed choices, to be closed when the case is done with them
      */
     public static SidebarSettingsMock install() {
 
-        var settingsMock = mockStatic(KmuMapLayerSettings.class);
-        var installed = new SidebarSettingsMock(settingsMock);
+        var installed = new SidebarSettingsMock(
+            mockStatic(KmuMapSidebarSettings.class),
+            mockStatic(KmuMapSoundSettings.class));
 
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarChevronColour)
+        installed.sidebarSettingsMock
+            .when(KmuMapSidebarSettings::getMapSidebarChevronColour)
             .thenReturn(CHEVRON_COLOUR);
 
         installed.selectColourScheme(COLOUR_SCHEME);
@@ -100,8 +110,8 @@ public final class SidebarSettingsMock implements AutoCloseable {
      * @param choice the scheme the panel is to be coloured from
      */
     public void selectColourScheme(SidebarColourSchemeChoice choice) {
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarColourScheme)
+        sidebarSettingsMock
+            .when(KmuMapSidebarSettings::getMapSidebarColourScheme)
             .thenReturn(choice);
     }
 
@@ -123,14 +133,14 @@ public final class SidebarSettingsMock implements AutoCloseable {
      */
     public void setArrivalVolumes(PointerArrivalVolumes arrivalVolumes) {
 
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarPanelChromeArrivalVolume)
+        soundSettingsMock
+            .when(KmuMapSoundSettings::getMapSidebarPanelChromeArrivalVolume)
             .thenReturn(arrivalVolumes.panelChromeVolume());
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarSingleOptionControlArrivalVolume)
+        soundSettingsMock
+            .when(KmuMapSoundSettings::getMapSidebarSingleOptionControlArrivalVolume)
             .thenReturn(arrivalVolumes.singleOptionControlVolume());
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarListedItemArrivalVolume)
+        soundSettingsMock
+            .when(KmuMapSoundSettings::getMapSidebarListedItemArrivalVolume)
             .thenReturn(arrivalVolumes.listedItemVolume());
     }
 
@@ -143,13 +153,15 @@ public final class SidebarSettingsMock implements AutoCloseable {
      */
     public void setListScrollVolume(float listScrollVolume) {
 
-        settingsMock
-            .when(KmuMapLayerSettings::getMapSidebarListScrollVolume)
+        soundSettingsMock
+            .when(KmuMapSoundSettings::getMapSidebarListScrollVolume)
             .thenReturn(listScrollVolume);
     }
 
     @Override
     public void close() {
-        settingsMock.close();
+
+        soundSettingsMock.close();
+        sidebarSettingsMock.close();
     }
 }

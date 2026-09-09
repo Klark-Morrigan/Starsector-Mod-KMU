@@ -3,7 +3,7 @@ package kmu.maplayers.base.hover;
 import kmlib.starsector.ui.sound.StarsectorUiSound;
 import kmlib.starsector.ui.sound.UiSoundCue;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSoundSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,10 +30,10 @@ final class MapHoverCuesTest {
         void composeCellArrivalCueTypesTheMapsOwnTickAtTheLevelThePlayerSet() {
             // The sample is the map's and not the sidebar's: a cell is crossed rather than aimed at,
             // and a button's mouseover under the cursor would claim a control the map has none of.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapSoundSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapCellArrivalVolume)
+                    .when(KmuMapSoundSettings::getMapCellArrivalVolume)
                     .thenReturn(SET_CELL_ARRIVAL_VOLUME);
 
                 assertThat(MapHoverCues.composeCellArrivalCue())
@@ -46,10 +46,10 @@ final class MapHoverCuesTest {
             // Silence stated by naming no cue rather than by handing one over at nothing, the rule the
             // sidebar's moments answer to as well: a sound asked for at zero is still a sound played,
             // and reads as wiring that half worked rather than as a map deliberately quiet.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapSoundSettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getMapCellArrivalVolume)
+                    .when(KmuMapSoundSettings::getMapCellArrivalVolume)
                     .thenReturn(0f);
 
                 assertThat(MapHoverCues.composeCellArrivalCue())

@@ -10,7 +10,7 @@ import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +58,7 @@ final class SectorMapLayerTerrainPluginTest {
     // LunaLib, which no test has. Held for the class so every case runs against a stated constraint
     // rather than a live settings file; Mockito's own default answers it off, which is the shipped
     // default and what all but the constraint's own cases mean to describe.
-    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+    private MockedStatic<KmuMapHoverSettings> mapLayerSettingsMock;
 
     // The running game, held for the class because every case wants the same one: no sector, so the
     // registry resolves to the registered default pick and the presence read behind the compatibility
@@ -90,7 +90,7 @@ final class SectorMapLayerTerrainPluginTest {
 
     @BeforeEach
     void stubTheCompatibilityConstraint() {
-        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapHoverSettings.class);
     }
 
     @AfterEach
@@ -376,7 +376,7 @@ final class SectorMapLayerTerrainPluginTest {
             // draw. Nothing at all happens - not the preparation either, so a foreign pass cannot
             // take the frame's single preparation from the map that is entitled to it.
             mapLayerSettingsMock
-                .when(KmuMapLayerSettings::getMapLayersOnlyOnTheirHosts)
+                .when(KmuMapHoverSettings::areMapLayersOnlyOnTheirHosts)
                 .thenReturn(true);
 
             var plugin = new SectorMapLayerTerrainPlugin();

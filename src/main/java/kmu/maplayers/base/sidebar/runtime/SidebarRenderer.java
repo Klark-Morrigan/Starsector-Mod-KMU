@@ -18,7 +18,7 @@ import kmlib.starsector.ui.widgets.PanelAlpha;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.time.Timings;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 
 import org.apache.log4j.Logger;
 
@@ -164,7 +164,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // setting, with zero meaning an instant snap.
         host.getController().advanceCollapse(
             elapsedSeconds,
-            KmuMapLayerSettings.getMapSidebarCollapseSeconds());
+            KmuMapSidebarSettings.getMapSidebarCollapseSeconds());
 
         // Offer the freshly-advanced fold to the host's fold selection, which decides for itself whether
         // that end is worth storing. Here rather than in the input pass because a fold is only unambiguous
@@ -203,7 +203,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // worn for as long as the panel is up, the second how much of the panel is there at all this
         // frame. The tab row honours the second alone, which is what stops a row standing solid over a
         // body dissolving beneath it.
-        var alpha = new PanelAlpha(KmuMapLayerSettings.getMapSidebarBackgroundOpacity(), fade);
+        var alpha = new PanelAlpha(KmuMapSidebarSettings.getMapSidebarBackgroundOpacity(), fade);
 
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
         // never seen is diagnosed from the numbers rather than another run.

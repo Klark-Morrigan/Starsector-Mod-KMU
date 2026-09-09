@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import kmlib.starsector.markets.DecivilisedMarkets;
 
 import kmu.maplayers.base.visibility.colonies.RevelationGate;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapVisibilitySettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -71,13 +71,13 @@ class MapVisibilityRulesTest {
         @Test
         void widensTheColonyRuleForTheUndiscoveredMarketsToggleAlone() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUndiscoveredMarkets)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowHiddenSystems)
+                    .when(KmuMapVisibilitySettings::shouldShowHiddenSystems)
                     .thenReturn(false);
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();
@@ -97,13 +97,13 @@ class MapVisibilityRulesTest {
             // The two knobs answer different arms of the fog, so each has to reach its own and
             // neither the other's: a world flown past but never surveyed is discovered and unread
             // at once, which is exactly the world a folded pair would leave unreachable.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::getDecivilisedWorldSurveyLevel)
+                    .when(KmuMapVisibilitySettings::getDecivilisedWorldSurveyLevel)
                     .thenReturn(SurveyLevel.FULL);
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUndiscoveredMarkets)
                     .thenReturn(false);
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();
@@ -118,13 +118,13 @@ class MapVisibilityRulesTest {
         @Test
         void forcesSystemsOntoTheMapForTheHiddenSystemsToggleAlone() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUndiscoveredMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUndiscoveredMarkets)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowHiddenSystems)
+                    .when(KmuMapVisibilitySettings::shouldShowHiddenSystems)
                     .thenReturn(true);
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();
@@ -143,7 +143,7 @@ class MapVisibilityRulesTest {
             // values rather than against a list written out here: a gate added later must reach
             // the live rule without this case being remembered, since a shape nobody thought to
             // name is exactly the one that leaks.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();
 
@@ -155,13 +155,13 @@ class MapVisibilityRulesTest {
         @Test
         void dropsTheDerelictGateForTheUnseenDerelictsToggleAlone() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenAbandonedStations)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenHiddenMarkets)
                     .thenReturn(false);
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();
@@ -177,13 +177,13 @@ class MapVisibilityRulesTest {
         @Test
         void dropsTheConcealmentGateForTheUnseenHiddenColoniesToggleAlone() {
 
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenAbandonedStations)
                     .thenReturn(false);
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenHiddenMarkets)
                     .thenReturn(true);
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();
@@ -199,13 +199,13 @@ class MapVisibilityRulesTest {
             // A player asking to see both shapes drops each back to the fog alone - which is
             // still the fog, so this widens what is shown without ever showing what has not
             // been found.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenAbandonedStations)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenAbandonedStations)
                     .thenReturn(true);
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenHiddenMarkets)
                     .thenReturn(true);
 
                 var visibilityRules = MapVisibilityRules.readFromLunaSettings();

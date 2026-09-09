@@ -1,5 +1,8 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import java.util.List;
+import java.util.Optional;
+
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
@@ -27,7 +30,7 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapHoverSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 import kmu.settings.KmuPoliticalMapHighlightSettings;
@@ -39,9 +42,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.MockedStatic;
-
-import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -141,7 +141,7 @@ final class PoliticalMapLayerRendererTest {
             recordNothingInThisCase();
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
@@ -163,7 +163,7 @@ final class PoliticalMapLayerRendererTest {
             // read through their own transform and the last of them wins, so the moment can only be
             // answered once they are all in - which the next frame's single preparation is.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
@@ -189,7 +189,7 @@ final class PoliticalMapLayerRendererTest {
             // The first preparation of a session runs before any pass ever has, so there is no read
             // to answer for - and none to build one for either, the read needing a running map.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
@@ -211,7 +211,7 @@ final class PoliticalMapLayerRendererTest {
             // arrangement: the beat is a root of this sector, the layer's row is what the beat
             // opens around the work, and the refresh sits inside that row.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
@@ -245,7 +245,7 @@ final class PoliticalMapLayerRendererTest {
 
             try (var screensMock = mockStatic(MapLayerScreens.class);
                     var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 screensMock
@@ -269,7 +269,7 @@ final class PoliticalMapLayerRendererTest {
             // beat is opened around it - but no layer ran, and a row for one that did not would
             // report a cost against work that never happened.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
@@ -301,7 +301,7 @@ final class PoliticalMapLayerRendererTest {
             recordNothingInThisCase();
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
@@ -325,7 +325,7 @@ final class PoliticalMapLayerRendererTest {
             // pinned here is the naming and the root, the layer's row inside a beat being pinned
             // where a beat can be driven through.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 viewRegistryMock
@@ -358,7 +358,7 @@ final class PoliticalMapLayerRendererTest {
                 .thenReturn(Optional.of(tooltipMock));
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
@@ -379,7 +379,7 @@ final class PoliticalMapLayerRendererTest {
             var viewMock = mock(PoliticalMapView.class);
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, false);
@@ -402,7 +402,7 @@ final class PoliticalMapLayerRendererTest {
             // The tab is open with every view deselected: nothing is painted, so there is nothing for a
             // hover to describe either.
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
@@ -427,7 +427,7 @@ final class PoliticalMapLayerRendererTest {
                 .thenReturn(Optional.of(mock(MapHoverTooltip.class)));
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubTooltipSwitches(frameworkSettingsMock, layerSettingsMock, true);
@@ -456,7 +456,7 @@ final class PoliticalMapLayerRendererTest {
             var viewMock = mock(PoliticalMapView.class);
 
             try (var viewRegistryMock = mockStatic(PoliticalMapViewRegistry.class);
-                    var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+                    var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class);
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
                     var diagnosticsSettingsMock = mockStatic(KmuPoliticalMapDiagnosticsSettings.class)) {
@@ -496,7 +496,7 @@ final class PoliticalMapLayerRendererTest {
             // what this pins is that the renderer obeys whichever answer it gets.
             hoverState.publishHover(HOVERED_CELL);
 
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
@@ -516,11 +516,11 @@ final class PoliticalMapLayerRendererTest {
             // wants the answer, and the frame's passes read no cursor at all.
             hoverState.publishHover(HOVERED_CELL);
 
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 frameworkSettingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(false);
 
                 buildRenderer(NOT_COVERING_THE_MAP)
@@ -538,11 +538,11 @@ final class PoliticalMapLayerRendererTest {
             // answer nobody asked for.
             var coverReadCount = new int[1];
 
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 frameworkSettingsMock
-                    .when(KmuMapLayerSettings::getMapHoveringEnabled)
+                    .when(KmuMapHoverSettings::isMapHoveringEnabled)
                     .thenReturn(false);
 
                 buildRenderer(() -> {
@@ -564,7 +564,7 @@ final class PoliticalMapLayerRendererTest {
             // The pass's whole remaining job: hand the frame's draw lists and this pass's own zoom
             // to the read. The lists are empty here, which is what a pass before the first build
             // sees and what the publisher parks on.
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
@@ -585,7 +585,7 @@ final class PoliticalMapLayerRendererTest {
             // than by the read itself. Handed any other sector's holder, a cursor read taken over
             // this sector's cells would light a cell on another sector's map - and this is the only
             // place that pairing is made, so no suite below can observe it.
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
@@ -605,7 +605,7 @@ final class PoliticalMapLayerRendererTest {
             // The moment belongs to the frame, not to a pass. A pass answering one would sound the
             // crossing between two transforms' answers every frame a foreign map draws beside the
             // real one.
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
@@ -637,7 +637,7 @@ final class PoliticalMapLayerRendererTest {
             // The read is per pass, so its beat is too - a frame painted by several surfaces then
             // reports the reads it actually made rather than one of them. The publisher is a double
             // that opens nothing, so what is pinned is the beat and the row around it.
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class);
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class);
                     var layerSettingsMock = mockStatic(KmuPoliticalMapHighlightSettings.class)) {
 
                 stubHoverSwitchesOn(frameworkSettingsMock, layerSettingsMock);
@@ -665,7 +665,7 @@ final class PoliticalMapLayerRendererTest {
             // The framework's settings are stood in for because the beat is recorded: closing one
             // asks what it was allowed to take, and that knob is read through LunaLib, which no
             // test classpath carries.
-            try (var frameworkSettingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var frameworkSettingsMock = mockStatic(KmuMapHoverSettings.class)) {
 
                 buildRenderer(NOT_COVERING_THE_MAP)
                     .publishHoverForPass(FACTOR);
@@ -790,16 +790,16 @@ final class PoliticalMapLayerRendererTest {
     // and the layer's own set to what the test is about. Each tier's own arithmetic is
     // PoliticalMapHoverGatesTest's; what is pinned here is which of them this renderer obeys.
     private static void stubTooltipSwitches(
-            MockedStatic<KmuMapLayerSettings> frameworkSettingsMock,
+            MockedStatic<KmuMapHoverSettings> frameworkSettingsMock,
             MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock,
             boolean isPoliticalTooltipEnabled) {
 
         frameworkSettingsMock
-            .when(KmuMapLayerSettings::getMapHoveringEnabled)
+            .when(KmuMapHoverSettings::isMapHoveringEnabled)
             .thenReturn(true);
 
         frameworkSettingsMock
-            .when(KmuMapLayerSettings::getMapHoverTooltipEnabled)
+            .when(KmuMapHoverSettings::isMapHoverTooltipEnabled)
             .thenReturn(true);
 
         layerSettingsMock
@@ -811,15 +811,15 @@ final class PoliticalMapLayerRendererTest {
     // are reached. The effects rather than the box because either kind on is enough to want the
     // read, and the effects tier is the one the union asks first.
     private static void stubHoverSwitchesOn(
-            MockedStatic<KmuMapLayerSettings> frameworkSettingsMock,
+            MockedStatic<KmuMapHoverSettings> frameworkSettingsMock,
             MockedStatic<KmuPoliticalMapHighlightSettings> layerSettingsMock) {
 
         frameworkSettingsMock
-            .when(KmuMapLayerSettings::getMapHoveringEnabled)
+            .when(KmuMapHoverSettings::isMapHoveringEnabled)
             .thenReturn(true);
 
         frameworkSettingsMock
-            .when(KmuMapLayerSettings::getMapHoverEffectsEnabled)
+            .when(KmuMapHoverSettings::areMapHoverEffectsEnabled)
             .thenReturn(true);
 
         layerSettingsMock

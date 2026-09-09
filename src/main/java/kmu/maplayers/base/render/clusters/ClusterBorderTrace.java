@@ -1,15 +1,15 @@
 package kmu.maplayers.base.render.clusters;
 
-import kmu.maplayers.base.geometry.CellEdge;
-import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.SystemClusterBorders;
-import kmu.settings.KmuMapLayerSettings;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.CellGrouping;
+import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.SystemClusterBorders;
+import kmu.settings.KmuMapLabelSettings;
 
 /**
  * The parameters of one cluster-border ring trace, and the trace itself - the single path every
@@ -30,8 +30,8 @@ public record ClusterBorderTrace(
     // Reads the live trace parameters from the "Map - Dev" tab's "Border tracing" section.
     public static ClusterBorderTrace readFromLunaSettings() {
         return new ClusterBorderTrace(
-            KmuMapLayerSettings.getMapBorderWeldTolerance(),
-            KmuMapLayerSettings.getMapBorderMiterLimit());
+            KmuMapLabelSettings.getMapBorderWeldTolerance(),
+            KmuMapLabelSettings.getMapBorderMiterLimit());
     }
 
     // Traces one cluster's inset border rings with these parameters and the fixed

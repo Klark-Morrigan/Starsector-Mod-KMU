@@ -5,7 +5,7 @@ import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.render.MapLayerRenderer;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Logger;
@@ -72,7 +72,7 @@ final class MapLayerRegistryTest {
     // makes each fade a cut and leaves these cases describing the settled answers they are about. The
     // ramp between them is PersistedMapLayerVisibilityTest's subject, and the one case here that wants a
     // reading from part-way down winds the pace up for itself.
-    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+    private MockedStatic<KmuMapSidebarSettings> mapLayerSettingsMock;
 
     private SectorMemoryFake sectorMemoryFake;
 
@@ -101,7 +101,7 @@ final class MapLayerRegistryTest {
 
     @BeforeEach
     void stubTheHidePace() {
-        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapSidebarSettings.class);
     }
 
     @AfterEach
@@ -531,7 +531,7 @@ final class MapLayerRegistryTest {
             .showLayers(false);
 
         mapLayerSettingsMock
-            .when(KmuMapLayerSettings::getMapLayerHideFadeSeconds)
+            .when(KmuMapSidebarSettings::getMapLayerHideFadeSeconds)
             .thenReturn(LONG_HIDE_FADE_SECONDS);
     }
 

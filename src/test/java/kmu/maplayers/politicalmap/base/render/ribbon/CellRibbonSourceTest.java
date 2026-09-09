@@ -3,6 +3,11 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import java.awt.Color;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
@@ -18,7 +23,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
@@ -28,11 +33,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-
-import java.awt.Color;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 
@@ -122,13 +122,13 @@ final class CellRibbonSourceTest {
 
     // The map-layer knobs stand in for the same reason, the bake opening a pass that samples the
     // dev reveal off them. No case here turns on the reveal, so the stub's own false is the answer.
-    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+    private MockedStatic<KmuMapVisibilitySettings> mapLayerSettingsMock;
 
     @BeforeEach
     void stubBandSettings() {
 
         settingsMock = mockStatic(KmuPoliticalMapRibbonSettings.class);
-        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapVisibilitySettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
     }

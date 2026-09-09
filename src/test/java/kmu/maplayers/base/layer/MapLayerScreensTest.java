@@ -3,7 +3,7 @@ package kmu.maplayers.base.layer;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +60,7 @@ final class MapLayerScreensTest {
     // in for the class so no case can reach it: Mockito's own default answers a pace of nothing, which
     // makes each fade a cut and leaves these cases describing the settled answers they are about. The
     // ramp between them is PersistedMapLayerVisibilityTest's subject.
-    private MockedStatic<KmuMapLayerSettings> mapLayerSettingsMock;
+    private MockedStatic<KmuMapSidebarSettings> mapLayerSettingsMock;
 
     private SectorMemoryFake sectorMemoryFake;
 
@@ -80,7 +80,7 @@ final class MapLayerScreensTest {
 
     @BeforeEach
     void stubTheHidePace() {
-        mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
+        mapLayerSettingsMock = mockStatic(KmuMapSidebarSettings.class);
     }
 
     @AfterEach

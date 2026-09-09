@@ -1,5 +1,12 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import kmlib.starsector.factions.FactionPalette;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -14,20 +21,13 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapLabelSettings;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -122,17 +122,17 @@ final class FactionTerritoryBuilderTest {
 
     // The trace reads its parameters off the live settings, so the seam stands for every case
     // here; without it the two Dev-tab reads would fault outside the game.
-    private MockedStatic<KmuMapLayerSettings> settingsMock;
+    private MockedStatic<KmuMapLabelSettings> settingsMock;
 
     @BeforeEach
     void openTheBorderTraceSeam() {
 
-        settingsMock = mockStatic(KmuMapLayerSettings.class);
+        settingsMock = mockStatic(KmuMapLabelSettings.class);
         settingsMock
-            .when(KmuMapLayerSettings::getMapBorderWeldTolerance)
+            .when(KmuMapLabelSettings::getMapBorderWeldTolerance)
             .thenReturn(WELD_TOLERANCE);
         settingsMock
-            .when(KmuMapLayerSettings::getMapBorderMiterLimit)
+            .when(KmuMapLabelSettings::getMapBorderMiterLimit)
             .thenReturn(MITER_SPIKE_LIMIT);
     }
 

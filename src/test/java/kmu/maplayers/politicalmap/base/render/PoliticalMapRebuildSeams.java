@@ -11,7 +11,8 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapLabelSettings;
+import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
@@ -69,7 +70,8 @@ final class PoliticalMapRebuildSeams {
 
         // The dev reveal, the anchor tuning and the dev overlays, all LunaLib-backed: no rebuild
         // claim turns on any of the three, so the seam's own answers stand for them.
-        seams.openSeam(KmuMapLayerSettings.class);
+        seams.openSeam(KmuMapVisibilitySettings.class);
+        seams.openSeam(KmuMapLabelSettings.class);
         seams.openSeam(KmuLunaSettings.class);
         seams.openSeam(KmuPoliticalMapDiagnosticsSettings.class);
 

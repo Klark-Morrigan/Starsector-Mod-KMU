@@ -3,6 +3,11 @@ package kmu.maplayers.base.chrome;
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
+
 import kmlib.logging.SessionWarning;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
@@ -12,14 +17,9 @@ import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 
 import org.apache.log4j.Logger;
-
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 
 /**
  * Keeps the map layers' tick box standing on whichever filter row the player is looking at, and
@@ -89,7 +89,7 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     /** Reads the live settings, screens and widget tree - the pairing a running game gets. */
     public MapLayerToggleUpkeep() {
         this(
-            KmuMapLayerSettings::getMapFilterRowToggleEnabled,
+            KmuMapSidebarSettings::isMapFilterRowToggleEnabled,
             MapLayerScreens::resolveLivePicks,
             MapFilterRows::resolveShownMapFilterRow,
             new VanillaMapLayerToggleAttacher());

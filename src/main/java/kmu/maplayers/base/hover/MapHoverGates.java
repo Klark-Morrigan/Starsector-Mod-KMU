@@ -1,8 +1,8 @@
 package kmu.maplayers.base.hover;
 
-import kmu.settings.KmuMapLayerSettings;
-
 import java.util.function.BooleanSupplier;
+
+import kmu.settings.KmuMapHoverSettings;
 
 /**
  * The hover switches that answer for every map layer at once: whether the map answers the cursor at
@@ -33,8 +33,8 @@ public final class MapHoverGates {
      *         or a wash
      */
     public static boolean isHoverEffectsEnabled() {
-        return KmuMapLayerSettings.getMapHoveringEnabled()
-            && KmuMapLayerSettings.getMapHoverEffectsEnabled();
+        return KmuMapHoverSettings.isMapHoveringEnabled()
+            && KmuMapHoverSettings.areMapHoverEffectsEnabled();
     }
 
     /**
@@ -43,8 +43,8 @@ public final class MapHoverGates {
      *         a box
      */
     public static boolean isHoverTooltipEnabled() {
-        return KmuMapLayerSettings.getMapHoveringEnabled()
-            && KmuMapLayerSettings.getMapHoverTooltipEnabled();
+        return KmuMapHoverSettings.isMapHoveringEnabled()
+            && KmuMapHoverSettings.isMapHoverTooltipEnabled();
     }
 
     /**
@@ -98,13 +98,13 @@ public final class MapHoverGates {
             BooleanSupplier isAnyMapShowing,
             BooleanSupplier isInGameSpace) {
 
-        if (KmuMapLayerSettings.getMapLayerMouseoverIsGlobal()) {
+        if (KmuMapHoverSettings.isMapLayerMouseoverGlobal()) {
             return true;
         }
         if (isAnyMapShowing.getAsBoolean()) {
             return true;
         }
-        return KmuMapLayerSettings.getMapLayerMouseoverIsEnabledInGameSpace()
+        return KmuMapHoverSettings.isMapLayerMouseoverEnabledInGameSpace()
             && isInGameSpace.getAsBoolean();
     }
 }

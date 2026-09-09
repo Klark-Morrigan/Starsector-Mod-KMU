@@ -1,5 +1,8 @@
 package kmu.maplayers.base.sidebar;
 
+import java.util.List;
+import java.util.Set;
+
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
@@ -15,13 +18,10 @@ import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapSidebarSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -392,7 +392,7 @@ final class LiveSidebarPlacementTest {
             var panel = buildPanelWithAnUnloadableFace(selectionMock);
 
             try (var fontsMock = mockStatic(LazyFontCache.class);
-                    var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+                    var settingsMock = mockStatic(KmuMapSidebarSettings.class)) {
 
                 fontsMock
                     .when(() -> LazyFontCache.loadByFace(any()))

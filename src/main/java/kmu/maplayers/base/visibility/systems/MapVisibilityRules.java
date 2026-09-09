@@ -1,12 +1,12 @@
 package kmu.maplayers.base.visibility.systems;
 
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
-import kmu.maplayers.base.visibility.colonies.RevelationGate;
-import kmu.settings.KmuMapLayerSettings;
-
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
+
+import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
+import kmu.maplayers.base.visibility.colonies.RevelationGate;
+import kmu.settings.KmuMapVisibilitySettings;
 
 /**
  * The visibility rules in force for one map-layer pass: the rule the pass reads colonies under,
@@ -79,10 +79,10 @@ public record MapVisibilityRules(
     public static MapVisibilityRules readFromLunaSettings() {
         return new MapVisibilityRules(
             new ColonyVisibility(
-                KmuMapLayerSettings.shouldShowUndiscoveredMarkets(),
-                KmuMapLayerSettings.getDecivilisedWorldSurveyLevel(),
+                KmuMapVisibilitySettings.shouldShowUndiscoveredMarkets(),
+                KmuMapVisibilitySettings.getDecivilisedWorldSurveyLevel(),
                 resolveRevelationGates()),
-            KmuMapLayerSettings.shouldShowHiddenSystems());
+            KmuMapVisibilitySettings.shouldShowHiddenSystems());
     }
 
     // The gates the player's settings leave in force. Each toggle grants rather than withholds,
@@ -101,10 +101,10 @@ public record MapVisibilityRules(
 
         var gatesInForce = EnumSet.noneOf(RevelationGate.class);
 
-        if (!KmuMapLayerSettings.shouldShowUnseenAbandonedStations()) {
+        if (!KmuMapVisibilitySettings.shouldShowUnseenAbandonedStations()) {
             gatesInForce.add(RevelationGate.SPACE_DERELICTS);
         }
-        if (!KmuMapLayerSettings.shouldShowUnseenHiddenMarkets()) {
+        if (!KmuMapVisibilitySettings.shouldShowUnseenHiddenMarkets()) {
             gatesInForce.add(RevelationGate.HIDDEN_COLONIES);
         }
         return Set.copyOf(gatesInForce);

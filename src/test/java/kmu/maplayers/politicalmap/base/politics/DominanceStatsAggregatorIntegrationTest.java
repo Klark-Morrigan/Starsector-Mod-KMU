@@ -3,18 +3,18 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import java.util.List;
+import java.util.Map;
+
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapVisibilitySettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
 
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
@@ -380,7 +380,7 @@ class DominanceStatsAggregatorIntegrationTest {
         void aggregateDominanceStatsWithholdsAHolderWhoseOnlyColonyIsAnUnseenConcealedBase() {
             // A bloc the colony rule withholds has no entry here at all, so it contributes to none
             // of the four metrics the picker sorts its options by - there is nothing to carry them.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);
 
@@ -394,7 +394,7 @@ class DominanceStatsAggregatorIntegrationTest {
             // The gate is still in force; what changed is that somebody has seen the base. A rule
             // reaching the fold means the picker gains the option on the same day the map gains
             // the colony.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);
                 markSystemAsVisitedByPlayer(sector, buildOnlySystem(sector));
@@ -408,10 +408,10 @@ class DominanceStatsAggregatorIntegrationTest {
         void aggregateDominanceStatsOffersThatHolderOnceTheConcealmentGateIsTurnedOff() {
             // The other way into the same entry: the player has been nowhere near the base and has
             // asked to be shown concealed colonies anyway.
-            try (var settingsMock = mockStatic(KmuMapLayerSettings.class)) {
+            try (var settingsMock = mockStatic(KmuMapVisibilitySettings.class)) {
 
                 settingsMock
-                    .when(KmuMapLayerSettings::shouldShowUnseenHiddenMarkets)
+                    .when(KmuMapVisibilitySettings::shouldShowUnseenHiddenMarkets)
                     .thenReturn(true);
 
                 var sector = buildUnvisitedSectorHoldingGatedPair(UNVISITED_SYSTEM);

@@ -3,6 +3,10 @@ package kmu.maplayers.base.tooltip.layout;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 import kmlib.starsector.ui.font.StarsectorFont;
@@ -20,12 +24,8 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapTooltipSettings;
 import kmu.util.KmuStrings;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
@@ -432,14 +432,14 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
                 .footnotedIn(TextStyle
                     .createStyle(FOOTNOTE_FONT)
                     .sizedAt(BODY_FONT.getNativeSize()))
-                .shrunkPerLevel(KmuMapLayerSettings.getMapTooltipNestingLevelShrink())
+                .shrunkPerLevel(KmuMapTooltipSettings.getMapTooltipNestingLevelShrink())
                 .stackedAt(buildLineGaps()),
             OPACITY,
             BORDER_WIDTH,
             StarsectorUiColour.BLACK.resolve(),
             StarsectorUiColour.VANILLA_PLAYER_BASE.resolve())
             .ruledBy(buildLeaderLineStyle())
-            .redactedAt(KmuMapLayerSettings.getMapTooltipRedactionDarkeningStrength());
+            .redactedAt(KmuMapTooltipSettings.getMapTooltipRedactionDarkeningStrength());
     }
 
     // How heavily the line from a label across to its value draws. Layered over KMLib's own weights
@@ -448,8 +448,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // screen, at whatever scale the player runs the game at, and therefore the player's to make.
     private static TooltipLeaderLineStyle buildLeaderLineStyle() {
         return new TooltipLeaderLineStyle(
-            KmuMapLayerSettings.getMapTooltipLeaderThickness(),
-            KmuMapLayerSettings.getMapTooltipLeaderOpacity());
+            KmuMapTooltipSettings.getMapTooltipLeaderThickness(),
+            KmuMapTooltipSettings.getMapTooltipLeaderOpacity());
     }
 
     // How far apart the box's lines stand, by the depth of the line above the gap: the box's own spacing
@@ -458,8 +458,8 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // standing where the shallower line above it put it.
     private static TooltipLineGaps buildLineGaps() {
         return TooltipLineGaps
-            .createGaps(KmuMapLayerSettings.getMapTooltipLineGap())
-            .gappedAtLevel(TIER_2_LEVEL, KmuMapLayerSettings.getMapTooltipTier2LineGap())
-            .gappedAtLevel(TIER_3_LEVEL, KmuMapLayerSettings.getMapTooltipTier3LineGap());
+            .createGaps(KmuMapTooltipSettings.getMapTooltipLineGap())
+            .gappedAtLevel(TIER_2_LEVEL, KmuMapTooltipSettings.getMapTooltipTier2LineGap())
+            .gappedAtLevel(TIER_3_LEVEL, KmuMapTooltipSettings.getMapTooltipTier3LineGap());
     }
 }

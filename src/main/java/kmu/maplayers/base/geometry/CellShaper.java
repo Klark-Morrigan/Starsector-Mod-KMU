@@ -36,7 +36,7 @@ public final class CellShaper {
      *
      * <p>The border's rounding shape - corner radius, segments, chamfer angle, and vertex weld
      * tolerance - is player-tunable under the LunaLib "Map - Dev" tab instead, read from
-     * {@link kmu.settings.KmuMapLayerSettings} and the drawing layer's own settings.
+     * {@link kmu.settings.KmuMapLabelSettings} and the drawing layer's own settings.
      */
     public static final double BORDER_INSET_DISTANCE = 150.0;
 

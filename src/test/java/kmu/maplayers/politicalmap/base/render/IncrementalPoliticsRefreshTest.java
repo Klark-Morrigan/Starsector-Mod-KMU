@@ -3,6 +3,14 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import kmlib.math.geometry.Segment;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -32,7 +40,7 @@ import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryF
 import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
-import kmu.settings.KmuMapLayerSettings;
+import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapDominanceSettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
@@ -44,14 +52,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.DISTANT_SYSTEM;
@@ -232,7 +232,7 @@ final class IncrementalPoliticsRefreshTest {
             // knobs - LunaLib again. No case here turns on the reveal, so the seam's own false is
             // the answer. The same for the band-path overlay and the weighting a re-fold resolves
             // its holders under: reached on the way through, turning no case here, LunaLib-backed.
-            seams.openSeam(KmuMapLayerSettings.class);
+            seams.openSeam(KmuMapVisibilitySettings.class);
             seams.openSeam(KmuPoliticalMapDiagnosticsSettings.class);
             seams.openSeam(KmuPoliticalMapDominanceSettings.class);
         }
