@@ -14,8 +14,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -28,6 +31,9 @@ import static org.mockito.Mockito.when;
  * looked at, since one dialog moves both screens' rows and a screen nobody is on still has to be right
  * when they open it; and that a frame with nothing to settle writes nothing, which is what makes a
  * per-frame pass affordable at all.
+ *
+ * <p>And that a read which throws costs the heal rather than the game: the row reaches every
+ * registered layer, a foreign mod's included, and this pass runs on frames the bar is nowhere near.
  *
  * <p>What the heal does to a stranded pick, and which row it judges one against, is
  * {@link kmu.maplayers.base.layer.ScreenLayerTabsTest}'s.
@@ -93,6 +99,36 @@ final class MapLayerPickUpkeepTest {
             // moved, so nothing is written and no save is touched.
             verify(screenPicks.layerSelection(), never())
                 .selectLayer(any());
+        }
+
+        @Test
+        void advanceSwallowsAFailedRosterReadAndHealsAgainOnTheNextFrame() {
+
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = buildScreenPicksOnTheEmptyView();
+            var readCount = new AtomicInteger();
+
+            Supplier<List<ScreenLayerPicks>> resolveScreenPicks = () -> {
+                if (readCount.getAndIncrement() == 0) {
+                    throw new IllegalStateException("a layer on the bar answered no id");
+                }
+                return List.of(screenPicks);
+            };
+
+            var upkeep = new MapLayerPickUpkeep(resolveScreenPicks);
+
+            assertThatCode(() -> upkeep.advance(PAUSED_FRAME))
+                .doesNotThrowAnyException();
+
+            upkeep.advance(PAUSED_FRAME);
+
+            // The row read reaches every registered layer, a foreign mod's included, and this pass
+            // runs on every frame rather than only where the bar is drawn - so a stranger that
+            // throws must cost the heal and not the game. A session that failed once is not written
+            // off either: the next frame asks again.
+            verify(screenPicks.layerSelection())
+                .selectLayer(paintingLayerMock);
         }
 
         @Test

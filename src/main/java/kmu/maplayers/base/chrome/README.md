@@ -95,6 +95,12 @@ loses the box keeps the heal; it runs while paused, every screen the bar draws o
 campaign. A heal leaves the pick on a tab the row offers, so the next frame finds nothing to do and
 nothing is written until something moves again.
 
+It fails open the way the toggle does, and for a reason the toggle does not have: the row it reads
+is every registered layer's, so on an install carrying a foreign mod's layer this calls a stranger's
+`getId` sixty times a second - and on every frame rather than only where the bar is drawn, so a throw
+would reach the player nowhere near the map they could connect it to. A failed frame costs the heal,
+one line in the log, and nothing else; the frame after asks again.
+
 ## The arranging dialog
 
 What writes the bar arrangement - which layers carry a tab, and in what order. Opened from the bar
