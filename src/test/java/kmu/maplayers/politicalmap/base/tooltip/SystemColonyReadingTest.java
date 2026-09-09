@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.Colony;
-import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colony;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipQualifier;

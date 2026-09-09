@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.politics.holders;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 

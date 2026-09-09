@@ -1,6 +1,6 @@
 package kmu.maplayers.base.visibility.colonies;
 
-import kmlib.starsector.colonies.Colony;
+import kmlib.starsector.markets.colonies.Colony;
 
 /**
  * A shape of colony a bare fog would leak, and the gate that holds it back until somebody has

@@ -12,9 +12,9 @@ import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
-import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;

@@ -3,8 +3,8 @@ package kmu.maplayers.base.visibility.systems;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.hashing.Avalanche;
-import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.map.VisibleStars;
+import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
 
 /**

@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.colonies;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.testfixtures.starsector.colonies.ColonyFixture;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyFixture;
 
 import java.util.HashMap;
 import java.util.Map;

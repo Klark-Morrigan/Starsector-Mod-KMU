@@ -2,8 +2,8 @@ package kmu.maplayers.base.visibility.colonies;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.Colony;
-import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+import kmlib.starsector.markets.colonies.Colony;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;

@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.Colony;
+import kmlib.starsector.markets.colonies.Colony;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

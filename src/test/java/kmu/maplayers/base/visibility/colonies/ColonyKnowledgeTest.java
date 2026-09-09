@@ -5,9 +5,9 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.Colony;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colony;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;

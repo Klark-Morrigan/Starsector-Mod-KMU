@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.ribbon;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.Colony;
+import kmlib.starsector.markets.colonies.Colony;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 

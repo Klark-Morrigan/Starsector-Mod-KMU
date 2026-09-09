@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
-import kmlib.starsector.colonies.Colony;
+import kmlib.starsector.markets.colonies.Colony;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;

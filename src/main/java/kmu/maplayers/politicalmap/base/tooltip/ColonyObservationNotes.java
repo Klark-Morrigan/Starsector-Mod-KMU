@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.CampaignClockAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colonies;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;

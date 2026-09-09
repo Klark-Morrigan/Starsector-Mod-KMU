@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.RowSlot;

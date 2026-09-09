@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.ContestAdmission;
 import kmlib.starsector.systems.claims.FactionClaimStanding;

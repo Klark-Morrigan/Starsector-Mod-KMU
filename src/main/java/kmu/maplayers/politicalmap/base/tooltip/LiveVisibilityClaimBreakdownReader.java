@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.KnownColonyReader;
+import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;

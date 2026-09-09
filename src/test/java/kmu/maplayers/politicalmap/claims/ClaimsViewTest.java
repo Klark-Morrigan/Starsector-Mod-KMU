@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SystemColoniesIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;

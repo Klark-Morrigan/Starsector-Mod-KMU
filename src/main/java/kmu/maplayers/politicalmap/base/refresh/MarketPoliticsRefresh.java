@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.SystemColonies;
+import kmlib.starsector.markets.colonies.SystemColonies;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;

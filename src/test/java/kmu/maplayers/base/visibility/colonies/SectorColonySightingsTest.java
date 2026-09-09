@@ -8,10 +8,10 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.SystemColonies;
-import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
-import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.SystemColonies;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyPlacementFixture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

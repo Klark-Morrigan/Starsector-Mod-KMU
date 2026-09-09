@@ -3,10 +3,10 @@ package kmu.maplayers.base.visibility.colonies;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.markets.DecivilisedMarkets;
-import kmlib.testfixtures.starsector.colonies.ColonyPlacementFixture;
+import kmlib.starsector.markets.colonies.Colony;
+import kmlib.starsector.markets.colonies.SystemColonies;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyPlacementFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

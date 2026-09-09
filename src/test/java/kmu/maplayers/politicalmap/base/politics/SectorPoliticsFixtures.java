@@ -10,7 +10,7 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
-import kmlib.testfixtures.starsector.colonies.ColonyMarketFixture;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;

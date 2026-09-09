@@ -15,10 +15,10 @@ import com.fs.starfarer.api.impl.campaign.ids.Stats;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import com.fs.starfarer.api.util.DynamicStatsAPI;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.SystemColonies;
 import kmlib.starsector.entities.EntityMapIcon;
 import kmlib.starsector.entities.EntityNameplate;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.SystemColonies;
 
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;

@@ -7,8 +7,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.SystemColonies;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.SystemColonies;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;

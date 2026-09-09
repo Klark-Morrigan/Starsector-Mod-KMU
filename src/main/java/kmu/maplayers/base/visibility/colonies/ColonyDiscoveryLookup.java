@@ -1,7 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
-import kmlib.starsector.colonies.Colonies;
 import kmlib.starsector.markets.MarketVisibility;
+import kmlib.starsector.markets.colonies.Colonies;
 
 import java.util.HashSet;
 import java.util.Set;

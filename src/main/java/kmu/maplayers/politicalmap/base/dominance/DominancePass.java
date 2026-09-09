@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.dominance;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colonies;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;

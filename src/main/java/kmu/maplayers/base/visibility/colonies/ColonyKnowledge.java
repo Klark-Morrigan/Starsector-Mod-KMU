@@ -3,11 +3,11 @@ package kmu.maplayers.base.visibility.colonies;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.KnownColonyReader;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.MarketVisibility;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colony;
+import kmlib.starsector.markets.colonies.KnownColonyReader;
 
 import java.util.ArrayList;
 import java.util.HashSet;

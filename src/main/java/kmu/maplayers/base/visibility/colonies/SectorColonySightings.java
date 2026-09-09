@@ -4,9 +4,9 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.colonies.Colonies;
-import kmlib.starsector.colonies.Colony;
-import kmlib.starsector.colonies.SystemColonies;
+import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.markets.colonies.Colony;
+import kmlib.starsector.markets.colonies.SystemColonies;
 
 import kmu.maplayers.base.visibility.observations.ObservationStore;
 
