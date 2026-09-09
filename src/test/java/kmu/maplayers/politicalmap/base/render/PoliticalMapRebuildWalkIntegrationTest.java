@@ -5,13 +5,20 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.profiling.ProfileCounter;
+import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.profiling.snapshot.BudgetBreach;
+import kmlib.profiling.snapshot.ProfileNode;
+import kmlib.starsector.SectorWalkCounters;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovingSystems;
+import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -26,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 
@@ -54,9 +62,15 @@ import static org.mockito.Mockito.when;
  * <p>No unit can make either claim. How many times a system was walked, and how many times a knob
  * was read, are facts about the composition rather than about any stage of it: each stage, handed
  * a pass, reads precisely what it is given and passes either way. So the cache, the geometry
- * update, the territory build and the bake are all real here, and the count is taken off
- * {@code getAllEntities} - what the unregistered-market half of a colony selection reaches for,
- * and so what a second reading shows up as.
+ * update, the territory build and the bake are all real here, and the count is read off the
+ * profiler's own walk counters, which the library's shared reads add as they traverse - the same
+ * witness a reader of a capture has in play, rather than however many times one vanilla method
+ * happened to be called.
+ *
+ * <p>Those counts are read off {@link MapFrameSections#REFRESH}, which is the row the frame opens
+ * around exactly this call and the row carrying the framework's bound on what one refresh may
+ * traverse. The one case still counting a vanilla call is the idle frame's, whose claim is that
+ * the sector was not read at all rather than how often it was.
  *
  * <p>What is stubbed is what no test JVM answers: the logger and the live LunaLib reads the
  * rebuild's stages are configured by, plus the sector lookup - which the rebuild itself no longer
@@ -92,6 +106,19 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // Comfortably past the motion tracker's one-unit noise floor, so a staged drift is unambiguous
     // motion rather than something that could read as float jitter.
     private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
+
+    // Nothing this suite claims is a duration, so one reading answers every clock read the capture
+    // makes - and a rebuild that took no time is still a rebuild that traversed what it traversed.
+    private static final long FIXED_CLOCK_NANOS = 0L;
+
+    // The staged sector's two rival colonies, each selected once for the whole rebuild. A stage
+    // opening a selection of its own reads both again, so the count doubles rather than moving by
+    // one.
+    private static final long TWO_COLONIES_SELECTED_ONCE = 2L;
+
+    // Two rebuilds, each opening a traversal of its own: what the row holds after a refresh signal
+    // has forced the second.
+    private static final long ONE_SECTOR_WALK_PER_REBUILD = 2L;
 
     // The screen each rebuild here is driven for. A stand-in rather than one of the two live screens:
     // how many times a rebuild walks the sector is the same on either panel, and what a switch between
@@ -132,14 +159,51 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         void refreshSelectsEachSystemsColoniesOnceForTheWholeRebuild() {
             // The step's own claim. Every stage asks the same question of the same systems, so the
             // rebuild opens one reading of the sector and hands it down; three stages each opening
-            // a reading of their own is what this stops.
-            var sector = buildContestedSectorWithAnEmptyNeighbour();
+            // a reading of their own is what this stops, and each would show here as another
+            // reading of every colony in the sector.
+            buildContestedSectorWithAnEmptyNeighbour();
 
-            runOneRebuild();
+            var refresh = captureOneRebuild();
 
-            for (var system : sector.getStarSystems()) {
-                verify(system, times(1)).getAllEntities();
-            }
+            assertThat(readCount(refresh, SectorWalkCounters.COLONIES_READ))
+                .isEqualTo(TWO_COLONIES_SELECTED_ONCE);
+        }
+
+        @Test
+        void refreshKeepsTheRebuildInsideTheFrameworksWalkBudget() {
+            // What the framework promises the frame it draws in, read off the row the frame opens
+            // around this very call: one traversal of the sector per refresh, however many stages
+            // run. A stage going looking for the system list on its own breaks it, and the breach
+            // is the finding a reader of a capture is handed rather than a number to compare.
+            buildContestedSectorWithAnEmptyNeighbour();
+
+            assertThat(captureOneRebuild().getBudgetBreach())
+                .isSameAs(BudgetBreach.NO_BREACH);
+        }
+
+        @Test
+        void refreshKeepsTheRebuildInsideTheWalkBudgetOnARefreshSignalToo() {
+            // The second rebuild, which reads the sector afresh rather than off the first one's
+            // reading. Each refresh is judged on its own call, so a second rebuild that traversed
+            // twice would be the breach even though the first stayed inside the bound.
+            buildContestedSectorWithAnEmptyNeighbour();
+
+            assertThat(captureRebuildsAcrossARefreshSignal().getBudgetBreach())
+                .isSameAs(BudgetBreach.NO_BREACH);
+        }
+
+        @Test
+        void refreshWalksTheSectorAgainOnASecondRebuild() {
+            // The bound's other half: one walk per refresh rather than one walk ever. A reading
+            // kept between rebuilds would draw the second off the sector the first saw, which is
+            // the change a rebuild exists to show - and would show here as the walk that never
+            // happened.
+            buildContestedSectorWithAnEmptyNeighbour();
+
+            var refresh = captureRebuildsAcrossARefreshSignal();
+
+            assertThat(readCount(refresh, SectorWalkCounters.SECTOR_WALKS))
+                .isEqualTo(ONE_SECTOR_WALK_PER_REBUILD);
         }
 
         @Test
@@ -293,10 +357,66 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
     }
 
-    // One rebuild of the real cache over whatever sector the global lookup was staged with - what
-    // a case asserting on what the rebuild read, rather than on what it drew, wants.
+    // One rebuild of the real cache over the staged sector, unmeasured - what a case asserting on
+    // what the rebuild sampled, rather than on what it traversed, wants.
     private void runOneRebuild() {
         new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE, SCREEN);
+    }
+
+    // One rebuild of the real cache over the staged sector, measured the way a frame measures it:
+    // inside the beat the renderer opens around this very call, which is the row carrying what one
+    // refresh is allowed to traverse.
+    private ProfileNode captureOneRebuild() {
+
+        var cache = new PoliticalMapCache(installation);
+
+        return captureRefreshesOf(profiler -> {
+            try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
+                cache.refresh(FactionsView.INSTANCE, SCREEN);
+            }
+        });
+    }
+
+    // Two rebuilds of one cache with a geometry signal between them, which is how a second full
+    // rebuild is posed at all: a cache whose inputs stand still folds the next frame into the cheap
+    // path. Both land on the one row, each as a call of its own.
+    private ProfileNode captureRebuildsAcrossARefreshSignal() {
+
+        var cache = new PoliticalMapCache(installation);
+
+        return captureRefreshesOf(profiler -> {
+            try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
+                cache.refresh(FactionsView.INSTANCE, SCREEN);
+            }
+            requestTheNextRebuild();
+
+            try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
+                cache.refresh(FactionsView.INSTANCE, SCREEN);
+            }
+        });
+    }
+
+    // The capture both forms are: the refreshes run against the profiler they were bound to, and
+    // the beat's row read back off what that profiler kept. The profiler is bound and taken back by
+    // the capture, the holder being process state that would otherwise follow this suite into
+    // whatever runs next.
+    private static ProfileNode captureRefreshesOf(Consumer<RecordingProfiler> refreshes) {
+
+        var profiler = new RecordingProfiler(() -> FIXED_CLOCK_NANOS);
+
+        return RecordedCapture
+            .recordWhile(profiler, () -> refreshes.accept(profiler))
+            .findNode(MapFrameSections.REFRESH.getName());
+    }
+
+    // What one row counted of one counter. A counter nothing touched is absent from the row rather
+    // than present at nought, and reading it as nought is what turns "never counted" into the
+    // number a case names - which is the failure a case about a walk that stopped happening wants.
+    private static long readCount(ProfileNode row, ProfileCounter counter) {
+
+        var count = row.findCount(counter);
+
+        return count == null ? 0L : count.getTotals().getTotal();
     }
 
     // Drifts one system far enough for two observations either side of the move to read it as

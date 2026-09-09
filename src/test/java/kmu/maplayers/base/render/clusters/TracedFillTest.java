@@ -2,15 +2,12 @@ package kmu.maplayers.base.render.clusters;
 
 import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.SilentProfiler;
-import kmlib.profiling.recording.RecordingProfiler;
-import kmlib.profiling.snapshot.ProfileNode;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
 import kmu.maplayers.base.theme.ThemeFixtures;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -42,43 +39,32 @@ final class TracedFillTest {
 
     private static final String CUT_HATCH_SECTION = "mapLayer.cutHatch";
 
-    // Every case leaves profiling as it found it, since the holder is process-wide: a recording
-    // profiler left bound would follow the next case into a capture it never asked for.
-    @AfterEach
-    void releaseBoundProfiler() {
-        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
-    }
-
     @Nested
     class BuildFillFor {
 
         @Test
         void countsTheStrokesItCutForThisBody() {
-            var profiler = new RecordingProfiler();
+            var cutFill = new ClusterFill[1];
 
-            ActiveProfiler.bindProfiler(profiler);
-
-            var fill = createPerFillState(List.of(SQUARE))
-                .buildFillFor(new RingRegion(SQUARE, List.of()));
+            var capture = RecordedCapture.recordWhile(() ->
+                cutFill[0] = createPerFillState(List.of(SQUARE))
+                    .buildFillFor(new RingRegion(SQUARE, List.of())));
 
             // Counted off the run that went on to be drawn, not off a second cut of the same fill -
             // so the number in the row describes what the frame actually shows.
-            assertThat(readCutSegments(profiler))
-                .isEqualTo(fill.hatchSegments().length / GlVertexRuns.FLOATS_PER_SEGMENT);
+            assertThat(readCutSegments(capture))
+                .isEqualTo(cutFill[0].hatchSegments().length / GlVertexRuns.FLOATS_PER_SEGMENT);
         }
 
         @Test
         void namesTheCallWithHowItsJoinsClosed() {
             // The readings that settle whether the join tolerance is load-bearing, which exist
             // nowhere but on the run this call held.
-            var profiler = new RecordingProfiler();
+            var capture = RecordedCapture.recordWhile(() ->
+                createPerFillState(List.of(SQUARE))
+                    .buildFillFor(new RingRegion(SQUARE, List.of())));
 
-            ActiveProfiler.bindProfiler(profiler);
-
-            createPerFillState(List.of(SQUARE))
-                .buildFillFor(new RingRegion(SQUARE, List.of()));
-
-            assertThat(readCutRow(profiler).getWorstCall().getTag())
+            assertThat(capture.findNode(CUT_HATCH_SECTION).getWorstCall().getTag())
                 .contains("exactJoins=")
                 .contains("widestClosedGap=");
         }
@@ -88,40 +74,28 @@ final class TracedFillTest {
             // A splitting owner whose members are all solid still cuts every body. The cut is
             // recorded, since it happened and cost something; what tells it from a body whose
             // hatch came out empty for a reason is the count, which is why it is a count.
-            var profiler = new RecordingProfiler();
+            var cutFill = new ClusterFill[1];
 
-            ActiveProfiler.bindProfiler(profiler);
+            var capture = RecordedCapture.recordWhile(() ->
+                cutFill[0] = createPerFillState(List.of())
+                    .buildFillFor(new RingRegion(SQUARE, List.of())));
 
-            var fill = createPerFillState(List.of())
-                .buildFillFor(new RingRegion(SQUARE, List.of()));
-
-            assertThat(readCutSegments(profiler))
+            assertThat(readCutSegments(capture))
                 .isZero();
-            assertThat(readCutRow(profiler).getWorstCall().getTag())
+            assertThat(capture.findNode(CUT_HATCH_SECTION).getWorstCall().getTag())
                 .isEmpty();
-            assertThat(fill.hatchSegments())
+            assertThat(cutFill[0].hatchSegments())
                 .isEmpty();
         }
     }
 
     // What the one cut this suite's subject made counted.
-    private static long readCutSegments(RecordingProfiler profiler) {
-        return readCutRow(profiler)
+    private static long readCutSegments(RecordedCapture capture) {
+        return capture
+            .findNode(CUT_HATCH_SECTION)
             .findCount(MapBuildCounters.HATCH_SEGMENTS)
             .getTotals()
             .getTotal();
-    }
-
-    // The row the cut landed on. Opened with nothing else running, so it is the one root of the
-    // one origin the capture holds.
-    private static ProfileNode readCutRow(RecordingProfiler profiler) {
-
-        var cutRow = profiler.snapshot().get(0).getRoots().get(0);
-
-        assertThat(cutRow.getSection().getName())
-            .isEqualTo(CUT_HATCH_SECTION);
-
-        return cutRow;
     }
 
     // A per-state fill hatching the given rings, with everything else it needs pinned: this suite's

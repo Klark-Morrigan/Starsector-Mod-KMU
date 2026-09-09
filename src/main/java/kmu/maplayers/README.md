@@ -342,6 +342,9 @@ bar once does not order it again per save.
   a load sheds what the register no longer describes and then records what the player was left
   standing among, in that order, asking the family which of its subjects still exist and what is
   being observed now.
+- **[Map build profiling](base/profiling/README.md)** - the counters a rebuild's stages add to and
+  the terms a rebuild step registers its section on, beneath both the geometry and the render so
+  neither imports the other to name them.
 - **[Cell geometry](base/geometry/README.md)** - the cells, edges, and clusters any painting layer
   is shaped out of, partitioned from the drawn systems and cached against them.
 - **[Cluster-name overlay](base/labels/README.md)** - where a name is placed across a cluster and

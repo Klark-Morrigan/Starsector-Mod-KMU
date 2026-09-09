@@ -3,9 +3,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.SilentProfiler;
-import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
@@ -87,6 +85,9 @@ final class CellRibbonsBakerTest {
 
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
+    // The row a bake lands on.
+    private static final String BAKE_SECTION = "politicalMap.bakeRibbons";
+
     // A plan with a run in it, so a cell that reaches the geometry comes back carrying a band and
     // one the pass never reached is told apart by drawing none.
     private static final RibbonPlan ANY_PLAN =
@@ -112,13 +113,6 @@ final class CellRibbonsBakerTest {
         mapLayerSettingsMock = mockStatic(KmuMapLayerSettings.class);
 
         RibbonSettingsFixtures.stubBandsOnAtSizesThatDraw(settingsMock);
-    }
-
-    // Every case leaves profiling as it found it, since the holder is process-wide: a recording
-    // profiler left bound would follow the next case into a capture it never asked for.
-    @AfterEach
-    void releaseBoundProfiler() {
-        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
     }
 
     @AfterEach
@@ -162,21 +156,15 @@ final class CellRibbonsBakerTest {
             // What the readout has to answer is what a cell costs, and that is a turn of the bake
             // rather than a call of it: a section per phase would report what a whole pass spent
             // and leave the number a rebuild scales with to be divided out by hand.
-            var profiler = new RecordingProfiler();
-
-            // The pass is posed before anything is recording. Posing it reads the sector, and those
-            // reads count what they walked onto the reserved row - which, arriving first, would
-            // head the capture and leave the bake's own row behind it. In play the same reads
+            // The pass is posed before anything is recording. Posing it reads the sector, and
+            // those reads count what they walked onto the reserved row; in play the same reads
             // happen inside the refresh that mints the pass, on that beat's own row.
             var baker = bakeThrough(buildTwoDrawnCells());
 
-            ActiveProfiler.bindProfiler(profiler);
-            baker.bakeAllCellRibbons();
+            var bakeRow = RecordedCapture
+                .recordWhile(baker::bakeAllCellRibbons)
+                .findNode(BAKE_SECTION);
 
-            var bakeRow = profiler.snapshot().get(0).getRoots().get(0);
-
-            assertThat(bakeRow.getSection().getName())
-                .isEqualTo("politicalMap.bakeRibbons");
             assertThat(bakeRow.getTiming().getCount())
                 .isEqualTo(1);
             assertThat(bakeRow.getIterations().getCount())
@@ -191,13 +179,11 @@ final class CellRibbonsBakerTest {
             // The number the pass's duration is read against, which used to be printed in a log
             // line the profiler never saw. How many of them came back with a band to draw is on
             // the call's name instead, being a fact about one call rather than a volume of work.
-            var profiler = new RecordingProfiler();
             var baker = bakeThrough(buildTwoDrawnCells());
 
-            ActiveProfiler.bindProfiler(profiler);
-            baker.bakeAllCellRibbons();
-
-            var bakeRow = profiler.snapshot().get(0).getRoots().get(0);
+            var bakeRow = RecordedCapture
+                .recordWhile(baker::bakeAllCellRibbons)
+                .findNode(BAKE_SECTION);
 
             assertThat(bakeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
                 .isEqualTo(2);

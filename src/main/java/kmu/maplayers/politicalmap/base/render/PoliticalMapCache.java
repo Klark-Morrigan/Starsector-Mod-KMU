@@ -4,7 +4,6 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SystemColoniesIndex;
@@ -14,29 +13,22 @@ import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.labels.Label;
-import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
-import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.render.debug.DebugBorderTracingBuilder;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
-import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -82,7 +74,7 @@ final class PoliticalMapCache {
     // an event rather than a per-frame cost: the line is what says a rebuild happened at all, and
     // what it left for the render to paint.
     private static final ProfileSection REBUILD_DRAWABLES_SECTION = ProfileSection.registerSection(
-        "politicalMap.rebuildDrawables", CallLogThreshold.LOGGING_EVERY_CALL);
+        "politicalMap.rebuildDrawables", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // The content revision's seed, below any revision the settings fold can report on a built
     // map, so this cache's first refresh finds the draw lists stale and builds them.
@@ -113,27 +105,10 @@ final class PoliticalMapCache {
     private RevisedCellGeometry cellGeometry =
         new RevisedCellGeometry(new CellGeometryCache(), FIRST_CUT_NUMBER);
 
-    // The built draw lists plus the holding and style inputs an incremental re-shape needs.
-    // Null until this cache's first build; exactly one of this and borderStageOverlay is
-    // non-null after a build.
-    private PoliticalMapTerritories territories;
-
-    // The debug border-tracing overlay, built instead of the territories above while the "debug
-    // border tracing" dev toggle is on. The toggle is a KMU setting, so flipping it bumps the
-    // content revision and forces the rebuild that swaps which view is built.
-    private ClusterBorderStageOverlay borderStageOverlay;
-
-    // The cluster-label placements and what they were fitted under, held here rather than by
-    // either view above so they draw over whichever is live - turning border tracing on must not
-    // hide them. Empty unless the names or the anchor overlay is on; they feed both. The two are
-    // one value because a placement is only reusable as a pair with the rules it was sized under,
-    // and this cache is what owns them across the rebuilds that reuse them.
-    private final StandingClusterAnchors standingAnchors = new StandingClusterAnchors();
-
-    // The cached faction-name labels, built from the placements above. Each owns a GL buffer, so
-    // the builder disposes the standing strings whenever it rebuilds this list. Empty unless the
-    // "show faction names" toggle is on.
-    private final List<Label> factionLabels = new ArrayList<>();
+    // Everything built to draw, and how each part of it is rebuilt. Held apart from the
+    // revisions and the staleness decision here, which answer when a rebuild is owed and what
+    // it carries forward rather than what it produces.
+    private final PoliticalMapDrawables drawables = new PoliticalMapDrawables();
 
     // The revision the territories were built against. They rebuild on a content change
     // (settings) or whenever the geometry itself was rebuilt. This starts at the unbuilt seed and
@@ -158,49 +133,39 @@ final class PoliticalMapCache {
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
     public PoliticalMapTerritories getTerritories() {
-        return territories;
+        return drawables.getTerritories();
     }
 
     /** @return the built debug border-tracing overlay, or null in the normal (non-debug) view */
     public ClusterBorderStageOverlay getBorderStageOverlay() {
-        return borderStageOverlay;
+        return drawables.getBorderStageOverlay();
     }
 
     // Whether the debug border-tracing overlay is the built view this frame - the one branch the
     // renderer needs to pick which base view to paint.
     public boolean isDebug() {
-        return borderStageOverlay != null;
+        return drawables.isDebug();
     }
 
     /** @return the cluster-label placements, drawn over whichever base view is live */
     public List<ClusterAnchor> getClusterAnchors() {
-        return standingAnchors.getAnchors();
+        return drawables.getClusterAnchors();
     }
 
     /** @return the cached faction-name labels */
     public List<Label> getFactionLabels() {
-        return factionLabels;
+        return drawables.getFactionLabels();
     }
 
     /**
      * Releases everything built for this cache's sector, when the machinery holding it goes.
      *
-     * <p>The labels' GL buffers are released as part of it: they are freed at the moment the lists
-     * are dropped rather than left to LazyLib's finalizer sweep. Nothing is rewound for a rebuild,
-     * because nothing rebuilds through a released cache - the sector after this one is drawn by a
-     * cache of its own, which begins at its seeds.
+     * <p>Nothing is rewound for a rebuild, because nothing rebuilds through a released cache - the
+     * sector after this one is drawn by a cache of its own, which begins at its seeds. What that
+     * release covers, the labels' GL buffers included, is the drawables' own.
      */
     public void disposeCachedState() {
-
-        LabelsBuilder.disposeAll(factionLabels);
-        factionLabels.clear();
-
-        // The placements go with the record of what they were fitted under: a statement of the
-        // rules this sector's labels were made under must not outlive the labels.
-        standingAnchors.discardAnchors();
-        territories = null;
-        borderStageOverlay = null;
-
+        drawables.disposeAll();
         cellGeometry.cells().clearCachedCells();
     }
 
@@ -228,7 +193,7 @@ final class PoliticalMapCache {
                         + "keeping last good draw lists",
                     exception);
             }
-            ensureDrawablesNonNull(view);
+            drawables.ensureTerritoriesNonNull(view);
         }
     }
 
@@ -286,7 +251,7 @@ final class PoliticalMapCache {
         // the build even if the content revision happens to match its unbuilt seed.
         var contentRevision = computeContentRevision(view, contentInputs);
         var isContentStale = isCellCutStale
-            || (territories == null && borderStageOverlay == null)
+            || drawables.hasNothingBuilt()
             || contentRevision != lastContentRevision;
 
         return new StaleHalves(
@@ -335,12 +300,12 @@ final class PoliticalMapCache {
             // was built this rebuild - the normal styled cells or the debug overlay's base loops -
             // which is why it is named rather than counted: the two are not one quantity.
             drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
-                + " " + describeBuiltCounts()
+                + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + staleHalves.isCellCutStale());
         }
     }
 
-    // The draw lists themselves: one view or the other, the names minted from the placements they
+    // The draw lists themselves: one view or the other, the names minted from the placements it
     // left, and the staleness this rebuild has just answered drained.
     private void rebuildDrawables(
             StaleHalves staleHalves,
@@ -351,16 +316,18 @@ final class PoliticalMapCache {
         // Build one view or the other, never both: the debug overlay replaces the normal
         // render, so in debug mode the production draw lists are not built at all, and the
         // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
-        // revision and forces this rebuild - which is what swaps the two. The anchor overlay
-        // rebuilds either way - it draws over both views - borrowing the normal build's holder
-        // map when there is one, resolving its own from the sector when the debug build left
-        // none behind.
+        // revision and forces this rebuild - which is what swaps the two.
         if (KmuPoliticalMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
-            rebuildBorderTracingOverlay(sector, view, staleHalves.contentInputs());
+            drawables.rebuildBorderTracingOverlay(
+                cellGeometry,
+                sector,
+                view,
+                staleHalves.contentInputs());
 
         } else {
 
-            rebuildTerritoriesAndBands(
+            drawables.rebuildTerritoriesAndBands(
+                cellGeometry,
                 new HolderPass(
                     view.resolveGrouping(),
                     staleHalves.cellCut().visibilityRules().colonyVisibility(),
@@ -369,14 +336,9 @@ final class PoliticalMapCache {
                 staleHalves.contentInputs());
         }
 
-        // The name labels are minted from the placements just rebuilt (empty when the names
-        // toggle is off), keeping them in step with the fills and borders and reusing the one
-        // placement search both consumers share. The name choice comes off this rebuild's own
-        // sampling rather than the preference, so what is minted matches what was fitted.
-        LabelsBuilder.rebuildLabels(
-            factionLabels,
-            standingAnchors.getAnchors(),
-            staleHalves.contentInputs().nameFormat().areNamesDrawn());
+        // The name choice comes off this rebuild's own sampling rather than the preference, so
+        // what is minted matches what was fitted.
+        drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
 
         lastContentRevision = staleHalves.contentRevision();
 
@@ -384,77 +346,6 @@ final class PoliticalMapCache {
         // already reflected - drain and discard it rather than re-processing the same systems
         // immediately after.
         installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
-    }
-
-    // The debug border-tracing view, which replaces the production draw lists outright. It reads
-    // holding from the sector rather than through the rebuild's own reading, and deliberately: the
-    // overlay is gated behind a dev toggle and builds no draw lists for the anchors to borrow a
-    // holder map from, so what it costs is paid only while somebody is looking at it.
-    private void rebuildBorderTracingOverlay(
-            SectorAPI sector,
-            PoliticalMapView view,
-            ContentInputs contentInputs) {
-
-        borderStageOverlay = DebugBorderTracingBuilder.buildDebugDrawables(
-            cellGeometry.cells(),
-            sector,
-            contentInputs);
-
-        territories = null;
-
-        ClusterAnchorsBuilder.rebuildClusterAnchorsFromSector(
-            standingAnchors,
-            cellGeometry,
-            sector,
-            view,
-            contentInputs);
-    }
-
-    // The production view's three stages, driven off the one reading of the sector the rebuild
-    // opened: the fills, the names fitted inside the borders they trace, and the bands laid
-    // around wherever those names ended up.
-    //
-    // The grouping the pass was opened under is the view's, sampled once, which is the condition
-    // the bake shares this reading on: a pass folded by another grouping would plan bands against
-    // blocs the fills never drew.
-    private void rebuildTerritoriesAndBands(
-            HolderPass pass,
-            PoliticalMapView view,
-            ContentInputs contentInputs) {
-
-        territories = TerritoryBuilder.buildTerritories(
-            cellGeometry.cells(),
-            pass,
-            view,
-            contentInputs);
-        borderStageOverlay = null;
-
-        // The cells go over carrying the revision they stand at rather than the live
-        // signal read at the top - the two agree here, and only the pair is true of the
-        // geometry in hand. The standing placements go in whole beside it, which is what
-        // lets the rebuild keep the ones whose clusters this pass has not moved.
-        ClusterAnchorsBuilder.rebuildClusterAnchors(
-            standingAnchors,
-            cellGeometry,
-            pass.sector(),
-            ClusterLabelStylingSnapshot.resolveFrom(territories));
-
-        // The bands come last, after the names have places, because they are laid around
-        // them: a band is cut by the room the names take, so baking one before the fit
-        // would leave it running under a word rather than clear of it. What the fit
-        // reports about the names it moved is dropped here: every cell was just rebuilt
-        // from nothing, so all of them owe a band whatever the names did.
-        //
-        // Baked through this rebuild's own reading rather than one of its own: the bake runs in
-        // the same frame the fills were painted in, so a fresh reading could only report the
-        // same sector at the cost of walking it again.
-        CellRibbonsBaker
-            .createForPass(
-                territories,
-                cellGeometry.cells(),
-                pass,
-                standingAnchors.getAnchors())
-            .bakeAllCellRibbons();
     }
 
     // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
@@ -479,7 +370,7 @@ final class PoliticalMapCache {
 
         var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
 
-        if (staleSystemIds.isEmpty() || territories == null || territories.isFiltering()) {
+        if (staleSystemIds.isEmpty() || !drawables.canFoldHolderChanges()) {
             return;
         }
         // The four halves go over as one value, and the standing pair goes in whole: a re-fit
@@ -488,24 +379,8 @@ final class PoliticalMapCache {
         // recorded for them.
         IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
             installation.resolveSector(),
-            new StandingPoliticalMap(territories, standingAnchors, factionLabels, cellGeometry),
+            drawables.toStandingMap(cellGeometry),
             staleSystemIds);
-    }
-
-    // What this rebuild left for the render to paint, in the terms of whichever view it built.
-    private String describeBuiltCounts() {
-        return borderStageOverlay != null
-            ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
-            : "styledCells=" + territories.getStyledCellByCellId().size();
-    }
-
-    // Guards the render path after a failed first build: a rebuild that threw before completing can
-    // leave the draw lists null, which the renderer would dereference. An empty placeholder makes
-    // the render a harmless no-op until a later frame's retry succeeds.
-    private void ensureDrawablesNonNull(PoliticalMapView view) {
-        if (territories == null) {
-            territories = PoliticalMapTerritories.createEmpty(view);
-        }
     }
 
     // The territories-staleness token: a settings change restyles every cell over the fixed

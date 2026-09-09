@@ -1,11 +1,10 @@
 package kmu.maplayers.base.render;
 
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.SilentProfiler;
 import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.profiling.snapshot.BudgetBreach;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.settings.KmuMapLayerSettings;
 
@@ -183,14 +182,14 @@ final class MapFrameSectionsTest {
 
         var profiler = new RecordingProfiler(() -> FIXED_CLOCK_NANOS);
 
-        ActiveProfiler.bindProfiler(profiler);
-        try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
-            for (var walk = 0; walk < walks; walk++) {
-                SectorWalkCounters.countSectorWalk(SYSTEMS_IN_A_WALK);
-            }
-        } finally {
-            ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
-        }
-        return profiler.snapshot().get(0).getRoots().get(0);
+        return RecordedCapture
+            .recordWhile(profiler, () -> {
+                try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
+                    for (var walk = 0; walk < walks; walk++) {
+                        SectorWalkCounters.countSectorWalk(SYSTEMS_IN_A_WALK);
+                    }
+                }
+            })
+            .findNode(MapFrameSections.REFRESH.getName());
     }
 }

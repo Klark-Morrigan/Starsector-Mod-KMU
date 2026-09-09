@@ -176,9 +176,11 @@ into findings. Two bounds today. A beat may take the milliseconds the `Frame bea
 `Map - Dev` states, asked for as the beat ends so a knob moved mid-session holds the next frame,
 and 0 there states no bound at all. The refresh may make one traversal of the sector per call - the
 rule the framework's indexes exist to keep, so a second walk is a pass that went looking for the
-sector rather than asking for what had already been gathered. A broken bound marks the row, keeps
-the call that broke it as the row's worst whatever it took, and is written to the log once per
-section as it happens.
+sector rather than asking for what had already been gathered. That one traversal is the pass's own
+systems-by-id index: the cell sites and the band bake's system lookups both come off it, either
+being enough on its own to put a rebuild over the bound if it indexed the sector for itself. A
+broken bound marks the row, keeps the call that broke it as the row's worst whatever it took, and
+is written to the log once per section as it happens.
 
 Inside each beat sits one row per layer, `mapLayer.layer.<layer id>`, opened around the layer's
 callback rather than by the layer. So what a layer costs is read against the beat it cost it in, a
@@ -188,15 +190,13 @@ siblings under the refresh they ran in. The stand-down reads sit inside the beat
 row, so a frame with nothing to draw reports what standing down cost and opens no row for a layer
 that never ran.
 
-A rebuild's own steps say so in the log as they close. `mapLayer.updateGeometry`,
-`mapLayer.buildLabels`, `mapLayer.cutHatch` and the political map's `resolvePolitics`,
-`findInhabited`, `findSpotlitPresence`, `shapeAndStyleCells`, `fitClusterAnchors`, `bakeRibbons` and
-`rebuildDrawables` each state that every call of them is worth a debug line, and the line carries
-the duration the row was accumulated from, what the call counted, and what it named itself. That
-replaces the hand-written `took=` lines those steps used to print: one measurement, read in the log
-as a rebuild happens or in the report afterwards, rather than two that could disagree. The counts
-themselves are few on purpose - `cells`, `labels`, `hatchSegments` in `MapBuildCounters`, beside the
-library's own sector counters - since every counter a capture touches widens every reading of it;
+A rebuild's own steps say so in the log as they close. Each registers its section on
+`RebuildStepTerms.LOGGED_EVERY_CALL` (in `kmu.maplayers.base.profiling`), so every call of it is a
+debug line carrying the duration the row was accumulated from, what the call counted, and what it
+named itself. That replaces the hand-written `took=` lines those steps used to print: one
+measurement, read in the log as a rebuild happens or in the report afterwards, rather than two that
+could disagree. The counts themselves are the three in `MapBuildCounters`, beside the library's own
+sector counters - few on purpose, since every counter a capture touches widens every reading of it;
 anything that is a detail of one call rides on that call's name instead.
 
 Those lines follow the profiler, which is the trade the single measurement is worth: with the level

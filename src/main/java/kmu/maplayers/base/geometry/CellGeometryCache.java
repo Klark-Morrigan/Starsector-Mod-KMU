@@ -3,11 +3,11 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 
@@ -66,7 +66,7 @@ public final class CellGeometryCache {
     // each of its calls is an event a reader following a rebuild through the log wants to see -
     // the fast ones included, a cut that recomputed nothing being an answer in itself.
     private static final ProfileSection UPDATE_SECTION = ProfileSection.registerSection(
-        "mapLayer.updateGeometry", CallLogThreshold.LOGGING_EVERY_CALL);
+        "mapLayer.updateGeometry", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // What the two outcomes of an update are named on their row's slowest call and in its line,
     // since the counts alone cannot say whether a scan that recomputed nothing found nothing to do
@@ -138,7 +138,7 @@ public final class CellGeometryCache {
         // cost are one duration, and the counts it is read against are added to the same scope
         // rather than printed beside a clock read of this method's own.
         try (var updateScope = ActiveProfiler.resolveProfiler().open(UPDATE_SECTION)) {
-            updateCellsFromSector(pass, movingSystemIds, seedInputs, updateScope);
+            updateCellsInScope(pass, movingSystemIds, seedInputs, updateScope);
         }
     }
 
@@ -173,7 +173,7 @@ public final class CellGeometryCache {
     // it recomputed as a count, and which of its two outcomes this call was as the call's name.
     // Both are what the row's duration is read against, and both reach the log through the scope
     // rather than through a line of this class's own.
-    private void updateCellsFromSector(
+    private void updateCellsInScope(
             MapVisibilityPass pass,
             Set<String> movingSystemIds,
             CellSeedInputs seedInputs,
@@ -181,23 +181,11 @@ public final class CellGeometryCache {
 
         var newSites = collectAccessibleSites(pass, movingSystemIds);
 
-        // The seed inputs are what every cell is cut from, so a change to either of them
-        // invalidates all cached cells regardless of the access diff. Drop them so the diff
-        // below reads every current system as "added" and reseeds it.
-        if (!seedInputs.equals(lastSeedInputs)) {
-            siteBySystemId.clear();
-            cellEdgesByCellId.clear();
-            systemIdByCellId.clear();
-            lastSeedInputs = seedInputs;
-        }
+        reseedIfSeedInputsMoved(seedInputs);
 
-        var added = new LinkedHashSet<String>(newSites.keySet());
-        added.removeAll(siteBySystemId.keySet());
+        var diff = diffSitesAgainstCache(newSites);
 
-        var removed = new LinkedHashSet<String>(siteBySystemId.keySet());
-        removed.removeAll(newSites.keySet());
-
-        if (added.isEmpty() && removed.isEmpty()) {
+        if (diff.isEmpty()) {
             // A refresh was requested but the participating set is identical (e.g. a
             // fingerprint collision, or a non-access change). Named so a "why did
             // nothing rebuild" question has an answer - and the diff cost (scanning
@@ -206,21 +194,76 @@ public final class CellGeometryCache {
             updateScope.tagCall(UNCHANGED_CALL + " sites=" + newSites.size());
             return;
         }
+        var affected = findAffectedCells(newSites, diff, seedInputs.cellRadius());
 
-        // Outlines to recompute: each added site, plus every site near a site that
-        // was added (it cedes area) or removed (it reclaims area). A system that
-        // started or stopped moving is an add or a remove here like any other. Read
-        // removed sites' positions from the old map before it is replaced. A change at
-        // one site can only alter cells whose site is within twice the cell radius (the
-        // bisector with the changed site reaches no farther), so that is the diff's reach.
-        var neighbourhoodRadius = 2.0 * seedInputs.cellRadius();
-        var affected = new LinkedHashSet<String>(added);
-        for (var id : added) {
+        replaceSites(newSites, diff.removed());
+
+        var recomputedCellEdges = recomputeCells(affected, seedInputs);
+
+        // The geometric diff: how many cells were recomputed as the count this call's duration is
+        // read against, and beside it which systems entered or left the partition (an access
+        // change, or a system starting or stopping moving), at what edge cost, and over how large
+        // a partition. The primary trace for a cell that is misshapen, missing, or left behind
+        // after such a change, and for how heavy a rebuild it triggered.
+        updateScope.addCount(MapBuildCounters.CELLS, affected.size());
+        updateScope.tagCall(REBUILT_CALL
+            + " added=" + diff.added().size()
+            + " removed=" + diff.removed().size()
+            + " cellEdges=" + recomputedCellEdges
+            + " sites=" + siteBySystemId.size());
+    }
+
+    // The seed inputs are what every cell is cut from, so a change to either of them invalidates
+    // all cached cells regardless of the access diff. Dropping them makes the diff read every
+    // current system as "added" and reseed it.
+    private void reseedIfSeedInputsMoved(CellSeedInputs seedInputs) {
+
+        if (seedInputs.equals(lastSeedInputs)) {
+            return;
+        }
+        siteBySystemId.clear();
+        cellEdgesByCellId.clear();
+        systemIdByCellId.clear();
+        lastSeedInputs = seedInputs;
+    }
+
+    // Which systems entered and which left the partition since the cells were last cut. A system
+    // that started or stopped moving is an add or a remove here like any other.
+    private SiteDiff diffSitesAgainstCache(Map<String, double[]> newSites) {
+
+        var added = new LinkedHashSet<String>(newSites.keySet());
+        added.removeAll(siteBySystemId.keySet());
+
+        var removed = new LinkedHashSet<String>(siteBySystemId.keySet());
+        removed.removeAll(newSites.keySet());
+
+        return new SiteDiff(added, removed);
+    }
+
+    // The outlines to recompute: each added site, plus every site near a site that was added (it
+    // cedes area) or removed (it reclaims area). Removed sites' positions are read from the old map
+    // before it is replaced. A change at one site can only alter cells whose site is within twice
+    // the cell radius (the bisector with the changed site reaches no farther), so that is the
+    // diff's reach.
+    private Set<String> findAffectedCells(
+            Map<String, double[]> newSites,
+            SiteDiff diff,
+            double cellRadius) {
+
+        var neighbourhoodRadius = 2.0 * cellRadius;
+        var affected = new LinkedHashSet<String>(diff.added());
+
+        for (var id : diff.added()) {
             affected.addAll(findSystemsNear(newSites, newSites.get(id), neighbourhoodRadius));
         }
-        for (var id : removed) {
+        for (var id : diff.removed()) {
             affected.addAll(findSystemsNear(newSites, siteBySystemId.get(id), neighbourhoodRadius));
         }
+        return affected;
+    }
+
+    // Takes the new site set as the partition's, dropping the cells of the systems that left it.
+    private void replaceSites(Map<String, double[]> newSites, Set<String> removed) {
 
         siteBySystemId.clear();
         siteBySystemId.putAll(newSites);
@@ -228,10 +271,15 @@ public final class CellGeometryCache {
             cellEdgesByCellId.remove(id);
             systemIdByCellId.remove(id);
         }
-        // Ordered site list plus its parallel id list: the labelled cell builder
-        // works in site indices, and the adjacency graph translates each edge's
-        // neighbour index back to a system id through this list. The two stay
-        // aligned because a LinkedHashMap iterates keys and values in lockstep.
+    }
+
+    // Recuts every affected cell against the current sites, answering how many edges that came to.
+    // Ordered site list plus its parallel id list: the labelled cell builder works in site
+    // indices, and the adjacency graph translates each edge's neighbour index back to a system id
+    // through this list. The two stay aligned because a LinkedHashMap iterates keys and values in
+    // lockstep.
+    private int recomputeCells(Set<String> affected, CellSeedInputs seedInputs) {
+
         var allSiteIds = new ArrayList<String>(siteBySystemId.keySet());
         var allSites = new ArrayList<double[]>(siteBySystemId.values());
         var indexBySystemId = new HashMap<String, Integer>();
@@ -255,18 +303,7 @@ public final class CellGeometryCache {
             systemIdByCellId.put(id, id);
             recomputedCellEdges += edges.size();
         }
-
-        // The geometric diff: how many cells were recomputed as the count this call's duration is
-        // read against, and beside it which systems entered or left the partition (an access
-        // change, or a system starting or stopping moving), at what edge cost, and over how large
-        // a partition. The primary trace for a cell that is misshapen, missing, or left behind
-        // after such a change, and for how heavy a rebuild it triggered.
-        updateScope.addCount(MapBuildCounters.CELLS, affected.size());
-        updateScope.tagCall(REBUILT_CALL
-            + " added=" + added.size()
-            + " removed=" + removed.size()
-            + " cellEdges=" + recomputedCellEdges
-            + " sites=" + siteBySystemId.size());
+        return recomputedCellEdges;
     }
 
     // The live sites the partition is built from: every drawn system's position,
@@ -327,5 +364,18 @@ public final class CellGeometryCache {
             edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
         }
         return edges;
+    }
+
+    /**
+     * Which systems entered and which left the partition since the cells were last cut.
+     *
+     * @param added   the systems now on the map that seeded no cell before
+     * @param removed the systems that seeded a cell before and are off the map now
+     */
+    private record SiteDiff(Set<String> added, Set<String> removed) {
+
+        boolean isEmpty() {
+            return added.isEmpty() && removed.isEmpty();
+        }
     }
 }

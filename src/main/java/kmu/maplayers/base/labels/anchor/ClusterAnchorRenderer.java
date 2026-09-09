@@ -10,6 +10,7 @@ import kmlib.opengl.GlLines;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlQuads;
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 
 import kmu.settings.KmuMapLayerSettings;
 
@@ -30,6 +31,11 @@ import java.util.function.Function;
  * and coordinate convention the base renderers use.
  */
 public final class ClusterAnchorRenderer {
+
+    // Held rather than named per frame: a section found by reference costs the pass nothing where
+    // one found by name is a lookup a frame.
+    private static final ProfileSection RENDER_SECTION =
+        ProfileSection.registerSection("mapLayer.render.anchors");
 
     // The anchor dot's diameter in screen pixels (GL_POINTS sizes in pixels, so it
     // stays a constant dot at any zoom) and its axis lines' width. Sized to read over
@@ -80,9 +86,11 @@ public final class ClusterAnchorRenderer {
             GlLineQuality.ALIASED,
             // Profiled (not logged) like the base passes: this runs every frame the map is
             // open, so only the profiler's accumulated view is affordable here.
-            () -> ActiveProfiler.resolveProfiler().measure(
-                "mapLayer.render.anchors",
-                () -> drawClusterAnchors(anchors, factor, alphaMult)));
+            () -> {
+                try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
+                    drawClusterAnchors(anchors, factor, alphaMult);
+                }
+            });
     }
 
     // The band quads, the centrelines, and the dots, layered bottom to top so a verdict

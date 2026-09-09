@@ -3,8 +3,10 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.StarsectorFactionColours;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
@@ -56,6 +58,12 @@ import static org.mockito.Mockito.mockStatic;
 final class TerritoryBuilderTest {
 
     private static final Color NEUTRAL = new Color(150, 150, 150);
+
+    // The rows a build's four reported stages land on.
+    private static final String RESOLVE_POLITICS_SECTION = "politicalMap.resolvePolitics";
+    private static final String FIND_INHABITED_SECTION = "politicalMap.findInhabited";
+    private static final String FIND_SPOTLIT_PRESENCE_SECTION = "politicalMap.findSpotlitPresence";
+    private static final String SHAPE_AND_STYLE_SECTION = "politicalMap.shapeAndStyleCells";
 
     // The picks a pass off filter was baked under. No case here spotlights a bloc, so the whole
     // reading is inert and the build reduces to the passes it hands down.
@@ -155,6 +163,68 @@ final class TerritoryBuilderTest {
             // itself until the habitation value gave it the pass's own walk to answer off.
             assertThat(inhabitationScanPasses)
                 .containsExactly(rebuildPass);
+        }
+
+        @Test
+        void buildTerritoriesNamesWhatTheHoldingResolveFound() {
+            // The counts the resolve used to print in a log line the profiler never saw. They ride
+            // on the call rather than as counters: none is a volume of work its duration divides
+            // by, and the row is read against what the readers beneath it walked.
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+
+            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                buildPassOverAnEmptySector(),
+                viewFake,
+                UNFILTERED_INPUTS));
+
+            assertThat(capture.findNode(RESOLVE_POLITICS_SECTION).getWorstCall().getTag())
+                .isEqualTo("owned=0 filtering=false contested=0 unfilled=0");
+        }
+
+        @Test
+        void buildTerritoriesNamesWhatEachSystemScanSelected() {
+            // Both scans report identically, which is what one shared helper is for: two spellings
+            // would be two chances for one of them to state its cost differently from the other.
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+
+            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                buildPassOverAnEmptySector(),
+                viewFake,
+                UNFILTERED_INPUTS));
+
+            assertThat(capture.findNode(FIND_INHABITED_SECTION).getWorstCall().getTag())
+                .isEqualTo("systems=1");
+            assertThat(capture.findNode(FIND_SPOTLIT_PRESENCE_SECTION).getWorstCall().getTag())
+                .isEqualTo("systems=0");
+        }
+
+        @Test
+        void buildTerritoriesCountsTheCellsItShaped() {
+            // The number the shaping stage's duration is read against. Nothing is shaped over an
+            // empty geometry, which is what the zero states - the counter is on the row either way,
+            // so a reader can tell a stage that shaped nothing from one that never ran.
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+
+            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                buildPassOverAnEmptySector(),
+                viewFake,
+                UNFILTERED_INPUTS));
+
+            var shapeRow = capture.findNode(SHAPE_AND_STYLE_SECTION);
+
+            assertThat(shapeRow.findCount(MapBuildCounters.CELLS).getTotals().getTotal())
+                .isZero();
+            assertThat(shapeRow.getWorstCall().getTag())
+                .isEqualTo("styled=0 blocs=0");
         }
 
         @Test

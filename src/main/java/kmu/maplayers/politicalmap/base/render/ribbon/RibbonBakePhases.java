@@ -1,8 +1,9 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.PhasedSection;
 import kmlib.profiling.ProfilePhase;
+
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 
 /**
  * The section a bake of the presence bands is measured under, and the four separable things a bake
@@ -39,7 +40,7 @@ public final class RibbonBakePhases {
      */
     public static final PhasedSection BAKE_SECTION = PhasedSection.registerPhasedSection(
         BAKE_SECTION_NAME,
-        CallLogThreshold.LOGGING_EVERY_CALL,
+        RebuildStepTerms.LOGGED_EVERY_CALL,
         PLAN_PHASE_NAME,
         TRACE_PHASE_NAME,
         CARVE_PHASE_NAME,

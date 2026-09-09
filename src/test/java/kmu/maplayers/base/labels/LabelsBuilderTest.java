@@ -1,19 +1,30 @@
 package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.labels.anchor.ClusterIdentity;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.lazywizard.lazylib.ui.LazyFont;
+import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 /**
  * Pins the pure placement-to-label decision - {@link LabelsBuilder#planLabels} - which
@@ -32,6 +43,12 @@ final class LabelsBuilderTest {
 
     private static final Color OWNER_COLOUR = Color.RED;
 
+    // The row a mint lands on.
+    private static final String BUILD_SECTION = "mapLayer.buildLabels";
+
+    // An accepted line for a placement whose geometry no case in the mint cares about.
+    private static final Segment HORIZONTAL_AXIS = new Segment(0f, 200f, 200f, 200f);
+
     // Which cluster a fixture placement was fitted to. The planner reads text, colour and
     // geometry only, so one identity serves every fixture.
     private static final ClusterIdentity CLUSTER_IDENTITY =
@@ -40,6 +57,53 @@ final class LabelsBuilderTest {
     // The stack geometry the multi-line tests compute by hand.
     private static final float FONT_HEIGHT = 100f;
     private static final double LINE_SPACING = 1.15;
+
+    @Nested
+    class RebuildLabels {
+
+        @Test
+        void countsTheLinesItMinted() {
+            // The number the mint's duration is read against, which used to be printed in a log
+            // line the profiler never saw. How many clusters they came from rides on the call's
+            // name instead, being a fact about one call rather than a volume of work.
+            var fontMock = mock(LazyFont.class);
+
+            when(fontMock.createText(anyString(), any(), anyFloat()))
+                .thenReturn(mock(DrawableString.class));
+
+            var labels = new ArrayList<Label>();
+            var anchors = List.of(
+                buildAcceptedAnchor(List.of("Persean League"), 0, 0, HORIZONTAL_AXIS),
+                buildAcceptedAnchor(List.of("Hegemony"), 500, 0, HORIZONTAL_AXIS));
+
+            try (var fontsMock = mockStatic(LabelFonts.class)) {
+
+                fontsMock.when(LabelFonts::loadMapLabelFont)
+                    .thenReturn(fontMock);
+
+                var capture = RecordedCapture.recordWhile(() ->
+                    LabelsBuilder.rebuildLabels(labels, anchors, true));
+
+                var buildRow = capture.findNode(BUILD_SECTION);
+
+                assertThat(buildRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal())
+                    .isEqualTo(2);
+                assertThat(buildRow.getWorstCall().getTag())
+                    .isEqualTo("ofClusters=2");
+            }
+        }
+
+        @Test
+        void recordsNothingWhereNamesAreNotDrawn() {
+            // The mint is skipped outright rather than measured as a call that did nothing, so a
+            // reader following a rebuild is not shown a row for a stage that never ran.
+            var capture = RecordedCapture.recordWhile(() ->
+                LabelsBuilder.rebuildLabels(new ArrayList<>(), List.of(), false));
+
+            assertThat(capture.hasNode(BUILD_SECTION))
+                .isFalse();
+        }
+    }
 
     @Nested
     class PlanLabels {

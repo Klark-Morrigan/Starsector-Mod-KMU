@@ -6,6 +6,7 @@ import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
 
@@ -40,6 +41,11 @@ import java.util.List;
  * rather than looked at, and a knob answering a question nobody asks costs more than it settles.
  */
 public final class CellRibbonPathRenderer {
+
+    // Held rather than named per frame: a section found by reference costs the pass nothing where
+    // one found by name is a lookup a frame.
+    private static final ProfileSection RENDER_SECTION =
+        ProfileSection.registerSection("mapLayer.render.ribbonPaths");
 
     // The path's stroke width and the start dot's diameter, both in screen pixels: the overlay
     // marks where world geometry landed, so it must stay legible at the zoom the cell is being
@@ -87,9 +93,11 @@ public final class CellRibbonPathRenderer {
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             GlLineQuality.ALIASED,
-            () -> ActiveProfiler.resolveProfiler().measure(
-                "mapLayer.render.ribbonPaths",
-                () -> drawRibbonPaths(ribbonPaths, factor, alphaMult)));
+            () -> {
+                try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
+                    drawRibbonPaths(ribbonPaths, factor, alphaMult);
+                }
+            });
     }
 
     // The carved ring first, then the ring a band may lie on over it, then the start dots over

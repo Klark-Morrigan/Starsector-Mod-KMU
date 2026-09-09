@@ -5,7 +5,6 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.solving.Bisection;
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
 
@@ -21,6 +20,7 @@ import kmu.maplayers.base.labels.anchor.ClusterPartition;
 import kmu.maplayers.base.labels.anchor.StandingClusterAnchors;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -86,7 +86,7 @@ public final class ClusterAnchorsBuilder {
     // Every fit writes its line: it runs on a rebuild rather than per frame, and it is the
     // rebuild's dominant cost, so a reader following one through the log wants each of them.
     private static final ProfileSection FIT_ANCHORS_SECTION = ProfileSection.registerSection(
-        "politicalMap.fitClusterAnchors", CallLogThreshold.LOGGING_EVERY_CALL);
+        "politicalMap.fitClusterAnchors", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // The font tolerance last announced, so a knob that sits still is not restated on every
     // fit. Zero cannot come from the read - the tuning floors it above zero - so it doubles
@@ -152,15 +152,16 @@ public final class ClusterAnchorsBuilder {
 
             return ClusterNameDisturbance.compareFittedNames(standingNames, List.of());
         }
-        // Scoped from here, past the gate: the skipped path does no work worth reporting, and the
-        // fit is the rebuild's dominant cost, so it needs a duration of its own beside the
-        // politics scan's and the cell shaping's rather than only inside the whole-rebuild total.
-        List<ClusterAnchor> fittedAnchors;
+        // The tuning comes back off the fingerprint rather than from a second read of the
+        // settings, so what the fit ran under and what it reports having run under are one
+        // value and cannot drift apart on a rebuild that straddles a settings change.
+        var fittedAnchors = fitClusterAnchors(
+            cellGeometry,
+            sector,
+            styling,
+            fitFingerprint.specification(),
+            reusableAnchors);
 
-        try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
-            fittedAnchors = fitClusterAnchors(cellGeometry, sector, styling, fitFingerprint,
-                reusableAnchors, fitScope);
-        }
         standingAnchors.replaceAnchors(fittedAnchors, fitFingerprint);
 
         return ClusterNameDisturbance.compareFittedNames(standingNames, fittedAnchors);
@@ -220,14 +221,30 @@ public final class ClusterAnchorsBuilder {
                 contentInputs.clearFilterPick()));
     }
 
-    // The sweep itself, reporting what it ran onto the scope around it. The placements go back to
-    // the caller rather than into the standing pair here, so what a fit produced and what a
+    // The sweep itself, measured as its own row: past the gate the skipped path never reaches, and
+    // the rebuild's dominant cost, so it needs a duration of its own beside the politics scan's and
+    // the cell shaping's rather than only inside the whole-rebuild total. The placements go back
+    // to the caller rather than into the standing pair here, so what a fit produced and what a
     // rebuild does with it stay two statements.
     private static List<ClusterAnchor> fitClusterAnchors(
             RevisedCellGeometry cellGeometry,
             SectorAPI sector,
             ClusterLabelStylingSnapshot styling,
-            AnchorFitFingerprint fitFingerprint,
+            LabelAnchorSpecification spec,
+            Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
+
+        try (var fitScope = ActiveProfiler.resolveProfiler().open(FIT_ANCHORS_SECTION)) {
+            return fitClusterAnchorsInScope(
+                cellGeometry, sector, styling, spec, reusableAnchors, fitScope);
+        }
+    }
+
+    // The sweep inside its scope, reporting what it ran onto it.
+    private static List<ClusterAnchor> fitClusterAnchorsInScope(
+            RevisedCellGeometry cellGeometry,
+            SectorAPI sector,
+            ClusterLabelStylingSnapshot styling,
+            LabelAnchorSpecification spec,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors,
             ProfileScope fitScope) {
 
@@ -270,10 +287,6 @@ public final class ClusterAnchorsBuilder {
             viewGrouping.grouping(),
             contentInputs);
 
-        // The tuning comes back off the fingerprint rather than from a second read of the
-        // settings, so what the fit ran under and what it reports having run under are one
-        // value and cannot drift apart on a rebuild that straddles a settings change.
-        var spec = fitFingerprint.specification();
         logFontToleranceChange(spec);
 
         var fit = ClusterAnchorPlacement.computeClusterAnchors(

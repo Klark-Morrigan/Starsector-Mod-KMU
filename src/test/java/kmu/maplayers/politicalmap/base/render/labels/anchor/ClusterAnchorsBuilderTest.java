@@ -3,12 +3,10 @@ package kmu.maplayers.politicalmap.base.render.labels.anchor;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
-import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.SilentProfiler;
-import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -95,6 +93,9 @@ final class ClusterAnchorsBuilderTest {
 
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
+
+    // The row a fit lands on.
+    private static final String FIT_ANCHORS_SECTION = "politicalMap.fitClusterAnchors";
 
     // Two cells of one bloc meeting along x = 2000, so the pair proves the rebuild fits them one
     // shared label; the rival's cell shares no edge with anything, so it stays its own cluster.
@@ -274,13 +275,6 @@ final class ClusterAnchorsBuilderTest {
             .thenReturn(listIdentityCellsFor(EDGES.keySet()));
     }
 
-    // Every case leaves profiling as it found it, since the holder is process-wide: a recording
-    // profiler left bound would follow the next case into a capture it never asked for.
-    @AfterEach
-    void releaseBoundProfiler() {
-        ActiveProfiler.bindProfiler(SilentProfiler.INSTANCE);
-    }
-
     @AfterEach
     void closeTheSettingsHolderAndFontSeams() {
 
@@ -321,25 +315,20 @@ final class ClusterAnchorsBuilderTest {
             // The number the fit's duration is read against - it is the rebuild's dominant cost,
             // and what it cost per placement is the reading a sweep is tuned by. What it swept to
             // get there rides on the call's name instead, none of it being a volume of work.
-            var profiler = new RecordingProfiler();
+            var fitRow = RecordedCapture
+                .recordWhile(() -> ClusterAnchorsBuilder.rebuildClusterAnchors(
+                    standingAnchors,
+                    cellGeometry,
+                    sectorMock,
+                    buildUnfilteredStyling(Map.of(
+                        HELD_SYSTEM,
+                        HEGEMONY_HOLDER,
+                        NEIGHBOUR_SYSTEM,
+                        HEGEMONY_HOLDER,
+                        RIVAL_SYSTEM,
+                        TRITACHYON_HOLDER))))
+                .findNode(FIT_ANCHORS_SECTION);
 
-            ActiveProfiler.bindProfiler(profiler);
-            ClusterAnchorsBuilder.rebuildClusterAnchors(
-                standingAnchors,
-                cellGeometry,
-                sectorMock,
-                buildUnfilteredStyling(Map.of(
-                    HELD_SYSTEM,
-                    HEGEMONY_HOLDER,
-                    NEIGHBOUR_SYSTEM,
-                    HEGEMONY_HOLDER,
-                    RIVAL_SYSTEM,
-                    TRITACHYON_HOLDER)));
-
-            var fitRow = profiler.snapshot().get(0).getRoots().get(0);
-
-            assertThat(fitRow.getSection().getName())
-                .isEqualTo("politicalMap.fitClusterAnchors");
             assertThat(fitRow.findCount(MapBuildCounters.LABELS).getTotals().getTotal())
                 .isEqualTo(2);
             assertThat(fitRow.getWorstCall().getTag())

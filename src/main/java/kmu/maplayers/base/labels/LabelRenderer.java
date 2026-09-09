@@ -2,6 +2,7 @@ package kmu.maplayers.base.labels;
 
 import kmlib.colour.Colours;
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 
 import org.lwjgl.opengl.GL11;
 
@@ -29,6 +30,12 @@ import java.util.List;
  * renderer adds only the shared world-scale matrix around the batch.
  */
 public final class LabelRenderer {
+
+    // Held rather than named per frame: this runs every frame the map is open, and a section found
+    // by reference costs the pass nothing where one found by name is a lookup a frame.
+    private static final ProfileSection RENDER_SECTION =
+        ProfileSection.registerSection("mapLayer.render.labels");
+
     // Emits only; never instantiated.
     private LabelRenderer() {
     }
@@ -42,9 +49,9 @@ public final class LabelRenderer {
         if (labels.isEmpty() || alphaMult <= 0f) {
             return;
         }
-        ActiveProfiler.resolveProfiler().measure(
-            "mapLayer.render.labels",
-            () -> drawLabels(labels, factor, alphaMult));
+        try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
+            drawLabels(labels, factor, alphaMult);
+        }
     }
 
     // Scales the modelview by the map factor once, then draws each label at its raw world

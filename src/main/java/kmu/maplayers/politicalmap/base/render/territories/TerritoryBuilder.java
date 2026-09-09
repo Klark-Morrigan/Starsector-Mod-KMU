@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
@@ -12,7 +11,9 @@ import kmlib.starsector.factions.StarsectorFactionColours;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.render.clusters.HatchBuildDiagnostics;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -25,6 +26,7 @@ import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import kmu.maplayers.politicalmap.base.render.style.RenderStyleReader;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -51,19 +53,30 @@ public final class TerritoryBuilder {
     // every call: a rebuild happens when something changed rather than on a clock, so the trace a
     // reader follows through the log wants every one of them, fast ones included.
     private static final ProfileSection RESOLVE_POLITICS_SECTION = ProfileSection.registerSection(
-        "politicalMap.resolvePolitics", CallLogThreshold.LOGGING_EVERY_CALL);
+        "politicalMap.resolvePolitics", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     private static final ProfileSection FIND_INHABITED_SECTION = ProfileSection.registerSection(
-        "politicalMap.findInhabited", CallLogThreshold.LOGGING_EVERY_CALL);
+        "politicalMap.findInhabited", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     private static final ProfileSection FIND_SPOTLIT_PRESENCE_SECTION =
         ProfileSection.registerSection(
-            "politicalMap.findSpotlitPresence", CallLogThreshold.LOGGING_EVERY_CALL);
+            "politicalMap.findSpotlitPresence", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // The shaping and everything spent on the shapes, which is what the hand-written line covered:
     // the two profiled steps below it are parts of this call rather than the whole of it.
     private static final ProfileSection SHAPE_AND_STYLE_SECTION = ProfileSection.registerSection(
-        "politicalMap.shapeAndStyleCells", CallLogThreshold.LOGGING_EVERY_CALL);
+        "politicalMap.shapeAndStyleCells", RebuildStepTerms.LOGGED_EVERY_CALL);
+
+    // The whole build and the two steps of the shaping worth a row of their own, read in the report
+    // rather than the log: what they cost is read against the stage around them.
+    private static final ProfileSection REBUILD_SECTION =
+        ProfileSection.registerSection("politicalMap.rebuildTerritories");
+
+    private static final ProfileSection SHAPE_CELLS_SECTION =
+        ProfileSection.registerSection("politicalMap.shapeCells");
+
+    private static final ProfileSection BUILD_FACTION_TERRITORIES_SECTION =
+        ProfileSection.registerSection("politicalMap.buildFactionTerritories");
 
     // Builds only; never instantiated.
     private TerritoryBuilder() {
@@ -89,7 +102,8 @@ public final class TerritoryBuilder {
             ContentInputs contentInputs) {
 
         var profiler = ActiveProfiler.resolveProfiler();
-        return profiler.measure("politicalMap.rebuildTerritories", () -> {
+
+        try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
 
             // The three readings a build is made of, in this order because each needs the one
             // before it: who holds what, then who is in each system (asked of what the holding left
@@ -117,7 +131,7 @@ public final class TerritoryBuilder {
             shapeAndStyleCells(profiler, territories, geometryCache);
 
             return territories;
-        });
+        }
     }
 
     // Who holds each system under this view, and - under a filter - which of the spotlit systems
@@ -250,13 +264,13 @@ public final class TerritoryBuilder {
             CellGeometryCache geometryCache) {
 
         try (var shapeScope = profiler.open(SHAPE_AND_STYLE_SECTION)) {
-            shapeAndStyleCellsUnder(profiler, territories, geometryCache, shapeScope);
+            shapeAndStyleCellsInScope(profiler, territories, geometryCache, shapeScope);
         }
     }
 
     // The shaping itself, reporting onto the scope above it. The two steps it profiles separately
     // are parts of this call, so their spans and whatever they counted are inside its own.
-    private static void shapeAndStyleCellsUnder(
+    private static void shapeAndStyleCellsInScope(
             Profiler profiler,
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
@@ -266,12 +280,7 @@ public final class TerritoryBuilder {
         // clusters by holder, so hand it each system's faction id as the key. Cells consumed by
         // the inset (fewer than three vertices left) drop out.
         var cellGrouping = resolveCellGrouping(territories, geometryCache);
-        var shapedCells = profiler.measure(
-            "politicalMap.shapeCells",
-            () -> CellShaper.shapeCells(
-                geometryCache.getCellEdgesByCellId(),
-                cellGrouping,
-                CellShaper.BORDER_INSET_DISTANCE));
+        var shapedCells = shapeCells(profiler, geometryCache, cellGrouping);
 
         // No band is laid here. A band keeps clear of the cluster names, and the names are fitted
         // after this pass - a name is placed inside the border these very cells trace - so bands
@@ -303,11 +312,9 @@ public final class TerritoryBuilder {
         // for the border - the same shape for both. Built off the same raw cells and holders the
         // seams used, and profiled on its own since chaining, smoothing, and tessellating every
         // faction's outline is comparable in cost to shaping the cells.
-        profiler.measure(
-            "politicalMap.buildFactionTerritories",
-            () -> FactionTerritoryBuilder.buildAllFactionTerritories(
-                territories,
-                geometryCache));
+        try (var territoriesScope = profiler.open(BUILD_FACTION_TERRITORIES_SECTION)) {
+            FactionTerritoryBuilder.buildAllFactionTerritories(territories, geometryCache);
+        }
 
         // The cells this pass shaped are what its duration is read against. What became of them -
         // how many were styled, into how many blocs - is a fact about this one call, and the hatch
@@ -316,6 +323,21 @@ public final class TerritoryBuilder {
         shapeScope.addCount(MapBuildCounters.CELLS, shapedCells.size());
         shapeScope.tagCall("styled=" + territories.getStyledCellByCellId().size()
             + " blocs=" + territories.getStyledClusterGroupByOwnerId().size());
+    }
+
+    // The cell shaping as a row of its own: fusing same-owner cells and insetting each is comparable
+    // in cost to tracing the territories after it, and a reader wants the two apart.
+    private static Map<String, ShapedCell> shapeCells(
+            Profiler profiler,
+            CellGeometryCache geometryCache,
+            CellGrouping cellGrouping) {
+
+        try (var shapeScope = profiler.open(SHAPE_CELLS_SECTION)) {
+            return CellShaper.shapeCells(
+                geometryCache.getCellEdgesByCellId(),
+                cellGrouping,
+                CellShaper.BORDER_INSET_DISTANCE);
+        }
     }
 
     // One profiled sector scan yielding a set of system ids, naming what it selected on the call.

@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
@@ -49,6 +50,9 @@ import java.util.Set;
 final class IncrementalPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(IncrementalPoliticsRefresh.class);
 
+    private static final ProfileSection APPLY_UPDATES_SECTION =
+        ProfileSection.registerSection("politicalMap.applyPoliticsUpdates");
+
     // Refreshes only; never instantiated.
     private IncrementalPoliticsRefresh() {
     }
@@ -74,9 +78,9 @@ final class IncrementalPoliticsRefresh {
             StandingPoliticalMap standingMap,
             Set<String> staleSystemIds) {
 
-        ActiveProfiler.resolveProfiler().measure(
-            "politicalMap.applyPoliticsUpdates",
-            () -> applyMarkedPoliticsUpdates(sector, standingMap, staleSystemIds));
+        try (var refreshScope = ActiveProfiler.resolveProfiler().open(APPLY_UPDATES_SECTION)) {
+            applyMarkedPoliticsUpdates(sector, standingMap, staleSystemIds);
+        }
     }
 
     // The batch itself, inside the measurement the entry point opened.

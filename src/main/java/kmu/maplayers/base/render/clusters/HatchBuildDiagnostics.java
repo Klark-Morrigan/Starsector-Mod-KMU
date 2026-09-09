@@ -4,11 +4,11 @@ import com.fs.starfarer.api.Global;
 
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.hatch.HatchRun;
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.theme.HatchStyle;
 
 import org.apache.log4j.Logger;
@@ -46,7 +46,7 @@ public final class HatchBuildDiagnostics {
      * beside the duration is what tells the two apart.
      */
     public static final ProfileSection CUT_HATCH_SECTION = ProfileSection.registerSection(
-        "mapLayer.cutHatch", CallLogThreshold.LOGGING_EVERY_CALL);
+        "mapLayer.cutHatch", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // Reports only; never instantiated.
     private HatchBuildDiagnostics() {

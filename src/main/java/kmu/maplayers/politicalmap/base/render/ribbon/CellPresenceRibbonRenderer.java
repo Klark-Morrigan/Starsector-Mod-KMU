@@ -6,6 +6,7 @@ import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 
 import org.lwjgl.opengl.GL11;
 
@@ -30,6 +31,11 @@ import java.util.Collection;
  * matrix work here is the single uniform scale the map widget leaves to the caller.
  */
 public final class CellPresenceRibbonRenderer {
+
+    // Held rather than named per frame: a section found by reference costs the pass nothing where
+    // one found by name is a lookup a frame.
+    private static final ProfileSection RENDER_SECTION =
+        ProfileSection.registerSection("mapLayer.render.ribbons");
 
     // Emits only; never instantiated.
     private CellPresenceRibbonRenderer() {
@@ -60,12 +66,12 @@ public final class CellPresenceRibbonRenderer {
         }
         // Profiled like the other map passes, since this runs every frame the map is open; only
         // the profiler's accumulated view is affordable here, never a per-frame log line.
-        ActiveProfiler.resolveProfiler().measure(
-            "mapLayer.render.ribbons",
-            () -> GlPasses.runBlendedPass(
+        try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
+            GlPasses.runBlendedPass(
                 GlBlendMode.ALPHA,
                 GlLineQuality.ALIASED,
-                () -> drawBands(ribbons, factor, alphaMult)));
+                () -> drawBands(ribbons, factor, alphaMult));
+        }
     }
 
     // Every run of every band, in the order they were laid around their rings.

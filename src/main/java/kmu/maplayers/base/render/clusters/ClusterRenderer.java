@@ -6,6 +6,7 @@ import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
@@ -38,6 +39,14 @@ import java.util.function.Function;
  */
 public final class ClusterRenderer {
 
+    // Held rather than named per frame: both passes run every frame the map is open, and a section
+    // found by reference costs a pass nothing where one found by name is a lookup a frame.
+    private static final ProfileSection FILLS_SECTION =
+        ProfileSection.registerSection("mapLayer.render.clusters.fills");
+
+    private static final ProfileSection BORDERS_SECTION =
+        ProfileSection.registerSection("mapLayer.render.clusters.borders");
+
     // Emits only; never instantiated.
     private ClusterRenderer() {
     }
@@ -60,7 +69,7 @@ public final class ClusterRenderer {
             factor,
             alphaMult,
             GlLineQuality.ALIASED,
-            "mapLayer.render.clusters.fills",
+            FILLS_SECTION,
             ClusterRenderer::drawFills);
     }
 
@@ -79,7 +88,7 @@ public final class ClusterRenderer {
             factor,
             alphaMult,
             GlLineQuality.SMOOTHED,
-            "mapLayer.render.clusters.borders",
+            BORDERS_SECTION,
             ClusterRenderer::strokeBorderRuns);
     }
 
@@ -93,7 +102,7 @@ public final class ClusterRenderer {
     // zero effective alpha - all cost, nothing on screen - so the whole GL pass is skipped rather
     // than left to blend away, and the frame is not built for it either.
     //
-    // The measure times only the per-frame GL emission; the surrounding state push/pop is
+    // The scope times only the per-frame GL emission; the surrounding state push/pop is
     // negligible. It is per entry point so the profiler shows which half costs, but never logged -
     // this runs every frame the map is open, so only the profiler's accumulated view is affordable.
     private static void renderMeasuredPassOnMap(
@@ -101,7 +110,7 @@ public final class ClusterRenderer {
             float factor,
             float alphaMult,
             GlLineQuality lineQuality,
-            String measureName,
+            ProfileSection section,
             Consumer<ClusterMapFrame> emitRuns) {
 
         if (drawLists.isEmpty() || alphaMult <= 0f) {
@@ -112,9 +121,11 @@ public final class ClusterRenderer {
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             lineQuality,
-            () -> ActiveProfiler.resolveProfiler().measure(
-                measureName,
-                () -> emitRuns.accept(frame)));
+            () -> {
+                try (var renderScope = ActiveProfiler.resolveProfiler().open(section)) {
+                    emitRuns.accept(frame);
+                }
+            });
     }
 
     // All the solid fills first, then the hatch over them. A cluster whose fill does

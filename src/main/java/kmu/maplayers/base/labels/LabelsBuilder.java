@@ -2,11 +2,11 @@ package kmu.maplayers.base.labels;
 
 import kmlib.math.geometry.Segment;
 import kmlib.profiling.ActiveProfiler;
-import kmlib.profiling.CallLogThreshold;
 import kmlib.profiling.ProfileSection;
 
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
 
 import org.lazywizard.lazylib.ui.LazyFont;
 import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
@@ -41,7 +41,7 @@ public final class LabelsBuilder {
     // Every mint writes its line: it runs on a rebuild rather than per frame, so each call is a
     // step a reader following that rebuild through the log expects to find.
     private static final ProfileSection BUILD_SECTION = ProfileSection.registerSection(
-        "mapLayer.buildLabels", CallLogThreshold.LOGGING_EVERY_CALL);
+        "mapLayer.buildLabels", RebuildStepTerms.LOGGED_EVERY_CALL);
 
     // Below two lines there is no gap between line centres to measure, so the band holds one
     // line height and nothing more.

@@ -4,6 +4,13 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.profiling.ProfileCounter;
+import kmlib.profiling.ProfileSection;
+import kmlib.profiling.recording.RecordingProfiler;
+import kmlib.profiling.snapshot.ProfileNode;
+import kmlib.starsector.SectorWalkCounters;
+import kmlib.testfixtures.profiling.RecordedCapture;
+
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
@@ -29,8 +36,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -47,9 +52,13 @@ import static org.mockito.Mockito.when;
  * <p>No unit can make this claim. How many times a system was walked is a fact about the
  * composition rather than about any part of it: each passenger, handed a mock, walks precisely
  * what it is told to and passes either way. So the poll, the snapshot, the motion walk and the
- * register are all real here, and the count is taken off {@code getAllEntities} - what the
- * unregistered-market half of a colony selection reaches for, and so what a second selection
- * shows up as.
+ * register are all real here, and the count is read off the profiler's own walk counters, which
+ * the library's shared reads add as they traverse - the same witness a reader of a capture has in
+ * play, rather than however many times one vanilla method happened to be called.
+ *
+ * <p>Those counts land on the profiler's reserved row, because a poll opens no section: it runs on
+ * the campaign thread on a coarse interval rather than inside a profiled frame, so what it
+ * traverses is exactly what a capture reports as unscoped.
  *
  * <p>It cannot be a case on {@link PoliticalMapStalenessSource}'s own suite either. That one
  * static-mocks the scan and the motion tracker, which is right for what it pins - each axis
@@ -85,6 +94,22 @@ final class PoliticalMapPollWalkIntegrationTest {
 
     private static final int ONE_POLL = 1;
 
+    // Nothing this suite claims is a duration, so one reading answers every clock read the capture
+    // makes - and a poll that took no time is still a poll that traversed what it traversed.
+    private static final long FIXED_CLOCK_NANOS = 0L;
+
+    // What the poll opens over the sector: one traversal for the whole poll, however many
+    // passengers ride it.
+    private static final long ONE_SECTOR_WALK = 1L;
+
+    // And two for two polls, each reading the sector as it stands rather than off the last one's.
+    private static final long ONE_SECTOR_WALK_PER_POLL = 2L;
+
+    // The staged sector's colonies - the open one and the derelict beside it - each selected once
+    // for the whole poll. A passenger opening a selection of its own reads both again, so the
+    // count doubles rather than moving by one.
+    private static final long TWO_COLONIES_SELECTED_ONCE = 2L;
+
     @Nested
     class MarkChangesSinceLastPoll {
 
@@ -92,14 +117,34 @@ final class PoliticalMapPollWalkIntegrationTest {
         void selectsEachSystemsColoniesOnceForTheWholePoll() {
             // The step's own claim. Every passenger asks the same question of the same systems,
             // so the poll opens one reading of the sector and hands it down; three readers each
-            // opening a walk of their own is what this stops.
-            var sector = buildSettledSectorWithAnEmptyNeighbour();
+            // opening a selection of their own is what this stops, and each would show here as
+            // another reading of every colony in the sector.
+            var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
 
-            runOnePoll(sector);
+            assertThat(readCount(poll, SectorWalkCounters.COLONIES_READ))
+                .isEqualTo(TWO_COLONIES_SELECTED_ONCE);
+        }
 
-            for (var system : sector.getStarSystems()) {
-                verify(system, times(1)).getAllEntities();
-            }
+        @Test
+        void walksTheSectorOnceForTheWholePoll() {
+            // The traversal the selection above is opened over, counted where the library actually
+            // makes it. A passenger going looking for the system list on its own is a second walk
+            // whether or not it then re-selects anybody's colonies.
+            var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
+
+            assertThat(readCount(poll, SectorWalkCounters.SECTOR_WALKS))
+                .isEqualTo(ONE_SECTOR_WALK);
+        }
+
+        @Test
+        void walksTheSectorAgainOnASecondPoll() {
+            // The counter's other half: one walk per poll rather than one walk ever. A reading kept
+            // between polls would answer the second off the sector the first saw, which is the
+            // change a poll exists to notice - and would show here as the walk that never happened.
+            var polls = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), TWO_POLLS);
+
+            assertThat(readCount(polls, SectorWalkCounters.SECTOR_WALKS))
+                .isEqualTo(ONE_SECTOR_WALK_PER_POLL);
         }
 
         @Test
@@ -170,6 +215,33 @@ final class PoliticalMapPollWalkIntegrationTest {
     // what the poll read, rather than on what it decided, wants.
     private static void runOnePoll(SectorAPI sector) {
         runPollsAndReadGeometryRevision(sector, ONE_POLL, () -> { });
+    }
+
+    // What pollCount polls over sector traversed, read off the row every count made with no scope
+    // open lands on. That reserved row is where a poll's counts land in play as well: the watcher
+    // runs on the campaign thread rather than inside a profiled frame, so nothing brackets it.
+    //
+    // The profiler is bound and taken back by the capture, the holder being process state that
+    // would otherwise follow this suite into whatever runs next.
+    private static ProfileNode capturePollCountsOver(SectorAPI sector, int pollCount) {
+
+        var profiler = new RecordingProfiler(() -> FIXED_CLOCK_NANOS);
+
+        return RecordedCapture
+            .recordWhile(
+                profiler,
+                () -> runPollsAndReadGeometryRevision(sector, pollCount, () -> { }))
+            .findNode(ProfileSection.UNSCOPED_COUNTS.getName());
+    }
+
+    // What one row counted of one counter. A counter nothing touched is absent from the row rather
+    // than present at nought, and reading it as nought is what turns "never counted" into the
+    // number a case names - which is the failure a case about a walk that stopped happening wants.
+    private static long readCount(ProfileNode row, ProfileCounter counter) {
+
+        var count = row.findCount(counter);
+
+        return count == null ? 0L : count.getTotals().getTotal();
     }
 
     // Drives the real poll pollCount times and reports the geometry revision it left standing. The
