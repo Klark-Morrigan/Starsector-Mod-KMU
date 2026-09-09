@@ -40,15 +40,17 @@ public final class CoastVoidReport {
      * smoothed line passes through. Equal counts mean the skip rules refused every candidate,
      * which reads on screen exactly like the smoothing being switched off.
      *
-     * @param laid         the coast with its walls down
+     * @param continents   the laying to report on, with the walls it puts down and the water it
+     *                     fills
      * @param borderStroke how wide a cell's border is drawn, which is what decides whether a
      *                     crossing is deep enough for anyone to see. Handed in rather than
      *                     read off the map's look: how a thing is DRAWN belongs to whatever
      *                     draws it, and a report reaching into that would point this package
      *                     at the window it is supposed to be independent of
      */
-    public static void reportCoastlines(LaidCoast laid, double borderStroke) {
+    public static void reportCoastlines(BridgedContinents continents, double borderStroke) {
 
+        var laid = continents.layEveryWall();
         var traced = laid.traced();
         var points = 0;
 
@@ -92,6 +94,15 @@ public final class CoastVoidReport {
             formatAgainstDepth(CoastMeasures.measureCrossingGaps(traced)));
 
         reportTrappedVoid(laid);
+
+        // Asked of the shaping the viewer opens on, because that is the picture being
+        // complained about, and with every site unowned, because a pocket one owner rings is
+        // pushed out into that owner's fills and the shapes would otherwise move with the
+        // colouring. Last, and outside the trapped-void report rather than at the end of it:
+        // a coast that traps nothing can still leave a patch of map that nothing draws.
+        reportUndrawnVoid(laid, continents.fillWater(
+            CoastPockets.markEverySiteUnowned(laid.sites()),
+            VoidPockets.PocketShaping.WITH_CHANNEL));
     }
 
     // What the smoothing shut in behind it, as the pockets it becomes. A coast that traps
@@ -166,7 +177,6 @@ public final class CoastVoidReport {
             spills.isEmpty() ? 0 : spills.get(0).depth());
 
         reportEachSpill(spills);
-        reportUndrawnVoid(laid);
     }
 
     // The coast's pockets at one shaping, with every site taken as unowned - a report about
@@ -233,16 +243,12 @@ public final class CoastVoidReport {
     }
 
     // The patches of map that nothing draws, which is the fault a reader sees first and the
-    // one no construction can report on its own.
-    //
-    // Asked of the shaping the viewer opens on, because that is the picture being complained
-    // about: the bands a fill gives up against the coast and against the cells are taken out
-    // of the question, so what is left is map inside the coast that should have been painted
-    // and was not.
-    private static void reportUndrawnVoid(LaidCoast laid) {
+    // one no layer can report on its own. The bands a fill gives up against the coast and
+    // against the cells are taken out of the question, so what is left is map inside the coast
+    // that should have been painted and was not.
+    private static void reportUndrawnVoid(LaidCoast laid, FilledWater water) {
 
-        var unfilled = UndrawnVoid.findUnfilledVoid(
-            laid, VoidPockets.PocketShaping.WITH_CHANNEL);
+        var unfilled = UndrawnVoid.findUnfilledVoid(laid, water);
 
         System.out.printf(
             Locale.ROOT,

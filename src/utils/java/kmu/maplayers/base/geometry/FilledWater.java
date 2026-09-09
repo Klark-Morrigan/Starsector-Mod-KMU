@@ -179,29 +179,12 @@ public final class FilledWater {
     }
 
     /**
-     * Every ring of water the map fills, whichever layer holds it.
+     * Which map this water was opened against: the one as drawn, or the void's true extent.
      *
-     * <p>What a reader asking "is this patch of map painted" wants, since which layer painted it
-     * is the layers' own business. A lake's margin contributes only its outer ring here: the
-     * water inside a drawn shore is bare unless some other layer covers it, and that other layer
-     * is already in this list on its own account.
-     *
-     * @return every layer's rings, gathered
+     * @return the shaping every layer here is found at
      */
-    public List<List<double[]>> collectEveryRing() {
-
-        var rings = new ArrayList<List<double[]>>();
-
-        rings.addAll(collectShoreWater());
-        rings.addAll(collectInletWater());
-        rings.addAll(collectLakeWater());
-        rings.addAll(collectPuddleWater());
-        rings.addAll(collectLinkWater());
-
-        for (var margin : collectLakeMargins()) {
-            rings.add(margin.waterEdge());
-        }
-        return List.copyOf(rings);
+    public VoidPockets.PocketShaping shaping() {
+        return shaping;
     }
 
     // What one set of spans shut in, with those spans as the only walls. Only what a span

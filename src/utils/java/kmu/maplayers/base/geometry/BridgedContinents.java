@@ -51,6 +51,7 @@ public final class BridgedContinents {
     private List<CellGap> lakeSpans;
     private List<CellGap> puddleSpans;
     private List<CellGap> links;
+    private LaidCoast walled;
 
     private BridgedContinents(
             List<double[]> sites,
@@ -249,22 +250,30 @@ public final class BridgedContinents {
      * does not already carry - is drawn but is not a wall here, so void only that shore shuts
      * in is read by whichever span or reach of the first trace also touches it.
      *
+     * <p>Laid once and kept, like everything else here: several readers ask what the walk did
+     * with a wall, and the walk answers about the walls it was handed - so a second laying is a
+     * second map, however equal the lines look.
+     *
      * @return the coasts, their own reaches, and every span, laid together
      */
     public LaidCoast layEveryWall() {
 
-        var spans = new ArrayList<DiscUnionBoundary.Chord>();
+        if (walled == null) {
 
-        spans.addAll(DiscUnionBoundary.buildChordsFrom(
-            layInletSpans(), DiscUnionBoundary.WallKind.INLET_SPAN));
-        spans.addAll(DiscUnionBoundary.buildChordsFrom(
-            layLakeSpans(), DiscUnionBoundary.WallKind.LAKE_SPAN));
-        spans.addAll(DiscUnionBoundary.buildChordsFrom(
-            claimPuddleSpans(), DiscUnionBoundary.WallKind.PUDDLE_SPAN));
-        spans.addAll(DiscUnionBoundary.buildChordsFrom(
-            layLinks(), DiscUnionBoundary.WallKind.LINK));
+            var spans = new ArrayList<DiscUnionBoundary.Chord>();
 
-        return LaidCoast.layCoast(traceCoasts(), spans, parameters);
+            spans.addAll(DiscUnionBoundary.buildChordsFrom(
+                layInletSpans(), DiscUnionBoundary.WallKind.INLET_SPAN));
+            spans.addAll(DiscUnionBoundary.buildChordsFrom(
+                layLakeSpans(), DiscUnionBoundary.WallKind.LAKE_SPAN));
+            spans.addAll(DiscUnionBoundary.buildChordsFrom(
+                claimPuddleSpans(), DiscUnionBoundary.WallKind.PUDDLE_SPAN));
+            spans.addAll(DiscUnionBoundary.buildChordsFrom(
+                layLinks(), DiscUnionBoundary.WallKind.LINK));
+
+            walled = LaidCoast.layCoast(traceCoasts(), spans, parameters);
+        }
+        return walled;
     }
 
     // One shore's spans, which is the same search either way once the shore has named the

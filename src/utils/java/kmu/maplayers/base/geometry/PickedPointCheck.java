@@ -15,10 +15,10 @@ import java.util.Locale;
 /**
  * What claims each point picked in the viewer, and why nothing claims the rest.
  *
- * <p>The bridge between what a reader sees and what the constructions think they built. A
- * patch of black raises one question - who was supposed to draw this - and answering it by eye
- * means guessing which of two constructions owns the spot, at which of two reaches, and
- * whether the void there is enclosed at all. Each of those is one column here.
+ * <p>The bridge between what a reader sees and what the layers think they drew. A patch of
+ * black raises one question - who was supposed to draw this - and answering it by eye means
+ * guessing which of six layers owns the spot, at which of two reaches, and whether the void
+ * there is enclosed at all. Each of those is one column here.
  *
  * <p>Driven by the log the window writes rather than by a list kept in the source, so a fresh
  * set of clicks needs no edit: pick in the viewer, run the report, read the answers.
@@ -32,6 +32,10 @@ public final class PickedPointCheck {
     // No ring in the set holds the point, which is a verdict rather than a failure: void with
     // nothing round it is exactly what several of the questions here are looking for.
     private static final int NOTHING_HOLDS_IT = -1;
+
+    // What a layer answers when none of its rings holds the point, so the layers that do can
+    // be picked out of the six by comparing against one word rather than six.
+    private static final String NO_HIT = "no";
 
     // How many ways out to try, how big a stride to take, and how far counts as out. The
     // stride is well under a cell so a walk cannot step over one, and the range is wider than
@@ -52,26 +56,30 @@ public final class PickedPointCheck {
      *
      * @param fixture    the sector the picks were taken on
      * @param sectorName its name, which the log records against every pick
-     * @param laid       the coast with its walls down, as the rest of the report has them.
+     * @param continents the laying the rest of the report has, with its walls and its water.
      *                   Handed in rather than laid again here, because the walk answers about
      *                   the walls it was given and a second laying is a second answer
      */
-    public static void reportPickedPoints(SectorFixture fixture, String sectorName, LaidCoast laid) {
+    public static void reportPickedPoints(
+            SectorFixture fixture,
+            String sectorName,
+            BridgedContinents continents) {
 
         var picks = readPicks(sectorName);
 
         if (!picks.isEmpty()) {
-            reportEachPick(picks, fixture, laid);
+            reportEachPick(picks, fixture, continents);
         }
     }
 
-    // Each pick against every construction at both shapings, so which of them was meant to
-    // draw the spot - and at which reach - is read off one line rather than guessed at.
+    // Each pick against every layer at both shapings, so which of them was meant to draw the
+    // spot - and at which reach - is read off one line rather than guessed at.
     private static void reportEachPick(
             List<double[]> picks,
             SectorFixture fixture,
-            LaidCoast laid) {
+            BridgedContinents continents) {
 
+        var laid = continents.layEveryWall();
         var traced = laid.traced();
         var walls = laid.walls();
         var segments = laid.parameters().boundSegments();
@@ -79,10 +87,10 @@ public final class PickedPointCheck {
         var holes = DiscUnionBoundary.traceHoles(laid.atCells(), segments);
         var drawnHoles = DiscUnionBoundary.traceHoles(laid.atDrawnReach(), segments);
 
-        // The void as the walk sees it with EVERY wall down - bridges and coast reaches
-        // together. Neither construction asks this question: one lays bridges alone and the
-        // other keeps only the holes a coast reach walled, so a hole the two kinds close
-        // between them belongs to neither of their answers and shows as nothing at all.
+        // The void as the walk sees it with EVERY wall down - spans and coast reaches
+        // together. No layer asks this question on its own: each keeps only the holes its own
+        // walls closed, so a hole two kinds close between them belongs to none of their answers
+        // and shows as nothing at all.
         //
         // At both reaches, because the reach a shape is DRAWN at is the one that decides what
         // a reader sees: a hole at the cells' own reach with nothing to show for it a channel
@@ -92,14 +100,11 @@ public final class PickedPointCheck {
         var drawnWalledHoles = DiscUnionBoundary.traceHolesAcrossWalls(
             laid.atDrawnReach(), walls, segments);
 
-        var coastTrue = collectCoastOutlines(
-            laid, fixture, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
-        var coastInset = collectCoastOutlines(
-            laid, fixture, VoidPockets.PocketShaping.WITH_CHANNEL);
-        var bridgeTrue = collectBridgeOutlines(
-            laid, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
-        var bridgeInset = collectBridgeOutlines(
-            laid, VoidPockets.PocketShaping.WITH_CHANNEL);
+        // Against the fixture's own owners, because a pick is a question about the picture the
+        // reader was looking at, and that picture is coloured.
+        var owners = fixture.getOwnerBySite();
+        var trueWater = continents.fillWater(owners, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+        var insetWater = continents.fillWater(owners, VoidPockets.PocketShaping.WITH_CHANNEL);
 
         // A block per pick rather than one long line. The columns answer four different
         // questions - who drew it, whether it is enclosed, what the coast did there, and where
@@ -111,11 +116,9 @@ public final class PickedPointCheck {
 
             System.out.printf(
                 Locale.ROOT,
-                "    drawn by: coast inset %s true %s | bridge inset %s true %s%n",
-                describeHit(coastInset, pick),
-                describeHit(coastTrue, pick),
-                describeHit(bridgeInset, pick),
-                describeHit(bridgeTrue, pick));
+                "    drawn by: inset %s | true %s%n",
+                describeLayerHolding(insetWater, pick),
+                describeLayerHolding(trueWater, pick));
 
             System.out.printf(
                 Locale.ROOT,
@@ -433,41 +436,48 @@ public final class PickedPointCheck {
         return null;
     }
 
-    // Every coast pocket's outline at one shaping, flattened, because what a pick asks is
-    // whether ANY of them holds the point rather than which pocket it belongs to.
-    private static List<List<double[]>> collectCoastOutlines(
-            LaidCoast laid,
-            SectorFixture fixture,
-            VoidPockets.PocketShaping shaping) {
+    // Which layer of the map's water holds a point, and which of its rings - or none. Every
+    // layer in the order the sheet fills them, with a margin counting only where it is a band:
+    // the water inside a drawn shore is bare unless another layer covers it, and that layer
+    // answers for itself here.
+    private static String describeLayerHolding(FilledWater water, double[] pick) {
 
-        var outlines = new ArrayList<List<double[]>>();
+        var byLayer = List.of(
+            new String[] {"shore", describeHit(water.collectShoreWater(), pick)},
+            new String[] {"inlet", describeHit(water.collectInletWater(), pick)},
+            new String[] {"lake", describeHit(water.collectLakeWater(), pick)},
+            new String[] {"puddle", describeHit(water.collectPuddleWater(), pick)},
+            new String[] {"link", describeHit(water.collectLinkWater(), pick)},
+            new String[] {"margin", describeMarginHolding(water.collectLakeMargins(), pick)});
 
-        for (var walled : CoastPockets.findCoastPockets(
-                laid.traced(),
-                fixture.getOwnerBySite(),
-                new VoidPockets.PocketRules(laid.parameters(), shaping))) {
+        var holding = new ArrayList<String>();
 
-            outlines.addAll(walled.pocket().outlines());
+        for (var layer : byLayer) {
+
+            if (!layer[1].equals(NO_HIT)) {
+                holding.add(layer[0] + " " + layer[1]);
+            }
         }
-        return outlines;
+        return holding.isEmpty() ? "none" : String.join(", ", holding);
     }
 
-    // Every bridge-captured pocket at one shaping, which is the other half of what the map
-    // fills void with.
-    private static List<List<double[]>> collectBridgeOutlines(
-            LaidCoast laid,
-            VoidPockets.PocketShaping shaping) {
+    // Which lake's margin holds a point: inside the water's edge and outside the drawn shore.
+    private static String describeMarginHolding(
+            List<FilledWater.LakeMargin> margins,
+            double[] pick) {
 
-        var parameters = laid.parameters();
+        for (var index = 0; index < margins.size(); index++) {
 
-        return VoidBridgePockets.findCapturedPockets(
-            laid.sites(),
-            VoidBridges.findVoidBridges(
-                laid.sites(),
-                parameters.cellRadius(),
-                parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
-            parameters,
-            shaping);
+            var margin = margins.get(index);
+
+            if (PolygonRegions.isPointInsideRing(margin.waterEdge(), pick[0], pick[1])
+                    && !PolygonRegions.isPointInsideRing(
+                        margin.drawnShore(), pick[0], pick[1])) {
+
+                return "#" + index;
+            }
+        }
+        return NO_HIT;
     }
 
     // Which hole of the union holds a point, if any. "None" is the answer that matters most:
@@ -482,13 +492,13 @@ public final class PickedPointCheck {
             : "#" + index + " (" + holes.get(index).ringing().size() + " cells)";
     }
 
-    // Which drawn outline holds a point, if any - asked once per construction and per reach,
-    // since a pocket can exist at one reach and not the other.
+    // Which drawn outline holds a point, if any - asked once per layer and per reach, since a
+    // pocket can exist at one reach and not the other.
     private static String describeHit(List<List<double[]>> outlines, double[] pick) {
 
         var index = findRingHolding(outlines, pick);
 
-        return index == NOTHING_HOLDS_IT ? "no" : "#" + index;
+        return index == NOTHING_HOLDS_IT ? NO_HIT : "#" + index;
     }
 
     // Which of a set of rings holds a point, by position, or none. Every verdict here is a

@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * sector's systems and laying either span set walks every pair of frontages, so a suite
  * building its own paid for the whole thing again - eight of them did, over two fixtures.
  *
- * <p>The knobs are the geometry layer's own declarations, not the viewer's: this package is
- * closed to the settings that assemble the window's, so the drawn widths a span is judged
- * against are stated here.
+ * <p>The knobs are {@link ShippedMap}'s, which is the geometry layer's own statement of the
+ * map a reader would open - the same one every report measures against, so a number here and
+ * a number in a dump are about one map.
  */
 final class SectorPipeline {
 
@@ -35,32 +35,14 @@ final class SectorPipeline {
     static final String SECTORS =
         "kmu.maplayers.base.geometry.SectorPipeline#provideSectorNames";
 
-    // Whether spans sharing an anchor are thinned, which is how the map lays the inlet spans:
-    // the thinned set is the proposal, and an unthinned one is a different laying.
-    private static final boolean SHOULD_THIN_FORMATIONS = true;
-
-    // How far off a wall already down a span may run and still count as doubling it. The width
-    // a span is drawn at, which is the shipped setting: two lines closer than that overlap on
-    // screen, which is the state a reader calls doubled. Stated here rather than read off the
-    // drawing, which this package may not reach into.
-    private static final double COAST_SLACK = 120;
-
-    // How close two span feet may stand before one of them moves. The shipped setting, which
-    // separates feet that are coincident and leaves the rest where the search put them.
-    private static final double ANCHOR_SEPARATION = 120;
-
     /** The knobs the cells are built under. */
-    static final SectorGeometryParameters PARAMETERS = SectorGeometryParameters.createDefaults();
+    static final SectorGeometryParameters PARAMETERS = ShippedMap.KNOBS;
 
-    /** How the coast is traced, taken from the one place that declares it. */
-    static final Coastlines.CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
+    /** How the coast is traced. */
+    static final Coastlines.CoastRules COAST_RULES = ShippedMap.COAST_RULES;
 
     /** The laying the map ships, which is the one worth reporting on. */
-    static final ContinentBridges.BridgeRules SPAN_RULES = new ContinentBridges.BridgeRules(
-        COAST_RULES.bridgeReachMultiple(),
-        COAST_SLACK,
-        SHOULD_THIN_FORMATIONS,
-        ANCHOR_SEPARATION);
+    static final ContinentBridges.BridgeRules SPAN_RULES = ShippedMap.SPAN_RULES;
 
     private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
 

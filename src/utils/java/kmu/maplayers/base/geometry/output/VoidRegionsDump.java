@@ -4,12 +4,13 @@ import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
+import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellBoundSeams;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.CoastPockets;
 import kmu.maplayers.base.geometry.CoastVoidReport;
 import kmu.maplayers.base.geometry.CoastWallReport;
-import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -19,10 +20,8 @@ import kmu.maplayers.base.geometry.ReportFigures;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.SettledCoast;
 import kmu.maplayers.base.geometry.ShippedMap;
-import kmu.maplayers.base.geometry.VoidBridgePockets;
-import kmu.maplayers.base.geometry.VoidBridges;
+import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.VoidSectionReport;
 import kmu.maplayers.base.geometry.WallRefusals;
@@ -57,8 +56,6 @@ public final class VoidRegionsDump {
     // geometry. The same reasoning the sites get, applied to the other half of the pair.
     private static final SectorGeometryParameters SHIPPED = ShippedMap.KNOBS;
 
-    private static final double BRIDGE_REACH_MULTIPLE = ShippedMap.BRIDGE_REACH_MULTIPLE;
-
     // Area percentiles worth naming when deciding where the "leave it alone" threshold sits.
     private static final double MEDIAN_FRACTION = 0.5;
     private static final double[] REPORTED_PERCENTILES = {MEDIAN_FRACTION, 0.9, 1.0};
@@ -82,15 +79,18 @@ public final class VoidRegionsDump {
 
             System.out.println("=== " + sectorName + " ===");
 
-            // One laying of the coast for the whole sector. Everything below asks what the
-            // walk did with a wall, and the walk answers about the walls it was handed - so a
-            // second laying is a second map, however equal the lines look.
-            // No spans of its own: this construction finds its bridges first and carries them
-            // on the trace, so what it lays across the water is already in hand here.
-            var laid = LaidCoast.layCoast(
-                SettledCoast.traceAcrossBridges(sites, SHIPPED, Coastlines.DEFAULT_RULES),
-                List.of(),
-                SHIPPED);
+            // One laying for the whole sector. Everything below asks what the walk did with a
+            // wall, and the walk answers about the walls it was handed - so a second laying is
+            // a second map, however equal the lines look. The laying keeps each of its searches
+            // once it has run it, which is what lets every report below be handed the same one.
+            var continents = BridgedContinents.layContinents(
+                sites,
+                SHIPPED,
+                ShippedMap.COAST_RULES,
+                ShippedMap.SPAN_RULES,
+                new VoidBridgeCache());
+
+            var laid = continents.layEveryWall();
 
             reportCells(cells);
             reportChannelWidths(fixture);
@@ -98,19 +98,19 @@ public final class VoidRegionsDump {
             reportBoundSeams(fixture);
 
             CoastWallReport.reportCoastWalls(laid);
-            PickedPointCheck.reportPickedPoints(fixture, sectorName, laid);
-            CoastVoidReport.reportCoastlines(laid, MapLook.RING_STROKE);
+            PickedPointCheck.reportPickedPoints(fixture, sectorName, continents);
+            CoastVoidReport.reportCoastlines(continents, MapLook.RING_STROKE);
             VoidSectionReport.reportSections(fixture, laid);
 
-            reportPockets(
-                VoidPockets.findVoidPockets(
-                    sites,
-                    fixture.getOwnerBySite(),
-                    new VoidPockets.PocketRules(
-                        SHIPPED,
-                        VoidPockets.PocketShaping.WITH_CHANNEL)),
-                fixture,
-                laid);
+            var pockets = VoidPockets.findVoidPockets(
+                sites,
+                fixture.getOwnerBySite(),
+                new VoidPockets.PocketRules(
+                    SHIPPED,
+                    VoidPockets.PocketShaping.WITH_CHANNEL));
+
+            reportPockets(pockets, fixture);
+            reportSpans(continents, laid, pockets);
 
             System.out.println();
         }
@@ -334,8 +334,7 @@ public final class VoidRegionsDump {
 
     private static void reportPockets(
             List<VoidPockets.VoidPocket> pockets,
-            SectorFixture fixture,
-            LaidCoast laid) {
+            SectorFixture fixture) {
 
         // Against a cell's full width, because that is the threshold the design uses: a
         // pocket no wider than one cell has nothing to connect across it.
@@ -352,9 +351,7 @@ public final class VoidRegionsDump {
 
         reportPocketWidths(pockets, cellWidth);
         reportPocketShapes(pockets);
-
         reportRingingOwners(pockets, fixture);
-        reportBridges(fixture, pockets, laid);
 
         var shares = new ArrayList<Double>(pockets.size());
         var sections = new ArrayList<Double>(pockets.size());
@@ -451,114 +448,152 @@ public final class VoidRegionsDump {
             ReportFigures.findPercentile(values, REPORTED_PERCENTILES[2]));
     }
 
-    // What the other construction over the same void finds, and the one number that says
-    // whether it is doing something different rather than the same thing another way: how
-    // many of its bridges span void that no pocket encloses. A pocket has to be ringed by
-    // cells to exist at all, so void that opens outward is invisible to that construction
-    // and ordinary to this one. If that count were zero the two would only disagree about
-    // where to draw, not about what there is.
-    private static void reportBridges(
-            SectorFixture fixture,
-            List<VoidPockets.VoidPocket> pockets,
-            LaidCoast laid) {
+    // What the four span sets did to the void, one set at a time. The same questions of each,
+    // because they are one search asked over four kinds of water: how many were offered and
+    // how wide, how many the walk laid and why it refused the rest, what the laid ones shut in,
+    // and how many stand over void that no cell-bound pocket encloses - which is the one number
+    // that says a set is doing something the pockets cannot rather than the same thing another
+    // way. A pocket has to be ringed by cells to exist at all, so void that opens outward is
+    // invisible to that construction and ordinary to a span.
+    //
+    // The water is opened with every site unowned, because this is a report about the SHAPES:
+    // with a colouring in hand a pocket one owner rings is pushed out into that owner's fills,
+    // and the count would move with who holds the cells rather than with what the spans did.
+    private static void reportSpans(
+            BridgedContinents continents,
+            LaidCoast laid,
+            List<VoidPockets.VoidPocket> pockets) {
 
-        // One site list and one set of knobs for every question asked below, so no two of
-        // them can quietly measure against different geometry.
-        var sites = fixture.getSites();
+        var water = continents.fillWater(
+            CoastPockets.markEverySiteUnowned(laid.traced().union().sites()),
+            VoidPockets.PocketShaping.WITH_CHANNEL);
 
-        var bridges = VoidBridges.findVoidBridges(
-            sites,
-            SHIPPED.cellRadius(),
-            SHIPPED.cellRadius() * BRIDGE_REACH_MULTIPLE);
+        var sets = List.of(
+            new SpanSet(
+                "inlet span",
+                DiscUnionBoundary.WallKind.INLET_SPAN,
+                continents.layInletSpans(),
+                water.collectInletWater()),
+            new SpanSet(
+                "lake span",
+                DiscUnionBoundary.WallKind.LAKE_SPAN,
+                continents.layLakeSpans(),
+                water.collectLakeWater()),
+            new SpanSet(
+                "puddle span",
+                DiscUnionBoundary.WallKind.PUDDLE_SPAN,
+                continents.claimPuddleSpans(),
+                List.of()),
+            new SpanSet(
+                "link",
+                DiscUnionBoundary.WallKind.LINK,
+                continents.layLinks(),
+                water.collectLinkWater()));
 
-        if (bridges.isEmpty()) {
-            System.out.println("void bridges: none");
+        for (var set : sets) {
+            reportSpanSet(set, laid, pockets);
+        }
+    }
+
+    // One span set's whole account, in the order a reader judging it wants: what was offered,
+    // what the walk made of it, what that shut in, and what it reached that nothing else does.
+    private static void reportSpanSet(
+            SpanSet set,
+            LaidCoast laid,
+            List<VoidPockets.VoidPocket> pockets) {
+
+        // The puddles are named beside their spans whether or not any were laid: a sector with
+        // puddles and no spans across them is a different fact from a sector with neither, and
+        // the spans alone cannot tell the two apart.
+        if (set.kind() == DiscUnionBoundary.WallKind.PUDDLE_SPAN) {
+
+            System.out.printf(
+                Locale.ROOT,
+                "%d puddles on the map, drawn whole%n",
+                laid.traced().puddles().size());
+        }
+
+        if (set.spans().isEmpty()) {
+            System.out.printf(Locale.ROOT, "%ss: none%n", set.name());
             return;
         }
 
-        var widths = new ArrayList<Double>(bridges.size());
+        var sites = laid.traced().union().sites();
+        var widths = new ArrayList<Double>(set.spans().size());
         var outsideEveryPocket = 0;
 
-        for (var bridge : bridges) {
+        for (var span : set.spans()) {
 
-            widths.add(bridge.width());
+            widths.add(span.width());
 
-            if (!doesAnyPocketHold(pockets, findMidpoint(bridge))) {
+            if (!doesAnyPocketHold(pockets, findMidpoint(span))) {
                 outsideEveryPocket++;
             }
         }
         widths.sort(Double::compare);
 
-        var capturing = VoidBridgePockets.findCapturingBridges(
-            sites, bridges, SHIPPED.cellRadius());
-
         System.out.printf(
             Locale.ROOT,
-            "of those %d bridges, %d close a ring and shut void in; %d only chain systems "
-                + "together and shut in nothing%n",
-            bridges.size(),
-            capturing.size(),
-            bridges.size() - capturing.size());
-
-        var captured = VoidBridgePockets.findCapturedPockets(
-            sites,
-            bridges,
-            SHIPPED,
-            VoidPockets.PocketShaping.WITH_CHANNEL);
-
-        System.out.printf(
-            Locale.ROOT,
-            "%d of ALL %d are drawn as walls (the rest have closed over or crowd a mouth "
-                + "already taken)%n",
-            VoidBridgePockets.findLaidChords(sites, bridges, SHIPPED).size(),
-            bridges.size());
-
-        reportBridgeRefusals(sites, bridges);
-
-        System.out.printf(
-            Locale.ROOT,
-            "walking the cells' borders with those bridges laid across them closes %d "
-                + "pockets; worst fill edge strays %.1f from its bridge (has to be 0)%n",
-            captured.size(),
-            VoidBridgePockets.measureWorstChordStray(captured, sites, bridges, SHIPPED));
-
-        System.out.printf(
-            Locale.ROOT,
-            "void bridges at %.0f cell radii apart: %d, of which %d span void no pocket "
-                + "encloses; width p50 %.0f / p90 %.0f / max %.0f%n",
-            BRIDGE_REACH_MULTIPLE,
-            bridges.size(),
+            "%ss: %d, of which %d span void no pocket encloses; width p50 %.0f / p90 %.0f "
+                + "/ max %.0f%n",
+            set.name(),
+            set.spans().size(),
             outsideEveryPocket,
             ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[0]),
             ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[1]),
             ReportFigures.findPercentile(widths, REPORTED_PERCENTILES[2]));
-    }
 
-    // Why each bridge that is not drawn was turned down, at both reaches. The count above
-    // says how many went; this says what took them, which is the difference between a gap the
-    // cells have genuinely closed and a wall the drawing's own inset refused.
-    private static void reportBridgeRefusals(
-            List<double[]> sites,
-            List<CellGap> bridges) {
+        reportSpanRefusals(set, laid, sites);
 
-        var walls = VoidBridgePockets.buildBridgeWalls(bridges, SHIPPED);
+        // A puddle is drawn as its whole water rather than as what its spans shut in, so there
+        // is no water of the spans' own to count.
+        if (set.kind() == DiscUnionBoundary.WallKind.PUDDLE_SPAN) {
+            return;
+        }
 
         System.out.printf(
             Locale.ROOT,
-            "bridges offered %d: at the cells' own reach %s | a channel out %s%n",
-            walls.chords().size(),
-            WallRefusals.summariseRefusals(
-                new DiscUnion(sites, SHIPPED.cellRadius()), walls, walls.chords()),
-            WallRefusals.summariseRefusals(
-                VoidPockets.buildDrawnUnion(sites, SHIPPED), walls, walls.chords()));
+            "  walking the cells' borders with those laid closes %d pockets%n",
+            set.shutIn().size());
+    }
 
-        WallRefusals.reportEachRefusal(
-            VoidPockets.buildDrawnUnion(sites, SHIPPED), walls, walls.chords(), "bridge");
+    // Why each span of one set that is not drawn was turned down, at both reaches. The count
+    // says how many went; this says what took them, which is the difference between a gap the
+    // cells have genuinely closed and a wall the drawing's own inset refused.
+    //
+    // Judged among EVERY wall the laying puts down rather than among its own set alone, since
+    // crowding is a fact about the neighbours a wall actually has - a span that loses its
+    // mouth to a coast reach was refused, whatever set it came from.
+    private static void reportSpanRefusals(
+            SpanSet set,
+            LaidCoast laid,
+            List<double[]> sites) {
+
+        var chords = new ArrayList<DiscUnionBoundary.Chord>();
+
+        for (var chord : laid.walls().chords()) {
+
+            if (chord.kind() == set.kind()) {
+                chords.add(chord);
+            }
+        }
+
+        var atCells = new DiscUnion(sites, SHIPPED.cellRadius());
+        var atDrawn = VoidPockets.buildDrawnUnion(sites, SHIPPED);
+
+        System.out.printf(
+            Locale.ROOT,
+            "  offered as walls %d: at the cells' own reach %s | a channel out %s%n",
+            chords.size(),
+            WallRefusals.summariseRefusals(atCells, laid.walls(), chords),
+            WallRefusals.summariseRefusals(atDrawn, laid.walls(), chords));
+
+        WallRefusals.reportEachRefusal(atDrawn, laid.walls(), chords, set.name());
     }
 
     // Against the section rather than the pocket's own outline, because the section is the
     // pocket at the reach that defines the void, while an outline is the pocket pulled in by
-    // the channel and would report a bridge near its rim as outside.
+    // the channel and would report a span near its rim as outside.
     private static boolean doesAnyPocketHold(
             List<VoidPockets.VoidPocket> pockets,
             double[] point) {
@@ -573,13 +608,31 @@ public final class VoidRegionsDump {
         return false;
     }
 
-    // The middle of a bridge, which is the point asked of the pockets when deciding whether
-    // that bridge spans void any of them encloses. The middle rather than either end: an end
+    // The middle of a span, which is the point asked of the pockets when deciding whether that
+    // span stands over void any of them encloses. The middle rather than either end: an end
     // sits on a cell's own border, where every pocket has already given up the channel.
-    private static double[] findMidpoint(CellGap bridge) {
+    private static double[] findMidpoint(CellGap span) {
 
         return new double[] {
-            (bridge.start()[0] + bridge.end()[0]) / 2,
-            (bridge.start()[1] + bridge.end()[1]) / 2};
+            (span.start()[0] + span.end()[0]) / 2,
+            (span.start()[1] + span.end()[1]) / 2};
+    }
+
+    /**
+     * One of the four sets of spans the construction lays, with what it shut in.
+     *
+     * @param name   what to call one in the report
+     * @param kind   the wall kind its spans were laid as, which is how they are told apart
+     *               among every wall the laying put down
+     * @param spans  the spans, as the search offered them
+     * @param shutIn the water they hold, walked with them as the only walls. Empty for the
+     *               puddle spans, since a puddle is drawn whole rather than as what a span
+     *               shut in and so has no water of the spans' own
+     */
+    private record SpanSet(
+        String name,
+        DiscUnionBoundary.WallKind kind,
+        List<CellGap> spans,
+        List<List<double[]>> shutIn) {
     }
 }

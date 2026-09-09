@@ -14,17 +14,22 @@ import java.util.Locale;
 /**
  * The black patch, found rather than clicked on: settled space with nothing drawn in it.
  *
- * <p>The map's void is filled by two constructions - the pockets a coast reach closes and the
- * pockets a bridge captures - and each of them reports on its own answer. Neither can report
- * the thing a reader actually sees, because it is precisely the case each believes belongs to
- * the other: a patch inside the coast, clear of every cell, that neither of them filled.
+ * <p>The map fills the void layer by layer - the water behind the shores, the bays the spans
+ * hold, the lakes and the puddles, the sea between the continents - and each layer reports on
+ * its own answer. None of them can report the thing a reader actually sees, because it is
+ * precisely the case each believes belongs to another: a patch inside the coast, clear of every
+ * cell, that no layer filled.
  *
- * <p>Asked of the PICTURE rather than of the constructions. A patch is judged by the same facts
- * that decide what is painted there - inside the drawn coast, clear of the band a fill gives up
+ * <p>Asked of the PICTURE rather than of the layers. A patch is judged by the same facts that
+ * decide what is painted there - inside the drawn coast, clear of the band a fill gives up
  * against that line, clear of every cell at the reach fills are drawn against, and inside no
  * fill - so a patch reported here is black on screen, and a map with none has no black left in
  * it. Matching holes to pockets cannot say that: a pocket is shaped after the hole it came from,
  * so a hole with a pocket to its name can still leave a patch of map uncovered.
+ *
+ * <p>Read off the same inventory the drawing reads, for the reason above: a report that listed
+ * the layers for itself would call a patch bare that the map is plainly painting the moment the
+ * two lists came apart.
  *
  * <p>Sampled on a grid, because area is what the question is about. The spacing decides the
  * smallest patch that can be seen and nothing else; a patch worth a reader's attention is
@@ -81,22 +86,22 @@ public final class UndrawnVoid {
     /**
      * Finds every patch of the map that lies inside the coast and is drawn by nothing.
      *
-     * <p>Run with every site taken as unowned, because a pocket that one owner rings is pushed
-     * out into that owner's fills instead of being drawn as void - so with a colouring in hand
-     * the shapes move, and a patch would be reported or not depending on who happens to hold
-     * the cells around it rather than on whether anything drew that patch of map.
+     * <p>The water should have been opened with every site taken as unowned, because a pocket
+     * that one owner rings is pushed out into that owner's fills instead of being drawn as void
+     * - so with a colouring in hand the shapes move, and a patch would be reported or not
+     * depending on who happens to hold the cells around it rather than on whether anything drew
+     * that patch of map.
      *
-     * @param laid         the coast with its walls down - handed in rather than laid again,
-     *                     since a patch judged against one laying says nothing about a map
-     *                     drawn under another
-     * @param shaping      whether to ask of the map as drawn or of the void's true extent
+     * @param laid  the coast with its walls down - handed in rather than laid again, since a
+     *              patch judged against one laying says nothing about a map drawn under another
+     * @param water what the map paints over the void, which says what a sample can be inside
+     *              of and which map - as drawn, or the void's true extent - is being asked about
      * @return one entry per patch, widest first
      */
-    static List<UnfilledPatch> findUnfilledVoid(
-            LaidCoast laid,
-            VoidPockets.PocketShaping shaping) {
+    static List<UnfilledPatch> findUnfilledVoid(LaidCoast laid, FilledWater water) {
 
         var parameters = laid.parameters();
+        var shaping = water.shaping();
 
         // The reach fills are drawn against, which is also the reach a patch has to be clear
         // of the cells at. At the drawn shaping that is a channel outside them, so the band
@@ -112,7 +117,7 @@ public final class UndrawnVoid {
         var patches = collectPatches(collectBareSamples(
             laid,
             Coastlines.collectCoastOutlines(laid.traced()),
-            collectDrawnFills(laid, shaping),
+            collectDrawnFills(water),
             clearOfCells,
             clearOfCoast));
 
@@ -121,38 +126,35 @@ public final class UndrawnVoid {
         return patches;
     }
 
-    // Everything the map fills void with, from both constructions, each with the box it lies
-    // in. What a sample asks is whether ANY fill covers it, and which one did is the
-    // constructions' own business; the box is what keeps that question cheap enough to ask of
-    // a whole sector.
-    private static List<BoxedFill> collectDrawnFills(
-            LaidCoast laid,
-            VoidPockets.PocketShaping shaping) {
+    // Everything the map fills void with, every layer of it, each with the box it lies in. What
+    // a sample asks is whether ANY fill covers it, and which one did is the layers' own
+    // business; the box is what keeps that question cheap enough to ask of a whole sector.
+    //
+    // A lake's margin goes in as the band it is rather than as its outer ring. The open water
+    // inside a drawn shore is left bare on purpose unless some other layer covers it, and that
+    // other layer is in this list on its own account - so a margin that claimed the whole lake
+    // would hide exactly the patch this exists to find.
+    private static List<BoxedFill> collectDrawnFills(FilledWater water) {
 
-        var parameters = laid.parameters();
-        var sites = laid.sites();
         var fills = new ArrayList<BoxedFill>();
 
-        for (var pocket : CoastPockets.findCoastPockets(
-                laid.traced(),
-                CoastPockets.markEverySiteUnowned(sites),
-                new VoidPockets.PocketRules(parameters, shaping))) {
-
-            for (var outline : pocket.pocket().outlines()) {
-                fills.add(BoxedFill.boxFill(outline));
-            }
-        }
-
-        for (var outline : VoidBridgePockets.findCapturedPockets(
-                sites,
-                VoidBridges.findVoidBridges(
-                    sites,
-                    parameters.cellRadius(),
-                    parameters.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
-                parameters,
-                shaping)) {
-
+        for (var outline : water.collectShoreWater()) {
             fills.add(BoxedFill.boxFill(outline));
+        }
+        for (var outline : water.collectInletWater()) {
+            fills.add(BoxedFill.boxFill(outline));
+        }
+        for (var outline : water.collectLakeWater()) {
+            fills.add(BoxedFill.boxFill(outline));
+        }
+        for (var outline : water.collectPuddleWater()) {
+            fills.add(BoxedFill.boxFill(outline));
+        }
+        for (var outline : water.collectLinkWater()) {
+            fills.add(BoxedFill.boxFill(outline));
+        }
+        for (var margin : water.collectLakeMargins()) {
+            fills.add(BoxedFill.boxMargin(margin.waterEdge(), margin.drawnShore()));
         }
         return fills;
     }
@@ -291,7 +293,7 @@ public final class UndrawnVoid {
     // A wall divides void into two pockets, and each of them gives up the channel against it -
     // so the strip along every laid wall is bare by construction, exactly as the strip along a
     // cell's border is. Left in, those strips are the whole population: they run the length of
-    // every bridge on the map and swamp the patch anyone is looking for.
+    // every span on the map and swamp the patch anyone is looking for.
     //
     // Asked of every wall offered rather than only of those laid, because a wall the walk
     // turned down leaves no strip and so can only cost a sliver a channel wide - where telling
@@ -340,22 +342,31 @@ public final class UndrawnVoid {
     }
 
     /**
-     * One drawn fill with the box it lies in.
+     * One drawn fill with the box it lies in, and the hole it leaves where it is a margin.
      *
      * <p>The box is what makes sweeping a whole sector affordable: a ring walk per fill per
      * sample is hundreds of millions of steps, where a box rejects all but the handful of
      * fills a sample could possibly be in.
      *
      * @param outline the fill's own ring
-     * @param box     the box it lies within
+     * @param hole    the ring inside it that the fill stops at, empty where the fill is whole
+     * @param box     the box the outline lies within
      */
     private record BoxedFill(
         List<double[]> outline,
+        List<double[]> hole,
         Bounds box) {
 
-        // One fill with its box worked out, which is how every fill enters the sweep.
+        // One whole fill with its box worked out, which is how every solid layer enters the
+        // sweep.
         static BoxedFill boxFill(List<double[]> outline) {
-            return new BoxedFill(outline, Bounds.computeEnclosingBounds(outline));
+            return new BoxedFill(outline, List.of(), Bounds.computeEnclosingBounds(outline));
+        }
+
+        // One band between two rings, which is how a lake's margin enters it: covering the
+        // water between the shore and the cells' edge, and none of the water inside the shore.
+        static BoxedFill boxMargin(List<double[]> outer, List<double[]> inner) {
+            return new BoxedFill(outer, inner, Bounds.computeEnclosingBounds(outer));
         }
 
         // Whether this fill covers a point - the box first, since almost every fill on the
@@ -366,7 +377,8 @@ public final class UndrawnVoid {
                 && at[0] <= box.maxX()
                 && at[1] >= box.minY()
                 && at[1] <= box.maxY()
-                && PolygonRegions.isPointInsideRing(outline, at[0], at[1]);
+                && PolygonRegions.isPointInsideRing(outline, at[0], at[1])
+                && (hole.isEmpty() || !PolygonRegions.isPointInsideRing(hole, at[0], at[1]));
         }
     }
 }
