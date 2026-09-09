@@ -32,7 +32,7 @@ public final class CoastMeasures {
      * run is resolved. A crossing on a run that jumps over skipped stretches is the skip rule
      * opening a gap the repair pass failed to close, and the fix is there instead.
      *
-     * @param traced what {@link #traceSectorCoasts} handed back
+     * @param traced the coast, as it was traced
      * @return one pair per crossing - how deep it goes, and how many stretches were skipped
      *         across it, where zero means the two were neighbours - deepest first
      */
@@ -51,7 +51,7 @@ public final class CoastMeasures {
      * arrival failed for want of anywhere to land; ordinary frontage says the fault is
      * elsewhere.
      *
-     * @param traced what {@link #traceSectorCoasts} handed back
+     * @param traced the coast, as it was traced
      * @return one pair per crossing - how deep it goes, and how long the crossed cell's
      *         frontage is - deepest first
      */
@@ -69,7 +69,7 @@ public final class CoastMeasures {
      * <p>The population a crossed cell's frontage is read against. Without it a small number
      * is just a small number.
      *
-     * @param traced what {@link #traceSectorCoasts} handed back
+     * @param traced the coast, as it was traced
      * @return every stretch of coast, as the length of border it offers
      */
     static List<Double> measureFrontages(Coastlines.TracedCoasts traced) {
@@ -165,7 +165,7 @@ public final class CoastMeasures {
      * kept count on its own cannot tell a coast that was already smooth from one the skip
      * rules refused to touch.
      *
-     * @param traced what {@link #traceSectorCoasts} handed back
+     * @param traced the coast, as it was traced
      * @return how many stretches there are in total, across every run
      */
     static int countCoastMarks(Coastlines.TracedCoasts traced) {

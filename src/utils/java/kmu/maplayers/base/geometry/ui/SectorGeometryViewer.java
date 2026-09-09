@@ -83,7 +83,7 @@ import javax.swing.SwingUtilities;
  *       per-edge miter. This is what {@code ClusterBorderTrace.traceRings} forwards to, at
  *       the same {@code CellShaper.BORDER_INSET_DISTANCE}; only the weld tolerance and
  *       miter limit arrive from {@link SectorGeometryParameters} instead of
- *       {@code KmuMapLayerSettings}.</li>
+ *       {@code KmuMapLabelSettings}.</li>
  *   <li>{@code BorderSmoothing.smoothBorderLoops} - both smoothing passes and the order they
  *       run in, over the traced cluster rings. The profile comes from this window's sliders
  *       rather than from the player's theme, and both gates are held on, so what each pass

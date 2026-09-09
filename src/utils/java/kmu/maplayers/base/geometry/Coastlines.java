@@ -452,40 +452,11 @@ public final class Coastlines {
     }
 
     /**
-     * Traces a whole sector's coast: the settled construction, with the bridges laid.
-     *
-     * <p>All this entry decides is the wall set - find the bridges and lay them as chords at
-     * the border channel. Everything else about building a coast lives once, in the shared
-     * tail, where the continent entry below cannot come to differ from it.
-     *
-     * @param sites      the sites
-     * @param parameters the knobs the cells are built under
-     * @param rules      the knobs the coast is traced under
-     * @return the coast, and what it was traced against
-     */
-    public static TracedCoasts traceSectorCoasts(
-            List<double[]> sites,
-            SectorGeometryParameters parameters,
-            CoastRules rules) {
-
-        return traceCoastsAcrossWalls(
-            sites,
-            parameters,
-            rules,
-            new DiscUnionBoundary.Walls(
-                DiscUnionBoundary.buildChordsFrom(VoidBridges.findVoidBridges(
-                    sites,
-                    parameters.cellRadius(),
-                    parameters.cellRadius() * rules.bridgeReachMultiple())),
-                parameters.borderInset()));
-    }
-
-    /**
      * Traces each touching-connected run of cells - each continent - as its own closed coast,
      * with no bridges laid.
      *
-     * <p>A preview of the per-continent proposal: the same walk and the same smoothing as
-     * {@link #traceSectorCoasts}, with the walls left out. Runs that a bridge joins into one
+     * <p>A preview of the per-continent proposal: the same walk and the same smoothing as the
+     * settled coast, with the walls left out. Runs that a bridge joins into one
      * super-continent come back as separate closed lines instead - so laid over the settled
      * map, this shows exactly where those lines and the bridges would cross, which is the
      * fact the proposal turns on.

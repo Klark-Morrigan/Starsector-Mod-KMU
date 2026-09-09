@@ -41,7 +41,7 @@ public final class CoastCrossings {
      * a map where nothing can be seen, and a reader who checks two of those stops checking the
      * third. Both are wrong in the same way and only one of them is visible.
      *
-     * @param traced       what {@link #traceSectorCoasts} handed back
+     * @param traced       the coast, as it was traced
      * @param borderStroke how wide a cell's border is drawn
      * @return the crossings that show, deepest first
      */
@@ -79,7 +79,7 @@ public final class CoastCrossings {
      * dips inside that cell by the sagitta of its own sampling, which is not the same thing
      * as a coast crossing one.
      *
-     * @param traced what {@link Coastlines#traceSectorCoasts} handed back
+     * @param traced the coast, as it was traced
      * @return one entry per offending run, in the order they are drawn
      */
     static List<Penetration> findPenetrations(Coastlines.TracedCoasts traced) {
@@ -165,7 +165,7 @@ public final class CoastCrossings {
      * in half - that is the failure it was built to fix - and the only way to say it has not
      * is to ask every straight reach how near it comes to every site.
      *
-     * @param traced what {@link Coastlines#traceSectorCoasts} handed back
+     * @param traced the coast, as it was traced
      * @return the deepest any straight run of coast reaches inside a cell, which is zero when
      *         none of them enters one
      */

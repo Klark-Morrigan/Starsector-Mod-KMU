@@ -4,6 +4,7 @@ import kmu.maplayers.base.geometry.CoastCrossings;
 import kmu.maplayers.base.geometry.CoastPocketFaults;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.SettledCoast;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
@@ -81,7 +82,7 @@ public final class SectorCoastOverlay {
         }
 
         // The two lines that make this v2: bridges laid, settled rules.
-        coast.acceptTrace(Coastlines.traceSectorCoasts(
+        coast.acceptTrace(SettledCoast.traceAcrossBridges(
             fixture.getSites(),
             settings.parameters,
             settings.resolveCoastRules()));

@@ -19,6 +19,7 @@ import kmu.maplayers.base.geometry.ReportFigures;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.SettledCoast;
 import kmu.maplayers.base.geometry.ShippedMap;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.VoidBridges;
@@ -85,7 +86,7 @@ public final class VoidRegionsDump {
             // walk did with a wall, and the walk answers about the walls it was handed - so a
             // second laying is a second map, however equal the lines look.
             var laid = LaidCoast.layCoast(
-                Coastlines.traceSectorCoasts(sites, SHIPPED, Coastlines.DEFAULT_RULES),
+                SettledCoast.traceAcrossBridges(sites, SHIPPED, Coastlines.DEFAULT_RULES),
                 SHIPPED);
 
             reportCells(cells);

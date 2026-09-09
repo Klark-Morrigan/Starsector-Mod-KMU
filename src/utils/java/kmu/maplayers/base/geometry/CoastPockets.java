@@ -38,7 +38,7 @@ public final class CoastPockets {
     /**
      * Finds every pocket the coast's straight reaches shut in.
      *
-     * @param traced       the coast, as {@link Coastlines#traceSectorCoasts} handed it back,
+     * @param traced       the coast, as it was traced,
      *                     which carries the sites everything here is measured against and the
      *                     bridges it was walled by
      * @param ownerBySite  each site's owner, index-aligned with the coast's own sites and

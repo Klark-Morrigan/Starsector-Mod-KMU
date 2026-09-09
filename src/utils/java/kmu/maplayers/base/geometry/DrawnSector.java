@@ -108,7 +108,7 @@ public record DrawnSector(
                 BorderSmoothing.smoothBorderLoops(byOwner.getValue(), smoothing));
         }
 
-        var coast = Coastlines.traceSectorCoasts(fixture.getSites(), parameters, rules);
+        var coast = SettledCoast.traceAcrossBridges(fixture.getSites(), parameters, rules);
 
         return new DrawnSector(
             geometry,

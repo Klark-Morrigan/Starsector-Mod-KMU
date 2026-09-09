@@ -1,9 +1,9 @@
 package kmu.maplayers.base.geometry.ui.overlays;
 
-import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.LaidCoast;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
+import kmu.maplayers.base.geometry.SettledCoast;
 import kmu.maplayers.base.geometry.VoidSection;
 import kmu.maplayers.base.geometry.VoidSections;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
@@ -70,7 +70,7 @@ public final class VoidSectionsOverlay {
         // overlay so that the sections do not appear and vanish with a toggle about whether the
         // coast LINE is drawn.
         var laid = LaidCoast.layCoast(
-            Coastlines.traceSectorCoasts(
+            SettledCoast.traceAcrossBridges(
                 fixture.getSites(), settings.parameters, settings.resolveCoastRules()),
             settings.parameters);
 
