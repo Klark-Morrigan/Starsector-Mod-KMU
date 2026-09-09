@@ -11,6 +11,7 @@ and the [mod README](../../../../../../../../README.md) for project context.
 ## Index
 
 - [How the package divides](#how-the-package-divides)
+- [The claim is the whole screen](#the-claim-is-the-whole-screen)
 - [Raised and painted part company](#raised-and-painted-part-company)
 - [Everything testable is outside the panel](#everything-testable-is-outside-the-panel)
 - [Element, never cell](#element-never-cell)
@@ -46,6 +47,20 @@ nesting it would make one of those two the other's owner. Outward, the panel rep
 `OverlayPresence`, the shape anything raised over a screen answers in - so whatever stands aside for
 this dialog stands aside for a vanilla modal by the same reading.
 
+## The claim is the whole screen
+
+The game supplies no modality for a panel stood in the core UI - it dims nothing behind one and goes
+on dispatching to what is under it - so the dialog consumes every event it is handed. Every event,
+with no exception carved out for its own box, because the engine hands a custom panel's events to
+its children first and its plugin afterwards: a press one of the dialog's controls acted on arrives
+at the claim rule already consumed, and the skip that leaves a consumed event alone is the whole of
+what protects the column.
+
+That order is why the first reading was wrong rather than merely cautious. Excepting the box by
+position left the events inside it untouched for *everything* under the dialog, not only for the
+dialog - so a star beneath the dim went on raising its own tooltip while the same star out on the
+open map, where the claim did reach, answered nothing at all.
+
 ## Raised and painted part company
 
 The dialog fades in and out at the pace of the game's own prompts, because the sidebar dissolves in
@@ -71,7 +86,7 @@ pulled out are the four that were each, at some point, the part nothing had veri
 
 - **`ArrangementDialogEventResponse`** is the claim rule - including that a dismissed dialog still
   on screen claims nothing - so the dialog's whole modality is a function of one event rather than a
-  branch inside a render hook.
+  branch inside a render hook. See [what the claim covers](#the-claim-is-the-whole-screen).
 - **`ArrangementDialogFade`** is the clock, so that raised moves on the press and the paint does
   not is a fact about two fields rather than something watched for on screen.
 - **`MapLayerArrangementEditor.applyRowAction`** is the mapping from a press to what it does. A case

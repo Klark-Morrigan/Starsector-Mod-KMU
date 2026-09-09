@@ -6,8 +6,8 @@ import java.util.function.BooleanSupplier;
 
 /**
  * The cover this mod's own bar-arranging dialog lays over the map. It stands across the screen, dims
- * what is behind it and claims the events outside its own box, so while it is up nothing the cursor
- * rests on is the map.
+ * what is behind it and claims every event its own widgets have not taken, so while it is up nothing
+ * the cursor rests on is the map.
  *
  * <p>Its own cover rather than a case of {@link ModalDialogMapCover}, and the difference is the whole
  * reason this class exists. That one recognises a modal by the accessor the game's own modal base
@@ -19,8 +19,8 @@ import java.util.function.BooleanSupplier;
  * for the same reason: that is exactly what leaves the cells the panel is no longer over answering the
  * cursor as if nothing were on screen, while the map goes on being drawn behind the dim.
  *
- * <p>No cursor test. The dialog claims the whole screen outside its own box, so where the pointer is
- * does not come into it - the same reasoning the modal, pause menu and console covers stand on.
+ * <p>No cursor test. The dialog claims the whole screen, so where the pointer is does not come into
+ * it - the same reasoning the modal, pause menu and console covers stand on.
  *
  * <p>Fails open per the role's rule, and cannot fail otherwise: the reading is a field on a dialog this
  * mod owns, so there is no tree to walk and nothing to be unable to establish.

@@ -4,8 +4,6 @@ import com.fs.starfarer.api.input.InputEventAPI;
 
 import org.lwjgl.input.Keyboard;
 
-import java.util.function.Predicate;
-
 /**
  * What the arranging dialog does with one input event, and the rule that decides it.
  *
@@ -15,11 +13,16 @@ import java.util.function.Predicate;
  * only by opening the dialog and clicking, which is how the claim came to be the one part of the
  * dialog nothing had verified.
  *
- * <p><b>Only mouse events inside the dialog's own box are left alone; everything else is claimed.</b>
- * That way round rather than "claim everything" because the order in which the game hands events to
- * a panel's widgets and to its plugin is the game's business: leaving the box's own events untouched
- * is correct whichever way round it is, while claiming them first would leave the dialog's buttons
- * dead on a build that dispatches to the plugin first.
+ * <p><b>A raised dialog claims every event it is handed that nothing has already taken.</b> The
+ * engine hands a custom panel's events to its children first and to its plugin afterwards, so
+ * anything the dialog's own controls acted on arrives here already consumed - which makes the
+ * consumed skip below the whole of what protects them, and leaves nothing to except by position.
+ *
+ * <p>The earlier rule excepted the dialog's own box by measuring it, on the reading that the
+ * dispatch order was the game's business. It is not the game's business, and the exception was
+ * being read by the widget underneath: the map answers a pointer it hears, and inside the box it
+ * heard one, so a star under the dim raised its own tooltip while the same star out on the open map
+ * answered nothing.
  *
  * <p><b>A dismissed dialog claims nothing at all</b>, though its box is on screen for the length of
  * its fade. The press that dismisses it is the moment the screen is the player's again, and a claim
@@ -39,22 +42,18 @@ enum ArrangementDialogEventResponse {
     /**
      * Decides what becomes of {@code event}.
      *
-     * <p>Whether the event landed in the box is asked through a predicate rather than taken as a
-     * flag, because it must not be asked at all for an event somebody has already consumed: six of
-     * {@link InputEventAPI}'s own accessors throw once that has happened, and the box test reads one
-     * of them. Whether the dialog is up is a flag for the opposite reason - it is a field read that
-     * touches no event at all, and it is asked first because a dialog that has let go answers for
-     * every event without measuring any of them.
+     * <p>Whether the dialog is up is asked before the event is touched at all, because a dialog that
+     * has let go answers for every event without reading one - and six of {@link InputEventAPI}'s
+     * accessors throw once something has consumed the event, so the consumed skip has to stand ahead
+     * of the key readings below it either way.
      *
-     * @param event                  the event the panel was handed
-     * @param isDialogRaised         whether the dialog is still up, as against on screen but dismissed
-     * @param isEventInsideDialogBox whether an event lands inside the dialog's own box
+     * @param event          the event the panel was handed
+     * @param isDialogRaised whether the dialog is still up, as against on screen but dismissed
      * @return what the dialog does with it
      */
     static ArrangementDialogEventResponse resolveResponseTo(
             InputEventAPI event,
-            boolean isDialogRaised,
-            Predicate<InputEventAPI> isEventInsideDialogBox) {
+            boolean isDialogRaised) {
 
         if (!isDialogRaised || event.isConsumed()) {
             return LEAVE_ALONE;
@@ -64,8 +63,6 @@ enum ArrangementDialogEventResponse {
             return CLOSE_DIALOG;
         }
 
-        return isEventInsideDialogBox.test(event)
-            ? LEAVE_ALONE
-            : CLAIM;
+        return CLAIM;
     }
 }

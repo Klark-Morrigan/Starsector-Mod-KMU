@@ -29,8 +29,9 @@ import java.util.function.Function;
  *
  * <p><b>Modality is supplied here, because the game does not supply it.</b> A panel added this way is
  * an ordinary child: nothing dims behind it and nothing stops the screen underneath being dispatched
- * to. So the body paints its own backdrop, through this plugin's render hook, and this claims the
- * input its own widgets do not want. Which events that claim takes is
+ * to. So the body paints its own backdrop, through this plugin's render hook, and this claims every
+ * event the panel's own widgets have not already taken - the engine dispatching those widgets before
+ * this plugin, which is what leaves a blanket claim safe. Which events that claim takes is
  * {@link ArrangementDialogEventResponse}'s; this acts on the answer.
  *
  * <p><b>The fade is written as the panel's opacity</b>, which the engine multiplies into the alpha it
@@ -140,16 +141,6 @@ final class ArrangementDialogPanel {
         body = buildBody.apply(panel);
     }
 
-    // Whether this event belongs to the dialog's own widgets, which is the one thing the claim leaves
-    // alone. Answered off the box the layout placed rather than off the numbers it was laid out from,
-    // so a resized window moves the claim with the box.
-    private boolean isEventInsideDialogBox(InputEventAPI event) {
-
-        return body != null
-            && event.isMouseEvent()
-            && body.getBoxPlacement().containsEvent(event);
-    }
-
     // Where the paint stands, written onto the panel as its opacity - the one write that fades every
     // part of the dialog together.
     private void paintFadeOntoPanel() {
@@ -249,8 +240,7 @@ final class ArrangementDialogPanel {
 
                 var response = ArrangementDialogEventResponse.resolveResponseTo(
                     event,
-                    isPanelRaised(),
-                    ArrangementDialogPanel.this::isEventInsideDialogBox);
+                    isPanelRaised());
 
                 if (response == ArrangementDialogEventResponse.LEAVE_ALONE) {
                     continue;

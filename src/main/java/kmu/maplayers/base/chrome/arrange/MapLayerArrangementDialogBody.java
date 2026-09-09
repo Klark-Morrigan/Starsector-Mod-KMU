@@ -89,14 +89,6 @@ final class MapLayerArrangementDialogBody {
     }
 
     /**
-     * @return where the layout put the box, for a caller hit-testing against what is on screen rather
-     *         than against the numbers it was laid out from - so a resized window moves both together
-     */
-    PositionAPI getBoxPlacement() {
-        return boxPlacement;
-    }
-
-    /**
      * Takes this body back off the panel it was built into.
      *
      * @param dialogPanel the panel it was built into

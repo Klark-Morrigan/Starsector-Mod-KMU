@@ -7,8 +7,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins that this mod's own bar-arranging dialog covers the map whatever the cursor is doing, which is
- * the whole of this cover: the dialog claims every event outside its own box, so there is no point on
- * the screen that is still the map.
+ * the whole of this cover: the dialog claims every event its own widgets have not taken, so there is
+ * no point on the screen that is still the map.
  *
  * <p>Its own cover rather than a case of the modal one beside it, and that is what is really pinned
  * here: a dialog this mod stands up carries none of the game's modal shape, so the walk behind
