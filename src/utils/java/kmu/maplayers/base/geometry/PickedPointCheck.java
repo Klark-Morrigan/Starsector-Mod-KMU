@@ -374,14 +374,14 @@ public final class PickedPointCheck {
         return "#" + index + " walled by " + walling;
     }
 
-    // Which side of the drawn coast a point is on. The question that separates "nothing
+    // Which side of the coast a point is on. The question that separates "nothing
     // enclosed this" from "the line enclosed it and the trace did not": inside the coast, a
     // patch of black is void the map claims to have shut in, and the walls under that line are
     // where to look. Outside it, the void is open sea and no construction was ever going to
     // fill it.
     private static String describeCoastSide(Coastlines.TracedCoasts traced, double[] pick) {
 
-        return Coastlines.isInsideCoast(Coastlines.collectCoastRings(traced), pick)
+        return Coastlines.isInsideCoast(Coastlines.collectCoastOutlines(traced), pick)
             ? "inside the coast"
             : "out at sea";
     }

@@ -182,13 +182,18 @@ public final class CoastVoidReport {
     }
 
     // Every run of pocket outline lying outside the coast that shut it in - judged against the
-    // rings the map actually draws, which is the only line that answers the question.
+    // BORDER rather than against the rounded line the map draws over it.
+    //
+    // Rounding only ever pulls a sharp corner inwards, so a spill measured against it would
+    // include every pocket the rounding itself stepped inside of. Those are a fault of the
+    // rounding radius and not of the construction being reported on, and a report that mixes
+    // the two says a coast is wrong wherever the map is merely being tidy.
     private static List<CoastPocketFaults.Spill> findSpillsOf(
             LaidCoast laid,
             List<WalledPocket> pockets) {
 
         return CoastPocketFaults.findSpills(
-            pockets, Coastlines.collectCoastRings(laid.traced()));
+            pockets, Coastlines.collectCoastOutlines(laid.traced()));
     }
 
     // How many pockets have anything to draw, which the channel is what decides.

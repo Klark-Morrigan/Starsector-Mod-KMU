@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The boundary of a {@link DiscUnion}, as closed cycles of circular arcs.
@@ -185,7 +186,8 @@ public final class DiscUnionBoundary {
     }
 
     /**
-     * The walls to lay across the void: which chords, and the channel every one keeps.
+     * The walls to lay across the void: which chords, the channel every one keeps, and the
+     * cells on which that channel closes to nothing.
      *
      * <p>One value because neither half means anything without the other. A chord list with
      * no channel is not a harmless default - the two pockets either side of every wall then
@@ -193,12 +195,26 @@ public final class DiscUnionBoundary {
      * sweep's bookkeeping besides - so the pairing refuses it outright rather than trusting
      * every caller to remember.
      *
-     * @param chords  the walls, as pairs of circles
-     * @param channel how far each side of a wall holds back from it
+     * <p><b>A pinched cell is the one place a wall is allowed no width.</b> A cell whose whole
+     * bridgeable frontage is a single point has every wall attaching at that point, and a wall
+     * of any width there buries the very place it lands on: its mouth takes the border either
+     * side of the anchor, and a coast running up to the wall stops a channel short of it. So
+     * on such a cell the mouth closes to the anchor and the wall's two sides meet there - a
+     * wedge rather than a strip - and the coast reaches the one point it was offered.
+     * Everywhere else the channel stands, because everywhere else there is border to spare.
+     *
+     * <p>Per cell rather than per wall end, since the fact is about the cell: every wall on a
+     * pinched cell lands on the same point, and one of them kept wide while the rest closed
+     * would hold the coast a channel off all of them.
+     *
+     * @param chords       the walls, as pairs of circles
+     * @param channel      how far each side of a wall holds back from it
+     * @param pinchedCells the cells on which a wall keeps no channel at all
      */
     public record Walls(
         List<Chord> chords,
-        double channel) {
+        double channel,
+        Set<Integer> pinchedCells) {
 
         // Nothing laid across the void, for the callers that want the cells' own boundary -
         // whether the trace over the bare discs or a coast traced with no bridges. Named
@@ -207,10 +223,41 @@ public final class DiscUnionBoundary {
         // need here, since with no chords there is no mouth for a channel to size.
         public static final Walls NONE = new Walls(List.of(), 0);
 
+        /**
+         * Walls that keep their channel on every cell.
+         *
+         * @param chords  the walls, as pairs of circles
+         * @param channel how far each side of a wall holds back from it
+         */
+        public Walls(List<Chord> chords, double channel) {
+            this(chords, channel, Set.of());
+        }
+
         public Walls {
             if (!chords.isEmpty() && channel <= 0) {
                 throw new IllegalArgumentException("walls need a channel to keep");
             }
+            pinchedCells = Set.copyOf(pinchedCells);
+        }
+
+        /**
+         * How far a wall's sides hold back from it on one cell.
+         *
+         * @param circle the cell
+         * @return the channel, or nothing at all on a pinched cell
+         */
+        public double channelOn(int circle) {
+            return isPinchedOn(circle) ? 0 : channel;
+        }
+
+        /**
+         * Whether every wall on a cell closes to the one point it lands on.
+         *
+         * @param circle the cell
+         * @return true where the cell is pinched, so a wall's mouth there is its anchor
+         */
+        public boolean isPinchedOn(int circle) {
+            return pinchedCells.contains(circle);
         }
     }
 
@@ -303,9 +350,12 @@ public final class DiscUnionBoundary {
      * and handing back only one of them threw the lakes away at the single place they were
      * already in the shape a smoother eats.
      *
-     * <p>Holes a WALL closed stay out of the lakes. A wall shuts void in by construction
-     * rather than by the cells' own geometry, and what becomes of that void is the pockets'
-     * whole subject - a coast drawn round it as well would be the same water answered twice.
+     * <p>Holes a WALL closed come back in a bucket of their own rather than among the lakes. A
+     * wall shuts void in by construction rather than by the cells' own geometry, so what the
+     * pockets fill and what a lake shore rings are two different claims about the map and a
+     * caller has to be able to take one without the other. Kept rather than dropped, because the
+     * border ringing such a hole is border like any other: a construction that lays its own
+     * walls and then asks what the cells show the water has nowhere else to read it from.
      *
      * <p>Handed back as marks in walk order rather than as sampled outlines, because what a
      * smoother wants is one point per stretch of coast and the order they are passed in - and
@@ -319,7 +369,8 @@ public final class DiscUnionBoundary {
      * @param boundSegments sides of the cells' own radius bound, whose vertex angles every
      *                      arc is flattened onto, to tell a silhouette from a hole by the
      *                      area it comes out with
-     * @return the silhouettes and the lakes, one run of marks each, in walk order
+     * @return the silhouettes, the lakes and the walled holes, one run of marks each, in walk
+     *         order
      */
     static CoastRuns traceCoastRuns(
             DiscUnion union,
@@ -328,6 +379,7 @@ public final class DiscUnionBoundary {
 
         var silhouettes = new ArrayList<List<CoastMark>>();
         var lakes = new ArrayList<List<CoastMark>>();
+        var walled = new ArrayList<List<CoastMark>>();
 
         for (var cycle : traceCycles(union, walls, boundSegments)) {
 
@@ -335,25 +387,35 @@ public final class DiscUnionBoundary {
                 silhouettes.add(cycle.marks());
             } else if (cycle.walledBy().isEmpty()) {
                 lakes.add(cycle.marks());
+            } else {
+                walled.add(cycle.marks());
             }
         }
-        return new CoastRuns(silhouettes, lakes);
+        return new CoastRuns(silhouettes, lakes, walled);
     }
 
     /**
-     * What {@link #traceCoastRuns} finds: every stretch of the union's boundary, sorted into
-     * the two kinds of coast a map draws.
+     * What {@link #traceCoastRuns} finds: every stretch of the union's boundary, sorted by what
+     * closed the space behind it.
      *
-     * <p>One value rather than two methods because both come out of one walk, and the walk is
-     * not cheap - asked for separately, each caller pays for it twice and the two answers can
-     * be about different walks.
+     * <p>One value rather than three methods because all of them come out of one walk, and the
+     * walk is not cheap - asked for separately, each caller pays for it again and the answers
+     * can be about different walks.
+     *
+     * <p>Three buckets rather than two because a caller wants different ones. What draws a map's
+     * coast wants the silhouettes and the lakes; what asks where the cells face water a wall
+     * shut in wants the third, and drawing that one beside the pockets would answer for the same
+     * water twice. Sorted here rather than left to a caller to sort, since the walk is the only
+     * thing that knows what walled each cycle.
      *
      * @param silhouettes one run of marks per outer silhouette, in walk order
      * @param lakes       one run of marks per hole the cells closed unaided, in walk order
+     * @param walled      one run of marks per hole a laid wall closed, in walk order
      */
     record CoastRuns(
         List<List<CoastMark>> silhouettes,
-        List<List<CoastMark>> lakes) {
+        List<List<CoastMark>> lakes,
+        List<List<CoastMark>> walled) {
     }
 
     /**
@@ -432,7 +494,8 @@ public final class DiscUnionBoundary {
      */
     static List<BrokenLink> findBrokenLinks(DiscUnion union, Walls walls) {
 
-        var laid = new Walls(findAttachableChords(union, walls), walls.channel());
+        var laid = new Walls(
+            findAttachableChords(union, walls), walls.channel(), walls.pinchedCells());
         var arcs = findUncoveredArcs(union, laid);
         var successors = linkArcsIntoCycles(arcs);
         var broken = new ArrayList<BrokenLink>();
@@ -522,7 +585,7 @@ public final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var mouthed = MouthedChord.measureMouths(union, chord, walls.channel());
+            var mouthed = MouthedChord.measureMouths(union, chord, walls);
 
             if (mouthed == null
                     || !isWallOnBoundaryAtBothEnds(union, mouthed)
@@ -562,7 +625,7 @@ public final class DiscUnionBoundary {
 
         for (var chord : walls.chords()) {
 
-            var mouthed = MouthedChord.measureMouths(union, chord, walls.channel());
+            var mouthed = MouthedChord.measureMouths(union, chord, walls);
             var refusal = mouthed == null
                 ? new ChordRefusal(RefusalReason.NO_MOUTH, null)
                 : judgeChord(union, mouthed, takenByCircle, takers);
@@ -599,17 +662,19 @@ public final class DiscUnionBoundary {
         /**
          * Measures both of a wall's mouths.
          *
-         * @param union   the discs it is laid across
-         * @param chord   the wall
-         * @param channel how far back from the cells the walls are laid
+         * @param union the discs it is laid across
+         * @param chord the wall
+         * @param walls the walls it is one of, for the channel each of its ends keeps
          * @return the wall and its mouths, or null where either end has no mouth at all -
          *         which is a wall with nowhere to leave from or nowhere to land, and so not a
          *         wall this can say anything further about
          */
-        static MouthedChord measureMouths(DiscUnion union, Chord chord, double channel) {
+        static MouthedChord measureMouths(DiscUnion union, Chord chord, Walls walls) {
 
-            var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), channel);
-            var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), channel);
+            var fromMouth = WallMouths.measureMouth(
+                union, chord, chord.fromCircle(), walls.channelOn(chord.fromCircle()));
+            var toMouth = WallMouths.measureMouth(
+                union, chord, chord.toCircle(), walls.channelOn(chord.toCircle()));
 
             return fromMouth == null || toMouth == null
                 ? null
@@ -772,18 +837,20 @@ public final class DiscUnionBoundary {
      * <p>No search and no snapping: the mouth's half-width is the angle whose sine is the
      * channel over the reach, and the ends are that angle either side of facing.
      *
-     * @param union   the discs the chord runs between
-     * @param chord   the chord
-     * @param channel how far each side of it holds back from the centre
+     * @param union the discs the chord runs between
+     * @param chord the chord
+     * @param walls the walls it is one of, for the channel each of its ends keeps
      * @return the two lines, each as its pair of end points
      */
     static List<List<double[]>> findChordSides(
             DiscUnion union,
             Chord chord,
-            double channel) {
+            Walls walls) {
 
-        var fromMouth = WallMouths.measureMouth(union, chord, chord.fromCircle(), channel);
-        var toMouth = WallMouths.measureMouth(union, chord, chord.toCircle(), channel);
+        var fromMouth = WallMouths.measureMouth(
+            union, chord, chord.fromCircle(), walls.channelOn(chord.fromCircle()));
+        var toMouth = WallMouths.measureMouth(
+            union, chord, chord.toCircle(), walls.channelOn(chord.toCircle()));
 
         if (fromMouth == null || toMouth == null) {
             return List.of();
@@ -826,7 +893,8 @@ public final class DiscUnionBoundary {
             Walls walls,
             int boundSegments) {
 
-        var laid = new Walls(findAttachableChords(union, walls), walls.channel());
+        var laid = new Walls(
+            findAttachableChords(union, walls), walls.channel(), walls.pinchedCells());
         var arcs = findUncoveredArcs(union, laid);
         var successors = linkArcsIntoCycles(arcs);
         var cycles = new ArrayList<VoidHole>();
@@ -937,7 +1005,7 @@ public final class DiscUnionBoundary {
             if (!isFromSide && chord.toCircle() != circle) {
                 continue;
             }
-            var mouth = WallMouths.measureMouth(union, chord, circle, walls.channel());
+            var mouth = WallMouths.measureMouth(union, chord, circle, walls.channelOn(circle));
 
             if (mouth == null) {
                 continue;
@@ -952,12 +1020,48 @@ public final class DiscUnionBoundary {
         return covers;
     }
 
+    // How close a mouth of no width may start to a disc cover's own start and still be read as
+    // starting AT it. Arithmetic rather than geometry: a wall pinched to a point lands on a
+    // frontage point the coast collapsed onto, and a collapse sits exactly where two cells
+    // cross - which is exactly where the neighbour's cover begins - so the two angles are one
+    // number arrived at two ways and differ by rounding alone. Far below anything the touching
+    // tolerance admits, and far above anything a rounding produces.
+    private static final double POINT_MOUTH_EDGE_TIE = 1e-6;
+
+    // Where the sweep hands over at a crossing that a point mouth sits on. Sorted by start
+    // alone, a mouth of no width and the disc cover beginning at the same angle are a tie, and
+    // the disc coming first puts the mouth INSIDE it: the overlap branch below then hands the
+    // boundary to the wall at the disc's far edge rather than at the wall's own end, and the
+    // wall's side runs from a point that is not its foot. The mouth coming first hands the
+    // boundary to the wall at the crossing and the disc takes over from the wall's far
+    // terminal, which is the map. So a point mouth is moved ahead of any disc cover it starts
+    // within a rounding of. Only a mouth of no width: a mouth with width starting on a disc's
+    // edge is the overlap the branch below was written for.
+    private static void bringPointMouthsBeforeDiscEdges(List<Cover> covers) {
+
+        for (var index = 1; index < covers.size(); index++) {
+
+            var cover = covers.get(index);
+            var before = covers.get(index - 1);
+
+            if (cover.width() == 0
+                    && isChordTerminal(cover.arrival())
+                    && !isChordTerminal(before.arrival())
+                    && cover.start() - before.start() <= POINT_MOUTH_EDGE_TIE) {
+
+                covers.set(index - 1, cover);
+                covers.set(index, before);
+            }
+        }
+    }
+
     // The gaps a circle's covers leave between them, swept once round in order. Each gap runs
     // from wherever the last cover let go to wherever the next takes hold, so its two ends are
     // named by the covers that made them and nothing has to be matched up by position.
     private static List<Arc> buildArcsBetweenCovers(int circle, List<Cover> covers) {
 
         covers.sort(Comparator.comparingDouble(Cover::start));
+        bringPointMouthsBeforeDiscEdges(covers);
 
         var origin = covers.get(0).start();
         var windowEnd = origin + Angles.FULL_TURN;
@@ -978,8 +1082,26 @@ public final class DiscUnionBoundary {
             }
         }
 
+        // The sweep opens on the first cover, and until now relied on that cover's width to
+        // carry it past the origin at the bottom of the loop - which set both the covered
+        // extent and the departure. A cover of no width reaches nowhere past the origin, so
+        // it set neither: its departure terminal then began no arc, and the cycle returning
+        // along that wall was a chain the walk ran off, a pocket lost for nothing. Opened on
+        // the first cover explicitly instead, unless a cover wrapping past the origin already
+        // lies over it - then it is swallowed, and the overlap branch below is its reader.
+        var first = 0;
+
+        if (coveredTo == origin) {
+
+            coveredTo = origin + covers.get(0).width();
+            departingFrom = covers.get(0).departure();
+            first = 1;
+        }
+
         var arcs = new ArrayList<Arc>();
-        for (var cover : covers) {
+        for (var index = first; index < covers.size(); index++) {
+
+            var cover = covers.get(index);
 
             if (cover.start() > coveredTo) {
 

@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
+import kmlib.math.geometry.Segments;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,12 +40,9 @@ class IntercontinentalPocketsIntegrationTest {
         "kmu.maplayers.base.geometry.IntercontinentalPocketsIntegrationTest"
             + "#provideSectorNames";
 
-    // The laying the map ships, which is the one worth reporting on. The same three knobs the
-    // link search is judged under: two lines closer than a span's own width read as doubled,
-    // feet closer than that read as one place, and the inlet spans are thinned as the map thins
-    // them.
-    private static final double COAST_SLACK = 120;
-    private static final double ANCHOR_SEPARATION = 120;
+    // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
+    // spans: the thinned set is the proposal, and an unthinned one is a different laying for the
+    // links to be judged against.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
 
     // One set of geometry knobs for the whole suite, for the reason the shipped pipeline keeps
@@ -51,12 +50,32 @@ class IntercontinentalPocketsIntegrationTest {
     private static final SectorGeometryParameters PARAMETERS =
         SectorGeometryParameters.createDefaults();
 
+    // How the coast is traced, taken from the one place that declares it rather than restated
+    // here: three copies of these numbers is how a suite comes to describe a different map from
+    // the one on screen without either of them saying so.
+    private static final Coastlines.CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
+
+    // How far off a wall already down a span may run and still count as doubling it. The width a
+    // span is drawn at, which is the shipped setting: two lines closer than that overlap on
+    // screen, which is the state a reader calls doubled. Stated here rather than read off the
+    // drawing, which this package may not reach into.
+    private static final double COAST_SLACK = 120;
+
+    // How close two span feet may stand before one of them moves. The shipped setting, which
+    // separates feet that are coincident and leaves the rest where the search put them.
+    private static final double ANCHOR_SEPARATION = 120;
+
+    // The laying the map ships, which is the one worth reporting on.
     private static final ContinentBridges.BridgeRules SPAN_RULES =
         new ContinentBridges.BridgeRules(
-            Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
+            COAST_RULES.bridgeReachMultiple(),
             COAST_SLACK,
             SHOULD_THIN_FORMATIONS,
             ANCHOR_SEPARATION);
+
+    // How near a sea has to come to a pinched foot to be judged against it at all: half a cell
+    // radius, which is far closer than any other sea and far further than any channel.
+    private static final double WITHIN_REACH_OF_A_FOOT = PARAMETERS.cellRadius() / 2;
 
     // How far inside a cell's reach an outline point may sit before it is over the border rather
     // than on it, in map units. Only the arithmetic of flattening an arc onto the cell's own
@@ -100,6 +119,51 @@ class IntercontinentalPocketsIntegrationTest {
             assertThat(fillSeasOf(sector, VoidPockets.PocketShaping.AT_TRUE_EXTENT))
                 .as("%s: the links closed no water at all", sector)
                 .isNotEmpty();
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void the_sea_reaches_every_foot_a_link_puts_on_a_single_point(String sector) {
+            // A cell whose whole frontage is one point offers a wall nowhere else to attach, so
+            // the wall is laid with no width there and the water it bounds runs up to the very
+            // point - rather than stopping a channel short, which is what a wall of any width
+            // does to the place it lands on. Judged at the true extent, where a fill IS its
+            // hole and nothing has been pulled back from anything.
+            //
+            // Of the LINKS, and only where a sea comes near the foot at all. An inlet span's
+            // foot borders a bay this layer leaves to the inlet fill, and a single link between
+            // two continents closes nothing, so a foot no sea comes within half a cell of is a
+            // foot with no sea to reach it - whereas one a sea comes that close to and stops
+            // short of has been held off by a channel that should not be there.
+            var walls = buildLaidWallsOf(sector);
+            var links = Set.copyOf(DiscUnionBoundary.buildChordsFrom(linkContinentsOf(sector)));
+            var outlines = fillSeasOf(sector, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+            var stoppedShort = new ArrayList<String>();
+
+            for (var chord : DiscUnionBoundary.findAttachableChords(
+                    traceCoastOf(sector).union(), walls)) {
+
+                if (!links.contains(chord)) {
+                    continue;
+                }
+
+                for (var end : List.of(chord.fromCircle(), chord.toCircle())) {
+
+                    if (!walls.pinchedCells().contains(end)) {
+                        continue;
+                    }
+                    var foot = chord.findEndOn(end);
+                    var nearest = measureToNearestOutline(outlines, foot);
+
+                    if (nearest <= WITHIN_REACH_OF_A_FOOT && nearest > ON_THE_BORDER) {
+                        stoppedShort.add(String.format("(%.0f, %.0f)", foot[0], foot[1]));
+                    }
+                }
+            }
+
+            assertThat(stoppedShort)
+                .as("%s: a sea that stops short of the single point its wall lands on", sector)
+                .isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")
@@ -233,6 +297,34 @@ class IntercontinentalPocketsIntegrationTest {
         return nearest;
     }
 
+    // The walls the fill is walked against, built as the construction builds them: the links
+    // and the standing inlet spans, pinched on every cell whose whole frontage is one point.
+    private static DiscUnionBoundary.Walls buildLaidWallsOf(String sector) {
+
+        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(linkContinentsOf(sector)));
+
+        laid.addAll(DiscUnionBoundary.buildChordsFrom(layInletSpansOn(sector)));
+
+        return new DiscUnionBoundary.Walls(
+            laid,
+            PARAMETERS.borderInset(),
+            CoastFrontages.collectPinchedCells(traceCoastOf(sector)));
+    }
+
+    private static double measureToNearestOutline(List<List<double[]>> outlines, double[] point) {
+
+        var nearest = Double.MAX_VALUE;
+
+        for (var outline : outlines) {
+            for (var index = 0; index < outline.size(); index++) {
+
+                nearest = Math.min(nearest, Segments.computeDistanceToPoint(
+                    outline.get(index), outline.get((index + 1) % outline.size()), point));
+            }
+        }
+        return nearest;
+    }
+
     private static List<List<double[]>> fillSeasOf(
             String sector,
             VoidPockets.PocketShaping shaping) {
@@ -264,7 +356,7 @@ class IntercontinentalPocketsIntegrationTest {
     private static Coastlines.TracedCoasts traceCoastOf(String sector) {
 
         return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
+            buildFixtureFor(named).getSites(), PARAMETERS, COAST_RULES));
     }
 
     private static SectorFixture buildFixtureFor(String sector) {

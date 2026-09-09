@@ -518,14 +518,16 @@ public final class SpanFormations {
             return isOpen ? OPEN_SEA : UNREADABLE;
         }
 
-        // Both shores of the construction as the lines they are drawn as, which is what a
-        // flood has to be stopped by: what closes water off is the line on screen.
+        // Both shores of the construction as the borders they are, which is what a flood has to
+        // be stopped by: what closes water off is where settled space ends, and a flood run
+        // against the rounded line instead would leak through every corner the rounding pulled
+        // in.
         private static List<List<double[]>> collectShoreRings(
                 Coastlines.TracedCoasts traced) {
 
-            var rings = new ArrayList<>(Coastlines.collectCoastRings(traced));
+            var rings = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
 
-            rings.addAll(Coastlines.collectLakeRings(traced));
+            rings.addAll(Coastlines.collectLakeOutlines(traced));
 
             return rings;
         }

@@ -247,7 +247,8 @@ class ContinentExposureIntegrationTest {
         var chord = DiscUnionBoundary.buildChordsFrom(List.of(span)).get(0);
         var carried = 0;
 
-        for (var side : DiscUnionBoundary.findChordSides(union, chord, PARAMETERS.borderInset())) {
+        for (var side : DiscUnionBoundary.findChordSides(
+                union, chord, new DiscUnionBoundary.Walls(List.of(chord), PARAMETERS.borderInset()))) {
 
             for (var outline : captured) {
 

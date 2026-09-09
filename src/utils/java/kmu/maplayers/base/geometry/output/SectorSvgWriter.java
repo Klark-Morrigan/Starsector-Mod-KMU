@@ -192,10 +192,10 @@ public final class SectorSvgWriter {
         drawCapturedVoid(drawing, sites, drawn);
         drawTrappedVoid(drawing, traced, sites, drawn.parameters(), drawn.shaping());
 
-        // The DRAWN ring rather than the traced vertices. What the window strokes is the line
-        // after its corners are rounded, and a picture stroking the vertices underneath it
-        // shows a coast a degree sharper at every join than the one on screen.
-        for (var ring : Coastlines.collectCoastRings(traced)) {
+        // The ROUNDED line rather than the border underneath it. What the window strokes is the
+        // line after its corners are taken off, and a picture stroking the border shows a coast
+        // a degree sharper at every join than the one on screen.
+        for (var ring : drawn.roundedCoast().coasts()) {
 
             drawing.drawPolygon(
                 ring,

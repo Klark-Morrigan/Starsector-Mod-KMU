@@ -21,6 +21,46 @@ import kmlib.math.ranges.Ranges;
  */
 public final class StraightRuns {
 
+    /**
+     * Which turn the window of reachable border is read on.
+     *
+     * <p>The window is a direction plus a half-angle either side of it, and it is then cut down
+     * to the stretch the coast is to land on. A direction is only an angle once a turn is
+     * chosen for it, and the two have to be on the SAME turn or the cut comes back empty over
+     * border the viewer can see perfectly well - which hands back an end of the stretch, and
+     * so a run to a place nothing can be seen from.
+     *
+     * <p><b>{@link #AT_THE_STRETCH_START} is the map's answer, and it is the one that misses.</b>
+     * On the larger fixture 244 of 317 adjacent pairs are placed from a direction before their
+     * far stretch begins, and the tangent fallback catches only three quarters of them. Anyone
+     * reading the arithmetic will conclude it is simply wrong. It is kept anyway, and
+     * {@link #NEAREST_THE_STRETCH_MIDDLE} is here to be compared against rather than to
+     * replace it.
+     *
+     * <p><b>Because the correct window draws a worse map.</b> Measured over both fixtures it
+     * takes the coast's incursions into cells from 42 and 38 down to 2 and 1 - the one thing
+     * placement has a right answer about - but it also lands more runs on the middles they were
+     * sliding towards, so a sixth to a quarter more cells meet exactly and collapse to a single
+     * point (86 to 101, and 97 to 121), and each sector loses three of its links for want of
+     * frontage to anchor on. A cell offering a wall one place is the worse fault of the two: an
+     * incursion is a line a little inside a border, where a collapse is a cell with nothing to
+     * build on.
+     *
+     * <p>So the choice is a rule rather than a constant. What is wanted is a judgement about
+     * how the map reads, and the next reader to weigh it should be able to look at both.
+     */
+    public enum ReachAnchor {
+
+        /** The turn beginning at the stretch's start, which can be a whole turn off it. */
+        AT_THE_STRETCH_START,
+
+        /** The turn centred on the stretch's middle, so the window always meets the stretch. */
+        NEAREST_THE_STRETCH_MIDDLE
+    }
+
+    // Half a turn, which is how far before a stretch's middle the turn centred on it begins.
+    private static final double HALF_TURN = Math.PI;
+
     // Each pass slides one end to the furthest the other allows, so the two close on the
     // common tangent from opposite directions. Four is past the point where the movement
     // stops being visible; the clearance check afterwards is what says whether it was enough.
@@ -140,20 +180,83 @@ public final class StraightRuns {
      * an earlier version did - hugs the whole coast and gives up every pocket the smoothing
      * was for.
      *
-     * @param run        the run being placed
-     * @param isAdjacent whether the walk put its two stretches next to each other, which is
-     *                   what makes the boundary's own join available as the fallback
+     * <p><b>A pair the walk joined by a wall takes the join outright.</b> Between two touching
+     * cells the join is a single crossing point and a run spanning the notch is the whole gain;
+     * between two cells a wall joins, the join IS the wall's side, and the two stretches it
+     * connects are the wall's own mouths. A free run there lands wherever the clamp likes on
+     * each mouth rather than at the wall's edge, and where a mouth has closed to a single point
+     * that is the difference between a coast that meets its anchor and one that misses it by
+     * whatever the clamp chose.
+     *
+     * @param run          the run being placed
+     * @param isAdjacent   whether the walk put its two stretches next to each other, which is
+     *                     what makes the boundary's own join available as the fallback
+     * @param isWallJoined whether that join is a wall's side rather than a crossing of two
+     *                     cells, in which case it is taken without asking
+     * @param anchor       which turn the reachable window is read on
      * @return where the run leaves and lands
      */
-    static EdgeAngles findClearEdge(StraightRun run, boolean isAdjacent) {
+    static EdgeAngles findClearEdge(
+            StraightRun run,
+            boolean isAdjacent,
+            boolean isWallJoined,
+            ReachAnchor anchor) {
 
-        var reach = resolveEdge(run);
+        if (isWallJoined) {
+            return new EdgeAngles(run.from().toAngle(), run.to().fromAngle());
+        }
+
+        var reach = resolveEdge(run, anchor);
 
         if (!isAdjacent || isRunClearOfEveryCell(run, reach)) {
 
             return reach;
         }
         return new EdgeAngles(run.from().toAngle(), run.to().fromAngle());
+    }
+
+    /**
+     * A run along a wall whose mouth on one cell, or both, has closed to a point.
+     *
+     * <p>Such a mouth leaves the run no freedom at that end: the coast is to meet the anchor,
+     * and the anchor is one place. The other end keeps the freedom every run has - it is slid
+     * to the nearest place to its own middle that the pinned end can see - so the coast touches
+     * the wall at the anchor and leaves it again, rather than following the wall's side to the
+     * far cell's mouth and wrapping that cell from there. Where both mouths are points there is
+     * nothing left to place and the run is the wall's side.
+     *
+     * <p>Held to the same clearance as a free run, with the wall's side as the fallback: that
+     * side is boundary and cannot cut anything, so a run pinned at one end that would cut a
+     * third cell gives way to it rather than to a line through the cell.
+     *
+     * @param run              the run being placed, along a wall's side
+     * @param isDepartureMouth whether the cell it leaves is pinched, so it leaves from the anchor
+     * @param isArrivalMouth   whether the cell it lands on is pinched, so it lands on the anchor
+     * @param reachAnchor      which turn the reachable window is read on
+     * @return where the run leaves and lands
+     */
+    static EdgeAngles findEdgeThroughMouth(
+            StraightRun run,
+            boolean isDepartureMouth,
+            boolean isArrivalMouth,
+            ReachAnchor reachAnchor) {
+
+        var side = new EdgeAngles(run.from().toAngle(), run.to().fromAngle());
+
+        if (isDepartureMouth && isArrivalMouth) {
+            return side;
+        }
+        var pinned = isDepartureMouth
+            ? new EdgeAngles(
+                side.departAngle(),
+                findReachableAngle(run.union(), run.to(), run.findDeparture(side), reachAnchor))
+            : new EdgeAngles(
+                findReachableAngle(run.union(), run.from(), run.findArrival(side), reachAnchor),
+                side.arriveAngle());
+
+        return isKeepingCellsLeft(run, pinned) && isRunClearOfEveryCell(run, pinned)
+            ? pinned
+            : side;
     }
 
     /**
@@ -169,12 +272,13 @@ public final class StraightRuns {
      * is the answer, and where it does not the two are put straight onto the tangent, which
      * is the configuration they were converging on and is exact rather than approached.
      *
-     * @param run the run being placed
+     * @param run    the run being placed
+     * @param anchor which turn the reachable window is read on
      * @return where the run leaves and lands
      */
-    static EdgeAngles resolveEdge(StraightRun run) {
+    static EdgeAngles resolveEdge(StraightRun run, ReachAnchor anchor) {
 
-        var clamped = clampEdgeEnds(run);
+        var clamped = clampEdgeEnds(run, anchor);
 
         // Clear is asked of EVERY cell rather than only the two the run joins. The two are
         // what the clamp was working against, so a run can satisfy both and still shave a
@@ -263,7 +367,7 @@ public final class StraightRuns {
     // Each end slid to the nearest place to its own middle that the other end can see, over
     // and over, so two ends that both block settle towards the common tangent instead of one
     // of them winning outright.
-    private static EdgeAngles clampEdgeEnds(StraightRun run) {
+    private static EdgeAngles clampEdgeEnds(StraightRun run, ReachAnchor anchor) {
 
         var union = run.union();
         var departAngle = run.from().midAngle();
@@ -274,11 +378,13 @@ public final class StraightRuns {
             arriveAngle = findReachableAngle(
                 union,
                 run.to(),
-                DiscUnionBoundary.findPointOnMark(union, run.from(), departAngle));
+                DiscUnionBoundary.findPointOnMark(union, run.from(), departAngle),
+                anchor);
             departAngle = findReachableAngle(
                 union,
                 run.from(),
-                DiscUnionBoundary.findPointOnMark(union, run.to(), arriveAngle));
+                DiscUnionBoundary.findPointOnMark(union, run.to(), arriveAngle),
+                anchor);
         }
         return new EdgeAngles(departAngle, arriveAngle);
     }
@@ -316,6 +422,25 @@ public final class StraightRuns {
             Angles.placeAfter(angle, mark.fromAngle()), mark.fromAngle(), mark.toAngle());
     }
 
+    // Which turn the facing is read on, per the anchor.
+    //
+    // An angle names a direction, and a direction names infinitely many angles a turn apart.
+    // The window is intersected with the stretch, so the two have to be expressed on the same
+    // turn or the intersection is empty over a stretch the viewer can see perfectly well.
+    //
+    // The first branch is the one that can miss, and it is kept deliberately: ReachAnchor is
+    // where what it costs and what correcting it costs are both measured. Read that before
+    // correcting this, because correcting it is not the improvement it looks like.
+    private static double placeFacingFor(
+            ReachAnchor anchor,
+            DiscUnionBoundary.CoastMark mark,
+            double raw) {
+
+        return anchor == ReachAnchor.AT_THE_STRETCH_START
+            ? Angles.placeAfter(raw, mark.fromAngle())
+            : Angles.placeAfter(raw, mark.midAngle() - HALF_TURN);
+    }
+
     // The place on one cell's frontage nearest its middle that a straight line from somewhere
     // else can touch without cutting through the cell. Seen from a point, the reachable part
     // of a circle is the arc facing it, half a turn wide less acos(reach / distance) - there
@@ -324,7 +449,8 @@ public final class StraightRuns {
     private static double findReachableAngle(
             DiscUnion union,
             DiscUnionBoundary.CoastMark mark,
-            double[] viewer) {
+            double[] viewer,
+            ReachAnchor anchor) {
 
         var centre = union.sites().get(mark.circle());
         var distance = Points.computeDistance(centre, viewer);
@@ -336,9 +462,8 @@ public final class StraightRuns {
             return mark.midAngle();
         }
 
-        var facing = Angles.placeAfter(
-            Math.atan2(viewer[1] - centre[1], viewer[0] - centre[0]),
-            mark.fromAngle());
+        var facing = placeFacingFor(
+            anchor, mark, Math.atan2(viewer[1] - centre[1], viewer[0] - centre[0]));
 
         var reachable = Math.acos(union.reach() / distance);
 

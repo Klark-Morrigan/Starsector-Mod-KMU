@@ -93,8 +93,7 @@ public final class CoastWallReport {
             if (chord.kind() != DiscUnionBoundary.WallKind.COAST_REACH) {
                 continue;
             }
-            for (var side : DiscUnionBoundary.findChordSides(
-                    union, chord, parameters.borderInset())) {
+            for (var side : DiscUnionBoundary.findChordSides(union, chord, walls)) {
 
                 for (var point : side) {
 

@@ -295,7 +295,7 @@ public final class VoidBridgePockets {
             var bestSide = Double.MAX_VALUE;
 
             for (var side : DiscUnionBoundary.findChordSides(
-                    union, chord, parameters.borderInset())) {
+                    union, chord, buildBridgeWalls(bridges, parameters))) {
 
                 bestSide = Math.min(bestSide, measureWorstStrayOnSide(captured, side));
             }

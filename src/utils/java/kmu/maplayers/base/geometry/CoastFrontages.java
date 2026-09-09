@@ -4,8 +4,10 @@ import kmlib.math.geometry.Angles;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Which stretches of a cell's border a wall may be anchored on.
@@ -120,6 +122,38 @@ public final class CoastFrontages {
             Coastlines.TracedCoasts traced) {
 
         return collectFrontagesAlong(traced.coasts());
+    }
+
+    /**
+     * The cells whose whole bridgeable frontage is a single point.
+     *
+     * <p>Such a cell offers a wall exactly one place to land, and a wall of any width there
+     * buries it: the mouth takes the border either side of the anchor and a coast running up
+     * to the wall stops a channel short of the point it was offered. So these are the cells a
+     * wall is laid on with no width at all - the one exception to the channel - and they are
+     * named here because this is where the frontage that decides it is read.
+     *
+     * @param traced the coast
+     * @return the cells, empty where every eligible cell offers a stretch
+     */
+    public static Set<Integer> collectPinchedCells(Coastlines.TracedCoasts traced) {
+
+        var pinched = new LinkedHashSet<Integer>();
+
+        for (var entry : collectBridgeFrontages(traced).entrySet()) {
+
+            var isPoint = true;
+
+            for (var run : entry.getValue()) {
+                if (run.size() > 1) {
+                    isPoint = false;
+                }
+            }
+            if (isPoint) {
+                pinched.add(entry.getKey());
+            }
+        }
+        return Set.copyOf(pinched);
     }
 
     /**

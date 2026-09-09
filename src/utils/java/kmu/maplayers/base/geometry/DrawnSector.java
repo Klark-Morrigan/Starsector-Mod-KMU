@@ -32,17 +32,22 @@ import java.util.Map;
  * @param smoothedRingsByOwner each owner's cluster rings after the smoothing passes - the
  *                             line a border is actually stroked along, which the rings on the
  *                             geometry above are not
- * @param coast                the sector coast as traced under the rules below, carrying its
- *                             own drawn line
+ * @param coast                the sector coast as traced under the rules below: the border, and
+ *                             so what anything measuring against the coast reads
+ * @param roundedCoast         that same coast with its sharp joins taken off, which is what a
+ *                             drawing strokes. Rounded once here rather than at each drawing,
+ *                             so that two pictures of one map cannot round it differently and
+ *                             so that a pass over tens of thousands of points is paid for once
  * @param parameters           the geometry knobs it was all built under
- * @param coastRules           the rules the coast was traced under, which also decide how its
- *                             drawn line is rounded
+ * @param coastRules           the rules the coast was traced under, whose rounding produced the
+ *                             line above
  * @param shaping              how far the void shapes are pulled back from what closed them in
  */
 public record DrawnSector(
     SectorGeometry geometry,
     Map<String, List<List<double[]>>> smoothedRingsByOwner,
     Coastlines.TracedCoasts coast,
+    CoastRounding.RoundedCoasts roundedCoast,
     SectorGeometryParameters parameters,
     Coastlines.CoastRules coastRules,
     VoidPockets.PocketShaping shaping) {
@@ -103,10 +108,13 @@ public record DrawnSector(
                 BorderSmoothing.smoothBorderLoops(byOwner.getValue(), smoothing));
         }
 
+        var coast = Coastlines.traceSectorCoasts(fixture.getSites(), parameters, rules);
+
         return new DrawnSector(
             geometry,
             smoothed,
-            Coastlines.traceSectorCoasts(fixture.getSites(), parameters, rules),
+            coast,
+            CoastRounding.roundTracedCoasts(coast, rules.rounding()),
             parameters,
             rules,
             shaping);

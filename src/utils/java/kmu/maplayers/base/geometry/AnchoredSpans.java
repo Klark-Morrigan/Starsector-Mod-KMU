@@ -59,14 +59,10 @@ public final class AnchoredSpans {
      */
     static List<double[][]> collectCoastWalls(Coastlines.TracedCoasts traced) {
 
-        var rings = new ArrayList<List<double[]>>();
+        var rings = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
 
-        for (var coast : traced.coasts()) {
-            rings.add(Coastlines.collectPoints(coast.vertices()));
-        }
-        for (var lake : traced.lakes()) {
-            rings.add(Coastlines.collectPoints(lake.shore().vertices()));
-        }
+        rings.addAll(Coastlines.collectLakeOutlines(traced));
+
         return WallCoverage.collectRingWalls(rings);
     }
 

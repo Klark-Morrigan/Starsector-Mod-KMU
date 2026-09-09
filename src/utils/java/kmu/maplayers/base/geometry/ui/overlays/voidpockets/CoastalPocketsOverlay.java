@@ -1,13 +1,15 @@
 package kmu.maplayers.base.geometry.ui.overlays.voidpockets;
 
 import kmu.maplayers.base.geometry.CoastPockets;
+import kmu.maplayers.base.geometry.CoastRounding;
 import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.LandableFrontages;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.WalledPocket;
 import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapPainting;
-import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
+import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -46,6 +48,19 @@ public final class CoastalPocketsOverlay {
     private Coastlines.TracedCoasts traced;
     private List<WalledPocket> pockets = List.of();
 
+    // The accepted trace's lines with their sharp joins taken off, which is what this actually
+    // strokes. Rounded on acceptance rather than while painting: a sector's coasts are tens of
+    // thousands of points, and a pass repeated per frame is paid for per frame.
+    private CoastRounding.RoundedCoasts rounded = CoastRounding.RoundedCoasts.NONE;
+
+    // Where a straight line could arrive on the accepted trace's cells from the open void.
+    // Measured on acceptance for the reason above and more so: the answer costs a sweep over
+    // every disc per sampled angle, which is the most expensive thing this overlay draws.
+    //
+    // Behind its own switch rather than measured whenever a trace arrives, since nothing reads
+    // it - a sector nobody has asked the question of should not pay for the answer.
+    private List<List<double[]>> landable = List.of();
+
     public CoastalPocketsOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
@@ -54,7 +69,8 @@ public final class CoastalPocketsOverlay {
      * Takes the trace a construction has just made, and forgets whatever came before it.
      *
      * <p>The pockets go with it. They are a fact about a particular trace, and keeping the old
-     * ones alongside a new coast would draw the void one line shut in underneath another.
+     * ones alongside a new coast would draw the void one line shut in underneath another. So is
+     * the rounding, which is this trace's borders taken to the line the map strokes.
      *
      * @param traced the trace, or null where the construction is switched off entirely
      */
@@ -62,6 +78,13 @@ public final class CoastalPocketsOverlay {
 
         this.traced = traced;
         this.pockets = List.of();
+        this.rounded = traced == null
+            ? CoastRounding.RoundedCoasts.NONE
+            : CoastRounding.roundTracedCoasts(traced, settings.resolveCoastRules().rounding());
+        this.landable = traced == null || !settings.showLandableFrontage
+            ? List.of()
+            : LandableFrontages.collectLandableRuns(
+                traced, settings.parameters.measureArcSegments());
     }
 
     /**
@@ -159,7 +182,7 @@ public final class CoastalPocketsOverlay {
      */
     public void paintCoastRings(Graphics2D g2, Color colour) {
 
-        MapPainting.paintLineRings(g2, Coastlines.collectCoastRings(traced), colour);
+        MapPainting.paintLineRings(g2, rounded.coasts(), colour);
     }
 
     /**
@@ -177,12 +200,19 @@ public final class CoastalPocketsOverlay {
      * one. In the sheet the two are one body, and a lake nothing else fills keeps the bare
      * middle a margin has always meant.
      *
+     * <p>Against the ROUNDED shore, which is the one place a fill is measured from a rounded
+     * line rather than from a border: the margin exists to meet the stroke on screen, so a band
+     * ending at the border would show a sliver of bare water wherever the rounding stepped
+     * inside it.
+     *
      * @param sheet the sheet to add them to
      */
     public void addLakeMargins(FillSheet sheet) {
 
-        for (var lake : traced.lakes()) {
-            sheet.addMargin(lake.waterEdge(), lake.shore().drawnRing());
+        var lakes = traced.lakes();
+
+        for (var index = 0; index < lakes.size(); index++) {
+            sheet.addMargin(lakes.get(index).waterEdge(), rounded.lakes().get(index));
         }
     }
 
@@ -198,7 +228,7 @@ public final class CoastalPocketsOverlay {
      */
     public void paintLakeRings(Graphics2D g2, Color colour) {
 
-        MapPainting.paintLineRings(g2, Coastlines.collectLakeRings(traced), colour);
+        MapPainting.paintLineRings(g2, rounded.lakes(), colour);
     }
 
     /**
@@ -224,5 +254,24 @@ public final class CoastalPocketsOverlay {
             g2,
             Coastlines.collectDroppedRuns(traced, settings.parameters.measureArcSegments()),
             settings.droppedStretchColour);
+    }
+
+    /**
+     * Draws the stretches of border a straight line could arrive at, on the borders they sit on.
+     *
+     * <p>Beside the coast and the drops rather than instead of either, because the three only
+     * mean anything read together: a drop over landable border is detail the rules gave up that
+     * something could have used, and coast over border nothing can arrive at is line the map
+     * draws where no wall will ever meet it.
+     *
+     * @param g2 what to draw with
+     */
+    public void paintLandableFrontage(Graphics2D g2) {
+
+        if (!settings.showLandableFrontage) {
+            return;
+        }
+
+        MapPainting.paintLineRuns(g2, landable, settings.landableFrontageColour);
     }
 }

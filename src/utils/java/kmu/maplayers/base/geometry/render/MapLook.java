@@ -114,6 +114,16 @@ public final class MapLook {
     // beside, since a stretch dropped from the coast is precisely one that is NOT eligible.
     public static final Color BRIDGE_FRONTAGE = new Color(0xff, 0xc0, 0x30);
 
+    // The stretch of a cell's border a straight line could arrive at from the open void, drawn
+    // on the border it sits on.
+    //
+    // Read against the two above rather than against the coast, since that is the comparison it
+    // is for: what a stretch dropped from the coast would still have offered, and how much of
+    // what the coast DID pass through nothing could ever have anchored on. So it is cool where
+    // both of those are warm, and no shade of either, or a reader would be judging one of them
+    // against a lighter copy of itself.
+    public static final Color LANDABLE_FRONTAGE = new Color(0x40, 0xe0, 0xd0);
+
     // Exactly the coast's own weight, and taken from it rather than restated. What this draws
     // is a stretch of that line in another colour, so any other weight would show as a band
     // beside the coast - a second line, where there is only one line with two kinds of stretch.

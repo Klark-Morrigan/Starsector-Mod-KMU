@@ -179,7 +179,7 @@ class CoastPocketsIntegrationTest {
 
         var coastFill = collectFill(findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping));
         var bridgeFill = collectBridgeFill(fixture, shaping);
-        var coast = measureBounds(Coastlines.collectCoastRings(traced));
+        var coast = measureBounds(Coastlines.collectCoastOutlines(traced));
 
         var unfilled = new ArrayList<String>();
 
@@ -387,7 +387,7 @@ class CoastPocketsIntegrationTest {
         var atCoarser = findPocketsAt(sector, COARSER_FRONTAGE_FLOOR, shaping);
         var coarserFill = collectFill(atCoarser);
 
-        var coarserCoast = Coastlines.collectCoastRings(
+        var coarserCoast = Coastlines.collectCoastOutlines(
             traceCoastAt(sector, COARSER_FRONTAGE_FLOOR));
 
         var stranded = new ArrayList<String>();
@@ -472,7 +472,8 @@ class CoastPocketsIntegrationTest {
                 Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
                 frontageFloor,
                 Coastlines.DEFAULT_RULES.minLakeShare(),
-                Coastlines.DEFAULT_ROUNDING));
+                Coastlines.DEFAULT_ROUNDING,
+                Coastlines.DEFAULT_RULES.reachAnchor()));
     }
 
     private static SectorFixture buildFixtureFor(String sector) {

@@ -1,0 +1,113 @@
+package kmu.maplayers.base.geometry;
+
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Integration coverage for what a coast offers a wall to anchor on, over real sectors.
+ *
+ * <p>Under the knobs the coast declares as its own, which are the ones every drawing of it
+ * opens on; a rule record typed here by hand would describe a second map.
+ */
+class CoastFrontagesIntegrationTest {
+
+    private static final String SECTORS =
+        "kmu.maplayers.base.geometry.CoastFrontagesIntegrationTest#provideSectorNames";
+
+    // One set of geometry knobs for the whole suite, for the reason the shipped pipeline keeps
+    // one: a coast traced under one set and read under another describes two maps.
+    private static final SectorGeometryParameters PARAMETERS =
+        SectorGeometryParameters.createDefaults();
+
+    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
+    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
+
+    static List<String> provideSectorNames() {
+
+        var names = SectorFixture.listSectorNames();
+
+        assertThat(names)
+            .as("no sector fixtures on the classpath")
+            .isNotEmpty();
+
+        return names;
+    }
+
+    @Nested
+    class CollectPinchedCells {
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void a_sector_has_cells_that_offer_a_single_point(String sector) {
+            // Asked first and alone, since every claim below is true of an empty set. A third of
+            // a coast's stretches come out as one point, so a sector with none would be one
+            // where the frontage was not read at all.
+            assertThat(CoastFrontages.collectPinchedCells(traceCoastOf(sector)))
+                .as("%s: no cell offers a single point", sector)
+                .isNotEmpty();
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void every_pinched_cell_offers_nothing_but_single_points(String sector) {
+            // What pinched means. A cell with any stretch to its name is not pinched, however
+            // many single points it offers besides: a wall on such a cell has somewhere with
+            // width to land, and keeps its channel.
+            var traced = traceCoastOf(sector);
+            var frontages = CoastFrontages.collectBridgeFrontages(traced);
+            var withAStretch = new ArrayList<String>();
+
+            for (var cell : CoastFrontages.collectPinchedCells(traced)) {
+                for (var run : frontages.get(cell)) {
+
+                    if (run.size() > 1) {
+                        withAStretch.add(String.format("cell %d, %d points", cell, run.size()));
+                    }
+                }
+            }
+
+            assertThat(withAStretch)
+                .as("%s: a pinched cell with a stretch of frontage", sector)
+                .isEmpty();
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void no_pinched_cell_is_absent_from_the_frontage(String sector) {
+            // The other direction: pinched is read OFF the frontage, so a cell reported pinched
+            // has frontage to be read off. One that did not would be a cell offering a wall
+            // nowhere at all, reported as offering it a point.
+            var traced = traceCoastOf(sector);
+            var frontages = CoastFrontages.collectBridgeFrontages(traced);
+            var unfronted = new ArrayList<Integer>();
+
+            for (var cell : CoastFrontages.collectPinchedCells(traced)) {
+                if (!frontages.containsKey(cell) || frontages.get(cell).isEmpty()) {
+                    unfronted.add(cell);
+                }
+            }
+
+            assertThat(unfronted)
+                .as("%s: a pinched cell with no frontage to have been read off", sector)
+                .isEmpty();
+        }
+    }
+
+    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
+
+        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
+            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
+    }
+
+    private static SectorFixture buildFixtureFor(String sector) {
+        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
+    }
+}

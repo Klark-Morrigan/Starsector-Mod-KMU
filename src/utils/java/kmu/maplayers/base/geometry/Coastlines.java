@@ -5,7 +5,6 @@ import kmlib.math.geometry.CornerRounding;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
-import kmlib.math.geometry.PolygonSmoothing;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,6 +33,22 @@ import java.util.Set;
  * licence for a fill to sit outside the edge that defines it - which is exactly what happened
  * while there were two: pockets measured from the true border, a line drawn a channel inside
  * it, and the gap between them showing as fill spilling past the coast.
+ *
+ * <p><b>Three stages, and only the last is cosmetic.</b> SELECTION chooses which stretches the
+ * border visits - the frontage floor and the clearance repair below. PLACEMENT decides where on
+ * each of them the line lands and how it crosses between them, which is {@link StraightRuns}'
+ * subject and is load-bearing geometry: it is what holds the line outside every cell, so it IS
+ * the border rather than a tidying of one. ROUNDING takes the tips off the joins the other two
+ * leave, and is the only one of the three that could be switched off and still leave a border
+ * to read - which is why it is not here at all but in {@link CoastRounding}, run over a whole
+ * finished trace.
+ *
+ * <p>Named apart because they have different freedoms, and a rule put in the wrong one cannot be
+ * satisfied. Selection can still choose: dropping a stretch is available to it, and the repair
+ * pass is there to overrule it where the drop would strand the line inside a cell. By the time
+ * placement runs, the stretches the line visits are settled, and holding clear of every cell
+ * uses up what freedom remains - so a constraint on WHERE the line may land has to be asked of
+ * selection, which can still act on it, rather than of placement, which can only refuse.
  *
  * <p><b>Nothing is searched for.</b> The silhouettes come out of {@link DiscUnionBoundary} as
  * stretches of coast in walk order, so "the next cell along the coast" is the next element of
@@ -81,10 +96,10 @@ public final class Coastlines {
 
     // A skip put back changes the jump either side of it, which can expose a different cell.
     // Bounded rather than run to a fixed point, because each pass keeps strictly more cells
-    // and the worst case - every cell kept - is the unsmoothed coast rather than a wrong one.
+    // and the worst case - every cell visited - is the unsmoothed coast rather than a wrong one.
     private static final int REPAIR_PASSES = 4;
 
-    // No stretch stands between two kept ones, or none of those that do is in anything's way.
+    // No stretch stands between two visited ones, or none of those that do is in anything's way.
     private static final int NOTHING_BLOCKING = -1;
 
     // How far apart two cells may sit and still be walled together, centre to centre, in cell
@@ -98,10 +113,10 @@ public final class Coastlines {
     // Below this it contributes a notch a few pixels wide at the zoom a sector is read at,
     // bought at the price of two straight runs and a fillet.
     //
-    // Not zero, because zero is the rule switched off: every stretch kept, and the scalloped
+    // Not zero, because zero is the rule switched off: every stretch visited, and the scalloped
     // silhouette reproduced exactly rather than smoothed. Since this is now the only thing
-    // deciding what a coast passes through, an opening value of zero would be no smoothing at
-    // all.
+    // deciding what a coast passes through, an opening value of zero would be selection
+    // switched off.
     private static final double DEFAULT_MIN_FRONTAGE_SHARE = 0.05;
 
     // Below this a lake is a puddle: half a percent of one cell is a few pixels of water at
@@ -134,7 +149,7 @@ public final class Coastlines {
 
     // How the drawn coastline is rounded where it turns sharply, out of the numbers above.
     //
-    // What it is FOR: a kept cell whose two cleared landings cross contributes a single
+    // What it is FOR: a visited cell whose two cleared landings cross contributes a single
     // point instead of a fillet, and the two straight runs either side then meet in a
     // needle. Rounding the join takes the needle's tip off without moving either run.
     public static final CornerRounding DEFAULT_ROUNDING = new CornerRounding(
@@ -164,17 +179,26 @@ public final class Coastlines {
      *                            frontage's: that one judges a cell's stretch of shore, this
      *                            one a whole lake - and it is judged on the true hole, so no
      *                            smoothing knob can move it. Zero keeps every puddle
-     * @param rounding            how the drawn line is rounded where it turns sharply. The
-     *                            third smoothing knob, beside the floors above: the floors
-     *                            decide which stretches and lakes the line passes through,
-     *                            the arc sampling how finely each is drawn, and this what
-     *                            becomes of the joins between them
+     * @param rounding            how the drawn line is rounded where it turns sharply. Read by
+     *                            {@link CoastRounding} and by no stage of the trace, which is
+     *                            what makes it the one setting here a reader could take to
+     *                            nothing and still have a border: the floors above are
+     *                            selection's and decide which stretches and lakes the line
+     *                            passes through, where this only takes the tips off the joins
+     *                            that leaves. Carried with them all the same, so that one
+     *                            setting drives every drawing of a coast traced under them
+     * @param reachAnchor         which turn placement reads the reachable window on, which
+     *                            decides where every straight run lands. A knob rather than a
+     *                            constant because the two answers draw different maps and the
+     *                            better-drawn one is not the arithmetically correct one - what
+     *                            each costs is on {@link StraightRuns.ReachAnchor}
      */
     public record CoastRules(
         double bridgeReachMultiple,
         double minFrontageShare,
         double minLakeShare,
-        CornerRounding rounding) {
+        CornerRounding rounding,
+        StraightRuns.ReachAnchor reachAnchor) {
     }
 
     /**
@@ -184,11 +208,21 @@ public final class Coastlines {
      * how a report comes to describe a different map from the one on screen without either of
      * them saying so.
      */
+    // The window read on the turn the stretch begins, which is the answer that draws the better
+    // map - not the arithmetically correct one. What each of the two costs is measured on
+    // StraightRuns.ReachAnchor, and that is the note to read before moving this.
+    //
+    // Named rather than written into the record below, so the map's answer is in one place and
+    // reads as a choice that was weighed rather than as whichever value was to hand.
+    private static final StraightRuns.ReachAnchor DEFAULT_REACH_ANCHOR =
+        StraightRuns.ReachAnchor.AT_THE_STRETCH_START;
+
     public static final CoastRules DEFAULT_RULES = new CoastRules(
         DEFAULT_BRIDGE_REACH_MULTIPLE,
         DEFAULT_MIN_FRONTAGE_SHARE,
         DEFAULT_MIN_LAKE_SHARE,
-        DEFAULT_ROUNDING);
+        DEFAULT_ROUNDING,
+        DEFAULT_REACH_ANCHOR);
 
     /**
      * A traced coast and the two things it was traced against.
@@ -204,13 +238,13 @@ public final class Coastlines {
      *                    smoothing. Carried rather than walked again by whatever wants them:
      *                    the walk is not cheap, and a second one is a second answer that can
      *                    disagree with the coast it is supposed to describe
-     * @param dropped     the stretches the smoothing chose not to pass through, over both
+     * @param dropped     the stretches selection chose not to pass through, over both
      *                    kinds of coast, which is the one thing about a finished line that
      *                    cannot be read back off it: a stretch the walk never offered and a
      *                    stretch a rule threw away are both simply absent from it
-     * @param union       the discs it was walked and drawn against, which are the same discs:
-     *                     a coast is a border, and everything measured from a border has to
-     *                     be measured from the one the map draws
+     * @param union       the discs it was walked and placed against, which are the same discs:
+     *                     a coast is a border, and everything measured from a border has to be
+     *                     measured from the one that border was built at
      * @param walls        the bridges it was walled by, and the channel they were laid at.
      *                    Carried for whatever lays more walls alongside them: found again
      *                    from the knobs, they are a second answer that can differ from the
@@ -229,6 +263,12 @@ public final class Coastlines {
      *                    discarded, because being too small for a shore does not stop them
      *                    being water: what a puddle earns instead is being filled up, the
      *                    way the settled construction fills the void its bridges capture
+     * @param walledShores one shore per hole a laid wall closed, smoothed exactly as a lake
+     *                    shore is. Apart from the lakes rather than among them, because what
+     *                    shut the water in is the whole difference between the two: a lake is
+     *                    the cells' own doing and this is a wall's, and the constructions that
+     *                    fill such water already answer for it. Empty wherever no wall was
+     *                    laid, which is every coast traced without them
      */
     public record TracedCoasts(
         List<Coast> coasts,
@@ -238,29 +278,24 @@ public final class Coastlines {
         DiscUnion union,
         DiscUnionBoundary.Walls walls,
         List<Lake> lakes,
-        List<Puddle> puddles) {
+        List<Puddle> puddles,
+        List<Coast> walledShores) {
     }
 
     /**
-     * One smoothed coast, in the two forms everything downstream asks it for.
+     * One coast as selection and placement left it: the border, and nothing else.
      *
-     * <p>The pair travels together because they are one line described twice and only mean
-     * anything against each other. Held as parallel lists they line up by index alone, which
-     * is a correspondence nothing checks and the smoothing can break: a coast dropped for
-     * coming out degenerate leaves the two lists a place apart from there on.
+     * <p><b>No rounded line here.</b> Rounding is what the map does to this before drawing it,
+     * and a rounded ring carried alongside is a second line for a reader to pick up by mistake -
+     * which is how a decision comes to be taken against presentation. Everything a trace hands
+     * back is geometry, so the question does not arise: there is one line, and it is this one.
+     * What the map draws is {@link CoastRounding}'s, built from a whole trace at once.
      *
-     * @param vertices  the line as points that each name the cell they sit on, which is what
-     *                  anything reasoning about WHERE a coast runs needs
-     * @param drawnRing the same line as the map draws it: rounded where it turns sharply, and
-     *                  so no longer attributable to the cells the vertices name. Rounded once
-     *                  at the trace rather than at each reader, because every one of them -
-     *                  the paint, the SVG, the inside-the-coast test - has to be looking at
-     *                  the one line, and because a pass repeated per frame is paid for per
-     *                  frame
+     * @param vertices the line as points that each name the cell they sit on, which is what
+     *                 anything reasoning about WHERE a coast runs needs
      */
     public record Coast(
-        List<CoastVertex> vertices,
-        List<double[]> drawnRing) {
+        List<CoastVertex> vertices) {
     }
 
     /**
@@ -270,7 +305,7 @@ public final class Coastlines {
      * same smoothing over the same kind of marks, read from the water's side. What a lake
      * adds is the edge that water actually runs to.
      *
-     * @param shore     the lake's coast, smoothed and drawn like any other
+     * @param shore     the lake's coast, selected and placed like any other
      * @param waterEdge the water's true edge: the cells' own arcs around the hole, sampled.
      *                  What the fill runs against - the lake's margin is the water between
      *                  the drawn shore and this edge, and the open water inside the shore is
@@ -305,7 +340,7 @@ public final class Coastlines {
     }
 
     /**
-     * The stretches the smoothing left out, as lines along the borders they sit on.
+     * The stretches selection left out, as lines along the borders they sit on.
      *
      * <p>Drawn where the coast WOULD have run had it passed through them, which is what makes
      * them legible beside the line that replaced them: the gap between the two is exactly what
@@ -394,7 +429,7 @@ public final class Coastlines {
     // One mark's stretch of border as points along its arc, at the density asked for. The one
     // flattening for every reader of a raw arc, so a diagnostic and a water's edge sampled on
     // the same stretch land on the same points.
-    private static List<double[]> sampleMarkArc(
+    static List<double[]> sampleMarkArc(
             DiscUnion union,
             DiscUnionBoundary.CoastMark mark,
             int arcSegments) {
@@ -455,7 +490,7 @@ public final class Coastlines {
      * map, this shows exactly where those lines and the bridges would cross, which is the
      * fact the proposal turns on.
      *
-     * <p>Without walls there are also no bridged cells for the smoothing to protect, so a
+     * <p>Without walls there are also no bridged cells for selection to protect, so a
      * continent's coast is free to cut a corner across where a bridge lands. That is not a
      * defect of the preview - it is the very collision this exists to make visible.
      *
@@ -481,11 +516,61 @@ public final class Coastlines {
             DiscUnionBoundary.Walls.NONE);
     }
 
-    // The shared tail of both entries: everything about tracing a coast that does not depend
-    // on where the walls came from. What differs between a sector coast and a continent coast
-    // is only the wall set - bridges found from the sites, or none at all - so the walk, the
-    // smoothing and the reach live once, here, and cannot drift between the two.
-    private static TracedCoasts traceCoastsAcrossWalls(
+    /**
+     * Traces the coasts with spans a caller has already laid, as the walls they are.
+     *
+     * <p>The third wall set, beside the settled entry's own bridges and the continent entry's
+     * none at all. What it is for is a construction that lays its spans FIRST and then wants the
+     * coastline of what they made - the walk treats a span as boundary like any other, so a
+     * cell a span reaches stops being alone in the void, the cells it lands on are protected
+     * from the frontage floor, and the span's own two sides come back as part of the closed
+     * line rather than as pieces to be joined up afterwards.
+     *
+     * <p>The spans are handed in rather than searched for, which is the whole difference from
+     * the settled entry: those are found from the sites and these were chosen against a coast
+     * that already existed. Found again here, they would be a second set the caller's map knows
+     * nothing about.
+     *
+     * @param sites      the sites
+     * @param parameters the knobs the cells are built under, whose border channel is the one
+     *                   every wall on this map keeps
+     * @param rules      the knobs the coast is traced under; the bridge reach goes unread, the
+     *                   spans being given rather than found
+     * @param spans      the spans to lay, in the order they were chosen - a wall's verdict
+     *                   turns on the walls laid before it
+     * @return the coasts, and what they were traced against
+     */
+    public static TracedCoasts traceCoastsAcrossSpans(
+            List<double[]> sites,
+            SectorGeometryParameters parameters,
+            CoastRules rules,
+            List<CellGap> spans) {
+
+        return traceCoastsAcrossWalls(
+            sites,
+            parameters,
+            rules,
+            spans.isEmpty()
+                ? DiscUnionBoundary.Walls.NONE
+                : new DiscUnionBoundary.Walls(
+                    DiscUnionBoundary.buildChordsFrom(spans), parameters.borderInset()));
+    }
+
+    /**
+     * Traces the coasts against walls a caller has already built.
+     *
+     * <p>The shared tail of every entry above, and the one to call when the walls need more
+     * than a channel to describe them - which cells they are pinched on, say. Everything about
+     * tracing a coast that does not depend on where the walls came from lives here, so the
+     * walk, the three stages and the reach are one and cannot drift between the entries.
+     *
+     * @param sites      the sites
+     * @param parameters the knobs the cells are built under
+     * @param rules      the knobs the coast is traced under
+     * @param walls      the walls to lay, exactly as the walk should keep them
+     * @return the coasts, and what they were traced against
+     */
+    public static TracedCoasts traceCoastsAcrossWalls(
             List<double[]> sites,
             SectorGeometryParameters parameters,
             CoastRules rules,
@@ -511,22 +596,89 @@ public final class Coastlines {
         var silhouettes = keepJoinedRuns(runs.silhouettes());
         var islands = collectLoneIslands(runs.silhouettes());
         var bridged = findBridgedCircles(union, walls);
-        var smoothingRules = new SmoothingRules(
+        // The two shores are placed under different rules about walls, and the difference is
+        // which side of a wall the water is on. An OUTER coast has every wall inside it: a run
+        // cut seaward across a wall's side leaves the wall on the land side of the line, which
+        // is the rounding-up the coast is for. An INTERIOR shore is the edge of water a wall
+        // bounds: a run cut across that wall's side puts the shore inside the wall, on the
+        // wrong side of a shape already drawn. So the shores take a wall's own side wherever
+        // the walk joined two stretches by one, and the outer coast places every run freely -
+        // except through a mouth that has closed to a point, which is the one place a wall
+        // offers the coast to touch it and is touched rather than cut across.
+        var outerRules = new BorderRules(
             rules.minFrontageShare(),
-            parameters.measureArcSegments());
+            parameters.measureArcSegments(),
+            walls,
+            WallPlacement.TOUCH_POINT_MOUTHS,
+            rules.reachAnchor());
+        var shoreRules = new BorderRules(
+            rules.minFrontageShare(),
+            parameters.measureArcSegments(),
+            walls,
+            WallPlacement.HUG_SIDES,
+            rules.reachAnchor());
 
-        var smoothed = smoothSilhouettes(silhouettes, union, bridged, smoothingRules);
-        var water = buildLakes(runs.lakes(), union, bridged, smoothingRules, rules);
+        var placed = buildSilhouetteBorders(silhouettes, union, bridged, outerRules);
+        var water = buildLakes(runs.lakes(), union, bridged, shoreRules, rules);
+        var walledShores = buildWalledShores(
+            runs.walled(), union, bridged, shoreRules, rules);
 
         return new TracedCoasts(
-            buildCoasts(smoothed.coasts(), rules.rounding()),
+            buildCoasts(placed.coasts()),
             silhouettes,
             islands,
-            concatenateDropped(smoothed.dropped(), water.dropped()),
+            concatenateDropped(placed.dropped(), water.dropped()),
             union,
             walls,
             water.lakes(),
-            water.puddles());
+            water.puddles(),
+            walledShores);
+    }
+
+    // The shores of the holes a wall closed, smoothed through the same pipeline as the lakes -
+    // because a shore is a shore, and the pipeline reads nothing but the marks and their order.
+    //
+    // Held to the same floor as a lake for the same reason: water too small to deserve a
+    // shoreline is too small whatever closed it. What differs is only what becomes of the ones
+    // refused - a lake too small is kept as a puddle to be filled, while this water is already
+    // the pockets' subject and needs nothing recorded of it here.
+    //
+    // What these shores leave out does NOT go on the shared dropped list. A dropped stretch is
+    // drawn where the coast would have run had it passed through, so that a reader can see what
+    // the rule bought against the line that replaced it - and the constructions that read that
+    // list draw the outer coasts and the lake shores, not these. Put there, the marks would be
+    // read against a line nobody drew.
+    private static List<Coast> buildWalledShores(
+            List<List<DiscUnionBoundary.CoastMark>> walledRuns,
+            DiscUnion union,
+            Set<Integer> bridged,
+            BorderRules borderRules,
+            CoastRules rules) {
+
+        var shores = new ArrayList<Coast>(walledRuns.size());
+        var leastWater = measureLeastWater(union, rules);
+
+        for (var run : walledRuns) {
+
+            if (Math.abs(PolygonRegions.computeSignedArea(
+                    sampleWaterEdge(union, run, borderRules.arcSegments()))) < leastWater) {
+
+                continue;
+            }
+
+            var one = buildOneBorder(run, union, bridged, borderRules);
+
+            if (!one.outline().isEmpty()) {
+                shores.add(new Coast(one.outline()));
+            }
+        }
+        return List.copyOf(shores);
+    }
+
+    // How much water a hole has to hold to be worth a shoreline, as an area. One reading for
+    // every kind of hole, so the floor means the same thing wherever it is applied.
+    private static double measureLeastWater(DiscUnion union, CoastRules rules) {
+        return rules.minLakeShare() * Math.PI * union.reach() * union.reach();
     }
 
     // The stretches both kinds of coast left out, as the one list the diagnostic draws. A
@@ -559,17 +711,17 @@ public final class Coastlines {
             List<List<DiscUnionBoundary.CoastMark>> lakeRuns,
             DiscUnion union,
             Set<Integer> bridged,
-            SmoothingRules smoothingRules,
+            BorderRules borderRules,
             CoastRules rules) {
 
         var lakes = new ArrayList<Lake>(lakeRuns.size());
         var puddles = new ArrayList<Puddle>();
         var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
-        var leastWater = rules.minLakeShare() * Math.PI * union.reach() * union.reach();
+        var leastWater = measureLeastWater(union, rules);
 
         for (var run : lakeRuns) {
 
-            var waterEdge = sampleWaterEdge(union, run, smoothingRules.arcSegments());
+            var waterEdge = sampleWaterEdge(union, run, borderRules.arcSegments());
 
             // The puddle floor, taken on the water's edge BEFORE any smoothing is paid for:
             // whether a hole is a lake is decided by how much water it holds, and a puddle
@@ -582,13 +734,13 @@ public final class Coastlines {
                 continue;
             }
 
-            var one = smoothOneCoast(run, union, bridged, smoothingRules);
+            var one = buildOneBorder(run, union, bridged, borderRules);
 
             dropped.addAll(one.dropped());
 
             if (!one.outline().isEmpty()) {
                 lakes.add(new Lake(
-                    buildCoast(one.outline(), rules.rounding()),
+                    new Coast(one.outline()),
                     waterEdge,
                     collectRingCells(run)));
             }
@@ -614,7 +766,7 @@ public final class Coastlines {
      * The water a trace found beyond its outer coasts - the lakes, the puddles, and what the
      * lake shores left out on the way.
      *
-     * <p>The drops travel with them for the reason {@link SmoothedCoasts}' do: a lake that
+     * <p>The drops travel with them for the reason {@link PlacedCoasts}' do: a lake that
      * came out wrong looks the same on screen whether a rule dropped too much or the walk
      * never offered the stretch, and those are opposite faults with opposite fixes.
      *
@@ -643,53 +795,80 @@ public final class Coastlines {
         return List.copyOf(edge);
     }
 
-    private static List<Coast> buildCoasts(
-            List<List<CoastVertex>> outlines,
-            CornerRounding rounding) {
+    private static List<Coast> buildCoasts(List<List<CoastVertex>> outlines) {
 
         var coasts = new ArrayList<Coast>(outlines.size());
 
         for (var outline : outlines) {
-            coasts.add(buildCoast(outline, rounding));
+            coasts.add(new Coast(outline));
         }
         return List.copyOf(coasts);
     }
 
-    // A smoothed outline paired with the line the map draws for it: the same points, rounded
-    // where they turn sharply.
-    //
-    // The rounding is apart from the smoothing rather than folded into it, because the two
-    // work on different things. The smoothing decides which stretches the coast runs along
-    // and hands back vertices that each name the cell they sit on; this rounds the joins
-    // BETWEEN those stretches, and the points it adds sit on no cell at all - so a rounded
-    // ring can no longer answer what the vertices answer, and is kept beside them rather than
-    // replacing them.
-    //
-    // The one place a Coast is made, so no caller can pair an outline with a ring rounded to
-    // different numbers, or with a ring off some other outline entirely.
-    private static Coast buildCoast(List<CoastVertex> outline, CornerRounding rounding) {
-
-        return new Coast(
-            outline,
-            PolygonSmoothing.roundCorners(collectPoints(outline), rounding));
+    /**
+     * What selection and placement are run under, in the units those two stages work in.
+     *
+     * <p>One knob each, and they do not interact: the first is the whole of what selection
+     * decides on, the second is how finely placement samples what selection left it. Rounding
+     * takes nothing from here, since it happens to a finished border rather than while one is
+     * being built.
+     *
+     * <p>Apart from {@link CoastRules}, which is the same settings as a caller sets them -
+     * multiples of a cell radius, and a rounding no stage below reads. This is what those come
+     * to once converted, so no stage has to convert them itself.
+     *
+     * @param minFrontageShare how much of its own border a cell has to face the void with to
+     *                         be worth visiting, as a share of the whole turn. Selection's
+     *                         only knob
+     * @param arcSegments      how finely a half-turn of arc is sampled, which is how smooth
+     *                         the fillets placement lays come out
+     * @param walls            the walls the coast was walked against. Their channel is what
+     *                         tells placement a join between two adjacent stretches is a
+     *                         wall's side rather than the crossing of two cells - a crossing
+     *                         has no length, a wall's side has at least the channel's - and
+     *                         which cells they are pinched on is where a side ends in a point
+     * @param wallPlacement    what placement does with a join that is a wall's side
+     * @param reachAnchor      which turn the reachable window is read on, carried through from
+     *                         {@link CoastRules} because selection's repair pass and placement
+     *                         both ask the clamp and have to ask it the same way
+     */
+    private record BorderRules(
+        double minFrontageShare,
+        int arcSegments,
+        DiscUnionBoundary.Walls walls,
+        WallPlacement wallPlacement,
+        StraightRuns.ReachAnchor reachAnchor) {
     }
 
     /**
-     * How aggressively a coast is smoothed, in the units the smoothing works in.
+     * What placement does with a join the walk made along a wall's side.
      *
-     * <p>One rule for what is dropped and one for how finely what survives is drawn. They do
-     * not interact - the first decides which stretches the coast passes through, the second
-     * how smoothly it rounds each of them.
-     *
-     * @param minFrontageShare how much of its own border a cell has to face the void with to
-     *                         be worth passing through, as a share of the whole turn
-     * @param arcSegments      how finely a half-turn of arc is sampled, which is how smooth
-     *                         the fillets come out and so the second thing deciding what a
-     *                         smoothed coast looks like
+     * <p>Two answers because the two shores stand on opposite sides of every wall. A shore
+     * inside a wall's water is the wall's own edge, so it follows the side. The outer coast has
+     * the wall on its land side and rounds up over it, so a side there is a stretch to cut
+     * across like any other - except where the mouth at its end has closed to a single point,
+     * where there is no width to cut and the coast is to meet the anchor.
      */
-    private record SmoothingRules(
-        double minFrontageShare,
-        int arcSegments) {
+    private enum WallPlacement {
+        HUG_SIDES,
+        TOUCH_POINT_MOUTHS
+    }
+
+    /**
+     * One run placed, and which of its two landings a wall decided.
+     *
+     * <p>The flags travel with the edge because they are about it: a landing at a wall's own
+     * edge or anchor is where the wall put it, and the un-crossing that runs afterwards may
+     * move only landings the clamp chose.
+     *
+     * @param edge            where the run leaves and lands
+     * @param isDepartureHeld whether the wall decided where it leaves
+     * @param isArrivalHeld   whether the wall decided where it lands
+     */
+    private record PlacedRun(
+        StraightRuns.EdgeAngles edge,
+        boolean isDepartureHeld,
+        boolean isArrivalHeld) {
     }
 
     /**
@@ -710,7 +889,7 @@ public final class Coastlines {
     }
 
     /**
-     * Traces the smoothed outer edge of every run of connected cells.
+     * Builds the outer border of every run of connected cells: selection, then placement.
      *
      * <p>Judged on the points that came out rather than on the cells that went in. A cell
      * contributes a whole run of border rather than a single point, so two cells that touch
@@ -720,34 +899,38 @@ public final class Coastlines {
      *
      * @param silhouettes the stretches of coast the cells make, in walk order
      * @param union       the discs to draw against
-     * @param bridged     the cells a laid wall attaches to, which are never skipped
-     * @param rules       how aggressively to smooth, and how finely
+     * @param bridged     the cells a laid wall attaches to, which selection never drops
+     * @param rules       what selection drops, and how finely placement samples
      * @return one closed run of points per run of connected cells
      */
-    private static SmoothedCoasts smoothSilhouettes(
+    private static PlacedCoasts buildSilhouetteBorders(
             List<List<DiscUnionBoundary.CoastMark>> silhouettes,
             DiscUnion union,
             Set<Integer> bridged,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
-        var smoothed = new ArrayList<List<CoastVertex>>();
+        var placed = new ArrayList<List<CoastVertex>>();
         var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
 
         for (var silhouette : silhouettes) {
 
-            var one = smoothOneCoast(silhouette, union, bridged, rules);
+            var one = buildOneBorder(silhouette, union, bridged, rules);
 
             dropped.addAll(one.dropped());
 
             if (!one.outline().isEmpty()) {
-                smoothed.add(one.outline());
+                placed.add(one.outline());
             }
         }
-        return new SmoothedCoasts(smoothed, List.copyOf(dropped));
+        return new PlacedCoasts(placed, List.copyOf(dropped));
     }
 
     /**
-     * The same smoothing over ONE run of coast marks, whichever kind of coast it came off.
+     * Selection and placement over ONE run of coast marks, whichever kind of coast it came off.
+     *
+     * <p>The two stages meet here and nowhere else, which is what makes the order between them
+     * a fact of the code rather than a convention: selection settles which stretches the border
+     * visits, and only then is placement handed them.
      *
      * <p>Named on its own because two callers want it one run at a time: the silhouettes go
      * through in a batch, and a lake pairs its finished shore with its own water's edge, so
@@ -757,58 +940,58 @@ public final class Coastlines {
      *
      * @param coast   one run of coast marks, in walk order
      * @param union   the discs to draw against
-     * @param bridged the cells a laid wall attaches to, which are never skipped
-     * @param rules   how aggressively to smooth, and how finely
-     * @return the smoothed outline and the stretches left out of it. The outline is empty
-     *         where what came out was too small to enclose anything, which is what a run that
-     *         could not be built comes to
+     * @param bridged the cells a laid wall attaches to, which selection never drops
+     * @param rules   what selection drops, and how finely placement samples
+     * @return the placed outline and the stretches selection left out of it. The outline is
+     *         empty where what came out was too small to enclose anything, which is what a run
+     *         that could not be built comes to
      */
-    private static SmoothedCoast smoothOneCoast(
+    private static PlacedCoast buildOneBorder(
             List<DiscUnionBoundary.CoastMark> coast,
             DiscUnion union,
             Set<Integer> bridged,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
-        var kept = keepSmoothedMarks(coast, union, bridged, rules);
-        var outline = buildClearedOutline(coast, kept, union, rules);
+        var visited = selectVisitedStretches(coast, union, bridged, rules);
+        var outline = placeClearedOutline(coast, visited, union, rules);
         var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
 
         for (var index = 0; index < coast.size(); index++) {
 
-            if (!kept.contains(index)) {
+            if (!visited.contains(index)) {
                 dropped.add(coast.get(index));
             }
         }
 
-        return new SmoothedCoast(
+        return new PlacedCoast(
             outline.size() >= Limits.MIN_VERTICES_TO_ENCLOSE_AREA ? outline : List.of(),
             List.copyOf(dropped));
     }
 
     /**
-     * What the smoothing made of one run of coast, and what it left out on the way.
+     * What the two stages made of one run of coast, and what selection left out on the way.
      *
-     * @param outline the smoothed line, or empty where it came out too small to be a shape
+     * @param outline the placed line, or empty where it came out too small to be a shape
      * @param dropped every stretch of this run the line was not drawn through
      */
-    private record SmoothedCoast(
+    private record PlacedCoast(
         List<CoastVertex> outline,
         List<DiscUnionBoundary.CoastMark> dropped) {
     }
 
     /**
-     * What the smoothing made of a batch of them, and what it left out over all of them.
+     * What they made of a batch of them, and what was left out over all of them.
      *
      * <p>The stretches dropped are kept rather than discarded because they are the only record
-     * of a decision the smoothing otherwise makes silently. A coast that came out wrong looks
-     * the same on screen whether a rule dropped too much or the walk never offered the stretch
-     * at all, and those are opposite faults with opposite fixes.
+     * of a decision selection otherwise makes silently. A coast that came out wrong looks the
+     * same on screen whether a rule dropped too much or the walk never offered the stretch at
+     * all, and those are opposite faults with opposite fixes.
      *
      * @param coasts  one closed run of points per run of connected cells, degenerate ones
      *                left out - so this does NOT line up with what went in
      * @param dropped every stretch the coast was not drawn through, over all of them
      */
-    private record SmoothedCoasts(
+    private record PlacedCoasts(
         List<List<CoastVertex>> coasts,
         List<DiscUnionBoundary.CoastMark> dropped) {
     }
@@ -876,32 +1059,53 @@ public final class Coastlines {
     }
 
     /**
-     * Every outer coast as the plain ring the map draws.
+     * Every outer coast as a bare closed ring: the border, with the cells its points sit on
+     * dropped.
      *
-     * <p>What a shape is judged against, and what the map puts on screen, are the same line:
-     * void outside it is void nothing shut in, whatever any single reach's line says. So the
-     * readers that only draw or test against the line ask for it here, without carrying the
-     * vertices they have no use for.
+     * <p>What a shape is judged against. Void outside this line is void nothing shut in, and a
+     * span crossing it crosses the edge of settled space - so everything DECIDING against a
+     * coast asks here, and what it gets is the line selection and placement settled rather than
+     * anything a later pass made of it for the eye.
+     *
+     * <p>Rings rather than vertices for the readers that have no use for the cells: a point in
+     * or out of a shape is answered by the shape.
      *
      * @param traced the coast
      * @return one ring per stretch of coast, in the order they were traced
      */
-    public static List<List<double[]>> collectCoastRings(TracedCoasts traced) {
-        return traced.coasts().stream().map(Coast::drawnRing).toList();
+    public static List<List<double[]>> collectCoastOutlines(TracedCoasts traced) {
+        return traced.coasts().stream().map(coast -> collectPoints(coast.vertices())).toList();
     }
 
     /**
-     * Every lake shore as the plain ring the map draws, for the same readers as above.
+     * Every lake shore as a bare closed ring, for the same readers as above.
      *
      * @param traced the coast
      * @return one ring per lake, in the order they were traced
      */
-    public static List<List<double[]>> collectLakeRings(TracedCoasts traced) {
-        return traced.lakes().stream().map(lake -> lake.shore().drawnRing()).toList();
+    public static List<List<double[]>> collectLakeOutlines(TracedCoasts traced) {
+
+        return traced.lakes().stream()
+            .map(lake -> collectPoints(lake.shore().vertices()))
+            .toList();
     }
 
     /**
-     * Whether a point lies inside the drawn coast.
+     * Every shore of water a laid wall closed, as a bare closed ring.
+     *
+     * @param traced the coast
+     * @return one ring per walled hole, in the order they were traced; empty for a coast traced
+     *         without walls
+     */
+    public static List<List<double[]>> collectWalledShoreOutlines(TracedCoasts traced) {
+
+        return traced.walledShores().stream()
+            .map(shore -> collectPoints(shore.vertices()))
+            .toList();
+    }
+
+    /**
+     * Whether a point lies inside the coast.
      *
      * @param coasts the coast's rings
      * @param point  the {x, y} point to place
@@ -1000,7 +1204,7 @@ public final class Coastlines {
 
     // The cells a laid wall attaches to. Asked of the laid chords rather than of every bridge
     // offered, because a bridge that was never drawn has no wall for the coast to cut across
-    // and protecting its cells would only cost smoothing for nothing.
+    // and protecting its cells would only cost selection detail for nothing.
     private static Set<Integer> findBridgedCircles(
             DiscUnion union,
             DiscUnionBoundary.Walls walls) {
@@ -1015,58 +1219,64 @@ public final class Coastlines {
         return bridged;
     }
 
-    // Which stretches the coast is drawn through: the ones too far from their neighbour to be
-    // dropped, plus the ones dropping would have put a cell across the jump.
-    private static List<Integer> keepSmoothedMarks(
+    // The whole of the selection stage: which stretches the border visits - the ones that show
+    // enough of themselves to the void, plus the ones dropping would have put a cell across the
+    // jump.
+    //
+    // The two halves are in that order for a reason. The first is a matter of taste and reads
+    // nothing but the stretch itself; the second is a matter of correctness and can only be
+    // asked once there is a set of drops to test. So a rule of taste may propose any drop it
+    // likes, and the repair passes are what stop a proposal stranding the line inside a cell.
+    private static List<Integer> selectVisitedStretches(
             List<DiscUnionBoundary.CoastMark> coast,
             DiscUnion union,
             Set<Integer> bridged,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
-        var isKept = markExposedStretches(coast, bridged, rules);
+        var isVisited = flagExposedStretches(coast, bridged, rules);
 
         for (var pass = 0; pass < REPAIR_PASSES; pass++) {
 
-            if (!restoreBlockingStretches(coast, union, isKept)) {
+            if (!restoreBlockingStretches(coast, union, isVisited, rules)) {
                 break;
             }
         }
 
-        return collectKeptPositions(isKept);
+        return collectVisitedPositions(isVisited);
     }
 
-    // The kept stretches as positions along the walk, which is what everything downstream
-    // indexes by. The flags are how the smoothing decides; the positions are how it is read.
-    private static List<Integer> collectKeptPositions(boolean[] isKept) {
+    // The visited stretches as positions along the walk, which is what placement indexes by.
+    // The flags are how selection decides; the positions are how its answer is read.
+    private static List<Integer> collectVisitedPositions(boolean[] isVisited) {
 
-        var kept = new ArrayList<Integer>();
+        var visited = new ArrayList<Integer>();
 
-        for (var index = 0; index < isKept.length; index++) {
+        for (var index = 0; index < isVisited.length; index++) {
 
-            if (isKept[index]) {
-                kept.add(index);
+            if (isVisited[index]) {
+                visited.add(index);
             }
         }
-        return kept;
+        return visited;
     }
 
-    // One pass along the coast, keeping every stretch that faces the void with enough of its
-    // own border to be worth drawing.
+    // Selection's first half: one pass along the coast, visiting every stretch that faces the
+    // void with enough of its own border to be worth drawing.
     //
     // Order-free, and that is the point of it: each stretch is judged against nothing but
     // itself, so the walk could start anywhere and drop the same set. Nothing accumulates
     // across the loop, which is why there is no state here to get wrong.
-    private static boolean[] markExposedStretches(
+    private static boolean[] flagExposedStretches(
             List<DiscUnionBoundary.CoastMark> coast,
             Set<Integer> bridged,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
-        var isKept = new boolean[coast.size()];
+        var isVisited = new boolean[coast.size()];
 
         for (var index = 0; index < coast.size(); index++) {
-            isKept[index] = !isBarelyFacingTheVoid(coast.get(index), bridged, rules);
+            isVisited[index] = !isBarelyFacingTheVoid(coast.get(index), bridged, rules);
         }
-        return isKept;
+        return isVisited;
     }
 
     // Whether a stretch offers too little of its cell's border to be worth passing through.
@@ -1078,7 +1288,7 @@ public final class Coastlines {
     // A cell a bridge attaches to is exempt: a bridge's wall is boundary the coast has to
     // stay OUTSIDE of, so cutting the corner across one puts the coast on the wrong side of
     // a shape already drawn. That is a matter of correctness rather than of taste, and no
-    // smoothing knob may overrule it.
+    // selection knob may overrule it.
     //
     // Nothing here can strand the coast inside a cell. A stretch dropped from this pass is
     // put straight back by the repair pass if the jump over it turns out to cross anything -
@@ -1086,48 +1296,49 @@ public final class Coastlines {
     private static boolean isBarelyFacingTheVoid(
             DiscUnionBoundary.CoastMark mark,
             Set<Integer> bridged,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
         return mark.measureShareOfCircle() < rules.minFrontageShare()
             && !bridged.contains(mark.circle());
     }
 
-    // Puts back any stretch a jump turned out to cross. A jump is tested against every cell,
-    // not only the two it runs between, because the cell in the way is by definition one
-    // neither end knows about - and if that cell is one of the stretches skipped over, keeping
-    // it is what stops the jump being made at all.
+    // Selection's second half: puts back any stretch a jump turned out to cross. A jump is
+    // tested against every cell, not only the two it runs between, because the cell in the way
+    // is by definition one neither end knows about - and if that cell is one of the stretches
+    // skipped over, visiting it is what stops the jump being made at all.
     private static boolean restoreBlockingStretches(
             List<DiscUnionBoundary.CoastMark> coast,
             DiscUnion union,
-            boolean[] isKept) {
+            boolean[] isVisited,
+            BorderRules rules) {
 
-        var kept = collectKeptPositions(isKept);
+        var visited = collectVisitedPositions(isVisited);
 
-        if (kept.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+        if (visited.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
             return false;
         }
 
         var restored = false;
 
-        for (var step = 0; step < kept.size(); step++) {
+        for (var step = 0; step < visited.size(); step++) {
 
-            var from = kept.get(step);
-            var to = kept.get((step + 1) % kept.size());
-            var blocker = findBlockedStretch(coast, union, isKept, from, to);
+            var from = visited.get(step);
+            var to = visited.get((step + 1) % visited.size());
+            var blocker = findBlockedStretch(coast, union, isVisited, from, to, rules);
 
             if (blocker >= 0) {
 
-                isKept[blocker] = true;
+                isVisited[blocker] = true;
                 restored = true;
             }
         }
         return restored;
     }
 
-    // Which of the stretches skipped between two kept ones to put back, or NOTHING_BLOCKING
+    // Which of the stretches skipped between two visited ones to put back, or NOTHING_BLOCKING
     // when the jump is clear.
     //
-    // The jump is judged first, by the one clearance test the drawing itself uses, and only a
+    // The jump is judged first, by the one clearance test placement itself uses, and only a
     // jump that failed goes looking for something to blame. That ordering is what keeps one
     // definition of "in the way" in play: an inline scan with its own threshold answered the
     // same question a hair differently, and a method holding two definitions of one question
@@ -1143,12 +1354,13 @@ public final class Coastlines {
     private static int findBlockedStretch(
             List<DiscUnionBoundary.CoastMark> coast,
             DiscUnion union,
-            boolean[] isKept,
+            boolean[] isVisited,
             int from,
-            int to) {
+            int to,
+            BorderRules rules) {
 
         var jump = new StraightRuns.StraightRun(union, coast.get(from), coast.get(to));
-        var edge = StraightRuns.resolveEdge(jump);
+        var edge = StraightRuns.resolveEdge(jump, rules.reachAnchor());
 
         if (StraightRuns.isRunClearOfEveryCell(jump, edge)) {
             return NOTHING_BLOCKING;
@@ -1156,7 +1368,9 @@ public final class Coastlines {
 
         var firstSkipped = NOTHING_BLOCKING;
 
-        for (var step = 1; step < coast.size() && !isKept[(from + step) % coast.size()]; step++) {
+        for (var step = 1;
+                step < coast.size() && !isVisited[(from + step) % coast.size()];
+                step++) {
 
             var index = (from + step) % coast.size();
 
@@ -1173,54 +1387,72 @@ public final class Coastlines {
         return firstSkipped;
     }
 
-    // The kept stretches turned into a closed run of points: a fillet along each cell's own
-    // border from where the coast arrives to where it leaves, and a straight reach from there
-    // to the next cell.
-    private static List<CoastVertex> buildClearedOutline(
+    // The whole of the placement stage: the visited stretches turned into a closed run of
+    // points - a fillet along each cell's own border from where the coast arrives to where it
+    // leaves, and a straight reach from there to the next cell.
+    //
+    // Every landing here is decided by what will clear the cells, and by nothing else. Which
+    // stretches arrived is already settled, so the only freedom left is where on each of them
+    // the line touches - and holding the reaches outside every cell is what that freedom is
+    // spent on.
+    private static List<CoastVertex> placeClearedOutline(
             List<DiscUnionBoundary.CoastMark> coast,
-            List<Integer> kept,
+            List<Integer> visited,
             DiscUnion union,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
         // A run of one has no reach to any other cell, so there is nothing to clamp against
         // and its whole frontage is the coast. That is a cell alone in the void, whose coast
         // is its own border - drawn over the top of it and so invisible, which is right.
-        if (kept.size() == 1) {
+        if (visited.size() == 1) {
 
-            var only = coast.get(kept.get(0));
+            var only = coast.get(visited.get(0));
 
-            return buildVertices(
+            return buildVerticesOnMark(
                 only,
                 sampleFillet(union, only, only.fromAngle(),
                 only.toAngle(),
                 rules));
         }
 
-        var arriveAngles = new double[kept.size()];
-        var departAngles = new double[kept.size()];
+        var arriveAngles = new double[visited.size()];
+        var departAngles = new double[visited.size()];
 
-        for (var index = 0; index < kept.size(); index++) {
+        // Which stretches a wall's side lands on. Those landings are the wall's own edges and
+        // are not the un-crossing's to move.
+        var isHeldByWall = new boolean[visited.size()];
 
-            var next = (index + 1) % kept.size();
+        for (var index = 0; index < visited.size(); index++) {
 
-            var edge = StraightRuns.findClearEdge(
-                new StraightRuns.StraightRun(
-                    union,
-                    coast.get(kept.get(index)),
-                    coast.get(kept.get(next))),
-                kept.get(next) == (kept.get(index) + 1) % coast.size());
+            var next = (index + 1) % visited.size();
+            var from = coast.get(visited.get(index));
+            var to = coast.get(visited.get(next));
+            var isAdjacent = visited.get(next) == (visited.get(index) + 1) % coast.size();
+            var run = new StraightRuns.StraightRun(union, from, to);
 
-            departAngles[index] = edge.departAngle();
-            arriveAngles[next] = edge.arriveAngle();
+            var placed = isAdjacent && isJoinedByWall(union, from, to, rules)
+                ? placeRunAlongWall(run, rules)
+                : new PlacedRun(
+                    StraightRuns.findClearEdge(run, isAdjacent, false, rules.reachAnchor()),
+                    false,
+                    false);
+
+            departAngles[index] = placed.edge().departAngle();
+            arriveAngles[next] = placed.edge().arriveAngle();
+
+            isHeldByWall[index] |= placed.isDepartureHeld();
+            isHeldByWall[next] |= placed.isArrivalHeld();
         }
+
+        uncrossLandings(coast, visited, union, arriveAngles, departAngles, isHeldByWall);
 
         var outline = new ArrayList<CoastVertex>();
 
-        for (var index = 0; index < kept.size(); index++) {
+        for (var index = 0; index < visited.size(); index++) {
 
-            var mark = coast.get(kept.get(index));
+            var mark = coast.get(visited.get(index));
 
-            outline.addAll(buildVertices(
+            outline.addAll(buildVerticesOnMark(
                 mark,
                 sampleFillet(
                     union,
@@ -1232,10 +1464,132 @@ public final class Coastlines {
         return outline;
     }
 
+    // Where a cell's two landings crossed, puts them back in walk order rather than losing the
+    // stretch of border between them.
+    //
+    // A crossing is NOT the ordinary way a cell comes to contribute one point. Two neighbours
+    // that can both see a cell's middle land on that middle, the sweep is zero, and the single
+    // point is what this smoothing is for. A crossing is the other case: something pushed each
+    // end past the other, so there IS a run of border between them, and a cell with a stretch
+    // to offer reports one place instead.
+    //
+    // Swapping moves BOTH runs, so both are put back through the clearance rule that placed
+    // them. Where either would cut a cell the crossing stands: a point on the boundary is
+    // always better than a line through a cell, which is the whole premise of the placement.
+    //
+    // A cell next to another that is also swapping is left alone. The run between two such
+    // cells would have both its ends move at once, which neither test above asked about - and
+    // refusing that case is also what keeps this order-free, so the walk could begin anywhere
+    // and swap the same cells.
+    private static void uncrossLandings(
+            List<DiscUnionBoundary.CoastMark> coast,
+            List<Integer> visited,
+            DiscUnion union,
+            double[] arriveAngles,
+            double[] departAngles,
+            boolean[] isHeldByWall) {
+
+        var isSwappable = new boolean[visited.size()];
+
+        for (var index = 0; index < visited.size(); index++) {
+            isSwappable[index] = !isHeldByWall[index] && isCrossingClearWhenSwapped(
+                coast, visited, union, arriveAngles, departAngles, index);
+        }
+
+        // Read off the flags rather than off the angles, so a swap already made cannot change
+        // the verdict on the cell after it.
+        for (var index = 0; index < visited.size(); index++) {
+
+            var previous = (index + visited.size() - 1) % visited.size();
+            var next = (index + 1) % visited.size();
+
+            if (!isSwappable[index] || isSwappable[previous] || isSwappable[next]) {
+                continue;
+            }
+
+            var arrived = arriveAngles[index];
+
+            arriveAngles[index] = departAngles[index];
+            departAngles[index] = arrived;
+        }
+    }
+
+    // A run the walk joined by a wall's side, placed as the shore it is on treats walls. Which
+    // ends are held is reported with the edge because the un-crossing may not move them: a
+    // landing that is a wall's own edge, or its anchor, is where the wall put it.
+    private static PlacedRun placeRunAlongWall(StraightRuns.StraightRun run, BorderRules rules) {
+
+        if (rules.wallPlacement() == WallPlacement.HUG_SIDES) {
+            return new PlacedRun(
+                StraightRuns.findClearEdge(run, true, true, rules.reachAnchor()), true, true);
+        }
+        var isDepartureMouth = rules.walls().isPinchedOn(run.from().circle());
+        var isArrivalMouth = rules.walls().isPinchedOn(run.to().circle());
+
+        // A side with width at both ends is cut across like any other stretch: the wall sits
+        // on the land side of the line and the coast rounds up over it.
+        if (!isDepartureMouth && !isArrivalMouth) {
+            return new PlacedRun(
+                StraightRuns.findClearEdge(run, true, false, rules.reachAnchor()), false, false);
+        }
+        return new PlacedRun(
+            StraightRuns.findEdgeThroughMouth(
+                run, isDepartureMouth, isArrivalMouth, rules.reachAnchor()),
+            isDepartureMouth,
+            isArrivalMouth);
+    }
+
+    // Whether the walk joined two adjacent stretches by a wall's side rather than at a crossing
+    // of their two cells. Told by the join's length: two cells cross at a point, so the far end
+    // of one stretch and the near end of the next are one place, while a wall's side runs from
+    // one cell's mouth to the other's and is at least a channel long. Nothing shorter than the
+    // channel can be a wall, since a wall is what holds its two sides that far apart.
+    private static boolean isJoinedByWall(
+            DiscUnion union,
+            DiscUnionBoundary.CoastMark from,
+            DiscUnionBoundary.CoastMark to,
+            BorderRules rules) {
+
+        var channel = rules.walls().channel();
+
+        return channel > 0
+            && Points.computeDistance(
+                DiscUnionBoundary.findPointOnMark(union, from, from.toAngle()),
+                DiscUnionBoundary.findPointOnMark(union, to, to.fromAngle()))
+                > channel;
+    }
+
+    // Whether a cell's landings crossed, and whether both runs still pass outside every cell
+    // once they are put back in order.
+    private static boolean isCrossingClearWhenSwapped(
+            List<DiscUnionBoundary.CoastMark> coast,
+            List<Integer> visited,
+            DiscUnion union,
+            double[] arriveAngles,
+            double[] departAngles,
+            int index) {
+
+        if (departAngles[index] >= arriveAngles[index]) {
+            return false;
+        }
+
+        var previous = (index + visited.size() - 1) % visited.size();
+        var next = (index + 1) % visited.size();
+
+        return StraightRuns.isRunClearOfEveryCell(
+                new StraightRuns.StraightRun(
+                    union, coast.get(visited.get(previous)), coast.get(visited.get(index))),
+                new StraightRuns.EdgeAngles(departAngles[previous], departAngles[index]))
+            && StraightRuns.isRunClearOfEveryCell(
+                new StraightRuns.StraightRun(
+                    union, coast.get(visited.get(index)), coast.get(visited.get(next))),
+                new StraightRuns.EdgeAngles(arriveAngles[index], arriveAngles[next]));
+    }
+
     // One stretch of coast as the points the line passes through: the sampled fillet running
     // along the cell's own border, each carrying the cell it belongs to so a later pass can
     // tell which stretch a point came off without matching coordinates back to a circle.
-    private static List<CoastVertex> buildVertices(
+    private static List<CoastVertex> buildVerticesOnMark(
             DiscUnionBoundary.CoastMark mark,
             List<double[]> points) {
 
@@ -1257,16 +1611,20 @@ public final class Coastlines {
     // exactly those cells to a point, which is what put a spike on every chain end and drove
     // the two runs either side of it straight through the cell.
     //
-    // Both ends are already clamped into that frontage, so the arrival cannot sit past the
-    // departure unless the cell's two neighbours pulled each beyond the other. There is no
-    // run of border between them then, and the point they are least far from is the only
-    // answer left.
+    // A sweep of nothing is the ordinary case rather than a fault: two neighbours that can both
+    // see this cell's middle land on it, and the single point they share is the line through the
+    // middle of the frontage this whole class is for.
+    //
+    // A NEGATIVE sweep is the other case - the cell's two neighbours pulled each end past the
+    // other - and one arriving here is one the un-crossing above refused, because putting the
+    // two back in order would have driven a run through a cell. The point they are least far
+    // from is then the only answer left.
     private static List<double[]> sampleFillet(
             DiscUnion union,
             DiscUnionBoundary.CoastMark mark,
             double arriveAngle,
             double departAngle,
-            SmoothingRules rules) {
+            BorderRules rules) {
 
         var sweep = departAngle - arriveAngle;
 

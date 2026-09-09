@@ -6,7 +6,7 @@ import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
-import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
+import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;

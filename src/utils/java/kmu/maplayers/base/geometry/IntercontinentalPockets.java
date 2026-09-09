@@ -81,9 +81,14 @@ public final class IntercontinentalPockets {
 
         var outlines = new ArrayList<List<double[]>>();
 
+        // Pinched on the same cells the link coastline is, so the sea and the line meet each
+        // cell at the same point.
         for (var hole : WalledVoid.traceVoidWalledBy(
                 traced.union().sites(),
-                new DiscUnionBoundary.Walls(laid, rules.parameters().borderInset()),
+                new DiscUnionBoundary.Walls(
+                    laid,
+                    rules.parameters().borderInset(),
+                    CoastFrontages.collectPinchedCells(traced)),
                 linkWalls,
                 rules.parameters(),
                 rules.shaping())) {

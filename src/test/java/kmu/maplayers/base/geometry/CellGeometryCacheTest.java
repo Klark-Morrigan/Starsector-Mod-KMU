@@ -9,8 +9,10 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
+import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
@@ -33,7 +35,8 @@ import static org.mockito.Mockito.when;
  * Pins {@link CellGeometryCache}: the first update builds cells for the
  * reachable systems and skips inaccessible ones; a later update rebuilds only the
  * cells near a changed system, leaving distant ones in place (asserted by object
- * identity); and a removed system's cell is dropped.
+ * identity); a removed system's cell is dropped; and every update reports what it recomputed and
+ * which of its two outcomes it was onto the scope it opens.
  */
 final class CellGeometryCacheTest {
 
@@ -61,6 +64,9 @@ final class CellGeometryCacheTest {
     // gates, so a cell appearing or vanishing is the access diff and never an override flip.
     private static final MapVisibilityRules NO_REVEAL = MapVisibilityRules.BASE;
 
+    // The row an update lands on.
+    private static final String UPDATE_SECTION = "mapLayer.updateGeometry";
+
     // The force override on, which admits every system whatever the normal gates say - the one
     // widening that needs no economy staged behind it to change the participating set.
     private static final MapVisibilityRules FORCED_ONTO_MAP =
@@ -84,6 +90,43 @@ final class CellGeometryCacheTest {
                 .containsOnlyKeys("a", "b");
             assertThat(cache.getCellEdgesByCellId().get("a"))
                 .isNotEmpty();
+        }
+
+        @Test
+        void countsTheCellsItRecomputed() {
+            // The number the update's duration is read against, which used to be printed in a log
+            // line the profiler never saw.
+            var cache = new CellGeometryCache();
+
+            var capture = RecordedCapture.recordWhile(() -> updateAtDefaultResolution(
+                cache,
+                buildAccessibleSystem("a", 0, 0),
+                buildAccessibleSystem("b", 4000, 0)));
+
+            assertThat(capture
+                    .findNode(UPDATE_SECTION)
+                    .findCount(MapBuildCounters.CELLS)
+                    .getTotals()
+                    .getTotal())
+                .isEqualTo(2);
+        }
+
+        @Test
+        void namesAnUpdateThatFoundNothingToRebuild() {
+            // A refresh over an identical participating set still costs the diff, and the call's
+            // name is what tells that from a rebuild - the counts alone cannot.
+            var cache = new CellGeometryCache();
+            var systems = new StarSystemAPI[] {
+                buildAccessibleSystem("a", 0, 0),
+                buildAccessibleSystem("b", 4000, 0)};
+
+            updateAtDefaultResolution(cache, systems);
+
+            var capture =
+                RecordedCapture.recordWhile(() -> updateAtDefaultResolution(cache, systems));
+
+            assertThat(capture.findNode(UPDATE_SECTION).getWorstCall().getTag())
+                .startsWith("unchanged");
         }
 
         @Test

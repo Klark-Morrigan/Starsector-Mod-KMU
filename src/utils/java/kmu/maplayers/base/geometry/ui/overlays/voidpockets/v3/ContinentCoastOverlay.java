@@ -5,6 +5,7 @@ import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.IntercontinentalBridges;
+import kmu.maplayers.base.geometry.IntercontinentalCoasts;
 import kmu.maplayers.base.geometry.IntercontinentalPockets;
 import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
@@ -14,8 +15,8 @@ import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
+import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
-import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -29,7 +30,7 @@ import java.util.Map;
  * shores and the void behind them, the lake shores round the water the cells closed unaided,
  * the puddles too small for a shore, the spans laid across the inlets and the puddles and the
  * water those spans shut in, and the links laid between one continent and the next with the sea
- * a run of them takes in.
+ * a run of them takes in and the coastline they made drawable.
  *
  * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
  * of cells a bridge would have joined comes back as several shapes rather than one, and under
@@ -89,6 +90,11 @@ public final class ContinentCoastOverlay {
     // the lines and the water are one construction seen twice.
     private SpanWater linkWater = SpanWater.NONE;
 
+    // The coastline those links added: the sector traced a second time with them laid, cut down
+    // to what the first line does not already carry. Held beside them rather than found while
+    // painting, since it is a second trace rather than a way of drawing the first.
+    private List<List<double[]>> linkShores = List.of();
+
     // The settled bridge search, shared with the construction that also asks it. Handed in
     // rather than made here: two overlays asking one question of one sector have to be one
     // search, and a cache each would be exactly the second answer it exists to prevent.
@@ -124,6 +130,7 @@ public final class ContinentCoastOverlay {
         lakeWater = SpanWater.NONE;
         puddleBridges = List.of();
         linkWater = SpanWater.NONE;
+        linkShores = List.of();
         frontages = List.of();
 
         // The coasts are traced while any of them is wanted, because each is built on them:
@@ -192,7 +199,24 @@ public final class ContinentCoastOverlay {
         // span and a puddle span both stand over water the cells have already closed around,
         // which a line running between two continents cannot reach without crossing a cell.
         if (isAnyLinkLayerShown()) {
+
             linkWater = findLinkWater();
+
+            // Off the same links, so what is drawn is the coastline of the lines on screen. And
+            // under the same coast rules as the first trace: the cut keeps whatever the two
+            // traces disagree about, so a second smoothing would have them agreeing nowhere and
+            // the whole sector would come back as new coastline.
+            //
+            // A second trace of the sector, which is the expensive half of this overlay - hence
+            // under its own switch rather than found alongside the links.
+            if (settings.showIntercontinentalShores) {
+
+                linkShores = IntercontinentalCoasts.findLinkedShores(
+                    coast.getTrace(),
+                    linkWater.spans(),
+                    settings.parameters,
+                    settings.resolveContinentCoastRules());
+            }
         }
     }
 
@@ -238,6 +262,15 @@ public final class ContinentCoastOverlay {
 
             coast.paintCoastRings(g2, settings.continentCoastColour);
             coast.paintDroppedStretches(g2);
+            coast.paintLandableFrontage(g2);
+        }
+
+        // In the coasts' own colour and at their own weight, because that is what these are: the
+        // same walk's answer about the same sector with the links laid. A colour of their own
+        // would say an isthmus edge is a different kind of line from the coast it runs into,
+        // which is the one thing it is not.
+        if (settings.showIntercontinentalShores) {
+            MapPainting.paintLineRuns(g2, linkShores, settings.continentCoastColour);
         }
 
         // A lake shore is this construction's coast seen from the water's side, so it is
@@ -392,7 +425,10 @@ public final class ContinentCoastOverlay {
     // at all. Both their layers rather than the lines' alone: the fill is walked with the links
     // as its subject, so asking for it is asking for them.
     private boolean isAnyLinkLayerShown() {
-        return settings.showIntercontinentalBridges || settings.showIntercontinentalFill;
+
+        return settings.showIntercontinentalBridges
+            || settings.showIntercontinentalFill
+            || settings.showIntercontinentalShores;
     }
 
     // The links and the sea they shut in, found together for the reason the shore spans are: the

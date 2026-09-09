@@ -1,10 +1,11 @@
-package kmu.maplayers.base.geometry.ui.settings;
+package kmu.maplayers.base.geometry.settings;
 
 import kmlib.math.geometry.CornerRounding;
 
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.StraightRuns;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
@@ -18,19 +19,30 @@ import java.awt.Color;
 /**
  * What the viewer is currently set to draw with, and nothing else.
  *
- * <p>State only. No widget builds one of these, no panel is built from one, and it knows
- * nothing about how any of it comes to be chosen - so a reader asking "what can this map be
- * drawn with" gets a list of the answers rather than three hundred lines of Swing with the
- * answers embedded in it. {@link ViewerSettingsPanel} is what edits it and
- * {@link SectorGeometryViewer} is what reads it.
+ * <p>State only. No widget builds one of these, none is built from one, and it knows nothing
+ * about how any of it comes to be chosen - so a reader asking "what can this map be drawn
+ * with" gets a list of the answers rather than three hundred lines of Swing with the answers
+ * embedded in it.
  *
- * <p>Fields rather than accessors, because a panel exists whose whole job is to write them.
- * Accessors would have implied a read-only view that nothing in the package actually has,
- * and paying sixty methods for that fiction is worse than admitting this is a bag of values.
+ * <p>Apart from the window for that reason. What is set is not a property of the widgets that
+ * happen to set it: a drawing written to a file, a measurement taken of a shape, and the
+ * window itself are all asking what this map is, and only one of them has a screen. Under the
+ * window, the two that do not would each have to say it again, and a report would describe a
+ * different map from the one on screen with neither of them saying so.
  *
- * <p>The defaults live here rather than with the panel because a default is a property of
+ * <p>Above the map's own look and below anything that draws: it reads the palette and the
+ * stroke widths to open on, since a default colour that is not the one the map paints with is
+ * a second answer to what a line is drawn in. The constructions below it stay knob-free and
+ * are handed a rule record instead, which is what lets one of them be asked the same question
+ * twice under different settings.
+ *
+ * <p>Fields rather than accessors, because something exists whose whole job is to write them.
+ * Accessors would have implied a read-only view that nothing actually has, and paying sixty
+ * methods for that fiction is worse than admitting this is a bag of values.
+ *
+ * <p>The defaults live here rather than with the widgets because a default is a property of
  * the setting - what it is when nobody has chosen - while the range a slider allows is a
- * property of the widget. The panel holds those.
+ * property of the widget, and belongs with it.
  */
 public final class ViewerSettings {
 
@@ -102,6 +114,8 @@ public final class ViewerSettings {
     public static final Color INTERCONTINENTAL_BRIDGE_DEFAULT = MapLook.INTERCONTINENTAL_BRIDGE;
 
     public static final Color DROPPED_STRETCH_DEFAULT = MapLook.DROPPED_STRETCH;
+
+    public static final Color LANDABLE_FRONTAGE_DEFAULT = MapLook.LANDABLE_FRONTAGE;
 
     public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
 
@@ -269,8 +283,16 @@ public final class ViewerSettings {
     // the links and the inlet spans as the walls, and only what a link actually closed is drawn -
     // water an inlet span holds is the layer above's, and water the cells closed unaided is a
     // lake or a puddle with its own switch.
+    //
+    // The shores are the sector traced a SECOND time with the links laid as walls, cut down to
+    // what the first line does not already carry - so what appears is the coastline a link
+    // added: the two edges of the isthmus it becomes, the rim of a cell it took out of the void,
+    // and wherever else the smoothing moved because a link changed what a cell is judged
+    // against. Its own switch because it is another trace of the sector rather than another way
+    // of drawing this one, and that is the expensive half of the layer.
     public boolean showIntercontinentalBridges;
     public boolean showIntercontinentalFill;
+    public boolean showIntercontinentalShores;
 
     // The same spans laid over the interior coastlines instead - across water the cells closed
     // around unaided rather than across the void between continents. One search over two shores
@@ -294,6 +316,12 @@ public final class ViewerSettings {
     // layer, and the answer it gives - what the rules left out - is the same question of both.
     public boolean showDroppedStretches;
 
+    // Every stretch of exposed border a straight line could arrive at from the open void, on
+    // whichever coasts are being drawn. Answered from the discs rather than from any line, so
+    // it says the same thing whichever construction it is drawn beside - which is what makes it
+    // worth putting under both.
+    public boolean showLandableFrontage;
+
     // How little of its own border a cell may face the void with before it is dropped from
     // the walk outright, as a share of the whole turn. The whole of how the settled coast is
     // smoothed: one intrinsic measure, with nothing carried from one stretch to the next.
@@ -315,6 +343,19 @@ public final class ViewerSettings {
     // is what the pass itself reads a non-positive threshold as.
     public double spikeHeight = SPIKE_HEIGHT_DEFAULT;
     public double spikeBelowDegrees = SPIKE_BELOW_DEGREES_DEFAULT;
+
+    // Whether a straight run may land only where the cell it leaves can actually see it, which
+    // is what the placement clamp reads as doing and does not do. What each answer costs the
+    // map is measured on StraightRuns.ReachAnchor.
+    //
+    // Off, and the map is drawn that way on purpose: the correct window removes nearly every
+    // incursion into a cell and collapses more cells to a single point in exchange, which reads
+    // worse. Here as a switch because that verdict is a judgement about how the map looks, and
+    // the only way to weigh it again is to put the two side by side.
+    //
+    // One knob over both constructions, like the rounding: it decides how a coast is placed
+    // rather than which coast is being traced, and the two lines are on screen to be compared.
+    public boolean shouldLandWhereVisible;
 
     // The puddle floor: how much water a hole must hold to be drawn as a lake, as a share of
     // one cell's area. One knob for both constructions, like the rounding: it is a claim
@@ -366,6 +407,7 @@ public final class ViewerSettings {
 
     public Color coastlineColour = COASTLINE_DEFAULT;
     public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
+    public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
     public Color continentCoastColour = CONTINENT_COAST_DEFAULT;
     public Color coastCrossingColour = COAST_CROSSING_DEFAULT;
     public Color piercedCellColour = PIERCED_CELL_DEFAULT;
@@ -462,7 +504,8 @@ public final class ViewerSettings {
                 || showContinentLakeBridges
                 || showContinentLakePocketFill
                 || showIntercontinentalBridges
-                || showIntercontinentalFill);
+                || showIntercontinentalFill
+                || showIntercontinentalShores);
     }
 
     // How the coast is traced, for the same reason. More than one overlay walks the cells with
@@ -471,7 +514,22 @@ public final class ViewerSettings {
     // drawings then describe maps that were never the same.
     public Coastlines.CoastRules resolveCoastRules() {
         return new Coastlines.CoastRules(
-            bridgeReachMultiple, coastMinFrontageShare, minLakeShare, resolveLineRounding());
+            bridgeReachMultiple,
+            coastMinFrontageShare,
+            minLakeShare,
+            resolveLineRounding(),
+            resolveReachAnchor());
+    }
+
+    // Where a straight run may land, for every coast on the map. One answer rather than one per
+    // construction, for the reason the rounding is one answer: the two lines are drawn to be
+    // compared, and placed differently a difference between them would be partly a difference
+    // between the switches that placed them.
+    public StraightRuns.ReachAnchor resolveReachAnchor() {
+
+        return shouldLandWhereVisible
+            ? StraightRuns.ReachAnchor.NEAREST_THE_STRETCH_MIDDLE
+            : StraightRuns.ReachAnchor.AT_THE_STRETCH_START;
     }
 
     /**
@@ -547,6 +605,7 @@ public final class ViewerSettings {
             bridgeReachMultiple,
             continentMinFrontageShare,
             minLakeShare,
-            resolveLineRounding());
+            resolveLineRounding(),
+            resolveReachAnchor());
     }
 }

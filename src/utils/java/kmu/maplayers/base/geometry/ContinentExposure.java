@@ -117,16 +117,16 @@ public final class ContinentExposure {
         var captured = VoidBridgePockets.findBridgeWalledHoles(
             traced.union().sites(), spans, parameters, AT_THE_COASTS_OWN_REACH);
 
-        // Built for the channel alone, which is how wide a mouth the walls take out of a cell.
+        // Built for the mouths alone, which is how wide a bite the walls take out of a cell.
         // Asked of the walls rather than read off the knobs here, so that the rule about what
         // a bridge wall keeps stays in the one place that states it.
-        var channel = VoidBridgePockets.buildBridgeWalls(spans, parameters).channel();
+        var walls = VoidBridgePockets.buildBridgeWalls(spans, parameters);
 
         var continentOf = Coastlines.mapCellsToContinents(traced);
         var continents = traced.silhouettes().size();
 
         var stretches = gatherByContinent(
-            findExposedStretches(traced, captured, channel),
+            findExposedStretches(traced, captured, walls),
             ExposedStretch::cell,
             continentOf,
             continents);
@@ -154,9 +154,9 @@ public final class ContinentExposure {
     private static List<ExposedStretch> findExposedStretches(
             Coastlines.TracedCoasts traced,
             List<VoidHole> captured,
-            double channel) {
+            DiscUnionBoundary.Walls walls) {
 
-        var closed = gatherClosedArcsByCell(captured, traced.union(), channel);
+        var closed = gatherClosedArcsByCell(captured, traced.union(), walls);
         var sites = traced.union().sites();
         var exposed = new ArrayList<ExposedStretch>();
 
@@ -237,7 +237,7 @@ public final class ContinentExposure {
     private static Map<Integer, List<ClosedArc>> gatherClosedArcsByCell(
             List<VoidHole> captured,
             DiscUnion union,
-            double channel) {
+            DiscUnionBoundary.Walls walls) {
 
         var arcs = new LinkedHashMap<Integer, List<ClosedArc>>();
 
@@ -250,8 +250,8 @@ public final class ContinentExposure {
 
             for (var wall : water.walledBy()) {
 
-                addMouthOf(arcs, wall, wall.fromCircle(), union, channel);
-                addMouthOf(arcs, wall, wall.toCircle(), union, channel);
+                addMouthOf(arcs, wall, wall.fromCircle(), union, walls);
+                addMouthOf(arcs, wall, wall.toCircle(), union, walls);
             }
         }
         return arcs;
@@ -263,9 +263,9 @@ public final class ContinentExposure {
             DiscUnionBoundary.Chord wall,
             int cell,
             DiscUnion union,
-            double channel) {
+            DiscUnionBoundary.Walls walls) {
 
-        var mouth = WallMouths.measureMouth(union, wall, cell, channel);
+        var mouth = WallMouths.measureMouth(union, wall, cell, walls.channelOn(cell));
 
         // Absent only where a wall opens no mouth on a circle at all, which a wall the walk
         // laid does not. Guarded rather than assumed, since nothing downstream would notice

@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.ui.settings;
 
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.ui.CollapsibleSection;
 import kmu.ui.ColourRows;
 import kmu.ui.ControlRows;
@@ -82,6 +83,7 @@ public final class ViewerSettingsPanel {
     private static final String LAKE_POCKET_FILL = "showContinentLakePocketFill";
     private static final String INTERCONTINENTAL_BRIDGES = "showIntercontinentalBridges";
     private static final String INTERCONTINENTAL_FILL = "showIntercontinentalFill";
+    private static final String INTERCONTINENTAL_SHORES = "showIntercontinentalShores";
 
     // What each section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
@@ -311,6 +313,27 @@ public final class ViewerSettingsPanel {
             colour -> settings.droppedStretchColour = colour,
             refreshes::repaintMap));
 
+        // Where a straight line could arrive from the open void, which is answered off the
+        // discs and so says the same thing under either construction - one row, like the drops
+        // above, and for the same reason.
+        //
+        // The coasts are refreshed rather than merely repainted, because the answer is measured
+        // on acceptance rather than while painting - switching it on has nothing to draw until
+        // the trace is taken again.
+        controls.add(ControlRows.buildToggle(
+            "showLandableFrontage",
+            "Landable frontage",
+            false,
+            on -> settings.showLandableFrontage = on,
+            refreshes::refreshCoastlines));
+
+        controls.add(ColourRows.buildColour(
+            "landableFrontageColour",
+            "Landable frontage",
+            ViewerSettings.LANDABLE_FRONTAGE_DEFAULT,
+            colour -> settings.landableFrontageColour = colour,
+            refreshes::repaintMap));
+
         // Read by every fill on the map - both constructions' pockets and the bridges' own -
         // so it belongs to neither.
         controls.add(buildOpacitySlider(
@@ -319,6 +342,25 @@ public final class ViewerSettingsPanel {
             opacity -> settings.voidFillOpacity = (int) opacity));
 
         addLineSmoothingRows(controls);
+        addRunPlacementRows(controls);
+    }
+
+    // Where a straight run is allowed to land on the cell it reaches, which every coast on the
+    // map is placed by.
+    //
+    // Among the knobs reaching both constructions for the reason the smoothing ones are: it
+    // decides how a coast is PLACED rather than which coast is being traced, and the two lines
+    // are on screen to be compared. Placed differently, a difference between them would be
+    // partly a difference between the switches that placed them.
+    private void addRunPlacementRows(JPanel controls) {
+
+        // Off, because the map is deliberately placed the other way - the row is here to put
+        // the two side by side, not to offer a correction someone should leave on.
+        controls.add(buildToggle(
+            "shouldLandWhereVisible",
+            "Land runs only where the far cell is visible",
+            false,
+            on -> settings.shouldLandWhereVisible = on));
     }
 
     // What becomes of a drawn line where it turns sharply: which turns are rounded and to
@@ -784,7 +826,7 @@ public final class ViewerSettingsPanel {
             CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES,
             LAKE_BRIDGES, LAKE_POCKET_FILL,
             CONTINENT_BRIDGES, INLET_FILL,
-            INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL));
+            INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES));
 
         rows.addAll(buildContinentBranchRows());
         rows.addAll(buildContinentGlobalRows());
@@ -849,13 +891,23 @@ public final class ViewerSettingsPanel {
             // Last, because it is the only set laid against everything above rather than
             // against the coasts alone.
             ToggleTree.Row.ofRollUp(
-                1, "Intercontinental bridges", INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL),
+                1,
+                "Intercontinental bridges",
+                INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_BRIDGES, "Bridges", false,
                 on -> settings.showIntercontinentalBridges = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_FILL, "Fill", false,
-                on -> settings.showIntercontinentalFill = on)));
+                on -> settings.showIntercontinentalFill = on)),
+
+            // Its own switch beside the span rather than under it, because the two are opposite
+            // readings of one line: the span says a link is a stroke over the void, the shores
+            // say it is land with water either side. A reader judging either wants the other
+            // out of the way.
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                INTERCONTINENTAL_SHORES, "Coastline", false,
+                on -> settings.showIntercontinentalShores = on)));
     }
 
     // The globals: one per KIND of thing, cutting across every branch above. No switches of
@@ -870,7 +922,10 @@ public final class ViewerSettingsPanel {
                 LAKE_COASTLINE, CONTINENT_COASTLINE,
                 LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES,
                 INTERCONTINENTAL_BRIDGES),
-            ToggleTree.Row.ofRollUp(1, "Coastline", LAKE_COASTLINE, CONTINENT_COASTLINE),
+            ToggleTree.Row.ofRollUp(
+                1,
+                "Coastline",
+                LAKE_COASTLINE, CONTINENT_COASTLINE, INTERCONTINENTAL_SHORES),
             ToggleTree.Row.ofRollUp(
                 1, "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
             ToggleTree.Row.ofRollUp(

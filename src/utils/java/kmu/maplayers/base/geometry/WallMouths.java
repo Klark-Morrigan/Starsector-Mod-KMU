@@ -60,6 +60,15 @@ public final class WallMouths {
 
         var towards = measureAngleToWallEnd(chord, circle, union.sites().get(circle));
 
+        // A wall of no width meets the circle at exactly one angle - where its end sits - and
+        // that angle is the whole of its mouth. Answered directly rather than through the
+        // capsule below, which at no width is a band of nothing intersected away and caps that
+        // cover nothing: it would report no mouth at all, and a wall with no mouth is refused,
+        // when what the wall has is a mouth of no width at a known place.
+        if (channel <= 0) {
+            return new double[] {Angles.normalise(towards), 0};
+        }
+
         var arcs = Angles.mergeSpans(
             collectMouthPieces(union, chord, circle, channel), towards);
 

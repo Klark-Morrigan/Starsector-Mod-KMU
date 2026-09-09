@@ -6,8 +6,8 @@ import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
+import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
-import kmu.maplayers.base.geometry.ui.settings.ViewerSettings;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -92,9 +92,12 @@ public final class SectorCoastOverlay {
             coast.getTrace(),
             MapLook.RING_STROKE);
 
+        // Against the border, not the rounded line drawn over it: rounding only pulls sharp
+        // corners inwards, so a spill measured against that would mark every pocket the
+        // rounding stepped inside of as a fault of this construction.
         spills = CoastPocketFaults.findSpills(
             coast.getPockets(),
-            Coastlines.collectCoastRings(coast.getTrace()));
+            Coastlines.collectCoastOutlines(coast.getTrace()));
     }
 
     /**
@@ -125,6 +128,7 @@ public final class SectorCoastOverlay {
 
         coast.paintCoastRings(g2, settings.coastlineColour);
         coast.paintDroppedStretches(g2);
+        coast.paintLandableFrontage(g2);
 
         paintPenetrations(g2);
         paintSpills(g2);
