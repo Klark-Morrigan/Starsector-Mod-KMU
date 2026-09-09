@@ -260,6 +260,12 @@ so only the hidden part is drawn twice and the tooltip reads at one opacity acro
 repaint that cannot be made (the read broke, or the draw threw) leaves the tooltip where vanilla drew
 it and warns once a session, so the failure costs the occlusion it was there to fix and nothing more.
 
+It is retried on the next frame rather than stood down, which is a decision and not an oversight. The
+reach fails both where the build carries no such draw entry point, which will not change within a
+session, and where the component's own draw threw on this frame's state, which will - and the two
+arrive as the same undeclared throwable, so they cannot be told apart from here. Standing down on the
+pair would spend every later frame's lift to save the cost of one bad frame.
+
 Both are ports rather than direct calls, and that is what keeps the pass separable from the game: the
 live binding reaches a core-UI draw entry point by name and writes to GL, neither of which exists
 outside a running one, while whether a repaint happens, which region it is clipped to, and how a

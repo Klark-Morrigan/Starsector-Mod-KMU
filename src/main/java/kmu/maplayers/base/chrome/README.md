@@ -36,6 +36,19 @@ Everything here fails open - no row, no room, a shape that no longer builds a dr
 that throws - to no control, one line in the log, and a map behaving as it did before the box
 existed.
 
+Which screen is up is read before any of that, and it is what makes the reach affordable: published
+API and one fail-soft hop, against a reflective walk into the running game's tree. The box goes on
+the sector map screen's row or the intel screen's, so every other screen - which is most frames of a
+game, all of the ones spent flying about - is left unwalked.
+
+The two ways of finding no row are held apart, because only one of them is worth asking again. A row
+merely *absent* on a map screen is the ordinary case and is retried every frame: that is what lets a
+row the layout had not placed yet take a box a moment later. A reach that *throws* is a game build
+whose shape this does not recognise, and it will not recognise it on the next frame either - so the
+refusal is held against the screen it happened on, and not tried again until the player is on a
+different one. One attempt per visit rather than one per frame; the other map screen is a different
+widget tree and is still worth asking.
+
 Failing open has a second half no log line covers. The upkeep is also the only thing that says a
 screen *has* a control, said once a box is actually standing rather than when one is attempted, so a
 screen it never writes to goes on showing its layers whatever the save holds. That word is what

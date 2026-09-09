@@ -304,6 +304,12 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
             // a refinement: swallowing it leaves the tooltip where vanilla drew it, under the panel,
             // which is the nuisance this fixes rather than a new defect. Letting it out would instead
             // take the whole panel away on every frame.
+            //
+            // Retried rather than stood down, and that is a decision rather than an oversight: the
+            // reach fails both where the build carries no such entry point, which will not change,
+            // and where the component's own draw threw on this frame's state, which will. The two
+            // arrive as the same undeclared throwable, so they cannot be told apart from here, and
+            // standing down on the pair would cost every later frame's lift for one bad one.
             warnOnTooltipRepaintFailure(repaintFailed);
         }
     }

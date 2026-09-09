@@ -2,8 +2,10 @@ package kmu.maplayers.base.chrome;
 
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.CoreUITabId;
 
 import kmlib.logging.SessionWarning;
+import kmlib.starsector.ui.coreui.CampaignScreenView;
 import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterRows;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
@@ -51,6 +53,19 @@ import java.util.function.Supplier;
  * a screen it never writes to shows its layers whatever the save holds, and neither a broken reach
  * nor a closed hatch can leave a player in front of a blank map with nothing to reverse it.
  *
+ * <p>The reach is asked for only where a row could be. The box goes on the sector map screen's row
+ * or the intel screen's, so which core screen is up is read first - published API and one fail-soft
+ * hop - and every other screen is left without the reflective walk that would find nothing on it.
+ * That is most frames of a game, all of them spent flying about.
+ *
+ * <p>Two ways of finding no row, held apart because only one of them is worth asking again. A row
+ * absent on a map screen is the ordinary case and is retried on every frame, that being what lets a
+ * row the layout had not placed yet take a box a moment later. A reach that <em>throws</em> is a game
+ * build whose shape this does not recognise, and it will not recognise it on the next frame either -
+ * so the refusal is held against the screen it happened on and not tried again until the player is on
+ * a different one. One attempt per visit rather than one per frame, and a screen the player never
+ * returns to is never asked twice.
+ *
  * <p>Saying so is also what takes a tab off that screen's strip, so a box going up can leave that
  * screen's pick on a tab it no longer offers. Settling that is {@link MapLayerPickUpkeep}'s and not
  * this pass's: a pick is left stranded by a row the player arranged just as readily as by a box, on
@@ -73,6 +88,11 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     // The filter row of the map on screen, or nothing on the many screens that show no map.
     private final Supplier<MapFilterRow> resolveShownFilterRow;
 
+    // Which core screen is up. The cheap half of the same question the row read answers, and what
+    // makes the expensive half affordable: this is published API plus one hop that fails soft, where
+    // the row read is a chain of reflective ones.
+    private final Supplier<CoreUITabId> resolveShownCoreTab;
+
     // Stands the box on a row and binds it to a pick.
     private final MapLayerToggleAttacher toggleAttacher;
 
@@ -86,12 +106,17 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
     private final Map<ScreenLayerPicks, MapFilterToggle> attachedTogglesByScreenPicks =
         new IdentityHashMap<>();
 
+    // The screen a reach threw on, or null while none has. Held rather than counted, so what is
+    // skipped is the screen that broke and not the next one the player opens.
+    private CoreUITabId screenTheReachRefused;
+
     /** Reads the live settings, screens and widget tree - the pairing a running game gets. */
     public MapLayerToggleUpkeep() {
         this(
             KmuMapSidebarSettings::isMapFilterRowToggleEnabled,
             MapLayerScreens::resolveLivePicks,
             MapFilterRows::resolveShownMapFilterRow,
+            CampaignScreenView::resolveShownCoreTab,
             new VanillaMapLayerToggleAttacher());
     }
 
@@ -99,23 +124,36 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
             BooleanSupplier isToggleEnabled,
             Supplier<ScreenLayerPicks> resolveLiveScreenPicks,
             Supplier<MapFilterRow> resolveShownFilterRow,
+            Supplier<CoreUITabId> resolveShownCoreTab,
             MapLayerToggleAttacher toggleAttacher) {
 
         this.isToggleEnabled = isToggleEnabled;
         this.resolveLiveScreenPicks = resolveLiveScreenPicks;
         this.resolveShownFilterRow = resolveShownFilterRow;
+        this.resolveShownCoreTab = resolveShownCoreTab;
         this.toggleAttacher = toggleAttacher;
     }
 
     @Override
     public void advance(float amount) {
 
+        // Held outside the boundary so a refusal can be recorded against the screen it happened on.
+        // Null where the screen read itself threw, which is the cheap read and the one everything
+        // else rests on: nothing is written off for that, and the next frame asks again.
+        CoreUITabId shownCoreTab = null;
+
         // The switch read is inside the boundary too: it reaches the settings substrate, as able to
         // throw on an unfamiliar install as the widget walk below it.
         try {
-            keepTheBoxStandingAndTruthful();
+            shownCoreTab = resolveShownCoreTab.get();
+
+            keepTheBoxStandingAndTruthful(shownCoreTab);
 
         } catch (RuntimeException failure) {
+
+            if (shownCoreTab != null) {
+                screenTheReachRefused = shownCoreTab;
+            }
 
             warning.warnOnce(
                 "The control that shows and hides the map layers could not be put on the game's "
@@ -138,13 +176,21 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         return true;
     }
 
-    // Ordered cheapest-first: a switch read, one hop into the widget on screen, then a reference
-    // compare - so the common frame, the box already where it belongs, costs the hop, the word
-    // re-asserted under it, and the one save read that keeps the box honest.
-    private void keepTheBoxStandingAndTruthful() {
+    // Ordered cheapest-first: a switch read, the screen the player is on, then one hop into the
+    // widget on screen and a reference compare - so the common frame, the box already where it
+    // belongs, costs the hop, the word re-asserted under it, and the one save read that keeps the box
+    // honest, while a frame on any other screen costs the first two reads and stops.
+    //
+    // The switch is asked ahead of the screen rather than after it, so closing the hatch takes the
+    // word back on whatever screen the player closed it from rather than waiting for the next map.
+    private void keepTheBoxStandingAndTruthful(CoreUITabId shownCoreTab) {
 
         if (!isToggleEnabled.getAsBoolean()) {
             forgetEveryControlAttached();
+            return;
+        }
+
+        if (!isScreenWorthReaching(shownCoreTab)) {
             return;
         }
 
@@ -168,6 +214,16 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         // Re-asserted every frame rather than seeded once: the pick moves under a standing box, and
         // the row offers no way to take one off and put a fresh one up in its place.
         standingToggle.setChecked(readStoredVisibilityOf(screenPicks).areLayersShown());
+    }
+
+    // Whether a row could be found on this screen at all, and whether it is worth looking. The box
+    // goes on the sector map screen's row or the intel screen's, so every other screen has none to
+    // find and is worth no walk; and a screen a reach has already thrown on will throw the same way
+    // until the player is on a different one, so it is worth no walk either.
+    private boolean isScreenWorthReaching(CoreUITabId shownCoreTab) {
+
+        return shownCoreTab != screenTheReachRefused
+            && (shownCoreTab == CoreUITabId.MAP || shownCoreTab == CoreUITabId.INTEL);
     }
 
     // The box on the row that is up, appending one where the screen has none - which is every screen
