@@ -2,8 +2,6 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SectorStarSystems;
-
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
@@ -94,25 +92,24 @@ final class MarkedSystemRederive {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             DominancePass pass,
-            StarSystemAPI system,
-            String systemId,
+            MarkedSystem marked,
             StalePoliticsDisturbance disturbance) {
 
         // Re-derived under the pass this batch opened, which carries the grouping the full build
         // resolved this system's holder with, so a single-system refresh lands the same winning
         // bloc the bulk pass would.
-        var newHolder = SectorPolitics.resolveDominantHolder(system, pass);
-        var oldHolder = territories.getHolderBySystemId().get(systemId);
+        var newHolder = SectorPolitics.resolveDominantHolder(marked.system(), pass);
+        var oldHolder = territories.getHolderBySystemId().get(marked.systemId());
 
         // DominantHolder is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
         if (Objects.equals(oldHolder, newHolder)) {
             return;
         }
-        territories.getOccupancy().recordHolderOf(systemId, newHolder);
+        territories.getOccupancy().recordHolderOf(marked.systemId(), newHolder);
         disturbance.recordFlip(
-            systemId,
-            neighbourSystemIdsOf(geometryCache, systemId),
+            marked.systemId(),
+            neighbourSystemIdsOf(geometryCache, marked.systemId()),
             oldHolder,
             newHolder);
     }
@@ -131,14 +128,13 @@ final class MarkedSystemRederive {
     private static void rederiveSystemInhabitation(
             PoliticalMapTerritories territories,
             HolderPass holding,
-            StarSystemAPI system,
-            String systemId,
+            MarkedSystem marked,
             StalePoliticsDisturbance disturbance) {
 
-        var isInhabited = PoliticalMapInhabitation.isSystemInhabited(holding, system);
+        var isInhabited = PoliticalMapInhabitation.isSystemInhabited(holding, marked.system());
 
-        if (territories.getOccupancy().foldInhabitationOf(systemId, isInhabited)) {
-            disturbance.recordRestyle(systemId);
+        if (territories.getOccupancy().foldInhabitationOf(marked.systemId(), isInhabited)) {
+            disturbance.recordRestyle(marked.systemId());
         }
     }
 
@@ -195,5 +191,23 @@ final class MarkedSystemRederive {
             }
         }
         return neighbours;
+    }
+
+    /**
+     * One system a batch was told to re-derive: the id it was marked under, and the system that id
+     * still resolves to.
+     *
+     * <p>The two travel together because each read below needs both and neither can be derived from
+     * the other here. The id is the key every set on the drawn map is written under, and it stays
+     * the key whether or not a system still stands behind it; the system is null exactly when the
+     * sector no longer lists one, which each read answers for itself rather than by skipping the
+     * mark - a system that has gone is a change the map has to record.
+     *
+     * @param systemId the id the system was marked stale under
+     * @param system   the system that id resolves to, or null where the sector no longer lists one
+     */
+    private record MarkedSystem(
+        String systemId,
+        StarSystemAPI system) {
     }
 }
