@@ -14,6 +14,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.SectorPipeline.COAST_RULES;
+import static kmu.maplayers.base.geometry.SectorPipeline.PARAMETERS;
+import static kmu.maplayers.base.geometry.SectorPipeline.layLinks;
+import static kmu.maplayers.base.geometry.SectorPipeline.loadFixture;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -30,24 +36,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IntercontinentalCoastsIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.IntercontinentalCoastsIntegrationTest"
-            + "#provideSectorNames";
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
     // spans: the thinned set is the proposal, and an unthinned one is a different laying for the
     // links to be judged against.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
-
-    // One set of geometry knobs for the whole suite, for the reason the shipped pipeline keeps
-    // one: a coast traced under one set and spans laid under another describe two maps.
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
-
-    // How the coast is traced, taken from the one place that declares it rather than restated
-    // here: three copies of these numbers is how a suite comes to describe a different map from
-    // the one on screen without either of them saying so.
-    private static final Coastlines.CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
 
     // How far off a wall already down a span may run and still count as doubling it. The width a
     // span is drawn at, which is the shipped setting: two lines closer than that overlap on
@@ -58,14 +52,6 @@ class IntercontinentalCoastsIntegrationTest {
     // How close two span feet may stand before one of them moves. The shipped setting, which
     // separates feet that are coincident and leaves the rest where the search put them.
     private static final double ANCHOR_SEPARATION = 120;
-
-    // The laying the map ships, which is the one worth reporting on.
-    private static final ContinentBridges.BridgeRules SPAN_RULES =
-        new ContinentBridges.BridgeRules(
-            COAST_RULES.bridgeReachMultiple(),
-            COAST_SLACK,
-            SHOULD_THIN_FORMATIONS,
-            ANCHOR_SEPARATION);
 
     // How far a run may sit from a pinched foot and still count as having reached it, and how
     // near it has to come to be judged at all. A foot on a cell that offers one point is the one
@@ -92,28 +78,10 @@ class IntercontinentalCoastsIntegrationTest {
     private static final double ROUND_THE_ISLAND =
         SectorGeometryParameters.DEFAULT_CELL_RADIUS * 1.5;
 
-    // Built once per sector and shared: tracing a coast is O(n^2) in a sector's systems, and
-    // this suite asks for two of them per fixture.
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> INLET_SPANS = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> LINKS = new ConcurrentHashMap<>();
-
     private static final Map<String, List<List<double[]>>> SHORES = new ConcurrentHashMap<>();
 
     private static final Map<String, Coastlines.TracedCoasts> LINKED_TRACES =
         new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
 
     @Nested
     class FindLinkedShores {
@@ -125,7 +93,7 @@ class IntercontinentalCoastsIntegrationTest {
             // sector with links across it has cells the trace could not draw a coast for and
             // isthmuses that were strokes over the void, so an empty answer is the cut having
             // taken everything.
-            assertThat(linkContinentsOf(sector))
+            assertThat(layLinks(sector))
                 .as("%s: nothing was linked, so no coastline can have been added", sector)
                 .isNotEmpty();
 
@@ -146,7 +114,6 @@ class IntercontinentalCoastsIntegrationTest {
 
             for (var run : shoresOf(sector)) {
                 for (var index = 1; index < run.size() - 1; index++) {
-
                     if (isPointOfAnyRing(run.get(index), drawn, OVER_THE_LINE)) {
                         doubled.add(String.format(
                             "point %d of %d", index, run.size()));
@@ -170,7 +137,6 @@ class IntercontinentalCoastsIntegrationTest {
             var loose = new ArrayList<String>();
 
             for (var run : shoresOf(sector)) {
-
                 var isClosed = Points.computeDistance(run.get(0), run.get(run.size() - 1))
                     <= OVER_THE_LINE;
 
@@ -180,7 +146,6 @@ class IntercontinentalCoastsIntegrationTest {
 
                 if (!isPointOfAnyRing(run.get(0), drawn, MEETS_THE_LINE)
                         || !isPointOfAnyRing(run.get(run.size() - 1), drawn, MEETS_THE_LINE)) {
-
                     loose.add(String.format("a run of %d points", run.size()));
                 }
             }
@@ -199,7 +164,7 @@ class IntercontinentalCoastsIntegrationTest {
             // rim is a walled hole's shore. What may not happen is an island with neither: a
             // linked cell on no line anywhere is the walk having refused the very cell the link
             // was laid to reach.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
             var reached = collectLinkedIslands(sector);
 
             assertThat(reached)
@@ -210,10 +175,8 @@ class IntercontinentalCoastsIntegrationTest {
             var bare = new ArrayList<String>();
 
             for (var island : reached) {
-
                 if (!seaRinged.contains(island)
                         && !isAnyRunNear(traced.union().sites().get(island), shoresOf(sector))) {
-
                     bare.add(String.format("island %d", island));
                 }
             }
@@ -230,14 +193,13 @@ class IntercontinentalCoastsIntegrationTest {
             // inside one. Held to the reach the line is drawn at, less what the rounding is
             // allowed to cut off a corner - which is the only thing that moves a point of a
             // drawn coast inward at all.
-            var union = traceCoastOf(sector).union();
+            var union = traceContinentCoast(sector).union();
             var floor = union.reach() - COAST_RULES.rounding().radius();
             var buried = new ArrayList<String>();
 
             for (var run : shoresOf(sector)) {
                 for (var point : run) {
                     for (var site = 0; site < union.sites().size(); site++) {
-
                         var separation = Points.computeDistance(union.sites().get(site), point);
 
                         if (separation < floor) {
@@ -264,10 +226,8 @@ class IntercontinentalCoastsIntegrationTest {
             var stoppedShort = new ArrayList<String>();
 
             for (var foot : collectPinchedFeetOf(sector)) {
-
                 if (isPointOfAnyRing(foot, shoresOf(sector), WITHIN_REACH_OF_A_FOOT)
                         && !isPointOfAnyRing(foot, shoresOf(sector), ON_THE_FOOT)) {
-
                     stoppedShort.add(String.format("(%.0f, %.0f)", foot[0], foot[1]));
                 }
             }
@@ -281,13 +241,11 @@ class IntercontinentalCoastsIntegrationTest {
     // The islands a link actually reaches, which are the ones the second trace can draw a coast
     // for. An island nothing reaches is alone in the void in both traces.
     private static List<Integer> collectLinkedIslands(String sector) {
-
-        var islands = List.copyOf(traceCoastOf(sector).islands());
+        var islands = List.copyOf(traceContinentCoast(sector).islands());
         var reached = new ArrayList<Integer>();
 
-        for (var link : linkContinentsOf(sector)) {
+        for (var link : layLinks(sector)) {
             for (var cell : List.of(link.fromSite(), link.toSite())) {
-
                 if (islands.contains(cell) && !reached.contains(cell)) {
                     reached.add(cell);
                 }
@@ -300,8 +258,7 @@ class IntercontinentalCoastsIntegrationTest {
     // sides of the water: a stretch drawn over a lake shore is as duplicated as one drawn over
     // an outer coast, and a run may as legitimately meet one as the other.
     private static List<List<double[]>> gatherDrawnLinesOf(String sector) {
-
-        var traced = traceCoastOf(sector);
+        var traced = traceContinentCoast(sector);
         var drawn = new ArrayList<>(Coastlines.collectCoastOutlines(traced));
 
         drawn.addAll(Coastlines.collectLakeOutlines(traced));
@@ -313,7 +270,6 @@ class IntercontinentalCoastsIntegrationTest {
     // The cells whose border a walled hole's shore runs along, off the trace with the links
     // laid - the same walk the construction cuts, asked here for the water side it leaves out.
     private static Set<Integer> collectWalledShoreCellsOf(String sector) {
-
         var ringed = new LinkedHashSet<Integer>();
 
         for (var shore : traceLinkedCoastOf(sector).walledShores()) {
@@ -328,33 +284,29 @@ class IntercontinentalCoastsIntegrationTest {
     // frontage is one point - so what is asked of the linked walk here is asked of the walk the
     // shores were cut from rather than of a second laying that merely resembles it.
     private static Coastlines.TracedCoasts traceLinkedCoastOf(String sector) {
-
         return LINKED_TRACES.computeIfAbsent(sector, named ->
             Coastlines.traceCoastsAcrossWalls(
-                buildFixtureFor(named).getSites(),
+                loadFixture(named).getSites(),
                 PARAMETERS,
                 COAST_RULES,
                 buildLinkWallsOf(named)));
     }
 
     private static DiscUnionBoundary.Walls buildLinkWallsOf(String sector) {
-
         return new DiscUnionBoundary.Walls(
-            DiscUnionBoundary.buildChordsFrom(linkContinentsOf(sector)),
+            DiscUnionBoundary.buildChordsFrom(layLinks(sector)),
             PARAMETERS.borderInset(),
-            CoastFrontages.collectPinchedCells(traceCoastOf(sector)));
+            CoastFrontages.collectPinchedCells(traceContinentCoast(sector)));
     }
 
     // Every foot a laid link puts on a pinched cell: the one point that cell offered, and the
     // one place the border the wall carries is meant to meet.
     private static List<double[]> collectPinchedFeetOf(String sector) {
-
         var walls = buildLinkWallsOf(sector);
         var feet = new ArrayList<double[]>();
 
         for (var chord : DiscUnionBoundary.findAttachableChords(
                 traceLinkedCoastOf(sector).union(), walls)) {
-
             if (walls.pinchedCells().contains(chord.fromCircle())) {
                 feet.add(chord.findStart());
             }
@@ -366,10 +318,8 @@ class IntercontinentalCoastsIntegrationTest {
     }
 
     private static boolean isAnyRunNear(double[] site, List<List<double[]>> runs) {
-
         for (var run : runs) {
             for (var point : run) {
-
                 if (Points.computeDistance(site, point) <= ROUND_THE_ISLAND) {
                     return true;
                 }
@@ -382,13 +332,10 @@ class IntercontinentalCoastsIntegrationTest {
             double[] point,
             List<List<double[]>> rings,
             double within) {
-
         for (var ring : rings) {
             for (var index = 1; index < ring.size(); index++) {
-
                 if (Segments.computeDistanceToPoint(
                         ring.get(index - 1), ring.get(index), point) <= within) {
-
                     return true;
                 }
             }
@@ -397,36 +344,11 @@ class IntercontinentalCoastsIntegrationTest {
     }
 
     private static List<List<double[]>> shoresOf(String sector) {
-
         return SHORES.computeIfAbsent(sector, named ->
             IntercontinentalCoasts.findLinkedShores(
-                traceCoastOf(named),
-                linkContinentsOf(named),
+                traceContinentCoast(named),
+                layLinks(named),
                 PARAMETERS,
                 COAST_RULES));
-    }
-
-    private static List<CellGap> linkContinentsOf(String sector) {
-
-        return LINKS.computeIfAbsent(sector, named ->
-            IntercontinentalBridges.findIntercontinentalBridges(
-                traceCoastOf(named), layInletSpansOn(named), PARAMETERS, SPAN_RULES));
-    }
-
-    private static List<CellGap> layInletSpansOn(String sector) {
-
-        return INLET_SPANS.computeIfAbsent(sector, named ->
-            ContinentBridges.findAnchoredBridges(
-                traceCoastOf(named), CoastFrontages.Shore.EXTERIOR, PARAMETERS, SPAN_RULES));
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, COAST_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
     }
 }

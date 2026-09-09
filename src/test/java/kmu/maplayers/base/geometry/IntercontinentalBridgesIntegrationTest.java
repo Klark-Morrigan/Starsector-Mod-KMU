@@ -11,7 +11,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static kmu.maplayers.base.geometry.SectorPipeline.PARAMETERS;
+import static kmu.maplayers.base.geometry.SectorPipeline.SPAN_RULES;
+import static kmu.maplayers.base.geometry.SectorPipeline.layInletSpans;
+import static kmu.maplayers.base.geometry.SectorPipeline.layLinks;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,19 +34,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IntercontinentalBridgesIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.IntercontinentalBridgesIntegrationTest"
-            + "#provideSectorNames";
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
     // spans: the thinned set is the proposal, and an unthinned one is a different laying for the
     // links to be judged against.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
-
-    // One set of geometry knobs for the whole suite, for the reason the shipped pipeline keeps
-    // one: a coast traced under one set and spans laid under another describe two maps.
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
 
     // How far off a wall already down a span may run and still count as doubling it. The width a
     // span is drawn at, which is the shipped setting: two lines closer than that overlap on
@@ -57,33 +55,6 @@ class IntercontinentalBridgesIntegrationTest {
     // the arithmetic of interpolating along a segment is being absorbed.
     private static final double ON_THE_LINE = 1e-6;
 
-    // The laying the map ships, which is the one worth reporting on.
-    private static final ContinentBridges.BridgeRules SPAN_RULES =
-        new ContinentBridges.BridgeRules(
-            Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
-            COAST_SLACK,
-            SHOULD_THIN_FORMATIONS,
-            ANCHOR_SEPARATION);
-
-    // Built once per sector and shared: tracing a coast is O(n^2) in a sector's systems, and
-    // laying either set walks every pair of frontages, so each check asking for its own would
-    // pay for the pipeline several times over.
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> INLET_SPANS = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> LINKS = new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
-
     @Nested
     class FindIntercontinentalBridges {
 
@@ -94,11 +65,11 @@ class IntercontinentalBridgesIntegrationTest {
             // A sector whose trace left several continents standing has pairs within reach of
             // each other by construction - that is what a bridge would have joined - so laying
             // nothing at all is the pass having refused everything.
-            assertThat(traceCoastOf(sector).silhouettes().size())
+            assertThat(traceContinentCoast(sector).silhouettes().size())
                 .as("%s: one continent only, so there is nothing to link", sector)
                 .isGreaterThan(1);
 
-            assertThat(linkContinentsOf(sector))
+            assertThat(layLinks(sector))
                 .as("%s: no continent linked to any other", sector)
                 .isNotEmpty();
         }
@@ -112,11 +83,10 @@ class IntercontinentalBridgesIntegrationTest {
             //
             // Shapes rather than continents, since an island is a shape of the sector with no
             // coastline: absent from the silhouettes, and still a thing a link may join.
-            var continentOf = Coastlines.mapCellsToShapes(traceCoastOf(sector));
+            var continentOf = Coastlines.mapCellsToShapes(traceContinentCoast(sector));
             var misjoined = new ArrayList<String>();
 
-            for (var link : linkContinentsOf(sector)) {
-
+            for (var link : layLinks(sector)) {
                 var from = continentOf.get(link.fromSite());
                 var to = continentOf.get(link.toSite());
 
@@ -145,11 +115,9 @@ class IntercontinentalBridgesIntegrationTest {
             var frontages = collectAnchorableFrontagesOf(sector);
             var strayed = new ArrayList<String>();
 
-            for (var link : linkContinentsOf(sector)) {
-
+            for (var link : layLinks(sector)) {
                 if (!isPointOfFrontage(link.start(), frontages.get(link.fromSite()))
                         || !isPointOfFrontage(link.end(), frontages.get(link.toSite()))) {
-
                     strayed.add(String.format("cells %d-%d", link.fromSite(), link.toSite()));
                 }
             }
@@ -165,17 +133,15 @@ class IntercontinentalBridgesIntegrationTest {
             // The inlet spans were laid first and are on the map. A link crossing one claims
             // void that span already holds, and the two lines drawn over each other are two
             // claims a reader cannot tell apart.
-            var inlets = layInletSpansOn(sector);
+            var inlets = layInletSpans(sector);
             var crossing = new ArrayList<String>();
 
-            for (var link : linkContinentsOf(sector)) {
+            for (var link : layLinks(sector)) {
                 for (var inlet : inlets) {
-
                     if (!isSharingAnAnchor(link, inlet)
                             && Segments.intersectSegments(
                                 link.start(), link.end(),
                                 inlet.start(), inlet.end()) != null) {
-
                         crossing.add(String.format(
                             "link %d-%d over inlet span %d-%d",
                             link.fromSite(), link.toSite(),
@@ -196,19 +162,18 @@ class IntercontinentalBridgesIntegrationTest {
             // second time with its own answer standing, which is the one arrangement where the
             // gate can bite: no other set on the map joins two cells of different continents,
             // so with the shipped inputs it is never reached.
-            var links = linkContinentsOf(sector);
-            var standing = new ArrayList<>(layInletSpansOn(sector));
+            var links = layLinks(sector);
+            var standing = new ArrayList<>(layInletSpans(sector));
 
             standing.addAll(links);
 
             var relaid = IntercontinentalBridges.findIntercontinentalBridges(
-                traceCoastOf(sector), standing, PARAMETERS, SPAN_RULES);
+                traceContinentCoast(sector), standing, PARAMETERS, SPAN_RULES);
 
             var joinedTwice = new ArrayList<String>();
 
             for (var again : relaid) {
                 for (var link : links) {
-
                     if (isSamePair(again, link)) {
                         joinedTwice.add(String.format(
                             "cells %d-%d", link.fromSite(), link.toSite()));
@@ -227,7 +192,7 @@ class IntercontinentalBridgesIntegrationTest {
             // Islands are shapes of the sector like any other. They carry no coastline, since
             // the line round a cell touching nothing would be its own border drawn twice - but
             // that is a reason not to draw one, not a reason to leave the cell unreachable.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
             var islands = new LinkedHashSet<>(traced.islands());
 
             assertThat(islands)
@@ -236,8 +201,7 @@ class IntercontinentalBridgesIntegrationTest {
 
             var reached = new LinkedHashSet<Integer>();
 
-            for (var link : linkContinentsOf(sector)) {
-
+            for (var link : layLinks(sector)) {
                 if (islands.contains(link.fromSite())) {
                     reached.add(link.fromSite());
                 }
@@ -258,13 +222,12 @@ class IntercontinentalBridgesIntegrationTest {
             // have reached. An island within the reach of another shape and still unlinked
             // would be the pass refusing a cell for having no coastline, which is the whole
             // fault this admits.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
             var sites = traced.union().sites();
             var reach = PARAMETERS.cellRadius() * SPAN_RULES.reachMultiple();
             var linked = new LinkedHashSet<Integer>();
 
-            for (var link : linkContinentsOf(sector)) {
-
+            for (var link : layLinks(sector)) {
                 linked.add(link.fromSite());
                 linked.add(link.toSite());
             }
@@ -272,17 +235,14 @@ class IntercontinentalBridgesIntegrationTest {
             var overlooked = new ArrayList<String>();
 
             for (var island : traced.islands()) {
-
                 if (linked.contains(island)) {
                     continue;
                 }
 
                 for (var cell : collectAnchorableFrontagesOf(sector).keySet()) {
-
                     if (cell != island
                             && Points.computeDistance(sites.get(cell), sites.get(island))
                                 <= reach) {
-
                         overlooked.add(String.format("island %d, cell %d near it", island, cell));
                     }
                 }
@@ -298,12 +258,11 @@ class IntercontinentalBridgesIntegrationTest {
         void every_link_joins_cells_within_reach_of_each_other(String sector) {
             // Range-based, the way the settled bridges are: two cells hold the void between
             // them only while they sit near enough to trap it, measured centre to centre.
-            var sites = traceCoastOf(sector).union().sites();
+            var sites = traceContinentCoast(sector).union().sites();
             var reach = PARAMETERS.cellRadius() * SPAN_RULES.reachMultiple();
             var overreached = new ArrayList<String>();
 
-            for (var link : linkContinentsOf(sector)) {
-
+            for (var link : layLinks(sector)) {
                 var separation = Points.computeDistance(
                     sites.get(link.fromSite()), sites.get(link.toSite()));
 
@@ -322,8 +281,7 @@ class IntercontinentalBridgesIntegrationTest {
 
     // Every stretch a link may anchor on: the continents' coasts, and the islands' whole rims.
     private static Map<Integer, List<List<double[]>>> collectAnchorableFrontagesOf(String sector) {
-
-        var traced = traceCoastOf(sector);
+        var traced = traceContinentCoast(sector);
         var frontages = new java.util.LinkedHashMap<>(
             CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
 
@@ -336,17 +294,14 @@ class IntercontinentalBridgesIntegrationTest {
     // Whether a point lies on the traced coast a cell offers, which is what anchoring on the
     // frontage means - on the line rather than near it.
     private static boolean isPointOfFrontage(double[] anchor, List<List<double[]>> runs) {
-
         if (runs == null) {
             return false;
         }
 
         for (var run : runs) {
             for (var index = 1; index < run.size(); index++) {
-
                 if (Segments.computeDistanceToPoint(
                         run.get(index - 1), run.get(index), anchor) <= ON_THE_LINE) {
-
                     return true;
                 }
             }
@@ -359,7 +314,6 @@ class IntercontinentalBridgesIntegrationTest {
     }
 
     private static boolean isSamePair(CellGap one, CellGap other) {
-
         return Math.min(one.fromSite(), one.toSite())
                 == Math.min(other.fromSite(), other.toSite())
             && Math.max(one.fromSite(), one.toSite())
@@ -370,7 +324,6 @@ class IntercontinentalBridgesIntegrationTest {
     // there by construction, and the search allows that - so a check on crossings has to allow
     // it too or it fails on the very case the search means to permit.
     private static boolean isSharingAnAnchor(CellGap span, CellGap held) {
-
         return isSamePlace(span.start(), held.start())
             || isSamePlace(span.start(), held.end())
             || isSamePlace(span.end(), held.start())
@@ -379,30 +332,5 @@ class IntercontinentalBridgesIntegrationTest {
 
     private static boolean isSamePlace(double[] one, double[] other) {
         return Points.computeDistance(one, other) <= DiscUnion.TOUCHING_TOLERANCE;
-    }
-
-    private static List<CellGap> linkContinentsOf(String sector) {
-
-        return LINKS.computeIfAbsent(sector, named ->
-            IntercontinentalBridges.findIntercontinentalBridges(
-                traceCoastOf(named), layInletSpansOn(named), PARAMETERS, SPAN_RULES));
-    }
-
-    // The spans the map lays first, which are what a link is judged against.
-    private static List<CellGap> layInletSpansOn(String sector) {
-
-        return INLET_SPANS.computeIfAbsent(sector, named ->
-            ContinentBridges.findAnchoredBridges(
-                traceCoastOf(named), CoastFrontages.Shore.EXTERIOR, PARAMETERS, SPAN_RULES));
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
     }
 }

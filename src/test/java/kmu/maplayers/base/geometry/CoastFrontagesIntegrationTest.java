@@ -5,9 +5,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,27 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastFrontagesIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.CoastFrontagesIntegrationTest#provideSectorNames";
-
-    // One set of geometry knobs for the whole suite, for the reason the shipped pipeline keeps
-    // one: a coast traced under one set and read under another describes two maps.
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
-
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     @Nested
     class CollectPinchedCells {
@@ -50,7 +29,7 @@ class CoastFrontagesIntegrationTest {
             // Asked first and alone, since every claim below is true of an empty set. A third of
             // a coast's stretches come out as one point, so a sector with none would be one
             // where the frontage was not read at all.
-            assertThat(CoastFrontages.collectPinchedCells(traceCoastOf(sector)))
+            assertThat(CoastFrontages.collectPinchedCells(traceContinentCoast(sector)))
                 .as("%s: no cell offers a single point", sector)
                 .isNotEmpty();
         }
@@ -61,13 +40,12 @@ class CoastFrontagesIntegrationTest {
             // What pinched means. A cell with any stretch to its name is not pinched, however
             // many single points it offers besides: a wall on such a cell has somewhere with
             // width to land, and keeps its channel.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
             var frontages = CoastFrontages.collectBridgeFrontages(traced);
             var withAStretch = new ArrayList<String>();
 
             for (var cell : CoastFrontages.collectPinchedCells(traced)) {
                 for (var run : frontages.get(cell)) {
-
                     if (run.size() > 1) {
                         withAStretch.add(String.format("cell %d, %d points", cell, run.size()));
                     }
@@ -85,7 +63,7 @@ class CoastFrontagesIntegrationTest {
             // The other direction: pinched is read OFF the frontage, so a cell reported pinched
             // has frontage to be read off. One that did not would be a cell offering a wall
             // nowhere at all, reported as offering it a point.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
             var frontages = CoastFrontages.collectBridgeFrontages(traced);
             var unfronted = new ArrayList<Integer>();
 
@@ -99,15 +77,5 @@ class CoastFrontagesIntegrationTest {
                 .as("%s: a pinched cell with no frontage to have been read off", sector)
                 .isEmpty();
         }
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
     }
 }

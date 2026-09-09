@@ -274,6 +274,9 @@ public final class CoastFrontages {
         return 0;
     }
 
+    // One run filed under the cell whose border it lies on, dropping what cannot be anchored
+    // on: a run belonging to no cell, and an empty one. Both would otherwise be offered to the
+    // span search as somewhere to start from.
     private static void addFrontage(
             Map<Integer, List<List<double[]>>> frontages,
             int cell,

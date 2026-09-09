@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.SectorPipeline.PARAMETERS;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -26,11 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LandableFrontagesIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.LandableFrontagesIntegrationTest#provideSectorNames";
-
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     // How much of a cell's radius a point may sit inside the border it is drawn on, in map
     // units. A sampled arc is chorded, so a point between two samples sits off the true circle
@@ -50,24 +49,8 @@ class LandableFrontagesIntegrationTest {
     private static final int RAYS_FROM_CENTRE = 72;
     private static final int RAY_STEPS_PER_REACH = 8;
 
-    // Built once per sector and shared: tracing a coast is O(n^2) in a sector's systems, and
-    // asking where a line could arrive sweeps every disc per sampled angle on top of it.
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-
     private static final Map<String, List<DiscUnionBoundary.CoastMark>> LANDABLE =
         new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
 
     @Nested
     class CollectLandableFrontages {
@@ -109,7 +92,6 @@ class LandableFrontagesIntegrationTest {
 
             for (var stretch : landableOf(sector)) {
                 if (!isWithinAny(stretch, offered.get(stretch.circle()))) {
-
                     strayed.add(String.format(
                         "cell %d from %.3f to %.3f",
                         stretch.circle(), stretch.fromAngle(), stretch.toAngle()));
@@ -139,7 +121,7 @@ class LandableFrontagesIntegrationTest {
             // together sits in the very water the inter-continental bridges wall in, and no
             // straight line from open sea reaches it; those are correctly reported walled, and
             // this check leaves them alone.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
 
             assertThat(traced.islands())
                 .as("%s: no islands, so this check asks nothing", sector)
@@ -170,13 +152,12 @@ class LandableFrontagesIntegrationTest {
             // A stretch of border drawn on the border it sits on. A point inside any cell would
             // mean the sampling had left the boundary, which is the one way these runs could be
             // drawn somewhere they say nothing about.
-            var union = traceCoastOf(sector).union();
+            var union = traceContinentCoast(sector).union();
             var buried = new ArrayList<String>();
 
             for (var run : runsOf(sector)) {
                 for (var point : run) {
                     for (var site = 0; site < union.sites().size(); site++) {
-
                         var separation = Points.computeDistance(union.sites().get(site), point);
 
                         if (separation < union.reach() - ON_THE_BORDER) {
@@ -198,19 +179,16 @@ class LandableFrontagesIntegrationTest {
     // cell. Marched from just past the cell's own reach, so its own disc is already behind the
     // ray and only the rest of the map can stop it.
     private static boolean isOpenFromCentre(DiscUnion union, int cell) {
-
         var centre = union.sites().get(cell);
         var edge = measureMapEdge(union);
 
         for (var ray = 0; ray < RAYS_FROM_CENTRE; ray++) {
-
             var angle = Angles.FULL_TURN * ray / RAYS_FROM_CENTRE;
             var blocked = false;
 
             for (var along = union.reach() + ON_THE_BORDER;
                     along < edge && !blocked;
                     along += union.reach() / RAY_STEPS_PER_REACH) {
-
                 blocked = union.isPointInside(new double[] {
                     centre[0] + along * Math.cos(angle),
                     centre[1] + along * Math.sin(angle)});
@@ -224,7 +202,6 @@ class LandableFrontagesIntegrationTest {
 
     // Beyond every cell from anywhere on the map, so a ray marched this far has left it.
     private static double measureMapEdge(DiscUnion union) {
-
         var furthest = 0.0;
 
         for (var site : union.sites()) {
@@ -237,16 +214,13 @@ class LandableFrontagesIntegrationTest {
     private static boolean isWithinAny(
             DiscUnionBoundary.CoastMark stretch,
             List<DiscUnionBoundary.CoastMark> offered) {
-
         if (offered == null) {
             return false;
         }
 
         for (var mark : offered) {
-
             if (stretch.fromAngle() >= mark.fromAngle() - WITHIN_THE_STRETCH
                     && stretch.toAngle() <= mark.toAngle() + WITHIN_THE_STRETCH) {
-
                 return true;
             }
         }
@@ -258,18 +232,15 @@ class LandableFrontagesIntegrationTest {
     // entire way round.
     private static Map<Integer, List<DiscUnionBoundary.CoastMark>> collectExposedByCell(
             String sector) {
-
-        var traced = traceCoastOf(sector);
+        var traced = traceContinentCoast(sector);
         var byCell = new LinkedHashMap<Integer, List<DiscUnionBoundary.CoastMark>>();
 
         for (var silhouette : traced.silhouettes()) {
             for (var mark : silhouette) {
-
                 byCell.computeIfAbsent(mark.circle(), whichever -> new ArrayList<>()).add(mark);
             }
         }
         for (var island : traced.islands()) {
-
             byCell
                 .computeIfAbsent(island, whichever -> new ArrayList<>())
                 .add(new DiscUnionBoundary.CoastMark(island, 0, Angles.FULL_TURN));
@@ -278,11 +249,9 @@ class LandableFrontagesIntegrationTest {
     }
 
     private static List<Integer> collectCellsWithLandableBorder(String sector) {
-
         var cells = new ArrayList<Integer>();
 
         for (var stretch : landableOf(sector)) {
-
             if (!cells.contains(stretch.circle())) {
                 cells.add(stretch.circle());
             }
@@ -291,7 +260,6 @@ class LandableFrontagesIntegrationTest {
     }
 
     private static double measureLandableArc(String sector) {
-
         var total = 0.0;
 
         for (var stretch : landableOf(sector)) {
@@ -301,12 +269,10 @@ class LandableFrontagesIntegrationTest {
     }
 
     private static double measureExposedArc(String sector) {
-
         var total = 0.0;
 
         for (var byCell : collectExposedByCell(sector).values()) {
             for (var mark : byCell) {
-
                 total += mark.toAngle() - mark.fromAngle();
             }
         }
@@ -314,25 +280,13 @@ class LandableFrontagesIntegrationTest {
     }
 
     private static List<List<double[]>> runsOf(String sector) {
-
         return LandableFrontages.collectLandableRuns(
-            traceCoastOf(sector), PARAMETERS.measureArcSegments());
+            traceContinentCoast(sector), PARAMETERS.measureArcSegments());
     }
 
     private static List<DiscUnionBoundary.CoastMark> landableOf(String sector) {
-
         return LANDABLE.computeIfAbsent(sector, named ->
             LandableFrontages.collectLandableFrontages(
-                traceCoastOf(named), PARAMETERS.measureArcSegments()));
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
+                traceContinentCoast(named), PARAMETERS.measureArcSegments()));
     }
 }

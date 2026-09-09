@@ -71,6 +71,9 @@ public final class CoastRounding {
             roundOutlines(Coastlines.collectWalledShoreOutlines(traced), rounding));
     }
 
+    // One rounding applied to a whole layer of lines. The rounding is a property of the map
+    // rather than of any one shore, so every layer is put through the same call rather than
+    // each reaching for the smoothing itself.
     private static List<List<double[]>> roundOutlines(
             List<List<double[]>> outlines,
             CornerRounding rounding) {

@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.SectorPipeline.PARAMETERS;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -31,13 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CrowdedAnchorsIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.CrowdedAnchorsIntegrationTest#provideSectorNames";
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     private static final boolean SHOULD_THIN_FORMATIONS = true;
-
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
 
     // How far off a wall already down a span may run and still count as doubling it, in map
     // units. The shipped setting; nothing below turns on the number.
@@ -67,21 +66,8 @@ class CrowdedAnchorsIntegrationTest {
     // line misses by a sagitta, which on these cells is tens of units.
     private static final double ON_THE_LINE = 1e-6;
 
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
     private static final Map<String, List<CellGap>> SPREAD = new ConcurrentHashMap<>();
     private static final Map<String, List<CellGap>> UNSPREAD = new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
 
     @Nested
     class SpreadCrowdedAnchors {
@@ -116,7 +102,6 @@ class CrowdedAnchorsIntegrationTest {
 
             for (var one = 0; one < spans.size(); one++) {
                 for (var other = one + 1; other < spans.size(); other++) {
-
                     var first = spans.get(one);
                     var second = spans.get(other);
 
@@ -124,7 +109,6 @@ class CrowdedAnchorsIntegrationTest {
                             && Segments.intersectSegments(
                                 first.start(), first.end(),
                                 second.start(), second.end()) != null) {
-
                         crossing.add(String.format(
                             "%d-%d over %d-%d",
                             first.fromSite(), first.toSite(),
@@ -151,7 +135,7 @@ class CrowdedAnchorsIntegrationTest {
             // sampled at.
             // The islands' rims among them, since a cell alone in the void has no coast and
             // its whole border is where a foot may stand.
-            var traced = traceCoastOf(sector);
+            var traced = traceContinentCoast(sector);
             var frontages = new java.util.LinkedHashMap<>(
                 CoastFrontages.Shore.EXTERIOR.collectFrontages(traced));
 
@@ -161,10 +145,8 @@ class CrowdedAnchorsIntegrationTest {
             var strayed = new ArrayList<String>();
 
             for (var span : laySpreadOn(sector)) {
-
                 if (!isPointOfFrontage(span.start(), frontages.get(span.fromSite()))
                         || !isPointOfFrontage(span.end(), frontages.get(span.toSite()))) {
-
                     strayed.add(String.format("%d-%d", span.fromSite(), span.toSite()));
                 }
             }
@@ -199,7 +181,6 @@ class CrowdedAnchorsIntegrationTest {
             assertThat(spread).hasSameSizeAs(unspread);
 
             for (var index = 0; index < spread.size(); index++) {
-
                 assertThat(spread.get(index).fromSite())
                     .as("%s: span %d joins a different cell once spread", sector, index)
                     .isEqualTo(unspread.get(index).fromSite());
@@ -228,11 +209,9 @@ class CrowdedAnchorsIntegrationTest {
             var fidgeted = new ArrayList<String>();
 
             for (var index = 0; index < spread.size(); index++) {
-
                 var others = collectFeetExcept(spread, index);
 
                 for (var side = 0; side < 2; side++) {
-
                     var from = side == 0
                         ? unspread.get(index).start() : unspread.get(index).end();
 
@@ -240,7 +219,6 @@ class CrowdedAnchorsIntegrationTest {
 
                     if (!isSamePlace(from, to)
                             && measureClearance(from, others) >= ANCHOR_SEPARATION) {
-
                         fidgeted.add(String.format(
                             "%d-%d foot %d, which had %.0f of room",
                             spread.get(index).fromSite(), spread.get(index).toSite(), side,
@@ -272,13 +250,11 @@ class CrowdedAnchorsIntegrationTest {
             var pointless = new ArrayList<String>();
 
             for (var index = 0; index < spread.size(); index++) {
-
                 // Its own span's two feet left out: a foot is nought from itself, and the far
                 // end of its own span moves with it.
                 var settled = collectFeetExcept(spread, index);
 
                 for (var side = 0; side < 2; side++) {
-
                     var from = side == 0
                         ? unspread.get(index).start() : unspread.get(index).end();
 
@@ -286,7 +262,6 @@ class CrowdedAnchorsIntegrationTest {
 
                     if (!isSamePlace(from, to)
                             && measureClearance(to, settled) <= measureClearance(from, settled)) {
-
                         pointless.add(String.format(
                             "%d-%d foot %d: left %.0f of room for %.0f",
                             spread.get(index).fromSite(), spread.get(index).toSite(), side,
@@ -310,12 +285,10 @@ class CrowdedAnchorsIntegrationTest {
     // the map no crowding at all - then count the same pair as crowded once the pass had moved
     // them a few hundred units apart, and report the cure as the disease.
     private static int countCrowdedFeet(List<CellGap> spans) {
-
         var feet = collectFeet(spans);
         var crowded = 0;
 
         for (var index = 0; index < feet.size(); index++) {
-
             if (measureClearanceApartFrom(feet.get(index), feet, index) < ANCHOR_SEPARATION) {
                 crowded++;
             }
@@ -332,11 +305,9 @@ class CrowdedAnchorsIntegrationTest {
             double[] foot,
             List<double[]> feet,
             int own) {
-
         var nearest = Double.MAX_VALUE;
 
         for (var index = 0; index < feet.size(); index++) {
-
             if (index != own) {
                 nearest = Math.min(nearest, Points.computeDistance(foot, feet.get(index)));
             }
@@ -347,13 +318,10 @@ class CrowdedAnchorsIntegrationTest {
     // Every foot of a laying but the two belonging to one span, which is what that span's own
     // feet have to be measured against - a foot is always nought from itself.
     private static List<double[]> collectFeetExcept(List<CellGap> spans, int own) {
-
         var feet = new ArrayList<double[]>(spans.size() * 2);
 
         for (var index = 0; index < spans.size(); index++) {
-
             if (index != own) {
-
                 feet.add(spans.get(index).start());
                 feet.add(spans.get(index).end());
             }
@@ -362,11 +330,9 @@ class CrowdedAnchorsIntegrationTest {
     }
 
     private static List<double[]> collectFeet(List<CellGap> spans) {
-
         var feet = new ArrayList<double[]>(spans.size() * 2);
 
         for (var span : spans) {
-
             feet.add(span.start());
             feet.add(span.end());
         }
@@ -375,17 +341,14 @@ class CrowdedAnchorsIntegrationTest {
 
     // Whether a foot lies on a cell's own drawn coast, corner or not.
     private static boolean isPointOfFrontage(double[] foot, List<List<double[]>> runs) {
-
         if (runs == null) {
             return false;
         }
 
         for (var run : runs) {
             for (var index = 1; index < run.size(); index++) {
-
                 if (Segments.computeDistanceToPoint(
                         run.get(index - 1), run.get(index), foot) <= ON_THE_LINE) {
-
                     return true;
                 }
             }
@@ -398,7 +361,6 @@ class CrowdedAnchorsIntegrationTest {
     }
 
     private static boolean isSharingAnAnchor(CellGap span, CellGap held) {
-
         return isSamePlace(span.start(), held.start())
             || isSamePlace(span.start(), held.end())
             || isSamePlace(span.end(), held.start())
@@ -414,12 +376,11 @@ class CrowdedAnchorsIntegrationTest {
     // dropped - the two no longer answer about the same set, and every claim below is about
     // what one span's foot did, which only means anything against the foot it started on.
     private static List<CellGap> laySpreadOn(String sector) {
-
         return SPREAD.computeIfAbsent(sector, named -> CrowdedAnchors.spreadCrowdedAnchors(
             layUnspreadOn(named),
             List.of(),
-            CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(named)),
-            traceCoastOf(named).union(),
+            CoastFrontages.Shore.EXTERIOR.collectFrontages(traceContinentCoast(named)),
+            traceContinentCoast(named).union(),
             ANCHOR_SEPARATION));
     }
 
@@ -430,14 +391,13 @@ class CrowdedAnchorsIntegrationTest {
     }
 
     private static List<CellGap> layBothSetsOn(String sector, double separation) {
-
         var rules = new ContinentBridges.BridgeRules(
             Coastlines.DEFAULT_RULES.bridgeReachMultiple(),
             COAST_SLACK,
             SHOULD_THIN_FORMATIONS,
             separation);
 
-        var traced = traceCoastOf(sector);
+        var traced = traceContinentCoast(sector);
 
         var inlets = ContinentBridges.findAnchoredBridges(
             traced, CoastFrontages.Shore.EXTERIOR, PARAMETERS, rules);
@@ -448,15 +408,5 @@ class CrowdedAnchorsIntegrationTest {
             traced, inlets, PARAMETERS, rules));
 
         return List.copyOf(laid);
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
     }
 }

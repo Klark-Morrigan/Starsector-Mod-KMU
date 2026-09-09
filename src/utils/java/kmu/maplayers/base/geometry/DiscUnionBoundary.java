@@ -471,6 +471,8 @@ public final class DiscUnionBoundary {
             && turnsLeft(otherFrom, otherTo, oneFrom) != turnsLeft(otherFrom, otherTo, oneTo);
     }
 
+    // Which side of a directed line a point falls on, by the sign of the cross product. Left is
+    // the side the walk keeps the union on, so this is how a step is told from its reverse.
     private static boolean turnsLeft(double[] from, double[] to, double[] point) {
 
         return (to[0] - from[0]) * (point[1] - from[1])
@@ -784,6 +786,9 @@ public final class DiscUnionBoundary {
     private record TakenMouth(double[] mouth, Chord wall) {
     }
 
+    // Notes which chord took a mouth on a circle, for the refusal report. Kept per circle
+    // because the question it answers is asked of one circle at a time: what already holds the
+    // place this chord wanted.
     private static void recordTaker(
             Map<Integer, List<TakenMouth>> takers,
             int circle,
@@ -808,6 +813,8 @@ public final class DiscUnionBoundary {
             : nameTakerOn(takers, chord.toCircle(), mouthed.toMouth());
     }
 
+    // Which chord already holds a mouth, named for a reader. Empty where nothing does, so the
+    // report can say a chord was refused for some other reason rather than invent a rival.
     private static String nameTakerOn(
             Map<Integer, List<TakenMouth>> takers,
             int circle,
@@ -1065,10 +1072,91 @@ public final class DiscUnionBoundary {
 
         var origin = covers.get(0).start();
         var windowEnd = origin + Angles.FULL_TURN;
+        var reached = openSweepAt(origin, covers);
+        var arcs = new ArrayList<Arc>();
 
-        // An interval running past the far end of the window covers the near end of it as
-        // well, so the sweep has to start already covered up to wherever that reaches.
-        // Without this the sweep reports a gap that the wrapping interval actually fills.
+        for (var index = reached.firstUnswept(); index < covers.size(); index++) {
+
+            var cover = covers.get(index);
+
+            if (cover.start() > reached.coveredTo()) {
+
+                arcs.add(new Arc(
+                    circle, reached.coveredTo(), cover.start(),
+                    reached.departingFrom(), cover.arrival()));
+
+            } else if (isHandingOverToAWall(reached.departingFrom(), cover)) {
+                arcs.add(buildEmptyHandover(circle, reached, cover));
+                reached = reached.handOverIfSwallowed(cover);
+            }
+            reached = reached.advanceOver(cover);
+        }
+
+        if (reached.coveredTo() < windowEnd) {
+
+            arcs.add(new Arc(
+                circle, reached.coveredTo(), windowEnd,
+                reached.departingFrom(), covers.get(0).arrival()));
+        }
+        return arcs;
+    }
+
+    /**
+     * How far round the circle the sweep has got, and which terminal the next gap leaves from.
+     *
+     * <p>The pair travel together because a gap is named by both: it runs from wherever the
+     * last cover let go to wherever the next takes hold, and the terminal is what the walk
+     * joins one gap to the next by. Carried apart, an extent advanced without its terminal is
+     * an arc beginning at a name nothing else uses.
+     *
+     * @param coveredTo     how far round the circle is covered so far
+     * @param departingFrom the terminal the next gap begins at, or {@link #NO_TERMINAL} before
+     *                      the sweep has passed a cover at all
+     * @param firstUnswept  which cover the walk starts at, the opening one having been read
+     */
+    private record SweepReach(double coveredTo, long departingFrom, int firstUnswept) {
+
+        // A cover reaching further round than anything so far becomes what the next gap leaves
+        // from. One that does not is already inside covered space and changes nothing.
+        SweepReach advanceOver(Cover cover) {
+
+            return cover.start() + cover.width() > coveredTo
+                ? new SweepReach(cover.start() + cover.width(), cover.departure(), firstUnswept)
+                : this;
+        }
+
+        // A cover swallowed WHOLE reaches no further round than what is already covered, so
+        // advanceOver leaves it alone and its far terminal would be dropped - an arrival with
+        // no departure, which is a chain the walk runs off rather than a cycle. Handing the
+        // departure on makes the swallowed cover the one the next stretch of boundary leaves
+        // from, which is what the pair do on the map.
+        //
+        // Not the same as a crowded-out mouth. Crowding is a pairwise test against each
+        // earlier mouth; what is covered here is the merged extent of every cover so far, so a
+        // mouth no single wall nests can still be buried by two of them between them - laid,
+        // and with nowhere to depart from.
+        SweepReach handOverIfSwallowed(Cover cover) {
+
+            return cover.start() + cover.width() <= coveredTo
+                ? new SweepReach(coveredTo, cover.departure(), firstUnswept)
+                : this;
+        }
+    }
+
+    // Where the sweep starts, which is not simply the first cover.
+    //
+    // An interval running past the far end of the window covers the near end of it as well, so
+    // the sweep has to start already covered up to wherever that reaches - otherwise it reports
+    // a gap the wrapping interval actually fills.
+    //
+    // Failing that it opens on the first cover explicitly, rather than letting the loop reach
+    // past the origin on that cover's own width. A cover of no width reaches nowhere past the
+    // origin and so would set neither the extent nor the departure, leaving its terminal to
+    // begin no arc - and the cycle returning along that wall is then a chain, which is a pocket
+    // dropped. Where a wrapping cover already lies over the first, the first is swallowed
+    // instead and the handover branch is its reader.
+    private static SweepReach openSweepAt(double origin, List<Cover> covers) {
+
         var coveredTo = origin;
         var departingFrom = NO_TERMINAL;
 
@@ -1082,87 +1170,41 @@ public final class DiscUnionBoundary {
             }
         }
 
-        // The sweep opens on the first cover, and until now relied on that cover's width to
-        // carry it past the origin at the bottom of the loop - which set both the covered
-        // extent and the departure. A cover of no width reaches nowhere past the origin, so
-        // it set neither: its departure terminal then began no arc, and the cycle returning
-        // along that wall was a chain the walk ran off, a pocket lost for nothing. Opened on
-        // the first cover explicitly instead, unless a cover wrapping past the origin already
-        // lies over it - then it is swallowed, and the overlap branch below is its reader.
-        var first = 0;
+        return coveredTo > origin
+            ? new SweepReach(coveredTo, departingFrom, 0)
+            : new SweepReach(
+                origin + covers.get(0).width(), covers.get(0).departure(), 1);
+    }
 
-        if (coveredTo == origin) {
+    // Whether two overlapping covers are a place the boundary changes hands rather than one
+    // stretch of covered circle.
+    //
+    // At least one of them has to be a wall's mouth: a wall laid against another wall's mouth,
+    // or laid so close past a third cell that its mouth and that cell's cover meet. The wall's
+    // terminal MUST be paired at such a place, because nowhere else will - a disc cover ending
+    // beyond the mouth takes over as the departure, the mouth's own terminal begins no arc, and
+    // the walk arriving from the far circle finds nothing to continue onto and throws away every
+    // cycle through it. That is a pocket missing behind any wall grazing a cell it does not join.
+    //
+    // Never where two DISCS are what overlap. Their crossing lies inside the union and the
+    // boundary transition between them happens out on their own rims, so joining their terminals
+    // would run a cycle through covered space. NO_TERMINAL is not a join either: it is the sweep
+    // not yet having passed a cover, not a terminal awaiting a pair.
+    private static boolean isHandingOverToAWall(long departingFrom, Cover cover) {
 
-            coveredTo = origin + covers.get(0).width();
-            departingFrom = covers.get(0).departure();
-            first = 1;
-        }
+        return departingFrom != NO_TERMINAL
+            && (isChordTerminal(departingFrom) || isChordTerminal(cover.arrival()));
+    }
 
-        var arcs = new ArrayList<Arc>();
-        for (var index = first; index < covers.size(); index++) {
+    // The handover itself: an arc of no width, since what the walk wants of it is that its two
+    // terminals name each other rather than any length. The boundary comes back along one cover
+    // and leaves along the other with nothing on the circle in between, so the stretch between
+    // them is empty rather than absent.
+    private static Arc buildEmptyHandover(int circle, SweepReach reached, Cover cover) {
 
-            var cover = covers.get(index);
-
-            if (cover.start() > coveredTo) {
-
-                arcs.add(new Arc(
-                    circle, coveredTo, cover.start(), departingFrom, cover.arrival()));
-
-            } else if (departingFrom != NO_TERMINAL
-                    && (isChordTerminal(departingFrom) || isChordTerminal(cover.arrival()))) {
-
-                // Two overlapping covers, at least one of them a wall's mouth: a wall laid
-                // against another wall's mouth, or laid so close past a third cell that its
-                // mouth and that cell's cover meet. The boundary comes back along one and
-                // leaves along the other with nothing on the circle in between, so the
-                // stretch between them is empty rather than absent - given as an arc of no
-                // width, since what the walk wants of it is that its two terminals name each
-                // other rather than any length.
-                //
-                // The wall's terminal MUST be paired here, because nowhere else will: a disc
-                // cover ending beyond the mouth takes over as the departure below, and the
-                // mouth's own terminal would then begin no arc at all - the walk arrives at
-                // the wall from the far circle, finds nothing to continue onto, and throws
-                // away every cycle through it. That is a pocket missing behind any wall that
-                // grazes a cell it does not join.
-                //
-                // Never where two DISCS are what overlap. Their crossing lies inside the
-                // union and the boundary transition between them happens out on their own
-                // rims, so joining their terminals here would run a cycle through covered
-                // space. NO_TERMINAL is not a join either: it is the sweep not yet having
-                // passed a cover, not a terminal awaiting a pair.
-                arcs.add(new Arc(
-                    circle, coveredTo, coveredTo, departingFrom, cover.arrival()));
-
-                // A cover swallowed WHOLE reaches no further round the circle than what is
-                // already covered, so the update below never runs for it and its far terminal
-                // is dropped - leaving it an arrival and no departure, which is a chain the
-                // walk runs off rather than a cycle. Handing the departure on makes the
-                // swallowed cover the one the next stretch of boundary leaves from, which is
-                // what the pair do on the map: the boundary goes out along one and back along
-                // the other with nothing on the circle in between.
-                //
-                // Nor is a swallowed mouth the same as a crowded-out one. Crowding is a
-                // pairwise test against each earlier mouth; what is covered here is the merged
-                // extent of every cover so far, so a mouth no single wall nests can still be
-                // buried by two of them between them - laid, and with nowhere to depart from.
-                if (cover.start() + cover.width() <= coveredTo) {
-                    departingFrom = cover.departure();
-                }
-            }
-
-            if (cover.start() + cover.width() > coveredTo) {
-
-                coveredTo = cover.start() + cover.width();
-                departingFrom = cover.departure();
-            }
-        }
-        if (coveredTo < windowEnd) {
-
-            arcs.add(new Arc(
-                circle, coveredTo, windowEnd, departingFrom, covers.get(0).arrival()));
-        }
-        return arcs;
+        return new Arc(
+            circle, reached.coveredTo(), reached.coveredTo(),
+            reached.departingFrom(), cover.arrival());
     }
 
     // Which arc the boundary continues onto, as a plain join: every arc names the terminal it

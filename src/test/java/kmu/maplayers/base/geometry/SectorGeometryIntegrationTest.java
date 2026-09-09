@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.SectorPipeline.loadFixture;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -33,30 +35,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SectorGeometryIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.SectorGeometryIntegrationTest"
-            + "#provideSectorNames";
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     // A vertex may sit a hair on the far side of its own bisector after clipping; the
     // nearest-site check tolerates that rather than chasing floating-point dust.
     private static final double NEAREST_SITE_TOLERANCE = 1e-6;
 
-    // Built once per sector and shared across that sector's cases: the partition is O(n^2)
-    // in a sector's systems, so rebuilding it per assertion would multiply the suite's cost
-    // by the number of invariants for no added coverage.
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
     private static final Map<String, SectorGeometry> GEOMETRIES = new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
 
     @Nested
     class BuildCellEdgesByCellId {
@@ -68,27 +53,23 @@ class SectorGeometryIntegrationTest {
             // no overlap. Asserting it directly is cheaper and clearer than testing every
             // pair of cells for intersection, and it is what redistribution will have to
             // consciously break when a grouping absorbs a dead star's space.
-            var fixture = buildFixtureFor(sector);
+            var fixture = loadFixture(sector);
             var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
             var sites = fixture.getSites();
             var systemIds = fixture.getSystemIds();
             var offenders = new ArrayList<String>();
 
             for (var index = 0; index < systemIds.size(); index++) {
-
                 var own = sites.get(index);
 
                 for (var edge : cellEdges.get(systemIds.get(index))) {
-
                     var vertex = new double[] {edge.x1(), edge.y1()};
                     var ownDistance = computeDistanceBetween(vertex, own);
 
                     for (var other = 0; other < sites.size(); other++) {
-
                         if (other != index
                                 && computeDistanceBetween(vertex, sites.get(other))
                                     < ownDistance - NEAREST_SITE_TOLERANCE) {
-
                             offenders.add(systemIds.get(index) + " vs " + systemIds.get(other));
                         }
                     }
@@ -101,11 +82,10 @@ class SectorGeometryIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_system_gets_a_cell_that_encloses_area(String sector) {
-
             var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
 
             assertThat(cellEdges)
-                .hasSize(buildFixtureFor(sector).getSystemIds().size());
+                .hasSize(loadFixture(sector).getSystemIds().size());
 
             for (var edges : cellEdges.values()) {
                 assertThat(computeRingArea(convertToRing(edges)))
@@ -123,7 +103,6 @@ class SectorGeometryIntegrationTest {
 
             for (var cell : cellEdges.entrySet()) {
                 for (var edge : cell.getValue()) {
-
                     if (!(edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem)) {
                         continue;
                     }
@@ -152,7 +131,6 @@ class SectorGeometryIntegrationTest {
             var geometry = readGeometryOf(sector);
 
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
-
                 var shaped = entry.getValue();
                 if (shaped.fillPolygon().isEmpty()) {
                     continue;
@@ -177,14 +155,11 @@ class SectorGeometryIntegrationTest {
             var pinned = 0;
 
             for (var entry : geometry.shapedCellByCellId().entrySet()) {
-
                 if (geometry.ownerByCellId().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().isEmpty()) {
-
                     continue;
                 }
                 for (var isBoundary : entry.getValue().edgeIsBoundary()) {
-
                     assertThat(isBoundary)
                         .isTrue();
                 }
@@ -201,14 +176,12 @@ class SectorGeometryIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_owner_holding_a_cell_traces_at_least_one_ring(String sector) {
-
             var geometry = readGeometryOf(sector);
             var ownersWithoutRings = new ArrayList<String>();
 
             for (var owner : SectorGeometry
                     .groupCellIdsByOwner(geometry.ownerByCellId())
                     .entrySet()) {
-
                 if (geometry.ringsByOwner().get(owner.getKey()).isEmpty()) {
                     ownersWithoutRings.add(owner.getKey());
                 }
@@ -225,7 +198,6 @@ class SectorGeometryIntegrationTest {
             // orphaned loop takes.
             for (var rings : readGeometryOf(sector).ringsByOwner().values()) {
                 for (var ring : rings) {
-
                     assertThat(ring.size())
                         .isGreaterThanOrEqualTo(3);
                     assertThat(Math.abs(PolygonRegions.computeSignedArea(ring)))
@@ -236,23 +208,16 @@ class SectorGeometryIntegrationTest {
 
     }
 
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
-    }
-
     private static SectorGeometry readGeometryOf(String sector) {
         return GEOMETRIES.computeIfAbsent(sector, name -> SectorGeometry.buildSectorGeometry(
-            buildFixtureFor(name),
+            loadFixture(name),
             SectorGeometryParameters.createDefaults()));
     }
 
     private static boolean hasNeighbourNamed(List<CellEdge> edges, String systemId) {
-
         for (var edge : edges) {
-
             if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
                     && systemId.equals(acrossSystem.systemId())) {
-
                 return true;
             }
         }
@@ -260,7 +225,6 @@ class SectorGeometryIntegrationTest {
     }
 
     private static List<double[]> convertToRing(List<CellEdge> edges) {
-
         var ring = new ArrayList<double[]>(edges.size());
 
         for (var edge : edges) {

@@ -795,6 +795,8 @@ public final class Coastlines {
         return List.copyOf(edge);
     }
 
+    // The placed outlines as coasts. A wrapper rather than the lists themselves, so that
+    // what a later stage is handed says which of the several point lists a trace holds it is.
     private static List<Coast> buildCoasts(List<List<CoastVertex>> outlines) {
 
         var coasts = new ArrayList<Coast>(outlines.size());
@@ -852,6 +854,107 @@ public final class Coastlines {
     private enum WallPlacement {
         HUG_SIDES,
         TOUCH_POINT_MOUTHS
+    }
+
+    /**
+     * The stretches placement is working over, and the walk they were chosen from.
+     *
+     * <p>One value because the three are meaningless apart. A mark names its circle by index
+     * into the union, and a visited position indexes into the marks, so a caller free to pair
+     * one walk's positions with another's marks can do it and still compile - and would be
+     * asking about a cell neither of them meant.
+     *
+     * <p>It also owns the wrap. Placement is a ring, so nearly every step of it needs the
+     * position before or after this one modulo the count, and that arithmetic written out at
+     * each use is where an off-by-one hides in plain sight.
+     *
+     * @param coast   every stretch the walk found, in walk order
+     * @param visited which of them selection kept, as positions along that walk
+     * @param union   the discs the stretches were read off
+     */
+    private record VisitedWalk(
+        List<DiscUnionBoundary.CoastMark> coast,
+        List<Integer> visited,
+        DiscUnion union) {
+
+        int countStretches() {
+            return visited.size();
+        }
+
+        DiscUnionBoundary.CoastMark findMarkAt(int step) {
+            return coast.get(visited.get(step));
+        }
+
+        int findStepAfter(int step) {
+            return (step + 1) % visited.size();
+        }
+
+        int findStepBefore(int step) {
+            return (step + visited.size() - 1) % visited.size();
+        }
+
+        // Whether the walk put the next visited stretch immediately after this one, which is
+        // what makes the boundary's own join between them available to fall back on.
+        boolean isAdjacentAfter(int step) {
+            return visited.get(findStepAfter(step)) == (visited.get(step) + 1) % coast.size();
+        }
+    }
+
+    /**
+     * Where the line lands on each visited stretch and leaves it again, and which of those a
+     * wall decided.
+     *
+     * <p>Three arrays indexed alike, held as one value rather than passed side by side. What
+     * they describe is a single thing - the placement so far - and the un-crossing has to read
+     * all three of them together to decide anything, so split apart they are three chances to
+     * hand one method the arrays from two different placements.
+     *
+     * @param arriveAngles  where the line lands on each stretch
+     * @param departAngles  where it leaves each stretch
+     * @param isHeldByWall  which landings a wall's side or anchor decided, and so which the
+     *                      un-crossing may not move
+     */
+    private record Landings(
+        double[] arriveAngles,
+        double[] departAngles,
+        boolean[] isHeldByWall) {
+
+        static Landings forWalk(VisitedWalk walk) {
+
+            return new Landings(
+                new double[walk.countStretches()],
+                new double[walk.countStretches()],
+                new boolean[walk.countStretches()]);
+        }
+
+        // One placed run written down: where it left the stretch behind it, where it landed on
+        // the next, and whether a wall rather than the clamp chose either.
+        void acceptPlacedRun(int step, int next, PlacedRun placed) {
+
+            departAngles[step] = placed.edge().departAngle();
+            arriveAngles[next] = placed.edge().arriveAngle();
+
+            isHeldByWall[step] |= placed.isDepartureHeld();
+            isHeldByWall[next] |= placed.isArrivalHeld();
+        }
+
+        // Whether the line leaves a stretch before it lands on it, which is a cell whose two
+        // landings were pushed past each other rather than one that was met exactly.
+        boolean isCrossedAt(int step) {
+            return departAngles[step] < arriveAngles[step];
+        }
+
+        boolean isHeldByWallAt(int step) {
+            return isHeldByWall[step];
+        }
+
+        void swapLandingsAt(int step) {
+
+            var arrived = arriveAngles[step];
+
+            arriveAngles[step] = departAngles[step];
+            departAngles[step] = arrived;
+        }
     }
 
     /**
@@ -1415,50 +1518,41 @@ public final class Coastlines {
                 rules));
         }
 
-        var arriveAngles = new double[visited.size()];
-        var departAngles = new double[visited.size()];
+        var walk = new VisitedWalk(coast, visited, union);
+        var landings = Landings.forWalk(walk);
 
-        // Which stretches a wall's side lands on. Those landings are the wall's own edges and
-        // are not the un-crossing's to move.
-        var isHeldByWall = new boolean[visited.size()];
+        for (var step = 0; step < walk.countStretches(); step++) {
 
-        for (var index = 0; index < visited.size(); index++) {
-
-            var next = (index + 1) % visited.size();
-            var from = coast.get(visited.get(index));
-            var to = coast.get(visited.get(next));
-            var isAdjacent = visited.get(next) == (visited.get(index) + 1) % coast.size();
+            var next = walk.findStepAfter(step);
+            var from = walk.findMarkAt(step);
+            var to = walk.findMarkAt(next);
+            var isAdjacent = walk.isAdjacentAfter(step);
             var run = new StraightRuns.StraightRun(union, from, to);
 
-            var placed = isAdjacent && isJoinedByWall(union, from, to, rules)
-                ? placeRunAlongWall(run, rules)
-                : new PlacedRun(
-                    StraightRuns.findClearEdge(run, isAdjacent, false, rules.reachAnchor()),
-                    false,
-                    false);
-
-            departAngles[index] = placed.edge().departAngle();
-            arriveAngles[next] = placed.edge().arriveAngle();
-
-            isHeldByWall[index] |= placed.isDepartureHeld();
-            isHeldByWall[next] |= placed.isArrivalHeld();
+            landings.acceptPlacedRun(step, next, isAdjacent
+                && isJoinedByWall(union, from, to, rules)
+                    ? placeRunAlongWall(run, rules)
+                    : new PlacedRun(
+                        StraightRuns.findClearEdge(run, isAdjacent, false, rules.reachAnchor()),
+                        false,
+                        false));
         }
 
-        uncrossLandings(coast, visited, union, arriveAngles, departAngles, isHeldByWall);
+        uncrossLandings(walk, landings);
 
         var outline = new ArrayList<CoastVertex>();
 
-        for (var index = 0; index < visited.size(); index++) {
+        for (var step = 0; step < walk.countStretches(); step++) {
 
-            var mark = coast.get(visited.get(index));
+            var mark = walk.findMarkAt(step);
 
             outline.addAll(buildVerticesOnMark(
                 mark,
                 sampleFillet(
                     union,
                     mark,
-                    arriveAngles[index],
-                    departAngles[index],
+                    landings.arriveAngles()[step],
+                    landings.departAngles()[step],
                     rules)));
         }
         return outline;
@@ -1481,36 +1575,25 @@ public final class Coastlines {
     // cells would have both its ends move at once, which neither test above asked about - and
     // refusing that case is also what keeps this order-free, so the walk could begin anywhere
     // and swap the same cells.
-    private static void uncrossLandings(
-            List<DiscUnionBoundary.CoastMark> coast,
-            List<Integer> visited,
-            DiscUnion union,
-            double[] arriveAngles,
-            double[] departAngles,
-            boolean[] isHeldByWall) {
+    private static void uncrossLandings(VisitedWalk walk, Landings landings) {
 
-        var isSwappable = new boolean[visited.size()];
+        var isSwappable = new boolean[walk.countStretches()];
 
-        for (var index = 0; index < visited.size(); index++) {
-            isSwappable[index] = !isHeldByWall[index] && isCrossingClearWhenSwapped(
-                coast, visited, union, arriveAngles, departAngles, index);
+        for (var step = 0; step < walk.countStretches(); step++) {
+            isSwappable[step] = !landings.isHeldByWallAt(step)
+                && isCrossingClearWhenSwapped(walk, landings, step);
         }
 
         // Read off the flags rather than off the angles, so a swap already made cannot change
         // the verdict on the cell after it.
-        for (var index = 0; index < visited.size(); index++) {
+        for (var step = 0; step < walk.countStretches(); step++) {
 
-            var previous = (index + visited.size() - 1) % visited.size();
-            var next = (index + 1) % visited.size();
+            if (isSwappable[step]
+                    && !isSwappable[walk.findStepBefore(step)]
+                    && !isSwappable[walk.findStepAfter(step)]) {
 
-            if (!isSwappable[index] || isSwappable[previous] || isSwappable[next]) {
-                continue;
+                landings.swapLandingsAt(step);
             }
-
-            var arrived = arriveAngles[index];
-
-            arriveAngles[index] = departAngles[index];
-            departAngles[index] = arrived;
         }
     }
 
@@ -1562,28 +1645,27 @@ public final class Coastlines {
     // Whether a cell's landings crossed, and whether both runs still pass outside every cell
     // once they are put back in order.
     private static boolean isCrossingClearWhenSwapped(
-            List<DiscUnionBoundary.CoastMark> coast,
-            List<Integer> visited,
-            DiscUnion union,
-            double[] arriveAngles,
-            double[] departAngles,
-            int index) {
+            VisitedWalk walk,
+            Landings landings,
+            int step) {
 
-        if (departAngles[index] >= arriveAngles[index]) {
+        if (!landings.isCrossedAt(step)) {
             return false;
         }
 
-        var previous = (index + visited.size() - 1) % visited.size();
-        var next = (index + 1) % visited.size();
+        var previous = walk.findStepBefore(step);
+        var next = walk.findStepAfter(step);
 
         return StraightRuns.isRunClearOfEveryCell(
                 new StraightRuns.StraightRun(
-                    union, coast.get(visited.get(previous)), coast.get(visited.get(index))),
-                new StraightRuns.EdgeAngles(departAngles[previous], departAngles[index]))
+                    walk.union(), walk.findMarkAt(previous), walk.findMarkAt(step)),
+                new StraightRuns.EdgeAngles(
+                    landings.departAngles()[previous], landings.departAngles()[step]))
             && StraightRuns.isRunClearOfEveryCell(
                 new StraightRuns.StraightRun(
-                    union, coast.get(visited.get(index)), coast.get(visited.get(next))),
-                new StraightRuns.EdgeAngles(arriveAngles[index], arriveAngles[next]));
+                    walk.union(), walk.findMarkAt(step), walk.findMarkAt(next)),
+                new StraightRuns.EdgeAngles(
+                    landings.arriveAngles()[step], landings.arriveAngles()[next]));
     }
 
     // One stretch of coast as the points the line passes through: the sampled fillet running

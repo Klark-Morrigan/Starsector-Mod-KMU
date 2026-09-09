@@ -199,6 +199,8 @@ public final class IntercontinentalCoasts {
         return -1;
     }
 
+    // A ring given back with its first point repeated at the end, so a run drawn from it is a
+    // closed shape rather than one with a gap between its ends where the line was cut open.
     private static List<double[]> closeRing(List<double[]> ring) {
 
         var closed = new ArrayList<>(ring);
@@ -274,6 +276,8 @@ public final class IntercontinentalCoasts {
         return false;
     }
 
+    // One grid square's two coordinates as a single map key. Packed rather than boxed into a
+    // pair, because this is asked once per point of every ring on the map.
     private static long buildPlaceKey(int atX, int atY) {
         return ((long) atX << PLACE_KEY_SHIFT) ^ (atY & PLACE_KEY_MASK);
     }

@@ -176,9 +176,8 @@ public final class StraightRuns {
      * other, which is one point where the cells overlap and the two sides of a mouth where a
      * bridge runs between them. That join cannot cut anything, because it IS the boundary.
      *
-     * <p>Only where the run fails, though. Taking this join for every adjacent pair - which
-     * an earlier version did - hugs the whole coast and gives up every pocket the smoothing
-     * was for.
+     * <p>Only where the run fails, though. Taken for every adjacent pair it hugs the whole
+     * coast and gives up every pocket the smoothing was for.
      *
      * <p><b>A pair the walk joined by a wall takes the join outright.</b> Between two touching
      * cells the join is a single crossing point and a run spanning the notch is the whole gain;
@@ -282,8 +281,8 @@ public final class StraightRuns {
 
         // Clear is asked of EVERY cell rather than only the two the run joins. The two are
         // what the clamp was working against, so a run can satisfy both and still shave a
-        // third cell that neither end knows about - and that run was then accepted, which is
-        // where the shallow crossings came from.
+        // third cell that neither end knows about - which is a shallow crossing, and passes
+        // any test that asks only about the two.
         return isRunSpanningTheNotch(run, clamped)
             && isKeepingCellsLeft(run, clamped)
             && isRunClearOfEveryCell(run, clamped)

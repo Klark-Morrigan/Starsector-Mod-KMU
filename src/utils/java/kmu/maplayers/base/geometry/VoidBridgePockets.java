@@ -247,10 +247,9 @@ public final class VoidBridgePockets {
     /**
      * How far the worst captured outline strays from the bridge it should close on.
      *
-     * <p>The check the earlier attempts lacked. Both measured how far a fill sat from the
-     * CELLS, which was never what was broken - a fill can sit perfectly against every cell
-     * and still close on a line nowhere near its bridge, which is what happened. This asks
-     * the question that can actually fail.
+     * <p>Measured against the BRIDGE rather than against the cells. A fill can sit perfectly
+     * against every cell and still close on a line nowhere near its bridge, so a check on the
+     * cells cannot fail for the fault this exists to catch.
      *
      * <p>Two filters, and both are needed. Only chords that were actually LAID are looked
      * for - one whose mouth is buried inside another disc, or crowded out by a chord that

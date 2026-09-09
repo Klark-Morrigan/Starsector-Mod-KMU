@@ -16,6 +16,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.SectorPipeline.PARAMETERS;
+import static kmu.maplayers.base.geometry.SectorPipeline.layInletSpans;
+import static kmu.maplayers.base.geometry.SectorPipeline.layLinks;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -36,24 +41,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class IntercontinentalPocketsIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.IntercontinentalPocketsIntegrationTest"
-            + "#provideSectorNames";
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
     // spans: the thinned set is the proposal, and an unthinned one is a different laying for the
     // links to be judged against.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
-
-    // One set of geometry knobs for the whole suite, for the reason the shipped pipeline keeps
-    // one: a coast traced under one set and a fill walked under another describe two maps.
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
-
-    // How the coast is traced, taken from the one place that declares it rather than restated
-    // here: three copies of these numbers is how a suite comes to describe a different map from
-    // the one on screen without either of them saying so.
-    private static final Coastlines.CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
 
     // How far off a wall already down a span may run and still count as doubling it. The width a
     // span is drawn at, which is the shipped setting: two lines closer than that overlap on
@@ -65,14 +58,6 @@ class IntercontinentalPocketsIntegrationTest {
     // separates feet that are coincident and leaves the rest where the search put them.
     private static final double ANCHOR_SEPARATION = 120;
 
-    // The laying the map ships, which is the one worth reporting on.
-    private static final ContinentBridges.BridgeRules SPAN_RULES =
-        new ContinentBridges.BridgeRules(
-            COAST_RULES.bridgeReachMultiple(),
-            COAST_SLACK,
-            SHOULD_THIN_FORMATIONS,
-            ANCHOR_SEPARATION);
-
     // How near a sea has to come to a pinched foot to be judged against it at all: half a cell
     // radius, which is far closer than any other sea and far further than any channel.
     private static final double WITHIN_REACH_OF_A_FOOT = PARAMETERS.cellRadius() / 2;
@@ -82,25 +67,7 @@ class IntercontinentalPocketsIntegrationTest {
     // vertex angles is being absorbed - every point of the walk is on a circle by construction.
     private static final double ON_THE_BORDER = 1;
 
-    // Built once per sector and shared: tracing a coast is O(n^2) in a sector's systems, and both
-    // span searches walk every pair of frontages, so each check asking for its own would pay for
-    // the pipeline several times over.
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> INLET_SPANS = new ConcurrentHashMap<>();
-    private static final Map<String, List<CellGap>> LINKS = new ConcurrentHashMap<>();
     private static final Map<String, List<List<double[]>>> POCKETS = new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
 
     @Nested
     class FindLinkWalledPockets {
@@ -112,7 +79,7 @@ class IntercontinentalPocketsIntegrationTest {
             // Two links between the same pair of continents ring the void between them, and a
             // sector linked in several places has such pairs by construction - so drawing
             // nothing at all is the keep-rule having refused everything.
-            assertThat(linkContinentsOf(sector))
+            assertThat(layLinks(sector))
                 .as("%s: nothing was linked, so there is no sea to shut in", sector)
                 .isNotEmpty();
 
@@ -136,19 +103,17 @@ class IntercontinentalPocketsIntegrationTest {
             // foot with no sea to reach it - whereas one a sea comes that close to and stops
             // short of has been held off by a channel that should not be there.
             var walls = buildLaidWallsOf(sector);
-            var links = Set.copyOf(DiscUnionBoundary.buildChordsFrom(linkContinentsOf(sector)));
+            var links = Set.copyOf(DiscUnionBoundary.buildChordsFrom(layLinks(sector)));
             var outlines = fillSeasOf(sector, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
             var stoppedShort = new ArrayList<String>();
 
             for (var chord : DiscUnionBoundary.findAttachableChords(
-                    traceCoastOf(sector).union(), walls)) {
-
+                    traceContinentCoast(sector).union(), walls)) {
                 if (!links.contains(chord)) {
                     continue;
                 }
 
                 for (var end : List.of(chord.fromCircle(), chord.toCircle())) {
-
                     if (!walls.pinchedCells().contains(end)) {
                         continue;
                     }
@@ -173,14 +138,11 @@ class IntercontinentalPocketsIntegrationTest {
             // one of zero area is a line the painter would draw as a hair - both are a pocket
             // reported where there is no water.
             for (var shaping : VoidPockets.PocketShaping.values()) {
-
                 var degenerate = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
-
                     if (outline.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA
                             || Math.abs(PolygonRegions.computeSignedArea(outline)) == 0) {
-
                         degenerate.add(String.format("%d points", outline.size()));
                     }
                 }
@@ -198,17 +160,15 @@ class IntercontinentalPocketsIntegrationTest {
             // covering the layer above. At the drawn shaping this is also the channel: the walk
             // is run one channel out from the cells, so a point closer than that is a fill
             // touching the border it is supposed to stand off.
-            var sites = traceCoastOf(sector).union().sites();
+            var sites = traceContinentCoast(sector).union().sites();
 
             for (var shaping : VoidPockets.PocketShaping.values()) {
-
                 var reach = measureReachAt(shaping);
                 var covered = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
                     for (var point : outline) {
                         for (var site = 0; site < sites.size(); site++) {
-
                             var separation = Points.computeDistance(sites.get(site), point);
 
                             if (separation < reach - ON_THE_BORDER) {
@@ -232,19 +192,16 @@ class IntercontinentalPocketsIntegrationTest {
             // link joins two shapes, so the water it helps close runs against a cell of each;
             // water ringed by cells of ONE shape is a bay or a lake, and those have layers of
             // their own that would then paint it a second time.
-            var shapeOf = Coastlines.mapCellsToShapes(traceCoastOf(sector));
-            var sites = traceCoastOf(sector).union().sites();
+            var shapeOf = Coastlines.mapCellsToShapes(traceContinentCoast(sector));
+            var sites = traceContinentCoast(sector).union().sites();
 
             for (var shaping : VoidPockets.PocketShaping.values()) {
-
                 var enclosed = new ArrayList<String>();
 
                 for (var outline : fillSeasOf(sector, shaping)) {
-
                     var shapes = new LinkedHashSet<Integer>();
 
                     for (var point : outline) {
-
                         // Only cells that are ON a shape count. One on none faces nothing but a
                         // lake, so it cannot bound open sea - and counted as a shape of its own
                         // it would satisfy this check without any second continent.
@@ -271,7 +228,6 @@ class IntercontinentalPocketsIntegrationTest {
     // of it stands outside of: the cells' own border at the true extent, and one channel out from
     // it at the drawn one.
     private static double measureReachAt(VoidPockets.PocketShaping shaping) {
-
         return shaping.isAtTrueExtent()
             ? PARAMETERS.cellRadius()
             : PARAMETERS.measureDrawnReach();
@@ -280,16 +236,13 @@ class IntercontinentalPocketsIntegrationTest {
     // The cell an outline point runs along. Every point of the walk lies on some cell's circle,
     // so the nearest site is the one whose border it was sampled from.
     private static int findNearestSite(List<double[]> sites, double[] point) {
-
         var nearest = 0;
         var closest = Double.MAX_VALUE;
 
         for (var site = 0; site < sites.size(); site++) {
-
             var separation = Points.computeDistance(sites.get(site), point);
 
             if (separation < closest) {
-
                 closest = separation;
                 nearest = site;
             }
@@ -300,24 +253,21 @@ class IntercontinentalPocketsIntegrationTest {
     // The walls the fill is walked against, built as the construction builds them: the links
     // and the standing inlet spans, pinched on every cell whose whole frontage is one point.
     private static DiscUnionBoundary.Walls buildLaidWallsOf(String sector) {
+        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(layLinks(sector)));
 
-        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(linkContinentsOf(sector)));
-
-        laid.addAll(DiscUnionBoundary.buildChordsFrom(layInletSpansOn(sector)));
+        laid.addAll(DiscUnionBoundary.buildChordsFrom(layInletSpans(sector)));
 
         return new DiscUnionBoundary.Walls(
             laid,
             PARAMETERS.borderInset(),
-            CoastFrontages.collectPinchedCells(traceCoastOf(sector)));
+            CoastFrontages.collectPinchedCells(traceContinentCoast(sector)));
     }
 
     private static double measureToNearestOutline(List<List<double[]>> outlines, double[] point) {
-
         var nearest = Double.MAX_VALUE;
 
         for (var outline : outlines) {
             for (var index = 0; index < outline.size(); index++) {
-
                 nearest = Math.min(nearest, Segments.computeDistanceToPoint(
                     outline.get(index), outline.get((index + 1) % outline.size()), point));
             }
@@ -328,38 +278,11 @@ class IntercontinentalPocketsIntegrationTest {
     private static List<List<double[]>> fillSeasOf(
             String sector,
             VoidPockets.PocketShaping shaping) {
-
         return POCKETS.computeIfAbsent(sector + "@" + shaping, key ->
             IntercontinentalPockets.findLinkWalledPockets(
-                traceCoastOf(sector),
-                linkContinentsOf(sector),
-                layInletSpansOn(sector),
+                traceContinentCoast(sector),
+                layLinks(sector),
+                layInletSpans(sector),
                 new VoidPockets.PocketRules(PARAMETERS, shaping)));
-    }
-
-    private static List<CellGap> linkContinentsOf(String sector) {
-
-        return LINKS.computeIfAbsent(sector, named ->
-            IntercontinentalBridges.findIntercontinentalBridges(
-                traceCoastOf(named), layInletSpansOn(named), PARAMETERS, SPAN_RULES));
-    }
-
-    // The spans the map lays first, which are both what a link is judged against and the walls
-    // this fill comes to rest against.
-    private static List<CellGap> layInletSpansOn(String sector) {
-
-        return INLET_SPANS.computeIfAbsent(sector, named ->
-            ContinentBridges.findAnchoredBridges(
-                traceCoastOf(named), CoastFrontages.Shore.EXTERIOR, PARAMETERS, SPAN_RULES));
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, COAST_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
     }
 }

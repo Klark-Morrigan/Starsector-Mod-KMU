@@ -4,9 +4,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,11 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class CoastLandingsIntegrationTest {
 
-    private static final String SECTORS =
-        "kmu.maplayers.base.geometry.CoastLandingsIntegrationTest#provideSectorNames";
-
-    private static final SectorGeometryParameters PARAMETERS =
-        SectorGeometryParameters.createDefaults();
+    private static final String SECTORS = SectorPipeline.SECTORS;
 
     // The most of a sector's eligible stretches that may be a bare point rather than a run.
     //
@@ -52,20 +46,6 @@ class CoastLandingsIntegrationTest {
     // may not reach into.
     private static final double DRAWN_CELL_BORDER = 90;
 
-    private static final Map<String, SectorFixture> FIXTURES = new ConcurrentHashMap<>();
-    private static final Map<String, Coastlines.TracedCoasts> TRACES = new ConcurrentHashMap<>();
-
-    static List<String> provideSectorNames() {
-
-        var names = SectorFixture.listSectorNames();
-
-        assertThat(names)
-            .as("no sector fixtures on the classpath")
-            .isNotEmpty();
-
-        return names;
-    }
-
     @Nested
     class TraceContinentCoasts {
 
@@ -75,13 +55,12 @@ class CoastLandingsIntegrationTest {
             // What opening a crossed landing buys. A cell whose two landings crossed has border
             // between them that the coast could run along, and collapsing to the midpoint reports
             // one place a wall may anchor where there is a stretch of them.
-            var frontages = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceCoastOf(sector));
+            var frontages = CoastFrontages.Shore.EXTERIOR.collectFrontages(traceContinentCoast(sector));
             var points = 0;
             var runs = 0;
 
             for (var byCell : frontages.values()) {
                 for (var run : byCell) {
-
                     runs++;
                     if (run.size() == 1) {
                         points++;
@@ -106,19 +85,9 @@ class CoastLandingsIntegrationTest {
             // moved can cut a cell neither of its ends knows about. Where it would, the crossing
             // is left standing - so the count here has to hold whatever the opening did.
             assertThat(CoastCrossings.findVisibleCrossings(
-                    traceCoastOf(sector), DRAWN_CELL_BORDER))
+                    traceContinentCoast(sector), DRAWN_CELL_BORDER))
                 .as("%s: coast runs cutting into a cell", sector)
                 .hasSizeLessThanOrEqualTo(MOST_RUNS_CUTTING_A_CELL);
         }
-    }
-
-    private static Coastlines.TracedCoasts traceCoastOf(String sector) {
-
-        return TRACES.computeIfAbsent(sector, named -> Coastlines.traceContinentCoasts(
-            buildFixtureFor(named).getSites(), PARAMETERS, Coastlines.DEFAULT_RULES));
-    }
-
-    private static SectorFixture buildFixtureFor(String sector) {
-        return FIXTURES.computeIfAbsent(sector, SectorFixture::loadSector);
     }
 }
