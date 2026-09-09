@@ -194,9 +194,11 @@ it would be correcting state it had no part in moving.
 
 ## The opener on the band
 
-Past the last tab stands the bar's opener, `buildBarOpenerSpec` - the one way into
+Past the last tab stands the bar's opener, [`BarOpeners`](BarOpeners.java) - the one way into
 [the dialog the bar is arranged in](../chrome/arrange/MapLayerArrangementDialog.java), there being no
-key bound to it. It is KMLib's band button (`TabPanelPlacement.bandButton`) rather than a segment of
+key bound to it. What it shows and does lives there rather than with the layout that places it: the
+placement asks for a button, and this answers which button that is, so a mark or an asset changing is a
+change to the control and nothing about how a band is laid out. It is KMLib's band button (`TabPanelPlacement.bandButton`) rather than a segment of
 the tabs control, which is the one thing it may not be: that control is indexed by layer everywhere it
 is read - the click that selects, the lit tab, and `BaseSidebarHost.handleKeyPress`'s shortcut walk -
 so a cell in it that is not a layer would move all three one along. Outside it, the row's indexing is
