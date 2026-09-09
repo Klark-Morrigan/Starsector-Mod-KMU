@@ -1,13 +1,10 @@
 package kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3;
 
+import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.CoastFrontages;
-import kmu.maplayers.base.geometry.Coastlines;
-import kmu.maplayers.base.geometry.ContinentBridges;
-import kmu.maplayers.base.geometry.IntercontinentalBridges;
 import kmu.maplayers.base.geometry.IntercontinentalCoasts;
 import kmu.maplayers.base.geometry.IntercontinentalPockets;
-import kmu.maplayers.base.geometry.PuddlePockets;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidBridgePockets;
@@ -23,6 +20,7 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * <b>The continent coast (v3), orchestrated.</b> Each touching-connected run of cells traced as
@@ -144,27 +142,32 @@ public final class ContinentCoastOverlay {
             return;
         }
 
-        // The one line that makes this v3: continent coasts, which lay no bridges.
-        coast.acceptTrace(Coastlines.traceContinentCoasts(
+        // The laying this overlay draws: the coasts, and every span the construction puts down
+        // across the water they leave. Opened rather than run - what each layer below costs is
+        // paid only where a switch asks for it.
+        var laid = BridgedContinents.layContinents(
             fixture.getSites(),
             settings.parameters,
-            settings.resolveContinentCoastRules()));
+            settings.resolveContinentCoastRules(),
+            settings.resolveContinentBridgeRules(),
+            sectorBridges);
+
+        coast.acceptTrace(laid.traceCoasts());
 
         // One step asked of each shore in turn. Separate calls rather than one gathered set,
         // because the two are laid independently: a formation is thinned among the spans it
         // shares an anchor with, and a span across a lake shares no anchor with one across
         // the void outside the continent.
-        // The links are laid against the inlet spans, so those have to exist whenever anything
-        // of the links is wanted - drawn or not. Found only while their own layer is on, the
-        // links would be judged against a map missing every wall the inlet search put down, and
-        // switching the inlet spans on would silently change which links survive.
+        // Asked for while anything of the links is wanted as well as under their own switch,
+        // because the links are judged against them - which the laying enforces on its own, and
+        // is said here because it is also why this layer is paid for with its switch off.
         inletWater = findSpanWater(
-            CoastFrontages.Shore.EXTERIOR,
+            laid::layInletSpans,
             settings.showContinentBridges || isAnyLinkLayerShown(),
             settings.showContinentInletFill);
 
         lakeWater = findSpanWater(
-            CoastFrontages.Shore.INTERIOR,
+            laid::layLakeSpans,
             settings.showContinentLakeBridges,
             settings.showContinentLakePocketFill);
 
@@ -178,29 +181,15 @@ public final class ContinentCoastOverlay {
 
         frontages = gatherEligibleFrontages();
 
-        // Claimed from the settled search rather than searched for again: these ARE the
-        // settled bridges asked about smaller water, at the settled reach, so the cache hands
-        // back whatever the inland overlay already found for this same sector.
         if (settings.showContinentPuddleBridges) {
-
-            puddleBridges = PuddlePockets.claimPuddleBridges(
-                coast.getTrace(),
-                sectorBridges.findVoidBridges(
-                    fixture.getSites(),
-                    settings.parameters.cellRadius(),
-                    settings.parameters.cellRadius() * settings.bridgeReachMultiple));
+            puddleBridges = laid.claimPuddleSpans();
         }
 
         // Last, because it is the one search laid against what the others left down rather than
         // against the coasts alone.
-        //
-        // Handed the inlet spans and no others. Those are the spans anchored on the same shore
-        // and over the same open void, so they are the ones a link can double or cross; a lake
-        // span and a puddle span both stand over water the cells have already closed around,
-        // which a line running between two continents cannot reach without crossing a cell.
         if (isAnyLinkLayerShown()) {
 
-            linkWater = findLinkWater();
+            linkWater = findLinkWater(laid);
 
             // Off the same links, so what is drawn is the coastline of the lines on screen. And
             // under the same coast rules as the first trace: the cut keeps whatever the two
@@ -370,15 +359,15 @@ public final class ContinentCoastOverlay {
         return sheet;
     }
 
-    // The spans this construction lays over one shore's water, and what they close around.
-    // One method for both shores, because after the shore has named its lines the two are one
-    // construction: the same search, the same walk over what its spans walled.
+    // One set of spans off the laying, and the water they close around.
     //
-    // The spans are filtered against the coasts they were offered to, so which survive is a
-    // question about THIS trace rather than about the cells alone. Found while either half of
-    // them is wanted, because the spans and the water they hold are one construction seen
-    // twice - a span is a line saying "this much is held between these cells", and the fill
-    // is what a run of them closes around.
+    // The laying is asked for rather than handed over, so a set neither switch wants is never
+    // searched for. Asked for while EITHER half is wanted, because the spans and the water they
+    // hold are one construction seen twice - a span is a line saying "this much is held between
+    // these cells", and the fill is what a run of them closes around.
+    //
+    // One method for whichever set is passed, because after the laying has named the lines the
+    // sets are one construction: the same walk over what a span walled.
     //
     // What they close around comes from the construction the settled bridges' fill comes from,
     // with the spans as the only walls - so what comes back is the water a run of them holds,
@@ -394,7 +383,7 @@ public final class ContinentCoastOverlay {
     // edge stands off at each reach and runs flush along the cell arcs between them - which
     // reads as a notched coastline rather than a filled sea.
     private SpanWater findSpanWater(
-            CoastFrontages.Shore shore,
+            Supplier<List<CellGap>> laying,
             boolean isSpanLayerShown,
             boolean isFillLayerShown) {
 
@@ -402,11 +391,7 @@ public final class ContinentCoastOverlay {
             return SpanWater.NONE;
         }
 
-        var spans = ContinentBridges.findAnchoredBridges(
-            coast.getTrace(),
-            shore,
-            settings.parameters,
-            settings.resolveContinentBridgeRules());
+        var spans = laying.get();
 
         if (!isFillLayerShown || spans.isEmpty()) {
             return new SpanWater(spans, List.of());
@@ -438,13 +423,9 @@ public final class ContinentCoastOverlay {
     // Walled by the inlet spans as well as by the links, since those are the remaining lines a
     // sea between two continents can come to rest against - the walls deliberately left out are
     // named where the walk is.
-    private SpanWater findLinkWater() {
+    private SpanWater findLinkWater(BridgedContinents laid) {
 
-        var links = IntercontinentalBridges.findIntercontinentalBridges(
-            coast.getTrace(),
-            inletWater.spans(),
-            settings.parameters,
-            settings.resolveContinentBridgeRules());
+        var links = laid.layLinks();
 
         if (!settings.showIntercontinentalFill || links.isEmpty()) {
             return new SpanWater(links, List.of());
