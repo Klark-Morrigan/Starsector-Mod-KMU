@@ -2,6 +2,7 @@ package kmu.maplayers.base.refresh;
 
 import kmlib.starsector.systems.SystemMotionTracker;
 
+import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 
 import java.util.Set;
@@ -58,17 +59,25 @@ public final class MovingSystems {
      * system's colonies a second time in the same tick. It also settles which systems count
      * as drawn identically to the geometry cache, both asking one rule.
      *
-     * @param pass the poll's reading of the sector, which decides the drawn set and names the
-     *             sector walked; a null pass - or one opened over no sector - observes nothing
+     * <p>The positions come off the pass as well, for the same reason and one more: the pass
+     * holds the traversal of the system list its readers share, so a tracker handed the sector
+     * would traverse it again for the very systems the pass is already holding.
+     *
+     * @param pass the poll's reading of the sector, which supplies the systems and decides the
+     *             drawn set; a null pass - or one opened over no sector - observes nothing
      *             and reports no change
      * @return true when the moving set gained or lost a member this poll, so the caller
      *         requests a geometry refresh; false while it is steady
      */
     public boolean updateMovingSystems(MapVisibilityPass pass) {
 
-        if (pass == null) {
+        // A pass over no sector observes nothing rather than observing an empty sector: the
+        // second would report every system that had been moving as having stopped, which is a
+        // refresh asked for by a load that has not finished rather than by anything that moved.
+        if (pass == null || pass.sector() == null) {
             return false;
         }
-        return systemMotionTracker.updateMovingSystems(pass.sector(), pass::isDrawn);
+        return systemMotionTracker.updateMovingSystems(
+            DrawnSystemPositions.collectLivePositions(pass));
     }
 }
