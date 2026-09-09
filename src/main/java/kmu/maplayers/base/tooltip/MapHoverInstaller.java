@@ -9,6 +9,7 @@ import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
 import kmu.starsector.listeners.SectorListeners;
+import kmu.starsector.listeners.SectorScripts;
 import kmu.starsector.ui.ShownMapSurface;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
@@ -115,26 +116,19 @@ public final class MapHoverInstaller {
     // instance can be taken out with it.
     static void installMapHoverExpirer(SectorAPI sector) {
 
-        if (sector == null) {
-            return;
-        }
-        removeMapHoverExpirer(sector);
-
         // This sector's own holder, since the script runs on this sector's frames: one kept from an
         // earlier load would go on expiring the hover of the sector it was built against while the
         // loaded one's stood forever.
-        sector.addTransientScript(new MapHoverExpirer(
-            MapLayerInstallations
-                .resolveInstallationFor(sector)
-                .resolveHoverState()));
+        SectorScripts.installScript(
+            sector,
+            () -> new MapHoverExpirer(
+                MapLayerInstallations
+                    .resolveInstallationFor(sector)
+                    .resolveHoverState()));
     }
 
     static void removeMapHoverExpirer(SectorAPI sector) {
-
-        if (sector == null) {
-            return;
-        }
-        sector.removeTransientScriptsOfClass(MapHoverExpirer.class);
+        SectorScripts.removeScript(sector, MapHoverExpirer.class);
     }
 
     // Registers the input listener that reads the hover box's detail-level cycle key. Transient,

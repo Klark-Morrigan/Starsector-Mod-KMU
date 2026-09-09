@@ -26,7 +26,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins what the pass adds over the rule it asks: that every screen is asked rather than the one being
  * looked at, since one dialog moves both screens' rows and a screen nobody is on still has to be right
- * when they open it; and that a screen already on a tab its row offers is written to at all.
+ * when they open it; and that a frame with nothing to settle writes nothing, which is what makes a
+ * per-frame pass affordable at all.
  *
  * <p>What the heal does to a stranded pick, and which row it judges one against, is
  * {@link kmu.maplayers.base.layer.ScreenLayerTabsTest}'s.

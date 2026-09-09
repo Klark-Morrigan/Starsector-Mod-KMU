@@ -310,6 +310,24 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
+        void healPickOntoOfferedTabsLandsAScreenSetToNoLayerAtAllOnTheLeadingTab() {
+            // A selection seam answering nothing over a populated bar - which a foreign mod's own
+            // implementation may - reads as a pick the row does not offer, so it is landed on a tab
+            // rather than left lighting none.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            var screenPicks = createPicksWithNoControl();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(null);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection())
+                .selectLayer(NoLayer.INSTANCE);
+        }
+
+        @Test
         void healPickOntoOfferedTabsWritesNothingWithNothingRegistered() {
             // A bare bar has no tab to land a pick on. Reachable before a composition root has
             // registered anything, which is a frame the pass can run on rather than a state the

@@ -195,6 +195,14 @@ def kmlibDependency = 'kmlib:KMLib'
 // <starsector>/mods/lw_lazylib, the launcher's expected layout.
 def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
 
+// LunaLib is a hard dependency in mod_info.json, and KMU compiles against none of
+// it - the coupling is KMLib's, in KmLogging and LunaSettingsReader. It is still
+// needed at TEST runtime: KMU's own settings classes reach that reader, whose
+// inner relay implements LunaLib's listener interface, so loading one without the
+// jar dies on NoClassDefFoundError. The game classloader hands it over in play;
+// nothing outside the game does.
+def lunaLibJarFile = file("${starsectorRoot}/mods/lunalib/jars/LunaLib.jar")
+
 // Nexerelin is an optional runtime dependency. KMU compiles against its
 // InvasionListener so the political map can repaint a colony that changes hands
 // in a Nex war; the mod classloader supplies the jar at runtime when Nex is
@@ -269,8 +277,9 @@ dependencies {
     // KMLib is a hard dependency in mod_info.json; Starsector's mod
     // classloader provides the jar at runtime so compileOnly is enough.
     // KMU drives its logging through KMLib's KmLogging, so the LunaLib
-    // coupling lives in KMLib's classpath, not here - KMU keeps only its
-    // runtime LunaLib dependency declared in mod_info.json.
+    // coupling lives in KMLib's classpath and KMU compiles against none of it -
+    // only the runtime dependency declared in mod_info.json, plus the test
+    // runtime entry below, where nothing hands the jar over.
     compileOnly kmlibDependency
     compileOnly files(lazyLibJarFile)
 
@@ -291,6 +300,7 @@ dependencies {
     testRuntimeOnly kmlibDependency
     testRuntimeOnly testFixtures(kmlibDependency)
     testRuntimeOnly files(lazyLibJarFile)
+    testRuntimeOnly files(lunaLibJarFile)
     testRuntimeOnly magicLibJars
     testRuntimeOnly files(lazyLibKotlinRuntimeJarFile)
 

@@ -160,7 +160,10 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
             return;
         }
 
-        recordControlStandingOn(screenPicks);
+        // What a box now standing is worth to its screen: the stored hide is acted on from here, and
+        // the empty view's tab comes off that screen's strip. Re-asserted rather than assumed after
+        // the first frame, a closed hatch having taken the word back while leaving the box standing.
+        screenPicks.layerVisibility().recordControlAttached();
 
         // Re-asserted every frame rather than seeded once: the pick moves under a standing box, and
         // the row offers no way to take one off and put a fresh one up in its place.
@@ -190,15 +193,6 @@ public final class MapLayerToggleUpkeep implements EveryFrameScript {
         attachedTogglesByScreenPicks.put(screenPicks, appendedToggle);
 
         return appendedToggle;
-    }
-
-    // What a box now standing on a screen is worth to that screen: its stored hide is acted on from
-    // here, and the empty view's tab comes off its strip.
-    //
-    // Re-asserted rather than assumed on every frame after the first, a closed hatch having taken the
-    // word back while leaving the box itself standing.
-    private static void recordControlStandingOn(ScreenLayerPicks screenPicks) {
-        screenPicks.layerVisibility().recordControlAttached();
     }
 
     // What closing the hatch means beyond attempting nothing further. The word is a latch, so one

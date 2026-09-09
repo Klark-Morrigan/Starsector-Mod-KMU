@@ -29,19 +29,14 @@ import java.util.List;
  * construction: a strip that withheld or moved a tab while the key walk did not would switch to the layer
  * one along from the tab it lit.
  *
- * <p>A pick that is not among the tabs its screen offers is moved onto the leading one, and that screen's
- * own show-or-hide control is set to whether the tab it lands on paints. Both halves, because the two
- * controls have to end up saying one thing: a layer painting from a tab that is not on the bar is a map
- * nothing on screen accounts for, and a lit tab standing over an empty map is the same disagreement read
- * from the other end.
- *
- * <p>That reaches a tab the player took off the bar as well as one this screen's control took over, and
- * the first of those is a deliberate reversal. A hidden layer used to go on painting for the save that
- * had picked it, on the reading that hiding a tab is not switching a layer off - which is true of the
- * store, the layer staying registered and its id staying resolvable, and which misses that the player is
- * looking at a bar. The only way back to a map painting from a tab that is not there is a dialog they
- * have to remember to open. The pick is preserved in the one way that shows, which is by following the
- * tabs.
+ * <p>A pick the offered row has no tab for is moved onto the leading tab it does offer, and that screen's
+ * show-or-hide control set to whether the tab it lands on paints. Both halves, because the two controls
+ * have to end up saying one thing: a layer painting from a tab that is not on the bar is a map nothing on
+ * screen accounts for, and a lit tab standing over an empty map is that same disagreement from the other
+ * end. It reaches a tab the player took off as well as one a control took over, and the first of those
+ * deliberately reverses the older reading that hiding a tab is not switching a layer off - true of the
+ * store, where the layer stays registered and its id resolvable, and blind to the bar the player is
+ * looking at.
  */
 public final class ScreenLayerTabs {
 

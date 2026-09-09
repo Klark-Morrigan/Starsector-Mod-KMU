@@ -210,17 +210,10 @@ bar once does not order it again per save.
   the last tab standing, a row emptied by hiding and a row emptied by withholding being the same
   unusable bar. Both subtractions are from the strip and never from the roster, a stored pick being
   an id resolved against it, so a hidden layer stays registered and its id goes on resolving. What
-  becomes of a pick the row no longer carries a tab for is `healPickOntoOfferedTabs`: it moves onto
-  the leading tab that is offered, and the screen's own show-or-hide control is set to whether that
-  tab paints - both halves, since the bar, the map and the control have to end up saying one thing.
-  That reverses what this file used to state, deliberately: hiding a tab was held not to be
-  switching a layer off, so a save left on a hidden layer went on painting it. It still is not
-  switching the layer off - it is that a layer painting from a tab that is not on the bar is a map
-  nothing on screen accounts for, reachable again only through a dialog the player has to remember
-  to open, so the pick is preserved in the one way that shows. The heal is asked per frame and for
-  every screen by [`MapLayerPickUpkeep`](base/chrome/README.md#the-pick-follows-the-bar) rather than
-  wherever a row moved: one dialog moves both screens' rows, a screen nobody is looking at still has
-  to be right when they next look, and the pass that lays a row out may not write. A layer is
+  becomes of a pick the row no longer offers a tab for is `healPickOntoOfferedTabs`, stated in
+  [the map chrome README](base/chrome/README.md#the-pick-follows-the-bar) beside the pass that asks
+  it - and it reverses what this file used to say, that a save left on a hidden layer went on
+  painting it. A layer is
   registered once for the process while what it draws with is one sector's, so it holds no renderer:
   it is asked for the one belonging to the installation being drawn, and the registry passes that
   installation through rather than resolving one of its own. A layer also letters and binds its own

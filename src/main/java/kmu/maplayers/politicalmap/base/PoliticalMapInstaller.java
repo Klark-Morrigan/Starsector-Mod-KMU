@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeL
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
 import kmu.starsector.listeners.SectorListeners;
+import kmu.starsector.listeners.SectorScripts;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
@@ -118,11 +119,7 @@ public final class PoliticalMapInstaller {
     // Stops the per-frame watcher polling. By class, which is safe here where it would not be for a
     // library script: this one is the framework's own and no sibling mod installs it.
     static void removeMapLayerSectorWatcher(SectorAPI sector) {
-
-        if (sector == null) {
-            return;
-        }
-        sector.removeTransientScriptsOfClass(MapLayerSectorWatcher.class);
+        SectorScripts.removeScript(sector, MapLayerSectorWatcher.class);
     }
 
     // Registers the listener that refreshes the political map when the player
@@ -171,19 +168,17 @@ public final class PoliticalMapInstaller {
     // system changing hands (an AI colony founded in a system already on the map),
     // or a mobile system drifting to a new position. The watcher owns only the
     // cadence, so which of those count as a change is handed in as the political
-    // map's own staleness source. Transient: not saved, so it is re-added fresh
-    // each load and never duplicates across reloads.
+    // map's own staleness source. Transient and cleared before it is added, so it
+    // is fresh on every load and never doubles up within a session either.
     static void installMapLayerSectorWatcher(SectorAPI sector) {
 
-        if (sector == null) {
-            return;
-        }
         // A fresh source per load, so the baselines it diffs against start empty rather
         // than carrying the previous save's last read into this one. Built against this
         // sector's installed machinery, for the same reason every listener above is built
         // against this sector: what it stages there is this sector's alone.
-        sector.addTransientScript(
-            new MapLayerSectorWatcher(
+        SectorScripts.installScript(
+            sector,
+            () -> new MapLayerSectorWatcher(
                 new PoliticalMapStalenessSource(
                     MapLayerInstallations.resolveInstallationFor(sector))));
     }

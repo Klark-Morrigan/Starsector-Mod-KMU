@@ -3,6 +3,7 @@ package kmu.maplayers.base.chrome;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.starsector.listeners.SectorScripts;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -20,11 +21,11 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * withholds a tab from that screen, so a box going up is healed against on the frame it goes up
  * rather than the one after.
  *
- * <p>Registered per sector, the pass being a script the sector ticks, and transient like the rest of
- * the feature's wiring: a script that entered the save would be restored beside the one each load
- * adds, and two of them would append two boxes to one row.
+ * <p>Both go on per sector through {@link SectorScripts}, which owns the transience and the
+ * clear-then-add: two boxes over one pick, or two heals writing one answer twice, are what a second
+ * registration buys.
  *
- * <p>The take-back stops the pass and nothing else. A box already standing stays where it is, the
+ * <p>The take-back stops the passes and nothing else. A box already standing stays where it is, the
  * game's row offering no way to take one off again - it goes on moving a pick nothing reads while
  * the layers are off, and the next row the player opens is bare. That the row is rebuilt on every
  * open is the same fact the pass itself rests on, and is what keeps a feature switched off and on
@@ -51,7 +52,7 @@ public final class MapChromeInstaller {
             "Failed to install KMU map layer filter row control");
 
         runGuardedStep(
-            () -> installMapLayerPickUpkeep(sector),
+            () -> SectorScripts.installScript(sector, MapLayerPickUpkeep::new),
             "Failed to install KMU map layer pick heal");
     }
 
@@ -63,64 +64,26 @@ public final class MapChromeInstaller {
     public static void uninstallAll(SectorAPI sector) {
 
         runGuardedStep(
-            () -> removeMapLayerToggleUpkeep(sector),
+            () -> SectorScripts.removeScript(sector, MapLayerToggleUpkeep.class),
             "Failed to remove KMU map layer filter row control");
 
         runGuardedStep(
-            () -> removeMapLayerPickUpkeep(sector),
+            () -> SectorScripts.removeScript(sector, MapLayerPickUpkeep.class),
             "Failed to remove KMU map layer pick heal");
     }
 
-    // Registers the standing pass as this sector's own transient script, clearing whatever is
-    // already registered first: two of them would each find the row bare of their own box and append
-    // one, leaving the player two controls over a single pick. Removed by class, which is safe
-    // because the script is this mod's own - no sibling mod runs one to be taken out with it.
-    //
-    // The same start-clean rule reaches past the script to what the screens believe, below.
+    // A step of its own rather than the bare registration the heal is, because standing the box up
+    // carries one thing the registration does not: what the screens believe about having one.
     static void installMapLayerToggleUpkeep(SectorAPI sector) {
 
         // A campaign just loaded has no box standing on any row, whatever an earlier one in this
         // session managed to attach. The word that a screen has one is held for the process while the
         // pick it governs reads the loaded sector's memory, so nothing else takes it back - and this
         // campaign's stored hide would otherwise be acted on from the first frame, on the strength of
-        // a control the previous campaign put up. Before the null check, since a load with no sector
+        // a control the previous campaign put up. Before the registration, since a load with no sector
         // to install into is a load with no box either.
         MapLayerScreens.forgetControlsAttached();
 
-        if (sector == null) {
-            return;
-        }
-        removeMapLayerToggleUpkeep(sector);
-
-        sector.addTransientScript(new MapLayerToggleUpkeep());
-    }
-
-    static void removeMapLayerToggleUpkeep(SectorAPI sector) {
-
-        if (sector == null) {
-            return;
-        }
-        sector.removeTransientScriptsOfClass(MapLayerToggleUpkeep.class);
-    }
-
-    // The heal, registered the same way and for the same reason: two of them would ask one question
-    // twice and write one answer twice. Transient like the box's pass, a script that entered the save
-    // being restored beside the one each load adds.
-    static void installMapLayerPickUpkeep(SectorAPI sector) {
-
-        if (sector == null) {
-            return;
-        }
-        removeMapLayerPickUpkeep(sector);
-
-        sector.addTransientScript(new MapLayerPickUpkeep());
-    }
-
-    static void removeMapLayerPickUpkeep(SectorAPI sector) {
-
-        if (sector == null) {
-            return;
-        }
-        sector.removeTransientScriptsOfClass(MapLayerPickUpkeep.class);
+        SectorScripts.installScript(sector, MapLayerToggleUpkeep::new);
     }
 }
