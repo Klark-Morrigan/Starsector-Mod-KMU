@@ -185,67 +185,12 @@ bar once does not order it again per save.
 
 ## Where each part lives
 
-- **`base/layer`** - the layer framework: `MapLayer` (id, tab label, body controls, shortcut key),
-  `MapLayerRegistry` (the roster, and what is in play on the screen showing this frame),
-  `MapLayerScreens` (both screens' picks under their frozen keys, and which screen is up),
-  `ScreenMemoryScope` (a screen's segment of a key, and the one place one is composed),
-  `MemoryKeyAddress` with `AddressedMemoryFlag` and `AddressedMemoryString` (what a preference is
-  partitioned by, and the two holders that store one slot per partition), `NoLayer`,
-  and
-  `MapLayerVisibility` - a screen's show-or-hide pick and the fade between the two, held per screen
-  beside its tab and handed out with it and that screen's scope as one `ScreenLayerPicks`, so nothing
-  can read one screen's tab against another's hiding. The pick is folded into the active-layer answer rather than read by
-  each consumer:
-  a hidden screen resolves to no active layer once its fade is out, which every pass driven by that
-  pick already draws nothing for. The sidebar is the one part of the footprint outside that answer,
-  since it draws whether or not a layer is picked, so it reads the same pick at
-  [its own gate](base/sidebar/README.md) - two reads for the whole visible footprint. What either read
-  gets is `ControlBackedMapLayerVisibility`: a stored hide is acted on only while that screen has a
-  control able to take it back, and read as shown until it has one, the stored choice untouched and
-  honoured again the moment there is a control for it. Which screens have one is `base/chrome`'s
-  answer below, and the session's rather than the save's. It also settles which tabs a screen is
-  offered: `ScreenLayerTabs` lays the player's own arrangement over the roster and then withholds
-  `NoLayer` from a screen carrying such a control, in one read the strip and the shortcut walk both
-  take - two lists would switch to the layer one along from the tab they lit - and never withholds
-  the last tab standing, a row emptied by hiding and a row emptied by withholding being the same
-  unusable bar. Both subtractions are from the strip and never from the roster, a stored pick being
-  an id resolved against it, so a hidden layer stays registered and its id goes on resolving. What
-  becomes of a pick the row no longer offers a tab for is `healPickOntoOfferedTabs`, stated in
-  [the map chrome README](base/chrome/README.md#the-pick-follows-the-bar) beside the pass that asks
-  it - and it reverses what this file used to say, that a save left on a hidden layer went on
-  painting it. A layer is
-  registered once for the process while what it draws with is one sector's, so it holds no renderer:
-  it is asked for the one belonging to the installation being drawn, and the registry passes that
-  installation through rather than resolving one of its own. A layer also letters and binds its own
-  tab: `resolveTabLabelText` hands the bar drawn text rather than a strings key and
-  `resolveShortcutKeycode` hands it the key in force rather than a settings field to read, since only
-  the mod that declares a layer holds the bundle its name lives in and the file its rebinding is
-  stored in, and the bar carries whatever is registered. Both are asked per frame, so a rename or a
-  rebind shows on the next one; KMU's own two layers answer out of `KmuStrings` and the
-  `Map - Keybinds` settings tab themselves. Registration is one layer at a time and accumulates, so a
-  mod that depends on KMU registers its own as it loads and lands to the right of the layers it was
-  built on. That arrival order is the whole of the row's order - no layer states a rank, none being
-  in a position to see the row it stands in - and the default pick falls out of it: the first layer
-  that offers itself (`isOfferedAsDefaultPick`), so `NoLayer` leads the strip while declining and the
-  political map is what a fresh save opens on. Two *different* layers under one id are arbitrated
-  rather than tabbed twice, both tabs otherwise reading and writing the one stored pick that names
-  them. Nothing is settled at load, since a mod registering after KMU's own load has returned is the
-  ordinary case rather than the exception.
-- **The bar arrangement** - what the player makes of that row, held apart from the roster itself and
-  living in `base/layer` beside it. `MapLayerArrangement` is their own order and the ids they took
-  off the bar, kept per user in the game's common data by `PersistedMapLayerArrangement` rather than
-  in the save, for the reason the table above gives. It is a preference laid over whatever is
-  registered rather than a roster of its own, and `ArrangedLayers` is that laying: an id nothing
-  registers is skipped, a registered layer the store does not name is appended in registration order,
-  an id named twice is placed once, and an arrangement that would leave no tab at all keeps the
-  leading one - a bar with no tabs having no way back to itself. So a mod installed, removed or
-  renamed costs the player nothing and needs no migration, and a file that cannot be read is worth
-  exactly the unarranged row. Which store answers is bound at the composition root and read through
-  `LiveMapLayerArrangement`, so nothing on the frame path names a file and an install that bound none
-  reads as unarranged; what is bound in play is `SessionHeldMapLayerArrangement` over the stored one,
-  the row being assembled on every frame the sidebar draws and every key it routes, which is more
-  often than a file may be opened. An arrangement recorded through that holding is what the next
-  frame reads, rather than what the next start does.
+- **[The layer framework](base/layer/README.md)** - what a layer is (`MapLayer`), the roster and its
+  arrival order (`MapLayerRegistry`), each screen's tab and show-or-hide pick under its own frozen
+  keys (`MapLayerScreens`, `ScreenLayerPicks`, `ControlBackedMapLayerVisibility`), which of the
+  registered layers a screen is offered as tabs (`ScreenLayerTabs`), and the bar arrangement laid
+  over the roster (`MapLayerArrangement`, `ArrangedLayers`). Nothing in it paints, and none of it
+  knows what a layer paints.
 - **[The arranging dialog](base/chrome/README.md#the-arranging-dialog)** - what writes that
   arrangement, opened from the bar and from nowhere else. Its rules, its modality and the box it
   stands in are [the map chrome README](base/chrome/README.md)'s.
