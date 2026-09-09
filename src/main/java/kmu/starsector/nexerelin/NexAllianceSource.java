@@ -1,10 +1,10 @@
 package kmu.starsector.nexerelin;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import exerelin.campaign.AllianceManager;
 import exerelin.campaign.alliances.Alliance;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The only class that imports {@code exerelin.*}: it reads Nexerelin's live alliance
@@ -25,12 +25,13 @@ final class NexAllianceSource implements AllianceSource {
      */
     @Override
     public List<AllianceRecord> readAlliances() {
+
         if (AllianceManager.getManager() == null) {
             return List.of();
         }
-        List<AllianceRecord> records = new ArrayList<>();
+        var records = new ArrayList<AllianceRecord>();
 
-        for (Alliance alliance : AllianceManager.getAllianceList()) {
+        for (var alliance : AllianceManager.getAllianceList()) {
             // uuId is the stable bloc id; getMembersSorted() ranks members by descending
             // market size so element 0 is the dominant member the bloc colours off.
             records.add(new AllianceRecord(
