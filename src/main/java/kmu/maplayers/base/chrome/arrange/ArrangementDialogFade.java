@@ -31,7 +31,7 @@ final class ArrangementDialogFade {
     // in front of itself is shown at these two durations - so two dialogs over one screen move
     // together. The way out is the shorter, as it is there: a dismissal answers a press and should
     // be gone under it.
-    static final TraverseDurations MODAL_DURATIONS = new TraverseDurations(0.3f, 0.2f);
+    private static final TraverseDurations MODAL_DURATIONS = new TraverseDurations(0.3f, 0.2f);
 
     // The two ends the fade travels between, named so a target reads as a destination rather than a
     // bare bound.
@@ -54,11 +54,7 @@ final class ArrangementDialogFade {
      * @param elapsedSeconds real time since the last frame
      */
     void advanceFade(float elapsedSeconds) {
-
-        fadeProgress.advanceTowardTarget(
-            resolveTargetProgress(),
-            elapsedSeconds,
-            MODAL_DURATIONS.resolveDurationSeconds(isRaised));
+        stepFadeToward(elapsedSeconds, MODAL_DURATIONS);
     }
 
     /**
@@ -77,12 +73,10 @@ final class ArrangementDialogFade {
 
         isRaised = false;
 
-        // Routed through the ordinary advance rather than a second write to the fraction, so there is
-        // one rule for where down is and the drop cannot land somewhere the fade never does.
-        fadeProgress.advanceTowardTarget(
-            FULLY_DOWN,
-            NO_ELAPSED_SECONDS,
-            TraverseDurations.SNAP.resolveDurationSeconds(isRaised));
+        // Routed through the ordinary step rather than a second write to the fraction, so there is one
+        // rule for where down is and the drop cannot land somewhere the fade never does. What makes it
+        // one step rather than a run is the pace, which covers the whole way at once.
+        stepFadeToward(NO_ELAPSED_SECONDS, TraverseDurations.SNAP);
     }
 
     /**
@@ -125,5 +119,16 @@ final class ArrangementDialogFade {
         return isRaised
             ? FULLY_UP
             : FULLY_DOWN;
+    }
+
+    // One step of the fade toward whichever end the dialog is heading for, at a stated pace. Which way
+    // it is heading is what raised says, so the pace follows from the same field rather than from a
+    // second reading of where the fraction currently stands.
+    private void stepFadeToward(float elapsedSeconds, TraverseDurations durations) {
+
+        fadeProgress.advanceTowardTarget(
+            resolveTargetProgress(),
+            elapsedSeconds,
+            durations.resolveDurationSeconds(isRaised));
     }
 }

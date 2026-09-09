@@ -70,8 +70,8 @@ spares the single-holder cell a ring walk.
 
 The gate is the pass's **inhabitation scan**, not its holding, and that is what puts a band on the
 systems no layer paints. A settled system can resolve no claimant for
-[several reasons](../../politics/holders/README.md) - a pirate haven and a player colony among them
-- so the claims layer's fill says nothing about it, and gating on that fill would have left the band
+[several reasons](../../politics/holders/README.md) - a pirate haven and a player colony among them -
+so the claims layer's fill says nothing about it, and gating on that fill would have left the band
 silent on exactly the systems it is the only readout for. Every held system is inhabited (a bloc
 holds one only by having a colony in it), so nothing that banded before stops banding. It is also
 the very set the factionless cell beneath is classified from, so a cell drawn as settled and a cell

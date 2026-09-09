@@ -210,8 +210,8 @@ read against whichever number that layer paints by. The bloc's metrics carry the
 ## Where each part lives
 
 The top level is divided by *mechanic*, not by view: `dominance` holds the two views painted by the
-market contest - `dominance/factions` and `dominance/alliances`, which differ only in how they group
-- and `claims` is its peer, painted by the vanilla claim mechanic. A view is not a unit of anything
+market contest - `dominance/factions` and `dominance/alliances`, which differ only in how they group -
+and `claims` is its peer, painted by the vanilla claim mechanic. A view is not a unit of anything
 except its own rules, so grouping Factions beside Claims put two mechanics on one shelf and split
 one mechanic across two; anything a mechanic owns beyond its views (its ribbon counting, so far)
 folds in beside them rather than pooling in `base`. What stays in `base` is what every mechanic
@@ -741,8 +741,8 @@ entirely where none is (`ListedClaimContest.selectFrom`, calling
 the very colonies it decides, so a second copy of the rule beside it would be free to disagree). It
 is the tighter of the two and deliberately so: the sibling count cannot name a faction, being the
 account's own working, stated beneath a market that faction was already weighed on. The two live in
-one class, the row rule written as this one plus its extra term, so the nesting holds by construction
-- a market only the count reaches earns a row under a faction some other market already put on the
+one class, the row rule written as this one plus its extra term, so the nesting holds by construction -
+a market only the count reaches earns a row under a faction some other market already put on the
 box, and never a box of its own. Naming a faction over an
 account with nothing in it would tell the player exactly what the fog is keeping back - and `F1` is
 offered only where a standing survives that filter (`hasListedStanding`), so the key is never

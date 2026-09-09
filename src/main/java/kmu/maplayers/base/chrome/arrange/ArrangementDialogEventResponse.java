@@ -20,6 +20,10 @@ import java.util.function.Predicate;
  * a panel's widgets and to its plugin is the game's business: leaving the box's own events untouched
  * is correct whichever way round it is, while claiming them first would leave the dialog's buttons
  * dead on a build that dispatches to the plugin first.
+ *
+ * <p><b>A dismissed dialog claims nothing at all</b>, though its box is on screen for the length of
+ * its fade. The press that dismisses it is the moment the screen is the player's again, and a claim
+ * held for the fall would eat the click that follows.
  */
 enum ArrangementDialogEventResponse {
 
@@ -38,17 +42,21 @@ enum ArrangementDialogEventResponse {
      * <p>Whether the event landed in the box is asked through a predicate rather than taken as a
      * flag, because it must not be asked at all for an event somebody has already consumed: six of
      * {@link InputEventAPI}'s own accessors throw once that has happened, and the box test reads one
-     * of them.
+     * of them. Whether the dialog is up is a flag for the opposite reason - it is a field read that
+     * touches no event at all, and it is asked first because a dialog that has let go answers for
+     * every event without measuring any of them.
      *
      * @param event                  the event the panel was handed
+     * @param isDialogRaised         whether the dialog is still up, as against on screen but dismissed
      * @param isEventInsideDialogBox whether an event lands inside the dialog's own box
      * @return what the dialog does with it
      */
     static ArrangementDialogEventResponse resolveResponseTo(
             InputEventAPI event,
+            boolean isDialogRaised,
             Predicate<InputEventAPI> isEventInsideDialogBox) {
 
-        if (event.isConsumed()) {
+        if (!isDialogRaised || event.isConsumed()) {
             return LEAVE_ALONE;
         }
 

@@ -25,6 +25,10 @@ import static org.mockito.Mockito.when;
  * <p>And that a consumed event is never measured. Six of {@link InputEventAPI}'s accessors throw once
  * something has consumed the event, and the box test reads one of them - so the guard is not an
  * optimisation but the difference between a rule and a crash out of a render pass.
+ *
+ * <p>The dismissed case is the other half of the same question, and it runs the opposite way: the box
+ * stays on screen for the length of its fade while the screen is already the player's again, so a rule
+ * that went on claiming would eat the click after the press rather than the press itself.
  */
 final class ArrangementDialogEventResponseTest {
 
@@ -38,6 +42,11 @@ final class ArrangementDialogEventResponseTest {
 
     private static final Predicate<InputEventAPI> OUTSIDE_THE_BOX = event -> false;
 
+    // The dialog up for input, as against on screen but already dismissed.
+    private static final boolean RAISED = true;
+
+    private static final boolean DISMISSED = false;
+
     @Nested
     class ResolveResponseTo {
 
@@ -47,7 +56,44 @@ final class ArrangementDialogEventResponseTest {
             var eventMock = mock(InputEventAPI.class);
             when(eventMock.isConsumed()).thenReturn(true);
 
-            assertThat(ArrangementDialogEventResponse.resolveResponseTo(eventMock, UNREACHED_BOX_TEST))
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, RAISED, UNREACHED_BOX_TEST))
+                .isEqualTo(ArrangementDialogEventResponse.LEAVE_ALONE);
+        }
+
+        @Test
+        void resolveResponseToLeavesEveryEventAloneWhileTheDialogIsOnlyFadingOut() {
+            // The box is still on screen and the game still dispatches to it, but the screen went back
+            // to the player at the press - so an event outside the box, which a raised dialog claims,
+            // is left alone here.
+            var eventMock = mock(InputEventAPI.class);
+
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, DISMISSED, OUTSIDE_THE_BOX))
+                .isEqualTo(ArrangementDialogEventResponse.LEAVE_ALONE);
+        }
+
+        @Test
+        void resolveResponseToMeasuresNothingWhileTheDialogIsOnlyFadingOut() {
+            // Asked before either reading, so a dialog that has let go answers for a whole frame's
+            // events without touching one of them.
+            var eventMock = mock(InputEventAPI.class);
+
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, DISMISSED, UNREACHED_BOX_TEST))
+                .isEqualTo(ArrangementDialogEventResponse.LEAVE_ALONE);
+        }
+
+        @Test
+        void resolveResponseToDoesNotCloseOnEscapeWhileTheDialogIsOnlyFadingOut() {
+            // Escape belongs to whatever has the screen now, and that is no longer this dialog: a
+            // second press should reach the screen behind rather than close a box already closing.
+            var eventMock = mock(InputEventAPI.class);
+            when(eventMock.isKeyDownEvent()).thenReturn(true);
+            when(eventMock.getEventValue()).thenReturn(Keyboard.KEY_ESCAPE);
+
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, DISMISSED, OUTSIDE_THE_BOX))
                 .isEqualTo(ArrangementDialogEventResponse.LEAVE_ALONE);
         }
 
@@ -58,7 +104,8 @@ final class ArrangementDialogEventResponseTest {
             when(eventMock.isKeyDownEvent()).thenReturn(true);
             when(eventMock.getEventValue()).thenReturn(Keyboard.KEY_ESCAPE);
 
-            assertThat(ArrangementDialogEventResponse.resolveResponseTo(eventMock, UNREACHED_BOX_TEST))
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, RAISED, UNREACHED_BOX_TEST))
                 .isEqualTo(ArrangementDialogEventResponse.CLOSE_DIALOG);
         }
 
@@ -68,7 +115,8 @@ final class ArrangementDialogEventResponseTest {
             // the game hands the plugin its events before the panel's children.
             var eventMock = mock(InputEventAPI.class);
 
-            assertThat(ArrangementDialogEventResponse.resolveResponseTo(eventMock, INSIDE_THE_BOX))
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, RAISED, INSIDE_THE_BOX))
                 .isEqualTo(ArrangementDialogEventResponse.LEAVE_ALONE);
         }
 
@@ -77,7 +125,8 @@ final class ArrangementDialogEventResponseTest {
 
             var eventMock = mock(InputEventAPI.class);
 
-            assertThat(ArrangementDialogEventResponse.resolveResponseTo(eventMock, OUTSIDE_THE_BOX))
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, RAISED, OUTSIDE_THE_BOX))
                 .isEqualTo(ArrangementDialogEventResponse.CLAIM);
         }
 
@@ -90,7 +139,8 @@ final class ArrangementDialogEventResponseTest {
             when(eventMock.isKeyDownEvent()).thenReturn(true);
             when(eventMock.getEventValue()).thenReturn(Keyboard.KEY_M);
 
-            assertThat(ArrangementDialogEventResponse.resolveResponseTo(eventMock, OUTSIDE_THE_BOX))
+            assertThat(ArrangementDialogEventResponse.resolveResponseTo(
+                    eventMock, RAISED, OUTSIDE_THE_BOX))
                 .isEqualTo(ArrangementDialogEventResponse.CLAIM);
         }
     }

@@ -33,8 +33,9 @@ import java.util.List;
  * an ordinary child: nothing dims behind it and nothing stops the screen underneath being dispatched
  * to. So the body paints its own backdrop, through this plugin's own render hook, and this claims the
  * input its own widgets do not want. What cannot be supplied is being recognised as a modal by anything
- * reading the game's modal base, so the map-side gates that stand down under one read
- * {@link #resolveDialogState()} beside that reading.
+ * reading the game's modal base, so whatever stands down under one has to read this dialog's own state
+ * beside that reading - {@link #isDialogRaised()} where the question is input, and
+ * {@link #resolveDialogState()} where it is input and paint together.
  *
  * <p>Which events that claim takes and which it leaves alone is
  * {@link ArrangementDialogEventResponse}'s; this acts on the answer.
@@ -265,6 +266,13 @@ public final class MapLayerArrangementDialog {
         @Override
         public void advance(float amount) {
 
+            // A panel this dialog has already let go of, which is what a detach that could not reach the
+            // core UI leaves behind: still advanced by whatever is holding it, and no longer ours to
+            // paint. Asked first because everything below it writes through a panel this no longer has.
+            if (dialogPanel == null) {
+                return;
+            }
+
             // The panel hangs from the core UI, which outlives the screen the dialog was opened on -
             // so leaving that screen has to be noticed rather than waited for. Down at once rather than
             // faded: there is no screen left under it to fade against.
@@ -279,16 +287,11 @@ public final class MapLayerArrangementDialog {
         @Override
         public void processInput(List<InputEventAPI> events) {
 
-            // A dialog on its way down claims nothing. It is still on screen for the length of the fall,
-            // and a claim kept up for that length would eat the click that follows the press.
-            if (!isDialogRaised()) {
-                return;
-            }
-
             for (var event : events) {
 
                 var response = ArrangementDialogEventResponse.resolveResponseTo(
                     event,
+                    isDialogRaised(),
                     MapLayerArrangementDialog.this::isEventInsideDialogBox);
 
                 if (response == ArrangementDialogEventResponse.LEAVE_ALONE) {

@@ -87,6 +87,9 @@ same fade, and a panel cut away at the first frame of it reads as a snap against
 deepening. So the panel keeps painting, thinner each frame, until the modal is fully in. A claimant
 with no fade to follow takes both at once, which is right: the console performs no dissolve for the
 panel to join, and the codex performs one too brief and too far out of reach to be worth joining.
+This mod's own arranging dialog fades at the pace the game's prompts do, and parts the pair at the
+*other* end as well: it lets go of input on the press while its box goes on dissolving, so the
+panel's input comes back under a box still painted and only its paint waits for that box to go.
 The show-or-hide ramp splits the pair the same way and for the same reason,
 the panel dissolving with the overlay it drives rather than cutting away from over it, and the two
 fades multiply. Both compositions ask the claim first and the screen last, so the read that walks
@@ -232,10 +235,11 @@ standing decision rather than a constraint: the toolkit and the hit-testing that
 already, and moving onto that seam is backlogged. Whether the intel screen's own map behaves the
 same way has not been tested.
 
-`SidebarRenderer` is a `CampaignUIRenderingListener` drawing in `renderInUICoordsAboveUIAndTooltips`
-- the only pass composited after the opaque core-UI screen, so the earlier passes are covered by the
-screen itself. It gates on the host, advances the collapse, offers the settled fold, resolves the
-placement, steps the panel's input motions against it, and hands off to KMLib's `TabPanelRenderer`.
+`SidebarRenderer` is a `CampaignUIRenderingListener` drawing in
+`renderInUICoordsAboveUIAndTooltips` - the only pass composited after the opaque core-UI screen, so
+the earlier passes are covered by the screen itself. It gates on the host, advances the collapse,
+offers the settled fold, resolves the placement, steps the panel's input motions against it, and
+hands off to KMLib's `TabPanelRenderer`.
 
 Drawing last wins against the core UI's tooltips too, which the panel does not want: a tooltip the
 cursor raises where the panel overlaps it is drawn underneath and reads as cut off at the panel edge.
@@ -255,13 +259,13 @@ failed draw is survived are decisions that hold anywhere.
 The animations run either side of the layout, which is why the frame's elapsed time is read once and
 spent on both sides: the fold has to advance *before* the placement, since it sizes it, and the input
 motions - the hover fades, the press lifts of the tabs and of the body's cells, and the tabs' hotkey
-blinks - *after* it, since what
-the pointer is on (a tab, a body control's cell, or the collapse handle) is resolved against the very placement being drawn
-rather than latched from the last pointer event. A latched hover goes stale whenever the panel moves
-under a still cursor, which the handle feels most: the panel folds out from under a still pointer and
-the notch stays lit for a handle no longer beneath it. The triggered motions need no placement at all
-- a click and a keypress have been and gone - but ride the same call so one frame's time is charged
-to every motion, off one pair of paces.
+blinks - *after* it, since what the pointer is on (a tab, a body control's cell, or the collapse
+handle) is resolved against the very placement being drawn rather than latched from the last pointer
+event. A latched hover goes stale whenever the panel moves under a still cursor, which the handle
+feels most: the panel folds out from under a still pointer and the notch stays lit for a handle no
+longer beneath it. The triggered motions need no placement at all - a click and a keypress have been
+and gone - but ride the same call so one frame's time is charged to every motion, off one pair of
+paces.
 
 Both advance off `System.nanoTime()`, not campaign time: these screens are open on a paused game
 where `advance()` does not tick, so a game-time delta would freeze a half-folded panel and a

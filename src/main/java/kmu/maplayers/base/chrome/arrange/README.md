@@ -59,8 +59,9 @@ while the game is running. Anything left inside one can be checked only by openi
 clicking, so the package is arranged to leave as little there as possible - and the four things
 pulled out are the four that were each, at some point, the part nothing had verified:
 
-- **`ArrangementDialogEventResponse`** is the claim rule, so the dialog's whole modality is a
-  function of one event rather than a branch inside a render hook.
+- **`ArrangementDialogEventResponse`** is the claim rule - including that a dismissed dialog still
+  on screen claims nothing - so the dialog's whole modality is a function of one event rather than a
+  branch inside a render hook.
 - **`ArrangementDialogFade`** is the clock, so that raised moves on the press and the paint does
   not is a fact about two fields rather than something watched for on screen.
 - **`MapLayerArrangementEditor.applyRowAction`** is the mapping from a press to what it does. A case
@@ -70,8 +71,10 @@ pulled out are the four that were each, at some point, the part nothing had veri
   only answer them by being looked at.
 
 What is left in `MapLayerArrangementDialog.DialogPanelPlugin` is glue: it reads those answers and
-acts. Its one rule of its own is that a core UI it cannot walk reads as no map, so the dialog comes
-down rather than standing over a screen it can no longer see.
+acts. Its two rules of its own are both about a panel that has stopped being the dialog's - a core UI
+it cannot walk reads as no map, so the dialog comes down rather than standing over a screen it can no
+longer see; and a panel whose detach did not take goes on being advanced by whoever still holds it,
+with nothing left to paint through.
 
 The same line explains the seam at the other end. The editor is seeded once and is thereafter its own
 source of truth - re-reading the store between clicks would read back what it just wrote, and
