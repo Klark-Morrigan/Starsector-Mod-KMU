@@ -64,7 +64,7 @@ final class MapLayerArrangementDialogBodyTest {
             // The larger face is the whole of what makes this a heading: at the element's default
             // title size it is the same size as the line under it.
             verify(headerMock).setTitleOrbitronLarge();
-            verify(headerMock).addTitle("Arrange Layer Bar");
+            verify(headerMock).addTitle("Arrange Map Layers");
         }
 
         @Test
