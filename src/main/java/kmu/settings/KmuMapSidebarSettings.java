@@ -1,9 +1,10 @@
 package kmu.settings;
 
 /**
- * The sidebar box's own chrome - where it sits, how it is drawn, how fast it moves - plus the two
+ * The sidebar box's own chrome - where it sits, how it is drawn, how fast it moves - plus the three
  * hatches that are neither appearance nor geometry: whether the vanilla filter row is reached into
- * at all, and what one frame's layer work is allowed to cost.
+ * at all, whether the bar's arranging button stands where the roster gives it nothing to do, and
+ * what one frame's layer work is allowed to cost.
  *
  * <p>The panel is drawn on two screens whose chrome differs, so several knobs come in pairs: what
  * reads correctly beside the intel screen's buttons is not what reads correctly under the sector
@@ -22,7 +23,14 @@ public final class KmuMapSidebarSettings {
     // rather than visuals: what it governs is a reach into another party's widget, so it is the hatch
     // a player opens when that reach misbehaves, not a knob they set to taste.
     private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
-        "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
+        "kmu_map_dev_ui_controls_mapLayersToggle_isEnabled";
+
+    // Whether the bar's opener stands where the roster gives it nothing to arrange. Dev rather than
+    // visuals for the same reason as the row above: it is not a look the player sets to taste but a
+    // hatch onto a box that is otherwise correctly out of the way. The row says "button" because
+    // that is what the player is looking at; the mod's own word for the control is the opener.
+    private static final String ARRANGEMENT_OPENER_ALWAYS_SHOWN_FIELD =
+        "kmu_map_dev_ui_controls_layersArrangementButton_isAlwaysShown";
 
     // Dev rather than visuals: nothing on screen moves with it, and it is read only while a
     // profile capture is running.
@@ -136,6 +144,12 @@ public final class KmuMapSidebarSettings {
     // shown - so a player who never opens the settings would get a feature that draws with no way to
     // put it away. An escape hatch is reached for after something misbehaves, so it ships open.
     private static final boolean DEFAULT_FILTER_ROW_TOGGLE_ENABLED = true;
+
+    // Off: the count is the answer the bar should give a player, and an opener onto a box with one
+    // row and nothing to do in it teaches them the feature is empty rather than that it is not
+    // theirs yet. What this exists for is reaching that box on an install carrying one layer, which
+    // is a thing to be asked for rather than the state everyone is put in.
+    private static final boolean DEFAULT_ARRANGEMENT_OPENER_ALWAYS_SHOWN = false;
 
     // A sixtieth of a second is the whole frame, and the map layers are one thing drawn in it beside
     // the game's own sector map - so a quarter of it is the share a beat can take before the frame
@@ -272,6 +286,18 @@ public final class KmuMapSidebarSettings {
         return KmuLunaSettings.readBoolean(
             FILTER_ROW_TOGGLE_ENABLED_FIELD,
             DEFAULT_FILTER_ROW_TOGGLE_ENABLED);
+    }
+
+    /**
+     * @return whether the bar's opener stands at the end of the map layer tab row whatever the
+     *         roster holds; off by default, which stands it only where there is more than one layer
+     *         that paints. On is how the arranging box is reached at all on an install carrying one
+     *         layer, where the row it would open has nowhere to move and nothing to uncheck
+     */
+    public static boolean isMapLayerArrangementOpenerAlwaysShown() {
+        return KmuLunaSettings.readBoolean(
+            ARRANGEMENT_OPENER_ALWAYS_SHOWN_FIELD,
+            DEFAULT_ARRANGEMENT_OPENER_ALWAYS_SHOWN);
     }
 
     /**

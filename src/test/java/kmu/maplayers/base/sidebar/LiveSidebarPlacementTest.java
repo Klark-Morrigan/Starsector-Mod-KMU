@@ -5,18 +5,27 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.input.TabPanelController;
+import kmlib.starsector.ui.widgets.tabs.style.TabBox;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerArrangements;
+import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapSidebarSettings;
+import kmu.settings.SidebarSettingsMock;
+import kmu.starsector.StarsectorUiColoursMock;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +54,10 @@ import static org.mockito.Mockito.when;
  * read of its own beside it, since a control in that body writes the preference of the screen it was
  * placed on.
  *
+ * <p>And whether the band carries the bar's opener at all: only where the roster holds more than one
+ * layer that paints, counted off the roster rather than off the row the screen is offered, so an opener
+ * never leaves over an arrangement it is the only way back from.
+ *
  * <p>And the one way a placement comes back with nothing in it: the tab face failing to load, which the
  * caller has to read as "draw nothing this frame" rather than as an empty row it may still hit-test.
  */
@@ -52,6 +65,16 @@ final class LiveSidebarPlacementTest {
 
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
+
+    // The ids two registered layers stand under, the arrangement naming its layers by id.
+    private static final String FIRST_PAINTING_LAYER_ID = "political";
+    private static final String SECOND_PAINTING_LAYER_ID = "trade_routes";
+
+    // The sector map's own tab row, which the opener is asked to stand in.
+    private static final float HOST_BAND_HEIGHT = 19f;
+    private static final float HOST_TAB_WIDTH = 130f;
+    private static final float HOST_TAB_HEIGHT = 18f;
+    private static final float HOST_TAB_GAP = 1f;
 
     // LWJGL's KEY_P and KEY_N, two real keys a layer could be answering with.
     private static final int POLITICAL_MAP_KEYCODE = 25;
@@ -330,6 +353,138 @@ final class LiveSidebarPlacementTest {
             var layerMock = mock(MapLayer.class);
             when(layerMock.resolveTabLabelText())
                 .thenReturn(label);
+
+            return layerMock;
+        }
+    }
+
+    @Nested
+    class ResolveOpenerSpec {
+
+        private StarsectorUiColoursMock uiColoursMock;
+        private SidebarSettingsMock sidebarSettingsMock;
+
+        @BeforeEach
+        void mockLiveColoursAndSettings() {
+            // What the host row's own style is composed from, the opener wearing that style unchanged
+            // but for its box.
+            uiColoursMock = StarsectorUiColoursMock.install();
+            sidebarSettingsMock = SidebarSettingsMock.install();
+        }
+
+        @AfterEach
+        void closeLiveColoursAndSettings() {
+
+            sidebarSettingsMock.close();
+            uiColoursMock.close();
+        }
+
+        @AfterEach
+        void restoreTheRosterAndBarThisCasePosed() {
+            // Both holders are static, so a roster of stand-ins and a bar arranged here would otherwise
+            // outlive the case that posed them.
+            MapLayerRosters.restoreNonEmptyRoster();
+            MapLayerArrangements.forgetTheArrangement();
+        }
+
+        @Test
+        void resolveOpenerSpecStandsTheOpenerWhereTwoLayersPaint() {
+            // The install a foreign mod's layer makes, and the only one in which arranging the bar can
+            // change what the map shows.
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
+                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+                .isNotNull();
+        }
+
+        @Test
+        void resolveOpenerSpecDropsTheOpenerWhereOneLayerPaintsBesideTheEmptyView() {
+            // KMU's own install. A door onto an empty room is worse than no door: one row to move with
+            // nowhere to move it that changes which layer paints, and a hide the last-tab guard refuses.
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
+
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+                .isNull();
+        }
+
+        @Test
+        void resolveOpenerSpecDropsTheOpenerWhereTheEmptyViewStandsAlone() {
+            // The empty view is not counted, so a roster of it alone is a roster of nothing to arrange
+            // rather than a row of one.
+            MapLayerRosters.replaceRosterWith(NoLayer.INSTANCE);
+
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+                .isNull();
+        }
+
+        @Test
+        void resolveOpenerSpecKeepsTheOpenerWhereThePlayerHasHiddenTheSecondLayer() {
+            // The count is the roster's and never the offered row's: this button is the only way a
+            // hidden tab comes back, so an opener that left once the row got short would strand the
+            // arrangement that shortened it.
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
+                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+
+            MapLayerArrangements.arrangeBarWith(List.of(), List.of(SECOND_PAINTING_LAYER_ID));
+
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+                .isNotNull();
+        }
+
+        @Test
+        void resolveOpenerSpecStandsTheOpenerOnTheDevHatchOverARosterThatWouldDropIt() {
+            // The hatch is how the box is reached at all on an install carrying one layer, which is
+            // every install until a second one ships - so it has to beat the count rather than be
+            // read beside it.
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
+
+            sidebarSettingsMock.openTheArrangementOpenerHatch();
+
+            assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
+                .isNotNull();
+        }
+
+        @Test
+        void resolveOpenerSpecAsksForTheOpenerUnchangedWhereItStands() {
+            // Nothing about the control moves with the gate: the band is handed the same mark and the
+            // same box it always was, so what changes is only whether it is handed one at all.
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
+                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+
+            var hostStyle = buildHostTabStyle();
+            var opener = LiveSidebarPlacement.resolveOpenerSpec(hostStyle);
+
+            assertThat(opener.icon())
+                .isEqualTo(BarOpeners.buildOpenerSpec(hostStyle).icon());
+            assertThat(opener.style())
+                .isEqualTo(BarOpeners.buildOpenerSpec(hostStyle).style());
+        }
+
+        // The host row the opener is asked to stand in: the strip's own style, boxed as the sector map
+        // boxes it.
+        private TabStyle buildHostTabStyle() {
+            return SidebarStyles.buildStripTabStyle(HOST_BAND_HEIGHT)
+                .withTabBox(new TabBox(HOST_TAB_WIDTH, HOST_TAB_HEIGHT, HOST_TAB_GAP));
+        }
+
+        // A registered layer that is not the empty view, which is the whole of what makes it count. Its
+        // id is stubbed because the roster arbitrates by id and the arrangement names layers by one.
+        private MapLayer buildLayerMockUnder(String layerId) {
+
+            var layerMock = mock(MapLayer.class);
+            when(layerMock.getId())
+                .thenReturn(layerId);
 
             return layerMock;
         }

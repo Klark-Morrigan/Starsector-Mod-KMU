@@ -111,6 +111,13 @@ from a screen carrying a control of its own, in one read the strip and the short
 two lists would switch to the layer one along from the tab they lit. It never withholds the last tab
 standing, a row emptied by hiding and a row emptied by withholding being the same unusable bar.
 
+What counts as drawing anything is `PaintingLayers`, one reading rather than a compare spelled wherever
+the question comes up: the empty view is the only tab a question about painting subtracts, and nothing on
+the `MapLayer` seam says so. The withholding above reads it, so does the show-or-hide state a pick landing
+on a row's leading tab settles - the two cannot drift into a control saying the layers are shown over the
+one tab whose job is to show none - and so does [the bar opener's own
+gate](../sidebar/README.md#the-opener-on-the-band), counting the roster rather than any screen's row.
+
 Both subtractions are from the strip and never from the roster, a stored pick being an id resolved
 against it, so a hidden layer stays registered and its id goes on resolving. What it does lose is its
 standing on a sector, [below](#what-a-hidden-tab-stands-down).

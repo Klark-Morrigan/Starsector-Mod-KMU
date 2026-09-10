@@ -154,7 +154,7 @@ final class LunaSettingsCsvIntegrationTest {
     // on. Its own check for the reason the row above has one: what it pins is a decision rather than
     // two spellings of a value agreeing, which the walk over every switch already holds.
     private static final String FILTER_ROW_TOGGLE_FIELD_ID =
-        "kmu_map_dev_ui_filters_mapLayersToggle_isEnabled";
+        "kmu_map_dev_ui_controls_mapLayersToggle_isEnabled";
 
     // The three Keycode rows. They are held here rather than in the numeric walk because there is
     // nothing to walk them against: no Java fallback mirrors a keycode, deliberately, so this column is

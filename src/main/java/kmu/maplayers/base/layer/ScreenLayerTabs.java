@@ -123,7 +123,7 @@ public final class ScreenLayerTabs {
         var leadingTab = offeredLayers.get(0);
 
         screenPicks.layerSelection().selectLayer(leadingTab);
-        screenPicks.layerVisibility().showLayers(isLayerPainting(leadingTab));
+        screenPicks.layerVisibility().showLayers(PaintingLayers.isLayerPainting(leadingTab));
 
         // Read back rather than assumed. A pick persisted in sector memory drops the write where there
         // is no memory to write into, and a caller that took the attempt for the outcome would record
@@ -133,19 +133,16 @@ public final class ScreenLayerTabs {
 
     // The given row without the empty view's tab, unless that would leave no tab at all: a row with no
     // tabs has no way back to itself, so the last one standing is offered whatever else is true.
+    //
+    // What counts as painting is PaintingLayers' single reading, shared with the state a pick landing on
+    // this row's leading tab settles the show-or-hide control at - so the two cannot drift into a control
+    // saying the layers are shown over the one tab whose whole job is to show none.
     private static List<MapLayer> withholdEmptyViewTab(List<MapLayer> offeredLayers) {
 
         var paintingLayers = offeredLayers.stream()
-            .filter(ScreenLayerTabs::isLayerPainting)
+            .filter(PaintingLayers::isLayerPainting)
             .toList();
 
         return paintingLayers.isEmpty() ? offeredLayers : paintingLayers;
-    }
-
-    // Whether a layer draws anything at all. One reading for both the tab the empty view's control takes
-    // over and the state a pick landing on that tab settles the control at, so the two cannot drift into
-    // a control saying the layers are shown over the one tab whose whole job is to show none.
-    private static boolean isLayerPainting(MapLayer layer) {
-        return layer != NoLayer.INSTANCE;
     }
 }

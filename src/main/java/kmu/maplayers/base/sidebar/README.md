@@ -230,6 +230,28 @@ a lift would run under a dialog and be seen by nobody.
 It rides in the drawn band, so the fold wipes it with the tabs, `containsPoint` claims it from the map
 underneath, and `computeOuterBound` reaches it.
 
+**It stands only where there is something to arrange**, which `LiveSidebarPlacement.resolveOpenerSpec`
+decides: more than one painting layer on the roster, or the band flies no button at all. A door onto an
+empty room is worse than no door - the player who opens it learns the feature is empty rather than that it
+is not theirs yet, one row having nowhere to move that changes which layer paints and a hide the dialog's
+last-tab guard refuses. Whether the band carries a button is the placement's rather than the control's, the
+control still answering only what it shows and does.
+
+The count is **the roster's and never the offered row's**. That row shrinks as the player takes tabs off the
+bar and this button is the only way one comes back, so an opener that left once the row got short would
+strand the arrangement that shortened it. `NoLayer` is not counted either, being a tab whose job is to draw
+nothing - which is what makes the rule bite on an install carrying KMU alone.
+
+One thing that withdraws, on the intel screen only: while a single painting layer is registered, the empty
+view's tab can no longer be taken off the bar. That is the whole of the cost - a tab the player can leave
+unpicked, one click from the layer beside it - and it comes back the moment a second layer registers.
+
+`kmu_map_dev_ui_controls_layersArrangementButton_isAlwaysShown` overrides the count outright, and is asked
+before it. Shipped off, it is how the box is reached at all on an install carrying KMU alone - every install
+until a second layer ships - so the dialog can be opened and worked on where the rule above would hide it.
+A dev row rather than a visuals one for the same reason as the filter-row hatch beside it: nothing here is
+set to taste, it is a hatch onto something otherwise correctly out of the way.
+
 Its words are the framework's own chrome rather than a layer's, so `KmuStrings` is read here - the same
 distinction the settings already make, and why this is not the bundle leak the tab label was.
 

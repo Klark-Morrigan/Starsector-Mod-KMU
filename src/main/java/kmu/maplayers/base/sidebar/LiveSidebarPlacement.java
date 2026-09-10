@@ -12,6 +12,7 @@ import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.widgets.BoxBorder;
 import kmlib.starsector.ui.widgets.PanelChrome;
 import kmlib.starsector.ui.widgets.scroll.ScrollbarThickness;
+import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
 import kmlib.starsector.ui.widgets.tabs.HeaderBandSpec;
 import kmlib.starsector.ui.widgets.tabs.TabPanelPlacement;
 import kmlib.starsector.ui.widgets.tabs.TabPanelViewState;
@@ -19,6 +20,8 @@ import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
 
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.PaintingLayers;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
 import kmu.settings.KmuMapSidebarSettings;
@@ -55,9 +58,15 @@ import java.util.Set;
  *
  * <p>Past the last tab stands {@link BarOpeners the bar's own opener}, asked for here and described there.
  * It is the panel's band button rather than a tab, so it wears the row's look while the row's own indexing
- * - the pick, the lit tab, the shortcut walk - is left exactly as it was.
+ * - the pick, the lit tab, the shortcut walk - is left exactly as it was. Whether the band carries one at
+ * all is {@link #resolveOpenerSpec}'s, that being a question about what stands in the band rather than
+ * about what the control says or does.
  */
 public final class LiveSidebarPlacement {
+
+    // The least a roster must carry for arranging the bar to be able to change anything: two layers that
+    // paint, so a move changes which of them the map shows and a hide leaves one still standing.
+    private static final int LEAST_ARRANGEABLE_PAINTING_LAYERS = 2;
 
     private LiveSidebarPlacement() {
     }
@@ -152,6 +161,41 @@ public final class LiveSidebarPlacement {
             cell -> selection.selectLayer(layers.get(cell)));
     }
 
+    // The band's opener where there is something to arrange, and no band button at all where there is
+    // not. A door onto an empty room is worse than no door: the player who opens it learns the feature is
+    // empty rather than that it is not theirs yet, one row having nowhere to move that changes which
+    // layer paints and a hide the dialog's last-tab guard refuses.
+    //
+    // Counted off the registry's roster rather than off the row this screen offers. The offered row
+    // shrinks as the player takes tabs off the bar and this button is the only way one comes back, so an
+    // opener that left once the row got short would strand the arrangement that shortened it.
+    //
+    // The empty view is not counted, which is what makes the rule bite on an install carrying KMU alone:
+    // it is a tab whose job is to draw nothing, withheld outright from a screen carrying its own control,
+    // so a roster of it and one layer is a roster of one layer as far as arranging goes. What that
+    // withdraws is one thing, on the intel screen only: while a single painting layer is registered, the
+    // empty view's tab can no longer be taken off the bar - a tab the player can leave unpicked, one click
+    // from the layer beside it, and back the moment a second layer registers.
+    //
+    // A dev row overrides the count outright, which is what makes the box reachable at all on an
+    // install carrying KMU alone - every install until a second layer ships. Asked first, so the one
+    // state it exists to reach costs no roster walk to arrive at.
+    //
+    // Read here per frame with the rest of the band's chrome rather than settled once. The roster is
+    // append-only and whole at no one moment - a mod built on this one registers its layer after this
+    // mod's own load has returned - and the row above is one the player moves mid-session.
+    static BandButtonSpec resolveOpenerSpec(TabStyle tabStyle) {
+
+        if (KmuMapSidebarSettings.isMapLayerArrangementOpenerAlwaysShown()) {
+            return BarOpeners.buildOpenerSpec(tabStyle);
+        }
+        var paintingLayerCount = PaintingLayers.countPaintingLayers(MapLayerRegistry.getLayers());
+
+        return paintingLayerCount < LEAST_ARRANGEABLE_PAINTING_LAYERS
+            ? null
+            : BarOpeners.buildOpenerSpec(tabStyle);
+    }
+
     // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
     // control in that body writes the preference it stands for when clicked, and that write belongs to the
     // screen the panel draws for - so the screen is taken from the panel rather than resolved here, which
@@ -198,7 +242,7 @@ public final class LiveSidebarPlacement {
             new HeaderBandSpec(
                 tabStyle,
                 buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
-                BarOpeners.buildOpenerSpec(tabStyle)),
+                resolveOpenerSpec(tabStyle)),
             buildBodyControls(activeLayer, screenPicks),
             measurer,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch

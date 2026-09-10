@@ -66,7 +66,7 @@ one up in its place.
 
 ### The hatch and the key
 
-Whether the box is attempted at all is `kmu_map_dev_ui_filters_mapLayersToggle_isEnabled`, a dev
+Whether the box is attempted at all is `kmu_map_dev_ui_controls_mapLayersToggle_isEnabled`, a dev
 hatch rather than an appearance knob, since what it governs is the reach and not the look.
 
 Which key ticks it is `kmu_map_keybinds_filters_mapLayersToggle`, default M, read afresh at each
