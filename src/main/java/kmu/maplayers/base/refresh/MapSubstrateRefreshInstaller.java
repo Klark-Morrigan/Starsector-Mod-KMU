@@ -2,7 +2,7 @@ package kmu.maplayers.base.refresh;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.starsector.listeners.SectorScripts;
+import kmlib.starsector.scripts.SectorScripts;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -54,7 +54,7 @@ public final class MapSubstrateRefreshInstaller {
     // Transient and cleared before it is added, so it is fresh on every load and never doubles up
     // within a session either.
     static void installMapSubstrateSectorWatcher(SectorAPI sector) {
-        SectorScripts.installScript(
+        SectorScripts.installTransientScript(
             sector,
             () -> new MapSubstrateSectorWatcher(new MapSubstrateStalenessSource(sector)));
     }
@@ -63,6 +63,6 @@ public final class MapSubstrateRefreshInstaller {
     // one is the framework's own and no sibling mod installs it. The engine clears by exact class,
     // so this reaches the substrate's poll and leaves every layer's standing.
     static void removeMapSubstrateSectorWatcher(SectorAPI sector) {
-        SectorScripts.removeScript(sector, MapSubstrateSectorWatcher.class);
+        SectorScripts.removeTransientScripts(sector, MapSubstrateSectorWatcher.class);
     }
 }

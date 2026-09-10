@@ -1,16 +1,12 @@
 package kmu.maplayers.base.refresh;
 
-import com.fs.starfarer.api.Global;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -31,7 +27,7 @@ final class MapLayerSectorWatcherTest {
             // The engine drops a script that reports done, and nothing reinstalls one before
             // the next load - so this answering true would silently stop live refresh for the
             // rest of the save, with no crash to point at it.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
 
@@ -48,7 +44,7 @@ final class MapLayerSectorWatcherTest {
         void doesNotPollWhileTheGameIsPaused() {
             // Nothing the poll watches for can happen while the game is paused, so polling
             // then would only spend a sector walk on the campaign thread to find no change.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var watcher = new MapLayerSectorWatcher(mock(MapLayerStalenessSource.class));
 
@@ -66,7 +62,7 @@ final class MapLayerSectorWatcherTest {
             // The whole of what this class does with a frame. A watcher that kept the amount
             // to itself would never elapse an interval, and the layer would refresh only on
             // reload with nothing on screen to say so.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
@@ -77,17 +73,5 @@ final class MapLayerSectorWatcherTest {
                     .markChangesSinceLastPoll();
             }
         }
-    }
-
-    // The poll's logger is resolved through Global at class init, so every test opens
-    // the static mock before touching the class and hands back a no-op logger.
-    private static MockedStatic<Global> stubGlobalLogger() {
-
-        var globalMock = mockStatic(Global.class);
-        globalMock
-            .when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(mock(Logger.class));
-
-        return globalMock;
     }
 }

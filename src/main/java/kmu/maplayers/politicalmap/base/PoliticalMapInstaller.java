@@ -2,6 +2,9 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.listeners.SectorListeners;
+import kmlib.starsector.scripts.SectorScripts;
+
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
@@ -9,8 +12,6 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisatio
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
-import kmu.starsector.listeners.SectorListeners;
-import kmu.starsector.listeners.SectorScripts;
 import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
@@ -119,7 +120,7 @@ public final class PoliticalMapInstaller {
     // Stops the per-frame watcher polling. By class, which is safe here where it would not be for a
     // library script: this one is the framework's own and no sibling mod installs it.
     static void removeMapLayerSectorWatcher(SectorAPI sector) {
-        SectorScripts.removeScript(sector, MapLayerSectorWatcher.class);
+        SectorScripts.removeTransientScripts(sector, MapLayerSectorWatcher.class);
     }
 
     // Registers the listener that refreshes the political map when the player
@@ -176,7 +177,7 @@ public final class PoliticalMapInstaller {
         // than carrying the previous save's last read into this one. Built against this
         // sector's installed machinery, for the same reason every listener above is built
         // against this sector: what it stages there is this sector's alone.
-        SectorScripts.installScript(
+        SectorScripts.installTransientScript(
             sector,
             () -> new MapLayerSectorWatcher(
                 new PoliticalMapStalenessSource(

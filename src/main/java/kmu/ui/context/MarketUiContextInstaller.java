@@ -2,7 +2,7 @@ package kmu.ui.context;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.starsector.listeners.SectorListeners;
+import kmlib.starsector.listeners.SectorListeners;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 

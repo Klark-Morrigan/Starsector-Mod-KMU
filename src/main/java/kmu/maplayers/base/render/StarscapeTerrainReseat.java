@@ -3,13 +3,13 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
+import kmlib.starsector.scripts.InstalledTransientScript;
 import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
 import kmu.maplayers.base.installation.InstalledMachinery;
 import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.starsector.listeners.InstalledTransientScript;
 
 import java.util.function.Supplier;
 

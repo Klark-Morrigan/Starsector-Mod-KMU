@@ -41,7 +41,7 @@ it.
 The loop is held by a script rather than being one, and two scripts hold it: `MapLayerSectorWatcher`,
 installed per layer that has something to poll, and `MapSubstrateSectorWatcher`, installed once per
 sector. They are two classes on purpose. Vanilla's `removeTransientScriptsOfClass` compares
-`getClass() != clazz` - exact identity, no subtype - and `SectorScripts.installScript` clears by the
+`getClass() != clazz` - exact identity, no subtype - and KMLib's `SectorScripts.installTransientScript` clears by the
 built script's own class before adding, so a second instance of one class silently replaces the
 first, and a layer taking its own poll back on a switch-off would take the substrate's with it. A
 poll that must be installed and cleared on its own timetable needs an identity of its own, and that

@@ -2,8 +2,9 @@ package kmu.maplayers.base.render;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.listeners.SectorListeners;
+
 import kmu.maplayers.base.installation.MapLayerInstallations;
-import kmu.starsector.listeners.SectorListeners;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 

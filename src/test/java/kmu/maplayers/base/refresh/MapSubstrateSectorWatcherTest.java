@@ -1,16 +1,12 @@
 package kmu.maplayers.base.refresh;
 
-import com.fs.starfarer.api.Global;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -32,7 +28,7 @@ final class MapSubstrateSectorWatcherTest {
             // The engine drops a script that reports done, and nothing reinstalls one before the
             // next load - so this answering true would stop the shared record accruing for the
             // rest of the save, and the gap would only show cycles later.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var watcher = new MapSubstrateSectorWatcher(mock(MapLayerStalenessSource.class));
 
@@ -50,7 +46,7 @@ final class MapSubstrateSectorWatcherTest {
             // No colony arrives among witnesses while the game is paused, so sweeping then
             // would only spend a sector walk on the campaign thread to record what is already
             // recorded.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var watcher = new MapSubstrateSectorWatcher(mock(MapLayerStalenessSource.class));
 
@@ -66,7 +62,7 @@ final class MapSubstrateSectorWatcherTest {
         @Test
         void handsTheEnginesFrameToTheSubstratesPoll() {
 
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
@@ -77,17 +73,5 @@ final class MapSubstrateSectorWatcherTest {
                     .markChangesSinceLastPoll();
             }
         }
-    }
-
-    // The poll's logger is resolved through Global at class init, so every test opens
-    // the static mock before touching the class and hands back a no-op logger.
-    private static MockedStatic<Global> stubGlobalLogger() {
-
-        var globalMock = mockStatic(Global.class);
-        globalMock
-            .when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(mock(Logger.class));
-
-        return globalMock;
     }
 }

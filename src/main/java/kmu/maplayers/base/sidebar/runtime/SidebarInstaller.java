@@ -2,10 +2,9 @@ package kmu.maplayers.base.sidebar.runtime;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.listeners.SectorListeners;
 import kmlib.starsector.ui.coreui.ReflectiveCoreUiComponentRepainter;
 import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
-
-import kmu.starsector.listeners.SectorListeners;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 

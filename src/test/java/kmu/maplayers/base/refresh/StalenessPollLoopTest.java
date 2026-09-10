@@ -1,17 +1,13 @@
 package kmu.maplayers.base.refresh;
 
-import com.fs.starfarer.api.Global;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,7 +32,7 @@ final class StalenessPollLoopTest {
         @Test
         void pollsTheSourceOnceTheIntervalElapses() {
 
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
@@ -51,7 +47,7 @@ final class StalenessPollLoopTest {
         @Test
         void doesNotPollBeforeTheIntervalElapses() {
 
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
 
@@ -65,7 +61,7 @@ final class StalenessPollLoopTest {
         @Test
         void pollsOncePerElapsedInterval() {
 
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
                 var pollLoop = new StalenessPollLoop(stalenessSourceMock);
@@ -82,7 +78,7 @@ final class StalenessPollLoopTest {
         void swallowsAFaultingSourceRatherThanThrowingIntoTheEngine() {
             // This runs on the campaign thread every few seconds, so a fault escaping here
             // would surface as an engine-level crash rather than a missed refresh.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var pollLoop = new StalenessPollLoop(buildFaultingSource());
 
@@ -95,7 +91,7 @@ final class StalenessPollLoopTest {
         void keepsPollingAfterTheSourceFaults() {
             // A transient fault (a half-built system mid-generation) must not silently
             // retire the poll for the rest of the save.
-            try (var globalMock = stubGlobalLogger()) {
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
                 var stalenessSourceMock = buildFaultingSource();
                 var pollLoop = new StalenessPollLoop(stalenessSourceMock);
@@ -119,17 +115,5 @@ final class StalenessPollLoopTest {
             .markChangesSinceLastPoll();
 
         return stalenessSourceMock;
-    }
-
-    // The loop's logger is resolved through Global at class init, so every test opens
-    // the static mock before touching the class and hands back a no-op logger.
-    private static MockedStatic<Global> stubGlobalLogger() {
-
-        var globalMock = mockStatic(Global.class);
-        globalMock
-            .when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(mock(Logger.class));
-
-        return globalMock;
     }
 }

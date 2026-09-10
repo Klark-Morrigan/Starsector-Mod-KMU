@@ -2,10 +2,9 @@ package kmu.starsector.rat;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.scripts.InstalledTransientScript;
 import kmlib.starsector.ui.screen.VanillaScreen;
 import kmlib.starsector.ui.suppression.OffScreenWidgetSuppressor;
-
-import kmu.starsector.listeners.InstalledTransientScript;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 

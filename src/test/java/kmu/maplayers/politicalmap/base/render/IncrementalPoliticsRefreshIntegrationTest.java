@@ -7,6 +7,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -45,7 +47,6 @@ import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -179,11 +180,8 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             var globalMock = seams.openSeam(Global.class);
 
             // The builders below log through static fields initialised on first touch, which
-            // happens inside this block; without this the logger would come back null and the
-            // first debug line would fault before any comparison was reached.
-            globalMock
-                .when(() -> Global.getLogger(any(Class.class)))
-                .thenReturn(Logger.getLogger(IncrementalPoliticsRefreshIntegrationTest.class));
+            // happens inside this block: StubbedGlobalLogger says what an unanswered one costs.
+            StubbedGlobalLogger.answerLoggersOn(globalMock);
 
             hegemonyMock = SectorPoliticsFixtures.buildFaction(
                 HEGEMONY,

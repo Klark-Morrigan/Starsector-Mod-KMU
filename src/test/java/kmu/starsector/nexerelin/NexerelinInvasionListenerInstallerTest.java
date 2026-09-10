@@ -7,9 +7,10 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
+import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
+
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
-import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

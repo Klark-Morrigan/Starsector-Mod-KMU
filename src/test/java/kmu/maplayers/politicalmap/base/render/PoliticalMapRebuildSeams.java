@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
@@ -17,7 +19,6 @@ import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
 
-import org.apache.log4j.Logger;
 import org.mockito.MockedStatic;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -60,13 +61,9 @@ final class PoliticalMapRebuildSeams {
 
         globalSeam = seams.openSeam(Global.class);
 
-        // A real logger rather than a mock, and this is not optional: a class whose static LOG field
-        // is first resolved inside this seam keeps whatever it was handed for the rest of the JVM, so
-        // a null there faults every later suite that logs a line. Named for this fixture, the name
-        // reaching nothing any suite asserts.
-        globalSeam
-            .when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(Logger.getLogger(PoliticalMapRebuildSeams.class));
+        // Not optional: a class whose static LOG field is first resolved inside this seam keeps
+        // whatever it was handed for the rest of the JVM. StubbedGlobalLogger says why.
+        StubbedGlobalLogger.answerLoggersOn(globalSeam);
 
         // The dev reveal, the anchor tuning and the dev overlays, all LunaLib-backed: no rebuild
         // claim turns on any of the three, so the seam's own answers stand for them.

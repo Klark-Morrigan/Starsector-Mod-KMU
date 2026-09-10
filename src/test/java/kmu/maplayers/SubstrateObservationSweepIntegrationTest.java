@@ -1,34 +1,26 @@
 package kmu.maplayers;
 
 import com.fs.starfarer.api.EveryFrameScript;
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmlib.profiling.ProfileSection;
-import kmlib.profiling.recording.RecordingProfiler;
-import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.testfixtures.profiling.ProfileCounts;
-import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.List;
-
-import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
+import static kmu.maplayers.PollWalkFixtures.ALPHA_ID;
+import static kmu.maplayers.PollWalkFixtures.buildSettledSectorWithADerelict;
+import static kmu.maplayers.PollWalkFixtures.captureUnscopedCountsWhile;
+import static kmu.maplayers.PollWalkFixtures.findOnlyDerelictIn;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -48,22 +40,8 @@ import static org.mockito.Mockito.verify;
  */
 final class SubstrateObservationSweepIntegrationTest {
 
-    private static final String ALPHA_ID = "alpha";
-    private static final String BETA_ID = "beta";
-
     // Comfortably past the 4-5s poll interval, so one advance elapses it and drives one sweep.
     private static final float ADVANCE_PAST_POLL_INTERVAL = 10f;
-
-    // The size the staged colony carries. Nothing here weighs a colony, so a case varying this
-    // would vary nothing the sweep can see.
-    private static final int COLONY_SIZE = 5;
-
-    // The size vanilla builds a derelict at: a hulk nobody lives on is created at nought.
-    private static final int DERELICT_SIZE = 0;
-
-    // Nothing this suite claims is a duration, so one reading answers every clock read the capture
-    // makes - and a sweep that took no time is still a sweep that traversed what it traversed.
-    private static final long FIXED_CLOCK_NANOS = 0L;
 
     // One sweep, and two for the case about what a second one re-reads.
     private static final int ONE_SWEEP = 1;
@@ -100,7 +78,8 @@ final class SubstrateObservationSweepIntegrationTest {
             // What the second reading costs, now that this sweep opens one of its own rather than
             // riding the political map's pass. One index per place instead would read every colony
             // in the sector once per system in it, on the campaign thread, every few seconds.
-            var sweep = captureSweepCountsOver(buildSettledSectorWithADerelict(), ONE_SWEEP);
+            var sweep = captureUnscopedCountsWhile(
+                () -> runSweepsOver(buildSettledSectorWithADerelict(), ONE_SWEEP));
 
             assertThat(ProfileCounts.readTotalOf(sweep, SectorWalkCounters.COLONIES_READ))
                 .isEqualTo(EACH_SYSTEM_SELECTED_ONCE);
@@ -111,46 +90,12 @@ final class SubstrateObservationSweepIntegrationTest {
             // The index's other half: it is discarded with the poll that opened it. One kept
             // between sweeps would answer the second off the sector the first saw, so a colony
             // that arrived among witnesses in between would never be recorded at all.
-            var sweeps = captureSweepCountsOver(buildSettledSectorWithADerelict(), TWO_SWEEPS);
+            var sweeps = captureUnscopedCountsWhile(
+                () -> runSweepsOver(buildSettledSectorWithADerelict(), TWO_SWEEPS));
 
             assertThat(ProfileCounts.readTotalOf(sweeps, SectorWalkCounters.COLONIES_READ))
                 .isEqualTo(EACH_SYSTEM_SELECTED_ONCE_PER_SWEEP);
         }
-    }
-
-    // Two star systems, one settled by an open colony with a derelict standing beside it. The
-    // derelict is what gives the sweep something to record; the empty neighbour is what makes
-    // "once per system" distinguishable from "once per sweep".
-    private static SectorAPI buildSettledSectorWithADerelict() {
-
-        var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
-        var colony = SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
-
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
-            List.of(hegemony),
-            listSystemMarkets(ALPHA_ID, colony),
-            listSystemMarkets(BETA_ID));
-
-        SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-            SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID),
-            SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
-
-        return sector;
-    }
-
-    // What one sweep over sector traversed, read off the row every count made with no scope open
-    // lands on. That reserved row is where a poll's counts land in play as well: the script runs
-    // on the campaign thread rather than inside a profiled frame, so nothing brackets it.
-    //
-    // The profiler is bound and taken back by the capture, the holder being process state that
-    // would otherwise follow this suite into whatever runs next.
-    private static ProfileNode captureSweepCountsOver(SectorAPI sector, int sweepCount) {
-
-        var profiler = new RecordingProfiler(() -> FIXED_CLOCK_NANOS);
-
-        return RecordedCapture
-            .recordWhile(profiler, () -> runSweepsOver(sector, sweepCount))
-            .findNode(ProfileSection.UNSCOPED_COUNTS.getName());
     }
 
     // Stands the substrate up on the sector and advances the script it registered past one poll
@@ -160,11 +105,7 @@ final class SubstrateObservationSweepIntegrationTest {
     // with the installer unwired.
     private static void runSweepsOver(SectorAPI sector, int sweepCount) {
 
-        try (var globalMock = mockStatic(Global.class)) {
-
-            globalMock
-                .when(() -> Global.getLogger(any(Class.class)))
-                .thenReturn(mock(Logger.class));
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
 
             MapSubstrateRefreshInstaller.installAll(sector);
 
@@ -177,16 +118,5 @@ final class SubstrateObservationSweepIntegrationTest {
                 registeredScript.getValue().advance(ADVANCE_PAST_POLL_INTERVAL);
             }
         }
-    }
-
-    // The one market hung on a system entity rather than listed - the derelict, since a listed
-    // hulk is an outpost rather than a wreck. Read back off the fixture so the case names the
-    // register's key without a second builder stating what was staged.
-    private static MarketAPI findOnlyDerelictIn(SectorAPI sector) {
-
-        return SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID)
-            .getAllEntities()
-            .get(0)
-            .getMarket();
     }
 }

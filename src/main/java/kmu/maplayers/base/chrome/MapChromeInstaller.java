@@ -2,8 +2,9 @@ package kmu.maplayers.base.chrome;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.scripts.SectorScripts;
+
 import kmu.maplayers.base.layer.MapLayerScreens;
-import kmu.starsector.listeners.SectorScripts;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -52,7 +53,7 @@ public final class MapChromeInstaller {
             "Failed to install KMU map layer filter row control");
 
         runGuardedStep(
-            () -> SectorScripts.installScript(sector, MapLayerPickUpkeep::new),
+            () -> SectorScripts.installTransientScript(sector, MapLayerPickUpkeep::new),
             "Failed to install KMU map layer pick heal");
     }
 
@@ -64,11 +65,11 @@ public final class MapChromeInstaller {
     public static void uninstallAll(SectorAPI sector) {
 
         runGuardedStep(
-            () -> SectorScripts.removeScript(sector, MapLayerToggleUpkeep.class),
+            () -> SectorScripts.removeTransientScripts(sector, MapLayerToggleUpkeep.class),
             "Failed to remove KMU map layer filter row control");
 
         runGuardedStep(
-            () -> SectorScripts.removeScript(sector, MapLayerPickUpkeep.class),
+            () -> SectorScripts.removeTransientScripts(sector, MapLayerPickUpkeep.class),
             "Failed to remove KMU map layer pick heal");
     }
 
@@ -84,6 +85,6 @@ public final class MapChromeInstaller {
         // to install into is a load with no box either.
         MapLayerScreens.forgetControlsAttached();
 
-        SectorScripts.installScript(sector, MapLayerToggleUpkeep::new);
+        SectorScripts.installTransientScript(sector, MapLayerToggleUpkeep::new);
     }
 }

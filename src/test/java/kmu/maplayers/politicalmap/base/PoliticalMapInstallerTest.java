@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
+
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
@@ -10,7 +12,6 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisatio
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
-import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -7,9 +7,9 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
+import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.installation.MapLayerInstallations;
-import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import static kmu.starsector.listeners.SectorListenerFixtures.buildSector;
+import static kmlib.testfixtures.starsector.listeners.SectorListenerFixtures.buildSector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;

@@ -4,6 +4,8 @@ import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
+
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -15,7 +17,6 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
-import kmu.starsector.listeners.RecordingListenerManager;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

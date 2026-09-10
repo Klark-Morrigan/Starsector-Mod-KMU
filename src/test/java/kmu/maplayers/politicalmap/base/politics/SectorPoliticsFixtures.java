@@ -10,6 +10,7 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
@@ -22,7 +23,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.PatrolWeighting;
 import kmu.maplayers.politicalmap.base.dominance.weighting.StationWeighting;
 import kmu.settings.HiddenMarketScalingChoice;
 
-import org.apache.log4j.Logger;
 import org.lwjgl.util.vector.Vector2f;
 import org.mockito.MockedStatic;
 
@@ -808,7 +808,6 @@ public final class SectorPoliticsFixtures {
 
         globalMock.when(Global::getSector)
             .thenReturn(sector);
-        globalMock.when(() -> Global.getLogger(any(Class.class)))
-            .thenReturn(mock(Logger.class));
+        StubbedGlobalLogger.answerLoggersOn(globalMock);
     }
 }

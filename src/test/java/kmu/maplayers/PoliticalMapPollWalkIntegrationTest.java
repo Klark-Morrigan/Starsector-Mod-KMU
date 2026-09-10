@@ -1,14 +1,11 @@
 package kmu.maplayers;
 
-import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.profiling.ProfileSection;
-import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.testfixtures.profiling.ProfileCounts;
-import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
@@ -20,7 +17,6 @@ import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -28,11 +24,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static kmu.maplayers.PollWalkFixtures.ALPHA_ID;
+import static kmu.maplayers.PollWalkFixtures.BETA_ID;
+import static kmu.maplayers.PollWalkFixtures.COLONY_SIZE;
+import static kmu.maplayers.PollWalkFixtures.buildSettledSectorWithADerelict;
+import static kmu.maplayers.PollWalkFixtures.captureUnscopedCountsWhile;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
@@ -75,25 +74,11 @@ final class PoliticalMapPollWalkIntegrationTest {
     private static final DominanceRules STABILITY_WEIGHTED =
         SectorPoliticsFixtures.buildStabilityWeightedRules();
 
-    private static final String ALPHA_ID = "alpha";
-    private static final String BETA_ID = "beta";
-
-    // The size the staged colony carries. Nothing here weighs a colony, so a case varying this
-    // would vary nothing the poll can see.
-    private static final int COLONY_SIZE = 5;
-
-    // The size vanilla builds a derelict at: a hulk nobody lives on is created at nought.
-    private static final int DERELICT_SIZE = 0;
-
     // Two polls, the first of which only seeds the baselines - so a change between them is the
     // only thing the second can report.
     private static final int TWO_POLLS = 2;
 
     private static final int ONE_POLL = 1;
-
-    // Nothing this suite claims is a duration, so one reading answers every clock read the capture
-    // makes - and a poll that took no time is still a poll that traversed what it traversed.
-    private static final long FIXED_CLOCK_NANOS = 0L;
 
     // What the poll opens over the sector: one traversal for the whole poll, however many
     // passengers ride it.
@@ -116,7 +101,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // so the poll opens one reading of the sector and hands it down; a reader opening a
             // selection of its own is what this stops, and would show here as another reading of
             // every colony in the sector.
-            var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
+            var poll = capturePollCountsOver(buildSettledSectorWithADerelict(), ONE_POLL);
 
             assertThat(ProfileCounts.readTotalOf(poll, SectorWalkCounters.COLONIES_READ))
                 .isEqualTo(TWO_COLONIES_SELECTED_ONCE);
@@ -127,7 +112,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // The traversal the selection above is opened over, counted where the library actually
             // makes it. A passenger going looking for the system list on its own is a second walk
             // whether or not it then re-selects anybody's colonies.
-            var poll = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), ONE_POLL);
+            var poll = capturePollCountsOver(buildSettledSectorWithADerelict(), ONE_POLL);
 
             assertThat(ProfileCounts.readTotalOf(poll, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK);
@@ -138,7 +123,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // The counter's other half: one walk per poll rather than one walk ever. A reading kept
             // between polls would answer the second off the sector the first saw, which is the
             // change a poll exists to notice - and would show here as the walk that never happened.
-            var polls = capturePollCountsOver(buildSettledSectorWithAnEmptyNeighbour(), TWO_POLLS);
+            var polls = capturePollCountsOver(buildSettledSectorWithADerelict(), TWO_POLLS);
 
             assertThat(ProfileCounts.readTotalOf(polls, SectorWalkCounters.SECTOR_WALKS))
                 .isEqualTo(ONE_SECTOR_WALK_PER_POLL);
@@ -152,7 +137,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // number, since the poll opening one more reading later is a change to this claim's
             // arithmetic and not to the claim.
             var foldsOverTwoSystems = countAllianceFoldsInOnePollOver(
-                buildSettledSectorWithAnEmptyNeighbour());
+                buildSettledSectorWithADerelict());
 
             var foldsOverFiveSystems = countAllianceFoldsInOnePollOver(
                 buildSettledSectorWithEmptyNeighbours(4));
@@ -178,7 +163,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             // kept between polls would answer the second one off the sector the first saw, which
             // is precisely the change a poll exists to notice - so a system settled between the
             // two would never join the drawn set and the geometry would never rebuild for it.
-            var sector = buildSettledSectorWithAnEmptyNeighbour();
+            var sector = buildSettledSectorWithADerelict();
 
             var geometryRevision = runPollsAndReadGeometryRevision(
                 sector,
@@ -203,14 +188,8 @@ final class PoliticalMapPollWalkIntegrationTest {
     // The profiler is bound and taken back by the capture, the holder being process state that
     // would otherwise follow this suite into whatever runs next.
     private static ProfileNode capturePollCountsOver(SectorAPI sector, int pollCount) {
-
-        var profiler = new RecordingProfiler(() -> FIXED_CLOCK_NANOS);
-
-        return RecordedCapture
-            .recordWhile(
-                profiler,
-                () -> runPollsAndReadGeometryRevision(sector, pollCount, () -> { }))
-            .findNode(ProfileSection.UNSCOPED_COUNTS.getName());
+        return captureUnscopedCountsWhile(
+            () -> runPollsAndReadGeometryRevision(sector, pollCount, () -> { }));
     }
 
     // Drives the real poll pollCount times and reports the geometry revision it left standing. The
@@ -225,15 +204,11 @@ final class PoliticalMapPollWalkIntegrationTest {
             int pollCount,
             Runnable moveTheSectorAfterTheFirstPoll) {
 
-        try (var globalMock = mockStatic(Global.class);
+        // Only the logger is answered of Global: a poll walks the sector its installation names,
+        // so the lookup the running game answers reaches nothing here.
+        try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
                 var dominanceRulesMock = mockStatic(DominanceRules.class)) {
-
-            // Only the logger: a poll walks the sector its installation names, so the lookup the
-            // running game answers reaches nothing here.
-            globalMock
-                .when(() -> Global.getLogger(any(Class.class)))
-                .thenReturn(mock(Logger.class));
 
             visibilityRulesMock
                 .when(MapVisibilityRules::readFromLunaSettings)
@@ -298,33 +273,6 @@ final class PoliticalMapPollWalkIntegrationTest {
         var sector = SectorPoliticsFixtures.buildSectorWithSystems(
             List.of(hegemony),
             systems.toArray(new SectorPoliticsFixtures.SystemMarkets[0]));
-
-        SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
-        return sector;
-    }
-
-    // Two star systems: one settled by an open colony with a derelict standing beside it, and one
-    // empty. The derelict is what gives the observation write something to record, and the empty
-    // neighbour is what a later poll can settle.
-    //
-    // Both carry a hyperspace position, without which the motion walk skips them before ever
-    // asking the drawn-set rule about them - and the count this suite takes would then be blind
-    // to the walk it most needs to watch.
-    private static SectorAPI buildSettledSectorWithAnEmptyNeighbour() {
-
-        var hegemony = SectorPoliticsFixtures.buildFaction("hegemony");
-        var colony = SectorPoliticsFixtures.buildVisibleMarket(hegemony, COLONY_SIZE);
-
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
-            List.of(hegemony),
-            listSystemMarkets(ALPHA_ID, colony),
-            listSystemMarkets(BETA_ID));
-
-        var alpha = SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID);
-
-        SectorPoliticsFixtures.placeMarketsOnSystemEntities(
-            alpha,
-            SectorPoliticsFixtures.buildAbandonedStationMarket(DERELICT_SIZE));
 
         SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
         return sector;

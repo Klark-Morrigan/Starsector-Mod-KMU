@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -38,7 +39,6 @@ import kmu.settings.KmuPoliticalMapDominanceSettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
 import kmu.settings.RibbonNameClearanceChoice;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -152,11 +152,8 @@ final class IncrementalPoliticsRefreshTest {
 
             globalMock = seams.openSeam(Global.class);
             // The class logs through a static field initialised on first touch, which may
-            // happen inside this block; without this the logger would come back null and
-            // the debug lines below would fault before the assertion was reached.
-            globalMock
-                .when(() -> Global.getLogger(any(Class.class)))
-                .thenReturn(Logger.getLogger(IncrementalPoliticsRefreshTest.class));
+            // happen inside this block: StubbedGlobalLogger says what an unanswered one costs.
+            StubbedGlobalLogger.answerLoggersOn(globalMock);
 
             sectorMock = buildSectorWithSystems(
                 FLIPPED_SYSTEM,

@@ -4,6 +4,8 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -13,7 +15,6 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.starsector.nexerelin.NexerelinAlliances;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -281,9 +282,7 @@ final class PoliticalMapStalenessSourceTest {
                 globalMock
                     .when(Global::getSector)
                     .thenReturn(mock(SectorAPI.class));
-                globalMock
-                    .when(() -> Global.getLogger(any(Class.class)))
-                    .thenReturn(mock(Logger.class));
+                StubbedGlobalLogger.answerLoggersOn(globalMock);
 
                 visibilityRulesMock
                     .when(MapVisibilityRules::readFromLunaSettings)
@@ -393,9 +392,7 @@ final class PoliticalMapStalenessSourceTest {
             // Only the logger. The sector lookup is left unstubbed on purpose: a poll reads its
             // installation's sector, so a run that only passed because the running game answered
             // with one would fail here rather than read as a case about routing.
-            globalMock
-                .when(() -> Global.getLogger(any(Class.class)))
-                .thenReturn(mock(Logger.class));
+            StubbedGlobalLogger.answerLoggersOn(globalMock);
 
             // The source reads the reveal toggles itself; stub them to the no-reveal view
             // so the scan and motion walks resolve the normal drawn set.
