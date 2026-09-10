@@ -175,7 +175,10 @@ inclusive total excluding the dearest thing it does.
 Each beat also states what one call of it is allowed, which is what turns the capture from a table
 into findings. Two bounds today. A beat may take the milliseconds the `Frame beat budget` knob on
 `Map - Dev` states, asked for as the beat ends so a knob moved mid-session holds the next frame,
-and 0 there states no bound at all. The refresh may make one traversal of the sector per call - the
+and 0 there states no bound at all. That number reaches here as a bound value rather than a settings
+read, through [`base/profiling`](../profiling/README.md#the-frame-beat-bound): the knob deciding how
+much of the framework is measured sits in the same settings section, and nothing here may be able to
+reach it. The refresh may make one traversal of the sector per call - the
 rule the framework's indexes exist to keep, so a second walk is a pass that went looking for the
 sector rather than asking for what had already been gathered. That one traversal is the pass's own
 systems-by-id index: the cell sites and the band bake's system lookups both come off it, either

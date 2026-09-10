@@ -1,13 +1,15 @@
 # Map build profiling vocabulary
 
 What the map layers say to the profiler beyond a section's name: the counters a rebuild's stages
-add to, and the terms a rebuild step registers its section on.
+add to, the terms a rebuild step registers its section on, and the one bound that arrives from
+outside the framework.
 
 ## Index
 
 - [Why a package](#why-a-package)
 - [Counters](#counters)
 - [Rebuild step terms](#rebuild-step-terms)
+- [The frame beat bound](#the-frame-beat-bound)
 
 ## Why a package
 
@@ -41,3 +43,21 @@ clock moved under it (`first jitMs=412`). That is worth having on a rebuild step
 runs a handful of times a session: its first call is a large share of what a reader sees, and it runs
 on code the JIT has not compiled yet. A per-frame beat states no threshold, so it is not read - the
 bean is a native call, and a beat has warmed up long before anyone opens the readout.
+
+## The frame beat bound
+
+`MapFrameBudgets` holds how long one beat of a map frame may take, and is the one thing here the
+framework does not decide for itself: a composition root binds where the number comes from, and
+[the frame sequence](../render/README.md#what-a-frame-costs) reads it back as a plain double.
+
+Inverted rather than read from the settings at the beat, because of what sits beside that row. The
+knob deciding how much of the framework is measured at all is in the same `Map - Dev` Profiling
+section, and a file under the framework naming the class that holds one would have the other within
+reach - code able to see whether it is being watched can act on it, which is worth more than the
+convenience of a direct read. Bound this way, nothing under `kmu.maplayers.base` names a settings
+class, which is the rule `SettingsLayeringIntegrationTest` holds the tree to.
+
+Unbound answers no bound at all rather than a default restated here. What the shipped number is
+belongs to the settings row and the accessor that answers with it; a copy would be a second place to
+correct and could disagree with the row while looking authoritative. Nothing is lost by it - a bound
+is only ever consulted while a capture is running, and the same root binds both.

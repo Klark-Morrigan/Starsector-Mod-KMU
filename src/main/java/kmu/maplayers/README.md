@@ -251,93 +251,14 @@ bar once does not order it again per save.
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
-- **`base/visibility/systems`** - which star systems a layer draws at all: `MapVisibility` admits a
-  system on either of two paths (reachable and drawn by the vanilla map, or inhabited) and hashes the
-  admitted set into the fingerprint that says it moved; `MapVisibilityPass` is one reading of the
-  sector answering that rule, and `DrawnSystemPositions` reads each drawn system's live hyperspace
-  position off it. The rule takes the answers rather than the sector to read them from - a pass
-  holds the colony index and hyperspace scan it composes them off - so a caller running several
-  walks in one tick selects each system once between them and asks one thing which systems are
-  drawn. The positions come off the index's own systems-by-id traversal rather than one opened
-  here, which is what keeps a pass to the single traversal a frame allows it however many of its
-  readers want the sector's systems. Inhabited means
-  somebody lives there - the colony set's habitation projection - so a system whose only market is an
-  abandoned station is admitted by access alone, and a star-hidden one holding a derelict is not drawn
-  at all. `MapVisibilityRules` pairs the colony rule that judges that with the force override a
-  caller may admit a system outright by, so a layer can widen what is drawn without the rule knowing
-  why it wanted to.
-- **`base/visibility/colonies`** - what may be shown of a colony, which is the map's own framing
-  and not the sector's. KMLib states which colonies a place holds; `ColonyKind` says what kind of
-  place each one stands for, `ColonyVisibility` and `RevelationGate` say what may be shown of it,
-  and `ColonyKnowledge` pairs that rule with the sector's record of what has been observed and
-  publishes the two projections every surface reads - the known listing a box may name, and the
-  habitation reading a cell is settled by. Each pass opens one and classifies each colony once
-  through it. Being found and being revealed stay separate questions there. The fog answers the
-  first for nearly everything; a collapsed colony, which vanilla admits on a survey level it writes
-  for player acts only, may instead be found on the word of whoever else lives in the same system,
-  so the ruin in orbit is drawn beside the colony that can see it. `ColonyKind` says which kinds
-  that reaches, and only while the survey asked for is no more than a sighting is worth.
-  `ColonyKindLookup` folds those kinds by colony id for a reader that
-  meets a colony as a row rather than as a colony, and `ColonyDiscoveryLookup` folds the entity's
-  own found-or-not flag the same way for the same reader. `OpenlyKnownColonyLookup` folds a third
-  such answer - whether a concealed colony is one the sector openly points at, off the entity ids
-  and tag `OpenlyKnownColonyRegistry` is seeded with at start-up. That one excuses a word a hover
-  box would otherwise say and reaches no gate: a landmark is concealed to every rule here, exactly
-  as the base beside it is. Who would speak about what stands beside them is owner-aware and then some:
-  `FactionAlliances` says which factions stand together, read through the `FactionAllianceSource`
-  port a composition root registers with `FactionAllianceRegistry`, so a partner keeps a concealed
-  base quiet exactly as its own faction does. It is a world fact rather than a rule, so it is folded
-  per pass beside the observations rather than carried on `ColonyVisibility` - and read through a
-  port so the rule never names the mod that maintains an alliance, nor changes with which map layer
-  the player is looking at. The register behind the observations is `ColonySightings` over
-  `SectorColonySightings`, written by `ColonySightingRecorder` as the player travels and by the
-  substrate's own poll (`base/refresh`) for what a place's own inhabitants can see;
-  `ColonySightingInstaller` stands the travelling half up on load. The player's arrival writes the gated shapes alone; the inhabitants' sweep
-  also writes the collapsed worlds their word is the only thing showing, so one outlives the last
-  neighbour that could report it. Its entries sit in the shared `ObservationStore` under a key of its own,
-  each spelt by `ColonyObservationCodec` - the moment, then the place - and `PresentColonies` is
-  what a load asks which colonies the sector still holds, read off the raw market listings so a
-  superseded market that may yet win its place is not shed as gone.
-- **`base/visibility/structures`** - what was last observed of a built structure: a comm relay, a
-  nav buoy, a sensor array. KMLib states which structures a place holds and what each one plainly
-  is; the register here says what one looked like when somebody last established it, which is the
-  only way its holder can be stated without either naming a faction in a system nobody has
-  approached or reporting a handover that happened while the player was a sector away. A
-  `StructureObservation` carries the holder, whatever `StructureFault` the structure was found in,
-  and a moment per axis: who holds it is established by standing there, whether it works by anyone
-  living in the same system, and the two go stale independently - a relay visited once and watched
-  since has a current state beside a four-cycle-old holder. A running hack is deliberately not
-  among its fields, for the reason stated there. `StructureObservations` is the port a rule reads
-  the register through, over
-  `SectorStructureObservations`, whose entries sit in the shared `ObservationStore` under a key of
-  its own and are spelt by `StructureObservationCodec` - the two moments, the state letters, then
-  the holder id to the end of the entry.
-- **`base/visibility/observations`** - how old the news about one concealed fact is, stated once for
-  every family that conceals one. `ObservationRecency` is the triad it can be in - something is
-  revealing it now, the record recalls it from a moment, or nothing ever established it - sealed so
-  a fourth state cannot be added without every reader being asked about it, and folded rather than
-  switched over since the mod targets Java 17. `ObservationRecency.resolveRecency` is the one place
-  a live reading is ranked above a record and a record above nothing. `RevealedFact` pairs that
-  state with the value an axis conceals, where it conceals one; a fact nobody ever established
-  cannot be built holding a value, so the words for an unknown are the reader's to supply.
-  `ObservationNoteFormatter` puts an age into words - how long ago, and on what date - in the three
-  span words every axis shares, taking the lead-in that introduces them as a key from its caller.
-  Which words introduce a date belong to the axis; how long a day is does not. `ObservationNotes`
-  settles which of a row's several axes dates it, each arriving as an `ObservationAxis` pairing a
-  recency with its own lead-in: every recalled axis carrying a moment contributes it, the most
-  recent wins and is stated in that axis's words, and a row nothing contributes to carries no date.
-  A current axis and an unknown one both contribute nothing, so a row is dated by what it recalls
-  and by nothing else. What an axis recalls is kept by `ObservationStore`, the register every family
-  writes its observations into: sector memory under a key of its own, held as text so no class name
-  of ours is baked into a save, and never opened at all where there was nothing to record.
-  `RecordedObservations` is what a pass reads it back through. What one entry means stays with the
-  family, as an `ObservationCodec` the store is handed - which is also where the fixed-fields-first
-  convention lives, the free-form field running to the end of an entry so an id spelt with the
-  separator reads back whole, and an entry that does not part reading as the weaker true thing
-  rather than as corrupt. The lifecycle is the store's because all three families want the same one:
-  a load sheds what the register no longer describes and then records what the player was left
-  standing among, in that order, asking the family which of its subjects still exist and what is
-  being observed now.
+- **[What the map may say](base/visibility/README.md)** - what a layer is allowed to state about a
+  place, as against what the sector holds. Which star systems are drawn at all (`MapVisibility` and
+  the pass, rules and positions around it), and beneath that the three disjoint families of place -
+  a colony (it carries a market), a structure (it carries `Tags.OBJECTIVE`), and a market-less
+  installation - each with its own knowledge and its own rule rather than a union type over places.
+  The register they share is there too: one store per family key, the recency triad every concealed
+  fact is stated in, and the single note a row is dated by. Which sector fact reaches which surface,
+  and which way each default errs, are that README's.
 - **[Map build profiling](base/profiling/README.md)** - the counters a rebuild's stages add to and
   the terms a rebuild step registers its section on, beneath both the geometry and the render so
   neither imports the other to name them.
@@ -365,8 +286,12 @@ bar once does not order it again per save.
   scripts that drive it are two classes, and the one poll that is nobody's layer - the substrate's
   sweep of what each system's inhabitants can see. The signals, who declares which, and the four
   rebuild paths they drive are [the caching notes](../../../../../docs/dev/caching.md).
-- **[The sidebar](base/sidebar/README.md)** - the control box: the per-screen hosts, placement,
-  fold persistence, and how it is drawn over and routed ahead of the vanilla screens.
+- **[The sidebar](base/sidebar/README.md)** - the control box: placement, the opener past its last
+  tab, and the state its lists and its fold are kept in. Two leaves under it -
+  [`runtime`](base/sidebar/runtime/README.md) for what differs per screen, what stands the panel
+  down, and how it is drawn over and routed ahead of the vanilla screens; and
+  [`style`](base/sidebar/style/README.md) for what it is painted in and how loudly it answers the
+  pointer.
 - **[Map chrome](base/chrome/README.md)** - the controls the player moves the layers with from
   outside the sidebar: the tick box appended to the vanilla filter row, the dialog the layer bar is
   arranged in, and the standing heal that keeps each screen's pick on a tab its bar still offers.
