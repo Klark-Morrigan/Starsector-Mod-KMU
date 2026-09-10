@@ -161,39 +161,20 @@ public final class LiveSidebarPlacement {
             cell -> selection.selectLayer(layers.get(cell)));
     }
 
-    // The band's opener where there is something to arrange, and no band button at all where there is
-    // not. A door onto an empty room is worse than no door: the player who opens it learns the feature is
-    // empty rather than that it is not theirs yet, one row having nowhere to move that changes which
-    // layer paints and a hide the dialog's last-tab guard refuses.
+    // The band's opener, or no band button at all where the roster carries too few layers that paint to
+    // arrange. Why the count is the roster's rather than this screen's row, why the empty view is left
+    // out of it, what that withdraws and what the dev hatch is for are all stated in this package's
+    // README - one register for a rule a reader will otherwise meet in four.
     //
-    // Counted off the registry's roster rather than off the row this screen offers. The offered row
-    // shrinks as the player takes tabs off the bar and this button is the only way one comes back, so an
-    // opener that left once the row got short would strand the arrangement that shortened it.
-    //
-    // The empty view is not counted, which is what makes the rule bite on an install carrying KMU alone:
-    // it is a tab whose job is to draw nothing, withheld outright from a screen carrying its own control,
-    // so a roster of it and one layer is a roster of one layer as far as arranging goes. What that
-    // withdraws is one thing, on the intel screen only: while a single painting layer is registered, the
-    // empty view's tab can no longer be taken off the bar - a tab the player can leave unpicked, one click
-    // from the layer beside it, and back the moment a second layer registers.
-    //
-    // A dev row overrides the count outright, which is what makes the box reachable at all on an
-    // install carrying KMU alone - every install until a second layer ships. Asked first, so the one
-    // state it exists to reach costs no roster walk to arrive at.
-    //
-    // Read here per frame with the rest of the band's chrome rather than settled once. The roster is
-    // append-only and whole at no one moment - a mod built on this one registers its layer after this
-    // mod's own load has returned - and the row above is one the player moves mid-session.
+    // The hatch is asked ahead of the count, so the one state it exists to reach costs no roster walk to
+    // arrive at. Both reads are per frame with the rest of the band's chrome: the roster is append-only
+    // and whole at no one moment, and the hatch is one the player moves mid-session.
     static BandButtonSpec resolveOpenerSpec(TabStyle tabStyle) {
 
-        if (KmuMapSidebarSettings.isMapLayerArrangementOpenerAlwaysShown()) {
-            return BarOpeners.buildOpenerSpec(tabStyle);
+        if (!isThereAnythingToArrange()) {
+            return null;
         }
-        var paintingLayerCount = PaintingLayers.countPaintingLayers(MapLayerRegistry.getLayers());
-
-        return paintingLayerCount < LEAST_ARRANGEABLE_PAINTING_LAYERS
-            ? null
-            : BarOpeners.buildOpenerSpec(tabStyle);
+        return BarOpeners.buildOpenerSpec(tabStyle);
     }
 
     // The body the active layer opens, built under the scope of the screen whose panel asked for it. Every
@@ -251,6 +232,18 @@ public final class LiveSidebarPlacement {
             new TabPanelViewState(
                 controller.getScrollState().getOffset(),
                 controller.getCollapseFraction()));
+    }
+
+    // Whether arranging the bar could change anything: two layers that paint, so a move changes which of
+    // them the map shows and a hide leaves one still standing - or the dev hatch open, which says to stand
+    // the opener whatever the roster holds.
+    private static boolean isThereAnythingToArrange() {
+
+        if (KmuMapSidebarSettings.isMapLayerArrangementOpenerAlwaysShown()) {
+            return true;
+        }
+        return PaintingLayers.countPaintingLayers(MapLayerRegistry.getLayers())
+            >= LEAST_ARRANGEABLE_PAINTING_LAYERS;
     }
 
     // What the panel spends on chrome rather than on content, read per frame so a settings change shows on

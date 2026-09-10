@@ -391,10 +391,7 @@ final class LiveSidebarPlacementTest {
         void resolveOpenerSpecStandsTheOpenerWhereTwoLayersPaint() {
             // The install a foreign mod's layer makes, and the only one in which arranging the bar can
             // change what the map shows.
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
-                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+            registerTwoLayersThatPaintBesideTheEmptyView();
 
             assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
                 .isNotNull();
@@ -404,9 +401,7 @@ final class LiveSidebarPlacementTest {
         void resolveOpenerSpecDropsTheOpenerWhereOneLayerPaintsBesideTheEmptyView() {
             // KMU's own install. A door onto an empty room is worse than no door: one row to move with
             // nowhere to move it that changes which layer paints, and a hide the last-tab guard refuses.
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
+            registerOneLayerThatPaintsBesideTheEmptyView();
 
             assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
                 .isNull();
@@ -427,10 +422,7 @@ final class LiveSidebarPlacementTest {
             // The count is the roster's and never the offered row's: this button is the only way a
             // hidden tab comes back, so an opener that left once the row got short would strand the
             // arrangement that shortened it.
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
-                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+            registerTwoLayersThatPaintBesideTheEmptyView();
 
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(SECOND_PAINTING_LAYER_ID));
 
@@ -443,9 +435,7 @@ final class LiveSidebarPlacementTest {
             // The hatch is how the box is reached at all on an install carrying one layer, which is
             // every install until a second one ships - so it has to beat the count rather than be
             // read beside it.
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
+            registerOneLayerThatPaintsBesideTheEmptyView();
 
             sidebarSettingsMock.openTheArrangementOpenerHatch();
 
@@ -457,18 +447,17 @@ final class LiveSidebarPlacementTest {
         void resolveOpenerSpecAsksForTheOpenerUnchangedWhereItStands() {
             // Nothing about the control moves with the gate: the band is handed the same mark and the
             // same box it always was, so what changes is only whether it is handed one at all.
-            MapLayerRosters.replaceRosterWith(
-                NoLayer.INSTANCE,
-                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
-                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
+            registerTwoLayersThatPaintBesideTheEmptyView();
 
             var hostStyle = buildHostTabStyle();
+            var openerAskedForDirectly = BarOpeners.buildOpenerSpec(hostStyle);
+
             var opener = LiveSidebarPlacement.resolveOpenerSpec(hostStyle);
 
             assertThat(opener.icon())
-                .isEqualTo(BarOpeners.buildOpenerSpec(hostStyle).icon());
+                .isEqualTo(openerAskedForDirectly.icon());
             assertThat(opener.style())
-                .isEqualTo(BarOpeners.buildOpenerSpec(hostStyle).style());
+                .isEqualTo(openerAskedForDirectly.style());
         }
 
         // The host row the opener is asked to stand in: the strip's own style, boxed as the sector map
@@ -476,6 +465,22 @@ final class LiveSidebarPlacementTest {
         private TabStyle buildHostTabStyle() {
             return SidebarStyles.buildStripTabStyle(HOST_BAND_HEIGHT)
                 .withTabBox(new TabBox(HOST_TAB_WIDTH, HOST_TAB_HEIGHT, HOST_TAB_GAP));
+        }
+
+        // KMU's own install: the empty view and the one layer that paints.
+        private void registerOneLayerThatPaintsBesideTheEmptyView() {
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID));
+        }
+
+        // The same roster with a second painting layer on the end, which is the install a foreign mod's
+        // layer makes and the only one there is anything to arrange on.
+        private void registerTwoLayersThatPaintBesideTheEmptyView() {
+            MapLayerRosters.replaceRosterWith(
+                NoLayer.INSTANCE,
+                buildLayerMockUnder(FIRST_PAINTING_LAYER_ID),
+                buildLayerMockUnder(SECOND_PAINTING_LAYER_ID));
         }
 
         // A registered layer that is not the empty view, which is the whole of what makes it count. Its
