@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Where the cycle wraps is pinned against the box's own depth rather than against the last
  * constant, that being what stops a box whose account ends higher up offering a tier it can never
- * fill.
+ * fill. So is the depth a box is actually cut at, which is what parts a step that shows the player
+ * something from one that redraws the box it was already looking at.
  *
  * <p>And what the hint at the foot of the box says: the phrase belongs to the level being arrived
  * at, so it is pinned per level against the words the game ships.
@@ -113,14 +114,34 @@ final class HoverTooltipDetailLevelTest {
     }
 
     @Nested
-    class ResolveDeepestLevel {
+    class ResolveDrawnLevelWithin {
 
         @Test
-        void resolveDeepestLevelNamesTheLastTierTheCycleDeclares() {
-            // The bound past which no box can hold anything, which is what lets a caller settle a
-            // collapse without asking any box how far its own tree reaches.
-            assertThat(HoverTooltipDetailLevel.resolveDeepestLevel())
-                .isEqualTo(HoverTooltipDetailLevel.PATROL_DETAILS);
+        void resolveDrawnLevelWithinDrawsAtTheLevelAskedForInsideTheBoxsBound() {
+            // The ordinary reading: the box holds everything asked of it, so what the player chose is
+            // what is drawn.
+            assertThat(HoverTooltipDetailLevel.SYSTEM_COMPOSITION
+                    .resolveDrawnLevelWithin(HoverTooltipDetailLevel.PATROL_DETAILS))
+                .isEqualTo(HoverTooltipDetailLevel.SYSTEM_COMPOSITION);
+        }
+
+        @Test
+        void resolveDrawnLevelWithinDrawsAtTheBoundWhereTheLevelHasOutrunTheBox() {
+            // The reading the offer turns on. The level is one shared fact carried across hovers, so a
+            // box is met at depths it holds nothing at - and every one of them draws the box its own
+            // bound cuts, which is why stepping between two of them shows the player nothing.
+            assertThat(HoverTooltipDetailLevel.PATROL_DETAILS
+                    .resolveDrawnLevelWithin(HoverTooltipDetailLevel.FACTIONS))
+                .isEqualTo(HoverTooltipDetailLevel.FACTIONS);
+        }
+
+        @Test
+        void resolveDrawnLevelWithinDrawsAtTheBoundWhereTheTwoMeet() {
+            // The box read exactly as deep as it goes, which is neither cut nor short: the level and
+            // the bound name the same depth.
+            assertThat(HoverTooltipDetailLevel.MARKET_STATS
+                    .resolveDrawnLevelWithin(HoverTooltipDetailLevel.MARKET_STATS))
+                .isEqualTo(HoverTooltipDetailLevel.MARKET_STATS);
         }
     }
 

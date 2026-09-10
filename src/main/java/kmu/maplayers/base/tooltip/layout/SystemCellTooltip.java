@@ -91,13 +91,6 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // asking whether anything was left out rather than as comparing against a bare zero.
     private static final int NOTHING_WITHHELD = 0;
 
-    // The deepest level the cycle declares, which is the deepest bound any box could state. A box read
-    // at it collapses on the next press however far its own tree reaches, so the answer is settled
-    // without asking - which is what keeps the read behind that question off the frames it cannot
-    // change.
-    private static final HoverTooltipDetailLevel DEEPEST_LEVEL_IN_CYCLE =
-        HoverTooltipDetailLevel.resolveDeepestLevel();
-
     // The two halves of that line a given box may have nothing for: a box at a level that offers no
     // further reading of this system, and one that had room for all of it. Named so the composition
     // below states what the line is missing rather than handing it unexplained nulls.
@@ -154,13 +147,10 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // box says it would rather than under a second rule that could drift from it.
         //
         // Once per press rather than once per frame, so the read it costs is one the player asked
-        // for - and skipped outright at the deepest level the cycle declares, where the press
-        // collapses the box whatever this one holds and its own bound cannot change the answer.
-        var deepestHeldLevel = detailLevel.isReadingAtLeast(DEEPEST_LEVEL_IN_CYCLE)
-            ? DEEPEST_LEVEL_IN_CYCLE
-            : resolveDeepestHeldLevelFor(sector, system);
-
-        return resolveOfferedLevel(detailLevel, deepestHeldLevel);
+        // for - and asked at every level, the deepest included: how far this box reaches is exactly
+        // what says whether the collapse would show the player anything, and a box the level has
+        // already outrun draws the same box on both sides of the press.
+        return resolveOfferedLevel(detailLevel, resolveDeepestHeldLevelFor(sector, system));
     }
 
     /**
@@ -308,17 +298,22 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // Where one press would take a box read at detailLevel whose own tree ends at deepestHeldLevel:
     // the one rule behind both the hint the box draws and the key the input pass claims.
     //
-    // Empty is the one case where the press would change nothing the player can see - a box holding
-    // nothing past the shallowest level, read at the shallowest level, which the cycle has nowhere to
-    // step to and nothing to collapse. Everywhere else there is either a deeper tier to open or a
-    // collapse to take, both of which the player sees.
+    // Empty where the press would redraw the box exactly as it stands, which is judged on the depth
+    // the box is cut at rather than on the level named: a box holds nothing past its own bound, so
+    // two levels either side of that bound cut it identically. That is the whole of the case for a
+    // box holding nothing past the shallowest level - one drawing over an unpopulated system, met at
+    // whatever depth the player reached over a populated one - which offers neither a tier to open
+    // nor a collapse the reader would see. The way back out is any box that does have depth, since a
+    // level nothing here draws is a level nothing here has to escape.
     private static Optional<HoverTooltipDetailLevel> resolveOfferedLevel(
             HoverTooltipDetailLevel detailLevel,
             HoverTooltipDetailLevel deepestHeldLevel) {
 
         var nextLevel = detailLevel.resolveNextLevelWithin(deepestHeldLevel);
+        var isRedrawingTheSameBox = nextLevel.resolveDrawnLevelWithin(deepestHeldLevel)
+            == detailLevel.resolveDrawnLevelWithin(deepestHeldLevel);
 
-        return nextLevel == detailLevel ? Optional.empty() : Optional.of(nextLevel);
+        return isRedrawingTheSameBox ? Optional.empty() : Optional.of(nextLevel);
     }
 
     // The box's heading as one block: the hovered system's name, and any lines the layer heads its box

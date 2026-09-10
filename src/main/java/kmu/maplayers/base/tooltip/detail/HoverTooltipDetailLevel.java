@@ -70,21 +70,13 @@ public enum HoverTooltipDetailLevel {
     }
 
     /**
-     * @return the deepest level the cycle declares - the bound a box holding every tier there is to
-     *         hold would state, and the level past which no box can hold anything. What lets a
-     *         caller settle where a press lands without asking any box how deep it goes
-     */
-    public static HoverTooltipDetailLevel resolveDeepestLevel() {
-
-        var levels = values();
-
-        return levels[levels.length - 1];
-    }
-
-    /**
      * The level one press moves to, given how deep the box being read actually goes: the next deeper
-     * level, or the shallowest again once {@code deepestHeldLevel} has been reached - so a press
-     * always acts and any box can be collapsed from wherever its own tree ends.
+     * level, or the shallowest again once {@code deepestHeldLevel} has been reached - so the cycle
+     * always names somewhere to go and any box can be collapsed from wherever its own tree ends.
+     *
+     * <p>Whether arriving there shows the player anything is a further question, and not one a step
+     * can answer: two levels either side of a box's own bound name different depths and draw the
+     * same box ({@link #resolveDrawnLevelWithin}).
      *
      * <p>Wrapping is judged at or past the bound rather than exactly at it, since the level is one
      * shared fact held across layer switches: a box reached at a level deeper than it holds anything
@@ -104,6 +96,22 @@ public enum HoverTooltipDetailLevel {
         // Short of the bound there is always a deeper constant to step to, the bound being one of
         // these levels itself - so the step needs no wrap of its own.
         return levels[ordinal() + 1];
+    }
+
+    /**
+     * How deep the box being read is actually drawn: this level, or the box's own bound where the
+     * player has asked for more than the box holds.
+     *
+     * <p>What the player asked for and what the box shows part company wherever a box runs out of
+     * tiers, and it is the second of the two that says whether a press is worth offering: a box
+     * cut at the same depth before and after is one box to the reader, whatever the two levels
+     * either side of the press are named.
+     *
+     * @param deepestHeldLevel the deepest level the box being read holds anything at
+     * @return the level the box's content is cut at
+     */
+    public HoverTooltipDetailLevel resolveDrawnLevelWithin(HoverTooltipDetailLevel deepestHeldLevel) {
+        return isReadingAtLeast(deepestHeldLevel) ? deepestHeldLevel : this;
     }
 
     /**

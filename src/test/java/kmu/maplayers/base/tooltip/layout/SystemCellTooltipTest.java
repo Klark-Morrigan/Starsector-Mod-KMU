@@ -147,6 +147,10 @@ final class SystemCellTooltipTest {
     // same reason.
     private static final float FADED_LEADER_OPACITY = 0.1f;
 
+    // What one press may cost the box in reads of the hovered system. Stated as its own number rather
+    // than asserted as "at least one", since what the press-time seam is for is being paid for once.
+    private static final int ONE_ASK_PER_PRESS = 1;
+
     // Where the hint sits in a box whose body is one listed block - the heading, that block, then the
     // line at the foot. Its own name because the boxes about the fit list rather than banner, so their
     // body is one block whatever it lists.
@@ -279,12 +283,26 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForClaimsTheKeyAtTheDeepestLevelWhateverTheBoxHolds() {
-            // The cycle wraps, so the press at the deepest level the levels declare collapses the box
-            // - which acts over any system at all, including one this box has nothing deeper to say
-            // about. Left unclaimed there, a player who reached that level over another system would
-            // have no way back out of it while the cursor rests here.
+        void resolveNextLevelForLeavesTheKeyAloneOverABoxTheLevelHasOutrun() {
+            // The level is one shared fact carried across hovers, so a box with nothing below the
+            // shallowest level is met at depths it holds nothing at - and it draws one box at all of
+            // them. Collapsing there would redraw exactly what is on screen, so the key falls through
+            // to vanilla rather than resetting a shared level over a box that never said it would.
             var tooltipFake = buildTooltipSayingSomething();
+
+            assertThat(tooltipFake.resolveNextLevelFor(
+                    buildSectorWithEconomy(),
+                    buildNamedSystem(),
+                    PATROL_DETAILS))
+                .isEmpty();
+        }
+
+        @Test
+        void resolveNextLevelForCollapsesABoxReadPastItsOwnBound() {
+            // The bound is short of the level being read and past the shallowest, so the box is drawn
+            // cut - and the collapse takes away a tier the player can see. That the press acts here
+            // and not over a box holding nothing is the whole distinction.
+            var tooltipFake = buildTooltipOfferingDetailDownTo(HoverTooltipDetailLevel.MARKET_STATS);
 
             assertThat(tooltipFake.resolveNextLevelFor(
                     buildSectorWithEconomy(),
@@ -294,11 +312,11 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void resolveNextLevelForCostsNoReadAtTheDeepestLevel() {
-            // No box can hold anything past the deepest level the cycle declares, so the press there
-            // collapses whatever this one holds and its own bound cannot change the answer - which is
-            // the whole point of the press-time seam being deferred: it is the one question that costs
-            // a walk of the hovered system, and it is asked once per press.
+        void resolveNextLevelForAsksTheBoxItsBoundOncePerPress() {
+            // The press-time seam costs a walk of the hovered system, and it is the one question the
+            // level cannot settle without: how deep the box goes is what says whether the press shows
+            // the player anything. Asked once, so a press pays for one read however far the player is
+            // reading.
             var tooltipFake = buildTooltipSayingSomething();
 
             tooltipFake.resolveNextLevelFor(
@@ -307,7 +325,7 @@ final class SystemCellTooltipTest {
                 PATROL_DETAILS);
 
             assertThat(tooltipFake.deeperDetailAskCount)
-                .isZero();
+                .isEqualTo(ONE_ASK_PER_PRESS);
         }
     }
 
@@ -638,12 +656,27 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForOffersTheWayOutOfTheDeepestLevelToABoxWithNothingDeeper() {
-            // The level is one shared fact carried across hovers, so a box with nothing to expand can
-            // be met at the deepest level all the same - reached over some other system. It ends on
-            // the collapse rather than on its content, which is the player's way back out; drawn
-            // under the same rule the key is claimed by, so the hint and the press agree here too.
+        void renderForEndsABoxTheLevelHasOutrunWithItsContent() {
+            // The level is one shared fact carried across hovers, so a box with nothing to expand is
+            // met at deeper levels all the same - reached over some other system. It draws the same
+            // box at every one of them, so a collapse offered here would name a press that redraws
+            // exactly what is on screen; the box ends where its content does instead.
             var sections = captureDrawnBoxAt(buildTooltipSayingSomething(), PATROL_DETAILS)
+                .sections();
+
+            assertThat(sections)
+                .hasSize(BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT);
+        }
+
+        @Test
+        void renderForOffersTheCollapseToABoxReadPastItsOwnBound() {
+            // The other side of that rule, and what keeps it from silencing every deep box: an account
+            // ending at the market stats is drawn cut at the deepest level, so the collapse below does
+            // take a tier away and is named. Drawn under the same rule the key is claimed by, so the
+            // hint and the press agree here too.
+            var sections = captureDrawnBoxAt(
+                    buildTooltipOfferingDetailDownTo(HoverTooltipDetailLevel.MARKET_STATS),
+                    PATROL_DETAILS)
                 .sections();
 
             assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())

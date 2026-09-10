@@ -84,8 +84,11 @@ being drawn, and a system with nothing more to state names nowhere and leaves th
 as the destination rather than as a yes or no, because the listener has to set the level it lands on
 and cannot work that out itself - only the box knows where its own tree ends. Asked per system rather
 than per box because part of the answer lives there - an unpopulated system has no colonies for a
-deeper tier to account for; asked at a level because the rest of it lives there - the cycle wraps, so
-from the deepest level the levels declare the press collapses the box, which acts over any system.
+deeper tier to account for; asked at a level because the rest of it lives there - what the press has
+to change is the depth the box is *cut* at rather than the level it names, and a box past its own
+bound is cut at that bound whatever level is being read. So a box with nothing below the shallowest
+level offers nothing from any level at all, and the way back out of a deep one is any box that has
+depth to collapse - a level nothing here draws is a level nothing here has to escape.
 Left unclaimed rather than advanced invisibly because the level is one shared fact: a press swallowed
 over a system with nothing to expand would silently decide how the next system that *does* differ
 opens. Vanilla keeps F1 everywhere else, and the listener runs below the sidebar's so a tab hotkey
@@ -115,11 +118,12 @@ its system to compose the blocks already holds the answer. Asked separately, the
 that read a second time every frame the cursor rests on the cell - and the hint could describe a
 reading the body beside it no longer agrees with. The key handler asks through
 `resolveDeepestHeldLevelFor` instead, that being the one caller with nothing composed to take the
-answer from, and it asks once per press - and not at all at the deepest level the levels declare,
-where no box can hold anything further and the collapse settles it whatever this one holds. The bound
-is two facts, and a layer joins them in one place: how far the box's *account* reaches, a constant of
-what it explains, and whether this system left it anything to account for at all. Hint and press run
-off that one rule, so the box cannot advertise a key that does nothing. The hint is not content: a
+answer from, and it asks once per press, at every level: the bound is what says whether a press would
+show the player anything, so no level settles that question without it. The bound is two facts, and a
+layer joins them in one place: how far the box's *account* reaches, a constant of what it explains,
+and whether this system left it anything to account for at all. Hint and press run off that one rule,
+so the box neither advertises a key that does nothing nor claims one it said nothing about. The hint
+is not content: a
 box with nothing to say about the system stays undrawn rather than appearing as a lone offer to
 expand into nothing. That same line carries one more run where the box had less room than its
 content needed: how many entries it could not show, in the quiet shade the box states everything
