@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 public final class StarsectorConditionRepository implements KmuConditionRepository {
     static final String VANILLA_SOURCE_NAME = "Starsector";
@@ -40,12 +40,12 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
 
     @Override
     public Optional<KmuConditionSpec> findConditionSpec(String conditionId) {
-        var normalizedId = normalizeText(conditionId);
-        if (normalizedId == null) {
+        var normalisedId = normaliseText(conditionId);
+        if (normalisedId == null) {
             return Optional.empty();
         }
 
-        var spec = settings.getMarketConditionSpec(normalizedId);
+        var spec = settings.getMarketConditionSpec(normalisedId);
         if (spec == null) {
             return Optional.empty();
         }
@@ -71,7 +71,7 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
         if (sourceMod == null) {
             return VANILLA_SOURCE_NAME;
         }
-        var sourceModName = normalizeText(sourceMod.getName());
+        var sourceModName = normaliseText(sourceMod.getName());
         return sourceModName == null ? VANILLA_SOURCE_NAME : sourceModName;
     }
 }

@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.installations;
 
 import java.util.Optional;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 /**
  * What kind of place a market-less installation is, as a map layer has to tell them apart: a hulk
@@ -64,7 +64,7 @@ public enum InstallationKind {
      */
     public static Optional<InstallationKind> findKindNamed(String name) {
 
-        var stated = normalizeText(name);
+        var stated = normaliseText(name);
 
         if (stated == null) {
             return Optional.empty();

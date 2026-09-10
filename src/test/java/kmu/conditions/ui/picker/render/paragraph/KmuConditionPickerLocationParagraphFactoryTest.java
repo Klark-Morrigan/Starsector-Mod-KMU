@@ -136,7 +136,7 @@ class KmuConditionPickerLocationParagraphFactoryTest {
 
         @Test
         void omitsMissingLocationFields() {
-            // Planet type whitespace is normalized to absent, no faction, no constellation
+            // Planet type whitespace is normalised to absent, no faction, no constellation
             var paragraphs = KmuConditionPickerLocationParagraphFactory.get(
                     buildModel(new KmuConditionPickerLocation(
                             "Valis", " ", null, "Corvus Star System", null, null, null)));

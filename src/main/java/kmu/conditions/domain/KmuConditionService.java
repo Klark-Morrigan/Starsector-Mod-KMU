@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 public final class KmuConditionService {
     private final KmuConditionRepository repository;
@@ -75,38 +75,38 @@ public final class KmuConditionService {
             String conditionId) {
         Objects.requireNonNull(market, "market");
 
-        var normalizedId = normalizeText(conditionId);
-        if (normalizedId == null) {
+        var normalisedId = normaliseText(conditionId);
+        if (normalisedId == null) {
             return KmuConditionAddResult.conditionNotFound(conditionId);
         }
 
         KmuConditionSpec spec;
         try {
-            spec = repository.findConditionSpec(normalizedId).orElse(null);
+            spec = repository.findConditionSpec(normalisedId).orElse(null);
         } catch (RuntimeException exception) {
-            return failed(normalizedId, "Failed to look up condition spec.", exception);
+            return failed(normalisedId, "Failed to look up condition spec.", exception);
         }
 
         if (spec == null) {
-            return KmuConditionAddResult.conditionNotFound(normalizedId);
+            return KmuConditionAddResult.conditionNotFound(normalisedId);
         }
         // Guard the add against conditions the picker would not offer, so a direct
         // (e.g. console) call cannot place a condition the policy hides.
         if (!offerPolicy.isConditionOfferable(spec)) {
-            return KmuConditionAddResult.notOfferable(normalizedId);
+            return KmuConditionAddResult.notOfferable(normalisedId);
         }
 
         try {
-            if (market.hasCondition(normalizedId)) {
-                return KmuConditionAddResult.alreadyPresent(normalizedId);
+            if (market.hasCondition(normalisedId)) {
+                return KmuConditionAddResult.alreadyPresent(normalisedId);
             }
 
-            market.addCondition(normalizedId);
-            market.markConditionSurveyed(normalizedId);
+            market.addCondition(normalisedId);
+            market.markConditionSurveyed(normalisedId);
             market.reapplyConditions();
-            return KmuConditionAddResult.added(normalizedId);
+            return KmuConditionAddResult.added(normalisedId);
         } catch (RuntimeException exception) {
-            return failed(normalizedId, "Failed to add market condition.", exception);
+            return failed(normalisedId, "Failed to add market condition.", exception);
         }
     }
 

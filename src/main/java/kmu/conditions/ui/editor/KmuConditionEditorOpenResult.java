@@ -3,7 +3,7 @@ package kmu.conditions.ui.editor;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 public final class KmuConditionEditorOpenResult {
     private final KmuConditionEditorOpenStatus status;
@@ -34,10 +34,10 @@ public final class KmuConditionEditorOpenResult {
     }
 
     public static KmuConditionEditorOpenResult unsupportedTarget(String reason) {
-        var normalizedReason = normalizeText(reason);
-        var message = normalizedReason == null
+        var normalisedReason = normaliseText(reason);
+        var message = normalisedReason == null
             ? "Current market does not support market condition editing."
-            : normalizedReason;
+            : normalisedReason;
         return new KmuConditionEditorOpenResult(
             KmuConditionEditorOpenStatus.UNSUPPORTED_TARGET,
             message,

@@ -3,7 +3,7 @@ package kmu.conditions.domain;
 import java.util.Objects;
 
 import static kmu.util.KmuValues.hasText;
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 import static kmu.util.KmuValues.requireNonBlankText;
 
 public final class KmuConditionSpec {
@@ -28,8 +28,8 @@ public final class KmuConditionSpec {
         this.id = requireNonBlankText(id, "id");
         this.name = hasText(name) ? name : this.id;
         this.icon = icon;
-        this.description = normalizeText(description);
-        this.sourceModName = normalizeText(sourceModName);
+        this.description = normaliseText(description);
+        this.sourceModName = normaliseText(sourceModName);
         this.planetary = planetary;
     }
 

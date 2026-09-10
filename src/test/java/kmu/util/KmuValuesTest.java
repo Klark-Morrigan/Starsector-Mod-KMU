@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static kmu.util.KmuValues.convertToOptionalText;
 import static kmu.util.KmuValues.getTextOrEmpty;
 import static kmu.util.KmuValues.hasText;
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 import static kmu.util.KmuValues.requireNonBlankText;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,21 +15,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KmuValuesTest {
 
     @Nested
-    class NormalizeText {
+    class NormaliseText {
 
         @Test
-        void normalizeTextReturnsNullForNull() {
-            assertThat(normalizeText(null)).isNull();
+        void normaliseTextReturnsNullForNull() {
+            assertThat(normaliseText(null)).isNull();
         }
 
         @Test
-        void normalizeTextReturnsNullForBlank() {
-            assertThat(normalizeText("   ")).isNull();
+        void normaliseTextReturnsNullForBlank() {
+            assertThat(normaliseText("   ")).isNull();
         }
 
         @Test
-        void normalizeTextTrimsWhitespace() {
-            assertThat(normalizeText("  hello  ")).isEqualTo("hello");
+        void normaliseTextTrimsWhitespace() {
+            assertThat(normaliseText("  hello  ")).isEqualTo("hello");
         }
     }
 

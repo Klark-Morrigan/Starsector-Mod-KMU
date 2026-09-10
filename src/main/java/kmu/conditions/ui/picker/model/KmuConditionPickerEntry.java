@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static kmu.util.KmuValues.getTextOrEmpty;
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 import static kmu.util.KmuValues.requireNonBlankText;
 
 public final class KmuConditionPickerEntry {
@@ -74,10 +74,10 @@ public final class KmuConditionPickerEntry {
             boolean hidden) {
         this.conditionId = requireNonBlankText(conditionId, "conditionId");
         this.name = requireNonBlankText(name, "name");
-        this.icon = normalizeText(icon);
+        this.icon = normaliseText(icon);
         this.state = Objects.requireNonNull(state, "state");
         this.tooltipText = getTextOrEmpty(tooltipText);
-        this.sourceModName = normalizeText(sourceModName);
+        this.sourceModName = normaliseText(sourceModName);
         this.tooltipRenderer = tooltipRenderer;
         this.suppressed = suppressed;
         this.hidden = hidden;

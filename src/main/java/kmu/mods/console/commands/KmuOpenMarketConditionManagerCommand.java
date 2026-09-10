@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand {
 
@@ -113,7 +113,7 @@ public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand
 
         var causeMessage = result.getCause()
             .map(RuntimeException::getMessage)
-            .map(message -> normalizeText(message))
+            .map(message -> normaliseText(message))
             .orElse(null);
 
         if (result.getStatus() == KmuConditionEditorOpenStatus.FAILED

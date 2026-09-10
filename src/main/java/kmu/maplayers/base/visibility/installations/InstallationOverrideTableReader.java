@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 /**
  * Reads the shipped installation table out of the game's data files.
@@ -129,7 +129,7 @@ public final class InstallationOverrideTableReader {
                     + "skipped; the rows around it were read.");
             return;
         }
-        var entityTypeId = normalizeText(rowFields.optString(ENTITY_TYPE_COLUMN, null));
+        var entityTypeId = normaliseText(rowFields.optString(ENTITY_TYPE_COLUMN, null));
 
         if (entityTypeId == null) {
             LOG.warn(
@@ -149,7 +149,7 @@ public final class InstallationOverrideTableReader {
     // two words is a row its author meant something by, so it says so before falling back.
     private Optional<Boolean> readAdmission(JSONObject rowFields, String entityTypeId) {
 
-        var stated = normalizeText(rowFields.optString(ADMISSION_COLUMN, null));
+        var stated = normaliseText(rowFields.optString(ADMISSION_COLUMN, null));
 
         if (stated == null) {
             return Optional.empty();
@@ -175,7 +175,7 @@ public final class InstallationOverrideTableReader {
         // Normalised here as well as inside the lookup, because a blank cell and a cell nothing
         // answers to are the same absent answer and must not be the same log line: the first is
         // how most rows leave the kind to the facts.
-        var stated = normalizeText(rowFields.optString(KIND_COLUMN, null));
+        var stated = normaliseText(rowFields.optString(KIND_COLUMN, null));
         var kind = InstallationKind.findKindNamed(stated);
 
         if (stated != null && kind.isEmpty()) {

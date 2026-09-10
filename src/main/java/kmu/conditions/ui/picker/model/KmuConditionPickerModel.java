@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 public final class KmuConditionPickerModel {
     private final List<KmuConditionPickerEntry> entries;
@@ -70,12 +70,12 @@ public final class KmuConditionPickerModel {
     }
 
     public Optional<KmuConditionPickerEntry> findEntry(String conditionId) {
-        var normalizedId = normalizeText(conditionId);
-        if (normalizedId == null) {
+        var normalisedId = normaliseText(conditionId);
+        if (normalisedId == null) {
             return Optional.empty();
         }
         return entries.stream()
-            .filter(entry -> entry.getConditionId().equals(normalizedId))
+            .filter(entry -> entry.getConditionId().equals(normalisedId))
             .findFirst();
     }
 }

@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static kmu.util.KmuValues.normalizeText;
+import static kmu.util.KmuValues.normaliseText;
 
 public final class StarsectorEditableMarket implements KmuEditableMarket {
     private final MarketAPI market;
@@ -46,11 +46,11 @@ public final class StarsectorEditableMarket implements KmuEditableMarket {
     }
 
     public Optional<MarketConditionAPI> findCondition(String conditionId) {
-        String normalizedId = normalizeText(conditionId);
-        if (normalizedId == null) {
+        String normalisedId = normaliseText(conditionId);
+        if (normalisedId == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(market.getFirstCondition(normalizedId));
+        return Optional.ofNullable(market.getFirstCondition(normalisedId));
     }
 
     @Override
