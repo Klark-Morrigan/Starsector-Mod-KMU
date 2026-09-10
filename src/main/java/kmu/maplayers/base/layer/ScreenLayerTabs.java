@@ -37,6 +37,10 @@ import java.util.List;
  * deliberately reverses the older reading that hiding a tab is not switching a layer off - true of the
  * store, where the layer stays registered and its id resolvable, and blind to the bar the player is
  * looking at.
+ *
+ * <p>Both halves settle together and do not land together: switching off is immediate and the pick waits
+ * out the dissolve that begins, so what is leaving the screen is seen to leave. Which frame each write
+ * falls on is {@link #healPickOntoOfferedTabs}'s.
  */
 public final class ScreenLayerTabs {
 
