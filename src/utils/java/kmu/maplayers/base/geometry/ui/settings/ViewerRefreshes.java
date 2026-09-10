@@ -18,10 +18,7 @@ public interface ViewerRefreshes {
     /** Builds the partition again and everything downstream of it. */
     public void rebuildGeometry();
 
-    /** Finds the void held between facing cells again. */
-    public void refreshVoidBridges();
-
-    /** Traces the smoothed outer edge again, and the continent preview beside it. */
+    /** Traces the coasts again, and lays everything that stands on them. */
     public void refreshCoastlines();
 
     /** Traces the unclipped partition again. */

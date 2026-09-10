@@ -44,11 +44,6 @@ public final class MapLook {
     public static final Color OWNED_CELL = new Color(0x4a, 0x8a, 0xd0);
     public static final Color UNOWNED_CELL = new Color(0x55, 0x55, 0x55);
     public static final Color UNBOUNDED_CELL = new Color(0x30, 0x30, 0x38);
-    // The void the cells and their bridges shut in, filled. Not a colour for void "within" a
-    // cell: the apron a cell leaves between its own bound and its inset fill is the unbounded
-    // partition showing through from underneath, so it takes that colour and needs none of
-    // its own.
-    public static final Color INLAND_VOID = new Color(0x30, 0xa0, 0xb0);
     public static final Color CHANNEL = new Color(0x22, 0x22, 0x26);
 
     // The line down the middle of a channel: the true border two neighbouring cells share,
@@ -57,33 +52,16 @@ public final class MapLook {
     // from, and the only place the partition itself is visible once the fills are in.
     public static final Color CENTRELINE = new Color(0x50, 0x50, 0x58);
 
-    // A line laid across void to close it off - a bridge between two cells that face each
-    // other. Deliberately unlike anything else on the map: it is a proposal about where a
-    // boundary could go, not a thing that has one, and reading it as an existing border is the
-    // one mistake that would make the shape look right when it is not.
-    public static final Color VOID_BRIDGE = new Color(0xff, 0xd0, 0x40);
-
-    // The void a reach of the smoothed coast shut in behind it, filled. Apart from the
-    // coastline's own colour so that both kinds of pocket read alike - a wall colour and a
-    // fill colour each - rather than the coastal fill alone being painted in the colour of
-    // the line that closed it.
-    public static final Color COASTAL_VOID = new Color(0x30, 0x70, 0xb0);
-
     // What a name is written in, whether it names a cell or a piece of void. One colour for
     // both because a name is not a shape: it says what a reader is looking at rather than
     // marking out anything, and two colours would imply a distinction the map already makes
     // with the shapes underneath.
     public static final Color REGION_NAME = new Color(0xff, 0xff, 0xff);
 
-    // The smoothed outer edge. Unlike anything else drawn, because it is a proposal about where
-    // the edge could be rather than an edge anything has: reading it as one of the shapes
+    // A coast: each touching-connected run of cells traced as its own closed line, with no
+    // spans laid. Deliberately unlike anything else drawn, because it is a proposal about where
+    // an edge could be rather than an edge anything has - and reading it as one of the shapes
     // underneath is the one mistake that would make it look right when it is not.
-    public static final Color COASTLINE = new Color(0x70, 0xe0, 0x90);
-
-    // A rival coast being previewed: each touching-connected run of cells traced as its own
-    // closed line, with no bridges laid. Deliberately unlike the settled coastline's colour -
-    // the whole point of drawing it is to see where the two constructions and the bridges
-    // disagree, and two greens would make agreement and disagreement look alike.
     public static final Color CONTINENT_COAST = new Color(0xc0, 0x60, 0xff);
 
     // A bridge offered to a sector that already has continent coastlines on it, and kept
@@ -137,9 +115,9 @@ public final class MapLook {
     // vanishing into the stroke.
     public static final float FRONTAGE_DOT_RADIUS = FRONTAGE_STROKE * 1.5f;
 
-    // The void a continent coast shuts in, filled. Its own colour rather than the settled
-    // coast's, for the reason its line has one: the two constructions are on screen together
-    // to be compared, and one colour for both would hide the difference being looked at.
+    // The void a coast shuts in, filled. Its own colour rather than the coastline's, so that
+    // a wall and what it encloses read as two things: sharing one would paint the water in the
+    // colour of the line that closed it.
     public static final Color CONTINENT_COASTAL_VOID = new Color(0x90, 0x50, 0xc0);
 
     // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the

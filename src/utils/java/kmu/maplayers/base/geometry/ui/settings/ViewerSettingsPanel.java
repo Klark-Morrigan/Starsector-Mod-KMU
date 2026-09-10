@@ -62,11 +62,6 @@ public final class ViewerSettingsPanel {
     // What each void switch is remembered under. Named here rather than written at the two
     // places each of them appears - once as the switch, once in whichever roll-ups cover it -
     // because a roll-up that named a key the switch does not would cover nothing, silently.
-    private static final String INLAND_BRIDGES = "showInlandBridges";
-    private static final String INLAND_FILL = "showInlandFill";
-    private static final String COASTLINE = "showCoastline";
-    private static final String COASTAL_FILL = "showCoastalFill";
-
     private static final String PUDDLE_BRIDGES = "showContinentPuddleBridges";
     private static final String PUDDLE_FILL = "showContinentPuddleFill";
     private static final String LAKE_COASTLINE = "showContinentLakeCoastline";
@@ -91,11 +86,8 @@ public final class ViewerSettingsPanel {
     private static final String INLET_NAMES = "showContinentInletNames";
     private static final String INTERCONTINENTAL_NAMES = "showIntercontinentalNames";
 
-    // What each section remembers its switch and its folded state under. Named for the
+    // What the section remembers its switch and its folded state under. Named for the
     // construction rather than taken from the heading, which is copy and gets reworded.
-    private static final CollapsibleSection.SectionKeys SECTOR_VOID_KEYS =
-        CollapsibleSection.SectionKeys.forSection("sectorVoid");
-
     private static final CollapsibleSection.SectionKeys CONTINENT_VOID_KEYS =
         CollapsibleSection.SectionKeys.forSection("continentVoid");
 
@@ -264,24 +256,15 @@ public final class ViewerSettingsPanel {
 
         controls.add(ControlRows.buildDivider());
 
-        // The two rival constructions, each foldable away under a switch of its own. They are
-        // the two longest runs in the panel and only one of them is usually being worked on,
-        // so a reader who cannot put one down is reading it on the way to the other every time.
-        controls.add(CollapsibleSection.buildSection(
-            SECTOR_VOID_KEYS,
-            "Sector coast void (v2)",
-            new CollapsibleSection.MasterSwitch(
-                true, on -> settings.showSectorVoid = on, this::refreshBothConstructions),
-            buildSectionBody(this::addVoidPocketRows)));
-
-        controls.add(ControlRows.buildDivider());
-
+        // The void construction, foldable away under a switch of its own. It is by far the
+        // longest run in the panel, and a reader working on the cells above is reading it on
+        // the way to nothing.
         controls.add(CollapsibleSection.buildSection(
             CONTINENT_VOID_KEYS,
-            "Continent coast void (v3)",
+            "Continent coast void",
             new CollapsibleSection.MasterSwitch(
                 true, on -> settings.showContinentVoid = on, refreshes::refreshCoastlines),
-            buildSectionBody(this::addVoidPocketV3Rows)));
+            buildSectionBody(this::addVoidPocketRows)));
 
         controls.add(ControlRows.buildDivider());
 
@@ -456,15 +439,6 @@ public final class ViewerSettingsPanel {
         return body;
     }
 
-    // Both, because the settled construction is drawn by two overlays: the bridges and their
-    // fills are one, the coast and its pockets the other. Refreshing one would leave the
-    // section half-suppressed, which reads as a fault in whichever half was left showing.
-    private void refreshBothConstructions() {
-
-        refreshes.refreshVoidBridges();
-        refreshes.refreshCoastlines();
-    }
-
     // The five knobs that decide what shape the cells are. Every one of them rebuilds the
     // partition, which is what makes them geometry rather than paint.
     private void addCellGeometryRows(JPanel controls) {
@@ -584,7 +558,7 @@ public final class ViewerSettingsPanel {
     // The cells the partition could not bound, traced separately and drawn over the rest.
     //
     // The switch rebuilds rather than repaints: an unbounded cell is found by tracing, so
-    // asking for them is what makes them exist. The bridges go with it, since a cell that was
+    // asking for them is what makes them exist. The coasts go with it, since a cell that was
     // not bounded is a cell no gap was measured against.
     private void addUnboundedCellRows(JPanel controls) {
         controls.add(buildToggle(
@@ -594,7 +568,7 @@ public final class ViewerSettingsPanel {
             on -> {
                 settings.showUnboundedCells = on;
                 refreshes.refreshUnboundedCells();
-                refreshes.refreshVoidBridges();
+                refreshes.refreshCoastlines();
             }));
 
         controls.add(ColourRows.buildColourPair(
@@ -696,109 +670,13 @@ public final class ViewerSettingsPanel {
 
     // Everything about the void as v2 builds it, in the order the toggles above it read: what
     // to show, then the inland knobs, then the coastal ones, then the knobs both kinds share.
-    // Below a divider because the rest of the panel is about CELLS, and a reader hunting for a
-    // void knob was otherwise reading forty identical rows to find it.
+    // The void construction, behind its own divider because the rest of the panel is about
+    // CELLS, and a reader hunting for a void knob was otherwise reading forty identical rows
+    // to find it.
     //
-    // Split the way the v3 section is, so the two constructions can be read side by side: a
-    // reader comparing them is comparing two runs of rows, not one short method against one
-    // long one.
+    // In the pattern the section reads in: what to show, what to draw it with, then the knobs
+    // that decide its shape.
     private void addVoidPocketRows(JPanel controls) {
-
-        controls.add(buildVoidPocketToggles());
-
-        addInlandVoidRows(controls);
-        addCoastalVoidRows(controls);
-    }
-
-    // The void held between two cells facing each other, and how far apart they may be.
-    private void addInlandVoidRows(JPanel controls) {
-
-        // Keyed as bridges rather than as cuts, which is what this swatch has actually
-        // coloured all along. A saved value under the old key belongs to the line it was
-        // chosen for, and letting it carry over would silently colour the cuts with it.
-        controls.add(ColourRows.buildColour(
-            "voidBridgeColour",
-            "Void bridges",
-            ViewerSettings.VOID_BRIDGE_DEFAULT,
-            colour -> settings.voidBridgeColour = colour,
-            refreshes::repaintMap));
-
-        // Recomputed rather than merely repainted, unlike the colours down here, because this
-        // one decides where the walls go, and a wall is what shuts one piece of void off from
-        // the next.
-        controls.add(buildBridgeReachSlider(
-            "bridgeReachMultiple",
-            ViewerSettings.BRIDGE_REACH_DEFAULT,
-            multiple -> settings.bridgeReachMultiple = multiple,
-            refreshes::refreshVoidBridges));
-
-        controls.add(ColourRows.buildColourPair(
-            "inlandVoidFill",
-            "Inland void fill",
-            new ColourRows.Choice(
-                ViewerSettings.INLAND_VOID_DEFAULT,
-                colour -> settings.inlandVoidColour = colour),
-            new ColourRows.Choice(
-                ViewerSettings.INLAND_VOID_DEFAULT,
-                colour -> settings.inlandVoidEdge = colour),
-            refreshes::repaintMap));
-    }
-
-    // The line round the sector's outer shape, the void it shuts in, and how it is smoothed.
-    private void addCoastalVoidRows(JPanel controls) {
-
-        controls.add(ColourRows.buildColour(
-            "coastlineColour",
-            "Coastline",
-            ViewerSettings.COASTLINE_DEFAULT,
-            colour -> settings.coastlineColour = colour,
-            refreshes::repaintMap));
-
-        // Its own colour rather than the coastline's, so the two kinds of pocket read the same
-        // way: a wall colour and a fill colour each. Sharing one made the coastal fill the only
-        // fill on the map painted in the colour of the line that closed it.
-        controls.add(ColourRows.buildColourPair(
-            "coastalVoidFill",
-            "Coastal void fill",
-            new ColourRows.Choice(
-                ViewerSettings.COASTAL_VOID_DEFAULT,
-                colour -> settings.coastalVoidColour = colour),
-            new ColourRows.Choice(
-                ViewerSettings.COASTAL_VOID_DEFAULT,
-                colour -> settings.coastalVoidEdge = colour),
-            refreshes::repaintMap));
-
-        // The whole of how the settled coast is smoothed: a stretch is dropped for what it
-        // offers on its own, so what goes does not depend on which cells came before it.
-        controls.add(buildLeastFrontageSlider(
-            "coastLeastFrontage",
-            ViewerSettings.COAST_MIN_FRONTAGE_DEFAULT,
-            share -> settings.coastMinFrontageShare = share));
-
-        // A pair rather than one, because the two say different halves of the same thing:
-        // which run went where it should not, and which cell it went into. This construction's
-        // own, since only it checks its coast for crossings.
-        controls.add(ColourRows.buildColourPair(
-            "coastCrossings",
-            "Coast crossing / crossed cell",
-            new ColourRows.Choice(
-                ViewerSettings.COAST_CROSSING_DEFAULT,
-                colour -> settings.coastCrossingColour = colour),
-            new ColourRows.Choice(
-                ViewerSettings.PIERCED_CELL_DEFAULT,
-                colour -> settings.piercedCellColour = colour),
-            refreshes::repaintMap));    }
-
-    // Void pockets v3: the per-continent construction, behind its own divider.
-    //
-    // Its own section rather than more rows among the v2 knobs because it is a SEPARATE
-    // construction, not another thing to see of the settled one. Every knob down here reads
-    // only v3 - which is what makes the divider honest, and what lets a reader turn one
-    // without wondering whether the map above just moved.
-    //
-    // Grown a control at a time as v3 acquires them, in the pattern the section already
-    // reads in: what to show, what to draw it with, then the knobs that decide its shape.
-    private void addVoidPocketV3Rows(JPanel controls) {
 
         controls.add(buildContinentVoidToggles());
 
@@ -1018,6 +896,16 @@ public final class ViewerSettingsPanel {
                     percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
                 refreshes::refreshCoastlines,
                 () -> { })));
+
+        // Beside the puddle floor, because the two decide one thing between them: that one says
+        // which holes are too small for a shore, and this one how far a span may reach to cross
+        // one. The reach of the search asked of the cells ALONE, with no coastline consulted -
+        // which is why it sits here rather than among the spans laid against the coastlines.
+        controls.add(buildBridgeReachSlider(
+            "bridgeReachMultiple",
+            ViewerSettings.BRIDGE_REACH_DEFAULT,
+            multiple -> settings.bridgeReachMultiple = multiple,
+            refreshes::refreshCoastlines));
     }
 
     // The spans laid across the inlets those coastlines leave, and the rules deciding which
@@ -1100,43 +988,6 @@ public final class ViewerSettingsPanel {
             ViewerSettings.INTERCONTINENTAL_BRIDGE_DEFAULT,
             colour -> settings.intercontinentalBridgeColour = colour,
             refreshes::repaintMap));
-    }
-
-    // Everything there is to see of the void, under one head.
-    //
-    // Two kinds of pocket, two things to see of each, and a roll-up cutting the other way for
-    // the question that is about a KIND OF THING rather than about a kind of pocket - "show me
-    // every wall". It crosses the branches on purpose: a bridge and a reach of coast are the
-    // same kind of proposal seen in two places, and comparing them means having them under one
-    // switch.
-    //
-    // Rebuilt rather than repainted, because both overlays are built only while something of
-    // theirs is on screen - so turning one on is what makes it exist, not merely what shows it.
-    private JPanel buildVoidPocketToggles() {
-
-        return ToggleTree.buildToggleTree(
-            () -> {
-                refreshes.refreshVoidBridges();
-                refreshes.refreshCoastlines();
-            },
-            ToggleTree.Row.ofRollUp(
-                0,
-                "Void pockets",
-                INLAND_BRIDGES, INLAND_FILL,
-                COASTLINE, COASTAL_FILL),
-            ToggleTree.Row.ofRollUp(
-                1, "Inland void pockets", INLAND_BRIDGES, INLAND_FILL),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                INLAND_BRIDGES, "Bridges", true, on -> settings.showInlandBridges = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                INLAND_FILL, "Fill", true, on -> settings.showInlandFill = on)),
-            ToggleTree.Row.ofRollUp(
-                1, "Coastal void pockets", COASTLINE, COASTAL_FILL),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                COASTLINE, "Coastline", true, on -> settings.showCoastline = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                COASTAL_FILL, "Fill", true, on -> settings.showCoastalFill = on)),
-            ToggleTree.Row.ofRollUp(1, "Pocket borders", INLAND_BRIDGES, COASTLINE));
     }
 
     // Every geometry knob rebuilds; that is what makes it a geometry knob rather than a

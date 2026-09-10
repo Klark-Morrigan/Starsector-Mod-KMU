@@ -1,12 +1,8 @@
 package kmu.maplayers.base.geometry.ui.overlays.voidpockets;
 
-import kmu.maplayers.base.geometry.CoastPockets;
 import kmu.maplayers.base.geometry.CoastRounding;
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.LandableFrontages;
-import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.VoidPockets;
-import kmu.maplayers.base.geometry.WalledPocket;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
@@ -15,23 +11,17 @@ import java.awt.Graphics2D;
 import java.util.List;
 
 /**
- * The half of a coast overlay that both rival constructions run identically: a traced coast,
- * the void it shut in, and the drawing of the two.
+ * A traced coast held for drawing: its lines as the map strokes them, and the marks read off
+ * the same trace that explain where those lines went.
  *
- * <p>Not driven from the window itself. Each construction holds one of these and drives it,
- * because what a construction is IS the trace it makes, and the trace is the one thing this
- * cannot do for itself.
+ * <p>Apart from the construction that traces it, because the two are different questions. What
+ * a coast IS comes out of the geometry and answers to the knobs; what a picture of one shows -
+ * which lines, in what colour, with which diagnostics over them - answers to the switches. Held
+ * together, a change to either reads as a change to both.
  *
- * <p>Two constructions are on screen to be compared, and they differ in exactly one thing -
- * how the coast is traced. Everything after that trace is one answer to one question: what a
- * coast reach shuts in is the same question however the coast offering it was arrived at. Each
- * construction holding its own copy of those steps is how the pair stops being a comparison:
- * the moment one copy is tuned and the other is not, a difference on screen is a difference in
- * the drawing rather than in the coasts, and looking at them side by side answers nothing.
- *
- * <p>So a construction owns its trace and hands it here, and what happens to a trace afterwards
- * lives in one place. What is left in each construction's own file is the part that makes it
- * that construction - which is what a reader comes to those files to find.
+ * <p>Not driven from the window either. The trace arrives from whatever made it, because a
+ * trace is the one thing this cannot do for itself, and everything that happens to a trace
+ * afterwards then lives in one place.
  *
  * <p>Colours are passed per call rather than held. They are live settings a panel writes to
  * while the window is open, and a set captured when this was built would go on drawing the map
@@ -42,10 +32,9 @@ public final class CoastalPocketsOverlay {
     private final ViewerSettings settings;
 
     // What the last trace found, held rather than recomputed while painting: a frame that
-    // rebuilt either would be drawing marks measured against geometry the rest of the frame
-    // is not being drawn from.
+    // rebuilt it would be drawing marks measured against geometry the rest of the frame is not
+    // being drawn from.
     private Coastlines.TracedCoasts traced;
-    private List<WalledPocket> pockets = List.of();
 
     // The accepted trace's lines with their sharp joins taken off, which is what this actually
     // strokes. Rounded on acceptance rather than while painting: a sector's coasts are tens of
@@ -67,8 +56,8 @@ public final class CoastalPocketsOverlay {
     /**
      * Takes the trace a construction has just made, and forgets whatever came before it.
      *
-     * <p>The pockets go with it. They are a fact about a particular trace, and keeping the old
-     * ones alongside a new coast would draw the void one line shut in underneath another.
+     * <p>The rounding goes with it. It is a fact about a particular trace, and keeping the old
+     * one alongside a new coast would stroke a line the trace never drew.
      *
      * <p>The rounded lines come in beside the trace rather than being made here. A construction
      * that holds a rounding already - because its fills are measured from one - would otherwise
@@ -83,29 +72,11 @@ public final class CoastalPocketsOverlay {
             CoastRounding.RoundedCoasts rounded) {
 
         this.traced = traced;
-        this.pockets = List.of();
         this.rounded = traced == null ? CoastRounding.RoundedCoasts.NONE : rounded;
         this.landable = traced == null || !settings.showLandableFrontage
             ? List.of()
             : LandableFrontages.collectLandableRuns(
                 traced, settings.parameters.measureArcSegments());
-    }
-
-    /**
-     * Works out the void the accepted trace shut in.
-     *
-     * <p>Asked for separately rather than done on acceptance, because a construction may want
-     * its coast on screen without its fill - and the pockets are the expensive half.
-     *
-     * @param fixture the sector the trace was made in
-     */
-    public void findPockets(SectorFixture fixture) {
-
-        pockets = CoastPockets.findCoastPockets(
-            traced,
-            fixture.getOwnerBySite(),
-            new VoidPockets.PocketRules(
-                settings.parameters, settings.resolvePocketShaping()));
     }
 
     /**
@@ -127,36 +98,10 @@ public final class CoastalPocketsOverlay {
     }
 
     /**
-     * The void found behind the accepted trace, for the faults a construction checks it for.
-     *
-     * @return the pockets, empty until {@link #findPockets} has been asked for
-     */
-    public List<WalledPocket> getPockets() {
-        return pockets;
-    }
-
-    /**
-     * Draws the void the coast shut in, beneath the cells.
-     *
-     * <p>Under them, so a stray edge reads as the mistake it is rather than painting over the
-     * shape it got wrong. Unlike the coast LINE, which goes over everything: the line is a
-     * proposal to be judged against the arcs underneath it, and a fill of the space it closed
-     * off hides none of them.
-     *
-     * @param g2   what to draw with
-     * @param fill what to fill the pockets with
-     * @param edge what to outline them in
-     */
-    public void paintPocketFills(Graphics2D g2, Color fill, Color edge) {
-
-        MapPainting.paintPocketFills(g2, pockets, settings.resolveWaterLook(fill, edge));
-    }
-
-    /**
      * Draws each coast, over the top of everything.
      *
      * @param g2     what to draw with
-     * @param colour what to draw the line in, which is what tells the two constructions apart
+     * @param colour what to draw the line in
      */
     public void paintCoastRings(Graphics2D g2, Color colour) {
 
@@ -166,8 +111,8 @@ public final class CoastalPocketsOverlay {
     /**
      * Draws each lake's shore, over the top of everything.
      *
-     * <p>At the coasts' own weight and in their colour, because a lake shore IS a coast of
-     * this construction: drawn any other way, the same line would read as two kinds of thing
+     * <p>At the outer shores' own weight and in their colour, because a lake shore IS one of
+     * these coasts: drawn any other way, the same line would read as two kinds of thing
      * depending on which side of the land it fell.
      *
      * @param g2     what to draw with
@@ -185,9 +130,9 @@ public final class CoastalPocketsOverlay {
      * bought is the gap between the stretch and the line that replaced it, and a mark hidden
      * beneath that line says nothing.
      *
-     * <p>In one colour for both constructions. They are told apart by the line each drop sits
-     * beside, and a second colour would imply the drops themselves differ in kind, which they
-     * do not.
+     * <p>In one colour whichever shore they sit beside. They are told apart by the line each
+     * drop belongs to, and a second colour would imply the drops themselves differ in kind,
+     * which they do not.
      *
      * @param g2 what to draw with
      */

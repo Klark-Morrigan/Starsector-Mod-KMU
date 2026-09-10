@@ -21,9 +21,7 @@ import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
-import kmu.maplayers.base.geometry.ui.overlays.VoidBridgesOverlay;
 import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
-import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v2.SectorCoastOverlay;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3.ContinentCoastOverlay;
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
@@ -193,13 +191,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     // Opened with the window and emptied there, so a session's picks are its own.
     private final PickLog picks = PickLog.startPickLog();
-    // One settled bridge search for the whole window. Every overlay that asks for it gets this,
-    // so the answer is found once per rebuild however many of them want it.
+    // The one search asked of the cells alone, kept for the whole window rather than made per
+    // laying: it answers about the sites and the reach and nothing else, so it outlives any one
+    // frame, and a copy per frame would be the repeated search it exists to prevent.
     private final VoidBridgeCache sectorBridges = new VoidBridgeCache();
 
-    private final VoidBridgesOverlay voidBridges =
-        new VoidBridgesOverlay(settings, sectorBridges);
-    private final SectorCoastOverlay sectorCoasts = new SectorCoastOverlay(settings);
     private final ContinentCoastOverlay continentCoasts =
         new ContinentCoastOverlay(settings);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
@@ -370,28 +366,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         canvas.repaint();
     }
 
-    // Nothing to build. A site's void is what is left showing when its clipped cell is
-    // drawn over its unclipped one, so the apron appears from draw order alone - which is
-    // why the void colour is applied to the unbounded cells rather than to a shape of its
-    // own.
-    // The pockets of void the cells trap, as their own outlines. Not the same black as the
-    // Rebuilt alongside the pockets rather than on its own schedule, because the two are only
-    // worth anything side by side and a knob that moved one without the other would be
-    // comparing two different maps.
-    @Override
-    public void refreshVoidBridges() {
-
-        voidBridges.refresh(fixture);
-        refreshCoastlines();
-    }
-
     // The sections follow the coast rather than having a schedule of their own: a section is a
     // piece of void the walls helped close, so every knob that moves a wall moves both where
     // the divisions fall and what the pieces are called.
     @Override
     public void refreshCoastlines() {
-
-        sectorCoasts.refresh(fixture);
 
         // One laying for the frame, handed to every reader of it. Nothing is searched for
         // here - what this settles is the question, so the drawing, the naming and a file saved
@@ -487,7 +466,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 fixture.getSites(),
                 settings.parameters.boundSegments());
         }
-        refreshVoidBridges();
+        refreshCoastlines();
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         refreshStatus();
     }
@@ -742,17 +721,14 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
             paintFillContours(g2);
             paintCentrelines(g2);
-            voidBridges.paintSpans(g2);
-            sectorCoasts.paintCoasts(g2);
 
-            // Topmost of the lines, so where the preview and the settled coast coincide the
-            // preview reads unbroken - what is being looked for is where they DIVERGE, and a
-            // divergence shows as two colours coming apart.
+            // Topmost of the lines, so a coast reads unbroken against the cells it was traced
+            // from - which is the one thing looking at it is for.
             continentCoasts.paintCoasts(g2);
             paintSites(g2);
         }
 
-        // The unclipped partition and the two void constructions, all of which go under the
+        // The unclipped partition and the water the coasts shut in, both of which go under the
         // cells so that a stray edge reads as the mistake it is rather than painting over the
         // shape it got wrong.
         private void paintUnderlays(Graphics2D g2) {
@@ -767,12 +743,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                         settings.unboundedCellEdge));
             }
 
-            voidBridges.paintFills(g2);
-            sectorCoasts.paintPocketFills(g2);
-
-            // Over the settled coast's fill, matching the order the two LINES are drawn in.
-            // Where the two constructions shut in the same void the preview is what shows,
-            // and where they differ the difference is a patch of one colour beside the other.
             continentCoasts.paintPocketFills(g2);
         }
 

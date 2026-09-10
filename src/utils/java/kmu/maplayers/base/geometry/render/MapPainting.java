@@ -1,7 +1,6 @@
 package kmu.maplayers.base.geometry.render;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.WalledPocket;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -9,7 +8,6 @@ import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -108,41 +106,6 @@ public final class MapPainting {
         for (var ring : rings) {
             paintFilledShape(g2, buildPath(ring), look);
         }
-    }
-
-    /**
-     * The same fill for pockets, which carry their outlines rather than being one.
-     *
-     * @param g2      what to draw with
-     * @param pockets the pockets, each of which may carry more than one outline
-     * @param look    how to paint each of them
-     */
-    public static void paintPocketFills(
-            Graphics2D g2,
-            List<WalledPocket> pockets,
-            FillLook look) {
-
-        paintRingFills(g2, collectPocketOutlines(pockets), look);
-    }
-
-    /**
-     * Every outline of every pocket, flattened.
-     *
-     * <p>What filling them asks for: a pocket's grouping of its own outlines matters to what
-     * made them rather than to paint. Shared because a construction gathering several kinds of
-     * fill into one sheet needs its pockets in the same form as its other rings.
-     *
-     * @param pockets the pockets
-     * @return their outlines, in the order the pockets were given
-     */
-    public static List<List<double[]>> collectPocketOutlines(List<WalledPocket> pockets) {
-
-        var outlines = new ArrayList<List<double[]>>(pockets.size());
-
-        for (var walled : pockets) {
-            outlines.addAll(walled.pocket().outlines());
-        }
-        return outlines;
     }
 
     // The one way a proposed line is drawn here: closed rings stroked at span weight in one

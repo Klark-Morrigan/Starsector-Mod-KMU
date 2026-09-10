@@ -53,27 +53,18 @@ public final class ViewerSettings {
     public static final Color OWNED_CELL_DEFAULT = MapLook.OWNED_CELL;
     public static final Color UNOWNED_CELL_DEFAULT = MapLook.UNOWNED_CELL;
     public static final Color UNBOUNDED_CELL_DEFAULT = MapLook.UNBOUNDED_CELL;
-    public static final Color INLAND_VOID_DEFAULT = MapLook.INLAND_VOID;
-    public static final Color COASTAL_VOID_DEFAULT = MapLook.COASTAL_VOID;
     public static final Color CHANNEL_DEFAULT = MapLook.CHANNEL;
     public static final Color CENTRELINE_DEFAULT = MapLook.CENTRELINE;
-    public static final Color VOID_BRIDGE_DEFAULT = MapLook.VOID_BRIDGE;
     public static final Color REGION_NAME_DEFAULT = MapLook.REGION_NAME;
-    public static final Color COASTLINE_DEFAULT = MapLook.COASTLINE;
 
     // Read off the coast's own defaults rather than restated here. What each of them means is
     // documented where it is declared; restating the NUMBER is how the sliders come to open
     // on a different map from the one the report describes, with neither of them saying so.
     // The rule is a share of a cell's whole border; the slider asks for it as a percentage,
     // which is how anyone reading a map thinks about how far a cell sticks out.
-    public static final double COAST_MIN_FRONTAGE_DEFAULT =
+    public static final double CONTINENT_MIN_FRONTAGE_DEFAULT =
         Coastlines.DEFAULT_RULES.minFrontageShare();
     public static final double FRONTAGE_PERCENT_SCALE = 100.0;
-
-    // The v3 coast opens on the same knobs as the settled one, so the two lines start
-    // identical and any difference on screen is a knob someone deliberately moved rather
-    // than a difference that was there from the first frame.
-    public static final double CONTINENT_MIN_FRONTAGE_DEFAULT = COAST_MIN_FRONTAGE_DEFAULT;
 
     // The puddle floor, read off the coast's own default for the reason the frontage floor
     // is. A share of one cell's area; the slider asks for it as a percentage.
@@ -122,18 +113,17 @@ public final class ViewerSettings {
 
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
 
-    public static final Color COAST_CROSSING_DEFAULT = MapLook.COAST_CROSSING;
-    public static final Color PIERCED_CELL_DEFAULT = MapLook.PIERCED_CELL;
-
     public static final Color SITE_COLOUR = MapLook.SITE;
 
+    // How far apart two cells may sit and still hold water between them, for the one search
+    // that asks about the cells alone. Its answer is what the puddle spans are claimed from.
     public static final double BRIDGE_REACH_DEFAULT =
         Coastlines.DEFAULT_RULES.bridgeReachMultiple();
     public static final double BRIDGE_REACH_STEP_SCALE = 100.0;
 
-    // v3's bridges open on the same reach the settled ones use, so the two lists start from
-    // the same offer and any difference between them is the coastline filter rather than a
-    // different search.
+    // The spans laid against the coastlines open on that same reach, so the two lists start
+    // from the same offer and any difference between them is the coastline filter rather than
+    // a different search.
     public static final double CONTINENT_BRIDGE_REACH_DEFAULT = BRIDGE_REACH_DEFAULT;
 
     // The width a wall is drawn at, so two lines closer than this are drawn overlapping -
@@ -179,64 +169,46 @@ public final class ViewerSettings {
     public int voidFillOpacity = OWNER_FILL_ALPHA;
     public double bridgeReachMultiple = BRIDGE_REACH_DEFAULT;
 
-    // One switch over each rival construction, suppressing the whole of it whatever its own
+    // One switch over the whole void construction, suppressing all of it whatever its own
     // switches are set to.
     //
-    // Their own settings rather than roll-ups of the switches below, because what they are for
-    // is putting a construction aside and coming back to it. A roll-up would take every switch
+    // Its own setting rather than a roll-up of the switches below, because what it is for is
+    // putting the construction aside and coming back to it. A roll-up would take every switch
     // under it down on the way out and could only turn every one of them on to come back, so
     // whatever arrangement was being looked at is gone the moment it is set down.
     //
-    // Both on by default, so what the viewer opens with is decided by the switches below as it
-    // always was. Off by default, the two would instead be a pair of hidden reasons for a knob
-    // to do nothing when moved.
-    public boolean showSectorVoid = true;
+    // On by default, so what the viewer opens with is decided by the switches below as it
+    // always was. Off by default, it would instead be a hidden reason for a knob to do nothing
+    // when moved.
     public boolean showContinentVoid = true;
-
-    // The void, in the two kinds it comes in and the two things there are to see of each.
-    //
-    // Split this finely because each of the four answers a different question. A wall is a
-    // proposal about where a boundary could go and the fill is what that proposal encloses, so
-    // judging either means being able to see it without the other; and the two KINDS are
-    // separate proposals entirely - the bridges are about the gaps between cells, the coast is
-    // about the sector's outer shape - so a reader weighing one wants the other out of the way.
-    public boolean showInlandBridges = true;
-    public boolean showInlandFill = true;
-
-    public boolean showCoastline = true;
-    public boolean showCoastalFill = true;
 
     // The cells' own names, whose system ids the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
     public boolean showCellNames;
 
-    // The per-continent coast preview, in its two shores. Not part of the void group, and off
-    // by default: it is a rival construction being judged against the settled coast, not a
-    // part of it.
+    // The coasts, in their two shores.
     //
     // Line, fill and frontage for each, in the same order and under the same names, because
     // the two shores are one kind of line seen from opposite sides - the interior one bounds
     // water the cells closed around, the exterior one the open void beyond them. A reader
     // judging either wants the handles they already know from the other.
 
-    // The puddles: holes the lake floor judged too small for a shoreline, filled up the way
-    // the settled construction fills captured void - bridges across the water, the water
-    // drawn as taken. Also the only reading of the slivers no shore could ever show: a hole
-    // whose every frontage is under the frontage floor smooths to an empty outline, and
-    // nothing but this draws it.
+    // The puddles: holes the lake floor judged too small for a shoreline, filled whole with a
+    // span across the water rather than shored. Also the only reading of the slivers no shore
+    // could ever show: a hole whose every frontage is under the frontage floor smooths to an
+    // empty outline, and nothing but this draws it.
     public boolean showContinentPuddleBridges;
     public boolean showContinentPuddleFill;
 
-    // The lake shores: void the continents' cells closed around unaided. The trial of drawing
-    // captured void as a shore rather than as v2's bridge-and-fill.
+    // The lake shores: void the continents' cells closed around unaided, drawn a shoreline of
+    // its own rather than filled up to a span.
     public boolean showContinentLakeCoastline;
     public boolean showContinentLakeFill;
     public boolean showContinentLakeFrontages;
 
-    // The outer shores, and the void each shuts in behind it. The fill is the same
-    // construction the settled coast's comes from, asked of the other coast - which is what
-    // makes the two worth putting on screen together, since the difference between them is
-    // then the coast rather than the way the void behind it was worked out.
+    // The outer shores, and the void each shuts in behind it. What a coast reach shuts in is
+    // one question however the coast offering it was traced, so the fill is the same walk the
+    // spans' water comes out of, asked about a different kind of wall.
     public boolean showContinentCoastline;
     public boolean showContinentCoastFill;
     public boolean showContinentCoastFrontages;
@@ -247,13 +219,11 @@ public final class ViewerSettings {
     // been offered nowhere nearer to anchor - which is invisible until the eligible stretches
     // are on screen beside the spans that used them.
 
-    // The bridges v3 would lay once its coastlines are down - the same search the settled map
-    // uses, offered the same cells, so the only difference between the two sets is which spans
-    // the coastlines then refuse.
+    // The spans laid once the coastlines are down, across the inlets those coasts leave.
     //
-    // Off by default and apart from the shores' own switches, because it is the next proposal
+    // Off by default and apart from the shores' own switches, because it is the next step
     // rather than another view of this one - and it is only meaningful with the coasts traced,
-    // since the coastlines are what decides which bridges survive.
+    // since the coastlines are what decides which spans survive.
     //
     // The fill is the water those spans shut in, found with the spans as the only walls. It
     // covers the exterior shores' own fill where the two meet - a bay a reach runs into is
@@ -332,11 +302,6 @@ public final class ViewerSettings {
     // worth putting under both.
     public boolean showLandableFrontage;
 
-    // How little of its own border a cell may face the void with before it is dropped from
-    // the walk outright, as a share of the whole turn. The whole of how the settled coast is
-    // smoothed: one intrinsic measure, with nothing carried from one stretch to the next.
-    public double coastMinFrontageShare = COAST_MIN_FRONTAGE_DEFAULT;
-
     // How a drawn line is rounded where it turns sharply, for every line on the map that is
     // rounded at all - both coasts and the cluster borders alike.
     //
@@ -368,21 +333,20 @@ public final class ViewerSettings {
     public boolean shouldLandWhereVisible;
 
     // The puddle floor: how much water a hole must hold to be drawn as a lake, as a share of
-    // one cell's area. One knob for both constructions, like the rounding: it is a claim
-    // about what counts as water worth drawing, not about how either coast is traced.
+    // one cell's area. One knob over every shore, like the rounding: it is a claim about what
+    // counts as water worth drawing, not about how any one coast is traced.
     public double minLakeShare = MIN_LAKE_SHARE_DEFAULT;
 
-    // The v3 coast's own frontage floor, apart from the settled coast's above.
-    //
-    // Apart because with no bridges laid far more of a continent's cells face the void
-    // through a sliver, so the share that clears those off would take real frontage off the
-    // sector coast. Shared, every attempt to tune one was a compromise with the other.
+    // How little of its own border a cell may face the void with before it is dropped from the
+    // walk outright, as a share of the whole turn. The whole of how a coast is smoothed: one
+    // intrinsic measure, with nothing carried from one stretch to the next.
     public double continentMinFrontageShare = CONTINENT_MIN_FRONTAGE_DEFAULT;
 
-    // How far apart two cells may sit and still be bridged on the v3 layer, in cell radii.
-    // Its own knob rather than the settled bridges' because the two are laid over different
-    // maps: v3's are offered to a sector whose coastlines have already taken some of the void,
-    // so the reach that finds the right spans there is not the one that finds them here.
+    // How far apart two cells may sit and still be spanned once the coastlines are down, in
+    // cell radii. Its own knob rather than the bare search's above, because the two are offered
+    // different maps: these are offered a sector whose coastlines have already taken some of
+    // the void, so the reach that finds the right spans there is not the one that finds them
+    // among the cells alone.
     public double continentBridgeReachMultiple = CONTINENT_BRIDGE_REACH_DEFAULT;
 
     // Whether spans sharing an anchor point are thinned once the laying is settled: chains
@@ -415,17 +379,9 @@ public final class ViewerSettings {
     public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
-    public Color coastlineColour = COASTLINE_DEFAULT;
     public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
     public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
     public Color continentCoastColour = CONTINENT_COAST_DEFAULT;
-    public Color coastCrossingColour = COAST_CROSSING_DEFAULT;
-    public Color piercedCellColour = PIERCED_CELL_DEFAULT;
-    public Color inlandVoidColour = INLAND_VOID_DEFAULT;
-    public Color inlandVoidEdge = INLAND_VOID_DEFAULT;
-    public Color coastalVoidColour = COASTAL_VOID_DEFAULT;
-    public Color coastalVoidEdge = COASTAL_VOID_DEFAULT;
-    public Color voidBridgeColour = VOID_BRIDGE_DEFAULT;
     public Color regionNameColour = REGION_NAME_DEFAULT;
     public Color siteColour = SITE_COLOUR;
     public Color centrelineColour = CENTRELINE_DEFAULT;
@@ -565,23 +521,10 @@ public final class ViewerSettings {
         };
     }
 
-    // How the coast is traced, for the same reason. More than one overlay walks the cells with
-    // the coast's walls laid, and a wall set built twice from the same sliders is still two
-    // answers - one of them can have a different wall crowded out of a mouth, and the two
-    // drawings then describe maps that were never the same.
-    public Coastlines.CoastRules resolveCoastRules() {
-        return new Coastlines.CoastRules(
-            bridgeReachMultiple,
-            coastMinFrontageShare,
-            minLakeShare,
-            resolveLineRounding(),
-            resolveReachAnchor());
-    }
-
     // Where a straight run may land, for every coast on the map. One answer rather than one per
-    // construction, for the reason the rounding is one answer: the two lines are drawn to be
-    // compared, and placed differently a difference between them would be partly a difference
-    // between the switches that placed them.
+    // line, for the reason the rounding is one answer: the lines are drawn to be compared, and
+    // placed differently a difference between them would be partly a difference between the
+    // switches that placed them.
     public StraightRuns.ReachAnchor resolveReachAnchor() {
 
         return shouldLandWhereVisible
@@ -638,9 +581,9 @@ public final class ViewerSettings {
             Math.toRadians(roundBelowDegrees));
     }
 
-    // How v3's bridges are offered and judged, asked of the settings for the same reason the
-    // coast rules are: the overlay that lays them and anything that later reports on them
-    // have to be describing one set, not two built from the same sliders a moment apart.
+    // How the spans are offered and judged, asked of the settings for the same reason the coast
+    // rules are: the overlay that lays them and anything that later reports on them have to be
+    // describing one set, not two built from the same sliders a moment apart.
     public ContinentBridges.BridgeRules resolveContinentBridgeRules() {
         return new ContinentBridges.BridgeRules(
             continentBridgeReachMultiple,
@@ -649,14 +592,14 @@ public final class ViewerSettings {
             spanAnchorSeparation);
     }
 
-    // How the v3 coast is traced. Its own method rather than the settled coast's, because a
-    // separate frontage floor is only separate if something reads it - so which coast a knob
-    // reaches is decided here rather than at whichever overlay happens to read it.
+    // How the coasts are traced. Asked of the settings rather than assembled at each overlay,
+    // because more than one thing walks the cells with these walls laid, and a wall set built
+    // twice from the same sliders is still two answers - one of them can have a different wall
+    // crowded out of a mouth, and the two drawings then describe maps that were never the same.
     //
-    // The bridge reach goes unread: no bridges are found while a continent coast is traced,
-    // so it is the one field of the record with nothing on the other end of it. Passed
-    // through as the settled coast's rather than as some number of its own, so that if it
-    // ever comes to be read the two coasts are still looking at one sector.
+    // The bridge reach in it is the search asked of the cells alone, which the coasts never
+    // run: no spans are laid while a coast is traced. What reads it is the puddle claim, which
+    // takes that search's answer and keeps the spans standing over water too small for a shore.
     public Coastlines.CoastRules resolveContinentCoastRules() {
         return new Coastlines.CoastRules(
             bridgeReachMultiple,
