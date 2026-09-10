@@ -15,11 +15,6 @@ group = 'kmu'
 //
 // Declared before `dependencies` because creating the source set is what creates its
 // utilsCompileOnly / utilsRuntimeOnly configurations, which that block then populates.
-//
-// Only the mod's own classes are added to the classpaths here. The game and library jars
-// arrive through this source set's own configurations rather than by borrowing main's: main
-// declares them compileOnly because Starsector supplies them at runtime, so borrowing its
-// runtime configuration would hand utils an empty one.
 sourceSets {
     // src/utils/java and src/utils/resources are this source set's conventional layout, so
     // they are not declared: naming a srcDir that is already one registers it twice and
@@ -109,9 +104,7 @@ enforcePackageVocabulary {
     // exercise, by their real class names on the political side. Naming another
     // package's types is not this package speaking the word for itself, and the
     // names are not ours to reword.
-    allowWord word: 'territory',
-            inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
-    allowWord word: 'territories',
+    allowWords words: ['territory', 'territories'],
             inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
 }
 
@@ -193,7 +186,7 @@ def kmlibDependency = 'kmlib:KMLib'
 // classloader supplies the jar at runtime, so compiling against it is enough.
 // Resolved via the install root because LazyLib always lives at
 // <starsector>/mods/lw_lazylib, the launcher's expected layout.
-def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
+def lazyLibJarFile = resolveModJarFile('lw_lazylib', 'LazyLib.jar')
 
 // LunaLib is a hard dependency in mod_info.json, and KMU compiles against none of
 // it - the coupling is KMLib's, in KmLogging and LunaSettingsReader. It is still
@@ -201,7 +194,7 @@ def lazyLibJarFile = file("${starsectorRoot}/mods/lw_lazylib/jars/LazyLib.jar")
 // inner relay implements LunaLib's listener interface, so loading one without the
 // jar dies on NoClassDefFoundError. The game classloader hands it over in play;
 // nothing outside the game does.
-def lunaLibJarFile = file("${starsectorRoot}/mods/lunalib/jars/LunaLib.jar")
+def lunaLibJarFile = resolveModJarFile('lunalib', 'LunaLib.jar')
 
 // Nexerelin is an optional runtime dependency. KMU compiles against its
 // InvasionListener so the political map can repaint a colony that changes hands
@@ -249,8 +242,7 @@ def magicLibJars = findModJars('MagicLib.jar')
 // ships beside its own jar. In game the classloader has both loaded; under test the class fails to
 // initialise without it, which surfaces as a NoClassDefFoundError on kotlin/jvm/internal/Intrinsics
 // from whatever first walked the widget tree. Test runtime only, like the jar it serves.
-def lazyLibKotlinRuntimeJarFile = file(
-    "${starsectorRoot}/mods/lw_lazylib/jars/internal/Kotlin-Runtime.jar")
+def lazyLibKotlinRuntimeJarFile = resolveModJarFile('lw_lazylib', 'internal/Kotlin-Runtime.jar')
 
 // org.json backs the preferences KMU keeps in the game's common data, which is a folder of JSON
 // files: the port KMLib publishes for it is spelled in JSONObject, so javac must resolve the type
@@ -266,60 +258,63 @@ def jsonJars = findCoreJars(['json.jar'])
 // source-set comment above warns about.
 def lwjglJars = findCoreJars(['lwjgl.jar', 'lwjgl_util.jar'])
 
-dependencies {
-    compileOnly consoleCommandsJars
-    compileOnly jsonJars
-    compileOnly nexJars
-    compileOnly xstreamJars
-    compileOnly obfJars
-    // KMLib is a hard dependency in mod_info.json; Starsector's mod
-    // classloader provides the jar at runtime so compileOnly is enough.
-    // KMU drives its logging through KMLib's KmLogging, so the LunaLib
-    // coupling lives in KMLib's classpath and KMU compiles against none of it -
-    // only the runtime dependency declared in mod_info.json, plus the test
-    // runtime entry below, where nothing hands the jar over.
-    compileOnly kmlibDependency
-    compileOnly files(lazyLibJarFile)
+// The utils tooling needs its jars at RUNTIME as well as to compile, for the same reason the tests
+// do: compileOnly is enough for the mod itself because Starsector's mod classloader hands it these
+// at runtime, but nothing outside the game does. A viewer that compiles and then dies on
+// NoClassDefFoundError is the shape that mistake takes. KMU's own shape rather than a shared one -
+// utils is this mod's source set, and the conventions know nothing of it.
+def dependOnUtilsJars = { Object jars ->
+    ['utilsCompileOnly', 'utilsRuntimeOnly'].each { configurationName ->
+        dependencies.add(configurationName, jars)
+    }
+}
 
-    testCompileOnly consoleCommandsJars
-    testCompileOnly jsonJars
-    testCompileOnly nexJars
-    testCompileOnly xstreamJars
-    testCompileOnly kmlibDependency
-    // The fixtures KMLib publishes as a variant of their own - the fakes of its
-    // ports and the market and colony shapes its reads are posed against. A
-    // variant rather than part of the jar above, because a fixture is a test
-    // artefact and the jar the game loads must not carry one.
+// Everything the mod and its tooling both build against, in the two shapes the conventions define:
+// a jar the game's own install carries, and a jar that arrives with another mod.
+dependOnGameJars(jsonJars)
+dependOnGameJars(xstreamJars)
+
+dependOnModJars(consoleCommandsJars)
+dependOnModJars(nexJars)
+dependOnModJars(files(lazyLibJarFile))
+// KMLib is a hard dependency in mod_info.json; Starsector's mod classloader provides the jar at
+// runtime so compileOnly is enough. KMU drives its logging through KMLib's KmLogging, so the LunaLib
+// coupling lives in KMLib's classpath and KMU compiles against none of it - only the runtime
+// dependency declared in mod_info.json, plus the test runtime entry below, where nothing hands the
+// jar over.
+dependOnModJars(kmlibDependency)
+
+dependOnUtilsJars(consoleCommandsJars)
+dependOnUtilsJars(nexJars)
+dependOnUtilsJars(kmlibDependency)
+dependOnUtilsJars(files(lazyLibJarFile))
+// At compile time as well as at runtime, because KMLib's geometry is overloaded on LWJGL's vector
+// type: without the jar to resolve those signatures against, every such call fails to compile and
+// the caller writes its own arithmetic instead of using the shared one.
+dependOnUtilsJars(lwjglJars)
+
+dependencies {
+    // Compile only, and deliberately not on the test compile classpath: these classes carry members
+    // whose names are not legal Java identifiers, so naming one in a test would not run.
+    compileOnly obfJars
+
+    // Compile only for the tooling: utils builds against the mod's own classes, so javac has to
+    // resolve the XStream types their signatures name. Nothing utils runs touches a save, so the
+    // jar is not on its runtime.
+    utilsCompileOnly xstreamJars
+
+    // The fixtures KMLib publishes as a variant of their own - the fakes of its ports and the market
+    // and colony shapes its reads are posed against. A variant rather than part of the jar above,
+    // because a fixture is a test artefact and the jar the game loads must not carry one.
     testCompileOnly testFixtures(kmlibDependency)
-    testCompileOnly files(lazyLibJarFile)
-    testRuntimeOnly consoleCommandsJars
-    testRuntimeOnly nexJars
-    testRuntimeOnly xstreamJars
-    testRuntimeOnly kmlibDependency
     testRuntimeOnly testFixtures(kmlibDependency)
-    testRuntimeOnly files(lazyLibJarFile)
+
+    // Test runtime only: nothing in KMU names these types, but a class it does name loads one.
+    // LunaLib arrives through KMLib's settings reader, MagicLib through its core-UI walk, and the
+    // Kotlin runtime through LazyLib's own Kotlin-generated bytecode.
     testRuntimeOnly files(lunaLibJarFile)
     testRuntimeOnly magicLibJars
     testRuntimeOnly files(lazyLibKotlinRuntimeJarFile)
-
-    // The utils tooling needs the same jars at RUNTIME as well as to compile, for the same
-    // reason the tests do: compileOnly is enough for the mod itself because Starsector's mod
-    // classloader hands it these at runtime, but nothing outside the game does. A viewer
-    // that compiles and then dies on NoClassDefFoundError is the shape that mistake takes.
-    utilsCompileOnly consoleCommandsJars
-    utilsCompileOnly nexJars
-    utilsCompileOnly xstreamJars
-    utilsCompileOnly kmlibDependency
-    utilsCompileOnly files(lazyLibJarFile)
-    // At compile time as well as at runtime, because KMLib's geometry is overloaded on LWJGL's
-    // vector type: without the jar to resolve those signatures against, every such call fails
-    // to compile and the caller writes its own arithmetic instead of using the shared one.
-    utilsCompileOnly lwjglJars
-    utilsRuntimeOnly consoleCommandsJars
-    utilsRuntimeOnly nexJars
-    utilsRuntimeOnly kmlibDependency
-    utilsRuntimeOnly files(lazyLibJarFile)
-    utilsRuntimeOnly lwjglJars
 }
 
 // Room for the geometry integration tests, which build whole generated sectors in memory
@@ -386,9 +381,8 @@ tasks.register('writeSectorSvg', JavaExec) {
     mainClass = 'kmu.maplayers.base.geometry.output.SectorSvgDump'
 }
 
-// Walks the void between cells directly, with no raster in the way. Replaces the earlier
-// grid prototype, whose every artefact turned out to be a property of the grid rather than
-// of the map.
+// Walks the void between cells directly, with no raster in the way: a grid of its own would put
+// its own artefacts into the answer, and every one of them would read as a property of the map.
 tasks.register('writeVoidRegions', JavaExec) {
     group = 'help'
     description = 'Traces the void between cells exactly and reports how it divides.'
