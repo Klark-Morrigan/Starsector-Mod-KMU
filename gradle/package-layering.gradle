@@ -11,7 +11,39 @@
 // Applied AFTER the shared conventions, since those are what register the task
 // this configures. Applied before them, the name resolves to nothing and the
 // build fails at configuration time.
+// Every package tree beside kmu.mods, closed below against the optional mods'
+// own types. Stated as an enumeration because the gate has no exemption clause:
+// a single 'under: kmu' edge would shut kmu.mods off from the very mods its
+// adapters exist to adapt. A new top-level tree has to be added here to be
+// covered - the list is the rule.
+//
+// kmu.maplayers is missing on purpose, and is the one tree still open: its
+// PoliticalMapMarketTransferListener implements a Nexerelin interface from
+// inside the political map's own listeners package. Closing it is a matter of
+// moving that class to kmu.mods.nexerelin, where the installer that defers it
+// already lives; until then this list would fail rather than hold.
+def treesClosedToOptionalMods = ['kmu.conditions', 'kmu.diagnostics',
+    'kmu.settings', 'kmu.starsector', 'kmu.svg', 'kmu.ui', 'kmu.util']
+
+// The mods KMU may run without: named only by the adapter that stands behind a
+// presence gate for each. LazyLib and LunaLib are deliberately absent - the mod
+// is compiled against them and cannot run without them, so they belong with the
+// code that uses them rather than under kmu.mods.
+def optionalModPackages = ['assortment_of_things', 'exerelin', 'org.lazywizard.console']
+
 enforcePackageLayering {
+
+    // Optional-mod bans:
+
+    treesClosedToOptionalMods.each { closedTree ->
+        forbidImport under: closedTree, of: optionalModPackages
+    }
+
+    // The mod plugin sits in the root package itself and registers the adapters,
+    // so it names kmu.mods; naming a mod's own types there would defeat the
+    // deferral those adapters are built around. 'exactly' rather than 'under',
+    // which would re-close every tree above.
+    forbidImport exactly: 'kmu', of: optionalModPackages
 
     // Group bans:
 
