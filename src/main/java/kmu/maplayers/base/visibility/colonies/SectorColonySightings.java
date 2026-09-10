@@ -76,13 +76,8 @@ public final class SectorColonySightings {
      */
     public static ColonySightings readSightings(SectorAPI sector) {
 
-        var recordedSightings = SIGHTINGS_REGISTER.readObservations(sector);
-
-        // The register answers an absent observation with an empty optional; this port answers it
-        // with null, so the adaptation is here rather than in every rule reading one.
-        return colonyId -> recordedSightings
-            .readObservation(colonyId)
-            .orElse(null);
+        return SIGHTINGS_REGISTER
+            .readObservations(sector)::readObservationOrNull;
     }
 
     /**

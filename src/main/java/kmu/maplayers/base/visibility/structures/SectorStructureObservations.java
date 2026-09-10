@@ -8,14 +8,10 @@ import kmu.maplayers.base.visibility.observations.ObservationStore;
  * The structure register kept in the sector's own memory: which key it is held under, how one
  * entry is spelt, and reading it back.
  *
- * <p>A register of its own rather than a payload on the colony one, because the two record
- * different things. A sighting says a colony was seen standing somewhere; an entry here says what
- * a structure looked like, which is the only way a holder can be stated without either outing
- * every faction the player has never met or being wrong about who holds it now.
- *
  * <p>The bytes and the load lifecycle underneath are an {@link ObservationStore}'s, which every
- * map family that keeps observations shares. What one entry means stays here, in
- * {@link StructureObservationCodec}.
+ * map family that keeps observations shares. What one entry says is {@link StructureObservation}'s
+ * and how it is spelt is {@link StructureObservationCodec}'s; a register of this family's own is
+ * what keeps both from having to fit beside a colony's.
  *
  * <p>Final class with a private constructor: pure-function utility, no instance state, and
  * null-defensive like the rest of the map framework.
@@ -45,12 +41,7 @@ public final class SectorStructureObservations {
      */
     public static StructureObservations readObservations(SectorAPI sector) {
 
-        var recordedObservations = OBSERVATIONS_REGISTER.readObservations(sector);
-
-        // The register answers an absent observation with an empty optional; this port answers it
-        // with null, so the adaptation is here rather than in every rule reading one.
-        return structureId -> recordedObservations
-            .readObservation(structureId)
-            .orElse(null);
+        return OBSERVATIONS_REGISTER
+            .readObservations(sector)::readObservationOrNull;
     }
 }

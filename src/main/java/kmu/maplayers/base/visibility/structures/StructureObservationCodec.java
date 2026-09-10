@@ -3,19 +3,22 @@ package kmu.maplayers.base.visibility.structures;
 import kmu.maplayers.base.visibility.observations.ObservationCodec;
 import kmu.util.KmuValues;
 
+import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * What one structure observation says, written as the register holds it and read back out of it:
- * the moment ownership was last seen, the moment operation was last detected, the state the
- * structure was in, then who was holding it.
+ * the moment ownership was last seen, the moment operation was last detected, the letters of
+ * whatever was out of action, then who was holding it.
  *
  * <p><strong>The stored form is save state.</strong> Every entry in every existing save is spelt
  * this way, and nothing in a loaded game could tell an entry it can no longer read from a structure
- * nobody has ever found - so the separator, the field order and the flag letters are fixed once and
- * for good.
+ * nobody has ever found - so the separator, the field order and the fault letters are fixed once
+ * and for good.
  *
- * <p>The two moments and the state letters are this family's fixed fields and the holder its
+ * <p>The two moments and the fault letters are this family's fixed fields and the holder its
  * free-form one, a faction id a mod may spell with anything at all - so the holder runs to the end
  * of the entry and reads back verbatim however it is spelt.
  *
@@ -29,21 +32,23 @@ import java.util.Optional;
  */
 final class StructureObservationCodec implements ObservationCodec<StructureObservation> {
 
-    // What the state letters may say. Single characters so a state added later costs a letter
-    // rather than a field, and stable once shipped for the reason the separator is.
-    private static final char DISRUPTED_FLAG = 'd';
-    private static final char NON_FUNCTIONAL_FLAG = 'n';
+    // What each fault is spelt as. Single characters so a fault added later costs a letter rather
+    // than a field, and stable once shipped for the reason the separator is.
+    private static final char DISRUPTED_LETTER = 'd';
+    private static final char NON_FUNCTIONAL_LETTER = 'n';
 
-    // How many fields one entry has, and what parts them. Split to exactly this many, so a
-    // separator inside the holder id is part of the id rather than a boundary.
+    // How many fields one entry has, and what parts them. The pattern is derived from the
+    // separator rather than spelt beside it, so the two cannot come to disagree - a split on one
+    // character while entries are written with another reads every save as unparseable.
     private static final int ENTRY_FIELD_COUNT = 4;
     private static final String FIELD_SEPARATOR = "|";
-    private static final String FIELD_SEPARATOR_PATTERN = "\\|";
+    private static final Pattern FIELD_SEPARATOR_PATTERN =
+        Pattern.compile(Pattern.quote(FIELD_SEPARATOR));
 
     // Where each field stands in an entry, fixed fields first.
     private static final int OWNERSHIP_MOMENT_FIELD = 0;
     private static final int OPERATION_MOMENT_FIELD = 1;
-    private static final int STATE_FLAGS_FIELD = 2;
+    private static final int FAULT_LETTERS_FIELD = 2;
     private static final int HOLDER_FIELD = 3;
 
     @Override
@@ -54,25 +59,23 @@ final class StructureObservationCodec implements ObservationCodec<StructureObser
             // register entry is. There is no weaker reading to fall to and no reason to lose it.
             return StructureObservation.createExistenceOnlyObservation();
         }
-        var fields = storedObservation.split(FIELD_SEPARATOR_PATTERN, ENTRY_FIELD_COUNT);
+        var fields = FIELD_SEPARATOR_PATTERN.split(storedObservation, ENTRY_FIELD_COUNT);
 
         if (fields.length != ENTRY_FIELD_COUNT) {
             return StructureObservation.createExistenceOnlyObservation();
         }
         var ownershipSeenTimestamp = readStoredMoment(fields[OWNERSHIP_MOMENT_FIELD]);
         var operationDetectedTimestamp = readStoredMoment(fields[OPERATION_MOMENT_FIELD]);
-        var storedFlags = fields[STATE_FLAGS_FIELD].trim();
+        var faults = readStoredFaults(fields[FAULT_LETTERS_FIELD].trim());
 
-        if (ownershipSeenTimestamp == null
-                || operationDetectedTimestamp == null
-                || !isStateFlagsField(storedFlags)) {
+        if (ownershipSeenTimestamp == null || operationDetectedTimestamp == null
+                || faults == null) {
 
             return StructureObservation.createExistenceOnlyObservation();
         }
         return new StructureObservation(
             Optional.ofNullable(fields[HOLDER_FIELD]).filter(KmuValues::hasText),
-            storedFlags.indexOf(DISRUPTED_FLAG) >= 0,
-            storedFlags.indexOf(NON_FUNCTIONAL_FLAG) >= 0,
+            faults,
             ownershipSeenTimestamp,
             operationDetectedTimestamp);
     }
@@ -84,25 +87,29 @@ final class StructureObservationCodec implements ObservationCodec<StructureObser
             FIELD_SEPARATOR,
             writeStoredMoment(observation.ownershipSeenTimestamp()),
             writeStoredMoment(observation.operationDetectedTimestamp()),
-            writeStateFlags(observation),
+            writeStoredFaults(observation.faults()),
             observation.holderFactionId().orElse(""));
     }
 
-    // Whether every letter in the state field is one this codec spells. A letter it does not know
-    // is an entry written by something else, which is read as existence alone rather than guessed
-    // at - a state field half understood would state that a structure was working when the entry
-    // may well have said the opposite.
-    private static boolean isStateFlagsField(String storedFlags) {
+    // The whole fault field, or null where a letter in it is one this codec does not spell.
+    //
+    // Half an entry understood is worse than none of it: a fault field read past a letter written
+    // by something else would state that a structure was working when the entry it came from may
+    // well have said the opposite.
+    private static Set<StructureFault> readStoredFaults(String storedFaults) {
 
-        for (var index = 0; index < storedFlags.length(); index++) {
+        var faults = EnumSet.noneOf(StructureFault.class);
 
-            var storedFlag = storedFlags.charAt(index);
+        for (var index = 0; index < storedFaults.length(); index++) {
 
-            if (storedFlag != DISRUPTED_FLAG && storedFlag != NON_FUNCTIONAL_FLAG) {
-                return false;
+            var fault = resolveFaultBy(storedFaults.charAt(index));
+
+            if (fault == null) {
+                return null;
             }
+            faults.add(fault);
         }
-        return true;
+        return faults;
     }
 
     // One stored moment, empty where the field states none, and null where the field states
@@ -121,19 +128,42 @@ final class StructureObservationCodec implements ObservationCodec<StructureObser
         }
     }
 
-    // The state as its letters, in the one order they are ever written in, so two saves recording
-    // the same state hold the same characters.
-    private static String writeStateFlags(StructureObservation observation) {
+    // Which fault a letter stands for, or null where no fault is spelt that way.
+    private static StructureFault resolveFaultBy(char storedLetter) {
 
-        var storedFlags = new StringBuilder();
+        for (var fault : StructureFault.values()) {
 
-        if (observation.isDisrupted()) {
-            storedFlags.append(DISRUPTED_FLAG);
+            if (resolveStoredLetter(fault) == storedLetter) {
+                return fault;
+            }
         }
-        if (observation.isNonFunctional()) {
-            storedFlags.append(NON_FUNCTIONAL_FLAG);
+        return null;
+    }
+
+    // How one fault is spelt. A switch with no default rather than a letter carried on the fault
+    // itself: the stored spelling is this codec's business, and a fault added to the enum stops
+    // this compiling until somebody says what it is written as.
+    private static char resolveStoredLetter(StructureFault fault) {
+
+        return switch (fault) {
+            case DISRUPTED -> DISRUPTED_LETTER;
+            case NON_FUNCTIONAL -> NON_FUNCTIONAL_LETTER;
+        };
+    }
+
+    // The faults as their letters, walked in the enum's own order so two saves recording the same
+    // faults hold the same characters whatever order they were collected in.
+    private static String writeStoredFaults(Set<StructureFault> faults) {
+
+        var storedFaults = new StringBuilder();
+
+        for (var fault : StructureFault.values()) {
+
+            if (faults.contains(fault)) {
+                storedFaults.append(resolveStoredLetter(fault));
+            }
         }
-        return storedFlags.toString();
+        return storedFaults.toString();
     }
 
     // A moment as the entry spells it, an unstated one leaving its field empty.

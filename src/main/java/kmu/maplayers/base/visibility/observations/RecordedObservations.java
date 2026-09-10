@@ -40,4 +40,21 @@ public interface RecordedObservations<T> {
      * @return what was observed, or empty where nothing was ever written down about it
      */
     Optional<T> readObservation(String subjectId);
+
+    /**
+     * The same reading, with a never-observed subject answered as nothing rather than as an empty
+     * optional.
+     *
+     * <p>Offered because a family whose own port spells an absent observation as null would
+     * otherwise unwrap this at each register it opens, one copy of the adaptation per family and
+     * each free to answer differently.
+     *
+     * @param subjectId the subject's own id, as the family names it
+     * @return what was observed, or null where nothing was ever written down about it
+     */
+    default T readObservationOrNull(String subjectId) {
+
+        return readObservation(subjectId)
+            .orElse(null);
+    }
 }

@@ -9,16 +9,19 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the key the structure register is held under and what a reader gets back through it: the
- * key because it is save state, and the reading because an absent entry has to arrive as nothing
- * observed rather than as an empty answer a rule could mistake for one.
+ * Pins the key the structure register is held under, the codec it is spelt through, and the null
+ * an unrecorded structure reads as.
+ *
+ * <p>What an absent register, an absent sector or an unparseable value does is the store's own
+ * suite and is not restated here; what those cases would show at this level is the same null the
+ * unrecorded structure below asserts.
  */
 final class SectorStructureObservationsTest {
 
@@ -40,21 +43,6 @@ final class SectorStructureObservationsTest {
 
     @Nested
     class ReadObservations {
-
-        @Test
-        void reports_nothing_observed_where_the_register_has_never_been_written() {
-
-            assertThat(readObservationOf(STRUCTURE_ID))
-                .isNull();
-        }
-
-        @Test
-        void reports_nothing_observed_where_there_is_no_sector_to_read() {
-
-            assertThat(SectorStructureObservations.readObservations(null)
-                    .readObservation(STRUCTURE_ID))
-                .isNull();
-        }
 
         @Test
         void reports_nothing_observed_of_a_structure_the_register_has_never_held() {
@@ -79,8 +67,7 @@ final class SectorStructureObservationsTest {
             assertThat(readObservationOf(STRUCTURE_ID))
                 .isEqualTo(new StructureObservation(
                     Optional.of("hegemony"),
-                    false,
-                    true,
+                    Set.of(StructureFault.NON_FUNCTIONAL),
                     Optional.of(4_200L),
                     Optional.of(4_300L)));
         }
@@ -98,8 +85,6 @@ final class SectorStructureObservationsTest {
     // pose a save that already holds observations.
     private void storeObservations(Object storedRegister) {
 
-        when(memoryMock.contains(anyString()))
-            .thenReturn(false);
         when(memoryMock.contains(OBSERVATIONS_KEY))
             .thenReturn(true);
         when(memoryMock.get(OBSERVATIONS_KEY))

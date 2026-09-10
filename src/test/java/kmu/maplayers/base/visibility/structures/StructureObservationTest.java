@@ -4,14 +4,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins what an observation may hold: an unstated half reading as one nothing established, and no
- * room at all for a state that reports itself.
+ * Pins what an observation may hold: an unstated half reading as one nothing established, faults
+ * that cannot be changed under a reader, and no room at all for a state that reports itself.
  */
 final class StructureObservationTest {
 
@@ -26,17 +28,14 @@ final class StructureObservationTest {
 
             var observation = new StructureObservation(
                 Optional.of(HOLDER_ID),
-                true,
-                false,
+                Set.of(StructureFault.DISRUPTED),
                 Optional.of(OBSERVED_MOMENT),
                 Optional.of(OBSERVED_MOMENT));
 
             assertThat(observation.holderFactionId())
                 .contains(HOLDER_ID);
-            assertThat(observation.isDisrupted())
-                .isTrue();
-            assertThat(observation.isNonFunctional())
-                .isFalse();
+            assertThat(observation.faults())
+                .containsExactly(StructureFault.DISRUPTED);
             assertThat(observation.ownershipSeenTimestamp())
                 .contains(OBSERVED_MOMENT);
             assertThat(observation.operationDetectedTimestamp())
@@ -50,8 +49,7 @@ final class StructureObservationTest {
             // them would print an empty faction name beside a date.
             var observation = new StructureObservation(
                 Optional.of("   "),
-                false,
-                false,
+                Set.of(),
                 Optional.empty(),
                 Optional.of(OBSERVED_MOMENT));
 
@@ -62,14 +60,34 @@ final class StructureObservationTest {
         @Test
         void readsAnUnstatedHalfAsOneNothingHasEstablished() {
 
-            var observation = new StructureObservation(null, false, false, null, null);
+            var observation = new StructureObservation(null, null, null, null);
 
             assertThat(observation.holderFactionId())
+                .isEmpty();
+            assertThat(observation.faults())
                 .isEmpty();
             assertThat(observation.ownershipSeenTimestamp())
                 .isEmpty();
             assertThat(observation.operationDetectedTimestamp())
                 .isEmpty();
+        }
+
+        @Test
+        void keepsTheFaultsItWasBuiltWithWhereTheCallersOwnSetMovesOn() {
+            // An observation is what somebody saw at a moment. Holding the caller's set would let
+            // the next structure it is filled in for rewrite what this one was found to be.
+            var observedFaults = EnumSet.of(StructureFault.DISRUPTED);
+
+            var observation = new StructureObservation(
+                Optional.of(HOLDER_ID),
+                observedFaults,
+                Optional.of(OBSERVED_MOMENT),
+                Optional.of(OBSERVED_MOMENT));
+
+            observedFaults.add(StructureFault.NON_FUNCTIONAL);
+
+            assertThat(observation.faults())
+                .containsExactly(StructureFault.DISRUPTED);
         }
     }
 
@@ -83,10 +101,8 @@ final class StructureObservationTest {
 
             assertThat(observation.holderFactionId())
                 .isEmpty();
-            assertThat(observation.isDisrupted())
-                .isFalse();
-            assertThat(observation.isNonFunctional())
-                .isFalse();
+            assertThat(observation.faults())
+                .isEmpty();
             assertThat(observation.ownershipSeenTimestamp())
                 .isEmpty();
             assertThat(observation.operationDetectedTimestamp())

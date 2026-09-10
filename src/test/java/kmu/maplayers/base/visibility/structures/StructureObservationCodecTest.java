@@ -5,16 +5,17 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the stored form of a structure observation, spelt out literally: the moment ownership was
- * seen, the moment operation was detected, the state letters, then the holder to the end.
+ * seen, the moment operation was detected, the fault letters, then the holder to the end.
  *
  * <p>Written against the text rather than through the register, because the text is save state.
  * Every entry in every existing save is spelt this way, and a change to the field order, the
- * separator or the state letters would read as a player who had found nothing rather than as a
+ * separator or the fault letters would read as a player who had found nothing rather than as a
  * fault - so the one place it can be caught is a case asserting the characters themselves.
  */
 final class StructureObservationCodecTest {
@@ -24,7 +25,7 @@ final class StructureObservationCodecTest {
     private static final long OWNERSHIP_SEEN = 4_200L;
 
     // A faction id spelt with the separator in it - the one spelling that parts in the wrong place
-    // unless the moments and the state lead and the holder runs to the end.
+    // unless the moments and the faults lead and the holder runs to the end.
     private static final String HOLDER_ID_HOLDING_THE_SEPARATOR = "hegemony|remnant";
 
     private StructureObservationCodec codec;
@@ -43,10 +44,19 @@ final class StructureObservationCodecTest {
             assertThat(codec.decodeObservation("4200|4300|dn|hegemony"))
                 .isEqualTo(new StructureObservation(
                     Optional.of(HOLDER_ID),
-                    true,
-                    true,
+                    Set.of(StructureFault.DISRUPTED, StructureFault.NON_FUNCTIONAL),
                     Optional.of(OWNERSHIP_SEEN),
                     Optional.of(OPERATION_DETECTED)));
+        }
+
+        @Test
+        void readsEachFaultLetterAsTheFaultItStandsFor() {
+            // Told apart one at a time as well as together, so the two letters cannot be swapped
+            // for each other without a case going red.
+            assertThat(codec.decodeObservation("4200|4300|d|hegemony").faults())
+                .containsExactly(StructureFault.DISRUPTED);
+            assertThat(codec.decodeObservation("4200|4300|n|hegemony").faults())
+                .containsExactly(StructureFault.NON_FUNCTIONAL);
         }
 
         @Test
@@ -56,8 +66,7 @@ final class StructureObservationCodecTest {
             assertThat(codec.decodeObservation("|4300||"))
                 .isEqualTo(new StructureObservation(
                     Optional.empty(),
-                    false,
-                    false,
+                    Set.of(),
                     Optional.empty(),
                     Optional.of(OPERATION_DETECTED)));
         }
@@ -69,21 +78,19 @@ final class StructureObservationCodecTest {
             assertThat(codec.decodeObservation("4200|4300||hegemony"))
                 .isEqualTo(new StructureObservation(
                     Optional.of(HOLDER_ID),
-                    false,
-                    false,
+                    Set.of(),
                     Optional.of(OWNERSHIP_SEEN),
                     Optional.of(OPERATION_DETECTED)));
         }
 
         @Test
         void readsAnEntryTimedByNothingAsObservedAtNoStatedMoment() {
-            // What a sector with no clock to read records. The holder and the state are a whole
+            // What a sector with no clock to read records. The holder and the fault are a whole
             // observation with the dates missing rather than a broken one.
             assertThat(codec.decodeObservation("||d|hegemony"))
                 .isEqualTo(new StructureObservation(
                     Optional.of(HOLDER_ID),
-                    true,
-                    false,
+                    Set.of(StructureFault.DISRUPTED),
                     Optional.empty(),
                     Optional.empty()));
         }
@@ -95,8 +102,7 @@ final class StructureObservationCodecTest {
             assertThat(codec.decodeObservation("4200|4300||hegemony|remnant"))
                 .isEqualTo(new StructureObservation(
                     Optional.of(HOLDER_ID_HOLDING_THE_SEPARATOR),
-                    false,
-                    false,
+                    Set.of(),
                     Optional.of(OWNERSHIP_SEEN),
                     Optional.of(OPERATION_DETECTED)));
         }
@@ -110,9 +116,9 @@ final class StructureObservationCodecTest {
 
         @Test
         void readsAnEntryWhoseMomentIsNotAMomentAsFoundAndNothingMore() {
-            // Half an entry understood is worse than none of it: a state field read beside a
-            // moment that is not one would state that a structure was working when the entry it
-            // came from may well have said the opposite.
+            // Half an entry understood is worse than none of it: a fault read beside a moment that
+            // is not one would state that a structure was working when the entry it came from may
+            // well have said the opposite.
             assertThat(codec.decodeObservation("yesterday|4300|d|hegemony"))
                 .isEqualTo(StructureObservation.createExistenceOnlyObservation());
         }
@@ -126,7 +132,7 @@ final class StructureObservationCodecTest {
         }
 
         @Test
-        void readsAnEntryWhoseStateLetterItDoesNotSpellAsFoundAndNothingMore() {
+        void readsAnEntryWhoseFaultLetterItDoesNotSpellAsFoundAndNothingMore() {
 
             assertThat(codec.decodeObservation("4200|4300|x|hegemony"))
                 .isEqualTo(StructureObservation.createExistenceOnlyObservation());
@@ -144,12 +150,23 @@ final class StructureObservationCodecTest {
     class EncodeObservation {
 
         @Test
-        void writesTheMomentsAndTheStateAheadOfTheHolderTheyDescribe() {
+        void writesTheMomentsAndTheFaultsAheadOfTheHolderTheyDescribe() {
 
             assertThat(codec.encodeObservation(new StructureObservation(
                     Optional.of(HOLDER_ID),
-                    true,
-                    true,
+                    Set.of(StructureFault.DISRUPTED, StructureFault.NON_FUNCTIONAL),
+                    Optional.of(OWNERSHIP_SEEN),
+                    Optional.of(OPERATION_DETECTED))))
+                .isEqualTo("4200|4300|dn|hegemony");
+        }
+
+        @Test
+        void writesTheFaultLettersInOneOrderWhateverOrderTheyArrivedIn() {
+            // Two saves recording the same faults must hold the same characters, or a register
+            // written on one visit reads as changed on the next.
+            assertThat(codec.encodeObservation(new StructureObservation(
+                    Optional.of(HOLDER_ID),
+                    Set.of(StructureFault.NON_FUNCTIONAL, StructureFault.DISRUPTED),
                     Optional.of(OWNERSHIP_SEEN),
                     Optional.of(OPERATION_DETECTED))))
                 .isEqualTo("4200|4300|dn|hegemony");
@@ -169,8 +186,7 @@ final class StructureObservationCodecTest {
             // with the separator survives the round trip rather than being mangled in a save.
             var observation = new StructureObservation(
                 Optional.of(HOLDER_ID_HOLDING_THE_SEPARATOR),
-                false,
-                true,
+                Set.of(StructureFault.NON_FUNCTIONAL),
                 Optional.of(OWNERSHIP_SEEN),
                 Optional.of(OPERATION_DETECTED));
 

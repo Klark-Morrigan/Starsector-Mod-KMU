@@ -303,13 +303,12 @@ bar once does not order it again per save.
   is; the register here says what one looked like when somebody last established it, which is the
   only way its holder can be stated without either naming a faction in a system nobody has
   approached or reporting a handover that happened while the player was a sector away. A
-  `StructureObservation` carries the holder, the state the structure was in, and a moment per axis:
-  who holds it is established by standing there, whether it works by anyone living in the same
-  system, and the two go stale independently - a relay visited once and watched since has a current
-  state beside a four-cycle-old holder. A running hack is deliberately absent from it: the sniffer
-  reports itself into the player's own comm queue for as long as it lasts and nothing fires when it
-  lapses, so it is read live rather than recalled out of a save years later.
-  `StructureObservations` is the port a rule reads the register through, over
+  `StructureObservation` carries the holder, whatever `StructureFault` the structure was found in,
+  and a moment per axis: who holds it is established by standing there, whether it works by anyone
+  living in the same system, and the two go stale independently - a relay visited once and watched
+  since has a current state beside a four-cycle-old holder. A running hack is deliberately not
+  among its fields, for the reason stated there. `StructureObservations` is the port a rule reads
+  the register through, over
   `SectorStructureObservations`, whose entries sit in the shared `ObservationStore` under a key of
   its own and are spelt by `StructureObservationCodec` - the two moments, the state letters, then
   the holder id to the end of the entry.

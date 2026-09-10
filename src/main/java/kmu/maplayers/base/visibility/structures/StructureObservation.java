@@ -3,6 +3,7 @@ package kmu.maplayers.base.visibility.structures;
 import kmu.util.KmuValues;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * What a structure was last observed to be: who was holding it, whether it was working, and when
@@ -31,10 +32,8 @@ import java.util.Optional;
  *
  * @param holderFactionId            who was holding the structure when ownership was last
  *                                   established, or empty where nobody has ever established it
- * @param isDisrupted                whether the structure was knocked out by a reset when its
- *                                   operation was last established
- * @param isNonFunctional            whether the structure was out of action of its own accord when
- *                                   its operation was last established
+ * @param faults                     what was out of action about the structure when its operation
+ *                                   was last established; empty for one found working
  * @param ownershipSeenTimestamp     when the holder was last observed directly, on the campaign
  *                                   clock's own scale, or empty where there was no clock to read
  * @param operationDetectedTimestamp when the structure was last established to be working or not,
@@ -42,17 +41,18 @@ import java.util.Optional;
  */
 public record StructureObservation(
     Optional<String> holderFactionId,
-    boolean isDisrupted,
-    boolean isNonFunctional,
+    Set<StructureFault> faults,
     Optional<Long> ownershipSeenTimestamp,
     Optional<Long> operationDetectedTimestamp) {
 
     /**
      * Reads an unstated half as an unestablished one, so an observation carrying less than the full
-     * set cannot fail late on whichever half was left out.
+     * set cannot fail late on whichever half was left out, and copies the faults so what a reader
+     * is shown cannot be changed under it afterwards.
      */
     public StructureObservation {
         holderFactionId = readStatedHolderId(holderFactionId);
+        faults = faults == null ? Set.of() : Set.copyOf(faults);
         ownershipSeenTimestamp = readStatedMoment(ownershipSeenTimestamp);
         operationDetectedTimestamp = readStatedMoment(operationDetectedTimestamp);
     }
@@ -64,14 +64,13 @@ public record StructureObservation(
      * back to: the register holding an entry for a structure is itself the record that somebody
      * found it, whatever else the entry has lost.
      *
-     * @return an observation naming no holder, no state and no moment
+     * @return an observation naming no holder, no fault and no moment
      */
     public static StructureObservation createExistenceOnlyObservation() {
 
         return new StructureObservation(
             Optional.empty(),
-            false,
-            false,
+            Set.of(),
             Optional.empty(),
             Optional.empty());
     }
