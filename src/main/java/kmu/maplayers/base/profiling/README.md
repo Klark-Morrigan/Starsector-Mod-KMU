@@ -19,9 +19,9 @@ share sits beneath both. The frame's beats stay with the frame sequence in
 
 ## Counters
 
-`MapBuildCounters` holds three: `cells`, `labels` and `hatchSegments`. Every counter anything in a
-capture touches adds a group of columns to every reading of it, so what earns one is a volume of
-work a duration is divided by. A detail of one call - the knobs a sweep ran under, how many of the
+`MapBuildCounters` holds three: `cells`, `labels` and `hatchSegments`. Every counter a reading's
+rows touch adds two columns to it - the total and what one item cost - so what earns one is a volume
+of work a duration is divided by. A detail of one call - the knobs a sweep ran under, how many of the
 cells handed to a bake came back with a band, whether an update rebuilt anything at all - rides on
 that call's tag, which the close line prints and the report keeps for the row's kept call. What the
 sector holds is counted by the library's own walkers, so a stage's row already says how many systems

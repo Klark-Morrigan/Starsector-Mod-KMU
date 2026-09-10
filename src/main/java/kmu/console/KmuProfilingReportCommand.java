@@ -23,8 +23,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Console command that prints KMU's accumulated performance timings, or clears
- * them when invoked with {@code reset}.
+ * Console command that writes KMU's accumulated performance timings to the game
+ * log, or clears them when invoked with {@code reset}.
  *
  * <p>The on-demand reporting surface for whichever profiler is bound. Three
  * readings of one capture, because three different questions are asked of it:
@@ -38,6 +38,13 @@ import java.util.function.Supplier;
  * here rather than in the library: profiling knows that a row counted something,
  * and what the something is belongs to whoever counted it.
  *
+ * <p>Every reading goes to the log and only a notice to the overlay. A capture is
+ * a table wider than the console can lay out, so what the overlay would show is a
+ * wrapped and unreadable copy of what the log holds properly aligned - and the
+ * log is the file a player already attaches. The overlay says where the reading
+ * landed rather than being left silent, since a command that visibly did nothing
+ * reads as one that failed.
+ *
  * <p>The profiler is resolved per invocation rather than held, because the level
  * knob rebinds it: a command holding the profiler it was built with would report
  * the capture the player switched away from. The lookup and the two output sinks
@@ -50,7 +57,7 @@ public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
 
     private static final String TIMINGS_RESET_NOTICE = "KMU timings reset.";
     private static final String TIMINGS_LOGGED_NOTICE =
-        "KMU timings written to the game log (starsector.log).";
+        "KMU timings written to the game log (starsector-core/starsector.log).";
 
     private final Supplier<Profiler> resolveBoundProfiler;
     private final CommandOutput log;
@@ -86,16 +93,9 @@ public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
             output.showMessage(TIMINGS_RESET_NOTICE);
             return CommandResult.SUCCESS;
         }
-        var report = TimingReport.format(profiler.snapshot(), buildRequest(parsed));
+        log.showMessage(TimingReport.format(profiler.snapshot(), buildRequest(parsed)));
+        output.showMessage(TIMINGS_LOGGED_NOTICE);
 
-        // To the log or to the overlay, never to both: two copies of one capture
-        // is one of them read against a table nobody meant to compare it with.
-        if (parsed.get(SPEC.log)) {
-            log.showMessage(report);
-            output.showMessage(TIMINGS_LOGGED_NOTICE);
-        } else {
-            output.showMessage(report);
-        }
         return CommandResult.SUCCESS;
     }
 
@@ -116,13 +116,12 @@ public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
     /**
      * What {@code kmu_profiling} accepts: which reading of the capture to write,
      * how to narrow it, whether to divide it by the frames it was measured over,
-     * where to write it, and a {@code reset} that clears the timings instead of
-     * reporting them.
+     * and a {@code reset} that clears the timings instead of reporting them.
      *
      * <p>The reading is a positional, being the one thing an invocation is
      * mostly about; the narrowings are named, since two numbers given
-     * positionally could not be told apart; and the sink and the reset are bare
-     * keywords, absence being the answer for both.
+     * positionally could not be told apart; and the per-frame division and the
+     * reset are bare keywords, absence being the answer for both.
      */
     private static final class KmuProfilingSpec extends ParameterSpec {
 
@@ -154,12 +153,11 @@ public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
                 .defaultsTo(ProfileReportRequest.EVERY_ROW);
 
         private final Parameter<Boolean> perFrame = acceptsFlag("perframe");
-        private final Parameter<Boolean> log = acceptsFlag("log");
         private final Parameter<Boolean> reset = acceptsFlag("reset");
 
         private KmuProfilingSpec() {
             super("Usage: kmu_profiling [" + TREE_VIEW + "|" + FLAT_VIEW + "|" + WALKS_VIEW
-                + "] [namespace=<prefix>] [top=<count>] [perframe] [log] [reset].");
+                + "] [namespace=<prefix>] [top=<count>] [perframe] [reset].");
         }
 
         // The counter the walks reading sorts on is the sector's, which is why the

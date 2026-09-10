@@ -33,12 +33,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins {@link KmuProfilingReportCommand}: a bare invocation prints the capture as it was measured,
- * a named view prints the reading it names, the frame flag divides the totals by the beat the
- * framework opens once a frame, the log flag writes the report to the game log and says so instead
- * of printing it, {@code reset} clears the profiler and reports that it did, a stray argument is
- * rejected as bad syntax without touching the profiler, and every invocation acts on whichever
- * profiler is bound at the moment it runs.
+ * Pins {@link KmuProfilingReportCommand}: a bare invocation writes the capture as it was measured
+ * to the game log and tells the overlay where it landed, a named view writes the reading it names,
+ * the frame flag divides the totals by the beat the framework opens once a frame, {@code reset}
+ * clears the profiler and reports that it did, a stray argument is rejected as bad syntax without
+ * touching the profiler, and every invocation acts on whichever profiler is bound at the moment it
+ * runs.
  */
 final class KmuProfilingReportCommandTest {
 
@@ -54,6 +54,9 @@ final class KmuProfilingReportCommandTest {
 
     private static final long TWO_WALKS = 2L;
 
+    private static final String TIMINGS_LOGGED_NOTICE =
+        "KMU timings written to the game log (starsector-core/starsector.log).";
+
     private final Profiler profilerMock = mock(Profiler.class);
     private final CommandOutputFake outputFake = new CommandOutputFake();
     private final CommandOutputFake logFake = new CommandOutputFake();
@@ -68,30 +71,34 @@ final class KmuProfilingReportCommandTest {
     class RunCommand {
 
         @Test
-        void printsTheFormattedTimingsForABareInvocation() {
-
+        void writesTheFormattedTimingsToTheGameLogForABareInvocation() {
+            // Where a capture has to end up: a table wider than the overlay can lay out is
+            // unreadable there and properly aligned in the log, which is the file a player
+            // attaches anyway. The overlay gets told where the reading went rather than nothing,
+            // since a command that visibly did nothing reads as one that failed.
             when(profilerMock.snapshot()).thenReturn(captureOf(nodeOf(SECTION)));
 
             var result = command.runCommand("", CommandContext.CAMPAIGN_MAP);
 
             assertThat(result).isEqualTo(CommandResult.SUCCESS);
-            assertThat(outputFake.getMessages()).hasSize(1);
-            assertThat(outputFake.getMessages().get(0)).contains(SECTION);
+            assertThat(logFake.getMessages()).hasSize(1);
+            assertThat(logFake.getMessages().get(0)).contains(SECTION);
+            assertThat(outputFake.getMessages()).containsExactly(TIMINGS_LOGGED_NOTICE);
         }
 
         @Test
-        void printsTheListingWhenOneIsNamed() {
+        void writesTheListingWhenOneIsNamed() {
             // The console word reaching the reading it names: a listing takes the rows out of the
             // tree, so the child is named by its whole path rather than indented under its parent.
             when(profilerMock.snapshot()).thenReturn(captureOf(parentHoldingOneChild()));
 
             command.runCommand("flat", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(outputFake.getMessages().get(0)).contains(SECTION + "/" + CHILD_SECTION);
+            assertThat(logFake.getMessages().get(0)).contains(SECTION + "/" + CHILD_SECTION);
         }
 
         @Test
-        void printsOnlyTheRowsThatWalkedWhenTheWalksListingIsNamed() {
+        void writesOnlyTheRowsThatWalkedWhenTheWalksListingIsNamed() {
             // Which counter "walks" means is this command's to say: the library knows a row counted
             // something and not that the something was a traversal of a sector.
             when(profilerMock.snapshot()).thenReturn(captureOf(nodeCountingWalks(), nodeOf(
@@ -99,7 +106,7 @@ final class KmuProfilingReportCommandTest {
 
             command.runCommand("walks", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(outputFake.getMessages().get(0))
+            assertThat(logFake.getMessages().get(0))
                 .contains(SECTION)
                 .doesNotContain(CHILD_SECTION);
         }
@@ -112,23 +119,8 @@ final class KmuProfilingReportCommandTest {
 
             command.runCommand("perframe", CommandContext.CAMPAIGN_MAP);
 
-            assertThat(outputFake.getMessages().get(0))
+            assertThat(logFake.getMessages().get(0))
                 .contains("per frame, over 2 of " + MapFrameSections.PREPARE.getName());
-        }
-
-        @Test
-        void writesTheReportToTheGameLogAndSaysSoWhenAskedTo() {
-            // Where a capture a player was asked for actually has to end up: the overlay scrolls
-            // away with the session, while the log file is the one they already attach.
-            when(profilerMock.snapshot()).thenReturn(captureOf(nodeOf(SECTION)));
-
-            var result = command.runCommand("log", CommandContext.CAMPAIGN_MAP);
-
-            assertThat(result).isEqualTo(CommandResult.SUCCESS);
-            assertThat(logFake.getMessages()).hasSize(1);
-            assertThat(logFake.getMessages().get(0)).contains(SECTION);
-            assertThat(outputFake.getMessages()).containsExactly(
-                "KMU timings written to the game log (starsector.log).");
         }
 
         @Test
