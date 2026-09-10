@@ -5,23 +5,14 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.font.StarsectorFont;
 import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipRenderer;
-import kmlib.starsector.ui.render.gl.tooltip.CursorTooltipStyle;
-import kmlib.starsector.ui.render.gl.tooltip.TooltipLeaderLineStyle;
 import kmlib.starsector.ui.text.TextSpan;
-import kmlib.starsector.ui.text.TextStyle;
-import kmlib.starsector.ui.widgets.tooltip.TooltipLineGaps;
 import kmlib.starsector.ui.widgets.tooltip.TooltipLineStyle;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
-import kmlib.starsector.ui.widgets.tooltip.TooltipStyle;
 
-import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.settings.KmuMapTooltipSettings;
-import kmu.util.KmuStrings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,11 +20,15 @@ import java.util.Optional;
 
 /**
  * The shared shape of a map-layer cell tooltip: the hovered system's name on top, the layer's own
- * content below it, one look and one render call for both. A layer tooltip extends this and supplies
- * only its content, so the header, the box style, and the economy precondition are settled in one place
- * and no two layers can drift on them - the difference between two layers' hovers is what they say
- * about the system, never how the box is framed or named. Which lines that content may be written in is
- * {@link CellTooltipRows}.
+ * content below it, and one render call for both. A layer tooltip extends this and supplies only its
+ * content, so the header, the economy precondition, and the order the box is assembled in are settled
+ * in one place and no two layers can drift on them - the difference between two layers' hovers is what
+ * they say about the system, never how the box is framed or named.
+ *
+ * <p>The parts of that box each answer a question of their own and are held apart accordingly: which
+ * lines the content may be written in is {@link CellTooltipRows}, how the box is set is
+ * {@link CellTooltipLook}, and the line it ends on - with the rule saying whether the cycle key has
+ * anything to offer over this system - is {@link CellTooltipFooter}.
  *
  * <p>The box opens with one block of its own - the system name and whatever {@linkplain #buildTitleRows
  * title lines} the layer heads it with, read together as the heading - and the layer's own
@@ -60,43 +55,6 @@ import java.util.Optional;
  */
 public abstract class SystemCellTooltip implements MapHoverTooltip {
 
-    // The two faces the box draws in, each at its own atlas's native size - which is also that row's line
-    // height for the box fit. Titles are set apart from body text by typeface rather than by colour or
-    // size alone because that is how the game's own tooltips are set: reusing vanilla's title-over-body
-    // pairing is what makes a KM hover read as part of the interface rather than as text laid over it.
-    private static final StarsectorFont HEADER_FONT = StarsectorFont.VANILLA_ORBITRON_20AA;
-    private static final StarsectorFont BODY_FONT = StarsectorFont.VANILLA_INSIGNIA_15;
-
-    // The face the box ends its key hint in - the very one the game sets its own "Press F1 for more
-    // info" line in, so a KM box tells the player about a key the way every vanilla box does. Its
-    // narrowness is what sets the line apart from the body; the size is not, so it is drawn at the
-    // body's rather than at the atlas's own 12, which reads as fine print beside 15pt content.
-    private static final StarsectorFont FOOTNOTE_FONT = StarsectorFont.VANILLA_ORBITRON_12_CONDENSED;
-
-    // The box's own look, handed to the tooltip widget as its style: a thin bright frame over a near
-    // opaque black fill, so the content reads over the map without blocking it entirely.
-    private static final float BORDER_WIDTH = 1f;
-    private static final float OPACITY = 0.9f;
-
-    // The two depths the tier gap sliders are bound to. A box states the terms one listed thing's
-    // number was summed from two steps under its own voice, and breaks one of those terms down a step
-    // below that - so those are the runs of like lines long enough to be worth tightening, whatever a
-    // given layer lists there. Named here rather than in the layer that fills them because the box is
-    // shared: two layers binding the sliders to different depths would leave the same knob doing
-    // different things depending on which box is open.
-    private static final int TIER_2_LEVEL = 2;
-    private static final int TIER_3_LEVEL = 3;
-
-    // What a box that drew everything it was asked for withheld. Named so the line at the foot reads as
-    // asking whether anything was left out rather than as comparing against a bare zero.
-    private static final int NOTHING_WITHHELD = 0;
-
-    // The two halves of that line a given box may have nothing for: a box at a level that offers no
-    // further reading of this system, and one that had room for all of it. Named so the composition
-    // below states what the line is missing rather than handing it unexplained nulls.
-    private static final String NO_OFFER = null;
-    private static final String NOTHING_TO_STATE = null;
-
     @Override
     public final void renderFor(
             SectorAPI sector,
@@ -110,11 +68,12 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         }
         var titleRows = buildTitleRows(sector, system);
         var body = composeBody(sector, system, detailLevel);
+
         // Nothing to say about the system - drawing the name alone would only echo the cursor.
         if (titleRows.isEmpty() && body.blocks().isEmpty()) {
             return;
         }
-        var style = buildStyle();
+        var style = CellTooltipLook.buildStyle();
 
         // The box is assembled against the room it has rather than drawn at whatever height its
         // content came to. A box lists as much as the hovered system holds and is then clamped on
@@ -150,7 +109,9 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // for - and asked at every level, the deepest included: how far this box reaches is exactly
         // what says whether the collapse would show the player anything, and a box the level has
         // already outrun draws the same box on both sides of the press.
-        return resolveOfferedLevel(detailLevel, resolveDeepestHeldLevelFor(sector, system));
+        return CellTooltipFooter.resolveOfferedLevel(
+            detailLevel,
+            resolveDeepestHeldLevelFor(sector, system));
     }
 
     /**
@@ -260,60 +221,11 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
         // Drawn from what the composition already found rather than from a read of its own: the hint
         // answers a fact about the body beside it, and a second read would charge the whole layer's
         // economy walk to a line of fine print - once per frame the cursor rests on the cell.
-        buildFooterSection(detailLevel, body.deepestHeldLevel(), drawnBody.withheldEntryCount())
+        CellTooltipFooter
+            .buildSection(detailLevel, body.deepestHeldLevel(), drawnBody.withheldEntryCount())
             .ifPresent(sections::add);
 
         return sections;
-    }
-
-    // The line the box ends on, or none at all: the cycle key and what pressing it would do to this
-    // box, and what the box had no room to show. Its own block, so the shared parting sets it off from
-    // the content the way any two blocks are set off - a hint about the box reading as the last line of
-    // a list would be read as part of that list.
-    //
-    // Takes the offer the body came back with rather than asking for one, so the line is drawn from
-    // the very reading it describes, and drawn under the same rule the key is claimed by - a hint
-    // and a press settled separately are one edit away from advertising a key that does nothing.
-    //
-    // The withheld figure keeps the line where the offer alone would have dropped it. What the box left
-    // out is the one thing it must not keep to itself: the rows standing in for withheld entries say it
-    // listing by listing, and this says it over the box, so a reader can tell a short list from a cut
-    // one wherever the cut happened to land.
-    private static Optional<TooltipSection> buildFooterSection(
-            HoverTooltipDetailLevel detailLevel,
-            HoverTooltipDetailLevel deepestHeldLevel,
-            int withheldEntryCount) {
-
-        var offeredLevel = resolveOfferedLevel(detailLevel, deepestHeldLevel);
-        var isStatingWithheld = withheldEntryCount > NOTHING_WITHHELD;
-
-        if (offeredLevel.isEmpty() && !isStatingWithheld) {
-            return Optional.empty();
-        }
-        return Optional.of(TooltipSection.createSection(List.of(buildFooterRow(
-            offeredLevel.map(HoverTooltipDetailLevel::resolveArrivalPhrase).orElse(NO_OFFER),
-            isStatingWithheld ? formatWithheldPhrase(withheldEntryCount) : NOTHING_TO_STATE))));
-    }
-
-    // Where one press would take a box read at detailLevel whose own tree ends at deepestHeldLevel:
-    // the one rule behind both the hint the box draws and the key the input pass claims.
-    //
-    // Empty where the press would redraw the box exactly as it stands, which is judged on the depth
-    // the box is cut at rather than on the level named: a box holds nothing past its own bound, so
-    // two levels either side of that bound cut it identically. That is the whole of the case for a
-    // box holding nothing past the shallowest level - one drawing over an unpopulated system, met at
-    // whatever depth the player reached over a populated one - which offers neither a tier to open
-    // nor a collapse the reader would see. The way back out is any box that does have depth, since a
-    // level nothing here draws is a level nothing here has to escape.
-    private static Optional<HoverTooltipDetailLevel> resolveOfferedLevel(
-            HoverTooltipDetailLevel detailLevel,
-            HoverTooltipDetailLevel deepestHeldLevel) {
-
-        var nextLevel = detailLevel.resolveNextLevelWithin(deepestHeldLevel);
-        var isRedrawingTheSameBox = nextLevel.resolveDrawnLevelWithin(deepestHeldLevel)
-            == detailLevel.resolveDrawnLevelWithin(deepestHeldLevel);
-
-        return isRedrawingTheSameBox ? Optional.empty() : Optional.of(nextLevel);
     }
 
     // The box's heading as one block: the hovered system's name, and any lines the layer heads its box
@@ -325,6 +237,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             List<TooltipRow> titleRows) {
 
         var rows = new ArrayList<TooltipRow>();
+
         rows.add(buildHeaderRow(system));
         rows.addAll(titleRows);
 
@@ -345,6 +258,7 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
     // below turns that into the title face, so the two decisions - what a line is, how that kind of line
     // looks - stay on the sides that own them.
     private static TooltipRow.CentredRow buildHeaderRow(StarSystemAPI system) {
+
         return TooltipRow
             .createCentredRow(new TextSpan(
                 StarSystems.readDisplayName(system),
@@ -352,109 +266,4 @@ public abstract class SystemCellTooltip implements MapHoverTooltip {
             .readsAs(TooltipLineStyle.HEADER);
     }
 
-    // The line itself, in the game's own colours for the job: the key picked out in the shade every
-    // vanilla button highlights its shortcut with, the words about it in the grey vanilla states such
-    // hints in, and the figure for what the box left out in that same grey. Runs rather than one string
-    // because that is exactly what vanilla draws - the key is the part the eye is meant to find, and the
-    // sentence around it is deliberately quiet.
-    //
-    // The withheld figure is quiet for a reason of its own: it is the box speaking about its own
-    // account rather than about the system, which is the shade this box states all such asides in. What
-    // it stands for is loud enough where it happened, on the rows standing in for the entries.
-    //
-    // Composed from whichever runs the box has rather than branched over, so a line missing one half is
-    // the same line short a run. Laid at the box's content edge rather than centred: it sits at the foot
-    // of the box the way the game's own does, and centring it would read as a verdict over the content
-    // above.
-    private static TooltipRow buildFooterRow(String phrase, String withheldPhrase) {
-
-        var runs = new ArrayList<TextSpan>();
-
-        if (phrase != NO_OFFER) {
-            runs.add(new TextSpan(
-                HoverTooltipDetailLevelInput.CYCLE_KEY_NAME,
-                StarsectorUiColour.VANILLA_BUTTON_SHORTCUT.resolve()));
-            runs.add(new TextSpan(phrase, StarsectorUiColour.VANILLA_GRAY.resolve()));
-        }
-        if (withheldPhrase != NOTHING_TO_STATE) {
-            runs.add(new TextSpan(withheldPhrase, StarsectorUiColour.VANILLA_GRAY.resolve()));
-        }
-        var remainingRuns = runs.iterator();
-        var row = TooltipRow
-            .createRow(remainingRuns.next())
-            .clearsCrestColumn();
-
-        while (remainingRuns.hasNext()) {
-            row = row.continuesWith(remainingRuns.next());
-        }
-        return row.readsAs(TooltipLineStyle.FOOTNOTE);
-    }
-
-    // What the box says at its foot about the entries it could not fit - the count over the whole box,
-    // whichever listings the cut fell in.
-    private static String formatWithheldPhrase(int withheldEntryCount) {
-        return KmuStrings.format(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_WITHHELD, withheldEntryCount);
-    }
-
-    // The tooltip's fixed look: the typography each kind of row draws in, the shared opacity, and the
-    // frame over a black fill in the map's own player palette. Built per paint so its colours resolve
-    // live rather than being baked at class load.
-    //
-    // The heading and the body name no size: each face is a bitmap atlas crisp at exactly one size, and
-    // the box has no fit of its own to squeeze text into, so a line speaking in the box's own voice takes
-    // the native size and is drawn 1:1 rather than scaled.
-    //
-    // Two kinds of line are scaled off their atlas anyway, both knowingly. The note at the foot, because
-    // its atlas is rasterised at 12, which beside 15pt content reads as fine print rather than as a
-    // quieter line of the same box - it takes the body's size instead, and what sets it apart is its
-    // narrowness and its colours, neither of which costs it a size of its own. And any line standing
-    // under that voice, by the player's own step per level, which is the whole point of asking for it.
-    //
-    // How dense the box is set is read live rather than fixed here: a box lists as much as the hovered
-    // system holds, so what reads comfortably on a two-colony system and what fits on screen for a
-    // twelve-colony one are not the same setting, and which of the two matters is the player's call.
-    //
-    // The two solid marks the box draws among its glyphs - the rule from a label across to its value, and
-    // the blocks a withheld name stands as - take the player's weights for the same reason the leader
-    // line does: how heavy a solid run looks beside text is a judgement made on screen, at whatever scale
-    // the game is run at.
-    private static CursorTooltipStyle buildStyle() {
-        return CursorTooltipStyle.createStyle(
-            TooltipStyle
-                .createStyle(
-                    TextStyle.createStyle(HEADER_FONT),
-                    TextStyle.createStyle(BODY_FONT))
-                .footnotedIn(TextStyle
-                    .createStyle(FOOTNOTE_FONT)
-                    .sizedAt(BODY_FONT.getNativeSize()))
-                .shrunkPerLevel(KmuMapTooltipSettings.getMapTooltipNestingLevelShrink())
-                .stackedAt(buildLineGaps()),
-            OPACITY,
-            BORDER_WIDTH,
-            StarsectorUiColour.BLACK.resolve(),
-            StarsectorUiColour.VANILLA_PLAYER_BASE.resolve())
-            .ruledBy(buildLeaderLineStyle())
-            .redactedAt(KmuMapTooltipSettings.getMapTooltipRedactionDarkeningStrength());
-    }
-
-    // How heavily the line from a label across to its value draws. Layered over KMLib's own weights
-    // rather than left at them, because how heavy a solid run looks beside a line of glyphs turns on the
-    // face, the size, and the atlas behind it - so where it sits against the text is a judgement made on
-    // screen, at whatever scale the player runs the game at, and therefore the player's to make.
-    private static TooltipLeaderLineStyle buildLeaderLineStyle() {
-        return new TooltipLeaderLineStyle(
-            KmuMapTooltipSettings.getMapTooltipLeaderThickness(),
-            KmuMapTooltipSettings.getMapTooltipLeaderOpacity());
-    }
-
-    // How far apart the box's lines stand, by the depth of the line above the gap: the box's own spacing
-    // everywhere, and the two depths a listing runs long at tightened on their own. Each gap belongs to
-    // the tier just drawn, so a slider closes up a run of like lines and leaves the line that opens it
-    // standing where the shallower line above it put it.
-    private static TooltipLineGaps buildLineGaps() {
-        return TooltipLineGaps
-            .createGaps(KmuMapTooltipSettings.getMapTooltipLineGap())
-            .gappedAtLevel(TIER_2_LEVEL, KmuMapTooltipSettings.getMapTooltipTier2LineGap())
-            .gappedAtLevel(TIER_3_LEVEL, KmuMapTooltipSettings.getMapTooltipTier3LineGap());
-    }
 }

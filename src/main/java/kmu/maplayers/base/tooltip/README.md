@@ -22,8 +22,8 @@ review: **`content`** is what a layer states - a line, its mark, its status, its
 - and imports none of the rest, so what a line says can be stated without knowing which tier it lands
 at, what colour that tier speaks in, or whether the box has room for it; **`detail`** is how deep the
 player asked the box to read, as a value and the held choice behind it, and knows nothing of either;
-**`layout`** is how a statement becomes a box - the blocks, the line vocabulary, the cut, the fit and
-the box itself; and the root is the plumbing that decides which box is drawn at all, which reaches
+**`layout`** is how a statement becomes a box - the blocks, the line vocabulary, the cut, the fit, the
+look, the line at the foot and the box itself; and the root is the plumbing that decides which box is drawn at all, which reaches
 into neither of the two ends.
 
 ## The pass, and the gates
@@ -88,27 +88,32 @@ deeper tier to account for; asked at a level because the rest of it lives there 
 to change is the depth the box is *cut* at rather than the level it names, and a box past its own
 bound is cut at that bound whatever level is being read. So a box with nothing below the shallowest
 level offers nothing from any level at all, and the way back out of a deep one is any box that has
-depth to collapse - a level nothing here draws is a level nothing here has to escape.
-Left unclaimed rather than advanced invisibly because the level is one shared fact: a press swallowed
-over a system with nothing to expand would silently decide how the next system that *does* differ
-opens. Vanilla keeps F1 everywhere else, and the listener runs below the sidebar's so a tab hotkey
-keeps the first claim on any key it is bound to.
+depth to collapse - a level nothing here draws is a level nothing here has to escape. Left unclaimed
+rather than advanced invisibly because the level is one shared fact: a press swallowed over a system
+with nothing to expand would silently decide how the next system that *does* differ opens. Vanilla
+keeps F1 everywhere else, and the listener runs below the sidebar's so a tab hotkey keeps the first
+claim on any key it is bound to.
 
 ## The box a layer's account takes
 
 `SystemCellTooltip` is the shape a layer's box takes - the hovered system's name over the layer's own
-content, one look and one draw for both, the name set in the game's own title face over body-face
-rows so a KM hover reads as part of the interface rather than as text laid over it. The box opens
-with a heading block - the system name and any title lines read on from it - and the layer's own
-blocks follow beneath, so a verdict that settles the whole system heads the box while a status or an
-entry sits in it.
+content, one draw for both. The box opens with a heading block - the system name and any title lines
+read on from it - and the layer's own blocks follow beneath, so a verdict that settles the whole
+system heads the box while a status or an entry sits in it. It is the shape alone: how the box is
+*set* is `CellTooltipLook` and the line it *ends* on is `CellTooltipFooter`, each answering a question
+of its own, so a layer changing none of them cannot be affected by either.
 
-A box taking part in the detail cycle ends on one more block: the key and what pressing it would do,
-drawn the way the game draws its own key hints - the key picked out in the shade vanilla highlights a
-shortcut with, the words about it in vanilla's grey, in vanilla's own smaller condensed face. What it
-says is the step the *next* press takes - "expand market stats", and "collapse to factions" once the
-box's own tree runs out - rather than which level is current, a number or a name telling the player
-nothing about what they would gain. The phrase is the level's
+`CellTooltipLook` is one look for every layer - the name in the game's own title face over body-face
+rows, so a KM hover reads as part of the interface rather than as text laid over it - and it is built
+per paint rather than settled once, half of it being the player's: the density knobs are read live, so
+a slider moved with the map open takes effect on the next frame.
+
+A box taking part in the detail cycle ends on `CellTooltipFooter`'s one more block: the key and what
+pressing it would do, drawn the way the game draws its own key hints - the key picked out in the shade
+vanilla highlights a shortcut with, the words about it in vanilla's grey, in vanilla's own smaller
+condensed face. What it says is the step the *next* press takes - "expand market stats", and "collapse
+to factions" once the box's own tree runs out - rather than which level is current, a number or a name
+telling the player nothing about what they would gain. The phrase is the level's
 (`HoverTooltipDetailLevel.resolveArrivalPhrase`), carried by the level being arrived at, so every
 layer names one step the same way and a level added brings its own wording with it.
 
@@ -121,14 +126,14 @@ reading the body beside it no longer agrees with. The key handler asks through
 answer from, and it asks once per press, at every level: the bound is what says whether a press would
 show the player anything, so no level settles that question without it. The bound is two facts, and a
 layer joins them in one place: how far the box's *account* reaches, a constant of what it explains,
-and whether this system left it anything to account for at all. Hint and press run off that one rule,
-so the box neither advertises a key that does nothing nor claims one it said nothing about. The hint
-is not content: a
-box with nothing to say about the system stays undrawn rather than appearing as a lone offer to
-expand into nothing. That same line carries one more run where the box had less room than its
-content needed: how many entries it could not show, in the quiet shade the box states everything
-about its own account in. It is what stops a cut box reading as a complete one over the whole of it,
-the rows standing in for withheld entries saying the same thing listing by listing.
+and whether this system left it anything to account for at all. Both the hint and the key handler go
+through one `CellTooltipFooter.resolveOfferedLevel`, so the box neither advertises a key that does
+nothing nor claims one it said nothing about. The hint is not content: a box with nothing to say about
+the system stays undrawn rather than appearing as a lone offer to expand into nothing. That same line
+carries one more run where the box had less room than its content needed: how many entries it could
+not show, in the quiet shade the box states everything about its own account in. It is what stops a
+cut box reading as a complete one over the whole of it, the rows standing in for withheld entries
+saying the same thing listing by listing.
 
 How far apart those blocks stand is never a line's own request: KMLib parts one block from the next
 by one measurement, and a listing nested inside a block by a narrower one, so what sets two things

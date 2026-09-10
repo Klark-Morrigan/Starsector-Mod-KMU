@@ -64,13 +64,10 @@ import static org.mockito.Mockito.when;
  */
 final class SystemCellTooltipTest {
 
-    // What the hint says at each level, as the phrases the player reads rather than as the keys behind
-    // them: the line has to name the step the next press takes, and a case reading the key instead
-    // would pass over a level wired to another level's wording.
+    // What the hint says where these cases draw one, as the phrase the player reads rather than as the
+    // key behind it. What each step is called is the footer's own subject; what is read here is that the
+    // line reached the box at all.
     private static final String EXPAND_SYSTEM_COMPOSITION = "expand system composition";
-    private static final String EXPAND_MARKET_STATS = "expand market stats";
-    private static final String EXPAND_PATROL_DETAILS = "expand patrol details";
-    private static final String COLLAPSE_TO_FACTIONS = "collapse to factions";
 
     // The sizes the atlases were rasterised at, restated here rather than read off the enum: taking the
     // native size is the decision under test, and an expectation reading it from the same value the
@@ -170,10 +167,6 @@ final class SystemCellTooltipTest {
     // The hint stands alone in its block, so it is both that block's only line and its first.
     private static final int FOOTER_ROW = 0;
     private static final int LONE_FOOTER_ROW_COUNT = 1;
-
-    // The hint is drawn in two runs - the key picked out, then the words about it - so a case about
-    // what the offer says reads the second and leaves the shortcut to the case about the look.
-    private static final int FOOTER_PHRASE_RUN = 1;
 
     // What a box with one body block and no hint comes to: its heading and that block.
     private static final int BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT = 2;
@@ -610,52 +603,6 @@ final class SystemCellTooltipTest {
         }
 
         @Test
-        void renderForNamesTheStepEveryPressShortOfTheDeepestTakes() {
-            // The hint states what the next press does rather than which level is current, so it is
-            // read off the level being moved to and every level names its own step. A number, or a
-            // phrase read off the level being drawn, would tell the player nothing about what they
-            // would gain by pressing.
-            var tooltipFake = buildTooltipOfferingDetail();
-
-            assertThat(readFooterWords(tooltipFake, HoverTooltipDetailLevel.SYSTEM_COMPOSITION))
-                .isEqualTo(EXPAND_MARKET_STATS);
-            assertThat(readFooterWords(tooltipFake, HoverTooltipDetailLevel.MARKET_STATS))
-                .isEqualTo(EXPAND_PATROL_DETAILS);
-        }
-
-        @Test
-        void renderForEndsTheDeepestBoxWithTheKeyThatCollapsesItAgain() {
-            // The cycle wraps, so the deepest level is the one place the next press collapses the box
-            // rather than opening it - the only level whose hint names a collapse, and it reads off
-            // the level being drawn without the box holding anything that says which way it goes.
-            var sections = captureDrawnBoxAt(
-                    buildTooltipOfferingDetail(),
-                    HoverTooltipDetailLevel.PATROL_DETAILS)
-                .sections();
-
-            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
-                .containsExactly(
-                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
-                    new TextSpan(COLLAPSE_TO_FACTIONS, GRAY));
-        }
-
-        @Test
-        void renderForEndsABoxAtItsOwnDeepestLevelWithTheCollapseRatherThanADeadTier() {
-            // The bug the bound exists for. A box whose account stops at the market stats has nothing
-            // at the level below, so offering to expand into it would advertise a press that redraws
-            // the box unchanged - the hint names the collapse instead, and the key acts on it.
-            var sections = captureDrawnBoxAt(
-                    buildTooltipOfferingDetailDownTo(HoverTooltipDetailLevel.MARKET_STATS),
-                    HoverTooltipDetailLevel.MARKET_STATS)
-                .sections();
-
-            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
-                .containsExactly(
-                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
-                    new TextSpan(COLLAPSE_TO_FACTIONS, GRAY));
-        }
-
-        @Test
         void renderForEndsABoxTheLevelHasOutrunWithItsContent() {
             // The level is one shared fact carried across hovers, so a box with nothing to expand is
             // met at deeper levels all the same - reached over some other system. It draws the same
@@ -666,23 +613,6 @@ final class SystemCellTooltipTest {
 
             assertThat(sections)
                 .hasSize(BOX_WITH_ONE_BODY_BLOCK_SECTION_COUNT);
-        }
-
-        @Test
-        void renderForOffersTheCollapseToABoxReadPastItsOwnBound() {
-            // The other side of that rule, and what keeps it from silencing every deep box: an account
-            // ending at the market stats is drawn cut at the deepest level, so the collapse below does
-            // take a tier away and is named. Drawn under the same rule the key is claimed by, so the
-            // hint and the press agree here too.
-            var sections = captureDrawnBoxAt(
-                    buildTooltipOfferingDetailDownTo(HoverTooltipDetailLevel.MARKET_STATS),
-                    PATROL_DETAILS)
-                .sections();
-
-            assertThat(readRow(sections, FOOTER_SECTION, FOOTER_ROW).labelRuns())
-                .containsExactly(
-                    new TextSpan(CYCLE_KEY_NAME, BUTTON_SHORTCUT),
-                    new TextSpan(COLLAPSE_TO_FACTIONS, GRAY));
         }
 
         @Test
@@ -838,21 +768,7 @@ final class SystemCellTooltipTest {
         return captureDrawnBoxAt(tooltip, FACTIONS);
     }
 
-    // What the hint at the foot of the box says when it is drawn at the given level, which is the one
-    // thing the cases about the offer's direction read.
-    private static String readFooterWords(SystemCellTooltip tooltip, HoverTooltipDetailLevel level) {
-
-        var footerRow = readRow(
-            captureDrawnBoxAt(tooltip, level).sections(),
-            FOOTER_SECTION,
-            FOOTER_ROW);
-
-        // The words about the key rather than the key itself: the shortcut is its own run and is
-        // asserted where the hint's two runs are.
-        return CellTooltipRowReads.readLabelTextRun(footerRow, FOOTER_PHRASE_RUN).text();
-    }
-
-    // The same, at a level a case names for itself - the shallowest being where the box opens, and so
+    // The same at a level a case names for itself - the shallowest being where the box opens, and so
     // the depth every case that is not about the depth is posed at.
     private static DrawnBox captureDrawnBoxAt(
             SystemCellTooltip tooltip,
