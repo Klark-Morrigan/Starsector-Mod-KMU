@@ -86,7 +86,11 @@ public final class KmuMapLabelSettings {
     // are searched regardless, which is what a coarse fan can afford to lean on.
     private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 4;
 
-    private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 10;
+    // The fan's other multiplicand, and the same reasoning applies to it: candidates are the
+    // directions crossed with these over every cluster, so a coarse fan paired with a fine offset
+    // sweep costs what the fan was cut to avoid. Kept just fine enough for a line to slide off a
+    // blocked centre into a roomier band.
+    private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 5;
 
     private static final double DEFAULT_ANCHOR_VERTICAL_PENALTY_STRENGTH = 0.3;
 
