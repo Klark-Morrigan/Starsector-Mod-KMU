@@ -219,7 +219,7 @@ def nexJars = findModJars('ExerelinCore.jar')
 // the game's and verifies what the mod registers on it, which needs the real
 // class present to stand in for. Globbed so a version bump does not break the
 // path.
-def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['xstream-*.jar'])
+def xstreamJars = findCoreJars(['xstream-*.jar'])
 
 // The obfuscated core, carrying the concrete campaign classes the published API only exposes as
 // interfaces. KMU compiles against one of them: CampaignTerrain, which the map layers' Starscape
@@ -235,8 +235,7 @@ def xstreamJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['
 // Both jars are needed to name one type: starfarer_obf.jar has CampaignTerrain itself, and
 // fs.common_obf.jar has the DoNotObfuscate and LayeredRenderable its supertype chain reaches -
 // javac resolves the whole chain of anything it is asked to subclass.
-def obfJars = fileTree(dir: "${starsectorRoot}/starsector-core",
-    include: ['starfarer_obf.jar', 'fs.common_obf.jar'])
+def obfJars = findCoreJars(['starfarer_obf.jar', 'fs.common_obf.jar'])
 
 // MagicLib backs KMLib's CoreUiTree, the reflection bypass every read of the live core-UI widget
 // tree goes through. KMU names it nowhere and compiles without it - the coupling is KMLib's, declared
@@ -258,15 +257,14 @@ def lazyLibKotlinRuntimeJarFile = file(
 // to compile a caller of it. The classes ship in starsector-core/json.jar and the game classloader
 // provides them at runtime, so compileOnly like the rest - the test runtime already sees the jar
 // through the core-jar set the shared conventions put there.
-def jsonJars = fileTree(dir: "${starsectorRoot}/starsector-core", include: ['json.jar'])
+def jsonJars = findCoreJars(['json.jar'])
 
 // LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
 // The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
 // needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
 // it succeeds and the tool then dies on NoClassDefFoundError, which is exactly the trap the
 // source-set comment above warns about.
-def lwjglJars = fileTree(dir: "${starsectorRoot}/starsector-core",
-    include: ['lwjgl.jar', 'lwjgl_util.jar'])
+def lwjglJars = findCoreJars(['lwjgl.jar', 'lwjgl_util.jar'])
 
 dependencies {
     compileOnly consoleCommandsJars
