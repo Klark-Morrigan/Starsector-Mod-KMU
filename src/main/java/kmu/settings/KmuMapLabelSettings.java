@@ -81,7 +81,10 @@ public final class KmuMapLabelSettings {
 
     private static final double DEFAULT_BORDER_MITER_LIMIT = 4.0;
 
-    private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 8;
+    // The fan is the dominant cost in a map rebuild - every extra spoke re-sweeps the whole
+    // offset family for every cluster - so the default is kept coarse. The axis and the slant
+    // are searched regardless, which is what a coarse fan can afford to lean on.
+    private static final int DEFAULT_ANCHOR_DIRECTION_COUNT = 4;
 
     private static final int DEFAULT_ANCHOR_OFFSET_COUNT = 10;
 
@@ -144,7 +147,7 @@ public final class KmuMapLabelSettings {
 
     /**
      * @return how many directions the label-anchor search fans over the half-circle (0..180
-     *         degrees, a label line being undirected); 8 by default. Pure horizontal, the cluster's
+     *         degrees, a label line being undirected); 4 by default. Pure horizontal, the cluster's
      *         own principal axis, and the preferred slant are always searched on top of the fan
      */
     public static int getMapAnchorDirectionCount() {
