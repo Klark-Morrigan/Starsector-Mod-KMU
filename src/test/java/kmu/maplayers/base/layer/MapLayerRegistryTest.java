@@ -117,6 +117,15 @@ final class MapLayerRegistryTest {
     }
 
     @AfterEach
+    void forgetThePictureThisCaseDrew() {
+        // The other half of the same problem. A screen holds what was last on it so a dissolve has a
+        // picture to finish, and these cases pose switched-off screens directly - so a case that drew a
+        // stand-in layer would leave the next one's dissolve showing a layer from a roster that no
+        // longer exists.
+        MapLayerScreenControls.forgetDrawnLayers();
+    }
+
+    @AfterEach
     void closeTheSectorMemory() {
         sectorMemoryFake.close();
     }
@@ -517,6 +526,11 @@ final class MapLayerRegistryTest {
     private void startHidingTheMapScreensLayers() {
 
         recordAControlOnTheShowingScreen(false);
+
+        // A drawn frame before the switch-off, which is what a session always has: every control able to
+        // switch a screen off stands on that screen, so the screen is being drawn when one is used. It is
+        // that frame the screen catches its picture on, and what it dissolves afterwards.
+        MapLayerRegistry.getActiveLayer();
 
         MapLayerScreens
             .getMapPicks()

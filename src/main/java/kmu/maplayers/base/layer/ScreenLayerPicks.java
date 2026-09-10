@@ -17,13 +17,44 @@ package kmu.maplayers.base.layer;
  * its own way of emptying the map on a screen that has one. Held as the narrower type, a holder of the value
  * holds that whole story rather than half of it, and no site has to find the other half for itself.
  *
+ * <p>What that screen is actually drawing travels beside the two, and is neither of them: a screen switched
+ * off goes on showing what was on it for as long as its dissolve lasts, whatever its pick has done
+ * meanwhile. It is composed from the pair rather than supplied, so it cannot be given one screen's picks
+ * and another's picture - {@link #ScreenLayerPicks(ActiveLayerSelection, ControlBackedMapLayerVisibility,
+ * ScreenMemoryScope)} is what every caller builds through.
+ *
  * @param layerSelection  which layer is active on this screen
  * @param layerVisibility whether this screen's layers show, how far through a change they stand, and
  *                        whether a control able to switch them back on stands on this screen
  * @param memoryScope     the scope a preference set on this screen's panel is saved and resolved under
+ * @param drawnLayer      which layer is on this screen this frame, the dissolve included
  */
 public record ScreenLayerPicks(
     ActiveLayerSelection layerSelection,
     ControlBackedMapLayerVisibility layerVisibility,
-    ScreenMemoryScope memoryScope) {
+    ScreenMemoryScope memoryScope,
+    ScreenDrawnLayer drawnLayer) {
+
+    /**
+     * One screen's picks and the scope they are saved under, with what it draws composed over them.
+     *
+     * <p>The constructor every caller uses. What a screen draws is a reading of the two picks handed in
+     * rather than a choice of its own, so composing it here is what keeps a screen's picture bound to
+     * that screen's own picks.
+     *
+     * @param layerSelection  which layer is active on this screen
+     * @param layerVisibility whether this screen's layers show, and how far through a change they stand
+     * @param memoryScope     the scope a preference set on this screen's panel is saved and resolved under
+     */
+    public ScreenLayerPicks(
+            ActiveLayerSelection layerSelection,
+            ControlBackedMapLayerVisibility layerVisibility,
+            ScreenMemoryScope memoryScope) {
+
+        this(
+            layerSelection,
+            layerVisibility,
+            memoryScope,
+            new ScreenDrawnLayer(layerSelection, layerVisibility));
+    }
 }

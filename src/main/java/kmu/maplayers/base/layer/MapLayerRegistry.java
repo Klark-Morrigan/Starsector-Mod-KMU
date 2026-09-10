@@ -41,10 +41,6 @@ public final class MapLayerRegistry {
 
     private static final Logger LOG = Global.getLogger(MapLayerRegistry.class);
 
-    // The end of the hide ramp: none of a screen's layers left on it, which is where the active pick
-    // stops being answered at all.
-    private static final float FULLY_HIDDEN = 0f;
-
     // The registered layers, in the order a screen offering all of them rows them up. Empty until a
     // composition root registers the first, which happens at mod load, before any sector map can open.
     //
@@ -140,12 +136,13 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return the active pick of the screen showing this frame, or null before a composition root has
+     * @return the layer on the screen showing this frame, or null before a composition root has
      *         registered any layers, or once that screen's layers have wholly faded off it. This is
      *         what the map surface dispatches its render pass through, so the paint follows the tab
      *         the player is looking at without the surface naming a layer; it follows the live screen
      *         rather than one fixed screen, so the intel screen's own tab governs what paints there
-     *         while the sector map keeps its own pick
+     *         while the sector map keeps its own pick. What is on a screen and what that screen is set
+     *         to are the same answer except while a dissolve runs - see {@link ScreenDrawnLayer}
      */
     public static MapLayer getActiveLayer() {
         return resolveActiveLayerOn(MapLayerScreens.resolveLivePicks());
@@ -174,8 +171,9 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * @return whether {@code layer} is the active pick of the screen showing this frame - the gate a
-     *         layer's own state reads to decide whether it is the one in play
+     * @return whether {@code layer} is the one on the screen showing this frame - the gate a layer's
+     *         own state reads to decide whether it is the one in play, which a layer dissolving off a
+     *         switched-off screen still is until it is gone
      */
     public static boolean isActive(MapLayer layer) {
         return isActiveOn(MapLayerScreens.resolveLivePicks(), layer);
@@ -190,8 +188,8 @@ public final class MapLayerRegistry {
      * screen from the rest of that caller's frame.
      *
      * @param screenPicks the screen being answered for
-     * @param layer       the layer asking whether it is that screen's pick
-     * @return whether {@code layer} is that screen's active pick
+     * @param layer       the layer asking whether it is the one on that screen
+     * @return whether {@code layer} is the layer on that screen
      */
     public static boolean isActiveOn(ScreenLayerPicks screenPicks, MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
@@ -232,29 +230,16 @@ public final class MapLayerRegistry {
         return -1;
     }
 
-    // One screen's active pick, for a screen already in hand rather than for whichever is showing. Both
-    // readings above are this applied to a screen: the live ones resolve which that is first, and the
-    // carried gate is handed one.
+    // What one screen is drawing, for a screen already in hand rather than for whichever is showing.
+    // Both readings above are this applied to a screen: the live ones resolve which that is first, and
+    // the carried gate is handed one.
     //
-    // Null for a screen whose layers have wholly faded off it. Hiding lands here rather than at each
-    // consumer, because every pass driven by the active pick already treats "no pick" as nothing to
-    // draw: one read takes the overlay, the labels and the hover box off the screen together.
+    // Asked of that screen's own reading rather than composed here, because what is on a screen is not
+    // its pick: hiding it leaves the picture dissolving off it for a while, and what is dissolving is
+    // what was there rather than whatever has been picked since. Every pass driven by this already
+    // treats "nothing" as nothing to draw, so one read takes the overlay, the labels and the hover box
+    // off the screen together.
     private static MapLayer resolveActiveLayerOn(ScreenLayerPicks screenPicks) {
-
-        if (!isAnythingOfTheLayersOn(screenPicks.layerVisibility())) {
-            return null;
-        }
-        return screenPicks.layerSelection().getActiveLayer();
-    }
-
-    // Whether anything of the given screen's layers is on it at all: a screen switched off goes on being
-    // drawn until its ramp reaches the end, which is what dissolves it rather than blinking it out.
-    //
-    // The crisp pick settles a shown screen outright, and the fade is asked for only where the answer
-    // could still turn on it. A screen coming back paints from the first frame of its ramp whatever the
-    // fade reads, so consulting it there could only ever agree - at the price of a clock read, and of a
-    // settings read behind it, on every frame the layers are simply on.
-    private static boolean isAnythingOfTheLayersOn(MapLayerVisibility visibility) {
-        return visibility.areLayersShown() || visibility.resolveShownFade() > FULLY_HIDDEN;
+        return screenPicks.drawnLayer().resolveDrawnLayer();
     }
 }

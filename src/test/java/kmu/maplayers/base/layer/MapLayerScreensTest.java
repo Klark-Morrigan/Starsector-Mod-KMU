@@ -125,6 +125,16 @@ final class MapLayerScreensTest {
                     "$kmu_political_preference_map",
                     "$kmu_political_preference_intel");
         }
+
+        @Test
+        void getAllScreenPicksCarriesAPictureOfItsOwnPerScreen() {
+            // What a screen is drawing is that screen's own memory, holding what was last on it so a
+            // dissolve has something to finish. One shared between the panels would have the visor
+            // dissolving the sector map's picture, which is the crossing the whole per-screen value
+            // exists to make impossible.
+            assertThat(MapLayerScreens.getMapPicks().drawnLayer())
+                .isNotSameAs(MapLayerScreens.getIntelPicks().drawnLayer());
+        }
     }
 
     @Nested

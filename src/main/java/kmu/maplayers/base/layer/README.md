@@ -12,6 +12,7 @@ vocabulary and the per-screen key scheme these types compose their keys through.
 - [What a layer is](#what-a-layer-is)
 - [The roster](#the-roster)
 - [A screen's two picks](#a-screens-two-picks)
+- [What a screen is drawing](#what-a-screen-is-drawing)
 - [Which tabs a screen is offered](#which-tabs-a-screen-is-offered)
 - [The bar arrangement](#the-bar-arrangement)
 - [What a hidden tab stands down](#what-a-hidden-tab-stands-down)
@@ -59,7 +60,9 @@ preference is partitioned by and the two holders that store one slot per partiti
 itself is [the hub's](../../README.md#two-screens-two-picks).
 
 A screen's tab, its show-or-hide pick and its scope travel together as one `ScreenLayerPicks`, so
-nothing can read one screen's tab against another's hiding.
+nothing can read one screen's tab against another's hiding. [What that screen is
+drawing](#what-a-screen-is-drawing) rides with them, composed over the pair rather than supplied, so
+it cannot be given one screen's picks and another's picture.
 
 `MapLayerVisibility` is the show-or-hide pick and the fade between the two. It is folded into the
 active-layer answer rather than read by each consumer: a hidden screen resolves to no active layer
@@ -72,6 +75,32 @@ What either read gets is `ControlBackedMapLayerVisibility`: a stored hide is act
 that screen has a control able to take it back, and read as shown until it has one, the stored
 choice untouched and honoured again the moment there is a control for it. Which screens have one is
 [the map chrome README](../chrome/README.md)'s answer, and the session's rather than the save's.
+
+## What a screen is drawing
+
+What a screen is set to and what is on it are the same answer except while a dissolve runs, and
+`ScreenDrawnLayer` is where they part. It is what `MapLayerRegistry.getActiveLayer`, `isActive` and
+`resolveActiveMapRenderer` all resolve through, so every pass driven by "what draws" reads one
+answer, and the two picks are left saying only what they are each about.
+
+A dissolve is *of* something, and the something can move while it runs. Taking the last painting tab
+off the bar switches the screen off and lands its pick on the empty view in the one frame - both are
+owed at once, or the bar, the map and the box disagree - so a dissolve reading the live pick would
+find nothing to dissolve on the very frame it began, and the map would cut while the sidebar beside
+it thinned. Held, the picture the player was looking at goes on being drawn until it is gone. The
+same memory answers a tab switched by key part-way through a hide: what leaves the screen is what was
+on it, not whatever has been picked since.
+
+The picture is caught on the way past rather than at the switch-off. Every frame a screen is showing,
+this is asked what draws and holds the answer, so the last thing it held when the screen goes off is
+what was on it. That works because every control able to switch a screen off stands on that screen -
+the box on its filter row, the dialog opened from its own sidebar - so a switch-off always has drawn
+frames behind it. A screen switched off with none holds nothing and dissolves nothing, which is the
+honest answer rather than a guess at the pick.
+
+Session state, like the ramp it serves. Nothing takes it back on a campaign load because nothing has
+to: a loaded campaign has no control standing on either screen, so both read as shown until one does,
+and the first read of the new campaign catches its own pick.
 
 ## Which tabs a screen is offered
 

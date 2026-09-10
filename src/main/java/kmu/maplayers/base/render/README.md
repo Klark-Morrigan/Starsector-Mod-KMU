@@ -197,8 +197,15 @@ debug line carrying the duration the row was accumulated from, what the call cou
 named itself. That replaces the hand-written `took=` lines those steps used to print: one
 measurement, read in the log as a rebuild happens or in the report afterwards, rather than two that
 could disagree. The counts themselves are the three in `MapBuildCounters`, beside the library's own
-sector counters - few on purpose, since every counter a capture touches widens every reading of it;
-anything that is a detail of one call rides on that call's name instead.
+sector counters - few on purpose, since every counter a shown row touches widens the reading it
+appears in; anything that is a detail of one call rides on that call's name instead.
+
+Stating a threshold also buys those calls a reading of their own conditions, written straight after
+the duration as `first` and `jitMs=`: a step's first call of a session runs on code the JIT has not
+compiled yet and can cost half again what every warm call after it does, which is a reading to
+discount rather than a regression to chase. That is why the mark is worth having exactly here - a
+rebuild step runs a handful of times a session, so its first call is a large share of what a reader
+sees, where a beat that runs every frame has warmed up before anyone looks.
 
 Those lines follow the profiler, which is the trade the single measurement is worth: with the level
 knob off, a rebuild says nothing at all, where the hand-written lines were written whenever the log

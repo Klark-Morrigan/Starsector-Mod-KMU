@@ -167,6 +167,22 @@ public final class MapLayerScreens {
         INTEL_LAYER_VISIBILITY.forgetControlAttached();
     }
 
+    /**
+     * Forgets what either screen was showing, leaving the reading screens that have never drawn give.
+     *
+     * <p>Package-private, and the running game asks it of nothing. What a screen was showing is only
+     * ever consulted while that screen is switched off and part-way through a dissolve, and a campaign
+     * load takes both controls back - so both screens read as shown until a box stands again, and the
+     * first frame of a new campaign catches its own pick before any dissolve could ask for one. What
+     * needs this is a process that poses a switched-off screen without drawing one first, which is a
+     * suite rather than a session.
+     */
+    static void forgetDrawnLayers() {
+
+        MAP_PICKS.drawnLayer().forgetDrawnLayer();
+        INTEL_PICKS.drawnLayer().forgetDrawnLayer();
+    }
+
     // Whether the intel screen is the one up, which is what "live screen" means above.
     private static boolean isIntelScreenLive() {
         return intelScreen != null && intelScreen.isIntelTabOpen();

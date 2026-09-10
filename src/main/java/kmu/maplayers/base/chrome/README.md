@@ -93,14 +93,12 @@ and what explains why the second bites on the sector map alone: there the No Lay
 the withholding, while on a screen with no box that tab stands, so a pick resting on it is a choice
 and is left alone.
 
-**The two halves do not land in the same frame.** The control goes down at once, so the box the player
-can see says what is happening from that frame on; the pick waits until the ramp that switch-off
-started has run out. Both orders settle the same way and only one of them can be watched: the frame
-the pick moves is the frame the outgoing layer stops being drawn, so landing it straight away cuts the
-map to black while the box beside it dissolves - the very cut the hide ramp exists to avoid. Left
-where it is, the layer the player just took off the bar goes the way their own hide takes it. Only a
-landing on a tab that paints nothing waits; a landing on one that paints is a switch between two
-pictures rather than a picture leaving, and takes effect immediately.
+**Both halves land in the one frame, and the map still dissolves.** They have to: a control left saying
+one thing while the pick says another is the disagreement this whole rule exists to remove, and a row
+moved again meanwhile would strand whichever half was still owed. What keeps that from cutting the map
+to black is not a wait here but a memory on the screen - `ScreenDrawnLayer` holds the picture that was
+on it, so the layer the player just took off the bar goes on being drawn, thinning, after the pick has
+already moved to the empty view. See [the layer README](../layer/README.md#what-a-screen-is-drawing).
 
 This reverses a rule the framework used to state - that hiding a tab is not switching a layer off, so
 a save holding a hidden layer as its pick still painted it. That reading defended the pick and was
@@ -127,8 +125,7 @@ Held on the outcome and never on the attempt. The heal answers whether the scree
 its row offers, and only that records the revision: a pick persisted in sector memory drops the write
 where there is no memory to write into and says nothing about it, so a pass that took having tried
 for having done it would leave that bar lit wrong until somebody opened the dialog. Unsettled means
-the next frame asks again - which is also the whole of what carries a screen through the wait above,
-a dissolve being an unsettled screen that settles itself.
+the next frame asks again.
 
 The pick itself is deliberately not in the revision, which would cost a save read per screen per
 frame. Nothing moves a pick to a tab that is not offered - the bar selects only tabs it draws, and
