@@ -242,7 +242,12 @@ public final class ContinentBridges {
 
         var continentOf = Coastlines.mapCellsToContinents(traced);
 
-        return (from, to) -> isOneContinent(continentOf, from, to);
+        // A span exists to round ONE outline up, so both its ends have to be corners of that
+        // outline: the water it closes off is water that outline currently runs into. Two cells
+        // on different continents have no shared inlet to capture - a line between them would
+        // be joining two shapes rather than tidying either.
+        return (from, to) ->
+            Coastlines.compareShapesOf(continentOf, from, to).isSameShape();
     }
 
     // How far apart two cells' centres may sit before a pair is not worth scanning, as the
@@ -315,20 +320,4 @@ public final class ContinentBridges {
         return false;
     }
 
-    // Whether two cells belong to the same continent, and so to the same outline.
-    //
-    // A span exists to round ONE outline up, so both its ends have to be corners of that
-    // outline: the water it closes off is water that outline currently runs into. Two cells
-    // on different continents have no shared inlet to capture - a line between them would be
-    // joining two shapes rather than tidying either.
-    private static boolean isOneContinent(
-            Map<Integer, Integer> continentOf,
-            int from,
-            int to) {
-
-        var one = continentOf.get(from);
-        var other = continentOf.get(to);
-
-        return one != null && one.equals(other);
-    }
 }

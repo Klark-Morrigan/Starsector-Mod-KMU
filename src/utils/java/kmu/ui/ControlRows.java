@@ -3,6 +3,7 @@ package kmu.ui;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -324,7 +325,7 @@ public final class ControlRows {
         var button = new JButton(RESET_LABEL);
 
         button.setToolTipText(RESET_TOOLTIP);
-        button.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        button.setMargin(new Insets(0, 0, 0, 0));
         button.setPreferredSize(new Dimension(RESET_BUTTON_WIDTH, RESET_BUTTON_HEIGHT));
         button.addActionListener(event -> reset.run());
 
@@ -340,9 +341,10 @@ public final class ControlRows {
      * of unrelated controls rather than as one panel.
      *
      * @param title    what the control is called
-     * @param value    the widget showing its value, beside the reset
+     * @param valueBox the box showing its value, beside the reset
      * @param reset    what to do when the reset is pressed
-     * @param wideParts anything spanning the full width beneath, such as a slider track
+     * @param slider   the track spanning the full width beneath, which every row of this
+     *                 shape has - the grid is laid out for two rows and fills both
      * @return the row
      */
     public static JPanel layOutLabelledRow(

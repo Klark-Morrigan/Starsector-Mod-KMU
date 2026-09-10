@@ -34,7 +34,7 @@ import exerelin.utilities.InvasionListener;
  *
  * <p>This is a Nexerelin-only integration. It implements a Nex interface, so the
  * class is loaded only after a mod-enabled gate has confirmed Nex is present -
- * {@code kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller} defers the
+ * {@code kmu.mods.nexerelin.NexerelinInvasionListenerInstaller} defers the
  * reference behind that gate, keeping a Nex-free install from ever resolving
  * {@link InvasionListener}. Only {@code reportMarketTransferred} touches the map;
  * the other invasion callbacks (loot, per-round strength, invasion finished) do

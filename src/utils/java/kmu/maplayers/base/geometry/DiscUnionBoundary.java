@@ -615,24 +615,124 @@ public final class DiscUnionBoundary {
      */
     static List<Chord> findAttachableChords(DiscUnion union, Walls walls) {
 
-        var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
         var attachable = new ArrayList<Chord>();
+
+        for (var verdict : judgeEveryOfferedChord(union, walls)) {
+
+            if (verdict.reason() == RefusalReason.LAID) {
+                attachable.add(verdict.chord());
+            }
+        }
+        return attachable;
+    }
+
+    /**
+     * The greedy laying itself: every offered wall judged in the order it was offered, with the
+     * mouths each laid wall claimed carried forward.
+     *
+     * <p><b>The one place the laying rule lives.</b> Which walls end up down and why any one of
+     * them did not are the same walk asked for two different things, and they were written as
+     * two loops - one keeping what it laid, the other additionally noting who took each mouth so
+     * it could name a rival. Two spellings of one rule are free to drift, and the drift is
+     * invisible: the map goes on being drawn correctly while the report explains a refusal the
+     * walk never made.
+     *
+     * <p>Verdicts rather than a filtered list, because what a refusal WAS is the whole of what
+     * the reports want and is thrown away by a method that returns only survivors.
+     *
+     * <p>No detail string is built here. Naming the cell that covered a wall's end costs a scan
+     * over the discs, and this runs on every trace while the answer is wanted for one wall at a
+     * time - so the reason is settled on the walk and the explaining is left to whoever asks.
+     * The rival's name is the exception: it has to be read while the wall is being judged,
+     * since a later wall changes who holds a mouth.
+     *
+     * @param union the discs the walls are laid across
+     * @param walls the walls on offer, in the order they are offered
+     * @return one verdict per offered wall, in that same order
+     */
+    private static List<ChordVerdict> judgeEveryOfferedChord(DiscUnion union, Walls walls) {
+
+        var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
+        var takers = new LinkedHashMap<Integer, List<TakenMouth>>();
+        var verdicts = new ArrayList<ChordVerdict>(walls.chords().size());
 
         for (var chord : walls.chords()) {
 
             var mouthed = MouthedChord.measureMouths(union, chord, walls);
+            var reason = mouthed == null
+                ? RefusalReason.NO_MOUTH
+                : judgeMouthedChord(union, mouthed, takenByCircle);
 
-            if (mouthed == null
-                    || !isWallOnBoundaryAtBothEnds(union, mouthed)
-                    || isCrowdedOut(takenByCircle, mouthed)) {
+            verdicts.add(new ChordVerdict(
+                chord,
+                mouthed,
+                reason,
+                reason == RefusalReason.CROWDED_OUT ? nameTaker(takers, mouthed) : null));
 
-                continue;
+            if (reason == RefusalReason.LAID) {
+
+                recordBothMouths(takenByCircle, mouthed);
+                recordTaker(takers, chord.fromCircle(), mouthed.fromMouth(), chord);
+                recordTaker(takers, chord.toCircle(), mouthed.toMouth(), chord);
             }
-            recordBothMouths(takenByCircle, mouthed);
-
-            attachable.add(chord);
         }
-        return attachable;
+        return verdicts;
+    }
+
+    // Why one wall was or was not laid, given what is already down. Reason only: see the note
+    // on the walk above about where the explaining happens.
+    private static RefusalReason judgeMouthedChord(
+            DiscUnion union,
+            MouthedChord mouthed,
+            Map<Integer, List<double[]>> takenByCircle) {
+
+        if (!isWallOnBoundaryAtBothEnds(union, mouthed)) {
+            return RefusalReason.OFF_BOUNDARY;
+        }
+
+        if (isCrowdedOut(takenByCircle, mouthed)) {
+            return RefusalReason.CROWDED_OUT;
+        }
+        return RefusalReason.LAID;
+    }
+
+    /**
+     * What the walk did with one offered wall, kept as it was judged.
+     *
+     * @param chord     the wall
+     * @param mouthed   it together with its two mouths, or null where it had none
+     * @param reason    what the walk did with it
+     * @param crowdedBy the rival holding the mouth it wanted, read while it was judged because
+     *                  a later wall changes who holds one; null unless it was crowded out
+     */
+    private record ChordVerdict(
+        Chord chord,
+        MouthedChord mouthed,
+        RefusalReason reason,
+        String crowdedBy) {
+
+        // The reason with its explanation attached, worked out only for a wall someone asked
+        // about. Which end failed is re-tested rather than remembered: it is two boundary
+        // tests on one wall, against a scan per wall on every trace to carry it.
+        ChordRefusal describeRefusal(DiscUnion union) {
+
+            if (reason != RefusalReason.OFF_BOUNDARY) {
+                return new ChordRefusal(reason, crowdedBy);
+            }
+
+            var covered = isWallOnBoundary(
+                union, chord, chord.fromCircle(), mouthed.fromMouth())
+                ? chord.toCircle()
+                : chord.fromCircle();
+
+            return new ChordRefusal(
+                RefusalReason.OFF_BOUNDARY,
+                describeCover(
+                    union,
+                    chord,
+                    covered,
+                    covered == chord.fromCircle() ? mouthed.fromMouth() : mouthed.toMouth()));
+        }
     }
 
     /**
@@ -644,8 +744,10 @@ public final class DiscUnionBoundary {
      * covered has cells that met without it, and one crowded out is competing with a
      * neighbour - the first is geometry, the second is ordering.
      *
-     * <p>Replays the greedy walk rather than testing the wall alone, because whether a mouth
-     * was already taken depends on every wall offered before it.
+     * <p>Runs the whole laying rather than testing the wall alone, because whether a mouth was
+     * already taken depends on every wall offered before it - and runs the SAME laying the walk
+     * does, so that what is explained here is what actually happened rather than a second
+     * opinion about it.
      *
      * @param union the discs the walls are laid across
      * @param walls the walls on offer, in the order they are offered
@@ -654,29 +756,13 @@ public final class DiscUnionBoundary {
      */
     static ChordRefusal describeChordRefusal(DiscUnion union, Walls walls, Chord wall) {
 
-        var takenByCircle = new LinkedHashMap<Integer, List<double[]>>();
-        var takers = new LinkedHashMap<Integer, List<TakenMouth>>();
-        var answer = new ChordRefusal(RefusalReason.NOT_OFFERED, null);
+        for (var verdict : judgeEveryOfferedChord(union, walls)) {
 
-        for (var chord : walls.chords()) {
-
-            var mouthed = MouthedChord.measureMouths(union, chord, walls);
-            var refusal = mouthed == null
-                ? new ChordRefusal(RefusalReason.NO_MOUTH, null)
-                : judgeChord(union, mouthed, takenByCircle, takers);
-
-            if (refusal.reason() == RefusalReason.LAID) {
-
-                recordBothMouths(takenByCircle, mouthed);
-                recordTaker(takers, chord.fromCircle(), mouthed.fromMouth(), chord);
-                recordTaker(takers, chord.toCircle(), mouthed.toMouth(), chord);
-            }
-
-            if (chord == wall) {
-                answer = refusal;
+            if (verdict.chord() == wall) {
+                return verdict.describeRefusal(union);
             }
         }
-        return answer;
+        return new ChordRefusal(RefusalReason.NOT_OFFERED, null);
     }
 
     /**
@@ -715,36 +801,6 @@ public final class DiscUnionBoundary {
                 ? null
                 : new MouthedChord(chord, fromMouth, toMouth);
         }
-    }
-
-    // One wall's verdict, in the same order findAttachableChords asks its questions - the two
-    // read the same rules, and a verdict that disagreed with what was laid would be worse than
-    // no verdict at all.
-    private static ChordRefusal judgeChord(
-            DiscUnion union,
-            MouthedChord mouthed,
-            Map<Integer, List<double[]>> takenByCircle,
-            Map<Integer, List<TakenMouth>> takers) {
-
-        var chord = mouthed.chord();
-
-        if (!isWallOnBoundary(union, chord, chord.fromCircle(), mouthed.fromMouth())) {
-            return new ChordRefusal(
-                RefusalReason.OFF_BOUNDARY,
-                describeCover(union, chord, chord.fromCircle(), mouthed.fromMouth()));
-        }
-
-        if (!isWallOnBoundary(union, chord, chord.toCircle(), mouthed.toMouth())) {
-            return new ChordRefusal(
-                RefusalReason.OFF_BOUNDARY,
-                describeCover(union, chord, chord.toCircle(), mouthed.toMouth()));
-        }
-
-        if (isCrowdedOut(takenByCircle, mouthed)) {
-            return new ChordRefusal(
-                RefusalReason.CROWDED_OUT, nameTaker(takers, mouthed));
-        }
-        return new ChordRefusal(RefusalReason.LAID, null);
     }
 
     // Whether both of a wall's ends sit on the boundary. Asked of the pair rather than of each

@@ -51,29 +51,38 @@ public record SectorGeometry(
      * @return the assembled geometry
      */
     public static SectorGeometry buildSectorGeometry(
-            SectorFixture fixture, SectorGeometryParameters parameters) {
+            SectorFixture fixture,
+            SectorGeometryParameters parameters) {
+
         var cellEdges = fixture.buildCellEdgesBySystemId(
-                parameters.cellRadius(), parameters.boundSegments());
+            parameters.cellRadius(),
+            parameters.boundSegments());
+
         // The one place the effective keys are decided. The frontier's redistribution pass
         // belongs here, between the partition and the shaping, replacing both the cell set
         // and the keys with what it emits; every consumer downstream then follows without
         // knowing it happened. Today one cell per system, each drawing as its own star, so the
         // draws-as map is identity over the cell ids.
         var grouping = new CellGrouping(
-                identityOver(cellEdges.keySet()),
-                fixture.getOwnerBySystemId());
+            identityOver(cellEdges.keySet()),
+            fixture.getOwnerBySystemId());
+
         var owners = fixture.getOwnerBySystemId();
         var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
+
         for (var group : groupCellIdsByOwner(owners).entrySet()) {
-            rings.put(group.getKey(), SystemClusterBorders.traceBorderRings(
+            rings.put(
+                group.getKey(),
+                SystemClusterBorders.traceBorderRings(
                     group.getValue(),
                     cellEdges,
                     grouping,
                     Set.of(),
-                    parameters.borderInset(),
-                    parameters.weldTolerance(),
-                    parameters.miterSpikeLimit()));
+                    new BorderTraceTolerances(
+                        parameters.borderInset(),
+                        parameters.weldTolerance(),
+                        parameters.miterSpikeLimit())));
         }
         return new SectorGeometry(cellEdges, owners, shaped, rings);
     }
@@ -86,9 +95,14 @@ public record SectorGeometry(
      * @return member cell ids per owner
      */
     static Map<String, List<String>> groupCellIdsByOwner(Map<String, String> ownerByCellId) {
+
         var members = new TreeMap<String, List<String>>();
+
         for (var entry : ownerByCellId.entrySet()) {
-            members.computeIfAbsent(entry.getValue(), key -> new ArrayList<>()).add(entry.getKey());
+
+            members
+                .computeIfAbsent(entry.getValue(), key -> new ArrayList<>())
+                .add(entry.getKey());
         }
         return members;
     }
@@ -96,7 +110,9 @@ public record SectorGeometry(
     // A map of each id to itself, so a cell set with one cell per system draws each cell as its
     // own star - the draws-as identity the redistribution pass later replaces with real cells.
     private static Map<String, String> identityOver(Set<String> ids) {
+
         var identity = new LinkedHashMap<String, String>();
+
         for (var id : ids) {
             identity.put(id, id);
         }

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -127,7 +126,8 @@ public final class IntercontinentalBridges {
             for (var to : frontages.keySet()) {
 
                 if (from >= to
-                        || !isTwoContinents(continentOf, from, to)
+                        || !Coastlines.compareShapesOf(continentOf, from, to)
+                            .isDifferentShapes()
                         || joined.contains(SpannedCells.buildFromCells(from, to))
                         || Points.computeDistance(sites.get(from), sites.get(to)) > reach) {
 
@@ -157,23 +157,6 @@ public final class IntercontinentalBridges {
         // is stepping around were settled before it was offered.
         return List.copyOf(CrowdedAnchors.spreadCrowdedAnchors(
             kept, laid, runs, union, rules.anchorSeparation()));
-    }
-
-    // Whether two cells sit on shapes that are not the same one, which is the whole of what
-    // makes a span between them a link.
-    //
-    // A cell on no shape joins nothing. The silhouettes name only the cells the outer walk
-    // touched, so a cell facing nothing but a lake is absent from them - and it has no frontage
-    // on the void to reach out over in the first place.
-    private static boolean isTwoContinents(
-            Map<Integer, Integer> continentOf,
-            int from,
-            int to) {
-
-        var one = continentOf.get(from);
-        var other = continentOf.get(to);
-
-        return one != null && other != null && !one.equals(other);
     }
 
     // The cell pairs something has already joined, so that no second line is offered between

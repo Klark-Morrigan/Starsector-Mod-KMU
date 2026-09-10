@@ -142,7 +142,7 @@ same shape this feature needs.
 ## Library support (LazyLib, MagicLib)
 
 KMU currently only depends on lazywizard's Console (used in
-`kmu/console/...`); `mod_info.json` declares no `dependencies` block. Adding
+`kmu/mods/console/commands/...`); `mod_info.json` declares no `dependencies` block. Adding
 this feature is the right moment to decide whether to take a hard or soft
 dep on the two ubiquitous libs.
 

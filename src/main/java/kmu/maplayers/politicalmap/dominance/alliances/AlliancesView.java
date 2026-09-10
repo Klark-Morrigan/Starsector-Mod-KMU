@@ -16,7 +16,7 @@ import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
-import kmu.starsector.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
 import java.util.List;

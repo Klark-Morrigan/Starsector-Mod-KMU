@@ -7,7 +7,7 @@ import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-import kmu.starsector.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.apache.log4j.Logger;
 

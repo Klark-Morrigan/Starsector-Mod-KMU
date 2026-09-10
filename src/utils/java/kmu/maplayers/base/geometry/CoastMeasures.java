@@ -2,7 +2,9 @@ package kmu.maplayers.base.geometry;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Measurements about a traced coast, for working out why one came out wrong.
@@ -89,7 +91,7 @@ public final class CoastMeasures {
     // supplies only its own second column.
     private static List<double[]> measureAgainstDepth(
             Coastlines.TracedCoasts traced,
-            java.util.function.ToDoubleFunction<CoastCrossings.Penetration> measure) {
+            ToDoubleFunction<CoastCrossings.Penetration> measure) {
 
         var rows = new ArrayList<double[]>();
 
@@ -106,7 +108,7 @@ public final class CoastMeasures {
     private static java.util.Map<Integer, DiscUnionBoundary.CoastMark> mapMarksByCircle(
             Coastlines.TracedCoasts traced) {
 
-        var marks = new java.util.HashMap<Integer, DiscUnionBoundary.CoastMark>();
+        var marks = new HashMap<Integer, DiscUnionBoundary.CoastMark>();
 
         for (var silhouette : traced.silhouettes()) {
             for (var mark : silhouette) {
@@ -125,7 +127,7 @@ public final class CoastMeasures {
     // long that silhouette is.
     private static java.util.Map<Integer, int[]> mapWalkPlaces(Coastlines.TracedCoasts traced) {
 
-        var places = new java.util.HashMap<Integer, int[]>();
+        var places = new HashMap<Integer, int[]>();
 
         for (var silhouette = 0; silhouette < traced.silhouettes().size(); silhouette++) {
 

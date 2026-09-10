@@ -7,7 +7,7 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
-import kmu.starsector.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinAlliances;
 
 import java.util.List;
 

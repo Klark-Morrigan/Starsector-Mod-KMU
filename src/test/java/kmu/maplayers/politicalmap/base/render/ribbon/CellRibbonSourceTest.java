@@ -18,9 +18,9 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
+import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuMapVisibilitySettings;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
-import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

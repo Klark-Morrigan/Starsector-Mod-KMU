@@ -5,6 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -265,7 +266,7 @@ public final class SavedValues {
     private static Map<String, String> parseFlatJson(String json) {
 
         var values = new LinkedHashMap<String, String>();
-        var strings = new java.util.ArrayList<String>();
+        var strings = new ArrayList<String>();
         var index = 0;
 
         while (index < json.length()) {

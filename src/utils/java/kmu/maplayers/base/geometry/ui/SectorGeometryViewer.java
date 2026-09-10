@@ -38,6 +38,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
@@ -98,8 +103,8 @@ import javax.swing.SwingUtilities;
  *       {@code getCellEdgesByCellId}. {@link SectorFixture} rebuilds the cache's private
  *       cell-to-edge translation, so every fixture row is drawn and nothing exercises the
  *       cache, its diffing, or the incremental refresh.</li>
- *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantOwnerBySystemId},
- *       {@code SystemDominance}, {@code DominantOwner.mapFactionIdBySystemId},
+ *   <li><i>Deciding who owns it</i> - {@code SectorPolitics.resolveDominantHolderBySystemId},
+ *       {@code SystemDominance}, {@code DominantHolder.mapFactionIdBySystemId},
  *       {@code DecivilisedMarkets.isRevealedDecivilised},
  *       {@code FilteredPolitics}, {@code FilterSelection}. Ownership is the fixture's
  *       dominant-owner column, whose score is summed market size rather than the real
@@ -271,9 +276,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
         WindowLayout.restoreLayout(frame, split);
 
-        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+        frame.addWindowListener(new WindowAdapter() {
             @Override
-            public void windowClosing(java.awt.event.WindowEvent event) {
+            public void windowClosing(WindowEvent event) {
                 WindowLayout.saveLayout(frame, split);
             }
         });
@@ -531,10 +536,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
                 repaint();
             });
-            addMouseListener(new java.awt.event.MouseAdapter() {
+            addMouseListener(new MouseAdapter() {
 
                 @Override
-                public void mousePressed(java.awt.event.MouseEvent event) {
+                public void mousePressed(MouseEvent event) {
 
                     dragAnchor = event.getPoint();
 
@@ -544,14 +549,14 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 }
 
                 @Override
-                public void mouseExited(java.awt.event.MouseEvent event) {
+                public void mouseExited(MouseEvent event) {
                     trackCursor(null);
                 }
             });
-            addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            addMouseMotionListener(new MouseMotionAdapter() {
 
                 @Override
-                public void mouseDragged(java.awt.event.MouseEvent event) {
+                public void mouseDragged(MouseEvent event) {
 
                     offsetX += event.getX() - dragAnchor.getX();
                     offsetY += event.getY() - dragAnchor.getY();
@@ -563,7 +568,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 }
 
                 @Override
-                public void mouseMoved(java.awt.event.MouseEvent event) {
+                public void mouseMoved(MouseEvent event) {
                     trackCursor(event.getPoint());
                 }
             });

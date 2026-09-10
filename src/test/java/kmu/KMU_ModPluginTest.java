@@ -14,8 +14,8 @@ import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
+import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuLunaSettings;
-import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

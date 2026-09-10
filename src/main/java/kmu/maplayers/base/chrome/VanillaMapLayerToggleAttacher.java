@@ -4,8 +4,8 @@ import kmlib.starsector.ui.map.controls.MapFilterRow;
 import kmlib.starsector.ui.map.controls.MapFilterToggle;
 
 import kmu.maplayers.base.layer.MapLayerVisibility;
+import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuMapKeybindSettings;
-import kmu.starsector.nexerelin.NexerelinAlliances;
 import kmu.util.KmuStrings;
 
 import java.util.function.IntSupplier;

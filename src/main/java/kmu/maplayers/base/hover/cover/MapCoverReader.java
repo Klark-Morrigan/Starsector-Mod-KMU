@@ -3,8 +3,8 @@ package kmu.maplayers.base.hover.cover;
 import kmlib.mods.console.ConsoleCommandsPresence;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 
-import kmu.starsector.consolecommands.ConsoleMapCover;
-import kmu.starsector.rat.RandomAssortmentOfThingsMinimapCover;
+import kmu.mods.console.ConsoleMapCover;
+import kmu.mods.rat.RandomAssortmentOfThingsMinimapCover;
 
 import java.util.ArrayList;
 import java.util.List;

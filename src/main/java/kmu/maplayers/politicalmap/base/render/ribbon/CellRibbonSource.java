@@ -15,8 +15,8 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanRules;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
+import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuPoliticalMapRibbonSettings;
-import kmu.starsector.nexerelin.NexerelinAlliances;
 
 import java.util.List;
 import java.util.Map;

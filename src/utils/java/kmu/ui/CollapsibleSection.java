@@ -5,6 +5,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Insets;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
@@ -215,7 +216,7 @@ public final class CollapsibleSection {
         var fold = new JButton(isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL);
 
         fold.setToolTipText(FOLD_TOOLTIP);
-        fold.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        fold.setMargin(new Insets(0, 0, 0, 0));
         fold.setPreferredSize(new Dimension(FOLD_BUTTON_WIDTH, FOLD_BUTTON_HEIGHT));
         fold.setFocusable(false);
 

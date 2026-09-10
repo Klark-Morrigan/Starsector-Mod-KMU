@@ -12,7 +12,7 @@ import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisatio
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonySizeListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDecivListener;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapDiscoveryListener;
-import kmu.starsector.nexerelin.NexerelinInvasionListenerInstaller;
+import kmu.mods.nexerelin.NexerelinInvasionListenerInstaller;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 

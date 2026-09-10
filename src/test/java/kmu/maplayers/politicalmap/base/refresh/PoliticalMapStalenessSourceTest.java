@@ -13,7 +13,7 @@ import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.starsector.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinAlliances;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

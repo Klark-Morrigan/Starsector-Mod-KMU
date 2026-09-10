@@ -17,7 +17,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.claims.ClaimsView;
 import kmu.maplayers.politicalmap.dominance.alliances.AlliancesView;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
-import kmu.starsector.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinAlliances;
 
 import java.util.ArrayList;
 import java.util.List;

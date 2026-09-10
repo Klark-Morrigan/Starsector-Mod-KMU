@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -119,10 +120,10 @@ public final class SvgRasteriser {
         var svg = readSvg(source);
         var root = matchOrFail(ROOT, svg, source);
 
-        var image = new java.awt.image.BufferedImage(
+        var image = new BufferedImage(
             Integer.parseInt(root.group(1)),
             Integer.parseInt(root.group(2)),
-            java.awt.image.BufferedImage.TYPE_INT_RGB);
+            BufferedImage.TYPE_INT_RGB);
 
         var g2 = image.createGraphics();
 

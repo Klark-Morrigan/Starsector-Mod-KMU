@@ -16,11 +16,11 @@ import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
+import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityInstaller;
+import kmu.mods.rat.RandomAssortmentOfThingsCompatibilityMode;
+import kmu.mods.rat.RandomAssortmentOfThingsSettings;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
-import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityInstaller;
-import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityMode;
-import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 import kmu.ui.context.MarketUiContextInstaller;
 
 import java.util.List;

@@ -56,8 +56,8 @@ not four times over is the delegation itself, nor the test of it.
 Two more belong to optional mods, live with those mods' own integrations, and join the set only where
 the mod is installed - presence being the one condition that cannot move within a run, so the factory
 settles it once instead of asking a cover that could only ever answer no. `ConsoleMapCover`
-(`kmu.starsector.consolecommands`) is a text-entry console, which takes the whole screen and so reads
-no geometry at all. `RandomAssortmentOfThingsMinimapCover` (`kmu.starsector.rat`) is everywhere that
+(`kmu.mods.console`) is a text-entry console, which takes the whole screen and so reads
+no geometry at all. `RandomAssortmentOfThingsMinimapCover` (`kmu.mods.rat`) is everywhere that
 is *not* a docked minimap, on the frames the mode from `RandomAssortmentOfThingsCompatibilityMode` is
 engaged and no vanilla map is showing; which surface that minimap is comes from
 `SingleEmbeddedMapReader`, the one walk it shares with the rule that switches a parked surface off and
