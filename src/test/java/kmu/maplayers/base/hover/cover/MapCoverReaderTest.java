@@ -1,6 +1,6 @@
 package kmu.maplayers.base.hover.cover;
 
-import kmlib.mods.consolecommands.ConsoleCommandsPresence;
+import kmlib.mods.console.ConsoleCommandsPresence;
 import kmlib.mods.rat.RandomAssortmentOfThingsPresence;
 
 import org.junit.jupiter.api.Nested;

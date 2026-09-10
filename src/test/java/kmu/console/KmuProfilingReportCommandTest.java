@@ -13,7 +13,7 @@ import kmlib.profiling.snapshot.ProfileOriginTree;
 import kmlib.profiling.snapshot.ProfileTiming;
 import kmlib.profiling.snapshot.WorstCall;
 import kmlib.starsector.SectorWalkCounters;
-import kmlib.testfixtures.console.output.CommandOutputFake;
+import kmlib.testfixtures.mods.console.commands.output.CommandOutputFake;
 
 import kmu.maplayers.base.render.MapFrameSections;
 

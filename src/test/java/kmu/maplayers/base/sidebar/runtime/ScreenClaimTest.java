@@ -1,8 +1,8 @@
 package kmu.maplayers.base.sidebar.runtime;
 
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
+import kmlib.mods.console.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.coreui.OverlayPresence;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
+import kmlib.testfixtures.mods.console.ConsoleOverlayPresenceFake;
 import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
 import org.junit.jupiter.api.Nested;

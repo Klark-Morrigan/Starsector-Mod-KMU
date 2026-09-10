@@ -1,7 +1,7 @@
 package kmu.starsector.consolecommands;
 
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
-import kmlib.testfixtures.mods.consolecommands.ConsoleOverlayPresenceFake;
+import kmlib.mods.console.ConsoleCommandsOverlay;
+import kmlib.testfixtures.mods.console.ConsoleOverlayPresenceFake;
 import kmlib.testfixtures.starsector.settings.ModStateScopes;
 
 import org.junit.jupiter.api.Nested;

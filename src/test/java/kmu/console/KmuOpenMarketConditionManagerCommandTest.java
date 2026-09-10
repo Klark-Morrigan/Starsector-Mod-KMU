@@ -1,6 +1,6 @@
 package kmu.console;
 
-import kmlib.testfixtures.console.output.CommandOutputFake;
+import kmlib.testfixtures.mods.console.commands.output.CommandOutputFake;
 
 import kmu.conditions.ui.editor.KmuConditionEditorOpenResult;
 

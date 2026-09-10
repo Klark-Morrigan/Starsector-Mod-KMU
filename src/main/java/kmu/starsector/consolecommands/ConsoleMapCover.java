@@ -1,6 +1,6 @@
 package kmu.starsector.consolecommands;
 
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
+import kmlib.mods.console.ConsoleCommandsOverlay;
 
 import kmu.maplayers.base.hover.cover.MapCover;
 

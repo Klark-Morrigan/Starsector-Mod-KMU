@@ -1,15 +1,15 @@
 package kmu.console;
 
-import kmlib.console.KmlibBaseConsoleCommand;
-import kmlib.console.output.CommandOutput;
-import kmlib.console.output.ConsoleCommandOutput;
-import kmlib.console.output.GameLogCommandOutput;
-import kmlib.console.parsing.Parameter;
-import kmlib.console.parsing.ParameterSpec;
-import kmlib.console.parsing.ParameterValues;
-import kmlib.console.parsing.ParsedParameters;
-import kmlib.console.parsing.ValueParseException;
-import kmlib.console.parsing.ValueParser;
+import kmlib.mods.console.commands.BaseKmlibCommand;
+import kmlib.mods.console.commands.output.CommandOutput;
+import kmlib.mods.console.commands.output.ConsoleCommandOutput;
+import kmlib.mods.console.commands.output.GameLogCommandOutput;
+import kmlib.mods.console.commands.parsing.Parameter;
+import kmlib.mods.console.commands.parsing.ParameterSpec;
+import kmlib.mods.console.commands.parsing.ParameterValues;
+import kmlib.mods.console.commands.parsing.ParsedParameters;
+import kmlib.mods.console.commands.parsing.ValueParseException;
+import kmlib.mods.console.commands.parsing.ValueParser;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.report.ProfileReportRequest;
@@ -52,7 +52,7 @@ import java.util.function.Supplier;
  * point the same formatting and reset rules at a different profiler or a
  * different sink.
  */
-public final class KmuProfilingReportCommand extends KmlibBaseConsoleCommand {
+public final class KmuProfilingReportCommand extends BaseKmlibCommand {
     private static final KmuProfilingSpec SPEC = new KmuProfilingSpec();
 
     private static final String TIMINGS_RESET_NOTICE = "KMU timings reset.";

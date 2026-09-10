@@ -1,9 +1,9 @@
 package kmu.console;
 
-import kmlib.console.KmlibBaseConsoleCommand;
-import kmlib.console.output.CommandOutput;
-import kmlib.console.output.ConsoleCommandOutput;
-import kmlib.console.parsing.ParameterSpec;
+import kmlib.mods.console.commands.BaseKmlibCommand;
+import kmlib.mods.console.commands.output.CommandOutput;
+import kmlib.mods.console.commands.output.ConsoleCommandOutput;
+import kmlib.mods.console.commands.parsing.ParameterSpec;
 
 import kmu.KmuErrorReporter;
 import kmu.conditions.domain.KmuConditionService;
@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 
 import static kmu.util.KmuValues.normalizeText;
 
-public final class KmuOpenMarketConditionManagerCommand extends KmlibBaseConsoleCommand {
+public final class KmuOpenMarketConditionManagerCommand extends BaseKmlibCommand {
 
     // No parameters; declaring the spec still makes the parser reject a stray
     // argument as bad syntax rather than silently ignoring it.

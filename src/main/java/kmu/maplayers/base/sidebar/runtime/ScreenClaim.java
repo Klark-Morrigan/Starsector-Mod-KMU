@@ -1,6 +1,6 @@
 package kmu.maplayers.base.sidebar.runtime;
 
-import kmlib.mods.consolecommands.ConsoleCommandsOverlay;
+import kmlib.mods.console.ConsoleCommandsOverlay;
 import kmlib.starsector.ui.coreui.CodexView;
 import kmlib.starsector.ui.coreui.CoreUiDialogView;
 import kmlib.starsector.ui.coreui.OverlayPresence;
