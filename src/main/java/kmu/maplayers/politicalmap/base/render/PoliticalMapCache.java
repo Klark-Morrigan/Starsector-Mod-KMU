@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.logging.SessionWarning;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
@@ -133,9 +134,9 @@ final class PoliticalMapCache {
     // first refresh cut, whatever the signal happens to say.
     private CellCutInputs lastCellCut;
 
-    // One-shot guard for rebuild faults: refresh runs every frame the map is open, so a recurring
-    // rebuild failure would flood the log. The first is recorded at ERROR, the rest silenced.
-    private boolean hasLoggedRebuildError;
+    // Said once per session: refresh runs every frame the map is open, so a recurring rebuild
+    // failure would otherwise flood the log, and the second line says nothing the first did not.
+    private final SessionWarning rebuildFaultWarning = new SessionWarning(LOG);
 
     // Where the traced preference signals stood when this cache last rebuilt, so a rebuild can name
     // which of them a player has touched since. Seeded at construction rather than left empty: the
@@ -206,13 +207,9 @@ final class PoliticalMapCache {
         try {
             rebuildStaleHalves(view, memoryScope);
         } catch (RuntimeException exception) {
-            if (!hasLoggedRebuildError) {
-                hasLoggedRebuildError = true;
-                LOG.error(
-                    "Political map rebuild failed; retrying next frame, "
-                        + "keeping last good draw lists",
-                    exception);
-            }
+            rebuildFaultWarning.warnOnce(
+                "Political map rebuild failed; retrying next frame, keeping last good draw lists",
+                exception);
             drawables.ensureTerritoriesNonNull(view);
         }
     }
