@@ -63,8 +63,9 @@ public final class KmuPoliticalMapHighlightSettings {
     private static final double DEFAULT_HOVER_WASH_OUTLINE_OPACITY = 0.8;
     private static final double DEFAULT_HOVER_WASH_OUTLINE_WIDTH = 2.0;
 
+    // The shade the cursor's own highlight burns, so the two tiers light the same map alike.
     private static final FactionPaletteChoice DEFAULT_PREVIEW_HIGHLIGHT_COLOUR =
-        FactionPaletteChoice.PRIMARY;
+        FactionPaletteChoice.SECONDARY;
     private static final double DEFAULT_PREVIEW_WASH_OPACITY = 0.6;
 
     private KmuPoliticalMapHighlightSettings() {
@@ -174,7 +175,7 @@ public final class KmuPoliticalMapHighlightSettings {
 
     /**
      * @return which palette colour of the previewed bloc the preview's cell wash and its trace both
-     *         draw in; the primary (bright) colour by default. Keyed on the bloc rather than on
+     *         draw in; the secondary (dark) colour by default. Keyed on the bloc rather than on
      *         each lit cell, so one shade covers the whole set
      */
     public static FactionPaletteChoice getPoliticalMapPreviewHighlightColour() {
