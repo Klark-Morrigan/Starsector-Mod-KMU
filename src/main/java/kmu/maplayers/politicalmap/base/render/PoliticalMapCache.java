@@ -507,9 +507,11 @@ final class PoliticalMapCache {
     // them, and a pick that really moved rebuilds under whichever view is up with no view naming
     // it.
     //
-    // TODO: nothing reads the filter, recede-style and map-style counters now that this fold reads
-    // the values instead. Decide on the refresh board whether they are still worth raising, and
-    // stop raising them where they are not.
+    // Which leaves those three counters deciding nothing, and they go on being raised anyway: a
+    // raise writes a line naming the signal as the board takes it, and the rebuild below reports
+    // which of them moved since the last one. So they are the record of what the player touched,
+    // read beside a rebuild rather than causing it - which is worth more than the flip they no
+    // longer trigger.
     //
     // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
     // combine here. The view is handed this cache's own board to fold its own live inputs from, so

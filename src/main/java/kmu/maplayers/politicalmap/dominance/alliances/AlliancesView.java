@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.dominance.alliances;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -11,8 +10,8 @@ import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
@@ -68,13 +67,13 @@ public final class AlliancesView implements DominancePaintedView {
     @Override
     public int getContentRevision(MapLayerRefreshBoard board) {
         // This view's one live input: the alliance set, whose revision the sector watcher bumps when
-        // membership moves, so the map repaints on a form/dissolve/transfer. The non-allied recede
-        // toggles are not folded in here - they are sampled by the bake with every other preference
-        // and folded in as values, so a flip that leaves the recede where it was rebuilds nothing
-        // while a real flip rebuilds whichever view is up. Composed through a fingerprint so a second
-        // live input later is one more source here rather than a wider contract.
-        return Fingerprints.compute(
-            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
+        // membership moves, so the map repaints on a form/dissolve/transfer. It is the set this view
+        // paints its blocs out of, so a membership change moves the fills themselves rather than only
+        // what is reported over them. The non-allied recede toggles are not folded in - they are
+        // sampled by the bake with every other preference and folded in as values, so a flip that
+        // leaves the recede where it was rebuilds nothing while a real flip rebuilds whichever view
+        // is up.
+        return PoliticalMapView.computeAllianceContentRevision(board);
     }
 
     @Override

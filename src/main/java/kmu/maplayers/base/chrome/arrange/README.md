@@ -19,7 +19,9 @@ and the [mod README](../../../../../../../../README.md) for project context.
 
 ## How the package divides
 
-Seven types, split along one line: what needs a running game, and what does not.
+The seven that do the work, split along one line: what needs a running game, and what does not. The
+package holds three more - the row, the action and the claim rule - each named below where what it
+carries is the subject.
 
 | Type | Owns |
 | --- | --- |

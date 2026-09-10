@@ -14,6 +14,7 @@ import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,19 @@ public final class ClusterAnchorPlacement {
     // principal axis and the preferred slant. Fixed, so a fan's configured width and the
     // count actually swept differ by exactly this.
     private static final int FIXED_EXTRA_DIRECTIONS = 2;
+
+    // What a placement carries where it has no band at all: a collapsed fit draws a dot and
+    // nothing else, so its font, its girth and its line count are all nothing. Named because
+    // three zeroes in a row at a call site say nothing about which component each is.
+    private static final float NO_FITTED_SIZE = 0f;
+    private static final int NO_FITTED_LINES = 0;
+
+    // The three diagnostic lines a placement may carry, each absent on its own terms: an accepted
+    // line only a collapse lacks, a near-miss only a collapse can show and only under its toggle,
+    // and an unbiased line only where the slope penalty moved the pick.
+    private static final Segment NO_ACCEPTED_AXIS = null;
+    private static final Segment NO_REJECTED_AXIS = null;
+    private static final Segment NO_UNBIASED_AXIS = null;
 
     // Searches only; never instantiated.
     private ClusterAnchorPlacement() {
@@ -216,26 +230,44 @@ public final class ClusterAnchorPlacement {
 
         if (rings.isEmpty()) {
             // No traceable border leaves nothing to prove a candidate interior - the
-            // one dead end the search cannot work around, so only the dot can show.
+            // one dead end the search cannot work around, so only the dot can show. No
+            // candidate was tried and no band was fitted, so both tallies are zero.
             return new ClusterSearch(
-                new ClusterAnchor(
-                    subject.identity(),
-                    centroidX,
-                    centroidY,
-                    subject.colour(),
-                    List.of(),
-                    0f,
-                    null,
-                    null,
-                    null,
-                    0f,
-                    0),
+                createCollapsedAnchor(subject, centroidX, centroidY, NO_REJECTED_AXIS),
                 0,
                 0);
         }
-
         var fitter = newBoxFitter(spec, subject.nameEstimator());
-        var icons = siteBySystemId.values();
+        var sweep = sweepCandidateLines(rings, siteBySystemId.values(), axis, spec, fitter);
+
+        if (sweep.bestAccepted() == null) {
+            // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
+            // near-miss span rides along only when the rejected toggle asked for it.
+            return new ClusterSearch(
+                createCollapsedAnchor(subject, centroidX, centroidY, sweep.resolveRejectedAxis()),
+                sweep.candidateCount(),
+                fitter.getBandFitCount());
+        }
+        return new ClusterSearch(
+            createFittedAnchor(subject, sweep.bestAccepted(), sweep.resolveUnbiasedAxis(spec)),
+            sweep.candidateCount(),
+            fitter.getBandFitCount());
+    }
+
+    // Every candidate line the search tries for one cluster, and the three verdicts the sweep
+    // carries away: the winner, the raw-height winner behind the yellow diagnostic, and the best
+    // near-miss behind the red one. Lifted out of the assembly above so that what is searched and
+    // what is made of the result are two readings rather than one run-on method.
+    //
+    // The slant preference is resolved here rather than handed in because nothing outside the
+    // sweep reads it: it only ever docks a candidate's score.
+    private static CandidateSweep sweepCandidateLines(
+            List<List<double[]>> rings,
+            Collection<double[]> icons,
+            PrincipalAxis axis,
+            LabelAnchorSpecification spec,
+            LabelBoxFitter fitter) {
+
         var slant = LabelSlantPreference.resolveFrom(axis, spec.scoring().maxSlantDegrees());
         var directions = buildCandidateDirections(axis, slant, spec.search().directionCount());
         var bestScore = 0.0;
@@ -290,57 +322,59 @@ public final class ClusterAnchorPlacement {
                 }
             }
         }
+        return new CandidateSweep(bestAccepted, longestAccepted, bestRejected, candidateCount);
+    }
 
-        if (bestAccepted != null) {
-            var accepted = bestAccepted.segment();
+    // The placement a winning box makes: the name block hangs off the accepted line's own
+    // midpoint, since that line has no tie to the centroid - the search is free to place it
+    // wherever the cluster is roomiest - and the lines drawn are the estimator's wrap at the very
+    // line count the box was sized for.
+    //
+    // A fitted anchor never carries a rejected axis: the red diagnostic is what a collapse shows,
+    // and a search that accepted a box has nothing to show a near-miss for.
+    private static ClusterAnchor createFittedAnchor(
+            ClusterLabelSubject subject,
+            LabelBoxFitter.BoxFit box,
+            Segment unbiasedAxis) {
 
-            // The accepted interval has no tie to the centroid any more, so the dot and
-            // the label's hang-point are the line's own midpoint.
-            var midX = (float) ((accepted.startX() + accepted.endX()) / 2.0);
-            var midY = (float) ((accepted.startY() + accepted.endY()) / 2.0);
+        var accepted = box.segment();
 
-            var unbiased = spec.diagnostics().showUnbiasedAxis()
-                    && longestAccepted != null
-                    && !longestAccepted.segment().equals(accepted)
-                ? longestAccepted.segment()
-                : null;
+        return new ClusterAnchor(
+            subject.identity(),
+            (float) ((accepted.startX() + accepted.endX()) / 2.0),
+            (float) ((accepted.startY() + accepted.endY()) / 2.0),
+            subject.colour(),
+            subject.nameEstimator().wrapIntoLines(box.lineCount()),
+            (float) box.fontHeight(),
+            accepted,
+            NO_REJECTED_AXIS,
+            unbiasedAxis,
+            (float) box.thickness(),
+            box.lineCount());
+    }
 
-            return new ClusterSearch(
-                new ClusterAnchor(
-                    subject.identity(),
-                    midX,
-                    midY,
-                    subject.colour(),
-                    subject.nameEstimator().wrapIntoLines(bestAccepted.lineCount()),
-                    (float) bestAccepted.fontHeight(),
-                    accepted,
-                    null, // Rejected axis.
-                    unbiased,
-                    (float) bestAccepted.thickness(),
-                    bestAccepted.lineCount()),
-                candidateCount,
-                fitter.getBandFitCount());
-        }
+    // The dot-only placement, for a cluster no box fit inside: no name, no band, and no accepted
+    // line, so the anchor is the point handed in. Stated once because the search reaches it two
+    // ways - a cluster with no traceable border at all, and one whose every candidate was
+    // discarded - and the two differ in nothing but the near-miss span one of them can show.
+    private static ClusterAnchor createCollapsedAnchor(
+            ClusterLabelSubject subject,
+            float anchorX,
+            float anchorY,
+            Segment rejectedAxis) {
 
-        // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
-        // near-miss span rides along only when the rejected toggle asked for it.
-        var rejected = bestRejected != null ? bestRejected.segment() : null;
-
-        return new ClusterSearch(
-            new ClusterAnchor(
-                subject.identity(),
-                centroidX,
-                centroidY,
-                subject.colour(),
-                List.of(),
-                0f,
-                null,
-                rejected,
-                null,
-                0f,
-                0),
-            candidateCount,
-            fitter.getBandFitCount());
+        return new ClusterAnchor(
+            subject.identity(),
+            anchorX,
+            anchorY,
+            subject.colour(),
+            List.of(),
+            NO_FITTED_SIZE,
+            NO_ACCEPTED_AXIS,
+            rejectedAxis,
+            NO_UNBIASED_AXIS,
+            NO_FITTED_SIZE,
+            NO_FITTED_LINES);
     }
 
     // Builds the box fitter from the tuning and the cluster's name estimator. Both halves
@@ -401,6 +435,40 @@ public final class ClusterAnchorPlacement {
         return new double[] {
             axis.centroidX() + shift * normalX,
             axis.centroidY() + shift * normalY};
+    }
+
+    // What one cluster's sweep of candidate lines came to: the box that won on the docked score,
+    // the box that won on raw font height, the best near-miss, and how many candidates were tried.
+    // Every one of them is what the assembly reads rather than what the sweep decided - the sweep
+    // ranks candidates and this record is where its ranking is read from, so the two diagnostic
+    // decisions below sit with the placement they describe rather than inside the loop.
+    private record CandidateSweep(
+        LabelBoxFitter.BoxFit bestAccepted,
+        LabelBoxFitter.BoxFit longestAccepted,
+        RejectedSpan bestRejected,
+        int candidateCount) {
+
+        // The red diagnostic's line: the furthest-along candidate discarded before the accepted
+        // line collapsed, or nothing where the toggle never asked the sweep to keep one.
+        private Segment resolveRejectedAxis() {
+            return bestRejected == null ? NO_REJECTED_AXIS : bestRejected.segment();
+        }
+
+        // The yellow diagnostic's line: the pure longest accepted box, shown only where the toggle
+        // asked for it and where the slope penalty actually moved the pick. Where it did not - the
+        // penalty at zero, or the longest line already the shallowest - the accepted line stands in
+        // for it and no second line is built.
+        private Segment resolveUnbiasedAxis(LabelAnchorSpecification spec) {
+
+            if (!spec.diagnostics().showUnbiasedAxis() || longestAccepted == null) {
+                return NO_UNBIASED_AXIS;
+            }
+            var unbiasedSegment = longestAccepted.segment();
+
+            return unbiasedSegment.equals(bestAccepted.segment())
+                ? NO_UNBIASED_AXIS
+                : unbiasedSegment;
+        }
     }
 
     // The best near-miss line for the red diagnostic: a candidate's clear span before the

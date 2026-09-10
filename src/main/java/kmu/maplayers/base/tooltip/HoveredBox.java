@@ -114,7 +114,7 @@ record HoveredBox(
         if (!MapLayerScreens.areLayersShownOnLiveScreen()) {
             return Optional.empty();
         }
-        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer(installation);
+        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(installation);
         if (layerRenderer == null) {
             return Optional.empty();
         }

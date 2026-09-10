@@ -385,7 +385,7 @@ final class HoveredBoxTest {
                     .thenReturn(false);
 
                 layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
+                    .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
                 assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))

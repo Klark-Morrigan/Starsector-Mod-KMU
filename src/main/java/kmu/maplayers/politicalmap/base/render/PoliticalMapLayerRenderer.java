@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.logging.ChangedLineTrace;
 import kmlib.starsector.ui.map.probes.MapIconOrderTrace;
 import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
@@ -113,15 +114,15 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // Reported under this mod's own verbosity rather than the library's, the line being about this
     // layer's problem: a logger named after a library class would sit outside the switch a player
     // reaches for when the map looks wrong.
-    private final ChangedLineTrace iconOrderTrace =
-        new ChangedLineTrace(LOG, "Map icon order", MapIconOrderTrace::describeTerrainIconOrder);
+    private final ChangedLineTrace iconOrderTrace = ChangedLineTrace.createWholeLineTrace(
+        LOG, "Map icon order", MapIconOrderTrace::describeTerrainIconOrder);
 
     // Which vanilla widgets the cursor is inside, reported when that changes. The hover comes from
     // the map's own geometry and knows nothing of the chrome laid over it, which is what the covers
     // answer for - and this is the line that says which widgets a build actually puts under the
     // cursor, so a cover that stops fitting a game build is diagnosed from the tree rather than
     // guessed at. Logged here for the reason above.
-    private final ChangedLineTrace widgetsUnderCursorTrace = new ChangedLineTrace(
+    private final ChangedLineTrace widgetsUnderCursorTrace = ChangedLineTrace.createKeyedLineTrace(
         LOG, "Map-tab widget trace", MapTabWidgetTrace::describeWidgetsUnderCursor);
 
     // The cursor read, taken from the source above on the first pass that wants one.

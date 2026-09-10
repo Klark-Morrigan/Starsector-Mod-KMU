@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.claims;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
@@ -20,7 +19,6 @@ import kmu.maplayers.politicalmap.base.politics.ClaimStats;
 import kmu.maplayers.politicalmap.base.politics.ClaimStatsAggregator;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimsHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
@@ -93,8 +91,7 @@ public final class ClaimsView implements PoliticalMapView {
         // economy, which the shared economy revision already repaints on. A live fingerprint for
         // explicit claim-flag flips is a later concern; until then a flag-only claim change waits for
         // the next economy rebuild.
-        return Fingerprints.compute(
-            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
+        return PoliticalMapView.computeAllianceContentRevision(board);
     }
 
     @Override

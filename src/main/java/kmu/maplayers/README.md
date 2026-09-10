@@ -151,7 +151,7 @@ Two words that are **not** synonyms, despite looking alike:
 The same map widget draws on the sector map and inside the visor, so "which layer is active" cannot
 be one shared value: it would paint the sector map's pick onto the intel screen and ignore the tab
 the player is looking at. Each screen holds its own `PersistedActiveLayerSelection` under its own
-key in `MapLayerScreens`, and `MapLayerRegistry.isActive` resolves which is live per frame from
+key in `MapLayerScreens`, and `MapLayerRegistry.isDrawnLayer` resolves which is live per frame from
 which screen is up.
 
 A screen's key is composed rather than spelled: `ScreenMemoryScope` appends that screen's segment to
@@ -234,7 +234,7 @@ bar once does not order it again per save.
   lifetime - replace on reinstall, release on removal, discard every one on load.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
-  render pass. It asks the active layer for a renderer and hands it the frame, so it names no layer;
+  render pass. It asks the drawn layer for a renderer and hands it the frame, so it names no layer;
   a layer that only switches (No Layer) supplies none, which is read as nothing to draw. Which
   sector it draws it finds through its own terrain entity, that being the one handle a plugin
   rebuilt from the save has. More than one terrain surface can paint one frame, so the per-frame

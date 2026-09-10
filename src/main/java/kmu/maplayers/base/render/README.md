@@ -29,10 +29,11 @@ it has. It is kept apart from `MapLayer` itself, which is a descriptor (id, tab 
 hotkey): folding drawing into the descriptor would merge two roles in one type, and a tab that only
 switches would be left with methods it has no answer for.
 
-`SectorMapLayerTerrainPlugin` is the terrain the engine actually calls. It reads the active layer,
-asks it for the renderer belonging to the sector being drawn, and draws through it. A layer that
-supplies none - No Layer, or any future switch-only tab - reads as nothing to draw, which is the
-same answer the surface gives when no layer is active at all. `base.tooltip`'s dispatcher resolves
+`SectorMapLayerTerrainPlugin` is the terrain the engine actually calls. It reads the layer being
+drawn - the screen's pick, or the picture still dissolving off it - asks that layer for the renderer
+belonging to the sector being drawn, and draws through it. A layer that supplies none - No Layer, or
+any future switch-only tab - reads as nothing to draw, which is the same answer the surface gives
+when nothing is on the screen at all. `base.tooltip`'s dispatcher resolves
 its box the same way, off the same two reads, so neither pass names a layer.
 
 Hiding the layers asks nothing of this surface but the alpha. The show-or-hide pick reaches it
@@ -227,9 +228,13 @@ share is still readable against the whole - and `top=` keeps only as many as are
 
 `perframe` divides the totals by the calls of `mapLayer.prepare`, which is the beat that runs once
 a frame, so a figure means the same whether the map was left open for four seconds or four minutes;
-a capture holding no call of it says so and leaves the totals alone. `log` writes the same reading
-to `starsector.log` instead of the overlay, which is where a capture asked for in a bug report has
-to end up.
+a capture holding no call of it says so and leaves the totals alone.
+
+Every reading goes to `starsector-core/starsector.log`, and the console gets a line saying so. The
+table is wider than the overlay can lay out, so what the overlay would show is a wrapped copy of
+what the log holds aligned - and the log is the file a capture asked for in a bug report has to end
+up in anyway. The notice is printed rather than nothing, since a command that visibly did nothing
+reads as one that failed.
 
 ## Silencing a minimap parked off screen
 

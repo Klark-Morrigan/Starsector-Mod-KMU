@@ -159,7 +159,7 @@ public final class PoliticalMapViewRegistry {
      * @return that screen's selected view while the political-map tab is its active pick, else null
      */
     public static PoliticalMapView resolveActiveViewOn(ScreenLayerPicks screenPicks) {
-        if (hostTab == null || !MapLayerRegistry.isActiveOn(screenPicks, hostTab)) {
+        if (hostTab == null || !MapLayerRegistry.isDrawnLayerOn(screenPicks, hostTab)) {
             return null;
         }
         return getSelectedView(screenPicks.memoryScope());

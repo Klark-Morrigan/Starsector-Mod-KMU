@@ -92,7 +92,7 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     private void stubTheActiveLayersRendererOnAShownScreen() {
 
         layerRegistryMock
-            .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
+            .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
             .thenReturn(layerRendererMock);
 
         layerScreensMock

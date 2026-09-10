@@ -225,7 +225,7 @@ final class SectorMapLayerTerrainPluginTest {
                  var layerScreensMock = mockStatic(MapLayerScreens.class)) {
 
                 layerRegistryMock
-                    .when(() -> MapLayerRegistry.resolveActiveMapRenderer(any()))
+                    .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
                 layerScreensMock

@@ -287,47 +287,47 @@ final class MapLayerRegistryTest {
     }
 
     @Nested
-    class GetActiveLayer {
+    class GetDrawnLayer {
 
         @Test
-        void getActiveLayerAnswersFromTheShowingScreensPick() {
+        void getDrawnLayerAnswersFromTheShowingScreensPick() {
 
             storeADifferentPickOnEachScreen();
             intelScreenFake.setIntelTabOpen(true);
 
-            assertThat(MapLayerRegistry.getActiveLayer())
+            assertThat(MapLayerRegistry.getDrawnLayer())
                 .isSameAs(firstLayerMock);
         }
 
         @Test
-        void getActiveLayerIsNullOnceTheShowingScreensLayersHaveFadedOff() {
-            // The one read hiding hangs off: every pass driven by the active pick already draws nothing
+        void getDrawnLayerIsNullOnceTheShowingScreensLayersHaveFadedOff() {
+            // The one read hiding hangs off: every pass driven by the drawn layer already draws nothing
             // for a null, so this takes the overlay, the labels and the hover box off together.
             hideTheMapScreensLayers();
 
-            assertThat(MapLayerRegistry.getActiveLayer())
+            assertThat(MapLayerRegistry.getDrawnLayer())
                 .isNull();
         }
 
         @Test
-        void getActiveLayerAnswersThePickWhileOnlyTheOtherScreensLayersAreHidden() {
+        void getDrawnLayerAnswersThePickWhileOnlyTheOtherScreensLayersAreHidden() {
             // The per-screen half of the same gate: the intel screen hidden must leave the sector map
             // painting its own pick, which is the whole reason the two picks are kept apart.
             storeADifferentPickOnEachScreen();
             hideTheIntelScreensLayers();
             intelScreenFake.setIntelTabOpen(false);
 
-            assertThat(MapLayerRegistry.getActiveLayer())
+            assertThat(MapLayerRegistry.getDrawnLayer())
                 .isSameAs(secondLayerMock);
         }
 
         @Test
-        void getActiveLayerAnswersAShownScreenWithoutReadingTheHidePace() {
+        void getDrawnLayerAnswersAShownScreenWithoutReadingTheHidePace() {
             // A screen with its layers on is answered off the stored pick alone. Worth pinning rather
             // than left as an accident of the order two conditions are written in: the fade is derived
             // from a clock and a settings read, and asking for it on every frame the layers are simply
             // on would put both on the map's hottest path to say what the pick has already said.
-            assertThat(MapLayerRegistry.getActiveLayer())
+            assertThat(MapLayerRegistry.getDrawnLayer())
                 .isSameAs(secondLayerMock);
 
             mapLayerSettingsMock
@@ -335,22 +335,22 @@ final class MapLayerRegistryTest {
         }
 
         @Test
-        void getActiveLayerIsNullBeforeAnyLayerIsRegistered() {
+        void getDrawnLayerIsNullBeforeAnyLayerIsRegistered() {
             // The map surface can be asked for a frame before the composition root has run, so the
             // registry has to answer "no pick" rather than leave a caller to find out by throwing.
             MapLayerRosters.forgetEveryLayer();
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.getActiveLayer())
+            assertThat(MapLayerRegistry.getDrawnLayer())
                 .isNull();
         }
     }
 
     @Nested
-    class ResolveActiveMapRenderer {
+    class ResolveDrawnMapRenderer {
 
         @Test
-        void resolveActiveMapRendererAsksTheActiveLayerAboutTheInstallationItWasHanded() {
+        void resolveDrawnMapRendererAsksTheDrawnLayerAboutTheInstallationItWasHanded() {
             // The roster is the process's while a renderer is one sector's, so the registry must
             // pass the installation through rather than resolve one of its own - a registry that
             // picked the running sector's would hand every surface the same renderer however many
@@ -363,37 +363,37 @@ final class MapLayerRegistryTest {
 
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
                 .isSameAs(layerRendererMock);
         }
 
         @Test
-        void resolveActiveMapRendererIsNullWhenTheActivePickDrawsNothing() {
+        void resolveDrawnMapRendererIsNullWhenTheDrawnLayerPaintsNothing() {
             // The switch-only tab, whose whole expression is a null renderer - and the pre-
-            // registration frame below it, answered the same way so no pass driven by the active
-            // pick needs a case for either. Stated rather than left to the stub's own default, or
+            // registration frame below it, answered the same way so no pass driven by the drawn
+            // layer needs a case for either. Stated rather than left to the stub's own default, or
             // the case would pass on a layer that was never asked at all.
             when(secondLayerMock.resolveRenderer(installation))
                 .thenReturn(null);
 
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
                 .isNull();
         }
 
         @Test
-        void resolveActiveMapRendererIsNullBeforeAnyLayerIsRegistered() {
+        void resolveDrawnMapRendererIsNullBeforeAnyLayerIsRegistered() {
 
             MapLayerRosters.forgetEveryLayer();
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
                 .isNull();
         }
 
         @Test
-        void resolveActiveMapRendererStillDrawsPartWayThroughTheHide() {
+        void resolveDrawnMapRendererStillDrawsPartWayThroughTheHide() {
             // What the fade is for: the pick already reads hidden, and the overlay must go on being
             // handed a renderer until the dissolve is over, or the picture would blink out from under
             // the sidebar that is still thinning beside it.
@@ -404,78 +404,78 @@ final class MapLayerRegistryTest {
 
             startHidingTheMapScreensLayers();
 
-            assertThat(MapLayerRegistry.resolveActiveMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
                 .isSameAs(layerRendererMock);
         }
     }
 
     @Nested
-    class IsActive {
+    class IsDrawnLayer {
 
         @Test
-        void isActiveIsTrueOnlyForTheResolvedActivePick() {
+        void isDrawnLayerIsTrueOnlyForTheResolvedDrawnLayer() {
 
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.isActive(secondLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
                 .isTrue();
-            assertThat(MapLayerRegistry.isActive(firstLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
                 .isFalse();
         }
 
         @Test
-        void isActiveAnswersFromTheIntelPickWhileTheIntelScreenIsUp() {
+        void isDrawnLayerAnswersFromTheIntelPickWhileTheIntelScreenIsUp() {
             // The bug this guards: each screen keeps its own tab, so an overlay reading one fixed
             // screen's pick painted the sector map's choice onto the intel screen - No Layer on the
             // intel tab could not turn it off there.
             storeADifferentPickOnEachScreen();
             intelScreenFake.setIntelTabOpen(true);
 
-            assertThat(MapLayerRegistry.isActive(firstLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
                 .isTrue();
-            assertThat(MapLayerRegistry.isActive(secondLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
                 .isFalse();
         }
 
         @Test
-        void isActiveAnswersFromTheMapPickWhileTheIntelScreenIsNotUp() {
+        void isDrawnLayerAnswersFromTheMapPickWhileTheIntelScreenIsNotUp() {
 
             storeADifferentPickOnEachScreen();
             intelScreenFake.setIntelTabOpen(false);
 
-            assertThat(MapLayerRegistry.isActive(secondLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
                 .isTrue();
-            assertThat(MapLayerRegistry.isActive(firstLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
                 .isFalse();
         }
 
         @Test
-        void isActiveIsFalseForEveryLayerOnceTheScreensLayersHaveFadedOff() {
+        void isDrawnLayerIsFalseForEveryLayerOnceTheScreensLayersHaveFadedOff() {
             // A hidden screen has no layer in play at all, which is what stands each layer's own state
             // down without a read of its own - the default pick included, since it is the one a layer
             // would otherwise go on thinking it held.
             hideTheMapScreensLayers();
 
-            assertThat(MapLayerRegistry.isActive(secondLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(secondLayerMock))
                 .isFalse();
-            assertThat(MapLayerRegistry.isActive(firstLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayer(firstLayerMock))
                 .isFalse();
         }
     }
 
     @Nested
-    class IsActiveOn {
+    class IsDrawnLayerOn {
 
         @Test
-        void isActiveOnAnswersTheScreenHandedInRatherThanTheShowingOne() {
+        void isDrawnLayerOnAnswersTheScreenHandedInRatherThanTheShowingOne() {
             // The gate a layer's own state reads, for a caller that already knows which panel it is
             // answering for - posed the same way as the read beneath it, with the visor up.
             storeADifferentPickOnEachScreen();
             intelScreenFake.setIntelTabOpen(true);
 
-            assertThat(MapLayerRegistry.isActiveOn(MapLayerScreens.getMapPicks(), secondLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayerOn(MapLayerScreens.getMapPicks(), secondLayerMock))
                 .isTrue();
-            assertThat(MapLayerRegistry.isActiveOn(MapLayerScreens.getMapPicks(), firstLayerMock))
+            assertThat(MapLayerRegistry.isDrawnLayerOn(MapLayerScreens.getMapPicks(), firstLayerMock))
                 .isFalse();
         }
     }
@@ -530,7 +530,7 @@ final class MapLayerRegistryTest {
         // A drawn frame before the switch-off, which is what a session always has: every control able to
         // switch a screen off stands on that screen, so the screen is being drawn when one is used. It is
         // that frame the screen catches its picture on, and what it dissolves afterwards.
-        MapLayerRegistry.getActiveLayer();
+        MapLayerRegistry.getDrawnLayer();
 
         MapLayerScreens
             .getMapPicks()

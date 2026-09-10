@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.math.hashing.Fingerprints;
 import kmlib.starsector.factions.FactionCrests;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
@@ -18,6 +19,7 @@ import kmu.maplayers.politicalmap.base.politics.BlocStatsRead;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.politics.holders.ClaimAugmentedHolderProvider;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderProvider;
+import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlanInputs;
 import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
@@ -67,12 +69,16 @@ public interface PoliticalMapView {
      * drawables' content token so a change to any of them forces a rebuild even when no
      * setting moved. A view composes it from its own sources ({@link
      * kmlib.math.hashing.Fingerprints#compute}), so its number of live inputs can grow
-     * without widening this contract: the faction view folds the live alliance-set revision alone,
-     * since that is all its per-faction painting reads; the alliances view folds that same revision
-     * plus its non-allied recede toggles, so either a membership change or a toggle flip repaints
-     * it. A view sampling nothing live folds no sources and returns a constant, never triggering a
-     * rebuild on its own. This is what lets the shared plugin invalidate on a view's live data
-     * without naming any concrete view - each view declares its own fingerprint.
+     * without widening this contract. A view sampling nothing live folds no sources and returns a
+     * constant, never triggering a rebuild on its own. This is what lets the shared plugin
+     * invalidate on a view's live data without naming any concrete view - each view declares its
+     * own fingerprint.
+     *
+     * <p>All three views KMU ships fold the alliance set alone, and each for a reason of its own,
+     * so {@link #computeAllianceContentRevision} is what they answer with. The player's own
+     * preferences are not folded here by any of them: the bake samples those with every other
+     * setting and folds them in as values, so a flip that leaves a preference where it was rebuilds
+     * nothing.
      *
      * <p>The board arrives as an argument because a view is a stateless strategy every sector's
      * machinery shares, while the counters it folds are one sector's: a view resolving a board of
@@ -86,6 +92,27 @@ public interface PoliticalMapView {
      *         live inputs
      */
     int getContentRevision(MapLayerRefreshBoard board);
+
+    /**
+     * The fingerprint of the alliance set alone, which is what every view that reads no other live
+     * input answers {@link #getContentRevision} with.
+     *
+     * <p>Stated once here rather than composed per view, because it is one arrangement of one
+     * source and three copies of it would be three places for a later source to be added to two of.
+     * What each view is answering is not shared and stays at each override: the alliances view
+     * paints its blocs out of the set, the faction view's bands report contest against it, and the
+     * claims view lays its runs by it - three different reasons to repaint on one number.
+     *
+     * <p>Composed through a fingerprint rather than handed back bare, so a view that grows a second
+     * live input adds a source beside this one instead of changing what it returns.
+     *
+     * @param board the refresh board of the sector this ask is about
+     * @return the content fingerprint of that board's alliance revision
+     */
+    static int computeAllianceContentRevision(MapLayerRefreshBoard board) {
+        return Fingerprints.compute(
+            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
+    }
 
     /**
      * The holder grouping this view resolves its pass under: identity for the

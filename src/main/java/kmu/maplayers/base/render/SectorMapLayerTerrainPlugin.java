@@ -130,7 +130,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // installed on the sector being drawn, so switching a tab switches what paints with no
         // per-layer branch here. Null when nothing draws at all - no registered pick yet, or a pick
         // that paints nothing.
-        var layerRenderer = MapLayerRegistry.resolveActiveMapRenderer(installation);
+        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(installation);
 
         if (layerRenderer == null) {
             return;

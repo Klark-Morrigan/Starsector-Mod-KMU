@@ -79,9 +79,11 @@ choice untouched and honoured again the moment there is a control for it. Which 
 ## What a screen is drawing
 
 What a screen is set to and what is on it are the same answer except while a dissolve runs, and
-`ScreenDrawnLayer` is where they part. It is what `MapLayerRegistry.getActiveLayer`, `isActive` and
-`resolveActiveMapRenderer` all resolve through, so every pass driven by "what draws" reads one
-answer, and the two picks are left saying only what they are each about.
+`ScreenDrawnLayer` is where they part. It is what `MapLayerRegistry.getDrawnLayer`, `isDrawnLayer` and
+`resolveDrawnMapRenderer` all resolve through, so every pass driven by "what draws" reads one answer,
+and the two picks are left saying only what they are each about. The registry says *drawn* rather
+than *active* for that reason: active is what a screen is set to, which is `ActiveLayerSelection`'s
+word and stays there.
 
 A dissolve is *of* something, and the something can move while it runs. Taking the last painting tab
 off the bar switches the screen off and lands its pick on the empty view in the one frame - both are

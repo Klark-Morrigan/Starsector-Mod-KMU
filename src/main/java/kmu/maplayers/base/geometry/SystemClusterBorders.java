@@ -71,14 +71,7 @@ public final class SystemClusterBorders {
      *                                     by nothing and so stays on the raw cell border, letting two
      *                                     clusters traced against each other meet exactly; empty for a
      *                                     trace that gives every boundary edge the uniform channel
-     * @param borderInset                  inward inset applied to each ring, matching the fills'
-     *                                     channel so the border lands on the fill edge
-     * @param vertexWeldTolerance          largest gap between two reports of a shared corner
-     *                                     still welded into one when chaining the boundary
-     * @param miterSpikeLimit              a corner whose inset miter would spike past this
-     *                                     multiple of {@code borderInset} is bevelled instead of
-     *                                     pointed, so a sharp cluster corner never shoots an
-     *                                     inward loop
+     * @param tolerances                   the three distances the trace is tuned by
      * @return one inset (un-rounded) ring per cluster and per enclave, in world
      *         coordinates; empty when the group holds no borderable geometry
      */
@@ -87,21 +80,20 @@ public final class SystemClusterBorders {
             Map<String, List<CellEdge>> edgesByCellId,
             CellGrouping grouping,
             Set<String> coincidentNeighbourSystemIds,
-            double borderInset,
-            double vertexWeldTolerance,
-            double miterSpikeLimit) {
+            BorderTraceTolerances tolerances) {
 
         var boundary = collectBoundarySegments(
-            groupCellIds, edgesByCellId,
+            groupCellIds,
+            edgesByCellId,
             grouping,
             coincidentNeighbourSystemIds,
-            borderInset);
+            tolerances.borderInset());
 
         var rings = new ArrayList<List<double[]>>();
         for (var ring : EdgeRings.chainIntoRingsWithEdgeValues(
                 boundary.segments(),
                 boundary.edgeDistances(),
-                vertexWeldTolerance)) {
+                tolerances.vertexWeldTolerance())) {
 
             // Offset each ring edge by its own distance: the channel for an ordinary
             // boundary, nothing across a coincident neighbour. The per-edge miter path is
@@ -110,7 +102,7 @@ public final class SystemClusterBorders {
             var inset = PolygonOffsets.insetPolygonByMiter(
                 ring.corners(),
                 ring.edgeValues(),
-                miterSpikeLimit);
+                tolerances.miterSpikeLimit());
 
             if (!isCollapsed(ring.corners(), inset)) {
                 rings.add(inset);

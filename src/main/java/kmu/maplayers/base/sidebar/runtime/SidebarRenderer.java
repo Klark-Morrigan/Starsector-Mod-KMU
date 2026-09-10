@@ -89,10 +89,11 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     private final SessionWarning tooltipRepaintWarning = new SessionWarning(LOG);
 
     // View-state trace. The panel has no error state - when a signal blocks it, it is simply absent - so
-    // the log is the only place "why hidden" or "drawn where" is answerable. Deduped on the whole line: a
-    // steady state is one line, every change a fresh one. Null to start, so the first pass logs and thereby
-    // proves the listener is registered and fires.
-    private String lastLoggedLine;
+    // the log is the only place "why hidden" or "drawn where" is answerable. Deduped on the view state
+    // rather than on the whole line: the drawn footprint carries a fade that moves every frame of every
+    // open and close, and keyed on that the trace would report continuously and say nothing. Null to
+    // start, so the first pass logs and thereby proves the listener is registered and fires.
+    private String lastLoggedKey;
 
     // Wall-clock nanos at the previous drawn frame, so the collapse animation advances by real elapsed
     // time. A wall clock rather than the campaign's own because these screens are open on a paused game
@@ -134,24 +135,7 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // The only pass composited after the entire core screen (and its tooltips), so it is the sole layer
         // the opaque core-UI screen cannot occlude - the panel has to draw here.
         if (fade <= HIDDEN) {
-
-            // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
-            // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
-            previousFrameNanos = 0L;
-
-            // The panel's input motions reset with that clock: a fade or a pulse left part-way through has
-            // no elapsed time to wind it down on re-open, so it would paint as the tail of an interaction
-            // the player never saw begin.
-            host.getController().resetInputMotions();
-
-            // The panel is off the screen, so what it last laid out is no longer on it: dropped here, where
-            // the draw learns it has stood down, rather than left standing for a hit-test to find.
-            host.clearDrawnPlacement();
-
-            // "Not drawn" rather than "hidden": this says the panel was not painted, while what follows
-            // says why - and one of those reasons is now the layers being hidden, which the two words
-            // together would read as a stutter.
-            logViewStateOnChange("not drawn; " + host.describeViewState());
+            standPanelDown();
             return;
         }
 
@@ -178,7 +162,8 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         // logged once.
         var placement = host.refreshPlacement();
         if (placement == null) {
-            logViewStateOnChange("not drawn; placement unavailable; " + host.describeViewState());
+            logViewStateOnChange(TracedLine.createWholeLine(
+                "not drawn; placement unavailable; " + host.describeViewState()));
             return;
         }
 
@@ -207,18 +192,28 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
 
         // Logged before the draw, with the resolved footprint / screen / opacity, so a panel gated in but
         // never seen is diagnosed from the numbers rather than another run.
-        logViewStateOnChange("showing; "
+        //
+        // The view state and the screen it was resolved against are what the line is keyed on. The
+        // footprint and the two alphas are not: the fade runs from 0 to 1 across every open and close, so
+        // a key holding it turns one transition into a line per frame of the animation, and the state
+        // change underneath is then unreadable. They stay in the printed text, which is where a panel
+        // gated in but never seen is actually diagnosed from.
+        var viewStateKey = "showing; "
             + host.describeViewState()
             + "; screen="
             + VanillaScreen.resolveUiWidth()
             + "x"
-            + VanillaScreen.resolveUiHeight()
-            + " box="
-            + formatRect(placement.body().box())
-            + " opacity="
-            + alpha.bodyOpacity()
-            + " fade="
-            + alpha.panelFade());
+            + VanillaScreen.resolveUiHeight();
+
+        logViewStateOnChange(new TracedLine(
+            viewStateKey,
+            viewStateKey
+                + " box="
+                + formatRect(placement.body().box())
+                + " opacity="
+                + alpha.bodyOpacity()
+                + " fade="
+                + alpha.panelFade()));
 
         // The live notch state: the collapse fraction the layout above was resolved at, and how far the
         // handle's hover has faded against that same placement, so the drawn fold and the lit handle match
@@ -314,6 +309,31 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
         }
     }
 
+    // What a frame that paints nothing still owes: the panel is off the screen, so everything the draw
+    // holds between frames on its behalf is let go of here, where the draw is what learns it has stood
+    // down. Nothing else is told - the panel simply stops being asked for.
+    private void standPanelDown() {
+
+        // Drop the frame clock so the next re-open advances from nothing rather than by the whole gap
+        // the screen was closed, which would otherwise snap a half-folded panel straight to its end.
+        previousFrameNanos = 0L;
+
+        // The panel's input motions reset with that clock: a fade or a pulse left part-way through has
+        // no elapsed time to wind it down on re-open, so it would paint as the tail of an interaction
+        // the player never saw begin.
+        host.getController().resetInputMotions();
+
+        // What it last laid out is no longer on the screen either: dropped here rather than left
+        // standing for a hit-test to find.
+        host.clearDrawnPlacement();
+
+        // "Not drawn" rather than "hidden": this says the panel was not painted, while what follows
+        // says why - and one of those reasons is the layers being hidden, which the two words together
+        // would read as a stutter.
+        logViewStateOnChange(TracedLine.createWholeLine(
+            "not drawn; " + host.describeViewState()));
+    }
+
     // Real seconds since the previous drawn frame, off the wall clock so the fold keeps animating on the
     // paused screen. A zeroed frame clock - the first frame and every re-open - reports no elapsed time, so
     // a re-opened panel resumes from where it was rather than jumping by the whole time the screen was shut.
@@ -329,13 +349,14 @@ public final class SidebarRenderer implements CampaignUIRenderingListener {
     }
 
     // Logs the composed view-state line once per change; the dedupe keeps a steady state to one line while
-    // every real transition prints a fresh one.
-    private void logViewStateOnChange(String line) {
-        if (line.equals(lastLoggedLine)) {
+    // every real transition prints a fresh one. Keyed rather than compared whole, so a footprint that
+    // shifts under an unchanged view state costs no line while still being printed when one is due.
+    private void logViewStateOnChange(TracedLine line) {
+        if (line.changeKey().equals(lastLoggedKey)) {
             return;
         }
-        lastLoggedLine = line;
-        LOG.debug("Map layer sidebar " + line);
+        lastLoggedKey = line.changeKey();
+        LOG.debug("Map layer sidebar " + line.text());
     }
 
     // Says once a session that the tooltip repaint is broken, so a game build that moves the draw entry

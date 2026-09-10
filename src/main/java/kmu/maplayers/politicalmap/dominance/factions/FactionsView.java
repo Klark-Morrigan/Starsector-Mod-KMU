@@ -4,15 +4,13 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.math.hashing.Fingerprints;
-
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.DominancePaintedView;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
+import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
-import kmu.maplayers.politicalmap.base.refresh.PoliticalMapRefreshSignal;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.util.KmuStrings;
@@ -57,8 +55,7 @@ public final class FactionsView implements DominancePaintedView {
         // is laid at contested length only against a bloc the painter is not allied with. Without
         // this fold, an alliance formed or dissolved in play leaves every band drawn at the old
         // lengths until an unrelated economy change happens to rebuild the map.
-        return Fingerprints.compute(
-            () -> board.getRevision(PoliticalMapRefreshSignal.ALLIANCES));
+        return PoliticalMapView.computeAllianceContentRevision(board);
     }
 
     @Override

@@ -11,10 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The roster of map layers, and the one answer everything that paints hangs off: which of them is in
- * play on the screen showing this frame. Each layer's own state reads {@link #isActive} to decide
- * whether it is the one to draw, and the map surface dispatches through
- * {@link #resolveActiveMapRenderer} - so all agree on one selection without sharing state directly.
+ * The roster of map layers, and the one answer everything that paints hangs off: which of them is on
+ * the screen showing this frame. Each layer's own state reads {@link #isDrawnLayer} to decide whether
+ * it is the one to draw, and the map surface dispatches through {@link #resolveDrawnMapRenderer} - so
+ * all agree on one reading without sharing state directly.
+ *
+ * <p>Drawn rather than picked, throughout. What a screen is set to is its {@link ActiveLayerSelection}
+ * and stays that class's word; what is on the screen is {@link ScreenDrawnLayer}'s, and the two part
+ * for exactly as long as a dissolve runs. Every reading here is the second, since every one of them
+ * exists to answer a pass that paints.
  *
  * <p>{@link #getLayers()} is the roster and not the row of tabs any screen draws: which of them a
  * given screen offers is {@link ScreenLayerTabs}', a screen carrying a control of its own on the
@@ -141,11 +146,10 @@ public final class MapLayerRegistry {
      *         what the map surface dispatches its render pass through, so the paint follows the tab
      *         the player is looking at without the surface naming a layer; it follows the live screen
      *         rather than one fixed screen, so the intel screen's own tab governs what paints there
-     *         while the sector map keeps its own pick. What is on a screen and what that screen is set
-     *         to are the same answer except while a dissolve runs - see {@link ScreenDrawnLayer}
+     *         while the sector map keeps its own pick
      */
-    public static MapLayer getActiveLayer() {
-        return resolveActiveLayerOn(MapLayerScreens.resolveLivePicks());
+    public static MapLayer getDrawnLayer() {
+        return MapLayerScreens.resolveLivePicks().drawnLayer().resolveDrawnLayer();
     }
 
     /**
@@ -160,14 +164,14 @@ public final class MapLayerRegistry {
      * hands back is one sector's.
      *
      * @param installation the machinery installed on the sector being drawn
-     * @return that sector's renderer for the active pick, or null when nothing draws
+     * @return that sector's renderer for the drawn layer, or null when nothing draws
      */
-    public static MapLayerRenderer resolveActiveMapRenderer(MapLayerInstallation installation) {
-        var activeLayer = getActiveLayer();
-        if (activeLayer == null) {
+    public static MapLayerRenderer resolveDrawnMapRenderer(MapLayerInstallation installation) {
+        var drawnLayer = getDrawnLayer();
+        if (drawnLayer == null) {
             return null;
         }
-        return activeLayer.resolveRenderer(installation);
+        return drawnLayer.resolveRenderer(installation);
     }
 
     /**
@@ -175,13 +179,13 @@ public final class MapLayerRegistry {
      *         own state reads to decide whether it is the one in play, which a layer dissolving off a
      *         switched-off screen still is until it is gone
      */
-    public static boolean isActive(MapLayer layer) {
-        return isActiveOn(MapLayerScreens.resolveLivePicks(), layer);
+    public static boolean isDrawnLayer(MapLayer layer) {
+        return isDrawnLayerOn(MapLayerScreens.resolveLivePicks(), layer);
     }
 
     /**
-     * The same gate as {@link #isActive} for a screen already in hand, rather than for whichever is
-     * showing.
+     * The same gate as {@link #isDrawnLayer} for a screen already in hand, rather than for whichever
+     * is showing.
      *
      * <p>For a caller that needs more of one screen than its tab, and so has resolved which screen it
      * is answering for once and carried it. Resolved again here, the gate could answer a different
@@ -191,9 +195,9 @@ public final class MapLayerRegistry {
      * @param layer       the layer asking whether it is the one on that screen
      * @return whether {@code layer} is the layer on that screen
      */
-    public static boolean isActiveOn(ScreenLayerPicks screenPicks, MapLayer layer) {
+    public static boolean isDrawnLayerOn(ScreenLayerPicks screenPicks, MapLayer layer) {
         // Layers are singletons, so identity settles it without an id compare.
-        return resolveActiveLayerOn(screenPicks) == layer;
+        return screenPicks.drawnLayer().resolveDrawnLayer() == layer;
     }
 
     /**
@@ -228,18 +232,5 @@ public final class MapLayerRegistry {
             }
         }
         return -1;
-    }
-
-    // What one screen is drawing, for a screen already in hand rather than for whichever is showing.
-    // Both readings above are this applied to a screen: the live ones resolve which that is first, and
-    // the carried gate is handed one.
-    //
-    // Asked of that screen's own reading rather than composed here, because what is on a screen is not
-    // its pick: hiding it leaves the picture dissolving off it for a while, and what is dissolving is
-    // what was there rather than whatever has been picked since. Every pass driven by this already
-    // treats "nothing" as nothing to draw, so one read takes the overlay, the labels and the hover box
-    // off the screen together.
-    private static MapLayer resolveActiveLayerOn(ScreenLayerPicks screenPicks) {
-        return screenPicks.drawnLayer().resolveDrawnLayer();
     }
 }

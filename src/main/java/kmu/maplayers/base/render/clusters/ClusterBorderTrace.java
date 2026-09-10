@@ -1,5 +1,6 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmu.maplayers.base.geometry.BorderTraceTolerances;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
@@ -60,8 +61,9 @@ public record ClusterBorderTrace(
             edgesByCellId,
             grouping,
             coincidentNeighbourSystemIds,
-            CellShaper.BORDER_INSET_DISTANCE,
-            weldTolerance,
-            miterSpikeLimit);
+            new BorderTraceTolerances(
+                CellShaper.BORDER_INSET_DISTANCE,
+                weldTolerance,
+                miterSpikeLimit));
     }
 }
