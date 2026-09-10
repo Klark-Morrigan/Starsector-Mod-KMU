@@ -87,8 +87,11 @@ second composed out of the first. The reverse import is what would make "may thi
 on whether anything is being drawn, so each half is a package of its own - the gate closes a
 package root, and a parent root closes its own children with it.
 
-A third package sits *under* both: `observations` states how old the news about a concealed fact is,
-in the same words whatever the fact is about. It is gated against importing either of the other two,
+A fourth sits beside the first: `structures` keeps what was observed of the built things in orbit
+that are not colonies, which conceal a different fact for a different reason.
+
+Under all of them is `observations`, which states how old the news about a concealed fact is, in the
+same words whatever the fact is about. It is gated against importing any of the families above,
 which is what keeps it from learning what a colony is - a shared rule that named one family would
 be that family's rule with extra callers.
 
@@ -295,6 +298,21 @@ bar once does not order it again per save.
   each spelt by `ColonyObservationCodec` - the moment, then the place - and `PresentColonies` is
   what a load asks which colonies the sector still holds, read off the raw market listings so a
   superseded market that may yet win its place is not shed as gone.
+- **`base/visibility/structures`** - what was last observed of a built structure: a comm relay, a
+  nav buoy, a sensor array. KMLib states which structures a place holds and what each one plainly
+  is; the register here says what one looked like when somebody last established it, which is the
+  only way its holder can be stated without either naming a faction in a system nobody has
+  approached or reporting a handover that happened while the player was a sector away. A
+  `StructureObservation` carries the holder, the state the structure was in, and a moment per axis:
+  who holds it is established by standing there, whether it works by anyone living in the same
+  system, and the two go stale independently - a relay visited once and watched since has a current
+  state beside a four-cycle-old holder. A running hack is deliberately absent from it: the sniffer
+  reports itself into the player's own comm queue for as long as it lasts and nothing fires when it
+  lapses, so it is read live rather than recalled out of a save years later.
+  `StructureObservations` is the port a rule reads the register through, over
+  `SectorStructureObservations`, whose entries sit in the shared `ObservationStore` under a key of
+  its own and are spelt by `StructureObservationCodec` - the two moments, the state letters, then
+  the holder id to the end of the entry.
 - **`base/visibility/observations`** - how old the news about one concealed fact is, stated once for
   every family that conceals one. `ObservationRecency` is the triad it can be in - something is
   revealing it now, the record recalls it from a moment, or nothing ever established it - sealed so
