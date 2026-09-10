@@ -2,19 +2,16 @@ package kmu.maplayers.base.geometry.output;
 
 import kmlib.math.geometry.Bounds;
 
+import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
+import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.CoastCrossings;
 import kmu.maplayers.base.geometry.CoastPockets;
-import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.VoidBridgePockets;
-import kmu.maplayers.base.geometry.VoidBridges;
-import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.svg.SvgDrawing;
 import kmu.svg.SvgPaint;
@@ -24,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -182,25 +180,35 @@ public final class SectorSvgWriter {
     // Over the cells rather than under them, because the question a coast is drawn to answer
     // is where it runs against the shapes it was traced from - and a coast passing INSIDE a
     // cell is the failure worth seeing, which a cell drawn over the top would hide.
+    //
+    // The whole construction, whatever the window had switched on: the water under the lines,
+    // the spans, then the shores. A saved picture is for keeping or comparing, and one missing
+    // a layer because a switch happened to be off at the time is a picture of a map that was
+    // never built.
     private static void drawCoastlines(
             SvgDrawing drawing,
             List<double[]> sites,
             DrawnSector drawn) {
 
-        var traced = drawn.coast();
+        var laid = drawn.laid();
+        var traced = laid.traceCoasts();
 
-        drawCapturedVoid(drawing, sites, drawn);
-        drawTrappedVoid(drawing, traced, sites, drawn.parameters(), drawn.shaping());
+        drawWater(drawing, sites, drawn);
+        drawSpans(drawing, laid);
 
         // The ROUNDED line rather than the border underneath it. What the window strokes is the
         // line after its corners are taken off, and a picture stroking the border shows a coast
-        // a degree sharper at every join than the one on screen.
-        for (var ring : drawn.roundedCoast().coasts()) {
+        // a degree sharper at every join than the one on screen. Lake shores in the coasts' own
+        // colour, as the window draws them: a lake shore IS a coast of this construction, seen
+        // from the water's side.
+        var coastPaint = SvgPaint.outlineOnly(
+            SvgDrawing.formatColour(MapLook.CONTINENT_COAST), MapLook.RING_STROKE);
 
-            drawing.drawPolygon(
-                ring,
-                SvgPaint.outlineOnly(
-                    SvgDrawing.formatColour(MapLook.COASTLINE), MapLook.RING_STROKE));
+        for (var ring : laid.roundCoasts().coasts()) {
+            drawing.drawPolygon(ring, coastPaint);
+        }
+        for (var ring : laid.roundCoasts().lakes()) {
+            drawing.drawPolygon(ring, coastPaint);
         }
 
         drawPenetrations(
@@ -209,61 +217,71 @@ public final class SectorSvgWriter {
             CoastCrossings.findVisibleCrossings(traced, MapLook.RING_STROKE));
     }
 
-    // The void the BRIDGES shut in, filled. Drawn beside the coast's own pockets because the
-    // two constructions divide the map's void between them: a picture holding one of them
-    // shows half the answer, and a change that empties the other leaves that half looking
-    // exactly as it did.
-    private static void drawCapturedVoid(
+    // Every layer of water the construction fills, as ONE body in one colour - the way the
+    // window paints it. Each pair of layers overlaps by construction and no wall can be laid
+    // to keep a pair apart, so filled one over another the shared water would come out darker
+    // and read as a third kind of thing. A lake's margin goes in as the band it is: its inner
+    // ring is a hole, so the open water inside a drawn shore stays bare unless some other
+    // layer covers it, which is what the two layers each mean with the other absent.
+    //
+    // With every site unowned, because this is a picture of the SHAPES: a pocket one owner
+    // rings is pushed out into that owner's fills, and the shapes would move with a colouring.
+    private static void drawWater(
             SvgDrawing drawing,
             List<double[]> sites,
             DrawnSector drawn) {
 
-        var parameters = drawn.parameters();
+        var water = drawn.laid().fillWater(
+            CoastPockets.markEverySiteUnowned(sites), drawn.shaping());
 
-        var bridges = VoidBridges.findVoidBridges(
-            sites,
-            parameters.cellRadius(),
-            parameters.cellRadius() * drawn.coastRules().bridgeReachMultiple());
+        var bodies = new ArrayList<List<double[]>>();
+        var holes = new ArrayList<List<double[]>>();
 
-        var colour = SvgDrawing.formatColour(MapLook.INLAND_VOID);
+        bodies.addAll(water.collectShoreWater());
+        bodies.addAll(water.collectInletWater());
+        bodies.addAll(water.collectLakeWater());
+        bodies.addAll(water.collectPuddleWater());
+        bodies.addAll(water.collectLinkWater());
 
-        for (var outline : VoidBridgePockets.findCapturedPockets(
-                sites, bridges, parameters, drawn.shaping())) {
+        for (var margin : water.collectLakeMargins()) {
 
-            drawing.drawPolygon(
-                outline,
-                SvgPaint.filledOutline(
-                    colour, FILL_OPACITY, colour, MapLook.RING_STROKE / TRAPPED_EDGE_STROKES));
+            bodies.add(margin.waterEdge());
+            holes.add(margin.drawnShore());
         }
+
+        var colour = SvgDrawing.formatColour(MapLook.CONTINENT_COASTAL_VOID);
+
+        drawing.drawBodiesWithHoles(
+            bodies,
+            holes,
+            SvgPaint.filledOutline(
+                colour, FILL_OPACITY, colour, MapLook.RING_STROKE / TRAPPED_EDGE_STROKES));
     }
 
-    // The void the coast shut in, filled, under the line that shut it in. Drawn together
-    // because the question either one answers is about the other: a pocket is right only if
-    // it stops a channel short of the coast, and no number reads as an answer to that.
-    private static void drawTrappedVoid(
-            SvgDrawing drawing,
-            Coastlines.TracedCoasts traced,
-            List<double[]> sites,
-            SectorGeometryParameters parameters,
-            VoidPockets.PocketShaping shaping) {
+    // Every span the construction lays, end to end at its true extent, under the coast that
+    // judged it. The first three sets in one colour because they are the same kind of claim -
+    // "this much water is held between these cells" - and the links in their own, because a
+    // link joins two shapes where a span rounds one out.
+    private static void drawSpans(SvgDrawing drawing, BridgedContinents laid) {
 
-        var colour = SvgDrawing.formatColour(MapLook.COASTLINE);
+        var spanPaint = SvgPaint.outlineOnly(
+            SvgDrawing.formatColour(MapLook.CONTINENT_BRIDGE), MapLook.SPAN_STROKE);
 
-        for (var pocket : CoastPockets.findCoastPockets(
-                traced,
-                CoastPockets.markEverySiteUnowned(sites),
-                new VoidPockets.PocketRules(parameters, shaping))) {
+        drawSpanSet(drawing, laid.layInletSpans(), spanPaint);
+        drawSpanSet(drawing, laid.layLakeSpans(), spanPaint);
+        drawSpanSet(drawing, laid.claimPuddleSpans(), spanPaint);
 
-            for (var outline : pocket.pocket().outlines()) {
+        drawSpanSet(
+            drawing,
+            laid.layLinks(),
+            SvgPaint.outlineOnly(
+                SvgDrawing.formatColour(MapLook.INTERCONTINENTAL_BRIDGE), MapLook.SPAN_STROKE));
+    }
 
-                drawing.drawPolygon(
-                    outline,
-                    SvgPaint.filledOutline(
-                        colour,
-                        FILL_OPACITY,
-                        colour,
-                        MapLook.RING_STROKE / TRAPPED_EDGE_STROKES));
-            }
+    private static void drawSpanSet(SvgDrawing drawing, List<CellGap> spans, SvgPaint paint) {
+
+        for (var span : spans) {
+            drawing.drawPolyline(List.of(span.start(), span.end()), paint);
         }
     }
 

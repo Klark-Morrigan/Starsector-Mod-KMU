@@ -204,6 +204,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         new ContinentCoastOverlay(settings);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
 
+    // The laying the last refresh drew the continent construction from, kept so that a file
+    // saved from the window is a picture of that frame rather than of a laying opened again
+    // at the moment of saving. Every refresh replaces it, so it is never older than the map.
+    private BridgedContinents continents;
+
     // The cells as named regions, so the pointer can be told which one it is over and a name
     // can be written on each. Built with the geometry rather than on a toggle of their own,
     // because the readout names a cell whether or not the names are being drawn.
@@ -388,11 +393,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
         sectorCoasts.refresh(fixture);
 
-        // One laying for the frame, handed to both readers of it. Nothing is searched for
-        // here - what this settles is the question, so the drawing and the naming cannot end
-        // up describing sectors laid under settings a moment apart, and whichever of them asks
-        // for a set of spans first is the only one that pays for it.
-        var laid = BridgedContinents.layContinents(
+        // One laying for the frame, handed to every reader of it. Nothing is searched for
+        // here - what this settles is the question, so the drawing, the naming and a file saved
+        // from the window cannot end up describing sectors laid under settings a moment apart,
+        // and whichever of them asks for a set of spans first is the only one that pays for it.
+        continents = BridgedContinents.layContinents(
             fixture.getSites(),
             settings.parameters,
             settings.resolveContinentCoastRules(),
@@ -402,8 +407,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // The preview rides the same refresh because it is traced under the same coast knobs:
         // a knob that moved one line without the other would show two coasts that were never
         // traced from the same settings.
-        continentCoasts.refresh(fixture, laid);
-        refreshVoidSections(laid);
+        continentCoasts.refresh(fixture, continents);
+        refreshVoidSections(continents);
     }
 
     // Not on the refresh contract: the panel has no knob that moves the sections without
@@ -439,19 +444,17 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
      * The sector as the window is currently drawing it, for anything that draws it a second
      * way.
      *
-     * <p>Assembled here rather than held, because most of it already is: the geometry and the
-     * smoothed rings are what the last rebuild left, and the knobs are read off the settings
-     * at the moment the second drawing is asked for. What it costs is one coast trace, which
-     * is the one thing the window keeps inside an overlay that may be switched off.
+     * <p>Assembled here rather than held, because all of it already is: the geometry and the
+     * smoothed rings are what the last rebuild left, and the laying is the one the last
+     * refresh drew from - so a file saved from the window is a picture of the frame on screen,
+     * with nothing traced again to make it.
      */
     private DrawnSector buildDrawnSector() {
 
         return DrawnSector.buildDrawnSector(
-            fixture,
             geometry,
-            settings.parameters,
             settings.resolveBorderSmoothing(),
-            settings.resolveCoastRules(),
+            continents,
             settings.resolvePocketShaping());
     }
 

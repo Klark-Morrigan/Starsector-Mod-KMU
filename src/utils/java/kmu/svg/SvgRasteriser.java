@@ -27,7 +27,8 @@ import javax.imageio.ImageIO;
  *
  * <p>So this converts rather than redraws. It reads back exactly what {@link SvgDrawing} emits
  * - the root, one backdrop rectangle, one flipping group, polygons, polylines, paths of
- * straight segments, and circles - and that narrowness is the point: a general SVG renderer
+ * straight segments under either fill rule, and circles - and that narrowness is the point: a
+ * general SVG renderer
  * would be a dependency and a surface, where a reader of these two files together can check in
  * a minute that the picture shows what was drawn.
  *
@@ -53,6 +54,12 @@ public final class SvgRasteriser {
 
     private static final Pattern POINTS = Pattern.compile("points=\"([^\"]*)\"");
     private static final Pattern PATH_DATA = Pattern.compile(" d=\"([^\"]*)\"");
+    private static final Pattern FILL_RULE = Pattern.compile("fill-rule=\"([^\"]+)\"");
+
+    // The two rules the writer merges rings under. Named so the path builder can be handed
+    // the rule read off the element rather than assume one, since the two give different
+    // pictures of the same sub-paths wherever they overlap.
+    private static final String EVEN_ODD = "evenodd";
     private static final Pattern FILL = Pattern.compile("[^-]fill=\"([^\"]+)\"");
     private static final Pattern FILL_OPACITY = Pattern.compile("fill-opacity=\"([^\"]+)\"");
     private static final Pattern STROKE = Pattern.compile("[^-]stroke=\"([^\"]+)\"");
@@ -190,7 +197,9 @@ public final class SvgRasteriser {
         return switch (element) {
             case "polygon" -> buildRun(findAttribute(POINTS, attributes, ""), true);
             case "polyline" -> buildRun(findAttribute(POINTS, attributes, ""), false);
-            case "path" -> buildPath(findAttribute(PATH_DATA, attributes, ""));
+            case "path" -> buildPath(
+                findAttribute(PATH_DATA, attributes, ""),
+                findAttribute(FILL_RULE, attributes, EVEN_ODD));
             case "circle" -> buildCircle(attributes);
             default -> null;
         };
@@ -253,9 +262,15 @@ public final class SvgRasteriser {
     // Only the three commands the writer emits: move, line and close. A path that used
     // anything else would come out missing that stretch, which is visible, rather than
     // rendered by a guess, which is not.
-    private static Path2D buildPath(String data) {
+    //
+    // Under the rule the element names, because the writer merges rings two ways and they
+    // disagree exactly where rings overlap: even-odd cancels the overlap and non-zero keeps
+    // it. Read off the element rather than assumed, so a merged fill comes out as the writer
+    // meant it rather than as whichever rule this happened to default to.
+    private static Path2D buildPath(String data, String fillRule) {
 
-        var path = new Path2D.Double(Path2D.WIND_EVEN_ODD);
+        var path = new Path2D.Double(
+            EVEN_ODD.equals(fillRule) ? Path2D.WIND_EVEN_ODD : Path2D.WIND_NON_ZERO);
         var tokens = data.trim().split("\\s+");
         var index = 0;
 

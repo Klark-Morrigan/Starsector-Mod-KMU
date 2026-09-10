@@ -1,10 +1,11 @@
 package kmu.maplayers.base.geometry.output;
 
-import kmu.maplayers.base.geometry.Coastlines;
+import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.ShippedMap;
+import kmu.maplayers.base.geometry.VoidBridgeCache;
 import kmu.maplayers.base.geometry.VoidPockets;
 import kmu.svg.SvgRasteriser;
 
@@ -44,16 +45,25 @@ public final class SectorSvgDump {
 
             var fixture = SectorFixture.loadSector(sectorName);
 
-            // Built once for both maps: the cells, their fills and their cluster rings are the
-            // same geometry either way, and only what is drawn of the VOID answers to the
-            // shaping. Building it twice would also invite the two maps to be built under
-            // knobs that had drifted apart.
-            var geometry = SectorGeometry.buildSectorGeometry(
-                fixture, SectorGeometryParameters.createDefaults());
+            // Built once for both maps: the cells, their fills, their cluster rings and the
+            // laying over them are the same geometry either way, and only what is drawn of the
+            // VOID answers to the shaping. Building them twice would also invite the two maps
+            // to be built under knobs that had drifted apart.
+            //
+            // At the shipped knobs, which is what a batch dump is for: a picture of the map as
+            // it comes rather than as anyone has tuned it.
+            var geometry = SectorGeometry.buildSectorGeometry(fixture, ShippedMap.KNOBS);
 
-            writeMap(fixture, geometry, sectorName, VoidPockets.PocketShaping.WITH_CHANNEL);
+            var laid = BridgedContinents.layContinents(
+                fixture.getSites(),
+                ShippedMap.KNOBS,
+                ShippedMap.COAST_RULES,
+                ShippedMap.SPAN_RULES,
+                new VoidBridgeCache());
+
+            writeMap(fixture, geometry, laid, sectorName, VoidPockets.PocketShaping.WITH_CHANNEL);
             writeMap(
-                fixture, geometry, sectorName, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+                fixture, geometry, laid, sectorName, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
         }
     }
 
@@ -64,6 +74,7 @@ public final class SectorSvgDump {
     private static void writeMap(
             SectorFixture fixture,
             SectorGeometry geometry,
+            BridgedContinents laid,
             String sectorName,
             VoidPockets.PocketShaping shaping) {
 
@@ -73,18 +84,11 @@ public final class SectorSvgDump {
         var target = SVG_DIRECTORY.resolve(
             sectorName.replace(CSV_EXTENSION, suffix + SVG_EXTENSION));
 
-        // At the shipped defaults, which is what a batch dump is for: a picture of the map as
-        // it comes rather than as anyone has tuned it.
         SectorSvgWriter.writeSectorSvg(
             target,
             fixture,
             DrawnSector.buildDrawnSector(
-                fixture,
-                geometry,
-                SectorGeometryParameters.createDefaults(),
-                DrawnSector.DEFAULT_SMOOTHING,
-                Coastlines.DEFAULT_RULES,
-                shaping));
+                geometry, DrawnSector.DEFAULT_SMOOTHING, laid, shaping));
 
         System.out.println("wrote " + target.toAbsolutePath());
 

@@ -2,6 +2,7 @@ package kmu.svg;
 
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
+import kmlib.math.geometry.PolygonRegions;
 
 import java.awt.Color;
 import java.util.List;
@@ -11,7 +12,8 @@ import java.util.Locale;
  * An SVG document being built up shape by shape, in world coordinates.
  *
  * <p>Deliberately narrow: a backdrop, polygons, polylines, circles, and rings gathered into one
- * even-odd path. That is the whole of it, and the narrowness is what makes {@link SvgRasteriser}
+ * path - even-odd where rings nest, non-zero where they overlap. That is the whole of it, and
+ * the narrowness is what makes {@link SvgRasteriser}
  * possible - the two are written against each other, so a reader can check in a minute that
  * what is drawn here is what comes back as a picture. A general SVG writer would be a surface
  * nobody could hold in their head, paired with a renderer nobody could verify.
@@ -37,6 +39,13 @@ public final class SvgDrawing {
     // anything a drawing can show, and full precision would multiply the file size for
     // digits no eye and no diff can use.
     private static final String COORDINATE_FORMAT = "%.1f";
+
+    // Which way a body and a hole are made to wind in a merged non-zero shape. The two have to
+    // disagree, since that is what drops the winding count to zero inside a hole and lifts it
+    // again where another body covers the same place. Which of the two directions is which is
+    // arbitrary, and only their disagreement is load-bearing.
+    private static final boolean WINDS_AS_BODY = true;
+    private static final boolean WINDS_AS_HOLE = false;
 
     private final StringBuilder svg = new StringBuilder();
 
@@ -197,6 +206,51 @@ public final class SvgDrawing {
     }
 
     /**
+     * Draws many bodies and the holes cut out of them as ONE shape, filled under the non-zero
+     * rule with every ring's direction decided here.
+     *
+     * <p>The other way of merging rings, for the case the even-odd rule gets wrong: bodies that
+     * overlap. Under even-odd two overlapping bodies cancel where they meet, punching a hole
+     * through the fill exactly where two layers of it were laid - so a sheet of several layers
+     * that routinely share water cannot be drawn that way. Under non-zero the overlap counts
+     * twice and stays filled, and a hole is a ring wound the OTHER way, which brings the count
+     * back to zero inside it until another body covers the same place.
+     *
+     * <p>Which is why the direction of every ring is decided here rather than trusted. Rings
+     * arrive from traces that had no reason to agree on one, and under non-zero two bodies
+     * wound opposite ways would cancel like even-odd's. So every body is turned one way and
+     * every hole the other, and only their disagreement is load-bearing.
+     *
+     * @param bodies the rings to fill, each whole
+     * @param holes  the rings to leave bare inside a body, until some other body covers them
+     * @param paint  how to fill and outline the whole
+     */
+    public void drawBodiesWithHoles(
+            List<List<double[]>> bodies,
+            List<List<double[]>> holes,
+            SvgPaint paint) {
+
+        var subPaths = new StringBuilder();
+
+        for (var ring : bodies) {
+            appendSubPath(subPaths, ring, WINDS_AS_BODY);
+        }
+        for (var ring : holes) {
+            appendSubPath(subPaths, ring, WINDS_AS_HOLE);
+        }
+
+        if (subPaths.length() == 0) {
+            return;
+        }
+
+        svg.append("<path fill-rule=\"nonzero\" d=\"")
+            .append(subPaths)
+            .append('"');
+
+        appendPaint(paint);
+    }
+
+    /**
      * Closes the drawing.
      *
      * @return the whole document, ready to write
@@ -232,6 +286,36 @@ public final class SvgDrawing {
                 .append('"');
         }
         svg.append("/>\n");
+    }
+
+    // One ring as a sub-path of a merged shape, turned to wind the way asked. A ring too short
+    // to enclose area is dropped here as it is everywhere else, so a degenerate one cannot
+    // leave a hairline in the merged fill.
+    private static void appendSubPath(
+            StringBuilder subPaths,
+            List<double[]> ring,
+            boolean shouldWindPositive) {
+
+        if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
+            return;
+        }
+
+        var windsPositive = PolygonRegions.computeSignedArea(ring) >= 0;
+        var step = windsPositive == shouldWindPositive ? 1 : -1;
+        var first = windsPositive == shouldWindPositive ? 0 : ring.size() - 1;
+
+        for (var count = 0; count < ring.size(); count++) {
+
+            var vertex = ring.get(first + count * step);
+
+            subPaths
+                .append(count == 0 ? 'M' : 'L')
+                .append(formatCoordinate(vertex[0]))
+                .append(' ')
+                .append(formatCoordinate(vertex[1]))
+                .append(' ');
+        }
+        subPaths.append("Z ");
     }
 
     private void appendPoints(List<double[]> points) {
