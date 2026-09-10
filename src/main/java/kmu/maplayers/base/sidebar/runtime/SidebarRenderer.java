@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
 import kmlib.logging.SessionWarning;
+import kmlib.logging.TracedLine;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.coreui.CoreUiComponentRepainter;
 import kmlib.starsector.ui.input.PanelMotionPaces;

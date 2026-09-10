@@ -111,7 +111,7 @@ final class MapFrameSectionsTest {
             assertThat(breach.hasBreached())
                 .isTrue();
             assertThat(breach.describeBreach())
-                .isEqualTo("4.00ms allowed per call");
+                .isEqualTo("4.000ms allowed per call");
         }
 
         @Test

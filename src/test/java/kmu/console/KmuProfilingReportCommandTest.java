@@ -4,7 +4,6 @@ import kmlib.profiling.ProfileOrigin;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
 import kmlib.profiling.snapshot.BudgetBreach;
-import kmlib.profiling.snapshot.CountSpread;
 import kmlib.profiling.snapshot.CountTotals;
 import kmlib.profiling.snapshot.DurationBuckets;
 import kmlib.profiling.snapshot.ProfileCount;
@@ -185,7 +184,7 @@ final class KmuProfilingReportCommandTest {
             List.of(new ProfileCount(
                 SectorWalkCounters.SECTOR_WALKS,
                 new CountTotals(TWO_WALKS, TWO_WALKS),
-                new CountSpread(TWO_WALKS, TWO_WALKS))),
+                TWO_WALKS)),
             List.of());
     }
 
