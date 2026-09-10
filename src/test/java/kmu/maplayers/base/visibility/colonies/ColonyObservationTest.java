@@ -25,7 +25,7 @@ final class ColonyObservationTest {
     class CreateObservationAt {
 
         @Test
-        void reports_the_place_and_the_moment_it_was_made() {
+        void reportsThePlaceAndTheMomentItWasMade() {
 
             var observation = ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_AT);
 
@@ -40,7 +40,7 @@ final class ColonyObservationTest {
     class CreateUndatedObservation {
 
         @Test
-        void reports_the_place_and_no_moment_at_all() {
+        void reportsThePlaceAndNoMomentAtAll() {
 
             var observation = ColonyObservation.createUndatedObservation(SYSTEM_ID);
 
@@ -55,7 +55,7 @@ final class ColonyObservationTest {
     class Constructor {
 
         @Test
-        void reads_an_unstated_moment_as_no_moment() {
+        void readsAnUnstatedMomentAsNoMoment() {
             // A hand-built value is one hop from a load, and an observation is meant to survive
             // being made before anybody wrote down when - so the absent half is absorbed rather
             // than left to surface at whatever reads it.
@@ -64,7 +64,7 @@ final class ColonyObservationTest {
         }
 
         @Test
-        void refuses_an_observation_of_nowhere() {
+        void refusesAnObservationOfNowhere() {
             // The place is the half every visibility rule spends. An observation without one
             // answers no question the register is ever asked.
             assertThatNullPointerException()

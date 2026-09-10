@@ -30,14 +30,14 @@ final class ColonyVisibilityTest {
     class BaseFog {
 
         @Test
-        void admits_nothing_the_player_has_not_found() {
+        void admitsNothingThePlayerHasNotFound() {
 
             assertThat(ColonyVisibility.BASE_FOG.shouldIncludeUndiscoveredMarkets())
                 .isFalse();
         }
 
         @Test
-        void asks_the_survey_vanilla_asks_before_naming_a_collapsed_colony() {
+        void asksTheSurveyVanillaAsksBeforeNamingACollapsedColony() {
             // The fall-back rule mirrors the game rather than picking a bar of its own, so a map
             // reading no settings says exactly what the game says and no more.
             assertThat(ColonyVisibility.BASE_FOG.ungovernedColonySurveyLevel())
@@ -45,7 +45,7 @@ final class ColonyVisibilityTest {
         }
 
         @Test
-        void holds_back_nothing_beyond_the_fog() {
+        void holdsBackNothingBeyondTheFog() {
             // A gate nobody asked for must not appear out of an unstated argument, so the
             // fall-back rule adds nothing to the fog in any direction.
             assertThat(ColonyVisibility.BASE_FOG.revelationGates())
@@ -57,13 +57,13 @@ final class ColonyVisibilityTest {
     class Construct {
 
         @Test
-        void reads_absent_gates_as_no_gates_at_all() {
+        void readsAbsentGatesAsNoGatesAtAll() {
             assertThat(new ColonyVisibility(false, SurveyLevel.SEEN, null).revelationGates())
                 .isEmpty();
         }
 
         @Test
-        void reads_an_absent_survey_level_as_the_fog_own_bar() {
+        void readsAnAbsentSurveyLevelAsTheFogOwnBar() {
             // The direction that matters: a missing argument must not be read as no bar at all, or
             // it would name every collapsed colony in the sector on a map that asked for nothing.
             var rule = new ColonyVisibility(false, null, Set.of());
@@ -73,7 +73,7 @@ final class ColonyVisibilityTest {
         }
 
         @Test
-        void keeps_each_part_answering_for_the_one_thing_it_names() {
+        void keepsEachPartAnsweringForTheOneThingItNames() {
             // The whole of what parts one knob from the next: a survey bar dropped to nothing says
             // nothing about whether an undiscovered colony counts, or about any gate.
             var rule = new ColonyVisibility(false, SurveyLevel.NONE, Set.of());
@@ -87,7 +87,7 @@ final class ColonyVisibilityTest {
         }
 
         @Test
-        void keeps_the_gates_it_was_built_with_when_the_source_set_changes_later() {
+        void keepsTheGatesItWasBuiltWithWhenTheSourceSetChangesLater() {
 
             var gates = new HashSet<RevelationGate>();
             gates.add(RevelationGate.SPACE_DERELICTS);
@@ -101,7 +101,7 @@ final class ColonyVisibilityTest {
         }
 
         @Test
-        void rejects_an_attempt_to_change_the_gates() {
+        void rejectsAnAttemptToChangeTheGates() {
             // A rule is resolved once for a whole render pass and handed to every reader in it,
             // so one reader able to change it would be re-fogging the map underneath the others.
             var rule = new ColonyVisibility(

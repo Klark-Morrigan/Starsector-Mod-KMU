@@ -31,7 +31,7 @@ class FactionAllianceFactoryTest {
     class BuildFrom {
 
         @Test
-        void reads_two_members_of_one_record_as_allied() {
+        void readsTwoMembersOfOneRecordAsAllied() {
 
             var alliances = FactionAllianceFactory.buildFrom(List.of(buildAlliedPowers()));
 
@@ -42,7 +42,7 @@ class FactionAllianceFactoryTest {
         }
 
         @Test
-        void reads_a_faction_no_record_names_as_unallied() {
+        void readsAFactionNoRecordNamesAsUnallied() {
 
             var alliances = FactionAllianceFactory.buildFrom(List.of(buildAlliedPowers()));
 
@@ -53,7 +53,7 @@ class FactionAllianceFactoryTest {
         }
 
         @Test
-        void reads_members_of_two_records_as_unallied() {
+        void readsMembersOfTwoRecordsAsUnallied() {
 
             var alliances = FactionAllianceFactory.buildFrom(List.of(
                 buildAlliedPowers(),
@@ -64,7 +64,7 @@ class FactionAllianceFactoryTest {
         }
 
         @Test
-        void reads_the_lone_member_of_a_record_of_one_as_unallied_with_anybody_else() {
+        void readsTheLoneMemberOfARecordOfOneAsUnalliedWithAnybodyElse() {
             // An alliance whose partners have all left, which a live manager does hand over. It
             // folds like any other and leaves its last member with nobody to keep a secret with,
             // so every witness around it still speaks.
@@ -78,7 +78,7 @@ class FactionAllianceFactoryTest {
         }
 
         @Test
-        void reads_nobody_as_allied_for_a_memberless_record() {
+        void readsNobodyAsAlliedForAMemberlessRecord() {
 
             var alliances = FactionAllianceFactory.buildFrom(List.of(
                 new AllianceRecord("empty-alliance", "Empty Pact", List.of())));
@@ -88,7 +88,7 @@ class FactionAllianceFactoryTest {
         }
 
         @Test
-        void resolves_a_faction_named_by_two_records_to_the_later_one() {
+        void resolvesAFactionNamedByTwoRecordsToTheLaterOne() {
             // Visited in list order, so the fold stays total and deterministic per input rather
             // than leaving the faction in whichever record was reached first.
             var alliances = FactionAllianceFactory.buildFrom(List.of(
@@ -103,21 +103,21 @@ class FactionAllianceFactoryTest {
         }
 
         @Test
-        void reads_nobody_as_allied_for_no_records() {
+        void readsNobodyAsAlliedForNoRecords() {
 
             assertThat(FactionAllianceFactory.buildFrom(List.of()))
                 .isEqualTo(FactionAlliances.NONE);
         }
 
         @Test
-        void reads_nobody_as_allied_where_no_records_were_read_at_all() {
+        void readsNobodyAsAlliedWhereNoRecordsWereReadAtAll() {
 
             assertThat(FactionAllianceFactory.buildFrom(null))
                 .isEqualTo(FactionAlliances.NONE);
         }
 
         @Test
-        void skips_a_record_the_game_never_named() {
+        void skipsARecordTheGameNeverNamed() {
             // The memberships are keyed on the alliance's own id, and one that is absent cannot be
             // compared against another - nor stored, the copy the result takes refusing it.
             var alliances = FactionAllianceFactory.buildFrom(List.of(

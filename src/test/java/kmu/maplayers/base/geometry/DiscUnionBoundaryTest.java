@@ -66,7 +66,7 @@ class DiscUnionBoundaryTest {
     class TraceHoles {
 
         @Test
-        void a_hole_names_one_stretch_of_border_per_cell_it_runs_along() {
+        void aHoleNamesOneStretchOfBorderPerCellItRunsAlong() {
             // Three discs ringing one hole meet it on one arc each, so the marks are the three
             // cells and nothing else. A count that drifts from the arcs walked is the fault
             // this guards: marks built anywhere but in the walk cannot say which stretch was
@@ -81,7 +81,7 @@ class DiscUnionBoundaryTest {
         }
 
         @Test
-        void a_marked_stretch_is_void_along_its_whole_sweep() {
+        void aMarkedStretchIsVoidAlongItsWholeSweep() {
             // What makes a stretch part of THIS hole is that no other disc covers it. A mark
             // naming the whole of its circle, or a stretch on the far side of its cell, would
             // pass every count and describe border the hole never touched.
@@ -100,7 +100,7 @@ class DiscUnionBoundaryTest {
         }
 
         @Test
-        void a_holes_corners_stand_where_its_marks_begin() {
+        void aHolesCornersStandWhereItsMarksBegin() {
             // The marks and the corners are one walk described twice, so they line up by index
             // or they are describing different journeys round the same hole. Worth pinning
             // because the boundary beside them is deliberately NOT in walk order - it is

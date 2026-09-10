@@ -88,7 +88,7 @@ class IntercontinentalCoastsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_sector_the_links_changed_gets_coastline_it_had_none_of(String sector) {
+        void aSectorTheLinksChangedGetsCoastlineItHadNoneOf(String sector) {
             // Asked first and alone, because every other claim below is true of an empty list. A
             // sector with links across it has cells the trace could not draw a coast for and
             // isthmuses that were strokes over the void, so an empty answer is the cut having
@@ -104,7 +104,7 @@ class IntercontinentalCoastsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_run_lies_along_a_coastline_already_drawn(String sector) {
+        void noRunLiesAlongACoastlineAlreadyDrawn(String sector) {
             // The whole of what "must not duplicate" means, and the claim the construction
             // exists to make. Asked of every point but the two at a run's ends: a run is MEANT
             // to begin and end on the drawn line, since that is what joins it to the coast it
@@ -128,7 +128,7 @@ class IntercontinentalCoastsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_run_meets_the_drawn_coastline_at_both_ends(String sector) {
+        void everyRunMeetsTheDrawnCoastlineAtBothEnds(String sector) {
             // What makes the added line join the map rather than float over it. A run is cut out
             // of a closed ring at the points the drawn coasts carry, so those points are on both
             // lines - unless the ring has no drawn point at all, which is a shape the first
@@ -157,7 +157,7 @@ class IntercontinentalCoastsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_linked_island_is_on_the_border_or_inside_the_seas(String sector) {
+        void everyLinkedIslandIsOnTheBorderOrInsideTheSeas(String sector) {
             // The cells that had no line at all. This layer draws only the sector's OUTER
             // border, so an island the border sweeps over gets coastline from it - and one the
             // seas swallowed gets none, since the water round it is the fills' subject and its
@@ -188,7 +188,7 @@ class IntercontinentalCoastsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void the_added_line_keeps_off_the_cells(String sector) {
+        void theAddedLineKeepsOffTheCells(String sector) {
             // A coastline is where settled space ends, so it runs on the cells' border and never
             // inside one. Held to the reach the line is drawn at, less what the rounding is
             // allowed to cut off a corner - which is the only thing that moves a point of a
@@ -217,7 +217,7 @@ class IntercontinentalCoastsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_run_that_comes_to_a_pinched_foot_lands_on_it(String sector) {
+        void aRunThatComesToAPinchedFootLandsOnIt(String sector) {
             // A cell whose whole frontage is one point offers a wall nowhere else to attach, so
             // the wall is laid with no width there and the border it carries can meet the point
             // - which is what a bridge landing on a single-point frontage was always meant to

@@ -33,7 +33,7 @@ class NexerelinAlliancesTest {
     class ResolveFactionAlliances {
 
         @Test
-        void reads_nobody_as_allied_where_nexerelin_is_absent() {
+        void readsNobodyAsAlliedWhereNexerelinIsAbsent() {
 
             try (var globalMock = mockStatic(Global.class)) {
 

@@ -51,7 +51,7 @@ final class ColonyObservationIntegrationTest {
     class RecordSightingsByInhabitants {
 
         @Test
-        void keeps_a_derelict_shown_once_the_colony_that_observed_it_has_decivilised() {
+        void keepsADerelictShownOnceTheColonyThatObservedItHasDecivilised() {
             // The whole of why the place's route is written down instead of read live. The hulk
             // has been on the map for cycles on its neighbours' account, and their dying is no
             // reason for it to blink out of a sector the player learnt long ago.
@@ -69,7 +69,7 @@ final class ColonyObservationIntegrationTest {
         }
 
         @Test
-        void keeps_a_dead_world_shown_once_the_colony_that_reported_it_has_decivilised() {
+        void keepsADeadWorldShownOnceTheColonyThatReportedItHasDecivilised() {
             // The same claim for the report route, and the failure that makes the widened write
             // worth its entries: the world is on the map on the neighbours' word alone, so without
             // a record of what they saw it would vanish with the last of them.
@@ -87,7 +87,7 @@ final class ColonyObservationIntegrationTest {
         }
 
         @Test
-        void withholds_a_derelict_that_moves_after_the_colony_that_observed_it_has_decivilised() {
+        void withholdsADerelictThatMovesAfterTheColonyThatObservedItHasDecivilised() {
             // An observation names a place, so it stops answering the moment the colony stands
             // somewhere else. That is what keeps a recorded observation from becoming a permanent
             // pass for a colony that wanders.
@@ -109,7 +109,7 @@ final class ColonyObservationIntegrationTest {
         }
 
         @Test
-        void records_nothing_for_the_ordinary_colony_doing_the_observing() {
+        void recordsNothingForTheOrdinaryColonyDoingTheObserving() {
             // The register holds what a gate reads and nothing besides. An open colony the economy
             // lists is permanently in the sector's own sight, so an entry for one would cost an
             // entry per colony in the sector to answer a question nobody asks.
@@ -135,7 +135,7 @@ final class ColonyObservationIntegrationTest {
     class ReadKnownColonies {
 
         @Test
-        void shows_a_derelict_its_neighbours_can_see_before_anything_has_been_recorded() {
+        void showsADerelictItsNeighboursCanSeeBeforeAnythingHasBeenRecorded() {
             // The live half of the rule, kept beside the recorded one so a colony arriving among
             // witnesses is shown at once rather than at whatever cadence a sweep runs on - and so
             // an install where nothing has swept still shows what is plainly there. The sector's
@@ -154,7 +154,7 @@ final class ColonyObservationIntegrationTest {
     class RecordSightingsIn {
 
         @Test
-        void follows_a_mover_from_each_system_it_is_met_in_to_the_next() {
+        void followsAMoverFromEachSystemItIsMetInToTheNext() {
             // The player's own route, and why an observation names a place rather than a day:
             // meeting the exoship again rewrites where it was last seen, and the system it left
             // stops answering for it.

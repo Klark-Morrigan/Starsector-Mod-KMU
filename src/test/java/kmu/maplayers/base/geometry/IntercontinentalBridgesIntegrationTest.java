@@ -60,7 +60,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_sector_of_several_continents_is_linked_somewhere(String sector) {
+        void aSectorOfSeveralContinentsIsLinkedSomewhere(String sector) {
             // Asked first and alone, because every other claim below is true of an empty set.
             // A sector whose trace left several continents standing has pairs within reach of
             // each other by construction - that is what a bridge would have joined - so laying
@@ -76,7 +76,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_link_joins_two_different_shapes(String sector) {
+        void everyLinkJoinsTwoDifferentShapes(String sector) {
             // The whole of what makes a link a link. A span between two cells of one shape is
             // an inlet span - the other pass's answer - and one leaving a cell on no shape at
             // all leaves a border that faces no open void.
@@ -104,7 +104,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_link_is_anchored_on_bridgeable_frontage(String sector) {
+        void everyLinkIsAnchoredOnBridgeableFrontage(String sector) {
             // A link has to end ON the drawn coast, since one ending short of it joins nothing
             // that is on the map. Measured against the line's segments rather than its corners,
             // because a foot the spreading has moved sits wherever along its stretch the room
@@ -129,7 +129,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_link_crosses_a_span_already_laid(String sector) {
+        void noLinkCrossesASpanAlreadyLaid(String sector) {
             // The inlet spans were laid first and are on the map. A link crossing one claims
             // void that span already holds, and the two lines drawn over each other are two
             // claims a reader cannot tell apart.
@@ -157,7 +157,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_pair_already_joined_is_not_joined_again(String sector) {
+        void aPairAlreadyJoinedIsNotJoinedAgain(String sector) {
             // The gate that says a link is not worth offering. Asked by running the search a
             // second time with its own answer standing, which is the one arrangement where the
             // gate can bite: no other set on the map joins two cells of different continents,
@@ -188,7 +188,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_link_reaches_a_cell_that_has_no_coast(String sector) {
+        void aLinkReachesACellThatHasNoCoast(String sector) {
             // Islands are shapes of the sector like any other. They carry no coastline, since
             // the line round a cell touching nothing would be its own border drawn twice - but
             // that is a reason not to draw one, not a reason to leave the cell unreachable.
@@ -217,7 +217,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_island_left_unlinked_had_nothing_within_reach(String sector) {
+        void anIslandLeftUnlinkedHadNothingWithinReach(String sector) {
             // The other direction: an island the pass passed over has to be one nothing could
             // have reached. An island within the reach of another shape and still unlinked
             // would be the pass refusing a cell for having no coastline, which is the whole
@@ -255,7 +255,7 @@ class IntercontinentalBridgesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_link_joins_cells_within_reach_of_each_other(String sector) {
+        void everyLinkJoinsCellsWithinReachOfEachOther(String sector) {
             // Range-based, the way the cell-pair bridges are: two cells hold the void between
             // them only while they sit near enough to trap it, measured centre to centre.
             var sites = traceContinentCoast(sector).union().sites();

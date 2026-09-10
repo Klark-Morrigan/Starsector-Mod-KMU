@@ -28,7 +28,7 @@ final class RevealedFactTest {
     class CreateNeverObservedFact {
 
         @Test
-        void states_nothing_and_reports_a_fact_nobody_established() {
+        void statesNothingAndReportsAFactNobodyEstablished() {
 
             var fact = RevealedFact.createNeverObservedFact();
 
@@ -43,7 +43,7 @@ final class RevealedFactTest {
     class CreateObservedNowFact {
 
         @Test
-        void states_what_the_live_reading_says_and_is_due_no_date() {
+        void statesWhatTheLiveReadingSaysAndIsDueNoDate() {
 
             var fact = RevealedFact.createObservedNowFact(OWNER);
 
@@ -54,7 +54,7 @@ final class RevealedFactTest {
         }
 
         @Test
-        void refuses_an_observed_fact_that_states_nothing() {
+        void refusesAnObservedFactThatStatesNothing() {
             // An observed fact whose value was absent would be an unobserved fact wearing the
             // wrong state, and every reader below would then date something nobody had seen.
             assertThatNullPointerException()
@@ -66,7 +66,7 @@ final class RevealedFactTest {
     class CreateRecalledFact {
 
         @Test
-        void states_what_was_recorded_and_the_observation_it_came_from() {
+        void statesWhatWasRecordedAndTheObservationItCameFrom() {
 
             var fact = RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER);
 
@@ -77,7 +77,7 @@ final class RevealedFactTest {
         }
 
         @Test
-        void refuses_a_recalled_fact_with_no_observation_behind_it() {
+        void refusesARecalledFactWithNoObservationBehindIt() {
             // What is recalled and when it was seen are one event. A value with no observation
             // behind it is a claim about the world nothing ever made.
             assertThatNullPointerException()
@@ -85,7 +85,7 @@ final class RevealedFactTest {
         }
 
         @Test
-        void refuses_a_recalled_fact_that_states_nothing() {
+        void refusesARecalledFactThatStatesNothing() {
             assertThatNullPointerException()
                 .isThrownBy(() -> RevealedFact.createRecalledFact(RECORDED_OBSERVATION, null));
         }
@@ -95,7 +95,7 @@ final class RevealedFactTest {
     class ResolveValue {
 
         @Test
-        void holds_a_value_in_both_observed_states_and_none_in_the_unobserved_one() {
+        void holdsAValueInBothObservedStatesAndNoneInTheUnobservedOne() {
             // The invariant the placeholder wording hangs off: exactly one of the three answers
             // empty, so a reader that handles the empty case has handled the only case with no
             // value in it.
@@ -112,21 +112,21 @@ final class RevealedFactTest {
     class Equals {
 
         @Test
-        void reports_facts_alike_where_the_state_and_the_value_agree() {
+        void reportsFactsAlikeWhereTheStateAndTheValueAgree() {
 
             assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER))
                 .isEqualTo(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER));
         }
 
         @Test
-        void reports_facts_apart_where_they_state_different_things() {
+        void reportsFactsApartWhereTheyStateDifferentThings() {
 
             assertThat(RevealedFact.createObservedNowFact(OWNER))
                 .isNotEqualTo(RevealedFact.createObservedNowFact(OTHER_OWNER));
         }
 
         @Test
-        void reports_facts_apart_where_the_same_value_reached_them_by_different_routes() {
+        void reportsFactsApartWhereTheSameValueReachedThemByDifferentRoutes() {
             // The same owner seen now and recalled from a record are different news, and a reader
             // caching by value alone would otherwise drop the date off one of them.
             assertThat(RevealedFact.createObservedNowFact(OWNER))
@@ -138,7 +138,7 @@ final class RevealedFactTest {
     class HashCode {
 
         @Test
-        void reports_one_hash_for_facts_that_are_alike() {
+        void reportsOneHashForFactsThatAreAlike() {
             // Hand-written beside a hand-written equals, so the pair can drift: a hash reading
             // fewer fields than the comparison sends alike facts to different buckets.
             assertThat(RevealedFact.createRecalledFact(RECORDED_OBSERVATION, OWNER).hashCode())

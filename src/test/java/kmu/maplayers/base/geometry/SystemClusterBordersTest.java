@@ -60,7 +60,7 @@ final class SystemClusterBordersTest {
     @Nested
     class TraceBorderRings {
         @Test
-        void two_same_key_cells_fuse_into_one_ring() {
+        void twoSameKeyCellsFuseIntoOneRing() {
             // Cells A [0,0]..[10,10] and B [10,0]..[20,10] share the x = 10 edge.
             // Both held by F, so that seam is dropped and the six surviving border
             // edges chain into the single outline of the fused 20x10 rectangle.
@@ -82,7 +82,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void an_edge_facing_a_different_key_stays_a_border() {
+        void anEdgeFacingADifferentKeyStaysABorder() {
             // The same two adjacent cells, but B is held by G. From F's group of
             // just A, the shared edge now faces a different owner, so it is a border
             // and A's whole square outlines one ring.
@@ -100,7 +100,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void an_edge_facing_an_unowned_neighbour_stays_a_border() {
+        void anEdgeFacingAnUnownedNeighbourStaysABorder() {
             // A [0,0]..[10,10] is held by F; its right edge faces a present but unowned
             // neighbour B (a dead star - a cell, no key). That grouped-vs-empty edge is an
             // open frontier, which still bounds the cluster, so A's whole square outlines
@@ -120,7 +120,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void a_group_with_no_geometry_yields_no_rings() {
+        void aGroupWithNoGeometryYieldsNoRings() {
             var rings = SystemClusterBorders.traceBorderRings(
                     List.of("missing"), Map.of(), buildGrouping(Map.of(), Map.of()),
                     NO_COINCIDENT_NEIGHBOURS,
@@ -130,7 +130,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void an_inset_that_swallows_the_cluster_drops_the_ring() {
+        void anInsetThatSwallowsTheClusterDropsTheRing() {
             // A lone 10x10 cell inset by 20 folds inside-out; the collapse guard
             // sees the winding flip and drops it rather than stroking a tangle.
             var edges = Map.of(
@@ -147,7 +147,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void two_regions_traced_against_each_other_meet_exactly_on_their_coincident_edge() {
+        void twoRegionsTracedAgainstEachOtherMeetExactlyOnTheirCoincidentEdge() {
             // Cells A [0,0]..[10,10] and B [10,0]..[20,10] share the x = 10 edge but carry
             // different keys, so each traces as its own cluster. Naming the other as coincident
             // leaves that shared edge un-inset from both sides: A's border reaches x = 10 and B's
@@ -160,7 +160,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void two_regions_traced_without_coincidence_leave_the_border_channel_between_them() {
+        void twoRegionsTracedWithoutCoincidenceLeaveTheBorderChannelBetweenThem() {
             // The same two cells, neither naming the other: the shared edge is an ordinary
             // boundary, so both sides inset by the channel and the 2 + 2 gap between them is the
             // border channel two rival nations are meant to be separated by.
@@ -192,7 +192,7 @@ final class SystemClusterBordersTest {
         }
 
         @Test
-        void an_open_frontier_edge_insets_inward_by_the_plain_channel() {
+        void anOpenFrontierEdgeInsetsInwardByThePlainChannel() {
             // Grouped A [0,0]..[100,100] faces a dead star B across its right edge (x = 100).
             // That open frontier takes the same inward channel every other boundary does, so
             // the ring's right side lands at x = 98 and never reaches past the raw cell edge

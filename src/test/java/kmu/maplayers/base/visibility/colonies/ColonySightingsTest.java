@@ -18,7 +18,7 @@ final class ColonySightingsTest {
     class None {
 
         @Test
-        void reports_nothing_seen_of_any_colony() {
+        void reportsNothingSeenOfAnyColony() {
 
             assertThat(ColonySightings.NONE.readObservation("sentinel_gantries"))
                 .isNull();

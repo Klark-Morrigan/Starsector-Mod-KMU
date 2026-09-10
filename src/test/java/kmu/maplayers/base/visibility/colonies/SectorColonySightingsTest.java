@@ -83,21 +83,21 @@ final class SectorColonySightingsTest {
     class ReadSightings {
 
         @Test
-        void reports_nothing_seen_where_the_register_has_never_been_written() {
+        void reportsNothingSeenWhereTheRegisterHasNeverBeenWritten() {
 
             assertThat(readObservationOf("any"))
                 .isNull();
         }
 
         @Test
-        void reports_nothing_seen_where_there_is_no_sector_to_read() {
+        void reportsNothingSeenWhereThereIsNoSectorToRead() {
 
             assertThat(SectorColonySightings.readSightings(null).readObservation("any"))
                 .isNull();
         }
 
         @Test
-        void reports_where_and_when_a_recorded_colony_was_seen() {
+        void reportsWhereAndWhenARecordedColonyWasSeen() {
 
             var stored = new HashMap<String, String>();
 
@@ -109,7 +109,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void reports_a_value_written_before_observations_were_timed_as_seen_at_no_stated_moment() {
+        void reportsAValueWrittenBeforeObservationsWereTimedAsSeenAtNoStatedMoment() {
             // The migration case, and the reason nothing here fails on an entry it did not write:
             // a save made before the time was kept names a place alone, and that is a complete
             // observation with one half missing rather than a broken one.
@@ -128,7 +128,7 @@ final class SectorColonySightingsTest {
     class RecordSightingsIn {
 
         @Test
-        void records_every_gated_colony_standing_in_the_system_visited() {
+        void recordsEveryGatedColonyStandingInTheSystemVisited() {
             // Both listings, since a gated colony is most often the unregistered shape: hung on
             // one of the system's own entities and never entered in the economy.
             var listedBase = buildConcealedColony("pirate_base", "pirates");
@@ -147,7 +147,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_where_a_colony_stands_and_nothing_of_when_where_there_is_no_clock_to_read() {
+        void recordsWhereAColonyStandsAndNothingOfWhenWhereThereIsNoClockToRead() {
             // The place is the half every visibility rule spends, so a sector that cannot say what
             // day it is must still record that somebody was here - dated at the next observation.
             when(sectorMock.getClock())
@@ -163,7 +163,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_for_a_colony_held_in_the_open() {
+        void recordsNothingForAColonyHeldInTheOpen() {
             // What bounds the register to what a gate actually reads. An open colony the economy
             // lists is permanently in the sector's own sight, so an entry for one would answer
             // nothing while costing an entry per colony in the sector.
@@ -179,7 +179,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_for_a_dead_world_the_player_is_standing_in() {
+        void recordsNothingForADeadWorldThePlayerIsStandingIn() {
             // The narrower half of the pair the two routes make: vanilla's own survey level already
             // remembers the player's arrival, so the register owes this shape nothing here.
             placeColoniesOnSystemEntities(buildDeadWorld("tibicena"));
@@ -192,7 +192,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void moves_a_colonys_sighting_to_wherever_it_was_last_seen() {
+        void movesAColonysSightingToWhereverItWasLastSeen() {
             // The mover's own case, from the register's side: meeting a colony again names the
             // new place rather than adding to a list of places it has ever been.
             var mover = buildConcealedColony("rat_exoship", "rat_exotech");
@@ -208,7 +208,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_where_the_system_names_itself_with_nothing() {
+        void recordsNothingWhereTheSystemNamesItselfWithNothing() {
             // A sighting is filed as the place the colony was seen standing in, and a reader
             // matches that against where it stands now. A place with no id to be matched by would
             // put an entry into the save that every later reading declines.
@@ -224,7 +224,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_for_a_place_that_is_not_a_star_system() {
+        void recordsNothingForAPlaceThatIsNotAStarSystem() {
             // Hyperspace, which is where the sector's largest entity list lives and where a colony
             // reads sighted whatever the register says. Walking it would buy nothing at all.
             SectorColonySightings.recordSightingsIn(sectorMock, mock(LocationAPI.class));
@@ -234,7 +234,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_where_there_is_no_memory_to_write_into() {
+        void recordsNothingWhereThereIsNoMemoryToWriteInto() {
 
             when(sectorMock.getMemoryWithoutUpdate())
                 .thenReturn(null);
@@ -251,7 +251,7 @@ final class SectorColonySightingsTest {
     class RecordSightingsByInhabitants {
 
         @Test
-        void records_a_derelict_standing_beside_another_factions_colony() {
+        void recordsADerelictStandingBesideAnotherFactionsColony() {
             // The route's own case, and the reason it is written down at all: a hulk in orbit over
             // an inhabited world is common knowledge there, and stays known once that world dies.
             var derelict = buildDerelict("sentinel_gantries");
@@ -269,7 +269,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_a_dead_world_standing_beside_another_factions_colony() {
+        void recordsADeadWorldStandingBesideAnotherFactionsColony() {
             // The wider half of the pair. No gate is about a dead world, and the neighbours' word
             // is nonetheless the whole of why the map shows one - so the entry is what keeps it
             // there after the colony that reported it has itself collapsed.
@@ -286,7 +286,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_for_a_derelict_alone_in_its_system() {
+        void recordsNothingForADerelictAloneInItsSystem() {
             // Nobody is here to have seen it, so nothing is written and no empty register is put
             // into the save on the strength of a system holding a hulk.
             placeColoniesOnSystemEntities(buildDerelict("sentinel_gantries"));
@@ -298,7 +298,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_for_a_base_its_own_faction_shelters() {
+        void recordsNothingForABaseItsOwnFactionShelters() {
             // Owner-awareness carried into the write: the pirates do not announce their own base,
             // so the register is never given an observation the rule would decline to credit.
             listColoniesInSystem(
@@ -313,7 +313,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_where_there_is_no_system_to_name_the_sighting_after() {
+        void recordsNothingWhereThereIsNoSystemToNameTheSightingAfter() {
             // The write is handed a place and a set rather than sweeping for either, so a caller
             // mid-walk over a sector that answers nothing must cost the register nothing.
             SectorColonySightings.recordSightingsByInhabitants(
@@ -323,7 +323,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_where_there_is_no_sector_to_stamp_the_sighting_against() {
+        void recordsNothingWhereThereIsNoSectorToStampTheSightingAgainst() {
             // The only route that reaches the write with colonies to file and no sector: the set
             // arrives from the caller's own walk rather than from the sector, so nothing empties it
             // on the way in. It must cost the register nothing rather than fault over the clock it
@@ -340,7 +340,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_where_there_is_no_colony_set_to_write_from() {
+        void recordsNothingWhereThereIsNoColonySetToWriteFrom() {
             // The other half of the same guard. A caller walking a sector mid-load holds places
             // it has no reading of yet, and handing one over must cost the register nothing
             // rather than fault on the way through.
@@ -351,7 +351,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void reads_under_the_fog_alone_where_the_caller_hands_over_no_knowledge() {
+        void readsUnderTheFogAloneWhereTheCallerHandsOverNoKnowledge() {
             // The single-place caller, which has no sweep of its own to have opened a reading in.
             // What it records must be what the fog admits, rather than nothing at all.
             listColoniesInSystem(buildOpenColony("jangala", "hegemony"));
@@ -373,7 +373,7 @@ final class SectorColonySightingsTest {
     class DropSightingsOfAbsentColonies {
 
         @Test
-        void drops_a_sighting_of_a_colony_no_longer_anywhere_in_the_sector() {
+        void dropsASightingOfAColonyNoLongerAnywhereInTheSector() {
             // A sighting outliving what it was about would go on answering for whatever next took
             // the id, which is an observation nobody ever made.
             var stored = openStoredSightings();
@@ -389,7 +389,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void keeps_a_sighting_of_a_colony_that_has_moved_to_another_system() {
+        void keepsASightingOfAColonyThatHasMovedToAnotherSystem() {
             // Present but elsewhere is not absent. The sighting stays and simply stops matching
             // where the colony stands, which is the rule's own way of saying it is unseen again.
             var stored = openStoredSightings();
@@ -404,7 +404,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void leaves_an_unwritten_register_alone() {
+        void leavesAnUnwrittenRegisterAlone() {
 
             SectorColonySightings.dropSightingsOfAbsentColonies(sectorMock);
 
@@ -417,7 +417,7 @@ final class SectorColonySightingsTest {
     class ReconcileWithLoadedSave {
 
         @Test
-        void records_the_colonies_where_the_save_was_left_and_sheds_the_ones_that_have_gone() {
+        void recordsTheColoniesWhereTheSaveWasLeftAndShedsTheOnesThatHaveGone() {
             // What a load owes the register. No location change fires until the player leaves, so
             // without this the place they are looking at is the one place nothing is known about -
             // and on a save written before any sighting was made, that is all it could learn.
@@ -438,7 +438,7 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void records_nothing_where_the_save_was_left_outside_a_star_system() {
+        void recordsNothingWhereTheSaveWasLeftOutsideAStarSystem() {
 
             openStoredSightings();
             placeColoniesOnSystemEntities(buildDerelict("sentinel_gantries"));

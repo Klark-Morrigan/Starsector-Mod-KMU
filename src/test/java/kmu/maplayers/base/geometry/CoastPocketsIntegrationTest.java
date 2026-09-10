@@ -78,7 +78,7 @@ class CoastPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_pocket_lost_to_a_coarser_coast_leaves_no_water_behind_it(String sector) {
+        void aPocketLostToACoarserCoastLeavesNoWaterBehindIt(String sector) {
             // Raising the frontage floor stops the coast passing along the narrowest
             // frontages. Where that closes a bay off rather than opening it, the water is
             // still inside the coastline and still wants a fill - so a pocket that vanishes
@@ -97,7 +97,7 @@ class CoastPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void shut_in_water_inside_the_coast_lies_under_the_fill_that_owes_it(String sector) {
+        void shutInWaterInsideTheCoastLiesUnderTheFillThatOwesIt(String sector) {
             // The property a reader checks by looking: water they cannot sail out of, drawn
             // inside a coastline, is coloured in. Asked of the flood rather than of the trace,
             // so that a piece of void the trace never considered still counts against it.
@@ -119,7 +119,7 @@ class CoastPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_pocket_names_the_cells_that_ring_it(String sector) {
+        void everyPocketNamesTheCellsThatRingIt(String sector) {
             // What makes a pocket identifiable at all, and the first thing the cross-floor
             // check matches on. A pocket ringed by no cell could not be told from any other,
             // so that match would pair unrelated water and call a lost pocket a kept one.

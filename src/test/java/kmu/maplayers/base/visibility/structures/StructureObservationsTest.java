@@ -18,7 +18,7 @@ final class StructureObservationsTest {
     class None {
 
         @Test
-        void reports_nothing_observed_of_any_structure() {
+        void reportsNothingObservedOfAnyStructure() {
 
             assertThat(StructureObservations.NONE.readObservation("kumari_kandam_relay"))
                 .isNull();

@@ -48,7 +48,7 @@ final class SystemClustersTest {
     @Nested
     class FindClusters {
         @Test
-        void adjacent_same_key_systems_fuse_into_one_cluster() {
+        void adjacentSameKeySystemsFuseIntoOneCluster() {
             // A and B share a border and both belong to F, so their shared seam fuses
             // them into a single cluster.
             var edges = Map.of(
@@ -63,7 +63,7 @@ final class SystemClustersTest {
         }
 
         @Test
-        void a_chain_of_same_key_systems_fuses_transitively() {
+        void aChainOfSameKeySystemsFusesTransitively() {
             // A-B and B-C border pairs, all held by F: A and C never touch directly but
             // fuse through B into one cluster.
             var edges = Map.of(
@@ -79,7 +79,7 @@ final class SystemClustersTest {
         }
 
         @Test
-        void same_key_systems_with_no_shared_border_stay_separate() {
+        void sameKeySystemsWithNoSharedBorderStaySeparate() {
             // Two F systems that face only empty space (a disjoint pocket each) get their
             // own cluster - one label each, not a name stranded between them.
             var edges = Map.of(
@@ -93,7 +93,7 @@ final class SystemClustersTest {
         }
 
         @Test
-        void adjacent_systems_of_different_keys_do_not_fuse() {
+        void adjacentSystemsOfDifferentKeysDoNotFuse() {
             // A and B share a border but belong to F and G, so the seam is a cluster
             // boundary, not a fusing interior seam: two clusters.
             var edges = Map.of(
@@ -108,7 +108,7 @@ final class SystemClustersTest {
         }
 
         @Test
-        void an_unowned_system_carries_no_cluster() {
+        void anUnownedSystemCarriesNoCluster() {
             // B has a cell but no key, so it never seeds a cluster; only grouped A does,
             // and the seam into unowned B does not fuse.
             var edges = Map.of(
@@ -123,7 +123,7 @@ final class SystemClustersTest {
         }
 
         @Test
-        void nothing_grouped_yields_no_clusters() {
+        void nothingGroupedYieldsNoClusters() {
             var edges = Map.of("A", List.of(buildBoundEdge()));
 
             var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, Map.of()));
@@ -132,7 +132,7 @@ final class SystemClustersTest {
         }
 
         @Test
-        void a_cell_drawing_as_another_systems_star_reports_that_star_not_its_own_id() {
+        void aCellDrawingAsAnotherSystemsStarReportsThatStarNotItsOwnId() {
             // Cell "wedge" is an absorbed cell drawing as key F's star A - it has no star of
             // its own. It borders A's own cell, so it fuses into A's cluster, but the cluster's
             // members are the systems the cells draw as, so it reports A once, never "wedge".

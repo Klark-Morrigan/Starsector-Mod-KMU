@@ -37,7 +37,7 @@ final class ColonyKindLookupTest {
     class ReadKindsIn {
 
         @Test
-        void names_each_colony_of_the_place_by_the_kind_it_is() {
+        void namesEachColonyOfThePlaceByTheKindItIs() {
 
             var derelict = nameColony(ColonyMarketFixture.buildDerelictStation(), DERELICT_ID);
             var neighbour = nameColony(
@@ -57,7 +57,7 @@ final class ColonyKindLookupTest {
         }
 
         @Test
-        void folds_every_colony_present_rather_than_the_ones_a_projection_admits() {
+        void foldsEveryColonyPresentRatherThanTheOnesAProjectionAdmits() {
             // What the lookup answers is what a place is, not what may be said of it. A reader
             // asking has already decided which rows it lists, so narrowing here would leave a
             // listed row unanswered for reasons that reader had nothing to do with.
@@ -74,7 +74,7 @@ final class ColonyKindLookupTest {
         }
 
         @Test
-        void passes_over_a_colony_with_no_id_to_key_it_on() {
+        void passesOverAColonyWithNoIdToKeyItOn() {
             // Nothing to pair a row with, so nothing is stored - which is not the same as storing
             // an entry under nothing and handing one colony's kind to every other unnamed one.
             var lookup = ColonyKindLookup.readKindsIn(
@@ -86,14 +86,14 @@ final class ColonyKindLookupTest {
         }
 
         @Test
-        void reads_a_place_that_could_not_be_walked_as_nothing_known() {
+        void readsAPlaceThatCouldNotBeWalkedAsNothingKnown() {
 
             assertThat(ColonyKindLookup.readKindsIn(null, ColonyKnowledge.observingUnderTheFog()))
                 .isEqualTo(ColonyKindLookup.NONE);
         }
 
         @Test
-        void reads_an_unstated_classification_as_nothing_known() {
+        void readsAnUnstatedClassificationAsNothingKnown() {
             // A reader with no pass behind it has nothing to classify by, and inventing a kind for
             // every colony would have a box call places what nobody worked out.
             assertThat(ColonyKindLookup.readKindsIn(Colonies.NONE, null))
@@ -105,7 +105,7 @@ final class ColonyKindLookupTest {
     class ReadKindOf {
 
         @Test
-        void reads_an_id_the_fold_never_met_as_an_ordinary_colony() {
+        void readsAnIdTheFoldNeverMetAsAnOrdinaryColony() {
             // The direction a classification errs in everywhere else: overstating a place by one
             // settlement rather than calling a living colony a ruin.
             assertThat(ColonyKindLookup.NONE.readKindOf(DERELICT_ID))
@@ -117,13 +117,13 @@ final class ColonyKindLookupTest {
     class Construct {
 
         @Test
-        void reads_an_absent_map_as_nothing_known() {
+        void readsAnAbsentMapAsNothingKnown() {
             assertThat(new ColonyKindLookup(null).kindByColonyId())
                 .isEmpty();
         }
 
         @Test
-        void keeps_the_kinds_it_was_built_with_when_the_source_map_changes_later() {
+        void keepsTheKindsItWasBuiltWithWhenTheSourceMapChangesLater() {
 
             var kindByColonyId = new HashMap<String, ColonyKind>();
             kindByColonyId.put(DERELICT_ID, ColonyKind.SPACE_DERELICT);
@@ -137,7 +137,7 @@ final class ColonyKindLookupTest {
         }
 
         @Test
-        void rejects_an_attempt_to_change_the_kinds() {
+        void rejectsAnAttemptToChangeTheKinds() {
             // Folded once for a whole box and read by every line in it, so one line able to change
             // it would be reclassifying the system underneath the others.
             var lookup = new ColonyKindLookup(

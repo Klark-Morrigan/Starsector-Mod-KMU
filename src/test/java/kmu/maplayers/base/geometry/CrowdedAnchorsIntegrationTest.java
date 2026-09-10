@@ -74,7 +74,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void fewer_feet_stand_within_the_separation_than_before(String sector) {
+        void fewerFeetStandWithinTheSeparationThanBefore(String sector) {
             // What the pass is for. Not all of them: a frontage of one point has nowhere to
             // step, one hemmed in on both sides has nowhere better, and a place that would put
             // the line across another span is no place at all - so what is claimed is that it
@@ -93,7 +93,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_span_crosses_another_after_a_foot_moves(String sector) {
+        void noSpanCrossesAnotherAfterAFootMoves(String sector) {
             // Moving a foot swings the whole span, so a move is exactly the operation that can
             // lay a line across one already down. The selection refused every crossing before
             // the feet moved; the count has to still be nought afterwards.
@@ -124,7 +124,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_foot_still_stands_on_the_drawn_coast(String sector) {
+        void everyFootStillStandsOnTheDrawnCoast(String sector) {
             // The invariant every anchor rests on: a foot sits ON the traced line, so the
             // pieces are cut against the line rather than near it. A place worked out on the
             // cell's true arc would sit off its chord by the sagitta - near the coast, not on
@@ -158,7 +158,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void moving_a_foot_saves_a_span_the_thinning_would_have_dropped(String sector) {
+        void movingAFootSavesASpanTheThinningWouldHaveDropped(String sector) {
             // Why the spreading runs before the thinning. A span given a foot of its own is
             // still on the map; a span dropped for sharing one is a piece of void nothing
             // holds. So a laying that spreads first has to carry MORE spans than one that
@@ -170,7 +170,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_span_is_dropped_or_rejoined_by_moving_its_feet(String sector) {
+        void noSpanIsDroppedOrRejoinedByMovingItsFeet(String sector) {
             // The pass moves feet and nothing else. Which spans exist and which cells each
             // joins are settled before it runs, so a set that came back a different size, or
             // in a different order, would mean the spreading had started making that decision
@@ -193,7 +193,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_foot_only_moves_off_a_place_something_stands_too_close_to(String sector) {
+        void aFootOnlyMovesOffAPlaceSomethingStandsTooCloseTo(String sector) {
             // The pass must not fidget: a foot moves because another is inside the separation
             // of it, so one that left a place with room to spare would be the rule firing where
             // it was not owed - a span drawn somewhere other than where the search put it, for
@@ -234,7 +234,7 @@ class CrowdedAnchorsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_moved_foot_stands_better_than_where_it_left(String sector) {
+        void aMovedFootStandsBetterThanWhereItLeft(String sector) {
             // The rule itself, and the whole of it. A foot goes to the nearest place clear of
             // every other by the separation, or failing that to the place with the most room on
             // its stretch - so a move that did not buy room is a move made for some other

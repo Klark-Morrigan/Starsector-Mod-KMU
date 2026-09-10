@@ -35,14 +35,14 @@ final class CellHitTestTest {
     @Nested
     class ResolveSystemIdAt {
         @Test
-        void a_point_inside_a_cell_resolves_to_its_system() {
+        void aPointInsideACellResolvesToItsSystem() {
             var cells = Map.of("A", buildSquare(0, 0, 10));
 
             assertThat(CellHitTest.resolveSystemIdAt(5, 5, cells)).isEqualTo("A");
         }
 
         @Test
-        void each_cell_claims_only_its_own_area_when_several_are_present() {
+        void eachCellClaimsOnlyItsOwnAreaWhenSeveralArePresent() {
             // Two disjoint cells: the point sits in the second, so the search must not
             // stop at the first polygon it tests.
             var cells = new LinkedHashMap<String, List<double[]>>();
@@ -53,7 +53,7 @@ final class CellHitTestTest {
         }
 
         @Test
-        void a_point_in_the_gap_between_cells_resolves_to_nothing() {
+        void aPointInTheGapBetweenCellsResolvesToNothing() {
             // The border channel the inset opens between two cells belongs to neither,
             // and reads as empty space just as it draws.
             var cells = new LinkedHashMap<String, List<double[]>>();
@@ -64,14 +64,14 @@ final class CellHitTestTest {
         }
 
         @Test
-        void a_point_beyond_every_cell_resolves_to_nothing() {
+        void aPointBeyondEveryCellResolvesToNothing() {
             var cells = Map.of("A", buildSquare(0, 0, 10));
 
             assertThat(CellHitTest.resolveSystemIdAt(100, 100, cells)).isNull();
         }
 
         @Test
-        void a_point_on_a_shared_edge_resolves_the_same_way_every_call() {
+        void aPointOnASharedEdgeResolvesTheSameWayEveryCall() {
             // Two cells meeting flush along x = 10: whichever wins, the cursor must not
             // flicker between them while it rests there, so the verdict is stable.
             var cells = new LinkedHashMap<String, List<double[]>>();
@@ -85,12 +85,12 @@ final class CellHitTestTest {
         }
 
         @Test
-        void an_empty_map_resolves_to_nothing() {
+        void anEmptyMapResolvesToNothing() {
             assertThat(CellHitTest.resolveSystemIdAt(5, 5, Map.of())).isNull();
         }
 
         @Test
-        void a_cell_with_no_drawable_polygon_can_never_be_hit() {
+        void aCellWithNoDrawablePolygonCanNeverBeHit() {
             // A cell the inset consumed comes back with no vertices; it encloses no area,
             // so no point lands in it.
             var cells = Map.<String, List<double[]>>of("A", List.of());

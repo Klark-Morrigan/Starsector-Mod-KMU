@@ -86,7 +86,7 @@ class ContinentExposureIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_exposed_stretch_faces_water_no_span_shut_in(String sector) {
+        void everyExposedStretchFacesWaterNoSpanShutIn(String sector) {
             // The claim the whole reading exists to make. Asked of the water rather than of the
             // arcs: a point stepped out of the middle of a stretch lands in whatever the coast
             // faces there, and a stretch still on the books over captured water lands inside
@@ -114,7 +114,7 @@ class ContinentExposureIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_continent_no_span_shut_water_in_on_keeps_its_whole_frontage(String sector) {
+        void aContinentNoSpanShutWaterInOnKeepsItsWholeFrontage(String sector) {
             // The other direction, which no probe can catch: a reading that dropped frontage it
             // had no reason to drop is invisible on the map, because what is missing is a
             // stretch nothing was going to be drawn over anyway. A continent whose cells ring
@@ -143,7 +143,7 @@ class ContinentExposureIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_exposed_stretch_runs_along_the_frontage_it_came_from(String sector) {
+        void anExposedStretchRunsAlongTheFrontageItCameFrom(String sector) {
             // A stretch is somewhere a further pass may anchor, and an anchor is only worth
             // anything if it sits on the traced line. So a stretch has to be a run of one of
             // its cell's own frontages, unbroken and in order - not a gathering of the points
@@ -169,7 +169,7 @@ class ContinentExposureIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_edge_span_holds_captured_water_on_one_side_only(String sector) {
+        void anEdgeSpanHoldsCapturedWaterOnOneSideOnly(String sector) {
             // What "edge" means, checked against the outlines rather than against the tally the
             // reading was made from. A span keeps a channel, so each of its sides closes on its
             // own line, and a side facing captured water is a line that water's outline runs

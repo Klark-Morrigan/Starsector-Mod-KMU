@@ -61,7 +61,7 @@ final class ColonySightingRecorderTest {
     class ReportCurrentLocationChanged {
 
         @Test
-        void records_the_colonies_where_the_player_arrives() {
+        void recordsTheColoniesWhereThePlayerArrives() {
 
             var arrivalSystem = buildSystemHolding(ARRIVAL_SYSTEM_ID, buildGatedColony("jangala"));
 
@@ -73,7 +73,7 @@ final class ColonySightingRecorderTest {
         }
 
         @Test
-        void records_the_colonies_where_the_player_leaves_from() {
+        void recordsTheColoniesWhereThePlayerLeavesFrom() {
             // The departure end is what catches a colony that appeared during the stay: it was
             // not there to be recorded on arrival, and the register would otherwise go on saying
             // the player had never seen it.
@@ -88,7 +88,7 @@ final class ColonySightingRecorderTest {
         }
 
         @Test
-        void records_nothing_of_a_system_the_move_does_not_name() {
+        void recordsNothingOfASystemTheMoveDoesNotName() {
             // The cost claim. A journey pays for the two places it joins, and a sector full of
             // systems the player is nowhere near is not walked at all.
             var departureSystem =

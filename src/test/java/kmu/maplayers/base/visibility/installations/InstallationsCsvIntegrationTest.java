@@ -65,14 +65,14 @@ final class InstallationsCsvIntegrationTest {
     class ShippedTable {
 
         @Test
-        void ships_the_columns_the_reader_opens_it_by() throws IOException {
+        void shipsTheColumnsTheReaderOpensItBy() throws IOException {
 
             assertThat(readShippedLines().get(0))
                 .isEqualTo(SHIPPED_HEADER);
         }
 
         @Test
-        void lists_vanillas_remnant_stations_which_no_tag_of_theirs_admits() throws Exception {
+        void listsVanillasRemnantStationsWhichNoTagOfTheirsAdmits() throws Exception {
 
             var table = readShippedTable();
 
@@ -83,7 +83,7 @@ final class InstallationsCsvIntegrationTest {
         }
 
         @Test
-        void lists_the_domain_era_landmarks_a_sector_is_navigated_by() throws Exception {
+        void listsTheDomainEraLandmarksASectorIsNavigatedBy() throws Exception {
 
             var table = readShippedTable();
 
@@ -94,7 +94,7 @@ final class InstallationsCsvIntegrationTest {
         }
 
         @Test
-        void states_no_kind_for_any_type_it_ships() throws Exception {
+        void statesNoKindForAnyTypeItShips() throws Exception {
 
             assertThat(readShippedTable().overridesByEntityTypeId().values())
                 .allSatisfy(shipped -> assertThat(shipped.kind()).isEmpty());

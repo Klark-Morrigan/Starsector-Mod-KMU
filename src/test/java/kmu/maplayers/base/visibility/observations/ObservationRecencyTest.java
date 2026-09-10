@@ -41,7 +41,7 @@ final class ObservationRecencyTest {
     class ResolveRecency {
 
         @Test
-        void reports_a_fact_being_revealed_now_whatever_the_record_holds() {
+        void reportsAFactBeingRevealedNowWhateverTheRecordHolds() {
             // The live reading is the newer of the two by definition, so a record cannot outrank
             // it - a date beside a fact somebody is looking at is stale the moment it is drawn.
             var recency = ObservationRecency.resolveRecency(
@@ -53,7 +53,7 @@ final class ObservationRecencyTest {
         }
 
         @Test
-        void reports_a_fact_being_revealed_now_where_the_record_holds_nothing() {
+        void reportsAFactBeingRevealedNowWhereTheRecordHoldsNothing() {
             // A first sighting: the live reading is the whole of the news, and a rule that reached
             // for the record first would call it unobserved while somebody was looking at it.
             var recency = ObservationRecency.resolveRecency(SOMETHING_IS_LOOKING, Optional.empty());
@@ -63,7 +63,7 @@ final class ObservationRecencyTest {
         }
 
         @Test
-        void recalls_the_record_where_nothing_is_revealing_the_fact() {
+        void recallsTheRecordWhereNothingIsRevealingTheFact() {
 
             var recency = ObservationRecency.resolveRecency(
                 NOBODY_IS_LOOKING,
@@ -74,7 +74,7 @@ final class ObservationRecencyTest {
         }
 
         @Test
-        void reports_a_fact_nobody_ever_established_where_the_record_holds_nothing() {
+        void reportsAFactNobodyEverEstablishedWhereTheRecordHoldsNothing() {
 
             var recency = ObservationRecency.resolveRecency(NOBODY_IS_LOOKING, Optional.empty());
 
@@ -87,13 +87,13 @@ final class ObservationRecencyTest {
     class SelectByCase {
 
         @Test
-        void runs_the_observed_now_case_for_a_fact_being_revealed() {
+        void runsTheObservedNowCaseForAFactBeingRevealed() {
             assertThat(foldToAnswer(ObservationRecency.OBSERVED_NOW))
                 .isEqualTo(OBSERVED_NOW_ANSWER);
         }
 
         @Test
-        void runs_the_recalled_case_with_the_moment_the_record_holds() {
+        void runsTheRecalledCaseWithTheMomentTheRecordHolds() {
 
             var observation = new RecalledObservation(Optional.of(OBSERVED_AT));
 
@@ -105,7 +105,7 @@ final class ObservationRecencyTest {
         }
 
         @Test
-        void runs_the_recalled_case_for_an_observation_carrying_no_moment() {
+        void runsTheRecalledCaseForAnObservationCarryingNoMoment() {
             // A value recorded before observations were timed is still recalled news, not absent
             // news, so it must reach the same arm as a dated one and simply carry nothing.
             var observation = new RecalledObservation(Optional.empty());
@@ -117,7 +117,7 @@ final class ObservationRecencyTest {
         }
 
         @Test
-        void runs_the_never_observed_case_for_a_fact_nobody_established() {
+        void runsTheNeverObservedCaseForAFactNobodyEstablished() {
             assertThat(foldToAnswer(ObservationRecency.NEVER_OBSERVED))
                 .isEqualTo(NEVER_OBSERVED_ANSWER);
         }
@@ -127,7 +127,7 @@ final class ObservationRecencyTest {
     class Constructor {
 
         @Test
-        void reads_an_unstated_moment_as_no_moment() {
+        void readsAnUnstatedMomentAsNoMoment() {
             // A hand-built value is one hop from a load, and a record made before observations
             // were timed must read back rather than surface at whatever asks it for a date.
             assertThat(new RecalledObservation(null).observedTimestamp())

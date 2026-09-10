@@ -35,7 +35,7 @@ final class ColonyKindTest {
     class ResolveKind {
 
         @Test
-        void reads_a_derelict_station_held_by_nobody_as_a_space_derelict() {
+        void readsADerelictStationHeldByNobodyAsASpaceDerelict() {
 
             var derelict = ColonyMarketFixture.buildDerelictStation();
 
@@ -44,7 +44,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_a_derelict_conditioned_market_a_faction_holds_as_an_outpost() {
+        void readsADerelictConditionedMarketAFactionHoldsAsAnOutpost() {
             // The condition is not vanilla's alone - a mod may hang it on a station it means to be
             // manned - so the owner is one of the two things that part a kept station from a hulk.
             // Posed against the case above, which differs in the owner and in nothing else.
@@ -55,7 +55,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_an_unowned_derelict_the_economy_lists_as_an_outpost() {
+        void readsAnUnownedDerelictTheEconomyListsAsAnOutpost() {
             // The other of the two, and the case that says either alone is enough. The routine
             // that builds a derelict pointedly does not register one, so a hulk trading anyway was
             // made economically real on purpose - and reading the owner alone left it taking a
@@ -67,7 +67,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_a_derelict_conditioned_market_the_neutral_faction_holds_as_a_space_derelict() {
+        void readsADerelictConditionedMarketTheNeutralFactionHoldsAsASpaceDerelict() {
             // Neutral is an owner on paper and nobody in fact, which is the whole reason the kind
             // read asks the faction rather than merely asking whether one is set.
             var derelict = ColonyMarketFixture.buildOutpost(Factions.NEUTRAL);
@@ -77,7 +77,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_an_ordinary_colony_as_a_colony() {
+        void readsAnOrdinaryColonyAsAColony() {
 
             var colony = ColonyMarketFixture.buildVisibleColony("hegemony");
 
@@ -86,7 +86,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_a_decivilised_world_as_a_dead_colony() {
+        void readsADecivilisedWorldAsADeadColony() {
 
             var decivilisedWorld = ColonyMarketFixture.buildDecivilisedWorld();
 
@@ -95,7 +95,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_a_dead_world_the_player_has_not_surveyed_as_a_dead_colony() {
+        void readsADeadWorldThePlayerHasNotSurveyedAsADeadColony() {
             // What the world is and whether the player may be told are different questions asked at
             // different layers, so an unread ruin is classified as the ruin it is and withheld by
             // the fog above rather than by being misfiled here.
@@ -106,7 +106,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_a_bare_planets_placeholder_as_a_colony() {
+        void readsABarePlanetsPlaceholderAsAColony() {
             // The condition-only market every uninhabited world carries, and the case that says the
             // ruin arm turns on the decivilised condition rather than on being condition-only. Such
             // a market never reaches a colony set in the first place, ownership refusing it.
@@ -117,7 +117,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void reads_a_null_market_as_a_colony() {
+        void readsANullMarketAsAColony() {
             // The default arm, posed at its extreme: nothing at all to read still yields the kind
             // that keeps a place on the map, because misfiling a settlement as a hulk erases it.
             assertThat(ColonyKind.resolveKind(null, UNLISTED_BY_ECONOMY))
@@ -129,7 +129,7 @@ final class ColonyKindTest {
     class IsFoundByReport {
 
         @Test
-        void answers_true_for_a_dead_colony() {
+        void answersTrueForADeadColony() {
             // The one kind the fog withholds on survey level rather than on the entity flag, which
             // is what leaves a ruin invisible in a system its neighbours have been living in.
             assertThat(ColonyKind.UNGOVERNED_COLONY.isFoundByReport())
@@ -137,7 +137,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void answers_false_for_the_kinds_the_fog_already_answers_for() {
+        void answersFalseForTheKindsTheFogAlreadyAnswersFor() {
             // Posed against the case above: these are entities the player has found or not, so a
             // report would widen nothing and the route is refused them.
             assertThat(ColonyKind.COLONY.isFoundByReport())
@@ -153,7 +153,7 @@ final class ColonyKindTest {
     class IsSettlingLocation {
 
         @Test
-        void answers_true_for_the_kinds_somebody_is_at() {
+        void answersTrueForTheKindsSomebodyIsAt() {
 
             assertThat(ColonyKind.COLONY.isSettlingLocation())
                 .isTrue();
@@ -162,7 +162,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void answers_false_for_a_dead_colony() {
+        void answersFalseForADeadColony() {
             // Somewhere people were is not somewhere people are: a ruin inhabits its place and has
             // nobody left to say what else is standing in it.
             assertThat(ColonyKind.UNGOVERNED_COLONY.isSettlingLocation())
@@ -170,7 +170,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void answers_false_for_a_space_derelict() {
+        void answersFalseForASpaceDerelict() {
 
             assertThat(ColonyKind.SPACE_DERELICT.isSettlingLocation())
                 .isFalse();

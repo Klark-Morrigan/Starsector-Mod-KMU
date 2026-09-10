@@ -141,7 +141,7 @@ final class ColonyKnowledgeTest {
         class BaseFog {
 
             @Test
-            void excludes_a_colony_the_player_has_not_found() {
+            void excludesAColonyThePlayerHasNotFound() {
                 // Concealed and on an undiscovered entity: the shape the fog has to keep back on both
                 // counts - naming its owner in a box would tell the player exactly what is hiding out
                 // there.
@@ -153,7 +153,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_an_open_colony_on_an_entity_the_player_has_not_found() {
+            void excludesAnOpenColonyOnAnEntityThePlayerHasNotFound() {
                 // A derelict station: the sector's most common undiscovered colony, and the one shape
                 // whose concealment and discovery disagree. Nothing hides it, so a projection reading
                 // concealment would paint its system as settled from the first frame of a campaign,
@@ -166,7 +166,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void restores_a_colony_the_player_has_not_found_under_the_reveal() {
+            void restoresAColonyThePlayerHasNotFoundUnderTheReveal() {
 
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var base = fixture.buildUndiscoveredConcealedColony("pirates");
@@ -176,7 +176,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_an_undiscovered_concealed_colony_under_the_discovery_reveal_alone() {
+            void withholdsAnUndiscoveredConcealedColonyUnderTheDiscoveryRevealAlone() {
                 // The rule each toggle is written to: a reveal drops the arm it names and clears no
                 // gate beside it. This colony is held back twice over - undiscovered, and concealed in a
                 // place nobody has seen it - so lifting the fog leaves the second reason standing.
@@ -190,7 +190,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_the_player_has_found() {
+            void keepsAConcealedColonyThePlayerHasFound() {
                 // A raided pirate base stays permanently hidden while being perfectly well known, so
                 // concealment alone must not fog it out where no gate asks it to.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -201,7 +201,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_the_set_s_own_order() {
+            void keepsTheSetSOwnOrder() {
 
                 var fixture = new ColonyKnowledgeFixture("corvus");
                 var first = fixture.buildVisibleColony("hegemony");
@@ -212,7 +212,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void reads_an_unstated_rule_as_the_fog_alone() {
+            void readsAnUnstatedRuleAsTheFogAlone() {
                 // A gate nobody asked for must not appear out of a missing argument, and neither
                 // must a reveal: a derelict the player has found reads known, and one they have not
                 // does not.
@@ -225,7 +225,7 @@ final class ColonyKnowledgeTest {
 
             @ParameterizedTest
             @MethodSource("kmu.maplayers.base.visibility.colonies.ColonyKnowledgeTest#buildEveryGateCombination")
-            void excludes_an_undiscovered_colony_in_a_settled_system(ColonyVisibility rule) {
+            void excludesAnUndiscoveredColonyInASettledSystem(ColonyVisibility rule) {
                 // The conjunction's own case. Revelation is a second condition on top of the fog and
                 // never an alternative to it, so a system full of witnesses - entered by the player,
                 // and holding a colony that settles it - still shows nothing the player has not
@@ -242,7 +242,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_a_gated_colony_under_the_reveal_where_nobody_has_seen_it() {
+            void withholdsAGatedColonyUnderTheRevealWhereNobodyHasSeenIt() {
                 // The same rule from the derelict's side: the reveal says the hulk may be shown
                 // though nobody found it, which is no answer at all to whether anybody has seen it
                 // standing here.
@@ -256,7 +256,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void admits_a_surveyed_dead_world() {
+            void admitsASurveyedDeadWorld() {
                 // A ruin the player has read: found by the survey arm, gated by nothing, and
                 // condition-only - which is what every other colony read refuses it for.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -269,7 +269,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_a_dead_world_nobody_has_surveyed() {
+            void withholdsADeadWorldNobodyHasSurveyed() {
                 // The ruins are there and the player has no way of knowing it, so the map may not
                 // say so - and the planet being found is beside the point, the two arms being
                 // independent.
@@ -283,7 +283,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_a_seen_decivilised_world_where_a_full_survey_is_asked_for() {
+            void withholdsASeenDecivilisedWorldWhereAFullSurveyIsAskedFor() {
                 // The bar moves both ways, which is what makes it a level rather than a reveal: a
                 // world vanilla would show is withheld where the map has been asked for more than
                 // vanilla asks.
@@ -297,7 +297,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void admits_an_unsurveyed_decivilised_world_where_no_survey_is_asked_for() {
+            void admitsAnUnsurveyedDecivilisedWorldWhereNoSurveyIsAskedFor() {
 
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
@@ -309,7 +309,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_an_undiscovered_unsurveyed_decivilised_world_under_either_knob_alone() {
+            void withholdsAnUndiscoveredUnsurveyedDecivilisedWorldUnderEitherKnobAlone() {
                 // The kind's own case of the rule every knob on the tab is written to: two arms
                 // hold this world back, each knob reaches one, and neither reaches the other's.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -334,7 +334,7 @@ final class ColonyKnowledgeTest {
         class SightingRoute {
 
             @Test
-            void excludes_a_derelict_alone_in_a_system_nobody_has_seen() {
+            void excludesADerelictAloneInASystemNobodyHasSeen() {
                 // The Sentinel Gantries reading: found by the fog because nothing hides it, and
                 // nothing whatever about it has reached the player.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -347,7 +347,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_derelict_the_player_has_seen_where_it_stands() {
+            void keepsADerelictThePlayerHasSeenWhereItStands() {
 
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var derelict = fixture.buildDerelictStation();
@@ -360,7 +360,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_colony_the_player_saw_in_a_system_it_has_since_left() {
+            void excludesAColonyThePlayerSawInASystemItHasSinceLeft() {
                 // The mover: an exoship warping about the fringes carries a sighting naming wherever
                 // it was met, and standing somewhere else is being unseen again. A gate reading only
                 // that the player had once been here would show it from the frame it arrived in.
@@ -375,7 +375,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_mover_once_the_player_meets_it_where_it_has_gone() {
+            void keepsAMoverOnceThePlayerMeetsItWhereItHasGone() {
                 // The other half of the case above, and what keeps the rule from being a one-way
                 // door: the sighting is refreshed by the meeting, not by the first one ever made.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -390,7 +390,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_colony_founded_where_the_player_has_already_been() {
+            void excludesAColonyFoundedWhereThePlayerHasAlreadyBeen() {
                 // The founding case, which is the mover seen from the other end: a base built in a
                 // system the player cleared years ago was never there to be seen, and no amount of
                 // time passing changes that - nothing in the rule reads a clock at all.
@@ -406,7 +406,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_its_own_faction_shelters_once_the_player_has_seen_it() {
+            void keepsAConcealedColonyItsOwnFactionSheltersOnceThePlayerHasSeenIt() {
                 // Owner-awareness narrows the route that runs through the neighbours and leaves the
                 // player's own untouched: having been there is knowing, whoever else holds the place.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -421,7 +421,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_gated_colony_standing_in_no_star_system() {
+            void keepsAGatedColonyStandingInNoStarSystem() {
                 // Hyperspace, where mods put a few. There is no system to have been in and none to be
                 // settled, so a gate answering otherwise would withhold it for the whole campaign.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -440,7 +440,7 @@ final class ColonyKnowledgeTest {
         class SettledRoute {
 
             @Test
-            void keeps_an_unseen_mover_among_inhabitants_and_drops_it_where_there_are_none() {
+            void keepsAnUnseenMoverAmongInhabitantsAndDropsItWhereThereAreNone() {
                 // The settled route is untouched by any of the above: it reads the place as it stands,
                 // so a colony arriving among people who can see it is revealed by the arrival itself,
                 // needs no sighting of its own, and loses that revelation the moment it warps out to
@@ -459,7 +459,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_derelict_once_a_colony_is_founded_beside_it() {
+            void keepsADerelictOnceAColonyIsFoundedBesideIt() {
                 // The second route to revelation: a hulk in orbit over an inhabited world is common
                 // knowledge there, whether or not the player has ever been.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -473,7 +473,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_derelict_beside_a_colony_the_player_has_not_found() {
+            void excludesADerelictBesideAColonyThePlayerHasNotFound() {
                 // A system counts as settled by what the player is shown, not by what is there: an
                 // undiscovered colony is no grapevine the player is party to, so the derelict beside
                 // it stays unmentioned rather than being vouched for by a place nobody has seen.
@@ -488,7 +488,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_derelict_vouched_for_only_by_another_derelict() {
+            void excludesADerelictVouchedForOnlyByAnotherDerelict() {
                 // A derelict cannot settle anything, having never had anybody aboard, so a place
                 // holding nothing but hulks reveals none of them.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -502,7 +502,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_concealed_colony_in_a_system_nobody_has_seen() {
+            void excludesAConcealedColonyInASystemNobodyHasSeen() {
                 // The Daybreak reading: a colony that hides itself, on an entity that was never
                 // discoverable, so the fog admits it and only revelation can hold it back.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -515,7 +515,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_a_system_s_own_inhabitants_can_see() {
+            void keepsAConcealedColonyASystemSOwnInhabitantsCanSee() {
                 // The Galatia Academy reading, and the case that makes the settled route necessary
                 // rather than tidy: nothing on the market tells it from the exoship above, and only
                 // the Hegemony world in the same system does.
@@ -530,7 +530,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_colony_the_sector_openly_points_at_where_nothing_settles_its_system() {
+            void excludesAColonyTheSectorOpenlyPointsAtWhereNothingSettlesItsSystem() {
                 // The same Academy, with the sector's own vouching for it registered. That excuses
                 // one word on a hover box and says nothing whatever about what may be shown: alone
                 // in its system it is withheld exactly as the exoship above is. One flag serving
@@ -545,7 +545,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_colony_the_sector_openly_points_at_where_its_neighbours_can_see_it() {
+            void keepsAColonyTheSectorOpenlyPointsAtWhereItsNeighboursCanSeeIt() {
                 // The other half of that pair: the route in is the settling neighbour, exactly as it
                 // is for the base beside it, and the registered vouching neither adds nor removes
                 // one.
@@ -560,7 +560,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_concealed_colony_only_its_own_faction_could_vouch_for() {
+            void excludesAConcealedColonyOnlyItsOwnFactionCouldVouchFor() {
                 // A pirate base in a system the pirates openly hold. The settled route rests on
                 // somebody saying what they can see, and the party keeping the secret is the one that
                 // will not - so the base falls back to the player's own sighting, which nothing here
@@ -576,7 +576,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_a_rival_s_colony_can_see() {
+            void keepsAConcealedColonyARivalSColonyCanSee() {
                 // The other half of the pair, posed on one base and one neighbour so the owners are
                 // the only thing that has moved: a faction that is not keeping the secret has every
                 // reason to mention what is sitting in the system with it.
@@ -591,7 +591,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_a_rival_can_see_among_its_own_faction_s_neighbours() {
+            void keepsAConcealedColonyARivalCanSeeAmongItsOwnFactionSNeighbours() {
                 // Several owners settle this place, and the question is asked of the set rather than
                 // of whichever colony was reached first: one rival among the base's own countrymen is
                 // enough, and a fold that had collapsed to "somebody is here" or to "the first owner
@@ -609,7 +609,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_concealed_colony_only_an_allied_faction_could_vouch_for() {
+            void excludesAConcealedColonyOnlyAnAlliedFactionCouldVouchFor() {
                 // The same silence as the base's own faction, for the same reason: an alliance is a
                 // standing arrangement to act as one, and handing a partner's concealed base to a
                 // third party is the thing it forbids. Posed on the pair that talks with no
@@ -627,7 +627,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_concealed_colony_its_own_faction_shelters_among_allies() {
+            void excludesAConcealedColonyItsOwnFactionSheltersAmongAllies() {
                 // The rule the alliance widened, unchanged underneath it: an owner is passed over
                 // for being the owner, not for being allied with itself. Posed with an alliance
                 // standing so a widening that had swallowed the identity test would show here.
@@ -644,7 +644,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_a_faction_outside_its_alliance_can_see() {
+            void keepsAConcealedColonyAFactionOutsideItsAllianceCanSee() {
                 // The other half of the pair: an alliance the base's owner is not in silences
                 // nobody, so the rule answers exactly as it does with no alliances at all.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -663,7 +663,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_one_unallied_settler_can_see_among_its_partners() {
+            void keepsAConcealedColonyOneUnalliedSettlerCanSeeAmongItsPartners() {
                 // Asked of the whole set rather than of whichever colony was reached first: one
                 // faction outside the alliance is enough, however many partners stand around it.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -683,7 +683,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_the_player_has_seen_whatever_the_alliance_says() {
+            void keepsAConcealedColonyThePlayerHasSeenWhateverTheAllianceSays() {
                 // An alliance says who would speak, and nothing about what the player has been to
                 // look at. So the sighting route is untouched by it, which is what keeps a partner's
                 // silence from taking back knowledge the player earned.
@@ -701,7 +701,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_derelict_whichever_alliance_settles_the_system_around_it() {
+            void keepsADerelictWhicheverAllianceSettlesTheSystemAroundIt() {
                 // Nobody holds a hulk and nobody joins an alliance, so the widened comparison
                 // reaches a derelict exactly as the bare owner one did - it is vouched for by
                 // whoever is there, allied or not.
@@ -718,7 +718,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_derelict_whichever_faction_settles_the_system_around_it() {
+            void keepsADerelictWhicheverFactionSettlesTheSystemAroundIt() {
                 // A hulk is held by nobody, and nobody never settles a place - so the owner comparison
                 // can never find the derelict's own owner among the settling ones, and the route
                 // answers for a derelict exactly as it did before it read owners at all.
@@ -733,7 +733,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void excludes_a_derelict_vouched_for_only_by_an_unheld_station() {
+            void excludesADerelictVouchedForOnlyByAnUnheldStation() {
                 // The one arrangement in which the owner comparison reaches a derelict: a station no
                 // faction holds that the economy lists anyway is read as kept, so it settles its
                 // place - while falling to the same nobody the hulk beside it does. It vouches for
@@ -759,7 +759,7 @@ final class ColonyKnowledgeTest {
         class ReportRoute {
 
             @Test
-            void keeps_an_unsurveyed_dead_world_a_rival_colony_can_see() {
+            void keepsAnUnsurveyedDeadWorldARivalColonyCanSee() {
                 // The asymmetry the route exists to close: the Hegemony's colony is drawn in a
                 // system the player has never entered, and the ruin in the next orbit - which
                 // everyone living there can see - was not.
@@ -774,7 +774,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_an_unsurveyed_dead_world_where_more_than_a_sighting_is_asked_for() {
+            void withholdsAnUnsurveyedDeadWorldWhereMoreThanASightingIsAskedFor() {
                 // The bar the route is held to, one notch up: the player has asked for survey data,
                 // and a neighbour's word that the world is standing there is not survey data.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -788,7 +788,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_an_unsurveyed_dead_world_alone_in_its_system() {
+            void withholdsAnUnsurveyedDeadWorldAloneInItsSystem() {
                 // Nobody is there to have seen it, so the route has nothing to report and the world
                 // falls back to the survey the player has not made.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -801,7 +801,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholds_an_unsurveyed_dead_world_vouched_for_only_by_an_unheld_station() {
+            void withholdsAnUnsurveyedDeadWorldVouchedForOnlyByAnUnheldStation() {
                 // Owner-awareness reaching the route without a line of its own. A collapsed colony
                 // falls to neutral as it dies, and so does a station no faction holds that the
                 // economy lists anyway - so the only settler here shares the world's own owner and
@@ -817,7 +817,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_an_unsurveyed_dead_world_seen_where_it_stands() {
+            void keepsAnUnsurveyedDeadWorldSeenWhereItStands() {
                 // The recorded half of the same route, and what keeps the world on the map after
                 // the neighbour that reported it has itself collapsed: an observation naming this
                 // system finds the world with nobody left in it.
@@ -832,7 +832,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_surveyed_dead_world_where_more_than_a_sighting_is_asked_for() {
+            void keepsASurveyedDeadWorldWhereMoreThanASightingIsAskedFor() {
                 // The fog arm is untouched by any of this: a world the player has actually surveyed
                 // that far is admitted at a bar no report could ever reach.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -845,7 +845,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void lets_a_dead_world_this_route_found_settle_nothing() {
+            void letsADeadWorldThisRouteFoundSettleNothing() {
                 // The route finds a world and grants it no voice, which is what keeps the two
                 // passes an ordering rather than a cycle: the collapsed colony is on the map and
                 // the hulk drifting beside it stays held back, having nobody there to report it.
@@ -867,7 +867,7 @@ final class ColonyKnowledgeTest {
         class UngatedColonies {
 
             @Test
-            void keeps_a_derelict_under_its_own_gate_off() {
+            void keepsADerelictUnderItsOwnGateOff() {
 
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var derelict = fixture.buildDerelictStation();
@@ -879,7 +879,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_a_concealed_colony_under_its_own_gate_off() {
+            void keepsAConcealedColonyUnderItsOwnGateOff() {
 
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var exoship = fixture.buildFoundConcealedColony("rat_exotech");
@@ -891,7 +891,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keeps_an_ordinary_colony_under_both_gates() {
+            void keepsAnOrdinaryColonyUnderBothGates() {
                 // Neither gate is about an open colony somebody lives on, so the gates that hold the
                 // other two kinds back must leave this one exactly where the fog put it.
                 var fixture = new ColonyKnowledgeFixture("corvus");
@@ -909,13 +909,13 @@ final class ColonyKnowledgeTest {
     class HasKnownColony {
 
         @Test
-        void answers_false_for_a_system_holding_nothing() {
+        void answersFalseForASystemHoldingNothing() {
             assertThat(observing().hasKnownColony(Colonies.NONE))
                 .isFalse();
         }
 
         @Test
-        void answers_true_for_an_ordinary_colony() {
+        void answersTrueForAnOrdinaryColony() {
 
             var fixture = new ColonyKnowledgeFixture("corvus");
 
@@ -924,7 +924,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_true_for_a_concealed_colony_the_player_has_found() {
+        void answersTrueForAConcealedColonyThePlayerHasFound() {
             // A raided base is concealed for good and plainly known, so an emptiness read gated on
             // concealment would call its system empty while the player is standing in it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -935,7 +935,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_false_for_a_colony_the_player_has_not_found() {
+        void answersFalseForAColonyThePlayerHasNotFound() {
             // Reporting its system as occupied is itself the tell that something is hiding there.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var base = fixture.buildUndiscoveredConcealedColony("pirates");
@@ -945,7 +945,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_false_for_an_open_colony_on_an_entity_the_player_has_not_found() {
+        void answersFalseForAnOpenColonyOnAnEntityThePlayerHasNotFound() {
             // The derelict-station shape again, asked of the emptiness read. A system holding
             // nothing but an undiscovered derelict reads as empty, which is what the player has
             // any means of knowing about it.
@@ -957,7 +957,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_true_for_a_colony_the_player_has_not_found_under_the_reveal() {
+        void answersTrueForAColonyThePlayerHasNotFoundUnderTheReveal() {
 
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var base = fixture.buildUndiscoveredConcealedColony("pirates");
@@ -967,7 +967,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void agrees_with_the_projection_it_asks_the_emptiness_of() {
+        void agreesWithTheProjectionItAsksTheEmptinessOf() {
             // The claim the second read rests on: not materialising the list must not change the
             // answer, and a set mixing a fogged colony with a visible one is where a filter that
             // had drifted between the two reads would show it.
@@ -990,7 +990,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void agrees_with_the_projection_over_a_set_holding_only_derelicts() {
+        void agreesWithTheProjectionOverASetHoldingOnlyDerelicts() {
             // Nothing here settles the place, so both reads have to reach their answer through
             // the gate itself rather than through anything an ordinary colony vouched for.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1012,7 +1012,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void agrees_with_the_projection_over_a_derelict_an_outpost_vouches_for() {
+        void agreesWithTheProjectionOverADerelictAnOutpostVouchesFor() {
             // A kept station has people on it, so it settles its place exactly as a colony does -
             // and what it vouches for is the hulk drifting beside it, which no gate would
             // otherwise admit here.
@@ -1031,7 +1031,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void agrees_with_the_projection_over_a_derelict_a_colony_vouches_for() {
+        void agreesWithTheProjectionOverADerelictAColonyVouchesFor() {
             // A settled place, where the derelict is admitted only by the colony beside it. Both
             // reads must take that settled reading before judging the gate, or they diverge.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1053,7 +1053,7 @@ final class ColonyKnowledgeTest {
     class ReadInhabitingColonies {
 
         @Test
-        void keeps_a_station_a_faction_keeps() {
+        void keepsAStationAFactionKeeps() {
             // A kept station wears the derelict condition and is somebody's, so it is read as a
             // colony throughout: habitation counts it, where the hulk beside it in the case above
             // is counted by neither projection.
@@ -1069,7 +1069,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void excludes_a_derelict_the_player_has_seen() {
+        void excludesADerelictThePlayerHasSeen() {
             // The whole of the projection's reason for existing: the listing may name a hulk the
             // player has been past, and the place it orbits is still nobody's home.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1087,7 +1087,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void keeps_a_colony_the_derelict_beside_it_does_not_join() {
+        void keepsAColonyTheDerelictBesideItDoesNotJoin() {
             // Both projections speak about one system and say different things: the listing names
             // the derelict the colony's own inhabitants can see, and habitation counts only the
             // colony.
@@ -1106,7 +1106,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void keeps_every_known_colony_where_no_derelict_is_present() {
+        void keepsEveryKnownColonyWhereNoDerelictIsPresent() {
             // Nothing is removed where nothing was ever a hulk, so a system of ordinary colonies
             // reads alike under either projection - in the set's own order.
             var fixture = new ColonyKnowledgeFixture("galatia");
@@ -1120,7 +1120,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void keeps_a_dead_world_and_lets_it_settle_nothing() {
+        void keepsADeadWorldAndLetsItSettleNothing() {
             // The ruin inhabits its place - somewhere people were is not empty space - while
             // vouching for nothing else standing there, nobody being left to speak. So the derelict
             // beside it stays unmentioned: a place is settled by the living, and the listing shows
@@ -1140,7 +1140,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void keeps_a_dead_world_a_neighbour_reported() {
+        void keepsADeadWorldANeighbourReported() {
             // Habitation reads the same found-test the listing does, so a ruin admitted on the
             // Hegemony's word counts as people living there exactly as a surveyed one does. Which
             // it should: the survivors on it are no less present for the player not having looked.
@@ -1155,7 +1155,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void excludes_a_derelict_its_own_gate_has_let_through() {
+        void excludesADerelictItsOwnGateHasLetThrough() {
             // Kind and gate answer separate questions. Turning the station gate off says the
             // player may be told about a hulk they have found; it does not put anybody aboard it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1172,7 +1172,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void excludes_a_derelict_the_reveal_has_let_through() {
+        void excludesADerelictTheRevealHasLetThrough() {
             // The reveal is about the fog, not about who is aboard. Posed on an entity the player
             // has not found, so it is the reveal alone putting the hulk in the listing - and
             // habitation still declines it.
@@ -1190,7 +1190,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void follows_the_gate_that_holds_a_concealed_colony_back() {
+        void followsTheGateThatHoldsAConcealedColonyBack() {
             // Habitation is the known set with a kind removed and no second reading of the rule,
             // so a colony the hidden gate withholds is absent from both and present in both once
             // the gate is off.
@@ -1208,7 +1208,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void reads_an_unstated_rule_as_the_fog_alone() {
+        void readsAnUnstatedRuleAsTheFogAlone() {
 
             var fixture = new ColonyKnowledgeFixture("corvus");
             var colony = fixture.buildVisibleColony("hegemony");
@@ -1225,13 +1225,13 @@ final class ColonyKnowledgeTest {
     class HasInhabitingColony {
 
         @Test
-        void answers_false_for_a_system_holding_nothing() {
+        void answersFalseForASystemHoldingNothing() {
             assertThat(observing().hasInhabitingColony(Colonies.NONE))
                 .isFalse();
         }
 
         @Test
-        void answers_true_for_an_ordinary_colony() {
+        void answersTrueForAnOrdinaryColony() {
 
             var fixture = new ColonyKnowledgeFixture("corvus");
 
@@ -1240,7 +1240,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_false_for_a_system_holding_only_a_derelict_the_player_has_seen() {
+        void answersFalseForASystemHoldingOnlyADerelictThePlayerHasSeen() {
             // The reading the map turns on: a system the listing has something to say about, and
             // which is still empty space with a hulk in it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1258,7 +1258,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_true_for_a_system_a_derelict_shares_with_a_colony() {
+        void answersTrueForASystemADerelictSharesWithAColony() {
             // A settled place, where the derelict must not be what carries the answer - the
             // colony beside it is.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1272,7 +1272,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_true_for_a_remembered_ruin_whose_neighbours_are_gone() {
+        void answersTrueForARememberedRuinWhoseNeighboursAreGone() {
             // What the register buys this reading: a system whose colonies have all since
             // collapsed still reads as somewhere people are, on an observation of the ruin made
             // while somebody was there to make it. The world is unsurveyed throughout, so the fog
@@ -1293,7 +1293,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answers_false_for_a_derelict_the_reveal_has_let_through() {
+        void answersFalseForADerelictTheRevealHasLetThrough() {
             // The emptiness question asked of the same case: the reveal admits the hulk to the
             // listing without making its place anybody's home.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1310,7 +1310,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void reads_an_unstated_rule_as_the_fog_alone() {
+        void readsAnUnstatedRuleAsTheFogAlone() {
             // No reveal appears out of a missing argument: a colony the player has not found does
             // not inhabit its place for the rule having gone unstated.
             var fixture = new ColonyKnowledgeFixture("corvus");
@@ -1323,7 +1323,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void follows_the_gate_that_holds_a_concealed_colony_back() {
+        void followsTheGateThatHoldsAConcealedColonyBack() {
             // A concealed colony settles nothing, so the gate is the whole of the answer here -
             // and the emptiness question has to consult it exactly as the listing does.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1340,7 +1340,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void agrees_with_the_projection_it_asks_the_emptiness_of() {
+        void agreesWithTheProjectionItAsksTheEmptinessOf() {
             // The claim the short-circuit rests on: skipping the list must not change the answer,
             // and a set mixing a derelict with a colony the fog withholds is where a short-circuit
             // that had drifted from the projection would show it.
@@ -1372,7 +1372,7 @@ final class ColonyKnowledgeTest {
     class ReadGatedColonies {
 
         @Test
-        void yields_the_shapes_a_gate_holds_back() {
+        void yieldsTheShapesAGateHoldsBack() {
 
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
@@ -1385,7 +1385,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void passes_over_a_colony_held_in_the_open() {
+        void passesOverAColonyHeldInTheOpen() {
             // What keeps the register from holding an entry per colony in the sector. An open
             // colony the economy lists is permanently in the sector's own sight, so no gate ever
             // asks about it and an observation of one would answer nothing.
@@ -1399,7 +1399,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_a_derelict_the_player_has_not_found() {
+        void yieldsADerelictThePlayerHasNotFound() {
             // Being somewhere is seeing what is in it, so this read consults no fog. The colony
             // still needs finding before it is shown, the gate being a condition on top of the fog
             // rather than an alternative to it.
@@ -1413,7 +1413,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void passes_over_a_dead_world_the_inhabitants_route_would_record() {
+        void passesOverADeadWorldTheInhabitantsRouteWouldRecord() {
             // The deliberate gap between the two observation reads. Arriving here is the very act
             // vanilla stamps a permanent survey level for, so an entry would restate what the fog
             // already answers - at the cost of one per collapsed world in every system entered.
@@ -1431,7 +1431,7 @@ final class ColonyKnowledgeTest {
     class ReadColoniesObservedByInhabitants {
 
         @Test
-        void yields_a_derelict_standing_beside_another_factions_colony() {
+        void yieldsADerelictStandingBesideAnotherFactionsColony() {
             // The route's own case: a hulk in orbit over an inhabited world is common knowledge
             // there, whether or not the player has ever been near it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1445,7 +1445,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_nothing_for_a_derelict_alone_in_its_system() {
+        void yieldsNothingForADerelictAloneInItsSystem() {
 
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
@@ -1457,7 +1457,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_nothing_for_a_concealed_base_its_own_faction_shelters() {
+        void yieldsNothingForAConcealedBaseItsOwnFactionShelters() {
             // Owner-awareness, carried into the write: the pirates do not announce their own base,
             // so nothing is recorded that the rule would decline to credit.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1471,7 +1471,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_nothing_for_a_colony_no_gate_is_about() {
+        void yieldsNothingForAColonyNoGateIsAbout() {
             // Two open colonies watching each other. Neither is gated, so neither is worth an
             // entry however plainly the other can see it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1485,7 +1485,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_nothing_for_a_concealed_base_an_allied_faction_would_not_announce() {
+        void yieldsNothingForAConcealedBaseAnAlliedFactionWouldNotAnnounce() {
             // The rule's own silence, carried into the write: an observation an ally alone would
             // have made is one the rule declines to credit, so recording it would put an
             // announcement nobody made permanently into a save.
@@ -1503,7 +1503,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_a_concealed_base_a_faction_outside_its_alliance_announces() {
+        void yieldsAConcealedBaseAFactionOutsideItsAllianceAnnounces() {
             // The other half of that pair, on the same shape: an alliance the base's owner is not
             // in silences nobody, so the observation is recorded as it always was.
             registerAllianceOf("hegemony", "persean_league");
@@ -1520,7 +1520,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_nothing_where_the_only_settler_is_a_colony_the_player_has_not_found() {
+        void yieldsNothingWhereTheOnlySettlerIsAColonyThePlayerHasNotFound() {
             // The fog is read here as it is read by the rule, and no reveal can reach it: a
             // written observation outlives the setting that let it be made, so one made under a
             // reveal could not be taken back by turning the reveal off again.
@@ -1535,7 +1535,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_a_dead_world_a_rival_colony_can_see() {
+        void yieldsADeadWorldARivalColonyCanSee() {
             // The report route's own entry, and the reason this read is not the gated one. No gate
             // is about a collapsed world; what the neighbours can see of it is nonetheless the whole
             // of why the map shows it, so the observation has to be written down.
@@ -1551,7 +1551,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_nothing_for_a_dead_world_alone_in_its_system() {
+        void yieldsNothingForADeadWorldAloneInItsSystem() {
 
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
@@ -1564,7 +1564,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yields_a_dead_world_though_the_rule_asks_for_more_than_a_sighting() {
+        void yieldsADeadWorldThoughTheRuleAsksForMoreThanASighting() {
             // What is written down is keyed on the kind and never on the knob. A player who ran at
             // a stricter bar for a hundred cycles must not come back down to a hole in the register
             // for those years - a setting says what may be shown and never what was seen.
@@ -1584,7 +1584,7 @@ final class ColonyKnowledgeTest {
     class Over {
 
         @Test
-        void reads_the_alliances_standing_when_each_pass_opens() {
+        void readsTheAlliancesStandingWhenEachPassOpens() {
             // Alliances form and dissolve while a campaign runs, and a pass folds them where it
             // opens the register - so a partnership that ends between two passes stops silencing
             // its witness at the second, rather than at whatever point a snapshot was taken.
@@ -1607,7 +1607,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void reads_nobody_as_allied_where_nothing_is_registered() {
+        void readsNobodyAsAlliedWhereNothingIsRegistered() {
             // What an install without the mod that keeps alliances answers: every other faction
             // present speaks, which is the rule exactly as it stood before alliances were read.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");

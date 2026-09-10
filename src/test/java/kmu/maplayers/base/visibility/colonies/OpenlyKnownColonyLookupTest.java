@@ -54,7 +54,7 @@ final class OpenlyKnownColonyLookupTest {
     class ReadOpenlyKnownIn {
 
         @Test
-        void holds_the_concealed_colonies_of_the_place_the_sector_openly_points_at() {
+        void holdsTheConcealedColoniesOfThePlaceTheSectorOpenlyPointsAt() {
 
             var academy = standOnEntity(
                 nameColony(ColonyMarketFixture.buildFoundConcealedColony("independent"), ACADEMY_ID),
@@ -75,7 +75,7 @@ final class OpenlyKnownColonyLookupTest {
         }
 
         @Test
-        void passes_over_a_colony_held_in_the_open_on_a_registered_entity() {
+        void passesOverAColonyHeldInTheOpenOnARegisteredEntity() {
             // The concealment is asked first, so the registry is consulted for the few colonies a
             // finding could ever be made about - and an open colony, which never earns the word,
             // cannot be excused of it.
@@ -91,7 +91,7 @@ final class OpenlyKnownColonyLookupTest {
         }
 
         @Test
-        void passes_over_a_concealed_colony_standing_on_no_entity() {
+        void passesOverAConcealedColonyStandingOnNoEntity() {
             // A market whose entity the sector has taken away is still a market a box lists, so the
             // fold answers rather than failing on it.
             var marketMock = nameColony(mock(MarketAPI.class), BASE_ID);
@@ -107,7 +107,7 @@ final class OpenlyKnownColonyLookupTest {
         }
 
         @Test
-        void passes_over_a_colony_with_no_id_to_key_it_on() {
+        void passesOverAColonyWithNoIdToKeyItOn() {
             // Nothing to pair a row with, so nothing is stored - which is not the same as storing
             // an entry under nothing and excusing every other unnamed colony.
             var academy = standOnEntity(
@@ -125,7 +125,7 @@ final class OpenlyKnownColonyLookupTest {
         }
 
         @Test
-        void reads_a_place_that_could_not_be_walked_as_nothing_known() {
+        void readsAPlaceThatCouldNotBeWalkedAsNothingKnown() {
 
             assertThat(OpenlyKnownColonyLookup.readOpenlyKnownIn(null))
                 .isEqualTo(OpenlyKnownColonyLookup.NONE);
@@ -136,14 +136,14 @@ final class OpenlyKnownColonyLookupTest {
     class IsOpenlyKnownColony {
 
         @Test
-        void reads_an_id_the_fold_never_met_as_a_secret() {
+        void readsAnIdTheFoldNeverMetAsASecret() {
 
             assertThat(OpenlyKnownColonyLookup.NONE.isOpenlyKnownColony(ACADEMY_ID))
                 .isFalse();
         }
 
         @Test
-        void reads_a_row_carrying_no_id_as_a_secret() {
+        void readsARowCarryingNoIdAsASecret() {
 
             assertThat(new OpenlyKnownColonyLookup(Set.of(ACADEMY_ID)).isOpenlyKnownColony(null))
                 .isFalse();
@@ -154,14 +154,14 @@ final class OpenlyKnownColonyLookupTest {
     class Construct {
 
         @Test
-        void reads_an_absent_set_as_nothing_known() {
+        void readsAnAbsentSetAsNothingKnown() {
 
             assertThat(new OpenlyKnownColonyLookup(null).openlyKnownColonyIds())
                 .isEmpty();
         }
 
         @Test
-        void keeps_the_landmarks_it_was_built_with_when_the_source_set_changes_later() {
+        void keepsTheLandmarksItWasBuiltWithWhenTheSourceSetChangesLater() {
 
             var openlyKnownColonyIds = new HashSet<String>();
             openlyKnownColonyIds.add(ACADEMY_ID);
@@ -175,7 +175,7 @@ final class OpenlyKnownColonyLookupTest {
         }
 
         @Test
-        void rejects_an_attempt_to_change_the_landmarks() {
+        void rejectsAnAttemptToChangeTheLandmarks() {
             // Folded once for a whole box and read by every line in it, so one line able to change
             // it would be re-reading the system underneath the others.
             var lookup = new OpenlyKnownColonyLookup(Set.of(ACADEMY_ID));

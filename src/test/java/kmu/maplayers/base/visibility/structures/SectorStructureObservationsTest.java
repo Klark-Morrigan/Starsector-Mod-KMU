@@ -45,7 +45,7 @@ final class SectorStructureObservationsTest {
     class ReadObservations {
 
         @Test
-        void reports_nothing_observed_of_a_structure_the_register_has_never_held() {
+        void reportsNothingObservedOfAStructureTheRegisterHasNeverHeld() {
 
             var stored = new HashMap<String, String>();
 
@@ -57,7 +57,7 @@ final class SectorStructureObservationsTest {
         }
 
         @Test
-        void reports_what_a_recorded_structure_was_last_observed_to_be() {
+        void reportsWhatARecordedStructureWasLastObservedToBe() {
 
             var stored = new HashMap<String, String>();
 

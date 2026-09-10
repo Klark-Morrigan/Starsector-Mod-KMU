@@ -53,7 +53,7 @@ class VoidSectionsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_piece_of_void_has_a_name_of_its_own(String sector) {
+        void everyPieceOfVoidHasANameOfItsOwn(String sector) {
             // Names are keys into the same map as the cells, so two pieces sharing one would be
             // one region to everything downstream - and the side-of-the-closest-pair part of a
             // name exists to settle exactly the collisions the cells alone leave.
@@ -70,7 +70,7 @@ class VoidSectionsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_name_opens_with_its_kind(String sector) {
+        void everyNameOpensWithItsKind(String sector) {
             // The prefix is what keeps a section's key out of a star's namespace and says what
             // water a reader should expect - so a section whose key opens with another kind's
             // prefix is misfiled twice over.
@@ -92,7 +92,7 @@ class VoidSectionsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_puddle_the_trace_found_is_named_as_a_puddle(String sector) {
+        void aPuddleTheTraceFoundIsNamedAsAPuddle(String sector) {
             // The floor decided this once, at the trace. A puddle span may have cut the puddle
             // into pieces, so what is asked is that every piece ringed by a subset of the
             // puddle's own cells came out as a puddle - not that the piece is the whole puddle.
@@ -132,7 +132,7 @@ class VoidSectionsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_lake_the_trace_found_is_named_as_lake_water(String sector) {
+        void aLakeTheTraceFoundIsNamedAsLakeWater(String sector) {
             // Whole where nothing crosses it, and a lake pocket per piece where a lake span
             // does; either way the water is the lake's, and neither the outer shore's nor a
             // bay's.

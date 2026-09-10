@@ -18,7 +18,7 @@ final class InstallationOverrideTest {
     class Construct {
 
         @Test
-        void reads_an_absent_admission_as_a_row_stating_none() {
+        void readsAnAbsentAdmissionAsARowStatingNone() {
 
             assertThat(new InstallationOverride(null, Optional.of(InstallationKind.HELD))
                 .isAdmitted())
@@ -26,7 +26,7 @@ final class InstallationOverrideTest {
         }
 
         @Test
-        void reads_an_absent_kind_as_a_row_stating_none() {
+        void readsAnAbsentKindAsARowStatingNone() {
 
             assertThat(new InstallationOverride(Optional.of(Boolean.TRUE), null).kind())
                 .isEmpty();

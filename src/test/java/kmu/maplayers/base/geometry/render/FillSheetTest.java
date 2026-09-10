@@ -54,7 +54,7 @@ class FillSheetTest {
     class AddRings {
 
         @Test
-        void what_two_rings_share_comes_out_the_shade_of_what_one_of_them_holds() {
+        void whatTwoRingsShareComesOutTheShadeOfWhatOneOfThemHolds() {
 
             // The whole point of the sheet. Filled ring by ring, the shared part takes two
             // translucent bodies and comes out darker, so what two layers both hold reads as a
@@ -69,7 +69,7 @@ class FillSheetTest {
         }
 
         @Test
-        void rings_that_arrived_wound_opposite_ways_are_still_one_body() {
+        void ringsThatArrivedWoundOppositeWaysAreStillOneBody() {
 
             // The rings come from traces that had no reason to agree on a direction, and under
             // the non-zero rule two that disagree cancel where they overlap - a hole through
@@ -84,7 +84,7 @@ class FillSheetTest {
         }
 
         @Test
-        void a_ring_is_filled_rather_than_left_as_the_backdrop() {
+        void aRingIsFilledRatherThanLeftAsTheBackdrop() {
 
             // Guards the assertions above from passing on an empty canvas: equal pixels prove
             // nothing if they are all the colour that was there to begin with.
@@ -100,7 +100,7 @@ class FillSheetTest {
     class AddMargin {
 
         @Test
-        void the_space_inside_the_inner_ring_is_left_bare() {
+        void theSpaceInsideTheInnerRingIsLeftBare() {
 
             var canvas = paintSheet(sheet -> sheet.addMargin(MARGIN_OUTER, MARGIN_INNER));
 
@@ -113,7 +113,7 @@ class FillSheetTest {
         }
 
         @Test
-        void a_body_covering_that_space_fills_it_at_the_shade_of_the_band() {
+        void aBodyCoveringThatSpaceFillsItAtTheShadeOfTheBand() {
 
             // What a margin is in a sheet FOR. The layer that concedes the middle and the
             // layer that fills it are one body, so the band does not come out darker than the

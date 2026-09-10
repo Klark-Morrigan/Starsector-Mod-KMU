@@ -47,7 +47,7 @@ final class RevelationGateTest {
     class CoversColony {
 
         @Test
-        void space_derelicts_covers_a_derelict() {
+        void spaceDerelictsCoversADerelict() {
 
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
                     buildColony(ColonyMarketFixture.buildDerelictStation()),
@@ -56,7 +56,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void space_derelicts_passes_over_a_colony_somebody_lives_on() {
+        void spaceDerelictsPassesOverAColonySomebodyLivesOn() {
 
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
                     buildColony(ColonyMarketFixture.buildVisibleColony("hegemony")),
@@ -65,7 +65,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void space_derelicts_passes_over_a_concealed_colony() {
+        void spaceDerelictsPassesOverAConcealedColony() {
             // The other gate's shape. A derelict gate that covered concealment would hide a
             // raided pirate base for the player who raided it.
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
@@ -75,7 +75,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void space_derelicts_passes_over_a_station_a_faction_keeps() {
+        void spaceDerelictsPassesOverAStationAFactionKeeps() {
             // A kept station wears the derelict condition and is somebody's, so the kind read
             // parts it from the hulk and this gate is not about it - it answers to concealment
             // alone, exactly as an ordinary colony does.
@@ -86,7 +86,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void hidden_colonies_covers_a_concealed_colony() {
+        void hiddenColoniesCoversAConcealedColony() {
 
             assertThat(RevelationGate.HIDDEN_COLONIES.coversColony(
                     buildColony(ColonyMarketFixture.buildFoundConcealedColony("rat_exotech")),
@@ -95,7 +95,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void hidden_colonies_passes_over_a_colony_held_in_the_open() {
+        void hiddenColoniesPassesOverAColonyHeldInTheOpen() {
 
             assertThat(RevelationGate.HIDDEN_COLONIES.coversColony(
                     buildColony(ColonyMarketFixture.buildVisibleColony("hegemony")),
@@ -104,7 +104,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void hidden_colonies_passes_over_a_derelict_nothing_conceals() {
+        void hiddenColoniesPassesOverADerelictNothingConceals() {
             // The ordinary derelict: open, and covered by the other gate alone. Concealment and
             // kind are separate facts, and this is the case that says so.
             assertThat(RevelationGate.HIDDEN_COLONIES.coversColony(
@@ -118,7 +118,7 @@ final class RevelationGateTest {
     class IsGatedColony {
 
         @Test
-        void reports_a_derelict_as_gated() {
+        void reportsADerelictAsGated() {
 
             assertThat(RevelationGate.isGatedColony(
                     buildColony(ColonyMarketFixture.buildDerelictStation()),
@@ -127,7 +127,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void reports_a_concealed_colony_as_gated() {
+        void reportsAConcealedColonyAsGated() {
 
             assertThat(RevelationGate.isGatedColony(
                     buildColony(ColonyMarketFixture.buildFoundConcealedColony("pirates")),
@@ -136,7 +136,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void reports_a_concealed_colony_the_sector_openly_points_at_as_gated() {
+        void reportsAConcealedColonyTheSectorOpenlyPointsAtAsGated() {
             // The landmark exemption excuses one word on a hover box and touches nothing here. A
             // single flag serving both is the obvious-looking simplification, and it would open the
             // Academy to a player who has never been to Galatia - the very market the settled route
@@ -152,7 +152,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void reports_a_colony_held_in_the_open_as_ungated() {
+        void reportsAColonyHeldInTheOpenAsUngated() {
             // The shape the register must not fill up with. An open colony the economy lists is
             // permanently in the sector's own sight, so an observation of one answers nothing.
             assertThat(RevelationGate.isGatedColony(
@@ -162,7 +162,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void reports_an_open_station_a_faction_keeps_as_ungated() {
+        void reportsAnOpenStationAFactionKeepsAsUngated() {
             // Neither gate is about it: its owner parts it from the hulk, and nothing conceals it.
             assertThat(RevelationGate.isGatedColony(
                     buildColony(ColonyMarketFixture.buildOutpost("hegemony")),
@@ -171,7 +171,7 @@ final class RevelationGateTest {
         }
 
         @Test
-        void reports_no_gate_where_there_is_no_colony_to_test() {
+        void reportsNoGateWhereThereIsNoColonyToTest() {
 
             assertThat(RevelationGate.isGatedColony(null, ColonyKind.SPACE_DERELICT))
                 .isFalse();

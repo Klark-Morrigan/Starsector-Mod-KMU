@@ -58,7 +58,7 @@ final class InstallationOverrideTableReaderTest {
     class ReadTable {
 
         @Test
-        void asks_for_the_shipped_table_as_a_merge_over_every_mod() throws Exception {
+        void asksForTheShippedTableAsAMergeOverEveryMod() throws Exception {
 
             shipRows();
 
@@ -69,7 +69,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void lists_a_type_the_sector_says_nothing_about_where_a_row_admits_it() throws Exception {
+        void listsATypeTheSectorSaysNothingAboutWhereARowAdmitsIt() throws Exception {
 
             shipRows(buildRow(CRYOSLEEPER_TYPE, "true", ""));
 
@@ -78,7 +78,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void drops_a_type_the_sector_would_admit_where_a_row_suppresses_it() throws Exception {
+        void dropsATypeTheSectorWouldAdmitWhereARowSuppressesIt() throws Exception {
 
             shipRows(buildRow(ARTILLERY_STATION_TYPE, "false", ""));
 
@@ -87,7 +87,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void states_the_kind_a_row_names() throws Exception {
+        void statesTheKindARowNames() throws Exception {
 
             shipRows(buildRow(ARTILLERY_STATION_TYPE, "", "HELD"));
 
@@ -96,7 +96,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void leaves_every_question_to_the_sector_where_a_row_states_only_its_type()
+        void leavesEveryQuestionToTheSectorWhereARowStatesOnlyItsType()
                 throws Exception {
 
             shipRows(buildRow(ARTILLERY_STATION_TYPE, "", ""));
@@ -106,7 +106,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void leaves_every_question_to_the_sector_where_a_merged_row_carries_none_of_the_columns()
+        void leavesEveryQuestionToTheSectorWhereAMergedRowCarriesNoneOfTheColumns()
                 throws Exception {
             // Another mod's copy of the table need not be the same shape as ours: the merge folds
             // whatever columns that file has, so a row can arrive carrying only the type it names.
@@ -120,7 +120,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void leaves_admission_to_the_sector_where_a_row_states_a_word_it_does_not_understand()
+        void leavesAdmissionToTheSectorWhereARowStatesAWordItDoesNotUnderstand()
                 throws Exception {
             // Not "false": a mistyped word is a row whose author meant something, and reading every
             // word but one as a suppression would hide the entity type they meant to list.
@@ -131,7 +131,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void leaves_the_kind_to_the_sector_where_a_row_names_one_that_does_not_exist()
+        void leavesTheKindToTheSectorWhereARowNamesOneThatDoesNotExist()
                 throws Exception {
 
             shipRows(buildRow(ARTILLERY_STATION_TYPE, "", "ABANDONED"));
@@ -141,7 +141,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void skips_a_row_naming_no_type_while_its_neighbours_load() throws Exception {
+        void skipsARowNamingNoTypeWhileItsNeighboursLoad() throws Exception {
             // A statement about no type is a statement about nothing, and filing one under a blank
             // key would hand its answers to every other unnamed row.
             shipRows(
@@ -155,7 +155,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void skips_an_entry_that_is_not_a_row_while_its_neighbours_load() throws Exception {
+        void skipsAnEntryThatIsNotARowWhileItsNeighboursLoad() throws Exception {
 
             var rows = new JSONArray();
             rows.put("not a row");
@@ -169,7 +169,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void reads_a_file_that_will_not_open_as_a_table_stating_nothing() throws Exception {
+        void readsAFileThatWillNotOpenAsATableStatingNothing() throws Exception {
             // The file a mod update half-broke, and the file nobody shipped. Neither is worth
             // taking down the pass that was only consulting it.
             when(settingsMock.getMergedSpreadsheetDataForMod(anyString(), anyString(), anyString()))
@@ -180,7 +180,7 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
-        void reads_a_game_that_answered_nothing_as_a_table_stating_nothing() throws Exception {
+        void readsAGameThatAnsweredNothingAsATableStatingNothing() throws Exception {
 
             when(settingsMock.getMergedSpreadsheetDataForMod(anyString(), anyString(), anyString()))
                 .thenReturn(null);
@@ -194,7 +194,7 @@ final class InstallationOverrideTableReaderTest {
     class Construct {
 
         @Test
-        void rejects_a_reader_with_no_settings_to_read_the_file_through() {
+        void rejectsAReaderWithNoSettingsToReadTheFileThrough() {
 
             assertThatThrownBy(() -> new InstallationOverrideTableReader(null))
                 .isInstanceOf(NullPointerException.class);

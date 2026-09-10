@@ -36,7 +36,7 @@ final class OpenlyKnownColonyRegistryTest {
     class IsOpenlyKnownEntity {
 
         @Test
-        void reads_a_registered_entity_as_openly_known() {
+        void readsARegisteredEntityAsOpenlyKnown() {
 
             registerTheAcademy();
 
@@ -45,7 +45,7 @@ final class OpenlyKnownColonyRegistryTest {
         }
 
         @Test
-        void reads_an_entity_nothing_vouches_for_as_a_secret() {
+        void readsAnEntityNothingVouchesForAsASecret() {
             // The base beside the landmark, differing in nothing a market read can see.
             registerTheAcademy();
 
@@ -54,7 +54,7 @@ final class OpenlyKnownColonyRegistryTest {
         }
 
         @Test
-        void reads_a_tagged_entity_the_registered_set_does_not_name_as_openly_known() {
+        void readsATaggedEntityTheRegisteredSetDoesNotNameAsOpenlyKnown() {
             // How another mod's quest hub opts in without this mod carrying a list of other mods'
             // content, which is the whole reason the ids are not a constant.
             registerTheAcademy();
@@ -69,7 +69,7 @@ final class OpenlyKnownColonyRegistryTest {
         }
 
         @Test
-        void reads_an_entity_the_game_never_named_as_a_secret() {
+        void readsAnEntityTheGameNeverNamedAsASecret() {
             // An unnamed entity cannot be the one that was registered, and asking a set about
             // nothing is not a question either.
             assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(buildEntity(null)))
@@ -77,14 +77,14 @@ final class OpenlyKnownColonyRegistryTest {
         }
 
         @Test
-        void reads_a_colony_standing_on_no_entity_as_a_secret() {
+        void readsAColonyStandingOnNoEntityAsASecret() {
 
             assertThat(OpenlyKnownColonyRegistry.isOpenlyKnownEntity(null))
                 .isFalse();
         }
 
         @Test
-        void reads_every_entity_as_a_secret_before_anything_is_registered() {
+        void readsEveryEntityAsASecretBeforeAnythingIsRegistered() {
             // What a registry with nothing wired should say: a concealed colony is a secret until
             // something states otherwise.
             OpenlyKnownColonyRegistry.registerEntityIds(null);
@@ -98,7 +98,7 @@ final class OpenlyKnownColonyRegistryTest {
     class RegisterEntityIds {
 
         @Test
-        void keeps_the_ids_it_was_registered_with_when_the_source_collection_changes_later() {
+        void keepsTheIdsItWasRegisteredWithWhenTheSourceCollectionChangesLater() {
             // Registered once and read by every hover box for the rest of the launch, so a caller
             // still holding the collection must not be able to empty the registry underneath them.
             var entityIds = new ArrayList<String>();

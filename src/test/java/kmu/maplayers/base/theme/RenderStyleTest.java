@@ -37,7 +37,7 @@ final class RenderStyleTest {
     @Nested
     class CategoryStyle {
         @Test
-        void a_layer_reads_back_the_bundle_it_stored_under_its_own_category() {
+        void aLayerReadsBackTheBundleItStoredUnderItsOwnCategory() {
             Map<MapStyleCategory, kmu.maplayers.base.theme.CategoryStyle> categories =
                     new LinkedHashMap<>();
             categories.put(HazardCategory.IRRADIATED, buildStyleMarkedBy(MARKED_WIDTH));
@@ -51,7 +51,7 @@ final class RenderStyleTest {
         }
 
         @Test
-        void a_category_that_is_not_an_enum_resolves_by_its_own_equality() {
+        void aCategoryThatIsNotAnEnumResolvesByItsOwnEquality() {
             // The lookup is a map read, so a key that is equal to the stored one finds the
             // bundle even though it is a different object - which is what lets a layer resolve
             // its categories fresh per draw rather than holding the exact constants it seeded.
@@ -65,7 +65,7 @@ final class RenderStyleTest {
         }
 
         @Test
-        void a_category_the_theme_was_never_given_resolves_to_no_bundle() {
+        void aCategoryTheThemeWasNeverGivenResolvesToNoBundle() {
             // Nothing in the theme privileges any one layer's set, so an unseeded category is
             // simply absent rather than falling back to some default bundle a caller would then
             // paint without noticing.

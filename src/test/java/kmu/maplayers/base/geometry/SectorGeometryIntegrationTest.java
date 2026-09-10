@@ -48,7 +48,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_cell_holds_only_the_space_nearest_its_own_site(String sector) {
+        void everyCellHoldsOnlyTheSpaceNearestItsOwnSite(String sector) {
             // The defining property of the partition, and the one that makes cells tile with
             // no overlap. Asserting it directly is cheaper and clearer than testing every
             // pair of cells for intersection, and it is what redistribution will have to
@@ -81,7 +81,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_system_gets_a_cell_that_encloses_area(String sector) {
+        void everySystemGetsACellThatEnclosesArea(String sector) {
             var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
 
             assertThat(cellEdges)
@@ -95,7 +95,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void adjacency_is_mutual_across_every_shared_edge(String sector) {
+        void adjacencyIsMutualAcrossEverySharedEdge(String sector) {
             // Two systems are neighbours only if each names the other, which is what lets a
             // consumer read one cell's edge and trust the far side agrees. A one-sided tag
             // would leave a cluster ring unable to close.
@@ -124,7 +124,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_shaped_cell_stays_within_the_raw_cell_it_came_from(String sector) {
+        void everyShapedCellStaysWithinTheRawCellItCameFrom(String sector) {
             // The channel is cut inward, so a shaped cell can only ever lose area. One that
             // grew would mean an offset escaped outward - the mechanism behind the poke the
             // frontier's first attempt shipped.
@@ -146,7 +146,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_unowned_cell_borders_on_every_edge_and_fuses_on_none(String sector) {
+        void anUnownedCellBordersOnEveryEdgeAndFusesOnNone(String sector) {
             // An unowned system shares its key with nobody - EdgeClassifier rules even a
             // neighbouring empty cell a plain boundary - so a dead star's cell is bordered
             // the whole way round. This is the base the frontier's redistribution alters, so
@@ -175,7 +175,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_owner_holding_a_cell_traces_at_least_one_ring(String sector) {
+        void everyOwnerHoldingACellTracesAtLeastOneRing(String sector) {
             var geometry = readGeometryOf(sector);
             var ownersWithoutRings = new ArrayList<String>();
 
@@ -192,7 +192,7 @@ class SectorGeometryIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_traced_ring_encloses_area(String sector) {
+        void everyTracedRingEnclosesArea(String sector) {
             // A ring the inset folded over is dropped by the trace's own collapse guard, so
             // anything handed back must be drawable; a degenerate survivor is the shape an
             // orphaned loop takes.

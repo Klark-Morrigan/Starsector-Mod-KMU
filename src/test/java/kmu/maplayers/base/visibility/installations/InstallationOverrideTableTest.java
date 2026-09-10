@@ -28,7 +28,7 @@ final class InstallationOverrideTableTest {
     class ReadOverrideOf {
 
         @Test
-        void reads_what_the_file_states_about_a_type_it_names() {
+        void readsWhatTheFileStatesAboutATypeItNames() {
 
             var table = new InstallationOverrideTable(Map.of(
                 ARTILLERY_STATION_TYPE,
@@ -43,14 +43,14 @@ final class InstallationOverrideTableTest {
         }
 
         @Test
-        void reads_a_type_the_file_never_mentions_as_stating_nothing() {
+        void readsATypeTheFileNeverMentionsAsStatingNothing() {
 
             assertThat(InstallationOverrideTable.NONE.readOverrideOf(CRYOSLEEPER_TYPE))
                 .isEqualTo(InstallationOverride.NONE);
         }
 
         @Test
-        void reads_an_entity_naming_no_type_as_stating_nothing() {
+        void readsAnEntityNamingNoTypeAsStatingNothing() {
             // An entity carrying no custom type at all is asked about like any other, and an
             // immutable table would refuse the question rather than answer it.
             assertThat(InstallationOverrideTable.NONE.readOverrideOf(null))
@@ -62,14 +62,14 @@ final class InstallationOverrideTableTest {
     class Construct {
 
         @Test
-        void reads_an_absent_map_as_a_table_stating_nothing() {
+        void readsAnAbsentMapAsATableStatingNothing() {
 
             assertThat(new InstallationOverrideTable(null).overridesByEntityTypeId())
                 .isEmpty();
         }
 
         @Test
-        void keeps_what_it_was_built_with_when_the_source_map_changes_later() {
+        void keepsWhatItWasBuiltWithWhenTheSourceMapChangesLater() {
 
             var overridesByEntityTypeId = new HashMap<String, InstallationOverride>();
             overridesByEntityTypeId.put(
@@ -85,7 +85,7 @@ final class InstallationOverrideTableTest {
         }
 
         @Test
-        void rejects_an_attempt_to_change_what_the_file_stated() {
+        void rejectsAnAttemptToChangeWhatTheFileStated() {
             // Read once and asked for every installation of every system a pass walks, so one
             // reader able to change it would be reclassifying the sector underneath the others.
             var table = new InstallationOverrideTable(Map.of(

@@ -20,35 +20,35 @@ final class InstallationKindTest {
     class FindKindNamed {
 
         @Test
-        void finds_the_kind_a_row_names() {
+        void findsTheKindARowNames() {
 
             assertThat(InstallationKind.findKindNamed("GARRISONED"))
                 .contains(InstallationKind.GARRISONED);
         }
 
         @Test
-        void finds_a_kind_named_in_any_case_and_spacing() {
+        void findsAKindNamedInAnyCaseAndSpacing() {
             // The file is hand-edited; a row is not worth losing over the shift key.
             assertThat(InstallationKind.findKindNamed("  Derelict "))
                 .contains(InstallationKind.DERELICT);
         }
 
         @Test
-        void reads_a_row_naming_no_kind_as_nothing_named() {
+        void readsARowNamingNoKindAsNothingNamed() {
             // The ordinary state of a row that only means to settle admission.
             assertThat(InstallationKind.findKindNamed("   "))
                 .isEmpty();
         }
 
         @Test
-        void reads_an_absent_name_as_nothing_named() {
+        void readsAnAbsentNameAsNothingNamed() {
 
             assertThat(InstallationKind.findKindNamed(null))
                 .isEmpty();
         }
 
         @Test
-        void reads_a_name_no_kind_answers_to_as_nothing_named() {
+        void readsANameNoKindAnswersToAsNothingNamed() {
 
             assertThat(InstallationKind.findKindNamed("ABANDONED"))
                 .isEmpty();

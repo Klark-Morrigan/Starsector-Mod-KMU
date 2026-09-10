@@ -35,7 +35,7 @@ final class FactionAllianceRegistryTest {
     class ReadAlliances {
 
         @Test
-        void reads_the_registered_source() {
+        void readsTheRegisteredSource() {
 
             registerAllianceOf(HEGEMONY, PERSEAN_LEAGUE);
 
@@ -45,7 +45,7 @@ final class FactionAllianceRegistryTest {
         }
 
         @Test
-        void reads_the_source_afresh_so_an_alliance_formed_later_is_seen() {
+        void readsTheSourceAfreshSoAnAllianceFormedLaterIsSeen() {
             // Alliances form and dissolve in play, so the registry holds where to ask rather than
             // what was answered once - a snapshot taken at start-up would credit yesterday's
             // arrangement for the rest of the session.
@@ -67,7 +67,7 @@ final class FactionAllianceRegistryTest {
         }
 
         @Test
-        void reads_nobody_as_allied_before_anything_is_registered() {
+        void readsNobodyAsAlliedBeforeAnythingIsRegistered() {
 
             FactionAllianceRegistry.registerAllianceSource(null);
 
@@ -77,7 +77,7 @@ final class FactionAllianceRegistryTest {
         }
 
         @Test
-        void reads_a_source_answering_nothing_as_no_alliances() {
+        void readsASourceAnsweringNothingAsNoAlliances() {
             // A supplier may be reached before whatever it reads exists. That is no reason to fail
             // a render pass, and every faction present speaking is the reading the rule shipped
             // with.

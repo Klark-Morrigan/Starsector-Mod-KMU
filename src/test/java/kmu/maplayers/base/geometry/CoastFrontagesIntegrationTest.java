@@ -25,7 +25,7 @@ class CoastFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_sector_has_cells_that_offer_a_single_point(String sector) {
+        void aSectorHasCellsThatOfferASinglePoint(String sector) {
             // Asked first and alone, since every claim below is true of an empty set. A third of
             // a coast's stretches come out as one point, so a sector with none would be one
             // where the frontage was not read at all.
@@ -36,7 +36,7 @@ class CoastFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_pinched_cell_offers_nothing_but_single_points(String sector) {
+        void everyPinchedCellOffersNothingButSinglePoints(String sector) {
             // What pinched means. A cell with any stretch to its name is not pinched, however
             // many single points it offers besides: a wall on such a cell has somewhere with
             // width to land, and keeps its channel.
@@ -59,7 +59,7 @@ class CoastFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_pinched_cell_is_absent_from_the_frontage(String sector) {
+        void noPinchedCellIsAbsentFromTheFrontage(String sector) {
             // The other direction: pinched is read OFF the frontage, so a cell reported pinched
             // has frontage to be read off. One that did not would be a cell offering a wall
             // nowhere at all, reported as offering it a point.

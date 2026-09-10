@@ -74,7 +74,7 @@ class IntercontinentalPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_sector_the_links_ringed_has_a_sea_in_it(String sector) {
+        void aSectorTheLinksRingedHasASeaInIt(String sector) {
             // Asked first and alone, because every other claim below is true of an empty set.
             // Two links between the same pair of continents ring the void between them, and a
             // sector linked in several places has such pairs by construction - so drawing
@@ -90,7 +90,7 @@ class IntercontinentalPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void the_sea_reaches_every_foot_a_link_puts_on_a_single_point(String sector) {
+        void theSeaReachesEveryFootALinkPutsOnASinglePoint(String sector) {
             // A cell whose whole frontage is one point offers a wall nowhere else to attach, so
             // the wall is laid with no width there and the water it bounds runs up to the very
             // point - rather than stopping a channel short, which is what a wall of any width
@@ -133,7 +133,7 @@ class IntercontinentalPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_pocket_is_a_shape_with_water_in_it(String sector) {
+        void everyPocketIsAShapeWithWaterInIt(String sector) {
             // What a fill has to be to be drawn. An outline of two points encloses nothing, and
             // one of zero area is a line the painter would draw as a hair - both are a pocket
             // reported where there is no water.
@@ -155,7 +155,7 @@ class IntercontinentalPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_pocket_reaches_inside_a_cell(String sector) {
+        void noPocketReachesInsideACell(String sector) {
             // The sea is what the cells left over, so a fill drawn over one is the layer below
             // covering the layer above. At the drawn shaping this is also the channel: the walk
             // is run one channel out from the cells, so a point closer than that is a fill
@@ -187,7 +187,7 @@ class IntercontinentalPocketsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_pocket_runs_against_two_continents(String sector) {
+        void everyPocketRunsAgainstTwoContinents(String sector) {
             // The keep-rule, asked of the geometry rather than of the walk's own bookkeeping. A
             // link joins two shapes, so the water it helps close runs against a cell of each;
             // water ringed by cells of ONE shape is a bay or a lake, and those have layers of

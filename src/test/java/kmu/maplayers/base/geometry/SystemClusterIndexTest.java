@@ -24,7 +24,7 @@ final class SystemClusterIndexTest {
     @Nested
     class IndexClusters {
         @Test
-        void an_indexed_cluster_cannot_be_changed_through_the_list_it_was_built_from() {
+        void anIndexedClusterCannotBeChangedThroughTheListItWasBuiltFrom() {
             // The index is built once per rebuild and read every frame, so a caller reusing
             // its list must not be able to grow a hovered cluster underneath the highlight.
             var cluster = new ArrayList<>(List.of("A"));
@@ -38,7 +38,7 @@ final class SystemClusterIndexTest {
         }
 
         @Test
-        void a_returned_cluster_cannot_be_changed_by_its_reader() {
+        void aReturnedClusterCannotBeChangedByItsReader() {
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A", "B")));
 
             assertThatThrownBy(() -> index.findClusterMembersOf("A").add("C"))
@@ -49,7 +49,7 @@ final class SystemClusterIndexTest {
     @Nested
     class FindClusterMembersOf {
         @Test
-        void a_member_of_a_two_system_cluster_resolves_to_both_members() {
+        void aMemberOfATwoSystemClusterResolvesToBothMembers() {
             // Two same-owner neighbours fuse into one cluster, so hovering either lights the
             // pair - the whole contiguous cluster, not the one cell under the cursor.
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A", "B")));
@@ -59,7 +59,7 @@ final class SystemClusterIndexTest {
         }
 
         @Test
-        void a_member_of_a_disjoint_pocket_resolves_to_that_pocket_alone() {
+        void aMemberOfADisjointPocketResolvesToThatPocketAlone() {
             // One key, two unconnected pockets: separate clusters, so hovering the
             // colony must not light the homeland across the sector.
             var index = SystemClusterIndex.indexClusters(
@@ -69,14 +69,14 @@ final class SystemClusterIndexTest {
         }
 
         @Test
-        void a_lone_system_resolves_to_itself() {
+        void aLoneSystemResolvesToItself() {
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A")));
 
             assertThat(index.findClusterMembersOf("A")).containsExactly("A");
         }
 
         @Test
-        void a_system_in_no_cluster_resolves_to_nothing() {
+        void aSystemInNoClusterResolvesToNothing() {
             // A differently-keyed neighbour is a cluster of its own and never a member of
             // this one; an unowned or cell-less system carries no cluster at all, and
             // neither is an error - the hover simply has nothing to highlight.
@@ -86,7 +86,7 @@ final class SystemClusterIndexTest {
         }
 
         @Test
-        void nothing_hovered_resolves_to_nothing() {
+        void nothingHoveredResolvesToNothing() {
             // The hit test returns null off any cell, so that null flows straight in here.
             var index = SystemClusterIndex.indexClusters(List.of(List.of("A")));
 
@@ -94,7 +94,7 @@ final class SystemClusterIndexTest {
         }
 
         @Test
-        void no_clusters_resolve_to_nothing() {
+        void noClustersResolveToNothing() {
             var index = SystemClusterIndex.indexClusters(List.of());
 
             assertThat(index.findClusterMembersOf("A")).isEmpty();

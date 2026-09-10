@@ -36,7 +36,7 @@ final class ColonyDiscoveryLookupTest {
     class ReadDiscoveriesIn {
 
         @Test
-        void holds_the_colonies_of_the_place_the_player_has_yet_to_find() {
+        void holdsTheColoniesOfThePlaceThePlayerHasYetToFind() {
 
             var undiscoveredDerelict = nameColony(
                 ColonyMarketFixture.buildUndiscoveredDerelictStation(),
@@ -57,7 +57,7 @@ final class ColonyDiscoveryLookupTest {
         }
 
         @Test
-        void reads_the_entitys_own_flag_rather_than_whether_the_colony_is_concealed() {
+        void readsTheEntitysOwnFlagRatherThanWhetherTheColonyIsConcealed() {
             // The two axes are separate everywhere else in the fog, and a box calling a raided
             // pirate base undiscovered would be reporting the wrong one of them.
             var concealedColony = nameColony(
@@ -72,7 +72,7 @@ final class ColonyDiscoveryLookupTest {
         }
 
         @Test
-        void passes_over_a_colony_with_no_id_to_key_it_on() {
+        void passesOverAColonyWithNoIdToKeyItOn() {
             // Nothing to pair a row with, so nothing is stored - which is not the same as storing an
             // entry under nothing and calling every other unnamed colony undiscovered.
             var lookup = ColonyDiscoveryLookup.readDiscoveriesIn(
@@ -83,7 +83,7 @@ final class ColonyDiscoveryLookupTest {
         }
 
         @Test
-        void reads_a_place_that_could_not_be_walked_as_nothing_known() {
+        void readsAPlaceThatCouldNotBeWalkedAsNothingKnown() {
 
             assertThat(ColonyDiscoveryLookup.readDiscoveriesIn(null))
                 .isEqualTo(ColonyDiscoveryLookup.NONE);
@@ -94,7 +94,7 @@ final class ColonyDiscoveryLookupTest {
     class IsDiscoveredColony {
 
         @Test
-        void reads_an_id_the_fold_never_met_as_found() {
+        void readsAnIdTheFoldNeverMetAsFound() {
             // The direction that states no finding, a box being unable to call a colony undiscovered on
             // the strength of a fold nobody made.
             assertThat(ColonyDiscoveryLookup.NONE.isDiscoveredColony(DERELICT_ID))
@@ -106,13 +106,13 @@ final class ColonyDiscoveryLookupTest {
     class Construct {
 
         @Test
-        void reads_an_absent_set_as_nothing_known() {
+        void readsAnAbsentSetAsNothingKnown() {
             assertThat(new ColonyDiscoveryLookup(null).undiscoveredColonyIds())
                 .isEmpty();
         }
 
         @Test
-        void keeps_the_discoveries_it_was_built_with_when_the_source_set_changes_later() {
+        void keepsTheDiscoveriesItWasBuiltWithWhenTheSourceSetChangesLater() {
 
             var undiscoveredColonyIds = new HashSet<String>();
             undiscoveredColonyIds.add(DERELICT_ID);
@@ -126,7 +126,7 @@ final class ColonyDiscoveryLookupTest {
         }
 
         @Test
-        void rejects_an_attempt_to_change_the_discoveries() {
+        void rejectsAnAttemptToChangeTheDiscoveries() {
             // Folded once for a whole box and read by every line in it, so one line able to change
             // it would be re-reading the system underneath the others.
             var lookup = new ColonyDiscoveryLookup(Set.of(DERELICT_ID));

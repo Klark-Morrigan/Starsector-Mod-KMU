@@ -29,7 +29,7 @@ final class FactionAlliancesTest {
     class AreFactionsAllied {
 
         @Test
-        void reads_two_members_of_one_alliance_as_allied() {
+        void readsTwoMembersOfOneAllianceAsAllied() {
 
             var alliances = new FactionAlliances(Map.of(
                 HEGEMONY, LEAGUE_ALLIANCE,
@@ -40,7 +40,7 @@ final class FactionAlliancesTest {
         }
 
         @Test
-        void reads_members_of_two_alliances_as_unallied() {
+        void readsMembersOfTwoAlliancesAsUnallied() {
             // Being in an alliance is not being in this one, which is the whole of what the rule
             // above turns on.
             var alliances = new FactionAlliances(Map.of(
@@ -52,7 +52,7 @@ final class FactionAlliancesTest {
         }
 
         @Test
-        void reads_a_faction_in_no_alliance_as_unallied() {
+        void readsAFactionInNoAllianceAsUnallied() {
 
             var alliances = new FactionAlliances(Map.of(HEGEMONY, LEAGUE_ALLIANCE));
 
@@ -61,7 +61,7 @@ final class FactionAlliancesTest {
         }
 
         @Test
-        void reads_a_faction_in_no_alliance_as_unallied_with_itself() {
+        void readsAFactionInNoAllianceAsUnalliedWithItself() {
             // Standing alone is not a relationship, so a faction nothing names answers no
             // differently when asked about itself. Whether a colony's own owner settles its place
             // is the caller's own comparison, which this is never asked to stand in for.
@@ -70,7 +70,7 @@ final class FactionAlliancesTest {
         }
 
         @Test
-        void reads_a_colony_no_faction_holds_as_unallied() {
+        void readsAColonyNoFactionHoldsAsUnallied() {
             // What a derelict reaches this with. The map the answer is read out of refuses a null
             // key outright, so the question is turned away before it is asked.
             var alliances = new FactionAlliances(Map.of(HEGEMONY, LEAGUE_ALLIANCE));
@@ -83,7 +83,7 @@ final class FactionAlliancesTest {
         }
 
         @Test
-        void reads_every_faction_as_unallied_where_no_alliances_were_stated() {
+        void readsEveryFactionAsUnalliedWhereNoAlliancesWereStated() {
             // What an installation with nothing wired answers, which is the rule as it stood
             // before alliances were read at all.
             assertThat(new FactionAlliances(null).areFactionsAllied(HEGEMONY, PERSEAN_LEAGUE))
@@ -95,7 +95,7 @@ final class FactionAlliancesTest {
     class AllianceIdByFactionId {
 
         @Test
-        void keeps_the_memberships_it_was_built_with_when_the_source_map_changes_later() {
+        void keepsTheMembershipsItWasBuiltWithWhenTheSourceMapChangesLater() {
             // Folded once per pass and read by every projection in it, so a caller still holding
             // the map must not be able to dissolve an alliance underneath them.
             var memberships = new HashMap<String, String>();

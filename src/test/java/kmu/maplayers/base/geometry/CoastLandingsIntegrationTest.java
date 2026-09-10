@@ -51,7 +51,7 @@ class CoastLandingsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void most_bridgeable_frontage_is_a_stretch_rather_than_a_bare_point(String sector) {
+        void mostBridgeableFrontageIsAStretchRatherThanABarePoint(String sector) {
             // What opening a crossed landing buys. A cell whose two landings crossed has border
             // between them that the coast could run along, and collapsing to the midpoint reports
             // one place a wall may anchor where there is a stretch of them.
@@ -79,7 +79,7 @@ class CoastLandingsIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void opening_a_crossed_landing_leaves_the_coast_outside_the_cells(String sector) {
+        void openingACrossedLandingLeavesTheCoastOutsideTheCells(String sector) {
             // The other half, and the reason the opening is not simply always done. Putting two
             // landings back in order moves BOTH runs either side of the cell, and a run that has
             // moved can cut a cell neither of its ends knows about. Where it would, the crossing

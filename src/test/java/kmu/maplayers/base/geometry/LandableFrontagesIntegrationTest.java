@@ -57,7 +57,7 @@ class LandableFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void a_sector_has_border_a_straight_line_could_arrive_at(String sector) {
+        void aSectorHasBorderAStraightLineCouldArriveAt(String sector) {
             // Asked first and alone, because every other claim below is satisfied by an empty
             // answer. A sector whose whole border is walled in from every direction is not a
             // sector anything could ever be laid across.
@@ -68,7 +68,7 @@ class LandableFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void some_exposed_border_cannot_be_arrived_at(String sector) {
+        void someExposedBorderCannotBeArrivedAt(String sector) {
             // What makes this a rule rather than a pass-through. Facing the void and being
             // reachable across it are different things - the difference is the notches, whose
             // water is open sea by a path and by no straight line - so a sector that came back
@@ -83,7 +83,7 @@ class LandableFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void every_stretch_lies_within_the_one_it_was_cut_from(String sector) {
+        void everyStretchLiesWithinTheOneItWasCutFrom(String sector) {
             // A landable stretch is a sub-arc of a stretch the walk found, so it names that
             // cell and runs between two angles of it. One outside would be border the walk
             // never offered - a stretch facing another cell rather than the void.
@@ -105,7 +105,7 @@ class LandableFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void an_island_open_from_its_centre_can_be_arrived_at_on_its_rim(String sector) {
+        void anIslandOpenFromItsCentreCanBeArrivedAtOnItsRim(String sector) {
             // The shapes this exists to keep. A cell alone in the void is on no silhouette and
             // has no coast, and it is exactly what a link is laid to reach - so the one way the
             // answer could fail them is by finding nowhere on a rim that plainly faces open sea.
@@ -148,7 +148,7 @@ class LandableFrontagesIntegrationTest {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
-        void no_run_passes_inside_a_cell(String sector) {
+        void noRunPassesInsideACell(String sector) {
             // A stretch of border drawn on the border it sits on. A point inside any cell would
             // mean the sampling had left the boundary, which is the one way these runs could be
             // drawn somewhere they say nothing about.

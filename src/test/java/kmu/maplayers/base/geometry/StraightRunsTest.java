@@ -84,7 +84,7 @@ class StraightRunsTest {
     class FindEdgeThroughMouth {
 
         @Test
-        void a_run_from_a_point_mouth_leaves_from_the_anchor() {
+        void aRunFromAPointMouthLeavesFromTheAnchor() {
             // The whole point of the placement: the departure is the mark's end, where the
             // wall lands, and not the clamp's choice.
             var edge = StraightRuns.findEdgeThroughMouth(
@@ -95,7 +95,7 @@ class StraightRunsTest {
         }
 
         @Test
-        void a_run_from_a_point_mouth_lands_where_the_far_cell_is_seen_from_the_anchor() {
+        void aRunFromAPointMouthLandsWhereTheFarCellIsSeenFromTheAnchor() {
             // The other end keeps a free run's freedom rather than the wall's far mouth, so the
             // coast touches the wall at the anchor and leaves it again.
             var edge = StraightRuns.findEdgeThroughMouth(
@@ -106,7 +106,7 @@ class StraightRunsTest {
         }
 
         @Test
-        void a_run_into_a_point_mouth_lands_on_the_anchor() {
+        void aRunIntoAPointMouthLandsOnTheAnchor() {
             // Mirrored: pinned at the arrival.
             var edge = StraightRuns.findEdgeThroughMouth(
                 new StraightRuns.StraightRun(UNION, FAR_TOP_MARK, NEAR_TOP_MARK), false, true, SHIPPED_ANCHOR);
@@ -116,7 +116,7 @@ class StraightRunsTest {
         }
 
         @Test
-        void a_run_into_a_point_mouth_leaves_from_where_the_anchor_sees_the_far_cell() {
+        void aRunIntoAPointMouthLeavesFromWhereTheAnchorSeesTheFarCell() {
             // Mirrored: free at the departure.
             var edge = StraightRuns.findEdgeThroughMouth(
                 new StraightRuns.StraightRun(UNION, FAR_TOP_MARK, NEAR_TOP_MARK), false, true, SHIPPED_ANCHOR);
@@ -126,7 +126,7 @@ class StraightRunsTest {
         }
 
         @Test
-        void a_run_between_two_point_mouths_is_the_walls_side() {
+        void aRunBetweenTwoPointMouthsIsTheWallsSide() {
             // Nothing left to place: both ends are anchors.
             var edge = StraightRuns.findEdgeThroughMouth(
                 new StraightRuns.StraightRun(UNION, NEAR_MARK, FAR_MARK), true, true, SHIPPED_ANCHOR);
@@ -136,7 +136,7 @@ class StraightRunsTest {
         }
 
         @Test
-        void a_run_that_would_cut_a_third_cell_gives_way_to_the_walls_side() {
+        void aRunThatWouldCutAThirdCellGivesWayToTheWallsSide() {
             // A third disc under the free run's path, reaching about 130 units past it. The
             // side is boundary and cannot cut anything, so it is what the run falls back to.
             var crowded = new DiscUnion(

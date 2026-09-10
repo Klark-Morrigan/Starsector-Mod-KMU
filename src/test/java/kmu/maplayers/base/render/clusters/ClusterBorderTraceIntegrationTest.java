@@ -72,7 +72,7 @@ class ClusterBorderTraceIntegrationTest {
     class TraceRings {
 
         @Test
-        void the_full_pass_and_the_incremental_re_trace_of_one_faction_agree() {
+        void theFullPassAndTheIncrementalReTraceOfOneFactionAgree() {
 
             var trace = new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
@@ -91,7 +91,7 @@ class ClusterBorderTraceIntegrationTest {
         }
 
         @Test
-        void the_record_forwards_its_parameters_to_the_cluster_trace() {
+        void theRecordForwardsItsParametersToTheClusterTrace() {
             // The record's trace must equal a direct cluster trace given the same parameters - the
             // wiring that keeps the anchor fit and the cluster build (both go through the record)
             // clipping against the very rings the fills stroke.
@@ -112,7 +112,7 @@ class ClusterBorderTraceIntegrationTest {
         }
 
         @Test
-        void two_rivals_sharing_the_dead_star_leave_its_cell_unclaimed_between_them() {
+        void twoRivalsSharingTheDeadStarLeaveItsCellUnclaimedBetweenThem() {
 
             var trace = new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 

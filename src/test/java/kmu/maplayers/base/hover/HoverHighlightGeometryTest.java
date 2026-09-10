@@ -38,7 +38,7 @@ final class HoverHighlightGeometryTest {
     class ResolveHighlightFor {
 
         @Test
-        void a_hovered_cell_resolves_the_loop_that_encloses_it() {
+        void aHoveredCellResolvesTheLoopThatEnclosesIt() {
 
             var loop = buildSquareRun(0, 0, 100);
 
@@ -54,7 +54,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_cell_fully_inside_its_frontier_washes_its_whole_extent() {
+        void aCellFullyInsideItsFrontierWashesItsWholeExtent() {
             // The clip must be a no-op for an interior cell: it washes its full 80x80 area (6400),
             // not a clamped-down piece, so only cells that reach the frontier are ever trimmed.
             var sourceFake = readSourceOf(
@@ -69,7 +69,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_cell_poking_past_the_frontier_washes_only_up_to_it() {
+        void aCellPokingPastTheFrontierWashesOnlyUpToIt() {
             // The shaped cell reaches past the frontier that encloses its centre - the corner the
             // border's rounding cut, which the raw cell keeps. The wash must clamp to the loop, so
             // the overlap [50,100]x[50,100] (area 2500) washes, not the whole 80x80 cell (6400).
@@ -87,7 +87,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_cell_with_no_candidate_loops_washes_with_no_halo() {
+        void aCellWithNoCandidateLoopsWashesWithNoHalo() {
             // A cell that fuses into no cluster, or whose cluster traced no border at all: there is
             // no frontier to bloom - but the cell itself is still what the cursor is on.
             var sourceFake = readSourceOf(
@@ -106,7 +106,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_cell_no_candidate_encloses_washes_with_no_halo() {
+        void aCellNoCandidateEnclosesWashesWithNoHalo() {
             // Candidates exist but the cell sits outside every one of them, which reads the same
             // as having none: the cell washes and nothing haloes.
             var sourceFake = readSourceOf(
@@ -123,7 +123,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void nothing_hovered_lights_nothing_up() {
+        void nothingHoveredLightsNothingUp() {
 
             var sourceFake = readSourceOf(
                 buildSquare(10, 10, 80),
@@ -137,7 +137,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_hovered_cell_with_no_drawable_shape_lights_nothing_up() {
+        void aHoveredCellWithNoDrawableShapeLightsNothingUp() {
 
             var sourceFake = readSourceOf(
                 List.of(),
@@ -151,7 +151,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_resting_cursor_reuses_the_answer_it_already_resolved() {
+        void aRestingCursorReusesTheAnswerItAlreadyResolved() {
             // The whole point of the memo: this runs every frame, and re-tracing the same loops
             // sixty times a second for an answer that cannot have changed is pure waste.
             var sourceFake = readSourceOf(
@@ -168,7 +168,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_fresh_source_over_unchanged_geometry_still_reuses_the_answer() {
+        void aFreshSourceOverUnchangedGeometryStillReusesTheAnswer() {
             // The memo keys on the extent and the loops the source handed back, not on the source
             // itself - which is what lets a layer wrap its current draw lists afresh each frame
             // without costing a re-trace on every one of them.
@@ -189,7 +189,7 @@ final class HoverHighlightGeometryTest {
         }
 
         @Test
-        void a_rebuilt_cell_resolves_again_rather_than_tracing_a_shape_that_is_gone() {
+        void aRebuiltCellResolvesAgainRatherThanTracingAShapeThatIsGone() {
 
             var geometry = new HoverHighlightGeometry();
 
