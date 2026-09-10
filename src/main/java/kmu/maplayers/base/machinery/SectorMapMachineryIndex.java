@@ -1,4 +1,4 @@
-package kmu.maplayers.base.installation;
+package kmu.maplayers.base.machinery;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.LocationAPI;
@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * no sector resolves one.
  *
  * <p>Installing replaces whatever that sector already had, so asking twice cannot leave two
- * installations answering for one sector; removing releases and forgets. A load discards every
- * installation before the loaded sector's is made, which is what makes a leak impossible without
+ * machinery answering for one sector; removing releases and forgets. A load discards every
+ * machinery before the loaded sector's is made, which is what makes a leak impossible without
  * anything having to notice that a sector went away - the index holds each sector by reference, and
  * nobody is in a position to tell it that one is gone.
  *
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * for a sector nobody passed down; and a render surface, which is terrain and so reaches a
  * {@link LocationAPI} rather than a sector, asks by the location it sits in.
  *
- * <p>A sector with nothing installed resolves to a detached installation rather than to null. The
+ * <p>A sector with nothing installed resolves to a detached machinery rather than to null. The
  * map layers sit behind a switch a player can leave off, so an uninstalled sector is an ordinary
  * state; answering null would make every seam below branch on a case that means "draw as you always
  * did".
@@ -36,65 +36,65 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Final class with a private constructor: process-wide index, no instances.
  */
-public final class MapLayerInstallations {
+public final class SectorMapMachineryIndex {
 
-    private static final Logger LOG = Global.getLogger(MapLayerInstallations.class);
+    private static final Logger LOG = Global.getLogger(SectorMapMachineryIndex.class);
 
     // What a resolution falls back on when the sector it was asked about has none: a real
-    // installation that nothing indexes and nothing releases. Shared, so every caller that reaches
+    // machinery that nothing indexes and nothing releases. Shared, so every caller that reaches
     // it meets one holder rather than one each - which is the arrangement a sector-less caller has
     // always had, back when each holder was a static of its own.
     // Made over no sector, a caller that reached it having named none - so a stage reading the
     // sector finds nothing rather than falling through to whichever sector is loaded.
-    private static final MapLayerInstallation DETACHED_INSTALLATION =
-        new MapLayerInstallation(null);
+    private static final SectorMapMachinery DETACHED_MACHINERY =
+        new SectorMapMachinery(null);
 
-    // One installation per sector, keyed by the sector itself rather than by any id it carries: a
+    // One machinery per sector, keyed by the sector itself rather than by any id it carries: a
     // sector is the thing being installed on, and two sectors are two objects whether or not
     // anything about their contents differs.
-    private static final Map<SectorAPI, MapLayerInstallation> installationsBySector =
+    private static final Map<SectorAPI, SectorMapMachinery> machineryBySector =
         new ConcurrentHashMap<>();
 
-    private MapLayerInstallations() {
+    private SectorMapMachineryIndex() {
         // process-wide index, no instances.
     }
 
     /**
-     * Makes {@code sector} a fresh installation, releasing any it already had.
+     * Makes {@code sector} a fresh machinery, releasing any it already had.
      *
      * <p>Replacing rather than reusing is what keeps a second install from inheriting the first
      * one's cached drawing: the two are separated by the install, not by whatever each holder
      * happens to notice has changed.
      *
      * @param sector the sector the map layers are being installed on; null installs nothing and
-     *               yields the detached installation, since the switch can be flipped with no game
+     *               yields the detached machinery, since the switch can be flipped with no game
      *               loaded
-     * @return the installation that sector's machinery is now held in
+     * @return the machinery that sector's machinery is now held in
      */
-    public static MapLayerInstallation installMachineryOn(SectorAPI sector) {
+    public static SectorMapMachinery installMachineryOn(SectorAPI sector) {
 
         if (sector == null) {
-            return DETACHED_INSTALLATION;
+            return DETACHED_MACHINERY;
         }
 
         // Computed in one pass so a replacement cannot be observed as an absence: a frame resolving
         // between a removal and a re-insertion would otherwise draw through the detached
-        // installation for that one frame.
-        var installation = installationsBySector.compute(sector, (key, replaced) -> {
+        // machinery for that one frame.
+        var machinery = machineryBySector.compute(sector, (key, replaced) -> {
 
             if (replaced != null) {
                 replaced.disposeMachinery();
             }
-            return new MapLayerInstallation(sector);
+            return new SectorMapMachinery(sector);
         });
 
-        LOG.debug("Map layer machinery installed; installations=" + installationsBySector.size());
-        return installation;
+        LOG.debug("Map layer machinery installed; machinery=" + machineryBySector.size());
+        return machinery;
     }
 
     /**
-     * Releases {@code sector}'s installation and forgets it, so a later resolution for that sector
-     * answers with the detached installation rather than with a drawing nothing maintains.
+     * Releases {@code sector}'s machinery and forgets it, so a later resolution for that sector
+     * answers with the detached machinery rather than with a drawing nothing maintains.
      *
      * @param sector the sector the map layers are being removed from; null and an uninstalled
      *               sector are both left alone
@@ -105,68 +105,68 @@ public final class MapLayerInstallations {
             return;
         }
 
-        var removed = installationsBySector.remove(sector);
+        var removed = machineryBySector.remove(sector);
 
         if (removed == null) {
             return;
         }
         removed.disposeMachinery();
 
-        LOG.debug("Map layer machinery uninstalled; installations=" + installationsBySector.size());
+        LOG.debug("Map layer machinery uninstalled; machinery=" + machineryBySector.size());
     }
 
     /**
-     * Releases every installation there is.
+     * Releases every machinery there is.
      *
-     * <p>What a load runs before installing on the sector it loaded. Every installation standing at
+     * <p>What a load runs before installing on the sector it loaded. Every machinery standing at
      * that point belongs to a sector the load has already replaced, and no other seam is told that
      * a sector went away - so discarding all of them is what keeps a previous save's drawing from
      * outliving it.
      */
-    public static void disposeEveryInstallation() {
+    public static void disposeAllMachinery() {
 
-        installationsBySector.values().forEach(MapLayerInstallation::disposeMachinery);
-        installationsBySector.clear();
+        machineryBySector.values().forEach(SectorMapMachinery::disposeMachinery);
+        machineryBySector.clear();
 
         LOG.debug("Map layer machinery discarded for every installed sector");
     }
 
     /**
-     * Every installation there is, for a caller acting on all of them at once rather than on the
+     * Every machinery there is, for a caller acting on all of them at once rather than on the
      * sector it was handed - a change to a preference that is one preference for every sector, which
      * is what the bar arrangement is.
      *
      * <p>A snapshot rather than the index's own view, so a walk that installs or removes as it goes
-     * is acting on the row it asked for. The detached installation is not among them: it is nobody's
+     * is acting on the row it asked for. The detached machinery is not among them: it is nobody's
      * sector, so there is nothing on it to act on.
      *
-     * @return the installation of every installed sector, in no particular order
+     * @return the machinery of every installed sector, in no particular order
      */
-    public static List<MapLayerInstallation> getEveryInstallation() {
-        return List.copyOf(installationsBySector.values());
+    public static List<SectorMapMachinery> getAllMachinery() {
+        return List.copyOf(machineryBySector.values());
     }
 
     /**
      * @param sector the sector being asked about; null is an uninstalled sector
-     * @return {@code sector}'s installation, or the detached one where it has none
+     * @return {@code sector}'s machinery, or the detached one where it has none
      */
-    public static MapLayerInstallation resolveInstallationFor(SectorAPI sector) {
+    public static SectorMapMachinery resolveMachineryFor(SectorAPI sector) {
 
         if (sector == null) {
-            return DETACHED_INSTALLATION;
+            return DETACHED_MACHINERY;
         }
-        return installationsBySector.getOrDefault(sector, DETACHED_INSTALLATION);
+        return machineryBySector.getOrDefault(sector, DETACHED_MACHINERY);
     }
 
     /**
-     * The installation of the sector whose hyperspace {@code location} is, for a caller that has a
+     * The machinery of the sector whose hyperspace {@code location} is, for a caller that has a
      * location and no sector - which is every render surface, terrain reaching a containing location
      * and nothing above it.
      *
      * <p>Answered by walking the installed sectors rather than from a location index of its own.
      * There is one installed sector, so the walk is the cheaper half of the trade; what it buys is
      * that a location can never disagree with the sector it belongs to. A second index would have to
-     * be written after the sector one - leaving a window in which a frame resolved the installation
+     * be written after the sector one - leaving a window in which a frame resolved the machinery
      * a reinstall had just released - and kept in step through every removal.
      *
      * <p>The comparison rests on {@code sector.getHyperspace()} being the same object as the
@@ -176,22 +176,22 @@ public final class MapLayerInstallations {
      * of degrading.
      *
      * <p>Answers null where nothing is installed in that location, and this is the one resolution
-     * that does. A surface exists because an installation put its terrain there, so a location with
-     * no installation is a surface belonging to a sector nothing is drawing; handing back the
-     * detached installation would have it paint through the holder every sector-less caller shares,
+     * that does. A surface exists because machinery put its terrain there, so a location with
+     * no machinery is a surface belonging to a sector nothing is drawing; handing back the
+     * detached machinery would have it paint through the holder every sector-less caller shares,
      * which is a drawing of no sector at all rather than a fallback.
      *
      * @param location the location being asked about, typically a surface's containing one; null is
      *                 a surface not in any location yet
-     * @return that location's installation, or null where it has none
+     * @return that location's machinery, or null where it has none
      */
-    public static MapLayerInstallation resolveInstallationIn(LocationAPI location) {
+    public static SectorMapMachinery resolveMachineryIn(LocationAPI location) {
 
         if (location == null) {
             return null;
         }
 
-        for (var installed : installationsBySector.entrySet()) {
+        for (var installed : machineryBySector.entrySet()) {
 
             if (installed.getKey().getHyperspace() == location) {
                 return installed.getValue();
@@ -201,12 +201,12 @@ public final class MapLayerInstallations {
     }
 
     /**
-     * @return the installation of the sector the game is running, or the detached one where that
+     * @return the machinery of the sector the game is running, or the detached one where that
      *         sector has none and where no game is loaded at all. For the seams vanilla drives
      *         without naming a sector, which is where the one global read this index exists to
      *         contain belongs
      */
-    public static MapLayerInstallation resolveInstallationForLiveSector() {
-        return resolveInstallationFor(Global.getSector());
+    public static SectorMapMachinery resolveMachineryForLiveSector() {
+        return resolveMachineryFor(Global.getSector());
     }
 }

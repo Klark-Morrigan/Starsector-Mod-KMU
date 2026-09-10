@@ -9,7 +9,7 @@ import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
 
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapMarketTransferListener;
 
 import org.junit.jupiter.api.Nested;
@@ -82,7 +82,7 @@ final class NexerelinInvasionListenerInstallerTest {
             // while Global is mocked.
             var listenerManager = new RecordingListenerManager();
             var sectorMock = buildSectorWith(listenerManager);
-            var refreshBoard = MapLayerInstallations
+            var refreshBoard = SectorMapMachineryIndex
                 .installMachineryOn(sectorMock)
                 .resolveRefreshBoard();
 

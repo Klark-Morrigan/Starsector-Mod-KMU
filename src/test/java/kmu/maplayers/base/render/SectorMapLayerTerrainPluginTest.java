@@ -5,11 +5,11 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -73,7 +73,7 @@ final class SectorMapLayerTerrainPluginTest {
         // a static field, and a class first loaded inside a mocked scope keeps a null one for the
         // rest of the JVM and faults every later case that logs. Forced here rather than left to
         // whichever order JUnit happens to run the other setups in.
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
         new SectorMapLayerTerrainPlugin();
 
         globalMock = mockStatic(Global.class);
@@ -103,7 +103,7 @@ final class SectorMapLayerTerrainPluginTest {
 
         when(drawingLayerMock.getId())
             .thenReturn("drawing");
-        // Whichever installation the surface resolves for the frame: which sector it draws is the
+        // Whichever machinery the surface resolves for the frame: which sector it draws is the
         // surface's to settle, and what this pins is that it draws through the answer it gets.
         when(drawingLayerMock.resolveRenderer(any()))
             .thenReturn(layerRendererMock);
@@ -122,10 +122,10 @@ final class SectorMapLayerTerrainPluginTest {
 
     // The index is process-wide, so a sector installed on by one case would otherwise still be
     // answering for the next - including with the frame it left half prepared, the claim being the
-    // installation's.
+    // machinery's.
     @AfterEach
-    void clearEveryInstallation() {
-        MapLayerInstallations.disposeEveryInstallation();
+    void clearEveryMachinery() {
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
@@ -147,18 +147,18 @@ final class SectorMapLayerTerrainPluginTest {
     class RenderOnMap {
 
         @Test
-        void renderOnMapDrawsThroughTheInstallationOfTheSectorItsTerrainSitsIn() {
+        void renderOnMapDrawsThroughTheMachineryOfTheSectorItsTerrainSitsIn() {
             // The hook names no sector, and this surface cannot be handed one - it is rebuilt from
             // the save with no seam to inject through - so the entity it rides on is what says which
             // sector's machinery the frame belongs to. A surface resolving anything else would paint
             // one sector's overlay from another sector's cells.
             var plugin = new SectorMapLayerTerrainPlugin();
-            var installation = seatSurfacesInAnInstalledSector(plugin);
+            var machinery = seatSurfacesInAnInstalledSector(plugin);
 
             plugin.renderOnMap(1.5f, 0.25f);
 
             verify(drawingLayerMock)
-                .resolveRenderer(installation);
+                .resolveRenderer(machinery);
         }
 
         @Test
@@ -272,9 +272,9 @@ final class SectorMapLayerTerrainPluginTest {
             var plugin = new SectorMapLayerTerrainPlugin();
             var secondPlugin = new SectorMapLayerTerrainPlugin();
 
-            var installation = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
+            var machinery = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
 
-            MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
 
             plugin.renderOnMap(1.5f, 0.25f);
             secondPlugin.renderOnMap(1.5f, 0.25f);
@@ -294,11 +294,11 @@ final class SectorMapLayerTerrainPluginTest {
             var plugin = new SectorMapLayerTerrainPlugin();
             var otherSectorsPlugin = new SectorMapLayerTerrainPlugin();
 
-            var installation = seatSurfacesInAnInstalledSector(plugin);
-            var otherInstallation = seatSurfacesInAnInstalledSector(otherSectorsPlugin);
+            var machinery = seatSurfacesInAnInstalledSector(plugin);
+            var otherMachinery = seatSurfacesInAnInstalledSector(otherSectorsPlugin);
 
-            MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
-            MapFramePreparationClaim.resolveClaimIn(otherInstallation).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim.resolveClaimIn(otherMachinery).renderInUICoordsBelowUI(null);
 
             plugin.renderOnMap(1.5f, 0.25f);
             otherSectorsPlugin.renderOnMap(1.5f, 0.25f);
@@ -318,9 +318,9 @@ final class SectorMapLayerTerrainPluginTest {
             var plugin = new SectorMapLayerTerrainPlugin();
             var secondPlugin = new SectorMapLayerTerrainPlugin();
 
-            var installation = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
+            var machinery = seatSurfacesInAnInstalledSector(plugin, secondPlugin);
 
-            MapFramePreparationClaim.resolveClaimIn(installation).renderInUICoordsBelowUI(null);
+            MapFramePreparationClaim.resolveClaimIn(machinery).renderInUICoordsBelowUI(null);
 
             plugin.renderOnMap(1.5f, 0.25f);
             secondPlugin.renderOnMap(1.5f, 0.25f);
@@ -356,8 +356,8 @@ final class SectorMapLayerTerrainPluginTest {
             // A claim spent for good would leave the map painting the draw lists of whichever frame
             // happened to prepare first, which is the opposite fault and the worse one.
             var plugin = new SectorMapLayerTerrainPlugin();
-            var installation = seatSurfacesInAnInstalledSector(plugin);
-            var claim = MapFramePreparationClaim.resolveClaimIn(installation);
+            var machinery = seatSurfacesInAnInstalledSector(plugin);
+            var claim = MapFramePreparationClaim.resolveClaimIn(machinery);
 
             claim.renderInUICoordsBelowUI(null);
             plugin.renderOnMap(1.5f, 0.25f);

@@ -63,7 +63,7 @@ final class IncrementalPoliticsRefresh {
     //
     // Both the sector and the marked systems arrive from the caller rather than being resolved
     // here. These entry points are static and are handed the standing map whole, so this holds no
-    // installation to ask either of - and the caller that assembles that map is exactly the one
+    // machinery to ask either of - and the caller that assembles that map is exactly the one
     // that does hold it, so what it drains and what it reads the colonies of are one sector's by
     // construction. It is also what answers for the frames with nothing marked, which is nearly all
     // of them: having drained the board itself, it knows there is nothing to fold before it

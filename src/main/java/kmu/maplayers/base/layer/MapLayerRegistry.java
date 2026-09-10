@@ -2,7 +2,7 @@ package kmu.maplayers.base.layer;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.apache.log4j.Logger;
@@ -153,25 +153,25 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * What draws for the screen showing this frame, over {@code installation}'s sector, or null when
+     * What draws for the screen showing this frame, over {@code machinery}'s sector, or null when
      * nothing does - because no layer is picked yet (before a composition root has registered any),
      * because that screen's layers have faded off it, or because the active one draws nothing. They
      * are one answer on purpose: every pass driven by the active pick treats them alike, so neither a
      * switch-only tab nor a hidden screen needs a case of its own in any of them.
      *
-     * <p>The installation is passed rather than resolved here because which sector is being drawn is
+     * <p>The machinery is passed rather than resolved here because which sector is being drawn is
      * the caller's to know: the roster this registry holds is the process's, while the renderer it
      * hands back is one sector's.
      *
-     * @param installation the machinery installed on the sector being drawn
+     * @param machinery the machinery installed on the sector being drawn
      * @return that sector's renderer for the drawn layer, or null when nothing draws
      */
-    public static MapLayerRenderer resolveDrawnMapRenderer(MapLayerInstallation installation) {
+    public static MapLayerRenderer resolveDrawnMapRenderer(SectorMapMachinery machinery) {
         var drawnLayer = getDrawnLayer();
         if (drawnLayer == null) {
             return null;
         }
-        return drawnLayer.resolveRenderer(installation);
+        return drawnLayer.resolveRenderer(machinery);
     }
 
     /**

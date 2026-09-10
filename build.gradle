@@ -128,7 +128,7 @@ enforceRestrictedCalls {
         toTypes: [
             'FilterSelectionHeal',
             'LiveVisibilityClaimBreakdownReader',
-            'MapLayerInstallations',
+            'SectorMapMachineryIndex',
             'PauseMenuMapCover']
 
     // Every choice made on a sidebar panel is that screen's own, and a screen's

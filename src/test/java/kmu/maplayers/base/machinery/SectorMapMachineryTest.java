@@ -1,4 +1,4 @@
-package kmu.maplayers.base.installation;
+package kmu.maplayers.base.machinery;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.PersonAPI;
@@ -26,21 +26,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what an installation holds: a refresh board, a motion tracker and a hover holder of its own,
+ * Pins what machinery holds: a refresh board, a motion tracker and a hover holder of its own,
  * so that what went stale in one sector is not what any other sector rebuilds for, that a system's
  * drift is judged against where its own sector last saw it, and that a cursor read over one sector's
  * map is not reported over another's. Beside those sits what a layer hands it to hold - one per
- * kind per sector, released when the installation is - and the profiling origin its rows are
+ * kind per sector, released when the machinery is - and the profiling origin its rows are
  * grouped under, so a capture says which sector each beat was measured in.
  *
- * <p>Built here rather than resolved through {@link MapLayerInstallations}, since the claim is
+ * <p>Built here rather than resolved through {@link SectorMapMachineryIndex}, since the claim is
  * about the holder itself and not about the index that hands one out.
  *
  * <p>One case runs on several threads, because one of these claims is only true under contention:
- * an installation is written from the campaign thread and read from the render thread, so a
+ * machinery is written from the campaign thread and read from the render thread, so a
  * make-if-absent has to be one step rather than a read and a write that read like one.
  */
-class MapLayerInstallationTest {
+class SectorMapMachineryTest {
 
     // The id both staged sectors give their system. Nothing forbids two sectors generating a
     // system under one id, and it is the case a shared holder gets wrong rather than merely
@@ -65,19 +65,19 @@ class MapLayerInstallationTest {
     // once per case, since only a make waits.
     private static final int MAKE_PAUSE_MILLIS = 50;
 
-    private final MapLayerInstallation installation = new MapLayerInstallation(null);
-    private final MapLayerInstallation otherInstallation = new MapLayerInstallation(null);
+    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
+    private final SectorMapMachinery otherMachinery = new SectorMapMachinery(null);
 
     @Nested
     class ResolveHoverState {
 
         @Test
-        void yieldsTheOneHolderThisInstallationKeeps() {
+        void yieldsTheOneHolderThisMachineryKeeps() {
             // The render pass publishes into it and the highlight and the box read it out, each
             // resolving separately - so two resolutions handing back two holders would leave both
             // readers reporting a hover nothing ever published.
-            assertThat(installation.resolveHoverState())
-                .isSameAs(installation.resolveHoverState());
+            assertThat(machinery.resolveHoverState())
+                .isSameAs(machinery.resolveHoverState());
         }
 
         @Test
@@ -85,13 +85,13 @@ class MapLayerInstallationTest {
             // A hover names its system by bare id, so a shared holder would have a cursor read over
             // one sector's map light the cell of whatever holds that id on the other's - and name
             // that system in the other's box.
-            installation
+            machinery
                 .resolveHoverState()
                 .publishHover(new MapHover(SHARED_SYSTEM_ID, List.of(SHARED_SYSTEM_ID)));
 
-            assertThat(otherInstallation.resolveHoverState().getHover())
+            assertThat(otherMachinery.resolveHoverState().getHover())
                 .isSameAs(MapHover.NONE);
-            assertThat(installation.resolveHoverState().getHover().hoveredSystemId())
+            assertThat(machinery.resolveHoverState().getHover().hoveredSystemId())
                 .isEqualTo(SHARED_SYSTEM_ID);
         }
     }
@@ -100,12 +100,12 @@ class MapLayerInstallationTest {
     class ResolveMachinery {
 
         @Test
-        void yieldsTheOneOfThatKindThisInstallationKeeps() {
+        void yieldsTheOneOfThatKindThisMachineryKeeps() {
             // The surface resolves what draws every frame and the hover box resolves it again in
             // the pass after, so two resolutions handing back two would have the box describing
             // draw lists the map never painted - and would double every cache behind them.
-            assertThat(resolveCountingMachineryIn(installation))
-                .isSameAs(resolveCountingMachineryIn(installation));
+            assertThat(resolveCountingMachineryIn(machinery))
+                .isSameAs(resolveCountingMachineryIn(machinery));
         }
 
         @Test
@@ -113,15 +113,15 @@ class MapLayerInstallationTest {
             // The whole of why a renderer stopped being the layer's: the caches behind it reconcile
             // by system id, so two sectors through one would keep each other's cells rather than
             // overwrite them.
-            assertThat(resolveCountingMachineryIn(installation))
-                .isNotSameAs(resolveCountingMachineryIn(otherInstallation));
+            assertThat(resolveCountingMachineryIn(machinery))
+                .isNotSameAs(resolveCountingMachineryIn(otherMachinery));
         }
 
         @Test
         void makesOneOfAKindHoweverManyAsksArriveAtOnce()
                 throws InterruptedException {
             // The map surfaces resolve what they are about to draw on the render thread while the
-            // campaign thread installs, so several asks can reach a kind this installation has none
+            // campaign thread installs, so several asks can reach a kind this machinery has none
             // of yet. Making one each would hand one sector two renderers, and release only the one
             // the map went on to keep - leaking the other's GL buffers with nothing left holding it.
             //
@@ -130,7 +130,7 @@ class MapLayerInstallationTest {
             var creationCount = new AtomicInteger();
             var resolved = ConcurrentHashMap.<CountingMachineryFake>newKeySet();
 
-            runContendedAsks(() -> resolved.add(installation.resolveMachinery(
+            runContendedAsks(() -> resolved.add(machinery.resolveMachinery(
                 CountingMachineryFake.class,
                 () -> {
                     creationCount.incrementAndGet();
@@ -151,12 +151,12 @@ class MapLayerInstallationTest {
     class ResolveMovingSystems {
 
         @Test
-        void yieldsTheOneTrackerThisInstallationKeeps() {
+        void yieldsTheOneTrackerThisMachineryKeeps() {
             // The poll observes into it and the geometry cache reads the movers out of it, each
             // resolving separately - so two resolutions handing back two trackers would leave the
             // cache reading a set nothing ever wrote.
-            assertThat(installation.resolveMovingSystems())
-                .isSameAs(installation.resolveMovingSystems());
+            assertThat(machinery.resolveMovingSystems())
+                .isSameAs(machinery.resolveMovingSystems());
         }
 
         @Test
@@ -167,8 +167,8 @@ class MapLayerInstallationTest {
             // still.
             var sectorFake = new MovableSystemSectorFake(SHARED_SYSTEM_ID);
             var otherSectorFake = new MovableSystemSectorFake(SHARED_SYSTEM_ID);
-            var movingSystems = installation.resolveMovingSystems();
-            var otherMovingSystems = otherInstallation.resolveMovingSystems();
+            var movingSystems = machinery.resolveMovingSystems();
+            var otherMovingSystems = otherMachinery.resolveMovingSystems();
 
             sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP);
             sectorFake.moveSystemClearOfItsLastPosition();
@@ -192,9 +192,9 @@ class MapLayerInstallationTest {
         void composesTheLabelFromWhatTheSectorIsRecognisedBy() {
             // The pair a save browser shows, since a reader who cannot take a slow row back to a
             // save cannot go and reproduce it.
-            var installationOnSector = new MapLayerInstallation(mockSectorSeeded(SEED));
+            var machineryOnSector = new SectorMapMachinery(mockSectorSeeded(SEED));
 
-            assertThat(installationOnSector.resolveProfilingOrigin().getLabel())
+            assertThat(machineryOnSector.resolveProfilingOrigin().getLabel())
                 .isEqualTo("MN-6220 - Marat");
         }
 
@@ -202,19 +202,19 @@ class MapLayerInstallationTest {
         void yieldsAnOriginOfItsOwnSoOneSectorsRowsAreNotAnothers() {
             // Two sectors through one origin would put both sets of beats in one group of rows,
             // which is the state a capture exists to tell apart.
-            var installationOnSector = new MapLayerInstallation(mockSectorSeeded(SEED));
-            var installationOnOtherSector =
-                new MapLayerInstallation(mockSectorSeeded(OTHER_SEED));
+            var machineryOnSector = new SectorMapMachinery(mockSectorSeeded(SEED));
+            var machineryOnOtherSector =
+                new SectorMapMachinery(mockSectorSeeded(OTHER_SEED));
 
-            assertThat(installationOnSector.resolveProfilingOrigin())
-                .isNotSameAs(installationOnOtherSector.resolveProfilingOrigin());
+            assertThat(machineryOnSector.resolveProfilingOrigin())
+                .isNotSameAs(machineryOnOtherSector.resolveProfilingOrigin());
         }
 
         @Test
-        void leavesTheDetachedInstallationsSpansUnattributed() {
+        void leavesTheDetachedMachinerySpansUnattributed() {
             // Nobody's sector, so there is nothing to describe and nothing a reader could match a
             // row back to - which is exactly what the reserved origin says.
-            assertThat(installation.resolveProfilingOrigin())
+            assertThat(machinery.resolveProfilingOrigin())
                 .isSameAs(ProfileOrigin.UNSCOPED);
         }
     }
@@ -223,11 +223,11 @@ class MapLayerInstallationTest {
     class ResolveRefreshBoard {
 
         @Test
-        void yieldsTheOneBoardThisInstallationKeeps() {
+        void yieldsTheOneBoardThisMachineryKeeps() {
             // A producer and a consumer resolve the board separately, so two resolutions handing
             // back two boards would have every raise land where nothing reads it.
-            assertThat(installation.resolveRefreshBoard())
-                .isSameAs(installation.resolveRefreshBoard());
+            assertThat(machinery.resolveRefreshBoard())
+                .isSameAs(machinery.resolveRefreshBoard());
         }
 
         @Test
@@ -235,11 +235,11 @@ class MapLayerInstallationTest {
             // The stale set is bare system ids, and nothing forbids two sectors from generating a
             // system under the same one - so a shared board is where two sectors corrupt each
             // other silently rather than merely draw each other's picture.
-            installation.resolveRefreshBoard().markSystemGroupingStale("sys");
+            machinery.resolveRefreshBoard().markSystemGroupingStale("sys");
 
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
-            assertThat(installation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .containsExactly("sys");
         }
 
@@ -247,14 +247,14 @@ class MapLayerInstallationTest {
         void yieldsABoardOfItsOwnSoOneSectorsRevisionIsNotAnothers() {
             // Shared counters would leave neither sector able to be stale on its own: either
             // sector's change would rebuild both.
-            installation.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
+            machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
 
-            assertThat(otherInstallation
+            assertThat(otherMachinery
                     .resolveRefreshBoard()
                     .getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
                 .isZero();
 
-            assertThat(installation
+            assertThat(machinery
                     .resolveRefreshBoard()
                     .getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
                 .isEqualTo(1);
@@ -269,9 +269,9 @@ class MapLayerInstallationTest {
             // What the release contract is for: the political map's draw lists own a GL buffer per
             // cached name, so a sector removed mid-session leaks every one it built unless disposal
             // reaches through to them.
-            var machineryFake = resolveCountingMachineryIn(installation);
+            var machineryFake = resolveCountingMachineryIn(machinery);
 
-            installation.disposeMachinery();
+            machinery.disposeMachinery();
 
             assertThat(machineryFake.getDisposeCount())
                 .isEqualTo(1);
@@ -281,10 +281,10 @@ class MapLayerInstallationTest {
         void releasesOnlyItsOwn() {
             // Removing one sector's layers leaves the other sector drawing, so its renderer - and
             // every GL resource behind it - has to survive the release beside it.
-            var machineryFake = resolveCountingMachineryIn(installation);
-            var otherMachineryFake = resolveCountingMachineryIn(otherInstallation);
+            var machineryFake = resolveCountingMachineryIn(machinery);
+            var otherMachineryFake = resolveCountingMachineryIn(otherMachinery);
 
-            installation.disposeMachinery();
+            machinery.disposeMachinery();
 
             assertThat(machineryFake.getDisposeCount())
                 .isEqualTo(1);
@@ -294,11 +294,11 @@ class MapLayerInstallationTest {
 
         @Test
         void isSafeWithNothingHandedToIt() {
-            // A sector installed on with the map never opened, and the detached installation every
+            // A sector installed on with the map never opened, and the detached machinery every
             // sector-less caller shares: both reach disposal holding nothing.
-            installation.disposeMachinery();
+            machinery.disposeMachinery();
 
-            assertThat(installation.isDisposed())
+            assertThat(machinery.isDisposed())
                 .isTrue();
         }
     }
@@ -366,17 +366,17 @@ class MapLayerInstallationTest {
 
     // The one kind of machinery these cases stage, asked for the way a layer asks: by its class,
     // with the way to make one. Named rather than repeated at each call so a case reads as which
-    // installation it is asking rather than as the pair of arguments it is asking with.
+    // machinery it is asking rather than as the pair of arguments it is asking with.
     private static CountingMachineryFake resolveCountingMachineryIn(
-            MapLayerInstallation installation) {
+            SectorMapMachinery machinery) {
 
-        return installation.resolveMachinery(
+        return machinery.resolveMachinery(
             CountingMachineryFake.class,
             CountingMachineryFake::new);
     }
 
     // A layer's machinery, stated as the plainest thing that can be held and released: what an
-    // installation owes one is a lifetime, and a real renderer would drag a cache and a live screen
+    // machinery owes one is a lifetime, and a real renderer would drag a cache and a live screen
     // read in to say the same thing.
     private static final class CountingMachineryFake implements InstalledMachinery {
 

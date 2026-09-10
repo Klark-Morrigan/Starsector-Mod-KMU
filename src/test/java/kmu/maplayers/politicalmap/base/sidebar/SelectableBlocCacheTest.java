@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.DominanceSortModes;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * revision moves it and nothing else does, so a live picker is served from the memo and a stale one
  * is re-walked. The memo mechanism itself is the framework's and is pinned there; what is pinned
  * here is the revision this layer feeds it, and that the presence behind the rows is served off that
- * same read. Pins its lifetime beside that - one memo per installation, so two sectors' sidebars
+ * same read. Pins its lifetime beside that - one memo per machinery, so two sectors' sidebars
  * neither read one another's rows nor evict one another's entry, and a disposal leaving nothing of
  * the gone sector's behind. The live settings revision reads zero in a test JVM (no LunaLib listener
  * runs), so the view's content revision is the only moving part of the key here.
@@ -65,27 +65,27 @@ final class SelectableBlocCacheTest {
     class ResolveBlocCacheIn {
 
         @Test
-        void resolveBlocCacheInAnswersOneCachePerInstallation() {
+        void resolveBlocCacheInAnswersOneCachePerMachinery() {
             // The body build asking for rows and the pass asking where a bloc was found resolve
             // separately, so both asks under one sector must land on the same memo or the second
             // pays for a whole economy walk of its own.
-            var installation = new MapLayerInstallation(mock(SectorAPI.class));
+            var machinery = new SectorMapMachinery(mock(SectorAPI.class));
 
-            assertThat(SelectableBlocCache.resolveBlocCacheIn(installation))
-                .isSameAs(SelectableBlocCache.resolveBlocCacheIn(installation));
+            assertThat(SelectableBlocCache.resolveBlocCacheIn(machinery))
+                .isSameAs(SelectableBlocCache.resolveBlocCacheIn(machinery));
         }
 
         @Test
-        void resolveBlocCacheInAnswersAFreshCacheAfterTheInstallationIsDisposed() {
-            // A load disposes the installation, which is what stands in for a discard of this memo's
+        void resolveBlocCacheInAnswersAFreshCacheAfterTheMachineryIsDisposed() {
+            // A load disposes the machinery, which is what stands in for a discard of this memo's
             // own - the sector after it walks its own economy rather than reading the previous
             // sector's rows out of a revision that never moved.
-            var installation = new MapLayerInstallation(mock(SectorAPI.class));
-            var cache = SelectableBlocCache.resolveBlocCacheIn(installation);
+            var machinery = new SectorMapMachinery(mock(SectorAPI.class));
+            var cache = SelectableBlocCache.resolveBlocCacheIn(machinery);
 
-            installation.disposeMachinery();
+            machinery.disposeMachinery();
 
-            assertThat(SelectableBlocCache.resolveBlocCacheIn(installation))
+            assertThat(SelectableBlocCache.resolveBlocCacheIn(machinery))
                 .isNotSameAs(cache);
         }
     }
@@ -132,24 +132,24 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocPickerReadKeysTheMemoOnItsOwnInstallationsBoard() {
+        void resolveBlocPickerReadKeysTheMemoOnItsOwnMachineryBoard() {
             // The key is the view's fold of a board, and the board it folds has to be this
-            // installation's: keyed on the running sector's instead, a list would never be re-walked
+            // machinery's: keyed on the running sector's instead, a list would never be re-walked
             // when its own sector's alliances moved, and would be thrown away when another sector's
             // did. Every other case here stubs the fold against any board, so this is the one that
             // reads the argument back.
             var sectorMock = mock(SectorAPI.class);
             var viewMock = stubViewAnswering(sectorMock, "factions");
-            var installation = new MapLayerInstallation(sectorMock);
+            var machinery = new SectorMapMachinery(sectorMock);
 
-            new SelectableBlocCache(installation).resolveBlocPickerRead(viewMock);
+            new SelectableBlocCache(machinery).resolveBlocPickerRead(viewMock);
 
             verify(viewMock)
-                .getContentRevision(installation.resolveRefreshBoard());
+                .getContentRevision(machinery.resolveRefreshBoard());
         }
 
         @Test
-        void resolveBlocPickerReadServesEachInstallationItsOwnSectorsRows() {
+        void resolveBlocPickerReadServesEachMachineryItsOwnSectorsRows() {
             // The wrongness a shared memo produces is a wrong list, not a stale one: the revision is
             // the view's, so one sector's rows would answer under the other's ask with nothing about
             // the key saying they came from elsewhere.
@@ -164,7 +164,7 @@ final class SelectableBlocCacheTest {
         }
 
         @Test
-        void resolveBlocPickerReadKeepsOneInstallationsListWhileTheOtherResolvesItsOwn() {
+        void resolveBlocPickerReadKeepsOneMachineryListWhileTheOtherResolvesItsOwn() {
             // One memo between two sectors holds a single entry, so alternating asks evict each
             // other and re-walk the whole economy every call. A memo apiece is what leaves each
             // sector's list standing while the other resolves.
@@ -250,10 +250,10 @@ final class SelectableBlocCacheTest {
         }
     }
 
-    // A cache over one sector's machinery, which is the only way a cache exists - the installation
+    // A cache over one sector's machinery, which is the only way a cache exists - the machinery
     // is what supplies the sector every walk below is taken against.
     private static SelectableBlocCache buildCacheOver(SectorAPI sectorMock) {
-        return new SelectableBlocCache(new MapLayerInstallation(sectorMock));
+        return new SelectableBlocCache(new SectorMapMachinery(sectorMock));
     }
 
     // A view answering READ for the stated sector under a stated id, which every case needs standing

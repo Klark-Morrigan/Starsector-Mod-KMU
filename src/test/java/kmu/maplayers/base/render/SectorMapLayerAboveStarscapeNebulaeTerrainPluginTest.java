@@ -1,8 +1,8 @@
 package kmu.maplayers.base.render;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -81,8 +81,8 @@ final class SectorMapLayerAboveStarscapeNebulaeTerrainPluginTest {
     // next.
     @BeforeEach
     @AfterEach
-    void clearEveryInstallation() {
-        MapLayerInstallations.disposeEveryInstallation();
+    void clearEveryMachinery() {
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     // Puts a renderer behind the active pick, on a screen showing its layers in full, for the cases

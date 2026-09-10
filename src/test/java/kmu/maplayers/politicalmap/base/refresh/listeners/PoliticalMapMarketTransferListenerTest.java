@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 
 import org.junit.jupiter.api.Nested;
@@ -26,16 +26,16 @@ import static org.mockito.Mockito.when;
  * since the transfer - not the invasion outcome - is what changes the holder.
  *
  * <p>Read off the board of the sector the listener was installed on, which is where it reports and
- * is made fresh with the installation for each case. That board is also what says the listener
+ * is made fresh with the machinery for each case. That board is also what says the listener
  * reports against the sector it holds rather than against the running game: a mark aimed anywhere
- * else lands on the installation that sector has not got, and never reaches here.
+ * else lands on the machinery that sector has not got, and never reaches here.
  */
 final class PoliticalMapMarketTransferListenerTest {
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private final MapLayerRefreshBoard refreshBoard =
-        MapLayerInstallations.installMachineryOn(sectorMock).resolveRefreshBoard();
+        SectorMapMachineryIndex.installMachineryOn(sectorMock).resolveRefreshBoard();
 
     private final PoliticalMapMarketTransferListener listener =
         new PoliticalMapMarketTransferListener(sectorMock);

@@ -7,7 +7,7 @@ import kmlib.starsector.SectorWalkCounters;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceSource;
@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>Only the reads by which the poll reaches its inputs at all are stubbed: the two live settings
  * reads and the logger, none of which anything but a running game answers. The sector is not among
- * them - a poll walks the one its installation was made over, so it is staged by installing on it.
+ * them - a poll walks the one its machinery was made over, so it is staged by installing on it.
  * Nothing standing in for a collaborator.
  */
 final class PoliticalMapPollWalkIntegrationTest {
@@ -193,7 +193,7 @@ final class PoliticalMapPollWalkIntegrationTest {
     }
 
     // Drives the real poll pollCount times and reports the geometry revision it left standing. The
-    // poll is built against an installation of its own over the run's sector - which is where it
+    // poll is built against machinery of its own over the run's sector - which is where it
     // reads that sector from, where it raises what it found, and what leaves each run's motion
     // observations to itself rather than to whatever ran before it.
     //
@@ -204,7 +204,7 @@ final class PoliticalMapPollWalkIntegrationTest {
             int pollCount,
             Runnable moveTheSectorAfterTheFirstPoll) {
 
-        // Only the logger is answered of Global: a poll walks the sector its installation names,
+        // Only the logger is answered of Global: a poll walks the sector its machinery names,
         // so the lookup the running game answers reaches nothing here.
         try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
@@ -218,10 +218,10 @@ final class PoliticalMapPollWalkIntegrationTest {
                 .when(DominanceRules::readFromLunaSettings)
                 .thenReturn(STABILITY_WEIGHTED);
 
-            // The board is this run's installation's, made with it, so the count is read straight
+            // The board is this run's machinery's, made with it, so the count is read straight
             // rather than as a delta: nothing else can have raised on it.
-            var installation = new MapLayerInstallation(sector);
-            var stalenessSource = new PoliticalMapStalenessSource(installation);
+            var machinery = new SectorMapMachinery(sector);
+            var stalenessSource = new PoliticalMapStalenessSource(machinery);
 
             for (var poll = 0; poll < pollCount; poll++) {
 
@@ -231,7 +231,7 @@ final class PoliticalMapPollWalkIntegrationTest {
                     moveTheSectorAfterTheFirstPoll.run();
                 }
             }
-            return installation
+            return machinery
                 .resolveRefreshBoard()
                 .getRevision(MapLayerCommonRefreshSignal.GEOMETRY);
         }

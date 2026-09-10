@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
-import kmu.maplayers.base.installation.InstalledMachinery;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.InstalledMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,10 +16,10 @@ import java.util.Map;
  * from {@link FilterSelection}: a hover is where a pointer happens to be this frame, previewed over
  * paint that is already there, where a pick has the reading layer rebuild everything it draws.
  *
- * <p>One sector's, held by that sector's installation rather than for the process. The id is one a
+ * <p>One sector's, held by that sector's machinery rather than for the process. The id is one a
  * sector's own walk offered and is read back against what that sector holds, so a hover left
  * standing when the sector goes would light a set the next sector never produced. Held that way it
- * needs no discard of its own: a load disposes the installation and the hover goes with it.
+ * needs no discard of its own: a load disposes the machinery and the hover goes with it.
  *
  * <p>Clearing within a sector's life is still a caller's obligation at both ends a hover can stop at
  * - the pointer leaving the row, and the panel standing down without a leave ever being reported -
@@ -33,23 +33,23 @@ public final class FilterHoverSlot implements InstalledMachinery {
     // pointer rests on a row, and absence is the resting state every list starts and ends in.
     private final Map<PickerScope, String> hoveredIdByPickerScope = new HashMap<>();
 
-    // Reached through resolveHoverSlotIn, so the only slots that exist are ones an installation
+    // Reached through resolveHoverSlotIn, so the only slots that exist are ones machinery
     // holds - and so goes with the sector it was made for.
     FilterHoverSlot() {
     }
 
     /**
-     * The hover slot {@code installation}'s picker reports into and its map preview reads back, made
-     * on the first ask and released with the installation holding it.
+     * The hover slot {@code machinery}'s picker reports into and its map preview reads back, made
+     * on the first ask and released with the machinery holding it.
      *
      * <p>The one way to a slot, so the picker writing a hover and the pass drawing from it cannot
      * end up on two different ones.
      *
-     * @param installation the machinery installed on the sector whose picker is being drawn
+     * @param machinery the machinery installed on the sector whose picker is being drawn
      * @return that sector's slot
      */
-    public static FilterHoverSlot resolveHoverSlotIn(MapLayerInstallation installation) {
-        return installation.resolveMachinery(FilterHoverSlot.class, FilterHoverSlot::new);
+    public static FilterHoverSlot resolveHoverSlotIn(SectorMapMachinery machinery) {
+        return machinery.resolveMachinery(FilterHoverSlot.class, FilterHoverSlot::new);
     }
 
     /**

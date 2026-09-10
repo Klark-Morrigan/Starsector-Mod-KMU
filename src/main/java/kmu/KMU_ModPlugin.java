@@ -8,8 +8,8 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerStandings;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
@@ -169,7 +169,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // outliving it. Ahead of the switch rather than inside it, since a load that finds the
         // overlay switched off has just as much of the previous sector's to discard.
         KmuWiringSteps.runGuardedStep(
-            MapLayerInstallations::disposeEveryInstallation,
+            SectorMapMachineryIndex::disposeAllMachinery,
             "Failed to discard KMU map layer machinery from the previous save");
 
         // Whatever each switch reads as, against a sector carrying nothing of what was applied to
@@ -195,7 +195,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
 
         // First, and taken back last: everything below derives what it draws from this sector, and
         // this is where that sector's share of it is held.
-        MapLayerInstallations.installMachineryOn(sector);
+        SectorMapMachineryIndex.installMachineryOn(sector);
 
         // Beside that machinery and above every layer: the sweep it drives keeps a record several
         // map families read, so it accrues for as long as the layers are standing at all rather
@@ -241,6 +241,6 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // so releasing it first would leave them undoing their work against nothing. Reached with a
         // sector nothing was ever installed on too, since a load with the overlay switched off
         // takes it back rather than declining to stand it up.
-        MapLayerInstallations.uninstallMachineryFrom(sector);
+        SectorMapMachineryIndex.uninstallMachineryFrom(sector);
     }
 }

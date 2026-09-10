@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapSidebarSettings;
 
@@ -35,11 +35,11 @@ import static org.mockito.Mockito.when;
  * has already been taken back for a renderer - and it must still get one, or the picture the player
  * is watching thin would blink out instead.
  *
- * <p>It holds because a renderer lives on the sector's installation and a layer's standing does not,
+ * <p>It holds because a renderer lives on the sector's machinery and a layer's standing does not,
  * so standing down takes back what keeps a picture <em>current</em> and leaves what draws the one
  * already cut. Nothing about that is visible from either side alone: {@link MapLayerStandingsTest}
  * pins the standing and {@link ScreenDrawnLayerTest} the dissolve, and each is right while the pair
- * is wrong. So the two are driven together here, over the real registry, screens and installations.
+ * is wrong. So the two are driven together here, over the real registry, screens and machinery.
  */
 final class HiddenLayerDissolveIntegrationTest {
 
@@ -65,7 +65,7 @@ final class HiddenLayerDissolveIntegrationTest {
     // winds the pace up for itself.
     private MockedStatic<KmuMapSidebarSettings> mapLayerSettingsMock;
 
-    private MapLayerInstallation installation;
+    private SectorMapMachinery machinery;
     private SectorMemoryFake sectorMemoryFake;
 
     @BeforeEach
@@ -87,7 +87,7 @@ final class HiddenLayerDissolveIntegrationTest {
 
         when(paintingLayerMock.resolveRenderer(any())).thenReturn(layerRendererMock);
 
-        installation = MapLayerInstallations.installMachineryOn(sectorMock);
+        machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
         MapLayerStandings.applyArrangementTo(sectorMock);
     }
@@ -105,7 +105,7 @@ final class HiddenLayerDissolveIntegrationTest {
     @AfterEach
     void restoreTheProcessWideState() {
 
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
         MapLayerScreenControls.forgetDrawnLayers();
         MapLayerScreenControls.forgetControlsAttached();
         MapLayerArrangements.forgetTheArrangement();
@@ -132,7 +132,7 @@ final class HiddenLayerDissolveIntegrationTest {
             drawAFrame();
             takeThePaintingTabOffTheBar();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
                 .isSameAs(layerRendererMock);
         }
 
@@ -146,7 +146,7 @@ final class HiddenLayerDissolveIntegrationTest {
 
             MapLayerStandings.applyArrangementWhereverInstalled();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
                 .isNull();
         }
 
@@ -158,7 +158,7 @@ final class HiddenLayerDissolveIntegrationTest {
             drawAFrame();
             takeThePaintingTabOffTheBar();
 
-            MapLayerRegistry.resolveDrawnMapRenderer(installation);
+            MapLayerRegistry.resolveDrawnMapRenderer(machinery);
             MapLayerStandings.applyArrangementWhereverInstalled();
 
             verify(standingMock, times(1)).standLayerDownFrom(sectorMock);

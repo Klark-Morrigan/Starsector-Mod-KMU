@@ -7,7 +7,7 @@ import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverExpirer;
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
@@ -41,9 +41,9 @@ class MapHoverInstallerTest {
     private static final float ONE_FRAME = 0.016f;
 
     @AfterEach
-    void clearEveryInstallation() {
+    void clearEveryMachinery() {
         // The index is process-wide, so a sector installed on here would outlive its case.
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
@@ -142,7 +142,7 @@ class MapHoverInstallerTest {
             // keep the last cell any map resolved for the rest of the session - which is the whole
             // fault the tick exists to prevent, reintroduced through its wiring.
             var sectorMock = mock(SectorAPI.class);
-            var hoverState = MapLayerInstallations
+            var hoverState = SectorMapMachineryIndex
                 .installMachineryOn(sectorMock)
                 .resolveHoverState();
 

@@ -407,7 +407,7 @@ One-time runner VM setup:
 1. Provision a Ubuntu VM using the Hyper-V provisioner.
 2. Install the GitHub Actions runner and register it with the KMU repository,
    adding the `kmu-runner` label.
-3. Place a Starsector installation (or at minimum its required jars) on the VM
+3. Place a Starsector machinery (or at minimum its required jars) on the VM
    at any path, then set `STARSECTOR_HOME` to that path in the runner's
    environment so it persists across jobs.
 4. Confirm `$STARSECTOR_HOME/starsector-core/starfarer.api.jar` and

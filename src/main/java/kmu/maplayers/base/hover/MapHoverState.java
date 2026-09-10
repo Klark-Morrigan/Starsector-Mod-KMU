@@ -20,7 +20,7 @@ package kmu.maplayers.base.hover;
  * <p>One per sector, held by that sector's installed map machinery, because a hover names a system
  * by bare id and nothing forbids two sectors from generating a system under the same one: a cursor
  * read on one map would light a cell on the other and name it in the other's box. The hover goes
- * with the installation when it is released, so a sector begins with nothing hovered rather than
+ * with the machinery when it is released, so a sector begins with nothing hovered rather than
  * with the cell the sector before it was left resting on.
  */
 public final class MapHoverState {

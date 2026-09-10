@@ -13,13 +13,13 @@ import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCover;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ActiveLayerSelection;
 import kmu.maplayers.base.layer.ControlBackedMapLayerVisibility;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapOverlayBand;
@@ -80,7 +80,7 @@ final class PoliticalMapLayerRendererTest {
     private static final float ALPHA_MULT = 1f;
 
     // The sector this renderer's rows are grouped under. Stated rather than taken from the
-    // installation below, which is the detached one and so groups under the reserved origin - the
+    // machinery below, which is the detached one and so groups under the reserved origin - the
     // one label a capture uses for rows nobody attributed, which would make an attributed root
     // indistinguishable from an unattributed one.
     private static final ProfileOrigin SECTOR_ORIGIN =
@@ -704,20 +704,20 @@ final class PoliticalMapLayerRendererTest {
 
     // The renderer under test, over one stated cover and a read it hands out rather than builds.
     // Both are the seams a running game supplies, and stating them here is what lets a frame be
-    // driven at all without a map on screen. The cache is made against an installation of its own,
+    // driven at all without a map on screen. The cache is made against machinery of its own,
     // which is how a renderer is reached in play - one sector's, and never shared.
     //
     // The read's source records the holder it was handed instead of ignoring it, since what the
     // renderer passes down is the one thing about the wiring no other suite can see.
     private PoliticalMapLayerRenderer buildRenderer(MapCover cover) {
-        return buildRendererOver(new PoliticalMapCache(new MapLayerInstallation(null)), cover);
+        return buildRendererOver(new PoliticalMapCache(new SectorMapMachinery(null)), cover);
     }
 
     // The same renderer over a stated cache, for the case whose subject is what the frame hands the
     // refresh rather than what the refresh then does with it.
     private PoliticalMapLayerRenderer buildRendererOver(PoliticalMapCache cache, MapCover cover) {
 
-        var installation = new MapLayerInstallation(null);
+        var machinery = new SectorMapMachinery(null);
 
         return new PoliticalMapLayerRenderer(
             cache,
@@ -727,7 +727,7 @@ final class PoliticalMapLayerRendererTest {
                 hoverStateHandedToTheReadSource = handedHoverState;
                 return hoverPublisherMock;
             },
-            new PoliticalMapPreviewHighlightRenderer(installation),
+            new PoliticalMapPreviewHighlightRenderer(machinery),
             new MapFrameBeats(SECTOR_ORIGIN, LAYER_SECTION));
     }
 

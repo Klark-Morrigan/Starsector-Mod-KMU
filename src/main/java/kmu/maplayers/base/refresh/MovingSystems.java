@@ -31,7 +31,7 @@ import java.util.Set;
  * installed map machinery, because an observation is keyed by system id: two sectors sharing
  * a tracker would measure one sector's system against the last-seen position of the system
  * holding that id in the other, and report a drift neither made. The observations go with the
- * installation when it is released, so a sector's tracking begins from nothing rather than
+ * machinery when it is released, so a sector's tracking begins from nothing rather than
  * from whatever the sector before it last saw.
  */
 public final class MovingSystems {

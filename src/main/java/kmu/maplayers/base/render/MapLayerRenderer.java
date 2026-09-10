@@ -1,6 +1,6 @@
 package kmu.maplayers.base.render;
 
-import kmu.maplayers.base.installation.InstalledMachinery;
+import kmu.maplayers.base.machinery.InstalledMachinery;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
 
 import java.util.Optional;
@@ -101,7 +101,7 @@ public interface MapLayerRenderer extends InstalledMachinery {
     }
 
     /**
-     * Releases what this renderer holds for its sector, when the installation holding it goes. Last
+     * Releases what this renderer holds for its sector, when the machinery holding it goes. Last
      * here because it is the last thing asked of a renderer: everything above is a frame, and this
      * is the end of every frame there will be.
      *

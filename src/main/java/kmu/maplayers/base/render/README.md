@@ -45,14 +45,14 @@ Which sector that is has to be resolved rather than passed: this hook is handed 
 nothing else, and the plugin cannot be handed one either - the engine rebuilds it from the save,
 with no seam to inject through. So it resolves through the one handle it does have, the terrain
 entity it rides on: that entity's containing location is its sector's hyperspace, which
-`MapLayerInstallations` answers by. Per frame, never held - an installation is a live object and
-this plugin is written into the save. What an installation is, what it holds and how its lifetime is
-settled are [the installed machinery](../installation/README.md); this file covers only how a
+`SectorMapMachineryIndex` answers by. Per frame, never held - machinery is a live object and
+this plugin is written into the save. What machinery is, what it holds and how its lifetime is
+settled are [the installed machinery](../machinery/README.md); this file covers only how a
 surface finds the one it is drawing.
 
 A surface whose location has nothing installed stands down instead of drawing. It belongs to a
 sector nothing is drawing - a save carrying the terrain with the overlay switched off, or a sector
-the layers were taken off mid-session - and the detached installation an uninstalled *sector*
+the layers were taken off mid-session - and the detached machinery an uninstalled *sector*
 resolves to would be the wrong answer here: it is the holder every sector-less caller shares, so
 painting through it draws no sector at all.
 
@@ -113,13 +113,13 @@ the first to ask after it. It fails open - until that pass has been seen, every 
 because a duplicated preparation costs work while a denied one costs the overlay, nothing else
 bringing the draw lists up to date.
 
-One claim per installation, not one per process. The counting is only right within a map: two
+One claim per machinery, not one per process. The counting is only right within a map: two
 sectors drawing in one frame each owe their own draw lists a preparation, and a shared claim would
 leave the second sector's overlay painting lists nothing brought up to date. Nothing clears it per
-load either - an installation is made fresh when the layers are installed on a sector, so a claim
-left mid-frame by the session before goes with the installation that held it, and a load that
+load either - machinery is made fresh when the layers are installed on a sector, so a claim
+left mid-frame by the session before goes with the machinery that held it, and a load that
 registers nothing falls back to the open state rather than to an armed claim whose boundary pass is
-gone. `MapSurfaceInstaller` registers the installation's own claim rather than one built beside it:
+gone. `MapSurfaceInstaller` registers the machinery's own claim rather than one built beside it:
 a listener opening frames on a claim the surfaces never ask would leave every one of them preparing
 per pass.
 
@@ -163,7 +163,7 @@ sequence it belongs to.
 framework once the roster takes foreign layers - so the sequence names a beat and nothing else.
 
 Each beat opens a **root** under the sector's profiling origin, which
-[the installed machinery](../installation/README.md) resolves once per sector. Roots rather than one
+[the installed machinery](../machinery/README.md) resolves once per sector. Roots rather than one
 tree per frame because the beats are separate calls from separate passes with nothing bracketing
 them, and grouping by origin is what lets a capture taken across two games say which one a row came
 from.
@@ -293,7 +293,7 @@ the panel, which is the next location change or the next load.
 A renderer belongs to one sector's installed map machinery, made on the first frame that asks for it
 and released with that machinery: nothing it holds enters a save, so it needs no `transient`
 marking, no lazy re-creation, and no save-restore path. The terrain plugin, which *is* serialised
-with its terrain entity, holds none of it - it resolves the installation from that entity each
+with its terrain entity, holds none of it - it resolves the machinery from that entity each
 frame rather than carrying one.
 
 `SectorMapLayerStarscapeTerrainPlugin` and `SectorMapLayerAboveStarscapeNebulaeTerrainPlugin` reach
@@ -302,7 +302,7 @@ so the overlay needs a terrain the filter admits. Each rides its own
 `SectorMapLayerStarscapeTerrain`, one entity class parameterised by the row id it resolves its
 plugin from, since reporting the whitelisted type is the whole of what that class does. All three
 surfaces dispatch to the same renderer over one set of draw lists - one sector resolves one
-installation, which holds one of each - so nothing is built or held twice.
+machinery, which holds one of each - so nothing is built or held twice.
 
 Two entities rather than one because the map draws its nebulae between the terrain icons it holds:
 a band above them needs an icon of its own, which needs an entity of its own. The plugins form a
@@ -348,7 +348,7 @@ moved. That the entity is a terrain, and that the fog above it is what makes the
 is the whole of KMU's side.
 
 `StarscapeTerrainReseat` is where both ports are wired and where the script is held - by the
-installation of the sector it was added to, so a removal aimed at one sector takes off the script
+machinery of the sector it was added to, so a removal aimed at one sector takes off the script
 that sector is actually running. One slot for the whole process could not: a second sector installed
 on would take the slot over, and the first sector's removal would then reach for a script it never
 had while the one still running went untouched. It is taken off by instance rather than by class

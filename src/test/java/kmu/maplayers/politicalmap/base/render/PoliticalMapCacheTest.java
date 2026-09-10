@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
@@ -29,7 +29,7 @@ final class PoliticalMapCacheTest {
     // The machinery the cache under test belongs to, installed on no sector - which is what makes
     // the rebuild throw part way through, the case below being about what a cache leaves drawable
     // when it does.
-    private final MapLayerInstallation installation = new MapLayerInstallation(null);
+    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
 
     private final PoliticalMapView viewMock = mock(PoliticalMapView.class);
 
@@ -40,7 +40,7 @@ final class PoliticalMapCacheTest {
         void refreshInstallsAnEmptyPlaceholderWhenTheRebuildThrows() {
             // No sector, so the rebuild throws part way through. The renderer must still find a draw
             // list rather than dereference a null one, and the next frame retries.
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             // Every settings class the refresh reads is stubbed inert: the revision counter is the
             // framework's, the cell seed inputs and the debug gate this layer's.
@@ -66,7 +66,7 @@ final class PoliticalMapCacheTest {
             // What a sector removed mid-session leaves behind if this does nothing: the cached names
             // each own a GL buffer, so the drop is what frees them rather than leaving them to
             // LazyLib's finalizer sweep.
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             try (var settingsMock = mockStatic(KmuLunaSettings.class);
                     var geometrySettingsMock = mockStatic(KmuPoliticalMapGeometrySettings.class);
@@ -94,7 +94,7 @@ final class PoliticalMapCacheTest {
         void disposeCachedStateIsSafeBeforeAnythingHasBeenBuilt() {
             // Reached for a sector installed on with the map never opened, when there are no draw
             // lists and no GL resources to release yet.
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.disposeCachedState();
 

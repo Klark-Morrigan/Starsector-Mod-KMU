@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the map does not draw is never tracked however far it moves. Whether a given shift counts as
  * motion at all is the tracker's own contract, not re-asserted here.
  *
- * <p>Every case builds its own tracker, the way an installation does. That two of them keep their
+ * <p>Every case builds its own tracker, the way machinery does. That two of them keep their
  * observations apart is a claim about the holder, and is pinned there.
  */
 class MovingSystemsTest {

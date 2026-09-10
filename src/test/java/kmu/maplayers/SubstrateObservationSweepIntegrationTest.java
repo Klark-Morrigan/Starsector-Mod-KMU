@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
  * <p>Only the substrate is installed here - no layer, no layer's poll, nothing that draws - which
  * is the arrangement the write was moved for: the register is shared by every map family, so its
  * gaps must not be decided by which map the player last chose to look at. A unit cannot make that
- * claim, having no installation to leave a layer out of; and neither can it make the cost one,
+ * claim, having no machinery to leave a layer out of; and neither can it make the cost one,
  * since how many times a system was walked is a fact about the composition rather than about any
  * part of it.
  *

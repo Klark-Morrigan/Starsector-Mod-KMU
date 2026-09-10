@@ -9,8 +9,8 @@ import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.starsector.StarsectorSettingsFake;
 import kmu.util.KmuStrings;
@@ -41,8 +41,8 @@ import static org.mockito.Mockito.never;
  * lands, since a report can land after the player has moved: a pick belongs to the panel it was
  * clicked on.
  *
- * <p>Each item pick is verified against the board of the installation the picker was built over,
- * and each hover read back off that same installation's slot. Both are what fails if the store ever
+ * <p>Each item pick is verified against the board of the machinery the picker was built over,
+ * and each hover read back off that same machinery's slot. Both are what fails if the store ever
  * resolved either when the report landed: the spotlight would repaint whichever sector was running
  * rather than the one the picker was listed for, and the preview would light that sector's map.
  *
@@ -87,13 +87,13 @@ final class FilterSelectionBinderTest {
     // The sector's machinery the picker is built over, which is where both of its writers come from:
     // the board an item pick repaints through and the slot a hovered row is recorded in. One per
     // case, so neither a spotlight nor a hover left standing is one the next case starts from.
-    private final MapLayerInstallation installation = new MapLayerInstallation(null);
+    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
 
     // Those two, taken the way the binder takes them. Named here rather than resolved at each
     // assertion so a case reads as "this sector's board" and "this sector's slot" - and so a binder
-    // that reached past its installation for either shows up as a write nothing observed.
-    private final MapLayerRefreshBoard builtBoard = installation.resolveRefreshBoard();
-    private final FilterHoverSlot builtHoverSlot = FilterHoverSlot.resolveHoverSlotIn(installation);
+    // that reached past its machinery for either shows up as a write nothing observed.
+    private final MapLayerRefreshBoard builtBoard = machinery.resolveRefreshBoard();
+    private final FilterHoverSlot builtHoverSlot = FilterHoverSlot.resolveHoverSlotIn(machinery);
 
     private MockedStatic<Misc> miscMock;
 
@@ -208,7 +208,7 @@ final class FilterSelectionBinderTest {
                     HAZARD_PICKER,
                     ListColumns.ONE,
                     List.of(),
-                    installation));
+                    machinery));
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -347,7 +347,7 @@ final class FilterSelectionBinderTest {
                         ListPicker.empty(),
                         ListColumns.ONE,
                         List.of(),
-                        installation))
+                        machinery))
                     .isEmpty();
 
                 sortBinderMock.verify(
@@ -371,7 +371,7 @@ final class FilterSelectionBinderTest {
             HAZARD_PICKER,
             ListColumns.ONE,
             List.of(),
-            installation);
+            machinery);
     }
 
     // A mode in its own natural direction over the foreign vocabulary - what a save that has never

@@ -2,7 +2,7 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import java.util.List;
@@ -113,12 +113,12 @@ public interface MapLayer {
      * Declared here rather than defaulted to null so every layer answers the question deliberately;
      * a new view that forgets to draw fails to compile rather than coming up blank.
      *
-     * <p>An implementation that draws holds its renderer in the installation rather than in itself,
+     * <p>An implementation that draws holds its renderer in the machinery rather than in itself,
      * so the same registered layer answers for two sectors with two renderers - each over the draw
      * lists cut from its own sector, and each released when that sector's machinery is.
      *
-     * @param installation the machinery installed on the sector being drawn
+     * @param machinery the machinery installed on the sector being drawn
      * @return that sector's renderer for this layer, or null for a layer that draws nothing
      */
-    MapLayerRenderer resolveRenderer(MapLayerInstallation installation);
+    MapLayerRenderer resolveRenderer(SectorMapMachinery machinery);
 }

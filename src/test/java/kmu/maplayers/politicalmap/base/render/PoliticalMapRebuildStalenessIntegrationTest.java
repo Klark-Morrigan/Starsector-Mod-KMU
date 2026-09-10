@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.sidebar.FilterSelection;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
@@ -90,7 +90,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
     // and the read it stands in for is per-save state rather than a LunaLib knob.
     private MockedStatic<UninhabitedOutlinePreference> outlinePreferenceMock;
 
-    private MapLayerInstallation installation;
+    private SectorMapMachinery machinery;
     private PoliticalMapCache cache;
 
     @BeforeEach
@@ -101,7 +101,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
 
         stageASettledSector();
 
-        cache = new PoliticalMapCache(installation);
+        cache = new PoliticalMapCache(machinery);
         cache.refresh(FactionsView.INSTANCE, SCREEN);
     }
 
@@ -134,7 +134,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
             // click that put a pick back where it was would cost a full rebuild, and so would every
             // click made on the other screen's panel.
             var standingMap = cache.getTerritories();
-            var board = installation.resolveRefreshBoard();
+            var board = machinery.resolveRefreshBoard();
 
             board.requestRefresh(MapLayerCommonRefreshSignal.FILTER);
             board.requestRefresh(MapLayerCommonRefreshSignal.RECEDE_STYLE);
@@ -151,7 +151,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
             // rebuild is measured on is the only place a reader meets them at all - which is what
             // separates a rebuild a player asked for from one a settings change or a view switch
             // caused, and the counters are the only record of the first.
-            installation.resolveRefreshBoard()
+            machinery.resolveRefreshBoard()
                 .requestRefresh(MapLayerCommonRefreshSignal.FILTER);
 
             seams.resolveFilterSelectionSeam()
@@ -275,7 +275,7 @@ final class PoliticalMapRebuildStalenessIntegrationTest {
             listSystemMarkets(BETA_ID));
 
         SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
-        installation = new MapLayerInstallation(sector);
+        machinery = new SectorMapMachinery(sector);
 
         seams.resolveGlobalSeam()
             .when(Global::getSector)

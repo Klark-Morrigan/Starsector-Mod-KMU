@@ -13,9 +13,9 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MovingSystems;
 import kmu.maplayers.base.render.MapFrameSections;
@@ -74,7 +74,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>What is stubbed is what no test JVM answers: the logger and the live LunaLib reads the
  * rebuild's stages are configured by, plus the sector lookup - which the rebuild itself no longer
- * makes, taking its sector off the installation it belongs to, and which is staged only for the
+ * makes, taking its sector off the machinery it belongs to, and which is staged only for the
  * incremental path a frame with nothing stale falls through to. Nothing standing in for a
  * collaborator.
  */
@@ -128,12 +128,12 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // A second sector's machinery, standing beside the one the cache under test is built against.
     // Its own sector reaches nothing here - what a case wants of it is its tracker, so that a claim
     // about whose movers a cut consults has somebody else's to be made against.
-    private final MapLayerInstallation otherInstallation =
-        new MapLayerInstallation(mock(SectorAPI.class));
+    private final SectorMapMachinery otherMachinery =
+        new SectorMapMachinery(mock(SectorAPI.class));
 
     // The machinery the cache under test is built against, made over the sector a case stages -
-    // which is the sector its rebuild reads, and so has to exist before the installation does.
-    private MapLayerInstallation installation;
+    // which is the sector its rebuild reads, and so has to exist before the machinery does.
+    private SectorMapMachinery machinery;
 
     private PoliticalMapRebuildSeams seams;
 
@@ -214,7 +214,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // every system into every frame of an idle map, which is worse than the three walks the
             // step set out to remove.
             var sector = buildContestedSectorWithAnEmptyNeighbour();
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
             cache.refresh(FactionsView.INSTANCE, SCREEN);
@@ -242,7 +242,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // index kept between rebuilds would draw the second off the sector the first saw,
             // which is precisely the change a rebuild exists to show.
             var sector = buildContestedSectorWithAnEmptyNeighbour();
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
             settleTheEmptyNeighbour(sector);
@@ -260,7 +260,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // contested. So the second rebuild's cut, fills and bands each have to move, and a
             // stage sampling the rules for itself would be the one that did not.
             buildUndiscoveredSectorWithAnEmptyNeighbour();
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
             seams.resolveVisibilityRulesSeam()
@@ -283,15 +283,15 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshLeavesOutTheSystemsItsOwnInstallationSawMoving() {
+        void refreshLeavesOutTheSystemsItsOwnMachinerySawMoving() {
             // The cut consults the movers so a system drifting across hyperspace seeds no cell and
             // clips no neighbour, its borders having nowhere stable to sit. Posed here rather than
             // in a unit because the moving set is published by a real tracker off real observations
             // and read by a real cut - neither end of which a stand-in could stage.
             var sector = buildContestedSectorWithASettledNeighbour();
 
-            observeSystemMovingInto(installation.resolveMovingSystems(), sector, ALPHA_ID);
-            var cache = new PoliticalMapCache(installation);
+            observeSystemMovingInto(machinery.resolveMovingSystems(), sector, ALPHA_ID);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
@@ -301,15 +301,15 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshCutsASystemAnotherInstallationSawMoving() {
-            // The half a cache holding its own installation is for. A tracker is keyed by bare
+        void refreshCutsASystemAnotherMachinerySawMoving() {
+            // The half a cache holding its own machinery is for. A tracker is keyed by bare
             // system id and nothing forbids two sectors from generating a system under the same
             // one, so a cache reading the running game's movers would drop this sector's system
             // for a drift the other sector's made.
             var sector = buildContestedSectorWithASettledNeighbour();
 
-            observeSystemMovingInto(otherInstallation.resolveMovingSystems(), sector, ALPHA_ID);
-            var cache = new PoliticalMapCache(installation);
+            observeSystemMovingInto(otherMachinery.resolveMovingSystems(), sector, ALPHA_ID);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
@@ -318,7 +318,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         }
 
         @Test
-        void refreshDrainsItsOwnInstallationsStaleSystemsAndLeavesAnothersStanding() {
+        void refreshDrainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
             // The board's half of the same claim. A full rebuild re-derives every system, so it
             // drains the marks it has just accounted for - and the marks are bare system ids, so a
             // rebuild draining a shared board would swallow another sector's pending re-shape and
@@ -326,19 +326,19 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // to say a mark went missing.
             buildContestedSectorWithASettledNeighbour();
 
-            installation.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
-            otherInstallation.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
+            machinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
+            otherMachinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
 
-            new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE, SCREEN);
+            new PoliticalMapCache(machinery).refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(installation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .containsExactly(ALPHA_ID);
         }
 
         @Test
-        void refreshCutsTheSectorItsInstallationWasMadeForRatherThanTheRunningOne() {
+        void refreshCutsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
             // The question this whole rework was for. Vanilla's map hook names no sector, so a
             // rebuild used to ask the running game which one it was drawing - which is right only
             // while the sector it holds cells for and the sector that is loaded are the same. Posed
@@ -347,7 +347,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             buildContestedSectorWithASettledNeighbour();
             stageADifferentSectorAsTheRunningOne();
 
-            var cache = new PoliticalMapCache(installation);
+            var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
@@ -360,7 +360,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // One rebuild of the real cache over the staged sector, unmeasured - what a case asserting on
     // what the rebuild sampled, rather than on what it traversed, wants.
     private void runOneRebuild() {
-        new PoliticalMapCache(installation).refresh(FactionsView.INSTANCE, SCREEN);
+        new PoliticalMapCache(machinery).refresh(FactionsView.INSTANCE, SCREEN);
     }
 
     // One rebuild of the real cache over the staged sector, measured the way a frame measures it:
@@ -368,7 +368,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // refresh is allowed to traverse.
     private ProfileNode captureOneRebuild() {
 
-        var cache = new PoliticalMapCache(installation);
+        var cache = new PoliticalMapCache(machinery);
 
         return captureRefreshesOf(profiler -> {
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
@@ -382,7 +382,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // path. Both land on the one row, each as a call of its own.
     private ProfileNode captureRebuildsAcrossARefreshSignal() {
 
-        var cache = new PoliticalMapCache(installation);
+        var cache = new PoliticalMapCache(machinery);
 
         return captureRefreshesOf(profiler -> {
             try (var refresh = profiler.open(MapFrameSections.REFRESH)) {
@@ -433,7 +433,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // suite moves a revision, and a cache whose inputs stand still folds the frame into the cheap
     // path.
     private void requestTheNextRebuild() {
-        installation
+        machinery
             .resolveRefreshBoard()
             .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
     }
@@ -482,7 +482,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             listSystemMarkets(BETA_ID));
 
         SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
-        installation = new MapLayerInstallation(sector);
+        machinery = new SectorMapMachinery(sector);
 
         seams.resolveGlobalSeam()
             .when(Global::getSector)

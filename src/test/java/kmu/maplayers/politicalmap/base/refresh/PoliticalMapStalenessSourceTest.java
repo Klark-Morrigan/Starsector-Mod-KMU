@@ -6,7 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard}
  * rather than a mocked one (whose logger a static mock would null during class init), stubbing
  * the snapshot scan and the alliance fingerprint across polls. The board is the one its own
- * installation holds, so a run reads only what it raised.
+ * machinery holds, so a run reads only what it raised.
  *
  * <p>Also pins what this poll no longer does: the observation each system's own inhabitants make of
  * the colonies a revelation gate holds back rode it while this was the only sector-wide sweep
@@ -242,7 +242,7 @@ final class PoliticalMapStalenessSourceTest {
         }
 
         @Test
-        void marksOnTheBoardOfTheInstallationItWasBuiltWith() {
+        void marksOnTheBoardOfTheMachineryItWasBuiltWith() {
             // The other half of the same claim, over the board rather than the sector. A holder
             // flip in one sector must reach only that sector's cache: marked on a board two
             // sectors read, it would re-shape a cell in the other under an id nothing forbids both
@@ -252,21 +252,21 @@ final class PoliticalMapStalenessSourceTest {
                 takeSnapshot(1, "a", "hegemony"),
                 takeSnapshot(1, "a", "tritachyon"));
 
-            var otherInstallation = buildInstallationPolledUnder(holderFlip);
+            var otherMachinery = buildMachineryPolledUnder(holderFlip);
 
             var outcome = pollThenReadRefreshOutcome(
                 holderFlip,
                 2,
-                buildInstallationPolledUnder(holderFlip));
+                buildMachineryPolledUnder(holderFlip));
 
             assertThat(outcome.staleSystemIds())
                 .containsExactly("a");
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
         }
 
         @Test
-        void pollsTheSectorItsInstallationWasMadeForRatherThanTheRunningOne() {
+        void pollsTheSectorItsMachineryWasMadeForRatherThanTheRunningOne() {
             // Vanilla drives this poll's cadence and names no sector, so it used to ask the running
             // game which one it was polling - right only while the sector it was installed on and
             // the sector loaded are the same. Posed with the two apart: a poll that read the loaded
@@ -301,7 +301,7 @@ final class PoliticalMapStalenessSourceTest {
                         return STEADY_SNAPSHOT;
                     });
 
-                new PoliticalMapStalenessSource(new MapLayerInstallation(installedSector))
+                new PoliticalMapStalenessSource(new SectorMapMachinery(installedSector))
                     .markChangesSinceLastPoll();
             }
             assertThat(polledSector)
@@ -343,9 +343,9 @@ final class PoliticalMapStalenessSourceTest {
     //
     // The tracker is always stubbed rather than driven with real positions, so every run reports
     // its moving set explicitly and none of them depends on the motion-detection math. The
-    // installation is the one collaborator this suite hands the source, and all three of those come
+    // machinery is the one collaborator this suite hands the source, and all three of those come
     // off it, the running game answering the source nothing.
-    private static MapLayerInstallation buildInstallationPolledUnder(PollInputs inputs) {
+    private static SectorMapMachinery buildMachineryPolledUnder(PollInputs inputs) {
 
         // Both collaborators are finished before either is handed over, so Mockito never sees one
         // stubbing opened inside another - which is what building the sector inside the sector
@@ -356,16 +356,16 @@ final class PoliticalMapStalenessSourceTest {
         when(movingSystemsMock.updateMovingSystems(any(MapVisibilityPass.class)))
             .thenReturn(false, inputs.hasMovingSetChangedOnSecondPoll());
 
-        var installationMock = mock(MapLayerInstallation.class);
+        var machineryMock = mock(SectorMapMachinery.class);
 
-        when(installationMock.resolveMovingSystems())
+        when(machineryMock.resolveMovingSystems())
             .thenReturn(movingSystemsMock);
-        when(installationMock.resolveSector())
+        when(machineryMock.resolveSector())
             .thenReturn(sector);
-        when(installationMock.resolveRefreshBoard())
+        when(machineryMock.resolveRefreshBoard())
             .thenReturn(new MapLayerRefreshBoard());
 
-        return installationMock;
+        return machineryMock;
     }
 
     // Polls a run's own machinery pollCount times against its stubbed reads, and reports what its
@@ -374,15 +374,15 @@ final class PoliticalMapStalenessSourceTest {
         return pollThenReadRefreshOutcome(
             inputs,
             pollCount,
-            buildInstallationPolledUnder(inputs));
+            buildMachineryPolledUnder(inputs));
     }
 
-    // The same run against a stated installation, for the case that needs a second one beside it to
+    // The same run against a stated machinery, for the case that needs a second one beside it to
     // stay untouched.
     private static RefreshOutcome pollThenReadRefreshOutcome(
             PollInputs inputs,
             int pollCount,
-            MapLayerInstallation installation) {
+            SectorMapMachinery machinery) {
 
         try (var globalMock = mockStatic(Global.class);
                 var visibilityRulesMock = mockStatic(MapVisibilityRules.class);
@@ -390,7 +390,7 @@ final class PoliticalMapStalenessSourceTest {
                 var alliancesMock = mockStatic(NexerelinAlliances.class)) {
 
             // Only the logger. The sector lookup is left unstubbed on purpose: a poll reads its
-            // installation's sector, so a run that only passed because the running game answered
+            // machinery's sector, so a run that only passed because the running game answered
             // with one would fail here rather than read as a case about routing.
             StubbedGlobalLogger.answerLoggersOn(globalMock);
 
@@ -410,21 +410,21 @@ final class PoliticalMapStalenessSourceTest {
                     inputs.firstAllianceFingerprint(),
                     inputs.secondAllianceFingerprint());
 
-            return runPollsAndReadOutcome(installation, pollCount);
+            return runPollsAndReadOutcome(machinery, pollCount);
         }
     }
 
-    // Polls the source pollCount times and reports what its own installation's board was left
+    // Polls the source pollCount times and reports what its own machinery's board was left
     // holding. Split from the stubbing so the try-with-resources block above reads as configuration
     // alone. The counters are read straight rather than as deltas: a board belongs to the
-    // installation the source was built against and is made fresh with it, so a run cannot see
+    // machinery the source was built against and is made fresh with it, so a run cannot see
     // another's marks and has nothing to isolate itself from.
     private static RefreshOutcome runPollsAndReadOutcome(
-            MapLayerInstallation installation,
+            SectorMapMachinery machinery,
             int pollCount) {
 
-        var board = installation.resolveRefreshBoard();
-        var stalenessSource = new PoliticalMapStalenessSource(installation);
+        var board = machinery.resolveRefreshBoard();
+        var stalenessSource = new PoliticalMapStalenessSource(machinery);
 
         for (var poll = 0; poll < pollCount; poll++) {
             stalenessSource.markChangesSinceLastPoll();

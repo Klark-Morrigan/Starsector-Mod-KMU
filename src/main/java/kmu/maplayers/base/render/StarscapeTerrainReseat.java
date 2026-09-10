@@ -8,8 +8,8 @@ import kmlib.starsector.ui.map.icons.MapIconReseater;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 
-import kmu.maplayers.base.installation.InstalledMachinery;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.InstalledMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 
 import java.util.function.Supplier;
 
@@ -24,14 +24,14 @@ import java.util.function.Supplier;
  * sprite where a name stops being legible, so lifting both would undo the split the two entities
  * exist for.
  *
- * <p>Held per installation because it names one sector's script. A slot shared across sectors cannot
+ * <p>Held per machinery because it names one sector's script. A slot shared across sectors cannot
  * do this job: removing against a sector other than the one the held script was installed on takes
  * nothing off either sector, so the script the caller meant to stop goes on running while a second
  * sector's install quietly drops the first's reference.
  *
  * <p>Disposal releases nothing, and that is not an omission. What is held is a transient script,
  * which no save carries and which dies with the sector it was added to; a sector whose overlay is
- * switched off mid-session has its script taken off by instance first, while the installation is
+ * switched off mid-session has its script taken off by instance first, while the machinery is
  * still standing.
  */
 final class StarscapeTerrainReseat implements InstalledMachinery {
@@ -43,7 +43,7 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
     private final InstalledTransientScript<MapIconReseater> installedReseat =
         new InstalledTransientScript<>();
 
-    // Reached through resolveReseatIn, so the only holders that exist are ones an installation
+    // Reached through resolveReseatIn, so the only holders that exist are ones machinery
     // holds.
     private StarscapeTerrainReseat() {
     }
@@ -55,14 +55,14 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
     }
 
     /**
-     * The reseat {@code installation}'s sector has, made on the first ask and released with the
-     * installation holding it.
+     * The reseat {@code machinery}'s sector has, made on the first ask and released with the
+     * machinery holding it.
      *
-     * @param installation the machinery installed on the sector the reseat runs over
+     * @param machinery the machinery installed on the sector the reseat runs over
      * @return that sector's reseat
      */
-    static StarscapeTerrainReseat resolveReseatIn(MapLayerInstallation installation) {
-        return installation.resolveMachinery(
+    static StarscapeTerrainReseat resolveReseatIn(SectorMapMachinery machinery) {
+        return machinery.resolveMachinery(
             StarscapeTerrainReseat.class,
             StarscapeTerrainReseat::new);
     }

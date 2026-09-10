@@ -1,4 +1,4 @@
-package kmu.maplayers.base.installation;
+package kmu.maplayers.base.machinery;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
@@ -23,28 +23,28 @@ import java.util.function.Supplier;
  * in both at different positions is not seen to have moved, and each sector keeps the shapes the
  * other cut rather than overwriting them.
  *
- * <p>What this type settles is the lifetime: one installation per sector, made and released by
- * {@link MapLayerInstallations}. Every holder below goes with the installation, so each needs no
+ * <p>What this type settles is the lifetime: one machinery per sector, made and released by
+ * {@link SectorMapMachineryIndex}. Every holder below goes with the machinery, so each needs no
  * discard of its own and no way to be told which sector it is now looking at - and a sector begins
  * from nothing rather than from what the sector before it left.
  *
  * <p>The holders it names are the framework's own. What a layer derives from the sector is held
- * through {@link #resolveMachinery} instead, which is what lets an installation own the lifetime of
+ * through {@link #resolveMachinery} instead, which is what lets machinery own the lifetime of
  * a renderer and its caches without this package naming the layers those live in.
  *
  * <p>It carries the sector itself beside them. Vanilla's map hook names no sector and a terrain
  * surface reaches a location rather than one, so a stage below either seam would otherwise ask the
  * running game which sector it is looking at - and would read the loaded sector's colonies while
- * drawing another sector's cells. Taken from the installation rather than passed alongside it, so
+ * drawing another sector's cells. Taken from the machinery rather than passed alongside it, so
  * the sector a stage reads and the holders it reads beside it cannot name two different sectors.
  *
  * <p>The profiling origin is here for that same reason: it is what a capture groups this sector's
  * rows under, and one resolved anywhere else could describe a sector other than the one whose
  * frame is being measured.
  */
-public final class MapLayerInstallation {
+public final class SectorMapMachinery {
 
-    // Whether this installation has been released. Kept rather than inferred from an emptied
+    // Whether this machinery has been released. Kept rather than inferred from an emptied
     // holder, because a caller can still be holding a reference the index has already let go of: a
     // resolution taken at the top of a frame outlives a removal that happens during it.
     //
@@ -55,7 +55,7 @@ public final class MapLayerInstallation {
     private volatile boolean isDisposed;
 
     // The sector this machinery was installed on, and so the sector everything below derives from.
-    // Null for the detached installation, which is nobody's sector.
+    // Null for the detached machinery, which is nobody's sector.
     private final SectorAPI sector;
 
     // The label every profiling root opened for this sector is grouped under. Composed once here
@@ -76,7 +76,7 @@ public final class MapLayerInstallation {
     private final MapLayerRefreshBoard refreshBoard = new MapLayerRefreshBoard();
 
     // What the layers derive from this sector, made on first ask and released with this
-    // installation. Keyed by the class of the thing held, so one sector has exactly one of each and
+    // machinery. Keyed by the class of the thing held, so one sector has exactly one of each and
     // a resolution hands back what it asks for without a cast of its own.
     //
     // Concurrent for the reason the index above it is: the campaign thread installs and removes
@@ -86,18 +86,18 @@ public final class MapLayerInstallation {
 
     /**
      * @param sector the sector this machinery is being installed on; null makes a detached
-     *               installation, which is what a caller with no sector - the switch flipped with no
+     *               machinery, which is what a caller with no sector - the switch flipped with no
      *               game loaded, or a suite driving a seam directly - is answered with
      */
-    public MapLayerInstallation(SectorAPI sector) {
+    public SectorMapMachinery(SectorAPI sector) {
         this.sector = sector;
         this.profilingOrigin = resolveOriginOf(sector);
     }
 
     /**
-     * Releases what this installation holds, after which it answers {@link #isDisposed}.
+     * Releases what this machinery holds, after which it answers {@link #isDisposed}.
      *
-     * <p>Called by {@link MapLayerInstallations} when a sector's machinery is replaced, removed, or
+     * <p>Called by {@link SectorMapMachineryIndex} when a sector's machinery is replaced, removed, or
      * discarded on load. Releasing rather than dropping is what keeps a holder with something to
      * hand back - a GL buffer, a registered script - from being left to the collector.
      */
@@ -109,7 +109,7 @@ public final class MapLayerInstallation {
     }
 
     /**
-     * @return whether this installation has been released, so a caller holding one it did not just
+     * @return whether this machinery has been released, so a caller holding one it did not just
      *         resolve can tell that the sector behind it has gone rather than drawing through it
      */
     public boolean isDisposed() {
@@ -126,17 +126,17 @@ public final class MapLayerInstallation {
     }
 
     /**
-     * This sector's machinery of one kind, made on the first ask and held until this installation
+     * This sector's machinery of one kind, made on the first ask and held until this machinery
      * is disposed - which is what makes a layer's renderer, and the caches behind it, one sector's
      * rather than the process's.
      *
      * <p>Keyed by the class asked for rather than by a name, so the caller gets back the type it
-     * asked about and one sector cannot come to hold two of a kind. The installation never names
+     * asked about and one sector cannot come to hold two of a kind. The machinery never names
      * what it is holding: whoever wants a piece of machinery supplies the way to make one, which is
      * what keeps this package clear of the layers that live downstream of it.
      *
-     * <p>Resolved fresh from {@link MapLayerInstallations} by every caller that needs one, so a
-     * disposed installation is not the one asked; what it made after disposal would answer for a
+     * <p>Resolved fresh from {@link SectorMapMachineryIndex} by every caller that needs one, so a
+     * disposed machinery is not the one asked; what it made after disposal would answer for a
      * sector nothing draws and would never be released.
      *
      * @param machineryType   the kind being asked for, and the key it is held under
@@ -181,14 +181,14 @@ public final class MapLayerInstallation {
     /**
      * @return the sector this machinery was installed on, which the stages reading the sector itself
      *         rather than a holder over it answer from - the rebuild that cuts cells from its
-     *         systems, and the poll that walks them. Null for the detached installation, which is
+     *         systems, and the poll that walks them. Null for the detached machinery, which is
      *         nobody's sector, so a stage reaching it has none to read and draws nothing
      */
     public SectorAPI resolveSector() {
         return sector;
     }
 
-    // The detached installation is nobody's sector, so there is nothing to describe and nothing a
+    // The detached machinery is nobody's sector, so there is nothing to describe and nothing a
     // reader could match a row back to: what it opens belongs where every unattributed span
     // belongs, which is the reserved origin.
     private static ProfileOrigin resolveOriginOf(SectorAPI sector) {

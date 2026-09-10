@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
 import kmu.maplayers.base.refresh.MovingSystems;
@@ -61,7 +61,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // walk the running game's sector while marking another's cache stale. Held from construction
     // rather than resolved per poll because a source is built per load, against the sector it was
     // installed on - the sector its baselines are diffs of.
-    private final MapLayerInstallation installation;
+    private final SectorMapMachinery machinery;
 
     // Last poll's state; 0 and an empty map are also the empty-sector values, so a
     // boolean guards the very first poll establishing every baseline.
@@ -71,10 +71,10 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private Map<String, String> lastHolderBySystemId = Map.of();
 
     /**
-     * @param installation the machinery installed on the sector this polls
+     * @param machinery the machinery installed on the sector this polls
      */
-    public PoliticalMapStalenessSource(MapLayerInstallation installation) {
-        this.installation = installation;
+    public PoliticalMapStalenessSource(SectorMapMachinery machinery) {
+        this.machinery = machinery;
     }
 
     // Re-reads the snapshot and stages on-map positions, then hands each axis its own
@@ -86,7 +86,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
 
         // Null mid-load, before the sector stands up: every passenger below is then handed a reading
         // over nothing and answers emptily rather than faulting.
-        var sector = installation.resolveSector();
+        var sector = machinery.resolveSector();
 
         // The one reading of the sector every passenger below shares, opened here. It samples
         // the live rules before it walks anything, so a toggle flipped mid-poll cannot leave the
@@ -104,7 +104,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         // taken out of, or returned to, the partition. Only a change to the moving set
         // stales the geometry; a system that keeps moving is already excluded, so it
         // reports no change and never churns the map.
-        var hasMovingSetChanged = installation
+        var hasMovingSetChanged = machinery
             .resolveMovingSystems()
             .updateMovingSystems(pass);
 
@@ -149,7 +149,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         if (!hasVisibilityChanged) {
             LOG.debug("Political map moving set changed");
         }
-        installation
+        machinery
             .resolveRefreshBoard()
             .requestRefresh(MapLayerCommonRefreshSignal.GEOMETRY);
     }
@@ -165,7 +165,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
 
         if (!isFirstPoll) {
 
-            var board = installation.resolveRefreshBoard();
+            var board = machinery.resolveRefreshBoard();
 
             for (var entry : currentHolderBySystemId.entrySet()) {
                 if (!entry.getValue().equals(lastHolderBySystemId.get(entry.getKey()))) {
@@ -196,7 +196,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
                 + " new="
                 + allianceFingerprint);
 
-            installation
+            machinery
                 .resolveRefreshBoard()
                 .requestRefresh(PoliticalMapRefreshSignal.ALLIANCES);
         }

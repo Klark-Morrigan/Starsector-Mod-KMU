@@ -1,4 +1,4 @@
-package kmu.maplayers.base.installation;
+package kmu.maplayers.base.machinery;
 
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.LocationAPI;
@@ -21,76 +21,76 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the lifetime: that two sectors get two installations, that installing again on one replaces
+ * Pins the lifetime: that two sectors get two machinery, that installing again on one replaces
  * rather than accumulates, that removal and a load release what they drop and leave none of a
- * released sector's state to the installation after it, and that a sector with nothing installed
+ * released sector's state to the machinery after it, and that a sector with nothing installed
  * resolves to something rather than to null.
  *
- * <p>What each installation is made <em>over</em> is pinned here too: the sector a rebuild cuts from
- * and a poll walks is the one it was installed on, and the shared detached installation is over no
+ * <p>What each machinery is made <em>over</em> is pinned here too: the sector a rebuild cuts from
+ * and a poll walks is the one it was installed on, and the shared detached machinery is over no
  * sector at all.
  *
  * <p>The location resolution is pinned beside the sector one: a render surface is terrain and reaches
- * only its containing location, so an installation has to be findable by the hyperspace its sector's
+ * only its containing location, so machinery has to be findable by the hyperspace its sector's
  * surfaces sit in - and has to stop being findable there the moment it is released.
  *
  * <p>The index is process-wide, so every case starts from a cleared one.
  */
-class MapLayerInstallationsTest {
+class SectorMapMachineryIndexTest {
 
     // The id the staged drifting system reports, which is what a motion observation is keyed by
-    // and so what a discarded installation could leave behind for the next one.
+    // and so what a discarded machinery could leave behind for the next one.
     private static final String DRIFTER_ID = "a";
 
     // The id a published hover names, a hover being the other thing keyed by bare system id that a
-    // discarded installation could leave lit for the next one.
+    // discarded machinery could leave lit for the next one.
     private static final String HOVERED_SYSTEM_ID = "b";
 
     @BeforeEach
-    void clearEveryInstallation() {
-        MapLayerInstallations.disposeEveryInstallation();
+    void clearEveryMachinery() {
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
     class InstallMachineryOn {
 
         @Test
-        void givesEachSectorAnInstallationOfItsOwn() {
+        void givesEachSectorMachineryOfItsOwn() {
 
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var otherMachinery = SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
-            assertThat(installation)
-                .isNotSameAs(otherInstallation);
-            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock))
-                .isSameAs(installation);
-            assertThat(MapLayerInstallations.resolveInstallationFor(otherSectorMock))
-                .isSameAs(otherInstallation);
+            assertThat(machinery)
+                .isNotSameAs(otherMachinery);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(sectorMock))
+                .isSameAs(machinery);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(otherSectorMock))
+                .isSameAs(otherMachinery);
         }
 
         @Test
-        void replacesTheSectorsStandingInstallationRatherThanAddingASecond() {
-            // The hazard a second install poses is not a wasted allocation, it is two installations
+        void replacesTheSectorsStandingMachineryRatherThanAddingASecond() {
+            // The hazard a second install poses is not a wasted allocation, it is two machinery
             // answering for one sector - so the first has to be released and forgotten, not merely
             // shadowed.
             var sectorMock = mock(SectorAPI.class);
 
-            var firstInstallation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var secondInstallation = MapLayerInstallations.installMachineryOn(sectorMock);
+            var firstMachinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var secondMachinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
-            assertThat(secondInstallation)
-                .isNotSameAs(firstInstallation);
-            assertThat(firstInstallation.isDisposed())
+            assertThat(secondMachinery)
+                .isNotSameAs(firstMachinery);
+            assertThat(firstMachinery.isDisposed())
                 .isTrue();
-            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock))
-                .isSameAs(secondInstallation);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(sectorMock))
+                .isSameAs(secondMachinery);
         }
 
         @Test
-        void givesEachInstallationTheSectorItWasInstalledOn() {
+        void givesEachMachineryTheSectorItWasInstalledOn() {
             // What the seams vanilla names no sector at read: the map hook and a terrain surface
             // reach a factor and a location, so the sector a rebuild cuts from and a poll walks
             // comes back out of the machinery rather than out of the running game. Two of them, so
@@ -98,24 +98,24 @@ class MapLayerInstallationsTest {
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var otherMachinery = SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
-            assertThat(installation.resolveSector())
+            assertThat(machinery.resolveSector())
                 .isSameAs(sectorMock);
-            assertThat(otherInstallation.resolveSector())
+            assertThat(otherMachinery.resolveSector())
                 .isSameAs(otherSectorMock);
         }
 
         @Test
         void indexesNothingForNoSector() {
             // The switch can be flipped with no game loaded, so the entry point can reach here
-            // holding null. The detached installation is what that answers with, which is the same
+            // holding null. The detached machinery is what that answers with, which is the same
             // holder any uninstalled sector resolves to.
-            var installation = MapLayerInstallations.installMachineryOn(null);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(null);
 
-            assertThat(installation)
-                .isSameAs(MapLayerInstallations.resolveInstallationFor(mock(SectorAPI.class)));
+            assertThat(machinery)
+                .isSameAs(SectorMapMachineryIndex.resolveMachineryFor(mock(SectorAPI.class)));
         }
     }
 
@@ -128,33 +128,33 @@ class MapLayerInstallationsTest {
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var otherMachinery = SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
-            MapLayerInstallations.uninstallMachineryFrom(sectorMock);
+            SectorMapMachineryIndex.uninstallMachineryFrom(sectorMock);
 
-            assertThat(installation.isDisposed())
+            assertThat(machinery.isDisposed())
                 .isTrue();
-            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock))
-                .isNotSameAs(installation);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(sectorMock))
+                .isNotSameAs(machinery);
 
-            assertThat(otherInstallation.isDisposed())
+            assertThat(otherMachinery.isDisposed())
                 .isFalse();
-            assertThat(MapLayerInstallations.resolveInstallationFor(otherSectorMock))
-                .isSameAs(otherInstallation);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(otherSectorMock))
+                .isSameAs(otherMachinery);
         }
 
         @Test
         void standsDownForASectorWithNothingInstalled() {
             // A load that finds the overlay switched off takes it back from a sector it was never
             // installed on, so this is an ordinary path rather than a misuse - and the detached
-            // installation an uninstalled sector resolves to is shared, so releasing it here would
+            // machinery an uninstalled sector resolves to is shared, so releasing it here would
             // reach every other sector-less caller.
             var sectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.uninstallMachineryFrom(sectorMock);
+            SectorMapMachineryIndex.uninstallMachineryFrom(sectorMock);
 
-            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock).isDisposed())
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(sectorMock).isDisposed())
                 .isFalse();
         }
 
@@ -165,10 +165,10 @@ class MapLayerInstallationsTest {
             var hyperspaceMock = mock(LocationAPI.class);
             var sector = buildSectorInHyperspace(hyperspaceMock);
 
-            MapLayerInstallations.installMachineryOn(sector);
-            MapLayerInstallations.uninstallMachineryFrom(sector);
+            SectorMapMachineryIndex.installMachineryOn(sector);
+            SectorMapMachineryIndex.uninstallMachineryFrom(sector);
 
-            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
+            assertThat(SectorMapMachineryIndex.resolveMachineryIn(hyperspaceMock))
                 .isNull();
         }
 
@@ -176,44 +176,44 @@ class MapLayerInstallationsTest {
         void standsDownForNoSector() {
             // The switch can be flipped with no game loaded, so the entry point reaches here
             // holding null.
-            MapLayerInstallations.uninstallMachineryFrom(null);
+            SectorMapMachineryIndex.uninstallMachineryFrom(null);
 
-            var detachedInstallation =
-                MapLayerInstallations.resolveInstallationFor(mock(SectorAPI.class));
+            var detachedMachinery =
+                SectorMapMachineryIndex.resolveMachineryFor(mock(SectorAPI.class));
 
-            assertThat(detachedInstallation.isDisposed())
+            assertThat(detachedMachinery.isDisposed())
                 .isFalse();
         }
     }
 
     @Nested
-    class DisposeEveryInstallation {
+    class DisposeAllMachinery {
 
         @Test
         void releasesEveryInstalledSectorsMachinery() {
             // What a load runs. Nothing tells this index that a sector was replaced, so an
-            // installation left standing here is one nothing would ever come back for.
+            // machinery left standing here is one nothing would ever come back for.
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var otherMachinery = SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.disposeAllMachinery();
 
-            assertThat(installation.isDisposed())
+            assertThat(machinery.isDisposed())
                 .isTrue();
-            assertThat(otherInstallation.isDisposed())
+            assertThat(otherMachinery.isDisposed())
                 .isTrue();
 
-            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock))
-                .isNotSameAs(installation);
-            assertThat(MapLayerInstallations.resolveInstallationFor(otherSectorMock))
-                .isNotSameAs(otherInstallation);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(sectorMock))
+                .isNotSameAs(machinery);
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(otherSectorMock))
+                .isNotSameAs(otherMachinery);
         }
 
         @Test
-        void leavesNoneOfADiscardedSectorsMotionObservationsToTheInstallationAfterIt() {
+        void leavesNoneOfADiscardedSectorsMotionObservationsToTheMachineryAfterIt() {
             // The whole of what a per-load flush of the motion tracker used to be for. An
             // observation is keyed by system id, so a save reloaded in the same session would
             // otherwise have its systems measured against the positions the previous save last
@@ -221,7 +221,7 @@ class MapLayerInstallationsTest {
             var sectorFake = new MovableSystemSectorFake(DRIFTER_ID);
             var sector = sectorFake.getSector();
 
-            var movingSystems = MapLayerInstallations
+            var movingSystems = SectorMapMachineryIndex
                 .installMachineryOn(sector)
                 .resolveMovingSystems();
 
@@ -229,9 +229,9 @@ class MapLayerInstallationsTest {
             sectorFake.moveSystemClearOfItsLastPosition();
             sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP);
 
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.disposeAllMachinery();
 
-            var reinstalledMovingSystems = MapLayerInstallations
+            var reinstalledMovingSystems = SectorMapMachineryIndex
                 .installMachineryOn(sector)
                 .resolveMovingSystems();
 
@@ -245,20 +245,20 @@ class MapLayerInstallationsTest {
         }
 
         @Test
-        void leavesNoneOfADiscardedSectorsHoverToTheInstallationAfterIt() {
+        void leavesNoneOfADiscardedSectorsHoverToTheMachineryAfterIt() {
             // The whole of what a per-load hover park used to be for. The hover names its system by
             // bare id, so a save reloaded in the same session would otherwise open with a cell lit -
             // and a box naming it - for whatever the loaded sector happens to hold that id.
             var sectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations
+            SectorMapMachineryIndex
                 .installMachineryOn(sectorMock)
                 .resolveHoverState()
                 .publishHover(new MapHover(HOVERED_SYSTEM_ID, List.of(HOVERED_SYSTEM_ID)));
 
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.disposeAllMachinery();
 
-            assertThat(MapLayerInstallations
+            assertThat(SectorMapMachineryIndex
                     .installMachineryOn(sectorMock)
                     .resolveHoverState()
                     .getHover())
@@ -271,61 +271,61 @@ class MapLayerInstallationsTest {
             // rebuilt from the loaded save with the machinery of the save before it.
             var hyperspaceMock = mock(LocationAPI.class);
 
-            MapLayerInstallations.installMachineryOn(buildSectorInHyperspace(hyperspaceMock));
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.installMachineryOn(buildSectorInHyperspace(hyperspaceMock));
+            SectorMapMachineryIndex.disposeAllMachinery();
 
-            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
+            assertThat(SectorMapMachineryIndex.resolveMachineryIn(hyperspaceMock))
                 .isNull();
         }
 
         @Test
-        void leavesTheDetachedInstallationStandingForAnUninstalledSector() {
+        void leavesTheDetachedMachineryStandingForAnUninstalledSector() {
             // The detached one is nobody's sector, so a load has nothing to discard of it - and a
-            // caller reaching it after a load must not find a released installation.
+            // caller reaching it after a load must not find a released machinery.
             var sectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.disposeAllMachinery();
 
-            assertThat(MapLayerInstallations.resolveInstallationFor(sectorMock).isDisposed())
+            assertThat(SectorMapMachineryIndex.resolveMachineryFor(sectorMock).isDisposed())
                 .isFalse();
         }
     }
 
     @Nested
-    class GetEveryInstallation {
+    class GetAllMachinery {
 
         @Test
-        void listsTheInstallationOfEverySectorInstalledOn() {
+        void listsTheMachineryOfEverySectorInstalledOn() {
             // What a preference shared by every campaign is applied through: a sector left out of
             // the walk would keep wiring the player took off the bar for all of them.
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var otherMachinery = SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
-            assertThat(MapLayerInstallations.getEveryInstallation())
-                .containsExactlyInAnyOrder(installation, otherInstallation);
+            assertThat(SectorMapMachineryIndex.getAllMachinery())
+                .containsExactlyInAnyOrder(machinery, otherMachinery);
         }
 
         @Test
-        void listsNoneOfTheDetachedInstallationOrTheSectorsReleased() {
+        void listsNoneOfTheDetachedMachineryOrTheSectorsReleased() {
             // The detached one is nobody's sector and a released one is a sector the load replaced,
             // so neither is something a walk over the installed sectors may act on.
-            MapLayerInstallations.installMachineryOn(mock(SectorAPI.class));
-            MapLayerInstallations.installMachineryOn(null);
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.installMachineryOn(mock(SectorAPI.class));
+            SectorMapMachineryIndex.installMachineryOn(null);
+            SectorMapMachineryIndex.disposeAllMachinery();
 
-            assertThat(MapLayerInstallations.getEveryInstallation())
+            assertThat(SectorMapMachineryIndex.getAllMachinery())
                 .isEmpty();
         }
     }
 
     @Nested
-    class ResolveInstallationFor {
+    class ResolveMachineryFor {
 
         @Test
-        void yieldsOneDetachedInstallationWhereTheSectorHasNone() {
+        void yieldsOneDetachedMachineryWhereTheSectorHasNone() {
             // Null here would make every seam below branch on a case that means "draw as you always
             // did", which is why an uninstalled sector answers with a holder rather than with
             // nothing. One holder for all of them, which is the arrangement a sector-less caller
@@ -333,98 +333,98 @@ class MapLayerInstallationsTest {
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            var installation = MapLayerInstallations.resolveInstallationFor(sectorMock);
+            var machinery = SectorMapMachineryIndex.resolveMachineryFor(sectorMock);
 
-            assertThat(installation)
+            assertThat(machinery)
                 .isNotNull();
-            assertThat(installation)
-                .isSameAs(MapLayerInstallations.resolveInstallationFor(otherSectorMock));
+            assertThat(machinery)
+                .isSameAs(SectorMapMachineryIndex.resolveMachineryFor(otherSectorMock));
         }
 
         @Test
-        void yieldsADetachedInstallationOverNoSectorAtAll() {
+        void yieldsDetachedMachineryOverNoSectorAtAll() {
             // The detached one is shared by every sector-less caller, so it cannot answer with the
             // sector of whichever of them asked - and answering with the running game's would have
             // a stage reached through it draw a sector nobody asked it about. It has none, and says
             // so.
-            var installation = MapLayerInstallations.resolveInstallationFor(mock(SectorAPI.class));
+            var machinery = SectorMapMachineryIndex.resolveMachineryFor(mock(SectorAPI.class));
 
-            assertThat(installation.resolveSector())
+            assertThat(machinery.resolveSector())
                 .isNull();
         }
     }
 
     @Nested
-    class ResolveInstallationIn {
+    class ResolveMachineryIn {
 
         @Test
-        void yieldsTheInstallationOfTheSectorWhoseHyperspaceItIs() {
+        void yieldsTheMachineryOfTheSectorWhoseHyperspaceItIs() {
             // How a render surface finds what it is drawing. It is terrain, so the handle it has is
             // its own entity's containing location - and that location has to reach the same
-            // installation the sector does, or the surface paints through a sector's machinery
+            // machinery the sector does, or the surface paints through a sector's machinery
             // nobody installed.
             var hyperspaceMock = mock(LocationAPI.class);
             var otherHyperspaceMock = mock(LocationAPI.class);
 
-            var installation = MapLayerInstallations.installMachineryOn(
+            var machinery = SectorMapMachineryIndex.installMachineryOn(
                 buildSectorInHyperspace(hyperspaceMock));
 
-            MapLayerInstallations.installMachineryOn(
+            SectorMapMachineryIndex.installMachineryOn(
                 buildSectorInHyperspace(otherHyperspaceMock));
 
-            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
-                .isSameAs(installation);
+            assertThat(SectorMapMachineryIndex.resolveMachineryIn(hyperspaceMock))
+                .isSameAs(machinery);
         }
 
         @Test
-        void yieldsTheReplacementRatherThanTheInstallationAReinstallReleased() {
+        void yieldsTheReplacementRatherThanTheMachineryAReinstallReleased() {
             // The hazard a location index of its own would carry. A second key has to be written
             // after the sector one, so between the two a surface resolving by location would be
-            // handed the installation the reinstall had just released - and would build a renderer,
+            // handed the machinery the reinstall had just released - and would build a renderer,
             // and the GL buffers behind it, onto a holder nothing will ever release again.
             var hyperspaceMock = mock(LocationAPI.class);
             var sector = buildSectorInHyperspace(hyperspaceMock);
 
-            var releasedInstallation = MapLayerInstallations.installMachineryOn(sector);
-            var installation = MapLayerInstallations.installMachineryOn(sector);
+            var releasedMachinery = SectorMapMachineryIndex.installMachineryOn(sector);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sector);
 
-            assertThat(MapLayerInstallations.resolveInstallationIn(hyperspaceMock))
-                .isSameAs(installation);
-            assertThat(releasedInstallation.isDisposed())
+            assertThat(SectorMapMachineryIndex.resolveMachineryIn(hyperspaceMock))
+                .isSameAs(machinery);
+            assertThat(releasedMachinery.isDisposed())
                 .isTrue();
         }
 
         @Test
         void yieldsNothingForALocationWithNothingInstalled() {
-            // The one resolution that answers null rather than with the detached installation. A
+            // The one resolution that answers null rather than with the detached machinery. A
             // surface in such a location belongs to a sector nothing is drawing - a save carrying
             // the terrain with the overlay switched off - and painting it through the holder every
             // sector-less caller shares would be drawing no sector at all.
-            assertThat(MapLayerInstallations.resolveInstallationIn(mock(LocationAPI.class)))
+            assertThat(SectorMapMachineryIndex.resolveMachineryIn(mock(LocationAPI.class)))
                 .isNull();
         }
 
         @Test
         void yieldsNothingForNoLocation() {
             // A surface the engine has built but not yet seated has no location to be asked about.
-            assertThat(MapLayerInstallations.resolveInstallationIn(null))
+            assertThat(SectorMapMachineryIndex.resolveMachineryIn(null))
                 .isNull();
         }
     }
 
     @Nested
-    class ResolveInstallationForLiveSector {
+    class ResolveMachineryForLiveSector {
 
         @Test
-        void yieldsTheRunningSectorsInstallation() {
+        void yieldsTheRunningSectorsMachinery() {
             // The seams vanilla drives without naming a sector land here, so what they resolve has
             // to be the running sector's rather than whichever sector was installed on last.
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.installMachineryOn(otherSectorMock);
+            SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             try (var globalMock = mockStatic(Global.class)) {
 
@@ -432,13 +432,13 @@ class MapLayerInstallationsTest {
                     .when(Global::getSector)
                     .thenReturn(sectorMock);
 
-                assertThat(MapLayerInstallations.resolveInstallationForLiveSector())
-                    .isSameAs(installation);
+                assertThat(SectorMapMachineryIndex.resolveMachineryForLiveSector())
+                    .isSameAs(machinery);
             }
         }
 
         @Test
-        void yieldsTheDetachedInstallationWithNoGameLoaded() {
+        void yieldsTheDetachedMachineryWithNoGameLoaded() {
 
             var sectorMock = mock(SectorAPI.class);
 
@@ -448,14 +448,14 @@ class MapLayerInstallationsTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(MapLayerInstallations.resolveInstallationForLiveSector())
-                    .isSameAs(MapLayerInstallations.resolveInstallationFor(sectorMock));
+                assertThat(SectorMapMachineryIndex.resolveMachineryForLiveSector())
+                    .isSameAs(SectorMapMachineryIndex.resolveMachineryFor(sectorMock));
             }
         }
     }
 
     // A sector answering only for the hyperspace its render surfaces would be installed in, which
-    // is the second key an installation is indexed under.
+    // is the second key machinery is indexed under.
     private static SectorAPI buildSectorInHyperspace(LocationAPI hyperspace) {
 
         var sectorMock = mock(SectorAPI.class);

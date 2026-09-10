@@ -3,8 +3,8 @@ package kmu.maplayers.base.render;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 
-import kmu.maplayers.base.installation.InstalledMachinery;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.InstalledMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 
 /**
  * Grants one map-layer frame preparation per drawn frame, so the per-frame work behind a layer runs
@@ -30,11 +30,11 @@ import kmu.maplayers.base.installation.MapLayerInstallation;
  * would leave the overlay frozen on the single frame that was ever prepared, nothing else bringing
  * the draw lists up to date.
  *
- * <p>One per installation, since a frame is a sector's: two sectors drawing in one frame each owe
+ * <p>One per machinery, since a frame is a sector's: two sectors drawing in one frame each owe
  * their own draw lists a preparation, and a shared claim would give the second sector's surfaces
- * nothing to prepare with. That also means nothing has to clear it per load - an installation is
+ * nothing to prepare with. That also means nothing has to clear it per load - machinery is
  * made fresh when the layers are installed, so a claim left mid-frame by the session before goes
- * with the installation that held it.
+ * with the machinery that held it.
  *
  * <p>Read and written on the game thread alone - both the UI render pass and the terrain pass run
  * there - so the state needs no publication guarantee of its own.
@@ -47,7 +47,7 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     // meaning here, and holding two flags is what would let one be written.
     private FramePreparationState state = FramePreparationState.BOUNDARY_UNKNOWN;
 
-    // Reached through resolveClaimIn, so the only claims that exist are ones an installation holds.
+    // Reached through resolveClaimIn, so the only claims that exist are ones machinery holds.
     MapFramePreparationClaim() {
     }
 
@@ -75,7 +75,7 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     /**
      * Forgets that frame boundaries were ever seen.
      *
-     * <p>Defensive rather than needed: a surface resolves its installation and this claim afresh
+     * <p>Defensive rather than needed: a surface resolves its machinery and this claim afresh
      * every frame, so a released claim is one nothing asks again. What it guards is the registration
      * the sector's listener manager may still be holding - which goes on being handed frame
      * boundaries until the install after it re-registers - and it leaves that stray in the fail-open
@@ -110,18 +110,18 @@ public final class MapFramePreparationClaim implements CampaignUIRenderingListen
     }
 
     /**
-     * The claim {@code installation}'s surfaces share, made on the first frame one of them asks for
-     * it and released with the installation holding it.
+     * The claim {@code machinery}'s surfaces share, made on the first frame one of them asks for
+     * it and released with the machinery holding it.
      *
      * <p>The one way to a claim, so a surface and the registration that opens its frames cannot end
      * up on two different ones - a claim nothing opens frames on grants every asker, which is the
      * duplicated preparation the type exists to stop.
      *
-     * @param installation the machinery installed on the sector being drawn
+     * @param machinery the machinery installed on the sector being drawn
      * @return that sector's claim
      */
-    static MapFramePreparationClaim resolveClaimIn(MapLayerInstallation installation) {
-        return installation.resolveMachinery(
+    static MapFramePreparationClaim resolveClaimIn(SectorMapMachinery machinery) {
+        return machinery.resolveMachinery(
             MapFramePreparationClaim.class,
             MapFramePreparationClaim::new);
     }

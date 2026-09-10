@@ -1,8 +1,8 @@
 package kmu.maplayers.base.render;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.settings.KmuMapHoverSettings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -74,11 +74,11 @@ final class SectorMapLayerStarscapeTerrainPluginTest {
     }
 
     // The index is process-wide, so a sector installed on by one case would go on answering for the
-    // next - including with the frame it left half prepared, the claim being the installation's.
+    // next - including with the frame it left half prepared, the claim being the machinery's.
     @BeforeEach
     @AfterEach
-    void clearEveryInstallation() {
-        MapLayerInstallations.disposeEveryInstallation();
+    void clearEveryMachinery() {
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     // Puts a renderer behind the active pick, on a screen showing its layers in full, for the cases

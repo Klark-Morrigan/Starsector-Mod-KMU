@@ -12,10 +12,10 @@ import kmlib.starsector.systems.SystemColoniesIndex;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
@@ -70,7 +70,7 @@ import java.util.Set;
  * <p><b>One cache serves exactly one sector.</b> {@link CellGeometryCache} reconciles by system
  * <em>id</em>, so two sectors through one cache would not overwrite each other's cells but keep
  * them, cut around positions the second sector's systems never sat at. Which is why the sector a
- * rebuild reads comes off the installation this cache was made for rather than off the running
+ * rebuild reads comes off the machinery this cache was made for rather than off the running
  * game: asking the running game is how a cache comes to be handed a second sector at all.
  */
 final class PoliticalMapCache {
@@ -102,7 +102,7 @@ final class PoliticalMapCache {
     // the movers that cut leaves out and the board it reads staleness off all come off this one
     // handle, so none of the three can name a different sector - a cut taken from the running game
     // while the drift is this sector's would leave out systems that never moved.
-    private final MapLayerInstallation installation;
+    private final SectorMapMachinery machinery;
 
     // Raw cell geometry keyed by system id, updated incrementally as systems gain or lose
     // access, paired with the number of the cut it currently holds. The cells themselves are the
@@ -156,11 +156,11 @@ final class PoliticalMapCache {
     // this cache's first rebuild would name flips that happened before it existed.
     private RefreshSignalRevisions signalsAtLastRebuild;
 
-    PoliticalMapCache(MapLayerInstallation installation) {
+    PoliticalMapCache(SectorMapMachinery machinery) {
 
-        this.installation = installation;
+        this.machinery = machinery;
         this.signalsAtLastRebuild = RefreshSignalRevisions.readRevisionsOf(
-            installation.resolveRefreshBoard(),
+            machinery.resolveRefreshBoard(),
             TRACED_PREFERENCE_SIGNALS);
     }
 
@@ -254,7 +254,7 @@ final class PoliticalMapCache {
         // the bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave
         // cells cut under one rule and painted under another.
         var cellCut = new CellCutInputs(
-            installation.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
+            machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
             new CellSeedInputs(
                 KmuPoliticalMapGeometrySettings.getPoliticalMapCellBoundSegments(),
                 KmuPoliticalMapGeometrySettings.getPoliticalMapCellRadius()),
@@ -303,7 +303,7 @@ final class PoliticalMapCache {
 
         // The sector this rebuild draws, read once. Every stage below is answered from this one
         // reference, so a rebuild cannot name one sector to its cut and another to its fills.
-        var sector = installation.resolveSector();
+        var sector = machinery.resolveSector();
 
         // The one reading of that sector this rebuild's stages share: the cell cut, the fills and
         // the bands each ask every system who lives there, so one walk per system serves all
@@ -350,7 +350,7 @@ final class PoliticalMapCache {
     private String describeSignalsRaisedSinceTheLastRebuild() {
 
         var raisedNow = RefreshSignalRevisions.readRevisionsOf(
-            installation.resolveRefreshBoard(),
+            machinery.resolveRefreshBoard(),
             TRACED_PREFERENCE_SIGNALS);
 
         var raisedSince = raisedNow.describeSignalsRaisedSince(signalsAtLastRebuild);
@@ -378,7 +378,7 @@ final class PoliticalMapCache {
         // it. A system marked after this drain sits on the board for the next frame's fold, which
         // is what the fold is for - where a drain after the build discarded it on the assumption
         // that the build had read everything, an assumption a reused holding does not meet.
-        var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
+        var staleSystemIds = machinery.resolveRefreshBoard().drainStaleGroupingSystemIds();
         var wasHoldingReused = false;
 
         // Build one view or the other, never both: the debug overlay replaces the normal
@@ -462,7 +462,7 @@ final class PoliticalMapCache {
     // frame: it returns before assembling the standing map for a fold that would find nothing in it.
     private void applyStandingMapUpdates() {
 
-        var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
+        var staleSystemIds = machinery.resolveRefreshBoard().drainStaleGroupingSystemIds();
 
         if (staleSystemIds.isEmpty()) {
             return;
@@ -481,7 +481,7 @@ final class PoliticalMapCache {
         // alone, since the placements it did not touch are still described by the rules already
         // recorded for them.
         IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
-            installation.resolveSector(),
+            machinery.resolveSector(),
             drawables.toStandingMap(cellGeometry),
             staleSystemIds);
     }
@@ -519,7 +519,7 @@ final class PoliticalMapCache {
     // one cannot fail to.
     private int computeContentRevision(PoliticalMapView view, ContentInputs contentInputs) {
 
-        var board = installation.resolveRefreshBoard();
+        var board = machinery.resolveRefreshBoard();
 
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
@@ -537,7 +537,7 @@ final class PoliticalMapCache {
     // holding.
     private int computeHoldingRevision(PoliticalMapView view, ContentInputs contentInputs) {
 
-        var board = installation.resolveRefreshBoard();
+        var board = machinery.resolveRefreshBoard();
 
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
@@ -571,7 +571,7 @@ final class PoliticalMapCache {
         // second row over the same span, differing only in which of the two names it carried.
         cellGeometry.cells().updateFromSector(
             pass,
-            installation.resolveMovingSystems().getMovingSystemIds(),
+            machinery.resolveMovingSystems().getMovingSystemIds(),
             cellCut.seedInputs());
 
         // A fresh cut number the moment the cells are recut, whichever of the four inputs

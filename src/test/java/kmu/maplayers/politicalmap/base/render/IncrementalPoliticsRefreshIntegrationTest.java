@@ -160,7 +160,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         // differ between the legs.
         private final CellGeometryCache cellsMock = buildRowOfAbuttingCells();
 
-        // What the caller drained off its own installation's board this frame, in the order it was
+        // What the caller drained off its own machinery's board this frame, in the order it was
         // marked - the refresh is handed the batch rather than draining one of its own.
         private final Set<String> staleSystemIds = new LinkedHashSet<>();
 

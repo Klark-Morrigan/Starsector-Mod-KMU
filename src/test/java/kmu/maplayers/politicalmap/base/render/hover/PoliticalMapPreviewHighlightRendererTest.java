@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
 import kmu.KmuMod;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.MapLayerStoreNamespaces;
 import kmu.maplayers.base.sidebar.PickerScope;
@@ -76,7 +76,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
         BLOC_BRIGHT_COLOUR,
         BLOC_DARK_COLOUR);
 
-    private final MapLayerInstallation installation = new MapLayerInstallation(sectorMock);
+    private final SectorMapMachinery machinery = new SectorMapMachinery(sectorMock);
 
     @Nested
     class ResolvePreviewPaint {
@@ -87,7 +87,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
             hover(BLOC_ID);
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machinery)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -102,7 +102,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
             // this has to reach without reading a theme or walking a sector.
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machinery)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -116,7 +116,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
             var view = stubViewFinding(BlocPresenceIndex.EMPTY);
             hover(BLOC_ID);
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machinery)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -132,10 +132,10 @@ final class PoliticalMapPreviewHighlightRendererTest {
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
-                .resolveHoverSlotIn(installation)
+                .resolveHoverSlotIn(machinery)
                 .recordHoveredId(createScopeOfView("alliances"), BLOC_ID);
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machinery)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -150,12 +150,12 @@ final class PoliticalMapPreviewHighlightRendererTest {
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
-                .resolveHoverSlotIn(installation)
+                .resolveHoverSlotIn(machinery)
                 .recordHoveredId(
                     new PickerScope(MapLayerStoreNamespaces.createStandInNamespace(), VIEW_ID),
                     BLOC_ID);
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machinery)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -167,14 +167,14 @@ final class PoliticalMapPreviewHighlightRendererTest {
             // The same answer the presence bands give such a bloc, and for the same reason: a bloc
             // the sector can no longer name has no shade, and lighting its cells in a stand-in one
             // would put colour on the map for something the map cannot name.
-            var installationWithoutTheFaction = new MapLayerInstallation(mock(SectorAPI.class));
+            var machineryWithoutTheFaction = new SectorMapMachinery(mock(SectorAPI.class));
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
 
             FilterHoverSlot
-                .resolveHoverSlotIn(installationWithoutTheFaction)
+                .resolveHoverSlotIn(machineryWithoutTheFaction)
                 .recordHoveredId(createScopeOfView(VIEW_ID), BLOC_ID);
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installationWithoutTheFaction)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machineryWithoutTheFaction)
                 .resolvePreviewPaint(buildFrameDrawing(view, PAINTING_TIER, PRESENT_SYSTEM_ID));
 
             assertThat(paint.isPainting())
@@ -188,7 +188,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
             hover(BLOC_ID);
 
-            var paint = new PoliticalMapPreviewHighlightRenderer(installation)
+            var paint = new PoliticalMapPreviewHighlightRenderer(machinery)
                 .resolvePreviewPaint(buildFrameDrawing(
                     view,
                     ThemeFixtures.NO_HIGHLIGHT,
@@ -209,7 +209,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
     // writes into - the scope being the painted view's, as the binder reports it under.
     private void hover(String blocId) {
         FilterHoverSlot
-            .resolveHoverSlotIn(installation)
+            .resolveHoverSlotIn(machinery)
             .recordHoveredId(createScopeOfView(VIEW_ID), blocId);
     }
 

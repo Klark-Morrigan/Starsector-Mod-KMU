@@ -5,8 +5,8 @@ import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,9 +31,9 @@ final class MapSurfaceFixtures {
      * which is how the several surfaces painting a single map are posed.
      *
      * @param surfaces the surfaces being posed
-     * @return that sector's installation, which is what each of them resolves as it draws
+     * @return that sector's machinery, which is what each of them resolves as it draws
      */
-    static MapLayerInstallation seatSurfacesInAnInstalledSector(CampaignTerrainPlugin... surfaces) {
+    static SectorMapMachinery seatSurfacesInAnInstalledSector(CampaignTerrainPlugin... surfaces) {
 
         var hyperspaceMock = mock(LocationAPI.class);
         var sectorMock = mock(SectorAPI.class);
@@ -44,7 +44,7 @@ final class MapSurfaceFixtures {
         for (var surface : surfaces) {
             seatSurfaceIn(surface, hyperspaceMock);
         }
-        return MapLayerInstallations.installMachineryOn(sectorMock);
+        return SectorMapMachineryIndex.installMachineryOn(sectorMock);
     }
 
     /**

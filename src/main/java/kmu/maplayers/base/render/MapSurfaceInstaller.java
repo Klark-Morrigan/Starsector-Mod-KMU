@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.listeners.SectorListeners;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -101,20 +101,20 @@ public final class MapSurfaceInstaller {
             "Failed to remove KMU map layer frame preparation claim");
     }
 
-    // Takes off the lift this sector had running, reached through that sector's own installation so
+    // Takes off the lift this sector had running, reached through that sector's own machinery so
     // the slot asked is the one the script went into. What the lift is and why it is worth making is
     // StarscapeTerrainReseat's; this only says when it stops.
     static void removeStarscapeTerrainReseater(SectorAPI sector) {
         StarscapeTerrainReseat
-            .resolveReseatIn(MapLayerInstallations.resolveInstallationFor(sector))
+            .resolveReseatIn(SectorMapMachineryIndex.resolveMachineryFor(sector))
             .removeReseatFrom(sector);
     }
 
     // Puts the per-frame lift of the upper Starscape terrain onto this sector, through that sector's
-    // own installation for the reason the removal above goes through it.
+    // own machinery for the reason the removal above goes through it.
     static void installStarscapeTerrainReseater(SectorAPI sector) {
         StarscapeTerrainReseat
-            .resolveReseatIn(MapLayerInstallations.resolveInstallationFor(sector))
+            .resolveReseatIn(SectorMapMachineryIndex.resolveMachineryFor(sector))
             .installReseatOn(sector);
     }
 
@@ -122,19 +122,19 @@ public final class MapSurfaceInstaller {
     // remove-then-add, for the dispatcher's reasons: it holds live view state and none of it belongs
     // in a save.
     //
-    // The installation's own claim rather than a fresh one, because that is the claim the surfaces
+    // The machinery's own claim rather than a fresh one, because that is the claim the surfaces
     // over this sector ask: a listener built beside it would open frames on a claim nothing consults,
     // and every surface would go on preparing per pass. It arrives unarmed without being cleared
-    // here, an installation being made fresh when the layers are installed - so a claim left mid-frame
-    // by the session before went with the installation that held it, and a load that fails to
+    // here, machinery being made fresh when the layers are installed - so a claim left mid-frame
+    // by the session before went with the machinery that held it, and a load that fails to
     // register anything falls back to preparing per pass rather than to a frozen overlay.
     static void installMapFramePreparationClaim(SectorAPI sector) {
 
-        var installation = MapLayerInstallations.resolveInstallationFor(sector);
+        var machinery = SectorMapMachineryIndex.resolveMachineryFor(sector);
 
         SectorListeners.installListener(
             sector,
             MapFramePreparationClaim.class,
-            () -> MapFramePreparationClaim.resolveClaimIn(installation));
+            () -> MapFramePreparationClaim.resolveClaimIn(machinery));
     }
 }

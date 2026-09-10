@@ -1,4 +1,4 @@
-# Installed machinery (`base.installation`)
+# Installed machinery (`base.machinery`)
 
 One sector's map machinery as a thing a caller can hold. Everything the map layers draw is derived
 from one sector - which systems exist, who holds each, where they sit, what the cursor is over - so
@@ -12,12 +12,12 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 ## Index
 
 - [Why a sector owns this at all](#why-a-sector-owns-this-at-all)
-- [What an installation holds](#what-an-installation-holds)
+- [What machinery holds](#what-machinery-holds)
 - [How a layer's own machinery gets in](#how-a-layers-own-machinery-gets-in)
 - [The lifetime](#the-lifetime)
 - [Standing a layer up on one sector](#standing-a-layer-up-on-one-sector)
 - [Three ways to resolve one](#three-ways-to-resolve-one)
-- [The detached installation](#the-detached-installation)
+- [The detached machinery](#the-detached-machinery)
 - [Where a sector-less seam still reads the global](#where-a-sector-less-seam-still-reads-the-global)
 - [What is not one sector's](#what-is-not-one-sectors)
 
@@ -38,9 +38,9 @@ stale on its own, since either one's change rebuilds both.
 The tell that a holder belongs to a sector is that it used to need emptying when the sector changed.
 Every holder here once had a per-load discard; disposal replaced all of them.
 
-## What an installation holds
+## What machinery holds
 
-`MapLayerInstallation` holds five things directly. The first three are the framework's own state:
+`SectorMapMachinery` holds five things directly. The first three are the framework's own state:
 
 | Holder | What it remembers |
 | --- | --- |
@@ -57,34 +57,34 @@ below this package are handed no sector to pass down: vanilla's map render hook 
 factor and nothing else, and a render surface is terrain, which reaches a `LocationAPI` and never a
 `SectorAPI`. A stage under either would otherwise ask the running game which sector it is looking
 at - correct only while the sector it holds cells for and the sector that is loaded are the same
-one. Taking it off the installation rather than passing it alongside is what stops a rebuild cutting
+one. Taking it off the machinery rather than passing it alongside is what stops a rebuild cutting
 cells from one sector while reading holders out of another - which the draw cache and staleness poll
 of [the political map](../../politicalmap/README.md) both rely on.
 
 The fifth is the **profiling origin**, answered by `resolveProfilingOrigin()`: the label every
 profiling root opened for this sector is grouped under, so a capture taken across two sectors says
 which of them each row was measured in rather than averaging the two into rows that describe
-neither. Composed once with the installation, out of the seed and the player's name -
+neither. Composed once with the machinery, out of the seed and the player's name -
 `kmlib.starsector.SectorLabels` is what pairs them, being the pair a save browser shows and so the
 pair a reader can match a slow row back to a save by. Once rather than per beat, because a frame
 opens several roots and none of them may spend its time building a string. The detached
-installation is nobody's sector and takes the reserved origin unattributed spans land in.
+machinery is nobody's sector and takes the reserved origin unattributed spans land in.
 
 ## How a layer's own machinery gets in
 
 A layer's renderer, and the caches behind it, are one sector's too - but they live in packages
-*downstream* of this one, and an installation that named them would point back at its own
+*downstream* of this one, and machinery that named them would point back at its own
 dependents. So they go in through `InstalledMachinery`, which is a release contract and nothing
 else:
 
 ```java
-installation.resolveMachinery(
+machinery.resolveMachinery(
     PoliticalMapLayerRenderer.class,
-    () -> PoliticalMapLayerRenderer.createForLiveScreen(installation));
+    () -> PoliticalMapLayerRenderer.createForLiveScreen(machinery));
 ```
 
 Keyed by the class asked for, made on the first ask, and handed back by that same type - so one
-sector cannot come to hold two of a kind, and the caller needs no cast. The installation never
+sector cannot come to hold two of a kind, and the caller needs no cast. The machinery never
 learns what it is holding.
 
 Release has to be certain rather than incidental: a cached faction name owns a GL buffer, so a
@@ -93,31 +93,31 @@ sweep.
 
 ## The lifetime
 
-`MapLayerInstallations` is the process-wide index, keyed by the sector object itself.
+`SectorMapMachineryIndex` is the process-wide index, keyed by the sector object itself.
 
-- **`installMachineryOn(sector)`** makes a fresh installation, releasing whatever that sector
+- **`installMachineryOn(sector)`** makes a fresh machinery, releasing whatever that sector
   already had. Replacing rather than reusing is what keeps a second install from inheriting the
   first one's cached drawing. Done in one atomic step, so a frame resolving on the render thread
   between a removal and a re-insertion cannot observe the replacement as an absence.
 - **`uninstallMachineryFrom(sector)`** releases and forgets. Reached with a sector nothing was ever
   installed on too, since a load with the overlay switched off takes it back rather than declining.
-- **`disposeEveryInstallation()`** releases all of them. This is what a load runs *before* installing
+- **`disposeAllMachinery()`** releases all of them. This is what a load runs *before* installing
   on the sector it loaded, and it is the only point at which a previous save's drawing can be
   stopped from outliving it - nothing else in the engine is told that a sector went away, and the
   index holds each sector by reference.
 
-`KMU_ModPlugin` drives all three: `installMapLayers` stands the installation up first, before
+`KMU_ModPlugin` drives all three: `installMapLayers` stands the machinery up first, before
 everything that stacks on it, and `uninstallMapLayers` takes it back last, since all of that is taken
 back *through* the state it holds.
 
-A fourth reading is over all of them rather than over one. `getEveryInstallation()` lists the
-installed sectors' installations, for a caller acting on a preference that is one preference for
+A fourth reading is over all of them rather than over one. `getAllMachinery()` lists the
+installed sectors' machinery, for a caller acting on a preference that is one preference for
 every campaign - which is what the bar arrangement is. It is a snapshot rather than the index's own
 view, so a walk that installs or removes as it goes acts on the row it asked for, and the detached
-installation is not among them.
+machinery is not among them.
 
 Concurrent throughout: installing and removing happen on the campaign thread while a frame resolves
-what it is about to draw on the render thread. `MapLayerInstallation` also carries a volatile
+what it is about to draw on the render thread. `SectorMapMachinery` also carries a volatile
 `isDisposed`, because a resolution taken at the top of a frame outlives a removal that happens
 during it.
 
@@ -130,13 +130,13 @@ decided by whether they keep its tab on the bar. The rule is
 [the layer framework's](../layer/README.md#what-a-hidden-tab-stands-down); what this package settles
 is the scope it acts in.
 
-That scope is one sector, so a change to the bar is applied by walking the installations rather than
+That scope is one sector, so a change to the bar is applied by walking the machinery rather than
 the loaded sector alone: a sector the walk skipped would keep the wiring of a tab that is no longer
 on the bar for any campaign.
 
 Which layers are standing on a sector is `StandingLayers`, and it comes in as `InstalledMachinery`
-like a renderer does - made on the first ask, released with the installation, never named by this
-package. Disposal forgets rather than stands anything down: an installation is disposed for a sector
+like a renderer does - made on the first ask, released with the machinery, never named by this
+package. Disposal forgets rather than stands anything down: machinery is disposed for a sector
 the load has already replaced, and everything a layer registers on a sector is transient, so there is
 nothing left to take back and a stand-down aimed at it would reach the sector that replaced it.
 
@@ -146,15 +146,15 @@ Three, because the seams below differ in what they hold.
 
 | Resolution | For | Answers when nothing is installed |
 | --- | --- | --- |
-| `resolveInstallationFor(sector)` | anything already holding a sector - an installer, a listener | the detached installation |
-| `resolveInstallationIn(location)` | [a render surface](../render/README.md), which is terrain and reaches only its containing location | **null** |
-| `resolveInstallationForLiveSector()` | a seam vanilla hands no sector at all | the detached installation |
+| `resolveMachineryFor(sector)` | anything already holding a sector - an installer, a listener | the detached machinery |
+| `resolveMachineryIn(location)` | [a render surface](../render/README.md), which is terrain and reaches only its containing location | **null** |
+| `resolveMachineryForLiveSector()` | a seam vanilla hands no sector at all | the detached machinery |
 
 The location resolution walks the installed sectors comparing `sector.getHyperspace() == location`
 rather than keeping a location index of its own. There is one installed sector, so the walk is the
 cheap half of the trade, and what it buys is that a location can never disagree with the sector it
 belongs to: a second index would have to be written *after* the sector key, leaving a window in
-which a frame resolving by location was handed the installation a reinstall had just released - and
+which a frame resolving by location was handed the machinery a reinstall had just released - and
 would then build a renderer, and its GL buffers, onto a holder nothing will ever release.
 
 It rests on one identity: `entity.getContainingLocation()` is the same object
@@ -163,14 +163,14 @@ engine seats an added entity in the location it was added to. Stated rather than
 comparison that missed would take the whole overlay off screen instead of degrading.
 
 It is also the only resolution that answers **null**, and deliberately. A surface exists because an
-installation put its terrain there, so a location with no installation is a surface belonging to a
+machinery put its terrain there, so a location with no machinery is a surface belonging to a
 sector nothing draws - a save carrying the terrain with the overlay switched off. Handing it the
-detached installation would have it paint through the holder every sector-less caller shares, which
+detached machinery would have it paint through the holder every sector-less caller shares, which
 is a drawing of no sector at all rather than a fallback.
 
-## The detached installation
+## The detached machinery
 
-One shared installation that nothing indexes and nothing releases, over no sector. It is what an
+One shared machinery that nothing indexes and nothing releases, over no sector. It is what an
 uninstalled sector resolves to, and it exists because the map layers sit behind a switch a player
 can leave off: answering null there would make every seam below branch on a case that means "carry
 on as you always did".
@@ -180,29 +180,29 @@ nothing to read rather than falling through to whichever sector happens to be lo
 
 ## Where a sector-less seam still reads the global
 
-`resolveInstallationForLiveSector()` is the one place in this package that reads
+`resolveMachineryForLiveSector()` is the one place in this package that reads
 `Global.getSector()`, and it is where that read belongs: vanilla's API offers no other handle, and
 the seams it serves are driven by the engine with no sector named.
 
 Its callers are the screen-side adapters and nothing else: the tab body build and the hover box the
 cursor read draws, each handed a frame and nothing more. They spell the resolution by that name
-rather than `resolveInstallationFor(Global.getSector())`, so every such adapter is findable by one
+rather than `resolveMachineryFor(Global.getSector())`, so every such adapter is findable by one
 grep and the global read stays inside this package where `enforceRestrictedCalls` contains it.
 
-Nothing else reaches a holder that way. Every producer and consumer there is holds the installation
+Nothing else reaches a holder that way. Every producer and consumer there is holds the machinery
 it means: the render surfaces resolve theirs from the terrain entity they ride, and the political
 map's cache, its staleness poll, its renderers, its views and its sidebar controls are each handed
 one.
 
 The sidebar controls are the ones worth naming, because a settings change looks like the seam that
-could not be handed a sector. It can: the tab's body build resolves an installation once, and every
+could not be handed a sector. It can: the tab's body build resolves machinery once, and every
 control it places carries that board to the preference it writes - so a flip repaints the map the
 control was placed over rather than whichever sector is running when the click lands.
 
 The board and the hover have no such resolution at all. `MapLayerRefreshBoard` and `MapHoverState`
-are reached only through the installation that holds them, and `kmu.maplayers.base.refresh` and
+are reached only through the machinery that holds them, and `kmu.maplayers.base.refresh` and
 `kmu.maplayers.base.hover` are both gated from importing this package so it stays that way: a holder
-that could resolve an installation of its own could only resolve the running game's, which is the
+that could resolve machinery of its own could only resolve the running game's, which is the
 one sector a caller drawing another's map is not looking at.
 
 ## What is not one sector's
@@ -216,7 +216,7 @@ Kept out of here on purpose, so a reader does not go looking:
   the roster when that mod loads - later still, and no nearer any sector. Which layers *exist* is
   the process's; which is *picked* is the sector's, and that half lives in sector memory.
 - **The views and layers themselves.** They are stateless strategies. One that started remembering
-  would become a shared cache two installations read. The claims view is the one that holds a field
+  would become a shared cache two machinery read. The claims view is the one that holds a field
   at all, and it holds the *means of opening* a claim reader rather than a reader - one is opened
   over the read being made and discarded with it.
 - **The alliance-source registration.** `FactionAllianceRegistry`'s registered source is written

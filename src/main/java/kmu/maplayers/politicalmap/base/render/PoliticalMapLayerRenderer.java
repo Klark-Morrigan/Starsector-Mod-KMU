@@ -13,8 +13,8 @@ import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
-import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapLayerRenderer;
@@ -76,7 +76,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
     // a renderer belongs to one sector's installed machinery and never enters a save, so neither
     // collaborator needs the transient marking or lazy rebuild a save-serialised holder would. The
-    // cache is made for the same installation this renderer was, so the two draw one sector.
+    // cache is made for the same machinery this renderer was, so the two draw one sector.
     private final PoliticalMapCache cache;
     private final PoliticalMapOverlayRenderer overlayRenderer;
 
@@ -154,30 +154,30 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     /**
      * The renderer one sector's map machinery holds, reading the covers and the cursor of the screen
-     * the game is showing. Which sector it draws is the installation's; where the reads come from is
+     * the game is showing. Which sector it draws is the machinery's; where the reads come from is
      * settled here, the renderer itself naming only the reader and the source.
      *
-     * @param installation the machinery this renderer is being made for, whose sector its cache cuts
+     * @param machinery the machinery this renderer is being made for, whose sector its cache cuts
      *                     its cells from, whose movers that cut leaves out, whose hover holder the
      *                     cursor read publishes into, whose picker the preview is read off, and
      *                     whose origin its profiling rows are grouped under
      * @param layerId      the id of the layer this renderer draws, which its rows are reported
      *                     under - handed in by the layer rather than named here, so the renderer
      *                     holds no second spelling of an id the layer already owns
-     * @return a renderer for that installation, its cache empty until the first frame builds it
+     * @return a renderer for that machinery, its cache empty until the first frame builds it
      */
     public static PoliticalMapLayerRenderer createForLiveScreen(
-            MapLayerInstallation installation,
+            SectorMapMachinery machinery,
             String layerId) {
 
         return new PoliticalMapLayerRenderer(
-            new PoliticalMapCache(installation),
+            new PoliticalMapCache(machinery),
             MapCoverReader.createForLiveScreen(),
-            installation.resolveHoverState(),
+            machinery.resolveHoverState(),
             PoliticalMapLayerRenderer::buildLiveHoverPublisher,
-            new PoliticalMapPreviewHighlightRenderer(installation),
+            new PoliticalMapPreviewHighlightRenderer(machinery),
             new MapFrameBeats(
-                installation.resolveProfilingOrigin(),
+                machinery.resolveProfilingOrigin(),
                 MapFrameSections.resolveLayerSection(layerId)));
     }
 

@@ -3,11 +3,11 @@ package kmu.maplayers.politicalmap.base;
 import kmlib.starsector.ui.controls.ControlSpec;
 
 import kmu.KmuMod;
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerStanding;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
 import kmu.maplayers.base.sidebar.FilterSelectionBinder;
@@ -79,8 +79,8 @@ public final class PoliticalMapLayer implements MapLayer {
         // repaints by raising a signal, so a sector or a screen found at the click would repaint
         // whichever map was running by then and file the write under whichever panel was showing,
         // rather than the map the control was placed over.
-        var installation = MapLayerInstallations.resolveInstallationForLiveSector();
-        var target = new BodyControlTarget(installation.resolveRefreshBoard(), memoryScope);
+        var machinery = SectorMapMachineryIndex.resolveMachineryForLiveSector();
+        var target = new BodyControlTarget(machinery.resolveRefreshBoard(), memoryScope);
 
         // The tab's view-agnostic sub-options (uninhabited checkbox, name-format radio), then the
         // view-selector radio that picks which view paints - one segment per registered view. The
@@ -99,7 +99,7 @@ public final class PoliticalMapLayer implements MapLayer {
         var selectedView = PoliticalMapViewRegistry.getSelectedView(memoryScope);
 
         if (selectedView != null) {
-            controls.addAll(buildSpotlightControls(selectedView, installation, target));
+            controls.addAll(buildSpotlightControls(selectedView, machinery, target));
             controls.addAll(selectedView.getViewBodyControls(target));
         }
         return List.copyOf(controls);
@@ -122,19 +122,19 @@ public final class PoliticalMapLayer implements MapLayer {
     }
 
     @Override
-    public MapLayerRenderer resolveRenderer(MapLayerInstallation installation) {
+    public MapLayerRenderer resolveRenderer(SectorMapMachinery machinery) {
         // View-neutral here as everywhere else on this tab: the renderer resolves which view is up,
         // so the tab hands over one renderer rather than branching on the view roster.
         //
-        // Held by the installation rather than by this tab, because everything behind the renderer -
+        // Held by the machinery rather than by this tab, because everything behind the renderer -
         // the cut cells, the territories, the fitted labels - is one sector's. This tab is
         // registered once for the process and would otherwise be where two sectors met.
         //
         // The id goes over beside it because the renderer reports its frame's rows under it. Handed
         // down rather than looked up, so there is one spelling of it.
-        return installation.resolveMachinery(
+        return machinery.resolveMachinery(
             PoliticalMapLayerRenderer.class,
-            () -> PoliticalMapLayerRenderer.createForLiveScreen(installation, LAYER_ID));
+            () -> PoliticalMapLayerRenderer.createForLiveScreen(machinery, LAYER_ID));
     }
 
     // The spotlight picker for the selected view: its selectable blocs under the player's live
@@ -150,15 +150,15 @@ public final class PoliticalMapLayer implements MapLayer {
     // under its own caption, here bound to the filter recede set rather than the non-allied one.
     private static List<ControlSpec> buildSpotlightControls(
             PoliticalMapView selectedView,
-            MapLayerInstallation installation,
+            SectorMapMachinery machinery,
             BodyControlTarget target) {
 
         // The list is read through the memo the sector's installed machinery holds, so this
         // per-frame body build reads a cached list rather than re-walking the economy every frame
-        // the map is open. The installation goes over whole for the same reason the target does: the
+        // the map is open. The machinery goes over whole for the same reason the target does: the
         // memo, the picker's own writers and the recede control below must not end up naming two
         // different sectors, which passing a board beside it would allow.
-        var blocCache = SelectableBlocCache.resolveBlocCacheIn(installation);
+        var blocCache = SelectableBlocCache.resolveBlocCacheIn(machinery);
 
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
         // so a spotlight, a sort or a column count picked here is that panel's own. It travels under
@@ -178,6 +178,6 @@ public final class PoliticalMapLayer implements MapLayer {
                 RecedePreferences.FILTER,
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
                 target),
-            installation);
+            machinery);
     }
 }

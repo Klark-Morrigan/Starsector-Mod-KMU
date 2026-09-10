@@ -4,7 +4,7 @@ import kmlib.testfixtures.logging.LogAppenderFake;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapSidebarSettings;
 
@@ -53,7 +53,7 @@ final class MapLayerRegistryTest {
     // The machinery of the sector being drawn, which the registry passes through rather than
     // resolves. One for the class, so a case asserting it reached the layer is comparing against
     // the very object it handed in.
-    private final MapLayerInstallation installation = new MapLayerInstallation(null);
+    private final SectorMapMachinery machinery = new SectorMapMachinery(null);
 
     private final MapLayer firstLayerMock = mock(MapLayer.class);
     private final MapLayer secondLayerMock = mock(MapLayer.class);
@@ -350,20 +350,20 @@ final class MapLayerRegistryTest {
     class ResolveDrawnMapRenderer {
 
         @Test
-        void resolveDrawnMapRendererAsksTheDrawnLayerAboutTheInstallationItWasHanded() {
+        void resolveDrawnMapRendererAsksTheDrawnLayerAboutTheMachineryItWasHanded() {
             // The roster is the process's while a renderer is one sector's, so the registry must
-            // pass the installation through rather than resolve one of its own - a registry that
+            // pass the machinery through rather than resolve one of its own - a registry that
             // picked the running sector's would hand every surface the same renderer however many
-            // sectors were being drawn. Pinned by stubbing that one installation and no other, so a
+            // sectors were being drawn. Pinned by stubbing that one machinery and no other, so a
             // registry substituting its own would find nothing stubbed for it.
             var layerRendererMock = mock(MapLayerRenderer.class);
 
-            when(secondLayerMock.resolveRenderer(installation))
+            when(secondLayerMock.resolveRenderer(machinery))
                 .thenReturn(layerRendererMock);
 
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
                 .isSameAs(layerRendererMock);
         }
 
@@ -373,12 +373,12 @@ final class MapLayerRegistryTest {
             // registration frame below it, answered the same way so no pass driven by the drawn
             // layer needs a case for either. Stated rather than left to the stub's own default, or
             // the case would pass on a layer that was never asked at all.
-            when(secondLayerMock.resolveRenderer(installation))
+            when(secondLayerMock.resolveRenderer(machinery))
                 .thenReturn(null);
 
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
                 .isNull();
         }
 
@@ -388,7 +388,7 @@ final class MapLayerRegistryTest {
             MapLayerRosters.forgetEveryLayer();
             sectorMemoryFake.removeSector();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
                 .isNull();
         }
 
@@ -399,12 +399,12 @@ final class MapLayerRegistryTest {
             // the sidebar that is still thinning beside it.
             var layerRendererMock = mock(MapLayerRenderer.class);
 
-            when(secondLayerMock.resolveRenderer(installation))
+            when(secondLayerMock.resolveRenderer(machinery))
                 .thenReturn(layerRendererMock);
 
             startHidingTheMapScreensLayers();
 
-            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(installation))
+            assertThat(MapLayerRegistry.resolveDrawnMapRenderer(machinery))
                 .isSameAs(layerRendererMock);
         }
     }

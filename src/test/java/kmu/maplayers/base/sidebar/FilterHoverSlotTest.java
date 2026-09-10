@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
 import kmu.KmuMod;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * whatever that list rested on, a null record and a clear both return it to resting, clearing an
  * already-resting list changes nothing, and a clear is invisible under another list - another mod's
  * included, which is the axis nothing else here would part. Pins its
- * lifetime beside that - one slot per installation, so two sectors' pickers cannot report into one
+ * lifetime beside that - one slot per machinery, so two sectors' pickers cannot report into one
  * another's, and a disposal leaving nothing of the gone sector's behind.
  */
 final class FilterHoverSlotTest {
@@ -44,44 +44,44 @@ final class FilterHoverSlotTest {
     class ResolveHoverSlotIn {
 
         @Test
-        void resolveHoverSlotInAnswersOneSlotPerInstallation() {
+        void resolveHoverSlotInAnswersOneSlotPerMachinery() {
             // The picker reporting a hover and the pass drawing from it resolve separately, so both
             // asks under one sector must land on the same slot or the preview reads nothing.
-            var installation = new MapLayerInstallation(null);
+            var machinery = new SectorMapMachinery(null);
 
-            FilterHoverSlot.resolveHoverSlotIn(installation)
+            FilterHoverSlot.resolveHoverSlotIn(machinery)
                 .recordHoveredId(PICKER_SCOPE, HOVERED_ID);
 
-            assertThat(FilterHoverSlot.resolveHoverSlotIn(installation).getHoveredIdOf(PICKER_SCOPE))
+            assertThat(FilterHoverSlot.resolveHoverSlotIn(machinery).getHoveredIdOf(PICKER_SCOPE))
                 .isEqualTo(HOVERED_ID);
         }
 
         @Test
-        void resolveHoverSlotInDoesNotShareASlotBetweenInstallations() {
+        void resolveHoverSlotInDoesNotShareASlotBetweenMachinery() {
             // A hovered id comes from one sector's own list, so reading it under another sector
             // would light a set that sector never produced.
-            var installation = new MapLayerInstallation(null);
-            var otherInstallation = new MapLayerInstallation(null);
+            var machinery = new SectorMapMachinery(null);
+            var otherMachinery = new SectorMapMachinery(null);
 
-            FilterHoverSlot.resolveHoverSlotIn(installation)
+            FilterHoverSlot.resolveHoverSlotIn(machinery)
                 .recordHoveredId(PICKER_SCOPE, HOVERED_ID);
 
             assertThat(
-                    FilterHoverSlot.resolveHoverSlotIn(otherInstallation).getHoveredIdOf(PICKER_SCOPE))
+                    FilterHoverSlot.resolveHoverSlotIn(otherMachinery).getHoveredIdOf(PICKER_SCOPE))
                 .isNull();
         }
 
         @Test
-        void resolveHoverSlotInAnswersAFreshSlotAfterTheInstallationIsDisposed() {
-            // A load disposes the installation, which is what stands in for a discard of this slot's
+        void resolveHoverSlotInAnswersAFreshSlotAfterTheMachineryIsDisposed() {
+            // A load disposes the machinery, which is what stands in for a discard of this slot's
             // own - the sector after it begins resting rather than on the previous sector's row.
-            var installation = new MapLayerInstallation(null);
+            var machinery = new SectorMapMachinery(null);
 
-            FilterHoverSlot.resolveHoverSlotIn(installation)
+            FilterHoverSlot.resolveHoverSlotIn(machinery)
                 .recordHoveredId(PICKER_SCOPE, HOVERED_ID);
-            installation.disposeMachinery();
+            machinery.disposeMachinery();
 
-            assertThat(FilterHoverSlot.resolveHoverSlotIn(installation).getHoveredIdOf(PICKER_SCOPE))
+            assertThat(FilterHoverSlot.resolveHoverSlotIn(machinery).getHoveredIdOf(PICKER_SCOPE))
                 .isNull();
         }
     }

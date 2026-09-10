@@ -132,7 +132,7 @@ final class IncrementalPoliticsRefreshTest {
         private final RevisedCellGeometry cellGeometry =
             new RevisedCellGeometry(buildTwoAdjacentCells(), GEOMETRY_REVISION);
 
-        // What the caller drained off its own installation's board this frame, in the order it was
+        // What the caller drained off its own machinery's board this frame, in the order it was
         // marked. Held per case rather than raised on a shared board: the fold is handed the ids
         // rather than draining any board of its own, so a case states the batch directly.
         private final Set<String> staleSystemIds = new LinkedHashSet<>();

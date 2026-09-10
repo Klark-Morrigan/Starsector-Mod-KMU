@@ -13,10 +13,10 @@ import kmlib.starsector.ui.map.presence.CampaignMapView;
 import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
 import kmu.maplayers.base.tooltip.MapHoverFixtures;
@@ -124,7 +124,7 @@ class MapLayerCellTooltipGateIntegrationTest {
 
         // The index is process-wide, so a sector left installed would carry this test's hover into
         // the next one.
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
 
         // The level holder is a process-wide singleton like the hover, so an advance left standing
         // would reach the next test as a detail level it never asked for.

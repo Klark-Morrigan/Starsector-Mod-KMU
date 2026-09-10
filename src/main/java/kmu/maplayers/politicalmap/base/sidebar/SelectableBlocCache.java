@@ -2,8 +2,8 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
-import kmu.maplayers.base.installation.InstalledMachinery;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.InstalledMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.settings.KmuLunaSettings;
@@ -24,14 +24,14 @@ import java.util.Set;
  * cannot end up holding presence from one reading beside rows from another.
  *
  * <p>One sector's: a list is a walk of that sector's economy keyed on that sector's revisions, so it
- * is held by that sector's {@link MapLayerInstallation} and discarded with it.
+ * is held by that sector's {@link SectorMapMachinery} and discarded with it.
  */
 public final class SelectableBlocCache implements InstalledMachinery {
 
     // The machinery this cache belongs to, and so the sector every list here is walked from. Taken
     // whole rather than as a bare sector so the sector a walk reads and the holder its answer is
     // memoised in cannot name two different ones.
-    private final MapLayerInstallation installation;
+    private final SectorMapMachinery machinery;
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
     // switch is a miss on the view id and the switched-in view's picker replaces the previous one.
@@ -41,26 +41,26 @@ public final class SelectableBlocCache implements InstalledMachinery {
     // the memo has no use for - it caches whatever the view answered.
     private final RevisionMemo<BlocPickerRead<?>> blocCache = new RevisionMemo<>();
 
-    // Reached through resolveBlocCacheIn, so the only caches that exist are ones an installation
+    // Reached through resolveBlocCacheIn, so the only caches that exist are ones machinery
     // holds - and so go with the sector they were made for.
-    SelectableBlocCache(MapLayerInstallation installation) {
-        this.installation = installation;
+    SelectableBlocCache(SectorMapMachinery machinery) {
+        this.machinery = machinery;
     }
 
     /**
-     * The memoised picker {@code installation}'s sidebar body reads, made on the first ask and
-     * released with the installation holding it.
+     * The memoised picker {@code machinery}'s sidebar body reads, made on the first ask and
+     * released with the machinery holding it.
      *
      * <p>The one way to this sector's memo, so the body build drawing the rows and the pass reading
      * the presence behind them cannot end up on two different walks.
      *
-     * @param installation the machinery installed on the sector whose picker is being drawn
+     * @param machinery the machinery installed on the sector whose picker is being drawn
      * @return that sector's memoised picker
      */
-    public static SelectableBlocCache resolveBlocCacheIn(MapLayerInstallation installation) {
-        return installation.resolveMachinery(
+    public static SelectableBlocCache resolveBlocCacheIn(SectorMapMachinery machinery) {
+        return machinery.resolveMachinery(
             SelectableBlocCache.class,
-            () -> new SelectableBlocCache(installation));
+            () -> new SelectableBlocCache(machinery));
     }
 
     /**
@@ -99,12 +99,12 @@ public final class SelectableBlocCache implements InstalledMachinery {
      *
      * @param view the selected political-map view whose blocs the picker draws
      * @return the memoised read - the picker and the presence behind it; the same instance while
-     *         nothing it depends on moves. A cache over no sector - the detached installation -
+     *         nothing it depends on moves. A cache over no sector - the detached machinery -
      *         resolves to the view's empty list
      */
     public BlocPickerRead<?> resolveBlocPickerRead(PoliticalMapView view) {
 
-        var sector = installation.resolveSector();
+        var sector = machinery.resolveSector();
 
         return blocCache.resolveValue(
             view.getId(),
@@ -117,12 +117,12 @@ public final class SelectableBlocCache implements InstalledMachinery {
     // (the alliance set, for the alliances view; a constant for the faction view). The filter
     // selection is absent by design - it changes which bloc is lit, never which blocs are listed.
     //
-    // The view folds its inputs off this installation's board, the same one the walk above takes its
+    // The view folds its inputs off this machinery's board, the same one the walk above takes its
     // sector from: keyed on another sector's counters, a list walked here would never be re-walked
     // when this sector's alliances moved, and would be thrown away when another sector's did.
     private int computeRevision(PoliticalMapView view) {
         return Objects.hash(
             KmuLunaSettings.getSettingsRevision(),
-            view.getContentRevision(installation.resolveRefreshBoard()));
+            view.getContentRevision(machinery.resolveRefreshBoard()));
     }
 }

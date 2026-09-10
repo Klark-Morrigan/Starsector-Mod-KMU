@@ -23,8 +23,8 @@ vocabulary and the per-screen key scheme these types compose their keys through.
 shortcut key.
 
 A layer is registered once for the process while what it draws with belongs to one sector, so it
-holds no renderer. It is asked for the one belonging to the installation being drawn, and
-`MapLayerRegistry` passes that installation through rather than resolving one of its own. What it
+holds no renderer. It is asked for the one belonging to the machinery being drawn, and
+`MapLayerRegistry` passes that machinery through rather than resolving one of its own. What it
 *runs* on a sector is held the same way round and for the same reason: a layer states a
 `MapLayerStanding` rather than registering anything itself, and is asked to stand up or down against
 a named sector.
@@ -173,7 +173,7 @@ a stranger's code here, and one that throws on the way up is not a reason for th
 unwired.
 
 Standing is per sector, so what is standing where is `StandingLayers`, held as
-[installed machinery](../installation/README.md#standing-a-layer-up-on-one-sector) and beginning and
+[installed machinery](../machinery/README.md#standing-a-layer-up-on-one-sector) and beginning and
 ending with the sector it describes.
 
 The order matters against the strip: a stood-down layer must never be a screen's pick, or the render

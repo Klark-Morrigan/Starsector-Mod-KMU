@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.listeners.SectorListeners;
 import kmlib.starsector.scripts.SectorScripts;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
 import kmu.maplayers.politicalmap.base.refresh.listeners.PoliticalMapColonisationListener;
@@ -181,6 +181,6 @@ public final class PoliticalMapInstaller {
             sector,
             () -> new MapLayerSectorWatcher(
                 new PoliticalMapStalenessSource(
-                    MapLayerInstallations.resolveInstallationFor(sector))));
+                    SectorMapMachineryIndex.resolveMachineryFor(sector))));
     }
 }

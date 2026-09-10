@@ -228,12 +228,12 @@ bar once does not order it again per save.
 - **[The arranging dialog](base/chrome/README.md#the-arranging-dialog)** - what writes that
   arrangement, opened from the bar and from nowhere else. Its rules, its modality and the box it
   stands in are [the map chrome README](base/chrome/README.md)'s.
-- **[Installed machinery](base/installation/README.md)** - one sector's map machinery as a thing a
+- **[Installed machinery](base/machinery/README.md)** - one sector's map machinery as a thing a
   caller can hold, since everything the layers draw is derived from one sector and everything under
-  that drawing is keyed by bare system id. `MapLayerInstallation` holds the refresh board, the
+  that drawing is keyed by bare system id. `SectorMapMachinery` holds the refresh board, the
   motion tracker, the hover holder and the sector itself; what a *layer* derives from the sector
-  goes in through `InstalledMachinery`, so an installation owns those lifetimes without naming the
-  packages downstream of it. `MapLayerInstallations` indexes one per sector and settles the
+  goes in through `InstalledMachinery`, so machinery owns those lifetimes without naming the
+  packages downstream of it. `SectorMapMachineryIndex` indexes one per sector and settles the
   lifetime - replace on reinstall, release on removal, discard every one on load.
 - **[The render surface](base/render/README.md)** - `MapLayerRenderer`, the seam a layer draws
   through - its overlay and the hover box over one cell of it - and the terrain that owns the map's
@@ -242,7 +242,7 @@ bar once does not order it again per save.
   sector it draws it finds through its own terrain entity, that being the one handle a plugin
   rebuilt from the save has. More than one terrain surface can paint one frame, so the per-frame
   work behind a layer is claimed rather than assumed: `MapFramePreparationClaim` grants it to the
-  first surface of that sector to reach each frame, one claim per installation so two maps drawing
+  first surface of that sector to reach each frame, one claim per machinery so two maps drawing
   in one frame each get their own. The
   cursor read is the exception, being taken per pass so the surface that drew last owns the answer.
   Where a second surface is a minimap its owner has parked off screen, the compatibility mode stops

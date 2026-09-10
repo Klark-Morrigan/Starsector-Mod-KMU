@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.base.refresh.MapSubstrateSectorWatcher;
@@ -271,7 +271,7 @@ class PoliticalMapInstallerTest {
         when(sectorMock.getListenerManager())
             .thenReturn(listenerManager);
 
-        var refreshBoard = MapLayerInstallations
+        var refreshBoard = SectorMapMachineryIndex
             .installMachineryOn(sectorMock)
             .resolveRefreshBoard();
 

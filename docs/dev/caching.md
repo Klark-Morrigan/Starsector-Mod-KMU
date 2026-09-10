@@ -48,7 +48,7 @@ Three properties make that safe:
   built once and only reconciled when the *set* of drawn systems changes. Systems
   that move are the exception, and are excluded from the partition rather than
   chased (see `MovingSystems`, one tracker per sector held by that sector's
-  installation, since an observation is keyed by system id).
+  machinery, since an observation is keyed by system id).
 - **Ownership changes are local.** Dominance is decided per system from the
   colonies seated in it, so a colony event can only shift its own system - which
   makes a targeted re-shape of that system and its neighbours possible instead of
@@ -197,15 +197,15 @@ a layer declares its own beside itself
 and reaches the same board for them.
 
 One board per sector, held by that sector's
-[`MapLayerInstallation`](../../src/main/java/kmu/maplayers/base/installation/MapLayerInstallation.java):
+[`SectorMapMachinery`](../../src/main/java/kmu/maplayers/base/machinery/SectorMapMachinery.java):
 every signal on it is a fact about one sector, and the stale set names that sector's
 systems by bare id. Why that has to be a sector's rather than the process's, and how the
-installation holding it is made and released, are
-[the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md).
-A producer or consumer holding a sector - or the installation over one - reaches that
+machinery holding it is made and released, are
+[the installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md).
+A producer or consumer holding a sector - or the machinery over one - reaches that
 sector's board directly, and every one of them does. A sidebar control looks like the
 exception, a settings change naming no sector, but the tab's body build resolves an
-installation once and hands its board to each control it places, so a flip repaints the
+machinery once and hands its board to each control it places, so a flip repaints the
 map that control was placed over. Nothing resolves a board off the running sector any
 more: a producer reaching one it was not handed is a producer that can raise on a map
 nobody is looking at.
@@ -257,7 +257,7 @@ that samples nothing live folds no sources and never forces a rebuild on its own
 board those counters are read off is an argument, since a view is a stateless strategy
 every sector's machinery shares while the counters are one sector's: both callers - the
 overlay cache's own fingerprint and the picker memo's key - already hold the
-installation being asked about, so each names the board it means rather than leaving
+machinery being asked about, so each names the board it means rather than leaving
 the view to resolve whichever sector is running.
 
 ## Layer 3: the caches
@@ -456,7 +456,7 @@ economy memoised against that sector's revisions, so a shared memo would serve o
 sector's rows under another's revision - a wrong list rather than a stale one - and two
 sectors' sidebars would evict each other's single entry on every alternation. It is
 therefore held by the sector's
-[installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md)
+[installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md)
 and goes when that does, which is also what replaces the discard it would otherwise
 need on load.
 
@@ -543,14 +543,14 @@ change of sector: the geometry cache reconciles by diffing system *ids*, so a
 system present in both saves at a different position reads as unchanged. So a
 cache serves one sector and one only - it is made when the layers are installed on
 that sector and released when they are removed, which a load does for every
-standing installation before installing the loaded one
-([the installed machinery](../../src/main/java/kmu/maplayers/base/installation/README.md)
+standing machinery before installing the loaded one
+([the installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md)
 sets out that lifetime). Every revision starts at a
 rebuild-forcing seed, so the first frame after an install rebuilds both halves from
 scratch, and there is nothing of a previous sector's for it to be told about.
 
 Release is not merely dropping. The cached faction names each own a GL buffer, so
-they are freed at the moment the installation goes rather than left to LazyLib's
+they are freed at the moment the machinery goes rather than left to LazyLib's
 finalizer sweep - which is what a sector removed mid-session would otherwise leak.
 
 What *is* persisted is only the player's choices that feed it - the active layer,

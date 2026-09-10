@@ -9,10 +9,10 @@ import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHoverPermissionFixture;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
@@ -112,7 +112,7 @@ final class MapLayerCellTooltipTest {
         void discardTheInstalledMachinery() {
             // The index is process-wide, so a sector left installed would reach the next test as a
             // hover - and a drawing - it never asked for.
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.disposeAllMachinery();
         }
 
         @AfterEach

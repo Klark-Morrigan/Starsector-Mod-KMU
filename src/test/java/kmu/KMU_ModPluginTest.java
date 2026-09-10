@@ -7,8 +7,8 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerStandings;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
@@ -208,8 +208,8 @@ class KMU_ModPluginTest {
     // an unmocked installer reach a real sector mock and answer for itself.
     private static final class MapLayerInstallerMocks implements AutoCloseable {
 
-        private final MockedStatic<MapLayerInstallations> installationsMock =
-            mockStatic(MapLayerInstallations.class);
+        private final MockedStatic<SectorMapMachineryIndex> machineryIndexMock =
+            mockStatic(SectorMapMachineryIndex.class);
         private final MockedStatic<MapSubstrateRefreshInstaller> substrateRefreshMock =
             mockStatic(MapSubstrateRefreshInstaller.class);
         private final MockedStatic<MapLayerStandings> standingsMock =
@@ -229,8 +229,8 @@ class KMU_ModPluginTest {
         // reached by a take-back.
         private void verifyEveryStandUpFor(SectorAPI sector, VerificationMode howOften) {
 
-            installationsMock.verify(
-                () -> MapLayerInstallations.installMachineryOn(sector), howOften);
+            machineryIndexMock.verify(
+                () -> SectorMapMachineryIndex.installMachineryOn(sector), howOften);
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
             standingsMock.verify(() -> MapLayerStandings.applyArrangementTo(sector), howOften);
@@ -242,8 +242,8 @@ class KMU_ModPluginTest {
 
         private void verifyEveryTakeBackFor(SectorAPI sector, VerificationMode howOften) {
 
-            installationsMock.verify(
-                () -> MapLayerInstallations.uninstallMachineryFrom(sector), howOften);
+            machineryIndexMock.verify(
+                () -> SectorMapMachineryIndex.uninstallMachineryFrom(sector), howOften);
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.uninstallAll(sector), howOften);
             standingsMock.verify(
@@ -263,7 +263,7 @@ class KMU_ModPluginTest {
             surfaceMock.close();
             standingsMock.close();
             substrateRefreshMock.close();
-            installationsMock.close();
+            machineryIndexMock.close();
         }
     }
 }

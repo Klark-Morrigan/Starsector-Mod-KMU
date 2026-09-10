@@ -19,7 +19,7 @@ Part of [the map layers framework](../../README.md).
 
 `MapHover` is the hovered cell and the cluster around it. `MapHoverState` is the holder the map
 render pass publishes to and the later UI passes read, since only that pass can invert a cursor pixel
-to a world point - one per sector, held by [that sector's installation](../installation/README.md), a
+to a world point - one per sector, held by [that sector's machinery](../machinery/README.md), a
 hover naming its system by bare id, and resolved off the running sector by the passes vanilla drives
 without naming one. `HoverHighlight` is the loops and triangles one highlight lights up, whether that
 is one cell under the cursor or a whole set lit at once.

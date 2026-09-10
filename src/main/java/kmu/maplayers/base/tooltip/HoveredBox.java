@@ -6,10 +6,10 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.systems.SectorStarSystems;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 
 import java.util.Optional;
@@ -52,22 +52,22 @@ record HoveredBox(
 
         // One resolution for everything below: the sector the box describes, the hover it published,
         // and the renderer that would say something about what that hover names. Taken off one
-        // installation rather than read apart, so the box cannot describe one sector out of another
+        // machinery rather than read apart, so the box cannot describe one sector out of another
         // sector's hover - the trio is what the box is, a cell of one sector's map described by that
         // sector's map.
-        var installation = MapLayerInstallations.resolveInstallationForLiveSector();
+        var machinery = SectorMapMachineryIndex.resolveMachineryForLiveSector();
 
         // Absent where no game is loaded, which is the machinery over no sector answering.
-        var sector = installation.resolveSector();
+        var sector = machinery.resolveSector();
         if (sector == null) {
             return Optional.empty();
         }
-        var hover = installation.resolveHoverState().getHover();
+        var hover = machinery.resolveHoverState().getHover();
 
         if (!shouldDrawTooltipFor(hover)) {
             return Optional.empty();
         }
-        var tooltip = resolveActiveTooltip(installation);
+        var tooltip = resolveActiveTooltip(machinery);
         if (tooltip.isEmpty()) {
             return Optional.empty();
         }
@@ -102,11 +102,11 @@ record HoveredBox(
      * the map surface paints through. Nothing drawing at all resolves the same as an injected empty:
      * nothing to show, so a switch-only tab and a pre-registration frame need no case of their own.
      *
-     * @param installation the machinery installed on the sector the box would describe, whose
+     * @param machinery the machinery installed on the sector the box would describe, whose
      *                     renderer is the one holding the draw lists the hover was resolved against
      * @return the active layer's injected box, or empty when it injects none
      */
-    static Optional<MapHoverTooltip> resolveActiveTooltip(MapLayerInstallation installation) {
+    static Optional<MapHoverTooltip> resolveActiveTooltip(SectorMapMachinery machinery) {
 
         // The crisp pick rather than the dissolve the overlay rides out. A box reporting what the cursor
         // is over has nothing left to report the moment the player switches the layers off, and it reads
@@ -114,7 +114,7 @@ record HoveredBox(
         if (!MapLayerScreens.areLayersShownOnLiveScreen()) {
             return Optional.empty();
         }
-        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(installation);
+        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(machinery);
         if (layerRenderer == null) {
             return Optional.empty();
         }

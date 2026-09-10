@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.colonies.SystemColonies;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
@@ -84,8 +84,8 @@ public final class MarketPoliticsRefresh {
             + " system=" + system.getId()
             + (context.isEmpty() ? "" : " " + context));
 
-        MapLayerInstallations
-            .resolveInstallationFor(sector)
+        SectorMapMachineryIndex
+            .resolveMachineryFor(sector)
             .resolveRefreshBoard()
             .markSystemGroupingStale(system.getId());
 

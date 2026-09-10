@@ -9,7 +9,7 @@ import kmlib.starsector.ui.widgets.lists.ListPickerStore;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.util.KmuStrings;
 
@@ -38,7 +38,7 @@ import java.util.List;
  * raises: a hover is a preview over paint already on the map, and only one screen is ever up to
  * preview on, so it is also the one tie that takes no screen. Resolved off the slot rather than
  * captured beside it, so the list a hover previews and the list a pick files under are one.
- * It is why the sector arrives as its whole {@link MapLayerInstallation} rather than
+ * It is why the sector arrives as its whole {@link SectorMapMachinery} rather than
  * as the board alone - the slot and the board are both that sector's, and handed over side by side
  * they would be two chances to name two sectors.
  *
@@ -70,7 +70,7 @@ public final class FilterSelectionBinder {
      * @param columns          how many columns the item list wraps its rows across
      * @param trailingControls the controls filling the right half of the sort row; empty leaves the
      *                         sort selector alone on the row
-     * @param installation     the machinery of the sector this picker was built over, holding both
+     * @param machinery        the machinery of the sector this picker was built over, holding both
      *                         the board an item pick repaints through and the slot a hovered row is
      *                         previewed from
      * @return the picker controls, top to bottom; empty when the picker offers no items
@@ -80,9 +80,9 @@ public final class FilterSelectionBinder {
             ListPicker<?> picker,
             ListColumns columns,
             List<ControlSpec> trailingControls,
-            MapLayerInstallation installation) {
+            SectorMapMachinery machinery) {
 
-        return buildCapturedPicker(slot, picker, columns, trailingControls, installation);
+        return buildCapturedPicker(slot, picker, columns, trailingControls, machinery);
     }
 
     // The picker built under a captured item type, which is what lets the items and their
@@ -97,7 +97,7 @@ public final class FilterSelectionBinder {
             ListPicker<T> picker,
             ListColumns columns,
             List<ControlSpec> trailingControls,
-            MapLayerInstallation installation) {
+            SectorMapMachinery machinery) {
 
         if (picker.items().isEmpty()) {
             return List.of();
@@ -116,14 +116,14 @@ public final class FilterSelectionBinder {
             activePicks,
             KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,
-            // Both writers taken off the one installation here, rather than resolved when a pick or
+            // Both writers taken off the one machinery here, rather than resolved when a pick or
             // a hover lands: a build runs while the sector is live, where a report can arrive after
-            // a load has disposed it - and asking a disposed installation for machinery makes a
+            // a load has disposed it - and asking a disposed machinery for machinery makes a
             // second copy that answers for a sector nothing draws and is never released.
             new ScopedPickerStore(
                 slot,
-                installation.resolveRefreshBoard(),
-                FilterHoverSlot.resolveHoverSlotIn(installation)));
+                machinery.resolveRefreshBoard(),
+                FilterHoverSlot.resolveHoverSlotIn(machinery)));
     }
 
     // What one picker writes into, bound to the slot its picks are filed under, to the board its item
@@ -131,7 +131,7 @@ public final class FilterSelectionBinder {
     // callbacks so the three are captured once, where they are read, rather than threaded into each
     // write separately.
     //
-    // The board and the hover slot are derived from one installation rather than handed over side by
+    // The board and the hover slot are derived from one machinery rather than handed over side by
     // side, so no caller can pair one sector's board with another sector's hover.
     private record ScopedPickerStore(
         SelectionSlot slot,

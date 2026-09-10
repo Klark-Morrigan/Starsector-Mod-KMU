@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.refresh.listeners;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -23,9 +23,9 @@ import static org.mockito.Mockito.mock;
  * deep-hyperspace station) mark nothing.
  *
  * <p>Read off the board of the sector the listener was installed on, which is where it reports and
- * is made fresh with the installation for each case. That board is also what says the listener
+ * is made fresh with the machinery for each case. That board is also what says the listener
  * reports against the sector it holds rather than against the running game: a mark aimed anywhere
- * else lands on the installation that sector has not got, and never reaches here.
+ * else lands on the machinery that sector has not got, and never reaches here.
  *
  * <p>The pre-deciv phase does write one thing, and it is the reason that phase is listened to at
  * all: what the dying colony still vouches for is recorded while it can still be read. That case
@@ -41,7 +41,7 @@ final class PoliticalMapDecivListenerTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private final MapLayerRefreshBoard refreshBoard =
-        MapLayerInstallations.installMachineryOn(sectorMock).resolveRefreshBoard();
+        SectorMapMachineryIndex.installMachineryOn(sectorMock).resolveRefreshBoard();
 
     private final PoliticalMapDecivListener listener = new PoliticalMapDecivListener(sectorMock);
 

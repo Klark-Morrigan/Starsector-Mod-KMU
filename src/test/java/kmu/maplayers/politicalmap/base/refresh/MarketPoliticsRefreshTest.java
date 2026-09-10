@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.visibility.colonies.ColonyObservation;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.mock;
  * stale, while a null market or one with no star system (a deep-hyperspace
  * station) marks nothing.
  *
- * <p>Both halves are read off the sector handed in - the board of that sector's installation, and
+ * <p>Both halves are read off the sector handed in - the board of that sector's machinery, and
  * that sector's register - since a report is about the sector its listener was installed on rather
  * than about whichever the player currently has loaded. Machinery is installed on a sector of this
  * suite's own per case, so the board each case reads starts empty.
@@ -41,7 +41,7 @@ final class MarketPoliticsRefreshTest {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     private final MapLayerRefreshBoard refreshBoard =
-        MapLayerInstallations.installMachineryOn(sectorMock).resolveRefreshBoard();
+        SectorMapMachineryIndex.installMachineryOn(sectorMock).resolveRefreshBoard();
 
     @Nested
     class ReportMarketChange {
@@ -104,7 +104,7 @@ final class MarketPoliticsRefreshTest {
             // listener was installed on, so one resolved off the running game would mark whichever
             // sector the player has loaded for an event in another.
             var otherSectorMock = mock(SectorAPI.class);
-            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+            var otherMachinery = SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
             MarketPoliticsRefresh.reportMarketChange(
                 sectorMock,
@@ -112,7 +112,7 @@ final class MarketPoliticsRefreshTest {
                 "colony resize",
                 "");
 
-            assertThat(otherInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
         }
 

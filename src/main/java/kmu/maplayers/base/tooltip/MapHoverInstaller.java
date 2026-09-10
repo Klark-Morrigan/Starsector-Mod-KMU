@@ -8,7 +8,7 @@ import kmlib.starsector.ui.map.probes.VanillaMapTooltipProbe;
 
 import kmu.maplayers.base.hover.MapHoverExpirer;
 import kmu.maplayers.base.hover.MapHoverPermission;
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevelState;
 import kmu.starsector.ui.ShownMapSurface;
 
@@ -122,8 +122,8 @@ public final class MapHoverInstaller {
         SectorScripts.installTransientScript(
             sector,
             () -> new MapHoverExpirer(
-                MapLayerInstallations
-                    .resolveInstallationFor(sector)
+                SectorMapMachineryIndex
+                    .resolveMachineryFor(sector)
                     .resolveHoverState()));
     }
 

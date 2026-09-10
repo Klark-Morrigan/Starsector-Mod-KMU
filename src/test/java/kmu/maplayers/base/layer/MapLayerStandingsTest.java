@@ -2,7 +2,7 @@ package kmu.maplayers.base.layer;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -79,10 +79,10 @@ final class MapLayerStandingsTest {
     }
 
     @AfterEach
-    void clearEveryInstallationThisCaseMade() {
+    void clearEveryMachineryThisCaseMade() {
         // The index is process-wide, so a sector installed here would otherwise be one every later
         // walk over every installed sector acted on.
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
@@ -93,7 +93,7 @@ final class MapLayerStandingsTest {
 
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
 
@@ -107,7 +107,7 @@ final class MapLayerStandingsTest {
             // looked at from.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
 
@@ -121,7 +121,7 @@ final class MapLayerStandingsTest {
             // layer's caches and re-register its listeners for no reason the player could see.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
             MapLayerStandings.applyArrangementTo(sectorMock);
@@ -136,7 +136,7 @@ final class MapLayerStandingsTest {
             // row down with the exception.
             MapLayerRosters.replaceRosterWith(pairlessLayerMock, wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAIRLESS_LAYER_ID));
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapLayerStandings.applyArrangementTo(sectorMock);
 
@@ -165,7 +165,7 @@ final class MapLayerStandingsTest {
 
             MapLayerRosters.replaceRosterWith(wiredLayerMock, otherWiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             assertThatCode(() -> MapLayerStandings.applyArrangementTo(sectorMock))
                 .doesNotThrowAnyException();
@@ -183,8 +183,8 @@ final class MapLayerStandingsTest {
             // wherever the player goes rather than only on the sector they were looking at.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            MapLayerInstallations.installMachineryOn(sectorMock);
-            MapLayerInstallations.installMachineryOn(otherSectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
 
             MapLayerStandings.applyArrangementWhereverInstalled();
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
@@ -199,7 +199,7 @@ final class MapLayerStandingsTest {
             // The way back has to work, the dialog being the only place a hidden tab returns from.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapLayerStandings.applyArrangementWhereverInstalled();
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
@@ -217,7 +217,7 @@ final class MapLayerStandingsTest {
             MapLayerArrangements.arrangeBarWith(
                 List.of(WIRED_LAYER_ID, OTHER_WIRED_LAYER_ID),
                 List.of());
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapLayerStandings.applyArrangementWhereverInstalled();
             MapLayerArrangements.arrangeBarWith(
@@ -239,7 +239,7 @@ final class MapLayerStandingsTest {
             // layer at once, and it is the path a player uninstalls the mod from a save through.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of());
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapLayerStandings.applyArrangementTo(sectorMock);
 
             MapLayerStandings.standEveryLayerDownFrom(sectorMock);
@@ -253,7 +253,7 @@ final class MapLayerStandingsTest {
             // stand-down aimed at it would have a layer's own idempotence carrying the mistake.
             MapLayerRosters.replaceRosterWith(wiredLayerMock);
             MapLayerArrangements.arrangeBarWith(List.of(), List.of(WIRED_LAYER_ID));
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapLayerStandings.applyArrangementTo(sectorMock);
 
             MapLayerStandings.standEveryLayerDownFrom(sectorMock);

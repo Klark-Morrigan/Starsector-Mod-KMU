@@ -7,12 +7,12 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.testfixtures.starsector.ui.intel.IntelScreenViewFake;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.render.MapLayerRenderer;
 
 import org.junit.jupiter.api.AfterEach;
@@ -53,11 +53,11 @@ final class HoveredBoxTest {
     // since the publish looks like.
     private static final String DROPPED_SYSTEM_ID = "gone";
 
-    // Machinery over no sector, for the cases that hand an installation in rather than have the
+    // Machinery over no sector, for the cases that hand machinery in rather than have the
     // chain resolve one. One for the class, since those cases are about which box a layer injects
     // and not about whose map it is: a fresh one per assertion would suggest the sector turned
     // something.
-    private final MapLayerInstallation detachedInstallation = new MapLayerInstallation(null);
+    private final SectorMapMachinery detachedMachinery = new SectorMapMachinery(null);
 
     private final MapHoverTooltip tooltipMock = mock(MapHoverTooltip.class);
     private final MapLayer tooltipLayerMock = mock(MapLayer.class);
@@ -87,10 +87,10 @@ final class HoveredBoxTest {
         // each test from the intel screen closed, which resolves reads to the map screen's pick.
         MapLayerScreens.registerIntelScreen(new IntelScreenViewFake());
 
-        // The chain reads the hover and the sector off one installation, so the box can only be
+        // The chain reads the hover and the sector off one machinery, so the box can only be
         // about a sector the machinery is actually installed on - a hover parked on machinery
         // belonging to no sector describes no map and draws nothing.
-        MapLayerInstallations.installMachineryOn(sectorMock);
+        SectorMapMachineryIndex.installMachineryOn(sectorMock);
     }
 
     @AfterEach
@@ -100,11 +100,11 @@ final class HoveredBoxTest {
 
         // The index is process-wide, so a sector left installed would carry this test's hover into
         // the next one.
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
 
         // The machinery over no sector is shared and never disposed, being nobody's to release - so
         // the one case that publishes onto it has to put it back itself.
-        MapLayerInstallations.resolveInstallationFor(null).resolveHoverState().clearHover();
+        SectorMapMachineryIndex.resolveMachineryFor(null).resolveHoverState().clearHover();
     }
 
     @Nested
@@ -179,7 +179,7 @@ final class HoveredBoxTest {
         @Test
         void resolveHoveredBoxIsEmptyForARunningSectorNothingIsInstalledOn() {
             // The one case that can tell where the box gets its sector, and so the only thing
-            // holding the box to the installation it read the hover from. Everywhere else the two
+            // holding the box to the machinery it read the hover from. Everywhere else the two
             // agree by construction: an installed sector is the running one, so a box that read the
             // running game directly would answer identically.
             //
@@ -194,7 +194,7 @@ final class HoveredBoxTest {
                 .thenReturn(List.of(systemMock));
 
             MapHoverFixtures.hoverASystemIn(
-                MapLayerInstallations.resolveInstallationFor(null), SYSTEM_ID);
+                SectorMapMachineryIndex.resolveMachineryFor(null), SYSTEM_ID);
 
             try (var globalMock = mockStatic(Global.class)) {
 
@@ -212,7 +212,7 @@ final class HoveredBoxTest {
             // A system dropped between the hover being published and this frame reading it. Tolerated
             // rather than dereferenced, since the hover is a value the map pass left behind.
             MapHoverFixtures.hoverASystemIn(
-                MapLayerInstallations.resolveInstallationFor(sectorMock), DROPPED_SYSTEM_ID);
+                SectorMapMachineryIndex.resolveMachineryFor(sectorMock), DROPPED_SYSTEM_ID);
 
             try (var globalMock = mockStatic(Global.class)) {
 
@@ -294,7 +294,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .contains(tooltipMock);
             }
         }
@@ -311,7 +311,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .isEmpty();
             }
         }
@@ -344,7 +344,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .contains(tooltipMock);
             }
         }
@@ -366,7 +366,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .isEmpty();
             }
         }
@@ -388,7 +388,7 @@ final class HoveredBoxTest {
                     .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
                     .thenReturn(layerRendererMock);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .isEmpty();
             }
         }
@@ -405,7 +405,7 @@ final class HoveredBoxTest {
                     .when(Global::getSector)
                     .thenReturn(null);
 
-                assertThat(HoveredBox.resolveActiveTooltip(detachedInstallation))
+                assertThat(HoveredBox.resolveActiveTooltip(detachedMachinery))
                     .isEmpty();
             }
         }
@@ -431,9 +431,9 @@ final class HoveredBoxTest {
     }
 
     // Puts the cursor over the registered system, on the machinery of the sector that system is in -
-    // which is the only installation the chain would read it back off.
+    // which is the only machinery the chain would read it back off.
     private void hoverTheSystem() {
         MapHoverFixtures.hoverASystemIn(
-            MapLayerInstallations.resolveInstallationFor(sectorMock), SYSTEM_ID);
+            SectorMapMachineryIndex.resolveMachineryFor(sectorMock), SYSTEM_ID);
     }
 }

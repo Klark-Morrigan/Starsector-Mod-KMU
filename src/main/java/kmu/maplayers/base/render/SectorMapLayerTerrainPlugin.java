@@ -8,10 +8,10 @@ import com.fs.starfarer.api.impl.campaign.terrain.BaseTerrain;
 import kmlib.starsector.ui.map.presence.MapPresence;
 import kmlib.starsector.ui.map.probes.EmbeddedMapHostTrace;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.settings.KmuMapHoverSettings;
 
 import java.util.EnumSet;
@@ -36,7 +36,7 @@ import java.util.List;
  * <p>This plugin is serialised into the save with its terrain entity, so it deliberately holds no
  * state: everything a frame needs lives behind the layer's renderer, which is reached through a
  * registered layer and never enters a save. That constraint is also what decides how it finds the
- * sector it draws, which {@link #resolveInstallationBeingDrawn} sets out.
+ * sector it draws, which {@link #resolveMachineryBeingDrawn} sets out.
  *
  * <p><b>Renaming or moving this class breaks every existing save.</b> XStream writes the concrete
  * class name into the file, and a save naming a class that no longer exists fails to load outright -
@@ -121,16 +121,16 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // Null while this surface's terrain sits somewhere nothing is installed in, which is a
         // surface belonging to a sector nothing draws - so it stands down rather than painting
         // through a holder shared with every other sector-less caller.
-        var installation = resolveInstallationBeingDrawn();
+        var machinery = resolveMachineryBeingDrawn();
 
-        if (installation == null) {
+        if (machinery == null) {
             return;
         }
         // Draws through the pick of whichever screen is showing this frame, over the machinery
         // installed on the sector being drawn, so switching a tab switches what paints with no
         // per-layer branch here. Null when nothing draws at all - no registered pick yet, or a pick
         // that paints nothing.
-        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(installation);
+        var layerRenderer = MapLayerRegistry.resolveDrawnMapRenderer(machinery);
 
         if (layerRenderer == null) {
             return;
@@ -145,7 +145,7 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
         // that surface for itself, so two can paint the lower band in one frame and would otherwise
         // each prepare it.
         if (paintedBands.contains(MapOverlayBand.BENEATH_STARSCAPE_NEBULAE)
-                && MapFramePreparationClaim.resolveClaimIn(installation).claimPreparation()) {
+                && MapFramePreparationClaim.resolveClaimIn(machinery).claimPreparation()) {
             layerRenderer.prepareFrame(factor);
         }
 
@@ -185,18 +185,18 @@ public class SectorMapLayerTerrainPlugin extends BaseTerrain {
      * <p>The render hook names no sector and there is no seam to hand one in through, the engine
      * rebuilding this plugin from the save - so the terrain entity it rides on is the handle it has,
      * and that entity's containing location is its sector's hyperspace. Resolved per frame and never
-     * held: an installation is a live object, and a field on this plugin is a field in the save.
+     * held: machinery is a live object, and a field on this plugin is a field in the save.
      *
-     * @return that sector's installation, or null where the engine has not yet seated this plugin's
+     * @return that sector's machinery, or null where the engine has not yet seated this plugin's
      *         entity or where nothing is installed in the location it sits in - both of which mean
      *         nothing to draw
      */
-    private MapLayerInstallation resolveInstallationBeingDrawn() {
+    private SectorMapMachinery resolveMachineryBeingDrawn() {
 
         var terrainEntity = getEntity();
 
         return terrainEntity == null
             ? null
-            : MapLayerInstallations.resolveInstallationIn(terrainEntity.getContainingLocation());
+            : SectorMapMachineryIndex.resolveMachineryIn(terrainEntity.getContainingLocation());
     }
 }

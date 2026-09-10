@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.render.hover;
 import kmu.KmuMod;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.PreviewHighlightGeometry;
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.PickerScope;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
@@ -38,18 +38,18 @@ public final class PoliticalMapPreviewHighlightRenderer {
     // The sector whose picker is being previewed - where the hovered bloc is read from, where the
     // systems behind it are read from, and whose factions the shade is read from. Taken whole
     // rather than as the three reads separately, so they cannot end up naming different sectors.
-    private final MapLayerInstallation installation;
+    private final SectorMapMachinery machinery;
 
     // Held rather than resolved per frame: the assembly retains what it built for the previewed
     // set, so a pointer resting on one row re-clips and re-tessellates nothing.
     private final PreviewHighlightGeometry geometry = new PreviewHighlightGeometry();
 
     /**
-     * @param installation the machinery installed on the sector whose map this draws over, holding
+     * @param machinery the machinery installed on the sector whose map this draws over, holding
      *                     both the picker's hover slot and the presence behind its rows
      */
-    public PoliticalMapPreviewHighlightRenderer(MapLayerInstallation installation) {
-        this.installation = installation;
+    public PoliticalMapPreviewHighlightRenderer(SectorMapMachinery machinery) {
+        this.machinery = machinery;
     }
 
     /**
@@ -94,7 +94,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
         // hover: the id is opaque, so a view named the same by another mod's picker is a different
         // list and must not preview here.
         var previewedBlocId = FilterHoverSlot
-            .resolveHoverSlotIn(installation)
+            .resolveHoverSlotIn(machinery)
             .getHoveredIdOf(new PickerScope(KmuMod.MAP_STORE_NAMESPACE, view.getId()));
 
         if (previewedBlocId == null) {
@@ -112,7 +112,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
         // listed under: the presence rides the same memo those rows came from, so asking under any
         // other view would both evict that memo and answer about a list the pointer is not on.
         var presentSystemIds = SelectableBlocCache
-            .resolveBlocCacheIn(installation)
+            .resolveBlocCacheIn(machinery)
             .readPresentSystemIds(view, previewedBlocId);
 
         return new PreviewHighlightPaint(
@@ -137,7 +137,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
     private Color resolveShadeOf(PoliticalMapTerritories territories, String blocId) {
 
         var palette = new SectorBlocPalettes(
-                installation.resolveSector(),
+                machinery.resolveSector(),
                 territories.getGrouping())
             .readBlocPalette(blocId);
 

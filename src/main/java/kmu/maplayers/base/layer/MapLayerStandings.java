@@ -2,8 +2,8 @@ package kmu.maplayers.base.layer;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import static kmu.KmuWiringSteps.runGuardedStep;
 
@@ -24,7 +24,7 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  *
  * <p>Asked on load, so a layer hidden in the store never stands up on a sector at all, and again
  * whenever the arrangement is written. Per sector throughout - standing up is against one sector,
- * and {@link MapLayerInstallations} is what says which sectors there are to stand on.
+ * and {@link SectorMapMachineryIndex} is what says which sectors there are to stand on.
  *
  * <p>Every layer is acted on behind its own failure boundary. An install carrying another mod's
  * layer calls a stranger's code here, and a layer that throws on the way up is not a reason for the
@@ -48,13 +48,13 @@ public final class MapLayerStandings {
      * bar standing, every layer they took off it not.
      *
      * <p>What the entry point runs as the layers are installed on a loaded sector. A sector with no
-     * installation - the switch flipped with no game loaded - has nothing to stand on and is left
+     * machinery - the switch flipped with no game loaded - has nothing to stand on and is left
      * alone.
      *
      * @param sector the sector being brought into line
      */
     public static void applyArrangementTo(SectorAPI sector) {
-        applyArrangementToInstallation(MapLayerInstallations.resolveInstallationFor(sector));
+        applyArrangementToMachinery(SectorMapMachineryIndex.resolveMachineryFor(sector));
     }
 
     /**
@@ -67,8 +67,8 @@ public final class MapLayerStandings {
      */
     public static void applyArrangementWhereverInstalled() {
 
-        for (var installation : MapLayerInstallations.getEveryInstallation()) {
-            applyArrangementToInstallation(installation);
+        for (var machinery : SectorMapMachineryIndex.getAllMachinery()) {
+            applyArrangementToMachinery(machinery);
         }
     }
 
@@ -83,13 +83,13 @@ public final class MapLayerStandings {
      */
     public static void standEveryLayerDownFrom(SectorAPI sector) {
 
-        var installation = MapLayerInstallations.resolveInstallationFor(sector);
-        var installedSector = installation.resolveSector();
+        var machinery = SectorMapMachineryIndex.resolveMachineryFor(sector);
+        var installedSector = machinery.resolveSector();
 
         if (installedSector == null) {
             return;
         }
-        var standingLayers = resolveStandingLayersIn(installation);
+        var standingLayers = resolveStandingLayersIn(machinery);
 
         for (var layer : MapLayerRegistry.getLayers()) {
             runGuardedStep(
@@ -102,18 +102,18 @@ public final class MapLayerStandings {
     // once for the whole walk rather than per layer: it is one answer about the bar, and a store
     // read per layer would let the row shift under the walk that is acting on it.
     //
-    // A sector-less installation is the detached one, which is nobody's sector: there is nothing for
+    // A sector-less machinery is the detached one, which is nobody's sector: there is nothing for
     // a layer to be stood up on, and recording a standing against it would have the next real sector
     // inherit a reading of a sector that never existed.
-    private static void applyArrangementToInstallation(MapLayerInstallation installation) {
+    private static void applyArrangementToMachinery(SectorMapMachinery machinery) {
 
-        var sector = installation.resolveSector();
+        var sector = machinery.resolveSector();
 
         if (sector == null) {
             return;
         }
         var arrangement = LiveMapLayerArrangement.resolveArrangement();
-        var standingLayers = resolveStandingLayersIn(installation);
+        var standingLayers = resolveStandingLayersIn(machinery);
 
         for (var layer : MapLayerRegistry.getLayers()) {
             runGuardedStep(
@@ -159,8 +159,8 @@ public final class MapLayerStandings {
     }
 
     // What this sector remembers of which layers are up on it, made on the first ask and released
-    // with the installation holding it.
-    private static StandingLayers resolveStandingLayersIn(MapLayerInstallation installation) {
-        return installation.resolveMachinery(StandingLayers.class, StandingLayers::new);
+    // with the machinery holding it.
+    private static StandingLayers resolveStandingLayersIn(SectorMapMachinery machinery) {
+        return machinery.resolveMachinery(StandingLayers.class, StandingLayers::new);
     }
 }

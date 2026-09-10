@@ -2,7 +2,7 @@ package kmu.maplayers.base.layer;
 
 import kmlib.starsector.ui.controls.ControlSpec;
 
-import kmu.maplayers.base.installation.MapLayerInstallation;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapKeybindSettings;
 import kmu.util.KmuStrings;
@@ -72,9 +72,9 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
-    public MapLayerRenderer resolveRenderer(MapLayerInstallation installation) {
+    public MapLayerRenderer resolveRenderer(SectorMapMachinery machinery) {
         // No renderer is the "show nothing" pick expressed to the map surface: it draws whatever the
-        // active layer draws, and this layer draws nothing. The installation goes unread for the
+        // active layer draws, and this layer draws nothing. The machinery goes unread for the
         // same reason - there is nothing here that a sector could differ in.
         return null;
     }

@@ -18,9 +18,9 @@ Part of [the map layers framework](../../README.md).
 
 A signal is a `MapLayerRefreshSignal`, declared by the framework (`MapLayerCommonRefreshSignal`) or by
 the layer that alone means anything by it. `MapLayerRefreshBoard` is what a signal is raised on, one
-per sector held by [that sector's installation](../installation/README.md), since the stale set names
+per sector held by [that sector's machinery](../machinery/README.md), since the stale set names
 systems by bare id. Every producer is handed the board it means, and this package is gated from
-importing the installation one so none can resolve a board of its own. `RefreshSignalRevisions` is a
+importing the machinery one so none can resolve a board of its own. `RefreshSignalRevisions` is a
 reading of where the traced signals stood, for a cache to name what moved since it last rebuilt.
 
 ## The poll

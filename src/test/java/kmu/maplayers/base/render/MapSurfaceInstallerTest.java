@@ -9,7 +9,7 @@ import kmlib.starsector.ui.map.presence.SectorMapState;
 import kmlib.starsector.ui.map.probes.MapIconLayeringProbe;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
-import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,8 +45,8 @@ class MapSurfaceInstallerTest {
     // the rest of the JVM.
     @BeforeEach
     @AfterEach
-    void clearEveryInstallation() {
-        MapLayerInstallations.disposeEveryInstallation();
+    void clearEveryMachinery() {
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
@@ -60,7 +60,7 @@ class MapSurfaceInstallerTest {
             // bake a library class's name into the file.
             var sectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
             verify(sectorMock)
@@ -77,10 +77,10 @@ class MapSurfaceInstallerTest {
             var firstLoadSectorMock = mock(SectorAPI.class);
             var secondLoadSectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.installMachineryOn(firstLoadSectorMock);
+            SectorMapMachineryIndex.installMachineryOn(firstLoadSectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(firstLoadSectorMock);
 
-            MapLayerInstallations.installMachineryOn(secondLoadSectorMock);
+            SectorMapMachineryIndex.installMachineryOn(secondLoadSectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(secondLoadSectorMock);
 
             var firstReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -96,7 +96,7 @@ class MapSurfaceInstallerTest {
         }
 
         @Test
-        void holdsEachSectorsReseaterUnderThatSectorsOwnInstallation() {
+        void holdsEachSectorsReseaterUnderThatSectorsOwnMachinery() {
             // What one slot for the whole process could not do. A second sector installed on would
             // take the slot over, and the first sector's removal would then reach for the second
             // sector's script - taking nothing off the sector still running one, and asking the
@@ -104,10 +104,10 @@ class MapSurfaceInstallerTest {
             var sectorMock = mock(SectorAPI.class);
             var otherSectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
-            MapLayerInstallations.installMachineryOn(otherSectorMock);
+            SectorMapMachineryIndex.installMachineryOn(otherSectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(otherSectorMock);
 
             var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -137,7 +137,7 @@ class MapSurfaceInstallerTest {
             // test that logs. Answering null for a null sector is its own contract, covered next door.
             MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
 
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
                     var globalMock = mockStatic(Global.class);
@@ -169,7 +169,7 @@ class MapSurfaceInstallerTest {
 
         @Test
         void looksUpTheTerrainOfTheSectorItWasInstalledOnRatherThanTheRunningOne() {
-            // A reseat is held per installation, so the terrain it lifts must be the terrain of the
+            // A reseat is held per machinery, so the terrain it lifts must be the terrain of the
             // sector it was installed for. Reading the running sector instead would have one
             // sector's script lift another sector's entity - and leave its own sector's map fogged
             // where the band was meant to clear it.
@@ -180,7 +180,7 @@ class MapSurfaceInstallerTest {
             // the stubbed scope rather than left null for the rest of the JVM.
             MapLayerTerrainInstaller.findAboveStarscapeNebulaeTerrain(null);
 
-            MapLayerInstallations.installMachineryOn(installedSectorMock);
+            SectorMapMachineryIndex.installMachineryOn(installedSectorMock);
 
             try (var mapViewMock = mockStatic(CampaignMapView.class);
                     var globalMock = mockStatic(Global.class);
@@ -240,7 +240,7 @@ class MapSurfaceInstallerTest {
             when(sectorMock.getListenerManager())
                 .thenReturn(listenerManager);
 
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
             var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -277,7 +277,7 @@ class MapSurfaceInstallerTest {
             // sector, and a removal by class would take that one with it.
             var sectorMock = mock(SectorAPI.class);
 
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installStarscapeTerrainReseater(sectorMock);
 
             var installedReseater = ArgumentCaptor.forClass(MapIconReseater.class);
@@ -310,7 +310,7 @@ class MapSurfaceInstallerTest {
             when(sectorMock.getListenerManager())
                 .thenReturn(listenerManager);
 
-            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
+            var machinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
 
             MapSurfaceInstaller.installMapFramePreparationClaim(sectorMock);
 
@@ -319,7 +319,7 @@ class MapSurfaceInstallerTest {
 
             assertThat(listenerManager.getAddedListeners())
                 .singleElement()
-                .isSameAs(MapFramePreparationClaim.resolveClaimIn(installation));
+                .isSameAs(MapFramePreparationClaim.resolveClaimIn(machinery));
 
             assertThat(listenerManager.getAddedTransientFlags())
                 .containsExactly(true);
@@ -337,13 +337,13 @@ class MapSurfaceInstallerTest {
             when(sectorMock.getListenerManager())
                 .thenReturn(listenerManager);
 
-            var previousInstallation = MapLayerInstallations.installMachineryOn(sectorMock);
-            var previousClaim = MapFramePreparationClaim.resolveClaimIn(previousInstallation);
+            var previousMachinery = SectorMapMachineryIndex.installMachineryOn(sectorMock);
+            var previousClaim = MapFramePreparationClaim.resolveClaimIn(previousMachinery);
 
             previousClaim.renderInUICoordsBelowUI(null);
             previousClaim.claimPreparation();
 
-            MapLayerInstallations.installMachineryOn(sectorMock);
+            SectorMapMachineryIndex.installMachineryOn(sectorMock);
             MapSurfaceInstaller.installMapFramePreparationClaim(sectorMock);
 
             assertThat(listenerManager.getAddedListeners())

@@ -7,10 +7,10 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.hover.MapHover;
-import kmu.maplayers.base.installation.MapLayerInstallation;
-import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
+import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerSectorWatcher;
 import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -43,17 +43,17 @@ import static org.mockito.Mockito.when;
  * can tell apart on its own.
  *
  * <p>No unit can make this claim. Isolation is a fact about the composition: each part, handed its
- * own installation, behaves correctly whether or not the parts share one underneath, so a shared
- * holder reintroduced below any of them passes every suite but this. So the installations, the
+ * own machinery, behaves correctly whether or not the parts share one underneath, so a shared
+ * holder reintroduced below any of them passes every suite but this. So the machinery, the
  * listeners, the watcher, the poll and the rebuild are all real here, and only what no test JVM
  * answers is stood in for.
  *
  * <p>It carries the installers' own wiring besides, which no suite either side of them reaches.
- * Which installation an installer builds a listener or a watcher against is invisible to the
+ * Which machinery an installer builds a listener or a watcher against is invisible to the
  * collaborator's suite, which builds its own collaborator, and to the installer's suite, which
  * cannot see where the collaborator staged anything without standing up the whole poll behind it.
  * Machinery installed on two sectors is what reads the argument back: a watcher handed the wrong
- * sector's installation observes one sector's positions into the other's tracker.
+ * sector's machinery observes one sector's positions into the other's tracker.
  *
  * <p>And it carries the load discard, which is what an entry point calls before installing on the
  * sector it loaded. Pinned here rather than over that entry point because covering the call there
@@ -62,9 +62,9 @@ import static org.mockito.Mockito.when;
  * with nothing of the first one's reachable.
  *
  * <p>Sits in the render package because the cache holding the draw lists is that package's own; the
- * installations and the installers it drives beside them are reached from anywhere.
+ * machinery and the installers it drives beside them are reached from anywhere.
  */
-final class MapLayerInstallationIsolationIntegrationTest {
+final class SectorMapMachineryIsolationIntegrationTest {
 
     private static final String HEGEMONY_ID = "hegemony";
     private static final String TRITACHYON_ID = "tritachyon";
@@ -111,16 +111,16 @@ final class MapLayerInstallationIsolationIntegrationTest {
     private PoliticalMapRebuildSeams seams;
 
     @BeforeEach
-    void discardEveryInstallationAndOpenSeams() {
+    void discardEveryMachineryAndOpenSeams() {
 
         // The index is process-wide, so a sector another suite installed on would still be indexed
         // here - and a resolution by location would walk it. Cleared before the seams open because
         // the index holds a logger taken from Global at class load.
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
 
         seams = PoliticalMapRebuildSeams.openEverySeamARebuildNeeds();
 
-        // A sector neither installation was made over, staged as the one the game is running. Any
+        // A sector neither machinery was made over, staged as the one the game is running. Any
         // stage that asked the running game which sector it was working on would then find a sector
         // with nothing in it, rather than quietly agreeing with whichever of the two happened to be
         // loaded last.
@@ -130,11 +130,11 @@ final class MapLayerInstallationIsolationIntegrationTest {
     }
 
     @AfterEach
-    void closeSeamsAndDiscardEveryInstallation() {
+    void closeSeamsAndDiscardEveryMachinery() {
 
         seams.closeEverySeam();
 
-        MapLayerInstallations.disposeEveryInstallation();
+        SectorMapMachineryIndex.disposeAllMachinery();
     }
 
     @Nested
@@ -155,11 +155,11 @@ final class MapLayerInstallationIsolationIntegrationTest {
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(resolveInstallationOf(firstSector)
+            assertThat(resolveMachineryOf(firstSector)
                     .resolveRefreshBoard()
                     .drainStaleGroupingSystemIds())
                 .containsExactly(SHARED_SYSTEM_ID);
-            assertThat(resolveInstallationOf(secondSector)
+            assertThat(resolveMachineryOf(secondSector)
                     .resolveRefreshBoard()
                     .drainStaleGroupingSystemIds())
                 .isEmpty();
@@ -226,22 +226,22 @@ final class MapLayerInstallationIsolationIntegrationTest {
         }
 
         @Test
-        void observesEachSectorsPositionsIntoTheTrackerOfTheInstallationItsWatcherWasBuiltWith() {
+        void observesEachSectorsPositionsIntoTheTrackerOfTheMachineryItsWatcherWasBuiltWith() {
             // The installer's own wiring, which nothing else reads back. The watcher is built with
-            // the installation resolved for the sector it is added to, and that argument is
+            // the machinery resolved for the sector it is added to, and that argument is
             // invisible either side of the install - so a watcher handed the other sector's
-            // installation would observe these positions into that sector's tracker, and the cut
+            // machinery would observe these positions into that sector's tracker, and the cut
             // over there would drop a system for a drift it never made.
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
             driftTheSharedSystemPastTwoPollsOf(firstSector);
 
-            assertThat(resolveInstallationOf(firstSector)
+            assertThat(resolveMachineryOf(firstSector)
                     .resolveMovingSystems()
                     .getMovingSystemIds())
                 .containsExactly(SHARED_SYSTEM_ID);
-            assertThat(resolveInstallationOf(secondSector)
+            assertThat(resolveMachineryOf(secondSector)
                     .resolveMovingSystems()
                     .getMovingSystemIds())
                 .isEmpty();
@@ -256,11 +256,11 @@ final class MapLayerInstallationIsolationIntegrationTest {
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
-            resolveInstallationOf(firstSector).resolveHoverState().publishHover(HOVERED_SHARED_CELL);
+            resolveMachineryOf(firstSector).resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
-            assertThat(resolveInstallationOf(firstSector).resolveHoverState().getHover())
+            assertThat(resolveMachineryOf(firstSector).resolveHoverState().getHover())
                 .isSameAs(HOVERED_SHARED_CELL);
-            assertThat(resolveInstallationOf(secondSector).resolveHoverState().getHover())
+            assertThat(resolveMachineryOf(secondSector).resolveHoverState().getHover())
                 .isSameAs(MapHover.NONE);
         }
     }
@@ -277,25 +277,25 @@ final class MapLayerInstallationIsolationIntegrationTest {
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
-            var removedInstallation = resolveInstallationOf(firstSector);
+            var removedMachinery = resolveMachineryOf(firstSector);
 
-            removedInstallation.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
-            removedInstallation.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
+            removedMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
+            removedMachinery.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
-            MapLayerInstallations.uninstallMachineryFrom(firstSector);
+            SectorMapMachineryIndex.uninstallMachineryFrom(firstSector);
 
             assertThat(new PoliticalMapCacheDriver(secondSector).rebuild().getStyledCellByCellId())
                 .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
 
-            assertThat(removedInstallation.isDisposed())
+            assertThat(removedMachinery.isDisposed())
                 .isTrue();
-            assertThat(resolveInstallationOf(firstSector))
-                .isNotSameAs(removedInstallation);
+            assertThat(resolveMachineryOf(firstSector))
+                .isNotSameAs(removedMachinery);
         }
     }
 
     @Nested
-    class DisposeEveryInstallation {
+    class DisposeAllMachinery {
 
         @Test
         void leavesTheSectorLoadedNextNothingOfThePreviousOnes() {
@@ -305,27 +305,27 @@ final class MapLayerInstallationIsolationIntegrationTest {
             // one, and the drift shows up twice over: a tracker carried across would drop the shared
             // system from the loaded sector's cut for a move the previous sector made.
             var previousSector = installMachineryOnAFirstSector();
-            var previousInstallation = resolveInstallationOf(previousSector);
+            var previousMachinery = resolveMachineryOf(previousSector);
 
-            previousInstallation.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
-            previousInstallation.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
+            previousMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
+            previousMachinery.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
             driftTheSharedSystemPastTwoPollsOf(previousSector);
 
-            MapLayerInstallations.disposeEveryInstallation();
+            SectorMapMachineryIndex.disposeAllMachinery();
 
             var loadedSector = installMachineryOnASecondSector();
-            var loadedInstallation = resolveInstallationOf(loadedSector);
+            var loadedMachinery = resolveMachineryOf(loadedSector);
 
             assertThat(new PoliticalMapCacheDriver(loadedSector).rebuild().getStyledCellByCellId())
                 .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
 
-            assertThat(loadedInstallation.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(loadedMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
-            assertThat(loadedInstallation.resolveMovingSystems().getMovingSystemIds())
+            assertThat(loadedMachinery.resolveMovingSystems().getMovingSystemIds())
                 .isEmpty();
-            assertThat(loadedInstallation.resolveHoverState().getHover())
+            assertThat(loadedMachinery.resolveHoverState().getHover())
                 .isSameAs(MapHover.NONE);
-            assertThat(previousInstallation.isDisposed())
+            assertThat(previousMachinery.isDisposed())
                 .isTrue();
         }
     }
@@ -370,7 +370,7 @@ final class MapLayerInstallationIsolationIntegrationTest {
         when(sector.getListenerManager())
             .thenReturn(new RecordingListenerManager());
 
-        MapLayerInstallations.installMachineryOn(sector);
+        SectorMapMachineryIndex.installMachineryOn(sector);
         PoliticalMapInstaller.installAll(sector);
 
         return sector;
@@ -449,8 +449,8 @@ final class MapLayerInstallationIsolationIntegrationTest {
     // Every read of a holder goes back through the index rather than through what an install
     // returned, because that is what a seam handed a sector actually does - and it is the index
     // handing one sector another's holder that this whole suite is posed against.
-    private static MapLayerInstallation resolveInstallationOf(SectorAPI sector) {
-        return MapLayerInstallations.resolveInstallationFor(sector);
+    private static SectorMapMachinery resolveMachineryOf(SectorAPI sector) {
+        return SectorMapMachineryIndex.resolveMachineryFor(sector);
     }
 
     // One sector's cache, kept across the rebuilds a case drives so the second reads the state the
@@ -461,7 +461,7 @@ final class MapLayerInstallationIsolationIntegrationTest {
         private final PoliticalMapCache cache;
 
         private PoliticalMapCacheDriver(SectorAPI sector) {
-            cache = new PoliticalMapCache(resolveInstallationOf(sector));
+            cache = new PoliticalMapCache(resolveMachineryOf(sector));
         }
 
         // What the cache last drew, without asking it to draw again - for a case claiming a sector
