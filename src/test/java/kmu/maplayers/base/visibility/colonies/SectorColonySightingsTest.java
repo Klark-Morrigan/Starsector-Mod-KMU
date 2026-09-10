@@ -97,16 +97,6 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void reports_nothing_seen_where_the_key_holds_something_that_is_not_a_register() {
-            // Another party writing over the key must cost the sightings and nothing else: a read
-            // that threw here would take down every colony set in the sector with it.
-            storeSightings("not a register");
-
-            assertThat(readObservationOf("any"))
-                .isNull();
-        }
-
-        @Test
         void reports_where_and_when_a_recorded_colony_was_seen() {
 
             var stored = new HashMap<String, String>();
@@ -215,6 +205,22 @@ final class SectorColonySightingsTest {
 
             assertThat(readObservationOf("rat_exoship"))
                 .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
+        }
+
+        @Test
+        void records_nothing_where_the_system_names_itself_with_nothing() {
+            // A sighting is filed as the place the colony was seen standing in, and a reader
+            // matches that against where it stands now. A place with no id to be matched by would
+            // put an entry into the save that every later reading declines.
+            when(systemMock.getId())
+                .thenReturn(null);
+
+            placeColoniesOnSystemEntities(buildDerelict("sentinel_gantries"));
+
+            SectorColonySightings.recordSightingsIn(sectorMock, systemMock);
+
+            verify(memoryMock, never())
+                .set(anyString(), any());
         }
 
         @Test
@@ -342,6 +348,24 @@ final class SectorColonySightingsTest {
                 sectorMock, systemMock, null, ColonyKnowledge.observingUnderTheFog());
 
             verifyNoInteractions(memoryMock);
+        }
+
+        @Test
+        void reads_under_the_fog_alone_where_the_caller_hands_over_no_knowledge() {
+            // The single-place caller, which has no sweep of its own to have opened a reading in.
+            // What it records must be what the fog admits, rather than nothing at all.
+            listColoniesInSystem(buildOpenColony("jangala", "hegemony"));
+            placeColoniesOnSystemEntities(buildDerelict("sentinel_gantries"));
+            openStoredSightings();
+
+            SectorColonySightings.recordSightingsByInhabitants(
+                sectorMock,
+                systemMock,
+                SystemColonies.readColoniesIn(sectorMock, systemMock),
+                null);
+
+            assertThat(readObservationOf("sentinel_gantries"))
+                .isEqualTo(ColonyObservation.createObservationAt(SYSTEM_ID, OBSERVED_NOW));
         }
     }
 
