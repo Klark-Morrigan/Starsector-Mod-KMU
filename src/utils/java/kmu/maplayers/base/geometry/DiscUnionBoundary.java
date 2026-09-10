@@ -149,7 +149,7 @@ public final class DiscUnionBoundary {
          * circles steeply and squarely between them, so the two edges of its mouth say
          * whether the gap it spans is still there: buried, and the cells have closed over it.
          *
-         * <p>The span the settled search lays over the cells alone, with no shore consulted.
+         * <p>The span the cell-pair search lays over the cells alone, with no shore consulted.
          * Every span below sits on the boundary exactly as this one does.
          */
         BRIDGE,

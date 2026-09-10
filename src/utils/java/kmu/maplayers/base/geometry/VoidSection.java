@@ -113,7 +113,7 @@ public record VoidSection(
     // and only what a link closed is the sea's; an inlet span's water covers the outer shore's
     // fill where a bay's reach runs into it; and a lake nothing crosses stays the lake shore's.
     //
-    // A settled bridge is read as a lake span. It is the same search laid over the cells with
+    // A cell-pair bridge is read as a lake span. It is the same search laid over the cells with
     // no shore consulted, so the water it divides is water the cells closed around, and that
     // is a lake's.
     //

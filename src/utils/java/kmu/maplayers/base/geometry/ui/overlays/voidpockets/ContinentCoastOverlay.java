@@ -1,4 +1,4 @@
-package kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3;
+package kmu.maplayers.base.geometry.ui.overlays.voidpockets;
 
 import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellGap;
@@ -11,7 +11,6 @@ import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
-import kmu.maplayers.base.geometry.ui.overlays.voidpockets.CoastalPocketsOverlay;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
@@ -20,41 +19,38 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <b>The continent coast (v3), orchestrated.</b> Each touching-connected run of cells traced as
- * its own closed coast, and everything that reading of the sector then produces: the outer
- * shores and the void behind them, the lake shores round the water the cells closed unaided,
- * the puddles too small for a shore, the spans laid across the inlets and the puddles and the
- * water those spans shut in, and the links laid between one continent and the next with the sea
- * a run of them takes in and the coastline they made drawable.
+ * <b>The continent coast, orchestrated.</b> Each touching-connected run of cells traced as its
+ * own closed coast, and everything that reading of the sector then produces: the outer shores
+ * and the void behind them, the lake shores round the water the cells closed unaided, the
+ * puddles too small for a shore, the spans laid across the inlets and the puddles and the water
+ * those spans shut in, and the links laid between one continent and the next with the sea a run
+ * of them takes in and the coastline they made drawable.
  *
- * <p>What makes this one the continent coast is that it traces with NO bridges laid, so a run
- * of cells a bridge would have joined comes back as several shapes rather than one, and under
- * its own coast rules. That is the whole of v3's disagreement with the settled coast. The fill
- * below it is {@link CoastalPocketsOverlay}, which the settled coast in the neighbouring
- * package runs exactly as well - which is the point: with the same code on both sides, a
- * difference on screen is a difference between the coasts.
+ * <p>What makes a continent a continent is touching, and the coasts are traced with NO walls
+ * laid. So a gap between two runs of cells stays water however narrow it is, and every span the
+ * map lays is chosen against coasts that already exist rather than being boundary the walk
+ * traced over. That ordering is the whole of what this overlay orchestrates: trace, then lay,
+ * then fill what the laying shut in.
  *
- * <p>The bridges are this construction's own. The settled coast treats a bridge as connective
- * tissue and traces one line round everything it joins; the proposal is to give each continent
- * its own smoothed coast and lay spans across the inlets those coasts leave. Whether that is
- * worth building turns on where the spans actually fall, which is only legible on screen.
+ * <p>The lines and the fills are {@link CoastalPocketsOverlay}'s, held rather than done here,
+ * so that what a coast IS and what a picture of one shows stay two questions.
  *
- * <p>The puddle spans are the settled search asked about smaller water, reused rather than
- * reinvented: water too small to deserve a shoreline is water in exactly the position the
- * settled map already fills by bridging it.
+ * <p>The puddle spans are the cell-pair search asked about smaller water, reused rather than
+ * reinvented: water too small to deserve a shoreline is water in exactly the position that
+ * search already answers for.
  *
- * <p>Drawn as a line over everything for the same reason the settled coast is: it is a
- * proposal, and the only way to judge it is against the bridges and the coast it would
- * replace, all on screen at once.
+ * <p>Drawn as a line over everything, because a coast is what judged every other mark on the
+ * map - the spans it refused, the frontages they could start from - and a line hidden beneath
+ * what it decided cannot be read against any of it.
  */
 public final class ContinentCoastOverlay {
 
     private final ViewerSettings settings;
 
-    // The half of this overlay the settled construction runs identically. Held rather than
-    // inherited from, because what v2 and v3 share is a sequence of steps rather than an
-    // identity - neither is a kind of the other, and nothing ever asks for "a coast overlay"
-    // without knowing which.
+    // The traced coast in its drawable form: the rounded lines, and the marks read off the
+    // same trace that explain where they went. Held rather than inherited from, because this
+    // is a step in a sequence rather than a kind of thing - nothing ever asks this for "a
+    // coast overlay", it asks it to draw a sector.
     private final CoastalPocketsOverlay coast;
 
     // This frame's water, opened once against the fixture's own colouring. Held rather than
@@ -98,9 +94,8 @@ public final class ContinentCoastOverlay {
     /**
      * Traces the continents again, or drops them when the preview is switched off.
      *
-     * <p>Under the v3 coast rules rather than the settled coast's, so a knob moved down here
-     * moves this line and leaves the map alone. What the two constructions still share is the
-     * cells and the parameters they are built from - they are two readings of one sector.
+     * <p>Under the continent section's own coast rules, so a knob moved down there moves this
+     * line and leaves the cells above it alone.
      *
      * @param fixture the sector to trace in
      * @param laid    the laying to draw, shared with whatever else reads this frame's walls
@@ -181,9 +176,9 @@ public final class ContinentCoastOverlay {
     /**
      * Draws the void this construction shut in, beneath the cells.
      *
-     * <p>At the same weight and in the same way as the settled coast's fill, because the two
-     * are on screen to be compared: any difference between them should be the coast, not the
-     * drawing.
+     * <p>Beneath the cells rather than over them, because it is water the cells hold between
+     * them: drawn on top it would read as something laid over the map rather than as the gaps
+     * in it.
      *
      * @param g2 what to draw with
      */

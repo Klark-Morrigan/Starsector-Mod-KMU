@@ -173,7 +173,7 @@ class CoastPocketsIntegrationTest {
             // and a reach running along a cell ring's edge makes such void legitimately the
             // coast's - so only the strict direction guards against masking.
             //
-            // TODO: the fill excusing cell-ringed water here is the settled search's captured
+            // TODO: the fill excusing cell-ringed water here is the cell-pair search's captured
             // pockets, which the map no longer paints anywhere. Measured against what the map
             // does paint, four pieces of open water - three on the 491 fixture, one on the 366 -
             // are covered by nothing. See the geometry TODO tracker.
@@ -214,7 +214,7 @@ class CoastPocketsIntegrationTest {
         return fill;
     }
 
-    // The pockets the settled bridge search captures - what the map used to paint as its inland
+    // The pockets the cell-pair bridge search captures - what the map used to paint as its inland
     // fill, and what this check has always excused cell-ringed water with.
     private static List<BoundedOutline> collectBridgeFill(
             SectorFixture fixture,

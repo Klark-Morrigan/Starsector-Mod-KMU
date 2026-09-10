@@ -137,7 +137,7 @@ public final class AnchoredSpans {
      * <p><b>Two spans over the same stretch of void are two claims on it.</b> Taken narrowest
      * first, keeping each that clears what is already kept leaves the tighter claim standing and
      * costs one loss per crossing. What that leaves is a tree - at most one route between any
-     * two places - which is what the settled bridges do.
+     * two places - which is what the cell-pair search does.
      *
      * <p>Refused between shores as within one. Letting them cross over water the cells already
      * ring looks like it should buy subdivision, since every span across such water closes a

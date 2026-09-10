@@ -25,12 +25,12 @@ import java.util.Set;
  * whole content is "who may be joined to whom" is better read as its own answer than as a
  * branch inside the answer that says the opposite.
  *
- * <p><b>Range-based, the way the settled bridges are.</b> Two cells hold the void between them
+ * <p><b>Range-based, the way the cell-pair bridges are.</b> Two cells hold the void between them
  * when they sit near enough to trap it, measured centre to centre; further apart than that and
- * what lies between is open void that happens to be between them. That is the settled search's
+ * what lies between is open void that happens to be between them. That is the cell-pair search's
  * claim about the sector, made here where the coasts have already taken some of the void.
  *
- * <p><b>Anchored on bridgeable frontage, and nowhere else.</b> The settled search runs rim to
+ * <p><b>Anchored on bridgeable frontage, and nowhere else.</b> The cell-pair search runs rim to
  * rim, which it can because it is laid before any line exists. Here the coastlines are already
  * drawn, and a span ending anywhere but ON one closes nothing - so a link leaves and lands where
  * the exterior coast runs along a cell, exactly as an inlet span does. The rest of a cell's
@@ -115,7 +115,7 @@ public final class IntercontinentalBridges {
         var sites = union.sites();
 
         // Read as how far apart the two cells may sit, which across open void is the same claim
-        // made of the centres - the settled search's reading, and the one the exterior spans are
+        // made of the centres - the cell-pair search's reading, and the one the exterior spans are
         // offered under.
         var reach = parameters.cellRadius() * rules.reachMultiple();
         var offered = new ArrayList<CellGap>();

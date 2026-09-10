@@ -25,9 +25,9 @@ import java.util.List;
  * already finished.
  *
  * <p>What is NOT here is the keep-rule. A hole no wall of the caller's closed may be that
- * caller's to draw anyway - the settled bridges fill the void the cells enclose unaided as
- * readily as the bays they span - or it may belong to another layer entirely, which is the
- * continent construction's answer for the same holes. Neither is more correct, so neither is
+ * caller's to draw anyway - the bridge fill takes the void the cells enclose unaided as readily
+ * as the bays its own spans wall off - or it may belong to another layer entirely, which is what
+ * the coast's own pockets answer for the same holes. Neither is more correct, so neither is
  * decided here. {@link #traceVoidWalledBy} only APPLIES the rule a caller states, by taking the
  * walls it means to keep on as an argument.
  */

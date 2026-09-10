@@ -42,7 +42,7 @@ class ContinentExposureIntegrationTest {
     private static final String SECTORS = SectorPipeline.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays them: the
-    // thinned set is the proposal, and an unthinned one is a different laying to report on.
+    // thinned set is what the map lays, and an unthinned one is a different laying to report on.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
 
     // How far off a wall already down a span may run and still count as doubling it. The width

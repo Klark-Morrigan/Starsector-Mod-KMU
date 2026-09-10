@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * The corridor of void between two cells, and whether anything is in the way of it.
  *
- * <p>Shared because two constructions ask the same pair of questions about the same pair of
+ * <p>Shared because two searches ask the same pair of questions about the same pair of
  * cells - one cutting a pocket of trapped void into sections, the other looking for pairs
  * that trap void between them at all - and each would otherwise carry its own arithmetic
  * for it.

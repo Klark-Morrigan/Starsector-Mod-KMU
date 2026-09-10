@@ -37,7 +37,7 @@ public final class BridgedContinents {
     private final Coastlines.CoastRules coastRules;
     private final ContinentBridges.BridgeRules bridgeRules;
 
-    // The settled bridge search, handed in rather than made here. It is the one search that
+    // The cell-pair bridge search, handed in rather than made here. It is the one search that
     // answers about the cells alone rather than about these coasts, so it outlives any one
     // laying, and a copy per laying would be the repeated search it exists to prevent.
     private final VoidBridgeCache sectorBridges;
@@ -79,8 +79,8 @@ public final class BridgedContinents {
      * @param coastRules    how the coasts are traced, whose bridge reach the puddle spans are
      *                      claimed at
      * @param bridgeRules   how every span is offered and judged
-     * @param sectorBridges the settled bridge search, shared with whatever else asks it of this
-     *                      same sector
+     * @param sectorBridges the cell-pair bridge search, shared with whatever else asks it of
+     *                      this same sector
      * @return the laying, with nothing found yet
      */
     public static BridgedContinents layContinents(
@@ -191,7 +191,7 @@ public final class BridgedContinents {
     /**
      * The spans across the puddles: holes the lake floor judged too small to be drawn a shore.
      *
-     * <p>Claimed from the settled search rather than searched for again. These ARE that search
+     * <p>Claimed from the cell-pair search rather than searched for again. These ARE that search
      * asked about smaller water, at the reach the coast rules carry, so a search of their own
      * would be the same offer paid for twice and free to drift from it.
      *

@@ -27,7 +27,7 @@ import java.util.List;
  * bridges wall off and the pockets the cells enclose come out of the same test.
  *
  * <p><b>Nothing here is offset.</b> The arcs come from a trace at the reach that leaves the
- * channel, exactly as the other construction gets its outline, and the bridge keeps the same
+ * channel, exactly as the coast's own pockets get their outline, and the bridge keeps the same
  * channel the cells do - one that two neighbouring pockets share, half of it each. Both are
  * the same trace at a different distance rather than a shape pushed outward afterwards, which
  * is why the corners come out where the circles actually cross instead of on a mitre.
@@ -56,8 +56,8 @@ public final class VoidBridgePockets {
      * bridge that closes the ring, and its two ends sit on two silhouettes with nothing drawn
      * between them, so it strings THOSE together instead and the pocket never appears.
      *
-     * <p>Traced at the reach that leaves the channel, exactly as the other construction gets
-     * its own outline, so nothing here is offset. The bridges keep that same channel: each
+     * <p>Traced at the reach that leaves the channel, exactly as the coast's own pockets get
+     * their outline, so nothing here is offset. The bridges keep that same channel: each
      * pocket stops half of one short of the wall, so two pockets meeting across a bridge are
      * held apart by the same gap that holds a pocket off the cells around it, and every
      * section reads as its own shape rather than as part of one mass.

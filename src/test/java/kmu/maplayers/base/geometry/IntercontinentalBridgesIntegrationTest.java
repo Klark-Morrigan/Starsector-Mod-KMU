@@ -37,7 +37,7 @@ class IntercontinentalBridgesIntegrationTest {
     private static final String SECTORS = SectorPipeline.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
-    // spans: the thinned set is the proposal, and an unthinned one is a different laying for the
+    // spans: the thinned set is what the map lays, and an unthinned one is a different laying for the
     // links to be judged against.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
 
@@ -256,7 +256,7 @@ class IntercontinentalBridgesIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void every_link_joins_cells_within_reach_of_each_other(String sector) {
-            // Range-based, the way the settled bridges are: two cells hold the void between
+            // Range-based, the way the cell-pair bridges are: two cells hold the void between
             // them only while they sit near enough to trap it, measured centre to centre.
             var sites = traceContinentCoast(sector).union().sites();
             var reach = PARAMETERS.cellRadius() * SPAN_RULES.reachMultiple();

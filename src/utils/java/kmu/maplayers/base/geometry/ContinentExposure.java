@@ -292,7 +292,7 @@ public final class ContinentExposure {
     //
     // Matched back to the span by the cells it joins. A chord carries its two cells and nothing
     // else of the span it was built from, so matching by identity would mean building the chords
-    // a second time and trusting two constructions of one line to come out equal.
+    // a second time and trusting two builds of one line to come out equal.
     private static List<CellGap> findEdgeSpans(List<CellGap> spans, List<VoidHole> captured) {
 
         var closedSides = new LinkedHashMap<SpannedCells, Integer>();

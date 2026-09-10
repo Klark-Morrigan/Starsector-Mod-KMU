@@ -234,11 +234,10 @@ public final class ViewerSettings {
     public boolean showContinentBridges;
     public boolean showContinentInletFill;
 
-    // The links between the continents: the same range the settled bridges are offered under,
+    // The links between the continents: the same range the cell-pair bridges are offered under,
     // asked of pairs on DIFFERENT continents and anchored on the coastlines rather than run rim
-    // to rim. What they are for is seeing whether the construction can be made whole again -
-    // the trace splits a run of cells a bridge would have joined into several shapes, and these
-    // are what puts them back in touch.
+    // to rim. What they are for is seeing whether the sector can be made whole again - the trace
+    // splits it at every gap however narrow, and these are what puts the pieces back in touch.
     //
     // Its own switch and apart from the inlet spans', because the two are opposite acts: an
     // inlet span rounds one outline up, a link joins two that have nothing to do with each
@@ -328,8 +327,8 @@ public final class ViewerSettings {
     // worse. Here as a switch because that verdict is a judgement about how the map looks, and
     // the only way to weigh it again is to put the two side by side.
     //
-    // One knob over both constructions, like the rounding: it decides how a coast is placed
-    // rather than which coast is being traced, and the two lines are on screen to be compared.
+    // One knob over every coast, like the rounding: it decides how a coast is placed rather
+    // than which coast is being traced.
     public boolean shouldLandWhereVisible;
 
     // The puddle floor: how much water a hole must hold to be drawn as a lake, as a share of
@@ -352,7 +351,7 @@ public final class ViewerSettings {
     // Whether spans sharing an anchor point are thinned once the laying is settled: chains
     // down to their end walls, fans down to one span, and nothing dropped that holds void in.
     //
-    // On by default, because the thinned set is what the proposal is - the switch is here to
+    // On by default, because the thinned set is what the map lays - the switch is here to
     // see what the pass did, which cannot be read off the map otherwise since a dropped span
     // is gone rather than marked.
     public boolean shouldThinSpanFormations = true;
@@ -432,8 +431,8 @@ public final class ViewerSettings {
     }
 
     // Which map of the void the overlays are asking for. Asked of the settings rather than
-    // worked out at each overlay, because the two constructions drawn together have to be
-    // asked the same question within one frame or they are describing different maps.
+    // worked out at each overlay, because every layer drawn in one frame has to be asked the
+    // same question or they are describing different maps.
     //
     // The void's own extent, with no choice about it. The other shaping takes the channel out
     // by re-tracing at a moved reach, which is what a section stops doing once the inset is a

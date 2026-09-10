@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Puddles filled the way the settled construction fills captured void: bridges laid across
- * the water, and the water drawn as taken.
+ * Puddles filled from the cell-pair bridges: spans laid across the water, and the water drawn
+ * as taken.
  *
  * <p>A puddle is a hole too small to deserve a shoreline, but its water is still water, and
  * leaving it blank draws it as open void - which it is not, being ringed by land the whole
- * way round. The settled map already has the answer for water in that position: the bridges
- * say "this much is held between these cells", and the fill is what they hold. So the same
+ * way round. The cell-pair search already has the answer for water in that position: its
+ * bridges say "this much is held between these cells", and the fill is what they hold. So the
  * machinery is reused rather than a third reading invented - {@link VoidBridges} finds the
  * spans, and what a puddle adds is only WHICH spans are its.
  *
@@ -29,15 +29,15 @@ public final class PuddlePockets {
     }
 
     /**
-     * Which of the settled bridges are laid across a puddle.
+     * Which of the cell-pair bridges are laid across a puddle.
      *
      * <p>Claimed from a search already made rather than searched for here, and that is the
-     * whole of this pass. The settled search is sector-wide and its crossing rule holds over
+     * whole of this pass. That search is sector-wide and its crossing rule holds over
      * everything it keeps, so per-puddle runs would each keep spans a sector-wide pass
      * refuses - and asking for the same search twice is the one answer paid for twice.
      *
      * @param traced  the coasts whose puddles are claiming
-     * @param bridges the settled bridges, as the search reports them for the whole sector
+     * @param bridges the cell-pair bridges, as the search reports them for the whole sector
      * @return every span whose void is a puddle's water, in the order they were offered
      */
     public static List<CellGap> claimPuddleBridges(

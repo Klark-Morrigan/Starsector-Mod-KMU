@@ -51,7 +51,7 @@ import java.util.function.BiPredicate;
  * narrow, which is the one thing they are drawn to show.
  *
  * <p><b>So a span is anchored at the point of each frontage nearest the other.</b> The
- * settled bridges reach rim to rim along the line between two cells' centres, which is the
+ * cell-pair search reaches rim to rim along the line between two cells' centres, which is the
  * same statement made where there is no coastline to sit on yet.
  *
  * <p>Anchored on points the traced line already carries, rather than on places computed along
@@ -80,7 +80,7 @@ import java.util.function.BiPredicate;
  * <p><b>No span crosses one already laid.</b> Taken shortest first, each is kept only if it
  * clears what is already down, so the tighter claim on a stretch of void stands and the
  * looser gives way. What that leaves is a tree - at most one route between any two places,
- * and the water they enclose one shape with fingers - which is what the settled bridges do.
+ * and the water they enclose one shape with fingers - which is what the cell-pair search does.
  *
  * <p>Which is why the frontage floor matters to this. Every stretch the coast passes through
  * is another frontage and another set of spans, so a coast kept at every sliver offers spans

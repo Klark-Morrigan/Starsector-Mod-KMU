@@ -261,8 +261,8 @@ public final class Coastlines {
      *                    shore are the same kind of line looked at from opposite sides
      * @param puddles     the holes the floor judged too small to be lakes. Kept rather than
      *                    discarded, because being too small for a shore does not stop them
-     *                    being water: what a puddle earns instead is being filled up, the
-     *                    way the settled construction fills the void its bridges capture
+     *                    being water: what a puddle earns instead is being filled up, from
+     *                    the cell-pair spans laid across it
      * @param walledShores one shore per hole a laid wall closed, smoothed exactly as a lake
      *                    shore is. Apart from the lakes rather than among them, because what
      *                    shut the water in is the whole difference between the two: a lake is
@@ -455,19 +455,24 @@ public final class Coastlines {
      * Traces each touching-connected run of cells - each continent - as its own closed coast,
      * with no bridges laid.
      *
-     * <p>A preview of the per-continent proposal: the same walk and the same smoothing as the
-     * settled coast, with the walls left out. Runs that a bridge joins into one
-     * super-continent come back as separate closed lines instead - so laid over the settled
-     * map, this shows exactly where those lines and the bridges would cross, which is the
-     * fact the proposal turns on.
+     * <p>The entry the map is drawn from. What makes a continent a continent is touching: a run
+     * of cells that reach each other is one shape, and a gap between two runs is water however
+     * narrow it is. So the spans that cross those gaps are laid AFTERWARDS, against coasts that
+     * already exist, rather than being boundary the walk traces over.
+     *
+     * <p>Which is why no walls are laid here, and the whole of what this entry decides. Walls
+     * laid first join what they touch into one shape and the water between disappears into the
+     * interior; laid after, the same water keeps a shore on both sides and a span standing over
+     * it, and the map can say which span holds which water.
      *
      * <p>Without walls there are also no bridged cells for selection to protect, so a
-     * continent's coast is free to cut a corner across where a bridge lands. That is not a
-     * defect of the preview - it is the very collision this exists to make visible.
+     * continent's coast is free to cut a corner across where a span will later land. That is a
+     * real collision rather than an artefact - a span is chosen against the line, so the line
+     * gets to be drawn first.
      *
-     * <p>A cell alone in the void still contributes nothing: the lone-island rule reads the
-     * run rather than the walls, so a single-cell continent degenerates exactly as it does
-     * on the settled coast.
+     * <p>A cell alone in the void still contributes nothing: the lone-island rule reads the run
+     * rather than the walls, so a single-cell continent degenerates the way any other lone cell
+     * does.
      *
      * @param sites      the sites
      * @param parameters the knobs the cells are built under
@@ -490,17 +495,16 @@ public final class Coastlines {
     /**
      * Traces the coasts with spans a caller has already laid, as the walls they are.
      *
-     * <p>The third wall set, beside the settled entry's own bridges and the continent entry's
-     * none at all. What it is for is a construction that lays its spans FIRST and then wants the
-     * coastline of what they made - the walk treats a span as boundary like any other, so a
-     * cell a span reaches stops being alone in the void, the cells it lands on are protected
-     * from the frontage floor, and the span's own two sides come back as part of the closed
-     * line rather than as pieces to be joined up afterwards.
+     * <p>The second wall set, beside the continent entry's none at all. What it is for is a
+     * caller that has laid its spans and then wants the coastline of what they made - the walk
+     * treats a span as boundary like any other, so a cell a span reaches stops being alone in
+     * the void, the cells it lands on are protected from the frontage floor, and the span's own
+     * two sides come back as part of the closed line rather than as pieces to be joined up
+     * afterwards.
      *
-     * <p>The spans are handed in rather than searched for, which is the whole difference from
-     * the settled entry: those are found from the sites and these were chosen against a coast
-     * that already existed. Found again here, they would be a second set the caller's map knows
-     * nothing about.
+     * <p>The spans are handed in rather than searched for, and that is not an economy. They were
+     * chosen against a coast that already existed, so a search made here would answer from the
+     * sites alone and hand back a second set the caller's map knows nothing about.
      *
      * @param sites      the sites
      * @param parameters the knobs the cells are built under, whose border channel is the one

@@ -10,10 +10,10 @@ import java.util.Map;
 /**
  * The coastline the links added, drawn by the walk that draws every other coastline.
  *
- * <p><b>The links are laid as walls and the sector is traced again.</b> That is the whole method,
- * and it is the settled construction's method: a bridge there is boundary, not a stroke over the
- * void, so the walk runs out along one of its sides, round whatever it reaches and back along the
- * other. Handed the links, the same walk gives an isthmus with an edge on each side, absorbs a
+ * <p><b>The links are laid as walls and the sector is traced again.</b> That is the whole method.
+ * A link laid as a wall is boundary rather than a stroke over the void, so the walk runs out
+ * along one of its sides, round whatever it reaches and back along the other. Handed the links,
+ * the same walk gives an isthmus with an edge on each side, absorbs a
  * cell that was alone in the void into the shape a link joins it to, protects the cells a link
  * lands on from the frontage floor, and rounds the joins - all of which is what a coastline is,
  * and none of which is worth reproducing beside it.

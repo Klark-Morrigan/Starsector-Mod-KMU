@@ -350,7 +350,7 @@ public final class PickedPointCheck {
 
     // Whether the walk finds a closed cycle round a point once every wall is laid, and what
     // walled it. The question that tells a leak from a filing error: enclosed here and drawn
-    // by nobody means the two constructions disagree about whose hole it is, while not
+    // by nobody means the walk and the fills disagree about whose hole it is, while not
     // enclosed at all means the void really does run out to sea.
     private static String describeWalledHoleAt(List<VoidHole> holes, double[] pick) {
 

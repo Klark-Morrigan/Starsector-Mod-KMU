@@ -12,8 +12,8 @@ import java.util.TreeSet;
  *
  * <p>Asked of the whole population at once - every hole at the cells' own reach with the walls
  * laid, whatever closed it - because a name has to be unique across all of them and not merely
- * within whichever construction produced it. The two constructions next door each report on
- * their own pockets, which cannot answer that.
+ * within the layer that produced it. Each fill layer reports on its own pockets, which cannot
+ * answer that.
  *
  * <p>Taken at the cells' own reach and nowhere else. A section is going to be handed to the
  * cluster machinery as a cell, and a cell's edges sit on its own border; a reading taken a

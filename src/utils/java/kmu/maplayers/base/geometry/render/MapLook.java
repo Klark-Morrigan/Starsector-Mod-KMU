@@ -59,16 +59,15 @@ public final class MapLook {
     public static final Color REGION_NAME = new Color(0xff, 0xff, 0xff);
 
     // A coast: each touching-connected run of cells traced as its own closed line, with no
-    // spans laid. Deliberately unlike anything else drawn, because it is a proposal about where
-    // an edge could be rather than an edge anything has - and reading it as one of the shapes
-    // underneath is the one mistake that would make it look right when it is not.
+    // spans laid. Deliberately unlike anything else drawn, because it is an edge the geometry
+    // derives rather than one of the cluster borders underneath - and reading it as one of the
+    // shapes below is the one mistake that would make it look right when it is not.
     public static final Color CONTINENT_COAST = new Color(0xc0, 0x60, 0xff);
 
     // A bridge offered to a sector that already has continent coastlines on it, and kept
     // because it spans open sea rather than void a coast had already taken. Its own colour
-    // rather than the settled bridges': the two constructions are laid under different rules
-    // and are on screen together to be compared, so one colour for both would hide the very
-    // difference being looked at.
+    // rather than the coast's: a span and the line that judged it meet all over the map, and
+    // one colour for both would leave a reader unable to see which of them refused the other.
     public static final Color CONTINENT_BRIDGE = new Color(0x40, 0xd0, 0xff);
 
     // A span joining two continents rather than tidying one. Its own colour because the two

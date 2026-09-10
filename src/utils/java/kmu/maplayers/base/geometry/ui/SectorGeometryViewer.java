@@ -22,7 +22,7 @@ import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
 import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
-import kmu.maplayers.base.geometry.ui.overlays.voidpockets.v3.ContinentCoastOverlay;
+import kmu.maplayers.base.geometry.ui.overlays.voidpockets.ContinentCoastOverlay;
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;

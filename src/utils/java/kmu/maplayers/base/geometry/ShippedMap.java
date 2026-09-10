@@ -25,7 +25,7 @@ public final class ShippedMap {
     public static final Coastlines.CoastRules COAST_RULES = Coastlines.DEFAULT_RULES;
 
     // Whether spans sharing an anchor are thinned, which is how the map lays them: the thinned
-    // set is the proposal, and an unthinned one is a different laying.
+    // set is what the map lays, and an unthinned one is a different laying.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
 
     // How far off a wall already down a span may run and still count as doubling it. The width

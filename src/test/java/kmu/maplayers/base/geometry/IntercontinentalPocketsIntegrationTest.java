@@ -44,7 +44,7 @@ class IntercontinentalPocketsIntegrationTest {
     private static final String SECTORS = SectorPipeline.SECTORS;
 
     // Whether the spans sharing an anchor are thinned, which is how the map lays the inlet
-    // spans: the thinned set is the proposal, and an unthinned one is a different laying for the
+    // spans: the thinned set is what the map lays, and an unthinned one is a different laying for the
     // links to be judged against.
     private static final boolean SHOULD_THIN_FORMATIONS = true;
 

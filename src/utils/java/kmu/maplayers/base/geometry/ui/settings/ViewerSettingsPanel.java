@@ -240,10 +240,9 @@ public final class ViewerSettingsPanel {
             PANEL_PADDING,
             PANEL_PADDING));
 
-        // Foldable but not switchable, unlike the two constructions below. What a cell is
-        // shaped like and what it is drawn in are always answered - there is no state in
-        // which the map has no cells - so a switch over either would be a control with
-        // nothing to mean.
+        // Foldable but not switchable, unlike the void section below. What a cell is shaped
+        // like and what it is drawn in are always answered - there is no state in which the
+        // map has no cells - so a switch over either would be a control with nothing to mean.
         controls.add(CollapsibleSection.buildFoldingSection(
             "cellGeometry",
             "Cell geometry",
@@ -268,26 +267,26 @@ public final class ViewerSettingsPanel {
 
         controls.add(ControlRows.buildDivider());
 
-        addBothConstructionRows(controls);
+        addSharedKnobRows(controls);
 
         return controls;
     }
 
-    // The knobs that reach BOTH constructions, outside either section.
+    // The knobs that reach across the sections, outside every one of them.
     //
-    // Inside one of them, a knob governing the other is unreachable exactly when that section
-    // is folded away or switched off - and worse, drawn as disabled while still deciding what
-    // the other construction shows. A knob that looks dead and is not is the one kind of
-    // control a reader cannot recover from by looking harder.
-    private void addBothConstructionRows(JPanel controls) {
+    // Inside a section, a knob governing what the others show is unreachable exactly when that
+    // section is folded away or switched off - and worse, drawn as disabled while still
+    // deciding what the rest of the map looks like. A knob that looks dead and is not is the
+    // one kind of control a reader cannot recover from by looking harder.
+    private void addSharedKnobRows(JPanel controls) {
 
         // What the smoothing left out, on whichever coasts are drawn. A diagnostic rather
         // than a layer: it answers "what did the rules take" - the one thing a finished coast
         // cannot be asked, since a stretch a rule threw away and one the walk never offered
         // are both simply missing from the line.
         //
-        // One row for both constructions because the question is the same of each, and the
-        // answer is told apart by the coast each mark sits beside.
+        // One row over every coast because the question is the same of each, and the answer is
+        // told apart by the coast each mark sits beside.
         controls.add(ControlRows.buildToggle(
             "showDroppedStretches",
             "Dropped stretches",
@@ -323,8 +322,8 @@ public final class ViewerSettingsPanel {
             colour -> settings.landableFrontageColour = colour,
             refreshes::repaintMap));
 
-        // Read by every fill on the map - both constructions' pockets and the bridges' own -
-        // so it belongs to neither.
+        // Read by every fill on the map - the coasts' pockets, the spans' and the bridges' own
+        // - so it belongs to no one section.
         controls.add(buildOpacitySlider(
             "voidFillOpacity",
             "Void fill opacity",
@@ -337,14 +336,13 @@ public final class ViewerSettingsPanel {
     // Where a straight run is allowed to land on the cell it reaches, which every coast on the
     // map is placed by.
     //
-    // Among the knobs reaching both constructions for the reason the smoothing ones are: it
-    // decides how a coast is PLACED rather than which coast is being traced, and the two lines
-    // are on screen to be compared. Placed differently, a difference between them would be
-    // partly a difference between the switches that placed them.
+    // Among the shared knobs for the reason the smoothing ones are: it decides how a coast is
+    // PLACED rather than which coast is being traced, so it reaches every line on the map
+    // alike.
     private void addRunPlacementRows(JPanel controls) {
 
         // Off, because the map is deliberately placed the other way - the row is here to put
-        // the two side by side, not to offer a correction someone should leave on.
+        // the two placements side by side, not to offer a correction someone should leave on.
         controls.add(buildToggle(
             "shouldLandWhereVisible",
             "Land runs only where the far cell is visible",
@@ -359,11 +357,9 @@ public final class ViewerSettingsPanel {
     // sanding exists to hand the rounding geometry it can work on, and reading either without
     // the other says nothing about the line that comes out.
     //
-    // Among the knobs reaching both constructions because smoothing is about how a LINE is
-    // drawn rather than about how anything is traced - it reaches the cluster borders too,
-    // which belong to neither - and because the lines are on screen to be compared: smoothed
-    // to different numbers, a difference between two of them would be partly a difference
-    // between the sliders.
+    // Among the shared knobs because smoothing is about how a LINE is drawn rather than about
+    // how anything is traced - it reaches the cluster borders as readily as the coasts, and
+    // those belong to no section at all.
     //
     // Every one rebuilds rather than repaints. Each smoothed line is worked out once when its
     // geometry is built and carried on it, so moving any of these is a change to the geometry
@@ -668,14 +664,13 @@ public final class ViewerSettingsPanel {
             refreshes::repaintMap));
     }
 
-    // Everything about the void as v2 builds it, in the order the toggles above it read: what
-    // to show, then the inland knobs, then the coastal ones, then the knobs both kinds share.
-    // The void construction, behind its own divider because the rest of the panel is about
+    // Everything about the void, behind its own divider because the rest of the panel is about
     // CELLS, and a reader hunting for a void knob was otherwise reading forty identical rows
     // to find it.
     //
-    // In the pattern the section reads in: what to show, what to draw it with, then the knobs
-    // that decide its shape.
+    // In the order the construction builds in, which is the order a reader follows it: what
+    // there is to see, then the coasts everything else is laid against, then the spans across
+    // the inlets those coasts leave, then the links between one continent and the next.
     private void addVoidPocketRows(JPanel controls) {
 
         controls.add(buildContinentVoidToggles());
@@ -690,7 +685,7 @@ public final class ViewerSettingsPanel {
     // three switches each, because the two are the same kind of line seen from opposite
     // sides - then the spans laid over each of those shores, in the same order.
     //
-    // The flat roll-ups after them cut across the branches on purpose, the way v2's do: they
+    // The flat roll-ups after them cut across the branches on purpose: they
     // answer questions about a KIND OF THING rather than about a branch - "every wall",
     // "every fill", "every bridge" - and a roll-up is what keeps the nested switch and the
     // global answer synced, since it reads as on, mixed or off over its keys and writes all
@@ -855,7 +850,7 @@ public final class ViewerSettingsPanel {
                 INTERCONTINENTAL_NAMES));
     }
 
-    // What the v3 coastlines are and how they are drawn, which is what everything below is
+    // What the coastlines are and how they are drawn, which is what everything below is
     // laid over.
     private void addContinentCoastRows(JPanel controls) {
 
@@ -876,10 +871,23 @@ public final class ViewerSettingsPanel {
             },
             refreshes::repaintMap));
 
-        controls.add(buildLeastFrontageSlider(
+        // The frontage floor: how little of its own border a cell may face the void with and
+        // still be walked through. Asked as a percentage because that is how anyone reading a
+        // map thinks about how far a cell sticks out; what the floor means is documented at
+        // the field it writes.
+        controls.add(SliderRows.buildSlider(
             "continentLeastFrontage",
-            ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT,
-            share -> settings.continentMinFrontageShare = share));
+            "Least frontage faced, in % of a cell",
+            new SliderRows.SliderRange(
+                MIN_FRONTAGE_MINIMUM,
+                MIN_FRONTAGE_MAXIMUM,
+                ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
+                    * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+            new SliderRows.SliderWork(
+                percent -> settings.continentMinFrontageShare =
+                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                refreshes::refreshCoastlines,
+                () -> { })));
 
         // The puddle floor, beside the frontage floor it works with: that one judges a
         // cell's stretch of shore, this one a whole lake. Asked for in percent the way the
@@ -1014,18 +1022,19 @@ public final class ViewerSettingsPanel {
     /**
      * How far apart two cells may sit and still be bridged, in cell radii.
      *
-     * <p>One row shape for both constructions, because the two are on screen to be compared:
-     * asked over different ranges or stepped differently, a difference between their bridges
-     * would be partly a difference between the sliders that set them. Only the default and
-     * where the value lands differ, which is what the two searches genuinely disagree about.
+     * <p>One row shape over every search that asks the question, because the answers are read
+     * against each other: offered over different ranges or stepped differently, a difference
+     * between two sets of spans would be partly a difference between the sliders that set
+     * them. Only the default and where the value lands differ, which is what the searches
+     * genuinely disagree about.
      *
      * <p>Stepped in hundredths, so the reach moves by a fraction of a cell radius rather than
      * jumping a whole one.
      *
      * @param key            what to remember it under
-     * @param defaultMultiple the reach this construction opens at
+     * @param defaultMultiple the reach this search opens at
      * @param apply          records the new reach, already back in cell radii
-     * @param onChange       what to rebuild once it moves, which differs by construction
+     * @param onChange       what to rebuild once it moves, which differs by search
      * @return the row
      */
     private JPanel buildBridgeReachSlider(
@@ -1044,39 +1053,6 @@ public final class ViewerSettingsPanel {
             new SliderRows.SliderWork(
                 stepped -> apply.accept(stepped / ViewerSettings.BRIDGE_REACH_STEP_SCALE),
                 onChange,
-                () -> { }));
-    }
-
-    /**
-     * How little of its own border a cell may face the void with and still be walked through.
-     *
-     * <p>One row shape for both coasts, for the reason the reach is: the floor is the knob the
-     * two constructions are most often compared across, so it has to ask them the same
-     * question over the same range.
-     *
-     * <p>Asked as a percentage because that is how anyone reading a map thinks about how far a
-     * cell sticks out; what the floor means is documented at the field it writes.
-     *
-     * @param key          what to remember it under
-     * @param defaultShare the floor this coast opens at, as a share of a turn
-     * @param apply        records the new floor, already back to a share
-     * @return the row
-     */
-    private JPanel buildLeastFrontageSlider(
-            String key,
-            double defaultShare,
-            DoubleConsumer apply) {
-
-        return SliderRows.buildSlider(
-            key,
-            "Least frontage faced, in % of a cell",
-            new SliderRows.SliderRange(
-                MIN_FRONTAGE_MINIMUM,
-                MIN_FRONTAGE_MAXIMUM,
-                defaultShare * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new SliderRows.SliderWork(
-                percent -> apply.accept(percent / ViewerSettings.FRONTAGE_PERCENT_SCALE),
-                refreshes::refreshCoastlines,
                 () -> { }));
     }
 

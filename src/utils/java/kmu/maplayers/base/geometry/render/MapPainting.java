@@ -108,10 +108,11 @@ public final class MapPainting {
         }
     }
 
-    // The one way a proposed line is drawn here: closed rings stroked at span weight in one
-    // opaque colour, filled with nothing. Shared by the settled coast and the continent
-    // preview because the two exist to be compared, and two stanzas of stroke-and-colour
-    // setup is how two lines meant to differ only in colour come to differ in weight as well.
+    // The one way a coast is drawn here: closed rings stroked at span weight in one opaque
+    // colour, filled with nothing. Shared by every ring the map strokes - outer shores, lake
+    // shores, the coastline the links added - because those are one kind of line, and two
+    // stanzas of stroke-and-colour setup is how lines meant to differ only in colour come to
+    // differ in weight as well.
     public static void paintLineRings(Graphics2D g2, List<List<double[]>> rings, Color colour) {
 
         prepareSpanStroke(g2, colour);
