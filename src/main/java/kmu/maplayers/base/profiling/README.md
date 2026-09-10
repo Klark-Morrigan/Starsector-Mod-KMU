@@ -34,3 +34,10 @@ writes its line, whatever it took. A rebuild happens when something changed rath
 so each of its steps is an event a reader following the rebuild through the log wants to see - the
 fast ones included. A step that should say more or less than the others changes its own
 registration rather than this.
+
+Stating any threshold at all also marks a section's calls as events rather than per-frame cost, and
+the library reads such a call for whether it was its row's first and how far the JVM's compilation
+clock moved under it (`first jitMs=412`). That is worth having on a rebuild step precisely because it
+runs a handful of times a session: its first call is a large share of what a reader sees, and it runs
+on code the JIT has not compiled yet. A per-frame beat states no threshold, so it is not read - the
+bean is a native call, and a beat has warmed up long before anyone opens the readout.
