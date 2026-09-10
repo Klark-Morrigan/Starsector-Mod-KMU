@@ -4,6 +4,8 @@ import com.fs.starfarer.api.ModSpecAPI;
 import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.characters.MarketConditionSpecAPI;
 
+import kmlib.testfixtures.logging.LogAppenderFake;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +17,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
 class StarsectorConditionRepositoryTest {
 
@@ -76,6 +80,25 @@ class StarsectorConditionRepositoryTest {
             assertThat(repository.getAllConditionSpecs())
                     .extracting(KmuConditionSpec::getId)
                     .containsExactly("hot");
+        }
+
+        @Test
+        void namesTheSpecItDroppedInTheLog() {
+            // A condition missing from the list with nothing said about it looks exactly like one
+            // the game never had, which leaves the mod that shipped the bad spec unfindable.
+            var settings = buildSettings(
+                    List.of(buildSpec("   ", "Blank", "graphics/icons/blank.png", true)),
+                    Map.of(),
+                    new ArrayList<>());
+            var repository = new StarsectorConditionRepository(settings);
+
+            var log = LogAppenderFake.captureLogOf(
+                    StarsectorConditionRepository.class,
+                    repository::getAllConditionSpecs);
+
+            assertThat(log.getMessages())
+                    .singleElement(as(STRING))
+                    .contains("market condition spec");
         }
 
         @Test
