@@ -23,6 +23,7 @@ import kmu.maplayers.base.tooltip.MapHoverTooltip;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
+import kmu.settings.KmuLoggingSettings;
 
 import org.apache.log4j.Logger;
 
@@ -213,8 +214,7 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
                 return;
             }
             try (var layerScope = frameBeats.openLayerRow()) {
-                iconOrderTrace.traceWhenChanged();
-                widgetsUnderCursorTrace.traceWhenChanged();
+                traceReflectiveReadings();
                 announceArrivalOnTheFrameJustClosed();
                 decideWhetherTheHoverIsWantedThisFrame();
 
@@ -342,6 +342,25 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             // that reports what it finds answer from one reading: a hover resolved on a frame no box
             // may draw on would light a cell the map then refuses to name.
             MapHoverPermission.createForLiveScreen()::isCursorLocatable);
+    }
+
+    // The two traces that read the game's own widget tree, asked only where the player has asked for
+    // them by name. Both walk the live tree and print about a kilobyte a line, which is out of all
+    // proportion to the rest of what DEBUG turns on here - so they answer to a switch of their own as
+    // well as to the level, and the level alone leaves them off.
+    //
+    // The switch is read before the traces rather than inside them, and that ordering is the point
+    // rather than a saved call: a walk that fails warns once a session, and a warning spent while
+    // this is off would be spent on nobody. Not walking at all until someone is listening is what
+    // keeps that line available for them - and what a reader who switches this on part way through a
+    // session is owed instead is handled where the switch moves.
+    private void traceReflectiveReadings() {
+
+        if (!KmuLoggingSettings.areReflectionProbesEnabled()) {
+            return;
+        }
+        iconOrderTrace.traceWhenChanged();
+        widgetsUnderCursorTrace.traceWhenChanged();
     }
 
     // Answers the moment the frame just closed settled on, that frame's last pass having had the

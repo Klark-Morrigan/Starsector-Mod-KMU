@@ -5,6 +5,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.diagnostics.ProfilingCaptureInstaller;
+import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -105,6 +106,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // level ships off, so a player who never opens the readout binds nothing that keeps a
         // capture.
         ProfilingCaptureInstaller.installAll();
+
+        // Also after the settings, and for the same reason: it reads the reflection-trace switch to
+        // know where that switch later moves from. Nothing it does depends on a sector, so it is here
+        // rather than in the per-load wiring - a warning spent before any save was opened is exactly
+        // one this has to be in place to re-arm.
+        KmuWiringSteps.runGuardedStep(
+            ReflectionTracingInstaller::installAll,
+            "Failed to install KMU reflection tracing listener");
 
         // Wire the concrete map layers into the framework registry once per launch, before any
         // sector map can open. The registry stays agnostic to which views exist; this is the

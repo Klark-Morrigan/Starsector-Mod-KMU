@@ -22,7 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the {@code KmuMap*Settings} readers and {@link KmuMapKeybindSettings} for what the map-layer
  * framework's own chrome, geometry and keys need, {@link KmuMarketConditionSettings} for the
  * condition picker, {@link KmuProfilingSettings} for how much of what the mod does is measured,
- * and the political map layer's own set. Splitting on the reader rather than on the settings tab
+ * {@link KmuLoggingSettings} for how much of it the mod says, and the political map layer's own
+ * set. Splitting on the reader rather than on the settings tab
  * is what keeps a layer's knobs out of reach of the framework: a class no framework code imports
  * cannot leak a feature's vocabulary into it, which a tab-shaped split could not promise.
  * {@code Map - Dev} is where the two part company - it carries the tuning of geometry every layer
@@ -74,12 +75,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class KmuLunaSettings {
 
-    // The settings id and the logger subtree the log-level field tunes. Every KMU class lives
-    // under the "kmu" package, so that one logger name is the lever for the whole mod's
-    // verbosity. The two coincide as strings but mean different things.
+    // The id every read below is scoped by. What the log-level binding needs beside it - the field
+    // the player sets and the logger subtree it tunes - is named in KmuLoggingSettings with the rest
+    // of that section's rows, so which logging rows exist has one answer rather than two.
     private static final String MOD_ID = KmuMod.MOD_ID;
-    private static final String LOGGER_ROOT = "kmu";
-    private static final String LOG_LEVEL_FIELD = "kmu_dev_logging_level";
 
     // Bumped on every change to KMU's LunaLib settings. Consumers that cache
     // derived state (e.g. the political-map overlay) read this revision and
@@ -96,7 +95,10 @@ public final class KmuLunaSettings {
      * mod plugin calls this.
      */
     public static void installBindings() {
-        KmLogging.bindToLunaSetting(MOD_ID, LOGGER_ROOT, LOG_LEVEL_FIELD);
+        KmLogging.bindToLunaSetting(
+            MOD_ID,
+            KmuLoggingSettings.LOGGER_ROOT,
+            KmuLoggingSettings.LOG_LEVEL_FIELD);
         // One listener, registered once at load, advances the revision on any
         // KMU settings change - the live-update signal for cached consumers.
         LunaSettingsReader.runOnSettingsChange(MOD_ID, settingsRevision::incrementAndGet);

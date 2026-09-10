@@ -4,6 +4,7 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmu.diagnostics.ProfilingCaptureInstaller;
+import kmu.diagnostics.ReflectionTracingInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
@@ -71,12 +72,13 @@ class KMU_ModPluginTest {
         void standsUpEveryStepALaunchIsMadeOf() {
             // The list is the whole subject: a step nobody named is a feature that silently never
             // runs, which is how a settings change came to leave a stale spotlight standing. Held
-            // over all four mocked steps at once, so a step dropped from the wiring fails here
-            // rather than in play.
+            // over every mocked step at once, so a step dropped from the wiring fails here rather
+            // than in play.
             try (var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
                     var mapLayersMock = mockStatic(MapLayers.class);
                     var filterHealMock = mockStatic(FilterSelectionHeal.class);
                     var profilingMock = mockStatic(ProfilingCaptureInstaller.class);
+                    var reflectionTracingMock = mockStatic(ReflectionTracingInstaller.class);
                     var ratSettingsMock = mockStatic(RandomAssortmentOfThingsSettings.class)) {
 
                 new KMU_ModPlugin().onApplicationLoad();
@@ -85,6 +87,11 @@ class KMU_ModPluginTest {
                 // binds is a setting: the shipped level is off, so a launch that ran it leaves the
                 // library exactly as silent as one that dropped it.
                 profilingMock.verify(ProfilingCaptureInstaller::installAll);
+
+                // Pinned as a call for the profiling step's reason: what it stands up is a listener
+                // on a switch that ships off, so a launch that dropped it looks identical from
+                // outside until the player turns the traces on and is met with silence.
+                reflectionTracingMock.verify(ReflectionTracingInstaller::installAll);
                 lunaSettingsMock.verify(KmuLunaSettings::installBindings);
                 mapLayersMock.verify(MapLayers::registerAll);
                 filterHealMock.verify(FilterSelectionHeal::installHealOnSettingsChange);

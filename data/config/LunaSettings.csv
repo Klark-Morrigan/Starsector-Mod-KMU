@@ -256,6 +256,7 @@ kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_intelScreen,,,,Intel sidebar pix
 ,,,,,,,,,,,,,,,,
 kmu_dev_logging_header,,,,Logging,,Header,Logging,,,,,,,,,Dev
 kmu_dev_logging_level,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics. [Default: WARN].,,,,,Dev
+kmu_dev_logging_areReflectionProbesEnabled,,,,Reflection probe traces,,Boolean,FALSE,,,,"Enables reflection related logs. Each line runs to about a kilobyte, so this is left off for normal play. [Requires log verbosity set to DEBUG.] [Default: false].",,,,,Dev
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
