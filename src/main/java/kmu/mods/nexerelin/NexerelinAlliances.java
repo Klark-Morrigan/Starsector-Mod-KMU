@@ -4,6 +4,10 @@ import kmlib.mods.nexerelin.NexerelinPresence;
 
 import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.mods.nexerelin.alliances.AllianceFingerprint;
+import kmu.mods.nexerelin.alliances.AllianceGroupingFactory;
+import kmu.mods.nexerelin.alliances.AllianceSource;
+import kmu.mods.nexerelin.alliances.FactionAllianceFactory;
 
 /**
  * The soft-dependency gate for the live alliance set: it answers whether Nexerelin is

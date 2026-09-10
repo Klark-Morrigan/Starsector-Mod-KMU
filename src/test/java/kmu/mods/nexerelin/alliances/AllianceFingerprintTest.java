@@ -1,4 +1,4 @@
-package kmu.mods.nexerelin;
+package kmu.mods.nexerelin.alliances;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

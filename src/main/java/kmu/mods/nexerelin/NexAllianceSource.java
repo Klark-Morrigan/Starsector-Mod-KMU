@@ -1,5 +1,8 @@
 package kmu.mods.nexerelin;
 
+import kmu.mods.nexerelin.alliances.AllianceRecord;
+import kmu.mods.nexerelin.alliances.AllianceSource;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package kmu.mods.nexerelin;
+package kmu.mods.nexerelin.alliances;
 
 import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 
