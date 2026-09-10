@@ -128,11 +128,11 @@ public final class SystemDominationTooltip extends SystemStandingsTooltip {
 
         // A faction the reads found nothing for is listed as its line alone rather than as a heading
         // over an empty account, which is what an empty answer means to the shape above.
+        var reading = new WeightAccountReading(pass.rules(), colonyReading, detailLevel);
+
         return standing -> MarketWeightRowResolver.resolveMarketRows(
             breakdownsByFactionId.getOrDefault(standing.factionId(), List.of()),
             unweighedColoniesByFactionId.getOrDefault(standing.factionId(), List.of()),
-            pass.rules(),
-            colonyReading,
-            detailLevel);
+            reading);
     }
 }

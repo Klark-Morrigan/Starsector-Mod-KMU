@@ -1,6 +1,7 @@
 package kmu.maplayers.base.tooltip.layout;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
+
 /**
  * What a layer composed for one paint of its hover box: the blocks its body reads as, and how deep
  * the box goes for this system.

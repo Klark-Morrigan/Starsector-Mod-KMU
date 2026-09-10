@@ -272,9 +272,10 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildConcealedBreakdown()),
                 NO_UNWEIGHED_COLONIES,
-                buildRules(),
-                buildReadingWithOpenlyKnown(nameColonyId("Selkie Station")),
-                PATROL_DETAILS);
+                new WeightAccountReading(
+                    buildRules(),
+                    buildReadingWithOpenlyKnown(nameColonyId("Selkie Station")),
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().qualifier())
                 .isNull();
@@ -287,9 +288,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
-                buildRules(),
-                buildReadingWithUndiscovered("jangala"),
-                PATROL_DETAILS);
+                new WeightAccountReading(buildRules(), buildReadingWithUndiscovered("jangala"), PATROL_DETAILS));
 
             assertThat(rows.get(0).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
@@ -501,9 +500,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
                 NO_UNWEIGHED_COLONIES,
-                buildRules(),
-                SystemColonyReading.NONE,
-                SYSTEM_COMPOSITION);
+                new WeightAccountReading(buildRules(), SystemColonyReading.NONE, SYSTEM_COMPOSITION));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly("Jangala");
@@ -519,9 +516,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrollingBreakdown(2, 1, 0)),
                 NO_UNWEIGHED_COLONIES,
-                buildRules(),
-                SystemColonyReading.NONE,
-                MARKET_STATS);
+                new WeightAccountReading(buildRules(), SystemColonyReading.NONE, MARKET_STATS));
 
             var patrolEntry = rows.get(0).children().get(2);
 
@@ -760,9 +755,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
-                buildRules(),
-                buildReadingRemarkingOn("jangala"),
-                PATROL_DETAILS);
+                new WeightAccountReading(buildRules(), buildReadingRemarkingOn("jangala"), PATROL_DETAILS));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -775,9 +768,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(),
                 List.of(buildUnweighedColony("Galatia Academy")),
-                buildRules(),
-                buildReadingRemarkingOn("galatia_academy"),
-                PATROL_DETAILS);
+                new WeightAccountReading(buildRules(), buildReadingRemarkingOn("galatia_academy"), PATROL_DETAILS));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -790,9 +781,7 @@ final class MarketWeightRowResolverTest {
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildMarkedBreakdown(buildMarkedColony("Jangala"))),
                 NO_UNWEIGHED_COLONIES,
-                buildRules(),
-                buildReadingRemarkingOn("jangala"),
-                PATROL_DETAILS);
+                new WeightAccountReading(buildRules(), buildReadingRemarkingOn("jangala"), PATROL_DETAILS));
 
             assertThat(rows.get(0).children())
                 .allSatisfy(factor -> assertThat(factor.line().noteText()).isNull());
@@ -836,9 +825,7 @@ final class MarketWeightRowResolverTest {
         return MarketWeightRowResolver.resolveMarketRows(
             breakdowns,
             unweighedColonies,
-            rules,
-            SystemColonyReading.NONE,
-            PATROL_DETAILS);
+            new WeightAccountReading(rules, SystemColonyReading.NONE, PATROL_DETAILS));
     }
 
     // A colony the economy does not list, under the name a case needs and marked with nothing. A

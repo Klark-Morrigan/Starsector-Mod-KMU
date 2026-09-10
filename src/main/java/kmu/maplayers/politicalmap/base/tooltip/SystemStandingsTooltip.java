@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.relation.StarsectorFactionRelations;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
@@ -11,9 +10,7 @@ import kmu.maplayers.base.tooltip.layout.CellTooltipBlocks;
 import kmu.maplayers.base.tooltip.layout.CellTooltipBody;
 import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
-import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.ContestSides;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -73,17 +70,11 @@ import java.util.Optional;
  */
 public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
-    // Where the alliance set behind the allied block is taken from. A source rather than a grouping,
-    // because a box lives for the whole session while alliances form and dissolve inside it - one
-    // captured at construction would go on filing a group under the alliance it left an hour ago.
-    private final HolderGroupingSource holderGroupingSource;
-
     protected SystemStandingsTooltip(
             ClaimBreakdownReader claimBreakdownReader,
             HolderGroupingSource holderGroupingSource) {
 
-        super(claimBreakdownReader);
-        this.holderGroupingSource = holderGroupingSource;
+        super(claimBreakdownReader, holderGroupingSource);
     }
 
     @Override
@@ -174,16 +165,12 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     // where no view is painting - there is then no grouping to rank under, and no body being drawn
     // for a hint to sit beneath.
     //
-    // One read behind both the body and the key hint at its foot, because the hint offers an account
-    // of exactly the standings the body lists. Resolved apart, the two are free to be answered from
-    // different readings of one system - and the shape that takes is a box advertising a key that
-    // does nothing, or declining to over a system it has just listed somebody in.
+    // One read behind both the body and the key hint at its foot, for the reason ComposedCellBody
+    // sets out: the hint offers an account of exactly the standings the body lists.
     //
-    // The routing is settled here for the same reason and travels with the rest of the read: it is
-    // taken over the live alliance set and the sector's live relations, so a box routing its blocks
-    // one at a time could file a group as an ally and the next block's read file it as a rival out
-    // of one hover. The alliance set is read as an affiliation at the point it is sampled, which is
-    // where a grouping stops being a fold and becomes the one question the blocks ask.
+    // The routing travels with it because it is settled over one sampling of the live relations
+    // (PoliticalMapCellTooltip): a box routing its blocks one at a time could file a group as an ally
+    // and the next block's read file it as a rival out of a single hover.
     private Optional<RankedStandings> readRankedStandings(
             SectorAPI sector,
             StarSystemAPI system) {
@@ -209,18 +196,18 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     //
     // The bar and the membership both come off that painting grouping: the ranking names its groups
     // by its bloc ids, so a membership read off any other fold would answer about blocs the box never
-    // listed. The alliance set is the one rule that does not - it is sampled live, being the axis the
-    // bands judge their contest by, and the faction and claims layers deliberately paint under a
-    // grouping that is not it.
-    //
-    // Disposition is read against this sector rather than through the game's own current one, so a
-    // box drawn over a second sector reports that sector's relations.
+    // listed. How a group stands with the holder is the one rule that does not - both halves are
+    // sampled live off the shape every political box shares, being the axis the bands judge their
+    // contest by, and the faction and claims layers deliberately paint under a grouping that is not
+    // it.
     private StandingBlockRules buildBlockRules(SectorAPI sector, HolderGrouping paintingGrouping) {
+
+        var blocRelations = sampleBlocRelations(sector);
 
         return new StandingBlockRules(
             BlocCandidacy.createForGrouping(paintingGrouping),
-            new BlocAffiliation(holderGroupingSource.resolveGrouping()),
-            new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)),
+            blocRelations.affiliation(),
+            blocRelations.friendliness(),
             paintingGrouping::resolveMemberFactionIds);
     }
 

@@ -119,32 +119,24 @@ public final class MarketWeightRowResolver {
      * @param unweighedColonies the faction's colonies in the system that the economy does not list,
      *                          identified and nothing more, no weight having been worked out for
      *                          them
-     * @param rules             the weighting rules the pass resolved under, which decide whether
-     *                          stability is a cause worth stating
-     * @param colonyReading     what the box may say about the system's colonies beyond their
-     *                          weights, folded once for the whole box - what kind of place each is,
-     *                          whether the player has found it, and how old the news of it is
-     * @param detailLevel       how deep the box was asked to read, which the arithmetic beneath a
-     *                          colony is worked out only as far as: the colonies themselves are
-     *                          always listed, this resolver being consulted at all only where they
-     *                          are
+     * @param reading           what the box knows about the hovered system beside these colonies -
+     *                          the weighting rule, the colony reading and how deep to go. The
+     *                          colonies themselves are always listed, this resolver being consulted
+     *                          at all only where they are
      * @return one entry per colony, the weighed ones ranked ahead of the unweighed; empty when the
      *         faction holds no colony at all in the system
      */
     public static List<CellTooltipEntry> resolveMarketRows(
             List<MarketWeightBreakdown> breakdowns,
             List<UnweighedColony> unweighedColonies,
-            DominanceRules rules,
-            SystemColonyReading colonyReading,
-            HoverTooltipDetailLevel detailLevel) {
+            WeightAccountReading reading) {
 
         var entries = new ArrayList<CellTooltipEntry>();
 
         breakdowns
             .stream()
             .sorted(MARKET_ORDER)
-            .forEach(breakdown -> entries.add(
-                resolveMarketEntry(breakdown, rules, colonyReading, detailLevel)));
+            .forEach(breakdown -> entries.add(resolveMarketEntry(breakdown, reading)));
 
         // Last whatever they would rank at, because they never ranked: sorted in among the weighed
         // colonies by a nought they were never given, they would sit above a colony that was
@@ -152,7 +144,8 @@ public final class MarketWeightRowResolver {
         unweighedColonies
             .stream()
             .sorted(UNWEIGHED_ORDER)
-            .forEach(colony -> entries.add(resolveUnweighedEntry(colony, colonyReading)));
+            .forEach(colony -> entries.add(
+                resolveUnweighedEntry(colony, reading.colonyReading())));
 
         return List.copyOf(entries);
     }
@@ -165,10 +158,9 @@ public final class MarketWeightRowResolver {
     // asked all the same, so what a line may call out is decided in one place for both lists.
     private static CellTooltipEntry resolveMarketEntry(
             MarketWeightBreakdown breakdown,
-            DominanceRules rules,
-            SystemColonyReading colonyReading,
-            HoverTooltipDetailLevel detailLevel) {
+            WeightAccountReading reading) {
 
+        var colonyReading = reading.colonyReading();
         var line = createCountedMapEntityLine(
             breakdown.marketNameplate(),
             breakdown.marketNameplate().displayName(),
@@ -185,7 +177,7 @@ public final class MarketWeightRowResolver {
                         breakdown.marketId(),
                         breakdown.isHiddenMarket()),
                     IS_LISTED_BY_ECONOMY)))
-            .nesting(resolveFactorEntries(breakdown, rules, detailLevel));
+            .nesting(resolveFactorEntries(breakdown, reading));
     }
 
     // A colony the pass never weighed, as the entry it is listed as: named as loudly as the colonies
@@ -274,19 +266,19 @@ public final class MarketWeightRowResolver {
     // price for.
     private static List<CellTooltipEntry> resolveFactorEntries(
             MarketWeightBreakdown breakdown,
-            DominanceRules rules,
-            HoverTooltipDetailLevel detailLevel) {
+            WeightAccountReading reading) {
 
-        if (!detailLevel.isReadingAtLeast(HoverTooltipDetailLevel.MARKET_STATS)) {
+        if (!reading.detailLevel().isReadingAtLeast(HoverTooltipDetailLevel.MARKET_STATS)) {
             return List.of();
         }
+        var rules = reading.rules();
         var entries = new ArrayList<CellTooltipEntry>();
 
         // Stability is stated only where it can cost the colony something: with the master
         // weighting off it moves no factor, and a line for it would read as a cause of cuts that
         // are all zero.
         if (rules.isStabilityWeighted()) {
-            entries.add(createFactorEntry(
+            entries.add(TermTooltipLine.buildTermEntry(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STABILITY),
                 MarketFactorText.formatStability(breakdown.marketStability())));
         }
@@ -303,7 +295,7 @@ public final class MarketWeightRowResolver {
                 MarketFactorText.formatStation(station)))));
 
         breakdown.patrols().ifPresent(patrols ->
-            entries.add(resolvePatrolEntry(patrols, detailLevel)));
+            entries.add(resolvePatrolEntry(patrols, reading.detailLevel())));
 
         return entries;
     }
@@ -341,7 +333,7 @@ public final class MarketWeightRowResolver {
             DominanceRules rules) {
 
         var isFixedRating = isFixedRating(breakdown, rules);
-        var line = createFactorLine(
+        var line = TermTooltipLine.buildTermLine(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             MarketFactorText.formatBaseSize(breakdown.baseSize(), isFixedRating));
 
@@ -367,8 +359,7 @@ public final class MarketWeightRowResolver {
             HoverTooltipDetailLevel detailLevel) {
 
         return CellTooltipEntry
-            .createEntry(CellTooltipEntryLine.createLine(
-                CellTooltipMark.NO_MARK,
+            .createEntry(TermTooltipLine.buildTermLine(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PATROLS),
                 MarketFactorText.formatPatrols(patrols)))
             .nesting(resolveTierEntries(patrols, detailLevel));
@@ -410,7 +401,7 @@ public final class MarketWeightRowResolver {
         if (tier.count() <= NO_PATROLS) {
             return;
         }
-        var line = createFactorLine(
+        var line = TermTooltipLine.buildTermLine(
                 KmuStrings.format(
                     KmuStrings.POLITICAL_MAP_TOOLTIP_PATROL_TIER,
                     KmuStrings.get(tierNameKey),
@@ -419,17 +410,5 @@ public final class MarketWeightRowResolver {
             .derivesValueFrom(MarketFactorText.formatPatrolTierWorking(tier));
 
         entries.add(CellTooltipEntry.createEntry(line));
-    }
-
-    // A factor line that breaks down no further, which is every one of them bar the patrols.
-    private static CellTooltipEntry createFactorEntry(String labelText, String valueText) {
-        return CellTooltipEntry.createEntry(createFactorLine(labelText, valueText));
-    }
-
-    // The shape every line beneath a colony takes: named, uncrested, and carrying its number. Shared
-    // by the lines that go on to state something more - a hidden colony's size, a tier's rate - so
-    // that stating more is one refinement rather than a second spelling of the line itself.
-    private static CellTooltipEntryLine createFactorLine(String labelText, String valueText) {
-        return CellTooltipEntryLine.createLine(CellTooltipMark.NO_MARK, labelText, valueText);
     }
 }

@@ -1,5 +1,6 @@
 package kmu.maplayers.base.tooltip.layout;
 
+import kmlib.starsector.ui.text.LabelRun;
 import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
@@ -161,7 +162,7 @@ final class CellTooltipFooterTest {
 
     // The runs of the one line the footer block holds, for a box read at detailLevel whose own tree ends
     // at deepestHeldLevel and which had to withhold withheldEntryCount entries.
-    private static List<TextSpan> readFooterRuns(
+    private static List<LabelRun> readFooterRuns(
             HoverTooltipDetailLevel detailLevel,
             HoverTooltipDetailLevel deepestHeldLevel,
             int withheldEntryCount) {

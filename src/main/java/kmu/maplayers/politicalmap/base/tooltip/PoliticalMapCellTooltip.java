@@ -3,11 +3,15 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.factions.relation.StarsectorFactionRelations;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.base.tooltip.layout.SystemCellTooltip;
+import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
+import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
+import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 
 import java.util.List;
 
@@ -50,8 +54,17 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      */
     protected final ClaimBreakdownReader claimBreakdownReader;
 
-    protected PoliticalMapCellTooltip(ClaimBreakdownReader claimBreakdownReader) {
+    // Where the alliance set behind an allied block is taken from. A source rather than a grouping,
+    // because a box lives for the whole session while alliances form and dissolve inside it - one
+    // captured at construction would go on filing a group under the alliance it left an hour ago.
+    private final HolderGroupingSource holderGroupingSource;
+
+    protected PoliticalMapCellTooltip(
+            ClaimBreakdownReader claimBreakdownReader,
+            HolderGroupingSource holderGroupingSource) {
+
         this.claimBreakdownReader = claimBreakdownReader;
+        this.holderGroupingSource = holderGroupingSource;
     }
 
     @Override
@@ -68,6 +81,29 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
             sector,
             claimBreakdownReader.readCoreFactionId(system),
             isStatingCoreClaimInBody());
+    }
+
+    /**
+     * Samples how a bloc may stand with the holder of the hovered system, for the one read a box
+     * builds its blocks from.
+     *
+     * <p>Bound here rather than by each shape because both are live and both place the same blocs:
+     * two boxes sampling for themselves are two chances to file a group as an ally on one tab and as
+     * a rival on the next, a keystroke apart, with nothing on screen to say which was right.
+     *
+     * <p>The alliance set is read through the session-long source at the moment of sampling, which is
+     * where a grouping stops being a fold and becomes the one question the blocks ask. Disposition is
+     * read against the hovered sector rather than through the game's own current one, so a box drawn
+     * over a second sector reports that sector's relations.
+     *
+     * @param sector the sector the hovered system stands in, whose relations are read
+     * @return the two relations, sampled together
+     */
+    protected final BlocRelations sampleBlocRelations(SectorAPI sector) {
+
+        return new BlocRelations(
+            new BlocAffiliation(holderGroupingSource.resolveGrouping()),
+            new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)));
     }
 
     /**

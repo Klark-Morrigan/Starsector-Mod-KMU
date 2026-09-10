@@ -97,10 +97,11 @@ public final class SystemClaimTooltip extends SystemClaimContestTooltip {
         // listing ties actually decided something are facts of the contest, not of one faction's
         // list, and the resolver reads both off the very breakdown this box is drawing.
         return ClaimScoreRowResolver.resolveMarketRows(
-            contest.breakdown(),
             standing,
-            colonyReading,
-            contest.colonyVisibility().shouldIncludeUndiscoveredMarkets(),
-            detailLevel);
+            new ClaimAccountReading(
+                contest.breakdown(),
+                colonyReading,
+                contest.colonyVisibility().shouldIncludeUndiscoveredMarkets(),
+                detailLevel));
     }
 }

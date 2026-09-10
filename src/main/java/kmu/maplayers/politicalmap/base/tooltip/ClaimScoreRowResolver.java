@@ -2,7 +2,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 
 import kmlib.starsector.systems.claims.FactionClaimStanding;
 import kmlib.starsector.systems.claims.MarketClaimBreakdown;
-import kmlib.starsector.systems.claims.SystemClaimBreakdown;
 import kmlib.starsector.systems.claims.WeighedClaimStanding;
 import kmlib.text.KmlibNumbers;
 
@@ -122,62 +121,40 @@ public final class ClaimScoreRowResolver {
      * strongest first, each carrying the terms of its own score - closed by the presence its several
      * holdings earned every one of them.
      *
-     * @param breakdown                    the whole contest the standing was ranked in - what
-     *                                     settles who the claim holder is and which listing ties
-     *                                     actually decided something, neither of which one
-     *                                     faction's standing can answer
-     * @param standing                     the faction's ranked place in that contest, of either
-     *                                     kind
-     * @param colonyReading                what the box may say about the system's colonies beyond
-     *                                     their scores, folded once for the whole box. A claim row
-     *                                     carries the id of the market it was scored from and
-     *                                     nothing of the place behind it, so this is the only thing
-     *                                     parting an unowned collapse from an unowned hulk on the
-     *                                     list, the only thing that can say the player has yet to
-     *                                     find either, and the only thing that can date them
-     * @param isListingUndiscoveredMarkets whether a market on an undiscovered entity may be listed
-     *                                     though the contest never weighed it. False is the
-     *                                     ordinary state and leaves those markets off; true is the
-     *                                     dev reveal, under which the account is stated in full
-     * @param detailLevel                  how deep the box was asked to read, which the terms
-     *                                     beneath a market are worked out only as far as: the
-     *                                     markets themselves are always listed, this resolver being
-     *                                     consulted at all only where they are
+     * @param standing the faction's ranked place in the contest, of either kind
+     * @param reading  what the box knows about the hovered system beside this one standing - the
+     *                 whole contest, the colony reading, which colonies may be named and how deep
+     *                 to go. The markets themselves are always listed, this resolver being
+     *                 consulted at all only where they are
      * @return the entries in the order they are read
      */
     public static List<CellTooltipEntry> resolveMarketRows(
-            SystemClaimBreakdown breakdown,
             FactionClaimStanding standing,
-            SystemColonyReading colonyReading,
-            boolean isListingUndiscoveredMarkets,
-            HoverTooltipDetailLevel detailLevel) {
+            ClaimAccountReading reading) {
 
-        var listedMarkets = selectListedMarkets(standing, isListingUndiscoveredMarkets);
+        var listedMarkets = selectListedMarkets(
+            standing,
+            reading.isListingUndiscoveredMarkets());
 
         // Routed on the kind of standing because the two things the fuller account is built from -
         // the market that carried the score, and the presence term counted for it - exist only on a
         // weighed one. The other arm is the presence-only kind, the standing being sealed over the
         // two.
         if (standing instanceof WeighedClaimStanding weighedStanding) {
-            return resolveWeighedRows(
-                breakdown,
-                weighedStanding,
-                colonyReading,
-                listedMarkets,
-                detailLevel);
+            return resolveWeighedRows(weighedStanding, listedMarkets, reading);
         }
-        return resolvePresenceOnlyRows(colonyReading, listedMarkets, detailLevel);
+        return resolvePresenceOnlyRows(listedMarkets, reading);
     }
 
     // The account of a faction the contest weighed: its markets strongest first, the one that took
     // the system called out where this faction took it, and the presence its several holdings earned
     // every one of them at the foot.
     private static List<CellTooltipEntry> resolveWeighedRows(
-            SystemClaimBreakdown breakdown,
             WeighedClaimStanding standing,
-            SystemColonyReading colonyReading,
             List<MarketClaimBreakdown> listedMarkets,
-            HoverTooltipDetailLevel detailLevel) {
+            ClaimAccountReading reading) {
+
+        var breakdown = reading.breakdown();
 
         // Whether this faction is the one the contest handed the system to, and so whose strongest
         // market is the one that took it. A decree settles the system before a single market is
@@ -200,9 +177,8 @@ public final class ClaimScoreRowResolver {
                     ClaimTieOutcomes.resolveOutcome(breakdown, standing, market),
                     isCarryingTheStanding),
                 market,
-                colonyReading,
                 isHoldingTheClaim && isCarryingTheStanding,
-                detailLevel));
+                reading));
         }
 
         // Stated unless the list carries a market the count never included, which is the one way the
@@ -225,9 +201,8 @@ public final class ClaimScoreRowResolver {
     // judgement would give it one: the mechanic passed over every colony behind such a standing, so
     // none of them won or lost a tie against anything.
     private static List<CellTooltipEntry> resolvePresenceOnlyRows(
-            SystemColonyReading colonyReading,
             List<MarketClaimBreakdown> listedMarkets,
-            HoverTooltipDetailLevel detailLevel) {
+            ClaimAccountReading reading) {
 
         var entries = new ArrayList<CellTooltipEntry>(listedMarkets.size());
 
@@ -238,9 +213,8 @@ public final class ClaimScoreRowResolver {
                     CellTooltipIndexOutcome.UNCONTESTED,
                     NO_MARKET_CARRIES_THE_STANDING),
                 market,
-                colonyReading,
                 NOTHING_TOOK_THE_SYSTEM,
-                detailLevel));
+                reading));
         }
         return List.copyOf(entries);
     }
@@ -262,9 +236,8 @@ public final class ClaimScoreRowResolver {
         // A note about the list rather than one of the faction's holdings - the arithmetic of a term
         // all of them share - so it reads as quietly as the working inside any other value, down to
         // its name, and only the points it comes to stay a finding.
-        return Optional.of(CellTooltipEntry.createEntry(CellTooltipEntryLine
-            .createLine(
-                CellTooltipMark.NO_MARK,
+        return Optional.of(CellTooltipEntry.createEntry(TermTooltipLine
+            .buildTermLine(
                 KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS),
                 formatBonus(siblingMarketCount))
             .derivesValueFrom(formatSiblingWorking(siblingMarketCount))
@@ -279,9 +252,10 @@ public final class ClaimScoreRowResolver {
     private static CellTooltipEntry resolveMarketEntry(
             CellTooltipEntryLine line,
             MarketClaimBreakdown market,
-            SystemColonyReading colonyReading,
             boolean isHoldingTheClaim,
-            HoverTooltipDetailLevel detailLevel) {
+            ClaimAccountReading reading) {
+
+        var colonyReading = reading.colonyReading();
 
         // Nothing chooses between the claim and what sort of place the colony is: the two are
         // findings about different things, and which of them leads is the shared resolver's to say
@@ -304,7 +278,7 @@ public final class ClaimScoreRowResolver {
             .createEntry(colonyReading.describeColony(line, market.marketId(), facts))
             .nesting(RedactedMarketLines.isRedactedMarket(market)
                 ? List.of()
-                : resolveTermEntries(market, detailLevel));
+                : resolveTermEntries(market, reading.detailLevel()));
     }
 
     // The shape every market's own line takes, whether or not the box may say what the market is
@@ -430,21 +404,15 @@ public final class ClaimScoreRowResolver {
 
         // Always stated, even where it is the whole score: it is the term the sum starts from, and a
         // market listing no term at all would read as a number with no account behind it.
-        entries.add(createTermEntry(
+        entries.add(TermTooltipLine.buildTermEntry(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             KmlibNumbers.formatGroupedInteger(market.marketSize())));
 
-        market.militaryBonus().ifPresent(bonus -> entries.add(createTermEntry(
+        market.militaryBonus().ifPresent(bonus -> entries.add(TermTooltipLine.buildTermEntry(
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY),
             formatBonus(bonus))));
 
         return entries;
-    }
-
-    // A term line, which breaks down no further - the claim score is two additions deep and no more.
-    private static CellTooltipEntry createTermEntry(String labelText, String valueText) {
-        return CellTooltipEntry.createEntry(
-            CellTooltipEntryLine.createLine(CellTooltipMark.NO_MARK, labelText, valueText));
     }
 
     // What a term added, signed so it reads as a term of a sum rather than as a quantity of its own -

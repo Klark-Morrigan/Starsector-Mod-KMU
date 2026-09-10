@@ -307,18 +307,20 @@ final class ClaimScoreRowResolverTest {
             var breakdown = new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival));
 
             var claimantRows = ClaimScoreRowResolver.resolveMarketRows(
-                breakdown,
                 claimant,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    breakdown,
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             var rivalRows = ClaimScoreRowResolver.resolveMarketRows(
-                breakdown,
                 rival,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    breakdown,
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.WON);
@@ -333,11 +335,12 @@ final class ClaimScoreRowResolverTest {
             var claimant = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
             var rival = buildRivalStanding(SECOND_LISTED, STRONGEST_MARKET_SIZE - 1);
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival)),
                 claimant,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, rival)),
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -358,17 +361,19 @@ final class ClaimScoreRowResolverTest {
             var breakdown = new SystemClaimBreakdown(null, HEGEMONY, List.of(claimant, outsider));
 
             var claimantRows = ClaimScoreRowResolver.resolveMarketRows(
-                breakdown,
                 claimant,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    breakdown,
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
             var outsiderRows = ClaimScoreRowResolver.resolveMarketRows(
-                breakdown,
                 outsider,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    breakdown,
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(claimantRows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -383,11 +388,12 @@ final class ClaimScoreRowResolverTest {
             var claimant = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
             var rival = buildRivalStanding(SECOND_LISTED, STRONGEST_MARKET_SIZE);
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(claimant, rival)),
                 claimant,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(claimant, rival)),
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().indexPlace().outcome())
                 .isEqualTo(CellTooltipIndexOutcome.UNCONTESTED);
@@ -615,11 +621,12 @@ final class ClaimScoreRowResolverTest {
                     SECOND_LISTED)));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingWithUndiscovered(nameMarketId("Kanta's Den")),
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    buildReadingWithUndiscovered(nameMarketId("Kanta's Den")),
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(1).line().hasRedactedName())
                 .isTrue();
@@ -808,11 +815,12 @@ final class ClaimScoreRowResolverTest {
                 List.of(buildOffEconomyMarket("Kanta's Den", 3, SECOND_LISTED)));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                NOTHING_BEYOND_THE_SCORE,
-                LISTING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    NOTHING_BEYOND_THE_SCORE,
+                    LISTING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             // No presence term beneath them, and that is the reveal's own doing rather than a second
             // rule: the market it admitted is one the count never reached, so the term would read as
@@ -832,11 +840,12 @@ final class ClaimScoreRowResolverTest {
                     IS_UNDISCOVERED_BY_PLAYER)));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingWithUndiscovered("kanta's_den"),
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    buildReadingWithUndiscovered("kanta's_den"),
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(1).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("undiscovered"));
@@ -893,11 +902,12 @@ final class ClaimScoreRowResolverTest {
             var standing = buildStandingOverOneSibling();
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(TRITACHYON, standing),
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().qualifier())
                 .isNull();
@@ -910,11 +920,12 @@ final class ClaimScoreRowResolverTest {
             var standing = buildStandingOverOneSibling();
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
                 standing,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    new SystemClaimBreakdown(HEGEMONY, HEGEMONY, List.of(standing)),
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().qualifier())
                 .isNull();
@@ -927,11 +938,12 @@ final class ClaimScoreRowResolverTest {
             var standing = buildStandingOverOneSibling();
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(TRITACHYON, standing),
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET, "Culann", PRESENCE_LINE);
@@ -1012,11 +1024,12 @@ final class ClaimScoreRowResolverTest {
                 List.of());
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                NOTHING_BEYOND_THE_SCORE,
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                SYSTEM_COMPOSITION);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    NOTHING_BEYOND_THE_SCORE,
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    SYSTEM_COMPOSITION));
 
             assertThat(readLabelTexts(rows))
                 .containsExactly(STRONGEST_MARKET);
@@ -1183,11 +1196,12 @@ final class ClaimScoreRowResolverTest {
                 buildUnknownHiddenMarket("Chalcedon", 4, ONE_SIBLING_MARKET, THIRD_LISTED));
 
             assertThat(readLabelTexts(ClaimScoreRowResolver.resolveMarketRows(
-                    buildBreakdownClaimedBy(HEGEMONY, standing),
                     standing,
-                    NOTHING_BEYOND_THE_SCORE,
-                    WITHHOLDING_UNDISCOVERED_MARKETS,
-                    PATROL_DETAILS)))
+                    new ClaimAccountReading(
+                        buildBreakdownClaimedBy(HEGEMONY, standing),
+                        NOTHING_BEYOND_THE_SCORE,
+                        WITHHOLDING_UNDISCOVERED_MARKETS,
+                        PATROL_DETAILS))))
                 .containsExactly("Kanta's Den");
         }
 
@@ -1211,11 +1225,12 @@ final class ClaimScoreRowResolverTest {
                 buildFoundHiddenMarket("Kanta's Den", 6, NO_SIBLING_MARKETS, SECOND_LISTED));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                buildReadingRemarkingOn("kanta's_den"),
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(TRITACHYON, standing),
+                    buildReadingRemarkingOn("kanta's_den"),
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -1229,11 +1244,12 @@ final class ClaimScoreRowResolverTest {
                 buildOffEconomyMarket("Kirov Reserve", 4, THIRD_LISTED));
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(TRITACHYON, standing),
                 standing,
-                buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId("Kirov Reserve")),
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(TRITACHYON, standing),
+                    buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId("Kirov Reserve")),
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -1246,11 +1262,12 @@ final class ClaimScoreRowResolverTest {
             var standing = buildStanding(buildStrongestMarket(NO_SIBLING_MARKETS), List.of());
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId(STRONGEST_MARKET)),
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId(STRONGEST_MARKET)),
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).line().noteText())
                 .isEqualTo(LAST_SEEN);
@@ -1263,11 +1280,12 @@ final class ClaimScoreRowResolverTest {
             var standing = buildStanding(buildFullyScoredMarket(), List.of());
 
             var rows = ClaimScoreRowResolver.resolveMarketRows(
-                buildBreakdownClaimedBy(HEGEMONY, standing),
                 standing,
-                buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId(STRONGEST_MARKET)),
-                WITHHOLDING_UNDISCOVERED_MARKETS,
-                PATROL_DETAILS);
+                new ClaimAccountReading(
+                    buildBreakdownClaimedBy(HEGEMONY, standing),
+                    buildReadingRemarkingOn(ClaimMarketFixture.nameMarketId(STRONGEST_MARKET)),
+                    WITHHOLDING_UNDISCOVERED_MARKETS,
+                    PATROL_DETAILS));
 
             assertThat(rows.get(0).children())
                 .allSatisfy(term -> assertThat(term.line().noteText()).isNull());
@@ -1299,11 +1317,12 @@ final class ClaimScoreRowResolverTest {
             SystemColonyReading colonyReading) {
 
         return ClaimScoreRowResolver.resolveMarketRows(
-            buildBreakdownClaimedBy(HEGEMONY, standing),
             standing,
-            colonyReading,
-            WITHHOLDING_UNDISCOVERED_MARKETS,
-            PATROL_DETAILS);
+            new ClaimAccountReading(
+                buildBreakdownClaimedBy(HEGEMONY, standing),
+                colonyReading,
+                WITHHOLDING_UNDISCOVERED_MARKETS,
+                PATROL_DETAILS));
     }
 
     // A contest the given faction won on the scores, holding the one standing posed against it. The
@@ -1335,11 +1354,12 @@ final class ClaimScoreRowResolverTest {
         var standing = buildPresenceOnlyStanding(unweighedMarkets);
 
         return ClaimScoreRowResolver.resolveMarketRows(
-            buildBreakdownClaimedBy(TRITACHYON, standing),
             standing,
-            colonyReading,
-            WITHHOLDING_UNDISCOVERED_MARKETS,
-            PATROL_DETAILS);
+            new ClaimAccountReading(
+                buildBreakdownClaimedBy(TRITACHYON, standing),
+                colonyReading,
+                WITHHOLDING_UNDISCOVERED_MARKETS,
+                PATROL_DETAILS));
     }
 
     // A faction present in the system through the given colonies alone, none of which the mechanic

@@ -172,9 +172,7 @@ final class TooltipDensityDepthIntegrationTest {
             standing -> MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildPatrolledColony()),
                 List.of(),
-                WEIGHING_RULES,
-                SystemColonyReading.NONE,
-                PATROL_DETAILS));
+                new WeightAccountReading(WEIGHING_RULES, SystemColonyReading.NONE, PATROL_DETAILS)));
 
         var body = CellTooltipBody.openBody(PATROL_DETAILS);
 

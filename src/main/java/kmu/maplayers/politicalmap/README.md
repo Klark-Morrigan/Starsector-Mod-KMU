@@ -295,12 +295,14 @@ standings behind a faction or alliance fill - and `SystemClaimTooltip` - the sco
 behind a claims fill, its claimant over the factions standing in its own alliance, those on good
 terms with it outside that alliance, the rivals who could have taken the system and the factions
 present that never could. Both are written from `FactionTooltipLine` (a faction as something a block
-lists) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
+lists), `TermTooltipLine` (one term of a number, named and uncrested, whichever account is being
+broken down) and `FactionTooltipBanner` (a faction as a verdict over the whole system),
 `StandingRowResolver` (the ranked groups as entries), and the core-territory heading
 (`CoreTerritoryHeading`) and status lines.
 
-All of them sit on `PoliticalMapCellTooltip`, which binds the claim read for the whole layer and
-heads its boxes with the decree holding the system: any box may have to say a system is held by
+All of them sit on `PoliticalMapCellTooltip`, which binds the two live reads every political box
+places blocs by (the claim read for the whole layer, and the `BlocRelations` pair sampled per hover)
+and heads its boxes with the decree holding the system: any box may have to say a system is held by
 decree, and a decree resolved - or drawn - one way on one view and another way on the next would
 answer one hover two ways a keystroke apart. A box whose own body already states the decree says so
 (`isStatingCoreClaimInBody`) and goes without the heading, so the one fact is met once rather than
@@ -355,7 +357,7 @@ political holds is the truer answer.
 
 Below the holder the split is `ContestSides` - the one placement every surface reporting a contest
 routes its blocks through, over the `BlocAffiliation` the bands judge their contest by
-(`HolderGroupingSource`, bound by `SystemDominationTooltip` and sampled per hover) - so no two
+(`HolderGroupingSource`, injected into the box and sampled per hover) - so no two
 surfaces over one system can put a bloc on different sides of it, and a box cannot disagree with the
 band beneath it about who is a rival. The headline stays on the group the map painted the cell for
 rather than on its alliance, which is what keeps the box an explanation of the cell beneath it - what
@@ -573,11 +575,13 @@ is handed the whole `ListedClaimContest` rather than the scored read alone,
 so the colony rule it draws under is the one the listing above it was projected under: read afresh
 per faction, an account would be free to withhold a colony the line above it had just named, and to
 answer two factions of one box under two different rules. Both relations to the claim holder travel
-in that same value and for the same reason - the `BlocAffiliation` the blocks are routed against
-(`HolderGroupingSource`, bound by `SystemClaimTooltip` and sampled per hover - a set held for the
-session would file a faction under the alliance it left an hour ago), placed by the same
-`ContestSides` split the domination box routes its own blocks through, and the `BlocFriendliness`
-bound to the hovered sector's own relations.
+in that same value and for the same reason - the `BlocAffiliation` the blocks are routed against,
+placed by the same `ContestSides` split the domination box routes its own blocks through, and the
+`BlocFriendliness` bound to the hovered sector's own relations. The pair is sampled once per hover as
+`BlocRelations`, by the shape both box families share (`PoliticalMapCellTooltip`): the alliance set
+comes off the injected `HolderGroupingSource` at that moment - one held for the session would file a
+faction under the alliance it left an hour ago - and the disposition off the sector being hovered, so
+neither box family can sample them differently from the other.
 
 Two axes place a faction into those blocks, and how it stands to the claim holder is the outer one:
 `Allied with the claim holder:` takes everyone standing with the holder by alliance and

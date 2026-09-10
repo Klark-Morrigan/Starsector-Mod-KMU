@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.factions.relation.StarsectorFactionRelations;
 import kmlib.starsector.markets.colonies.SystemColonies;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.systems.claims.FactionClaimStanding;
@@ -20,8 +19,6 @@ import kmu.maplayers.base.tooltip.layout.ComposedCellBody;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
-import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
-import kmu.maplayers.politicalmap.base.dominance.BlocFriendliness;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.util.KmuStrings;
 
@@ -63,7 +60,8 @@ import java.util.List;
  *
  * <p>Alliance stays outside disposition, so a bloc's own ally is never re-sorted by how it feels about
  * it: one gone sour is still an ally, and one on excellent terms gains nothing by it. Which
- * disposition earns the friendly block is {@link StarsectorFactionRelations}' - the base game's own
+ * disposition earns the friendly block is
+ * {@link kmlib.starsector.factions.relation.StarsectorFactionRelations}' - the base game's own
  * step from indifference to goodwill, a landmark the player is shown on every faction screen, where a
  * cut taken elsewhere in the scale would be one they never see.
  *
@@ -93,17 +91,11 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     private static final boolean IS_STATING_ELIGIBILITY_ON_LINE = true;
     private static final boolean IS_ELIGIBILITY_LEFT_TO_THE_HEADING = false;
 
-    // Where the alliance set behind the routing is taken from. A source rather than a grouping,
-    // because a box lives for the whole session while alliances form and dissolve inside it - one
-    // captured at construction would go on filing a faction under the alliance it left an hour ago.
-    private final HolderGroupingSource holderGroupingSource;
-
     protected SystemClaimContestTooltip(
             ClaimBreakdownReader claimBreakdownReader,
             HolderGroupingSource holderGroupingSource) {
 
-        super(claimBreakdownReader);
-        this.holderGroupingSource = holderGroupingSource;
+        super(claimBreakdownReader, holderGroupingSource);
     }
 
     @Override
@@ -301,26 +293,22 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // it was projected under, the standings that projection leaves the box free to name, and the two
     // relations they are placed against.
     //
-    // One read behind both the body and the key hint at its foot, because the hint offers an account
-    // of exactly the factions the body lists. Resolved apart, the two are free to be answered from
-    // different readings of one system - and the shape that takes is a box advertising a key that
-    // does nothing, or declining to over a system it has just named a faction in.
+    // One read behind both the body and the key hint at its foot, for the reason ComposedCellBody
+    // sets out: the hint offers an account of exactly the factions the body lists.
     //
-    // Both relations are sampled here for the same reason and travel with the rest of the read: every
-    // block is routed against one reading of each, so an alliance dissolving or a disposition sliding
-    // past neutral between two of the box's own questions cannot leave one faction filed as an ally or
-    // a friend and another as a rival.
-    //
-    // The alliance set is read as an affiliation at the point it is sampled, which is where the
-    // grouping stops being a fold and becomes the one question the blocks ask of it. Disposition is
-    // read against this hover's sector rather than through the game's own current one, so a box drawn
-    // over a second sector reports that sector's relations.
+    // Both relations travel with it because they are sampled together (PoliticalMapCellTooltip):
+    // every block is routed against one reading of each, so an alliance dissolving or a disposition
+    // sliding past neutral between two of the box's own questions cannot leave one faction filed as
+    // an ally or a friend and another as a rival.
     private ListedClaimContest readListedContest(SectorAPI sector, StarSystemAPI system) {
+
+        var blocRelations = sampleBlocRelations(sector);
+
         return ListedClaimContest.selectFrom(
             claimBreakdownReader.readBreakdown(system),
             readColonyVisibility(),
-            new BlocAffiliation(holderGroupingSource.resolveGrouping()),
-            new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)));
+            blocRelations.affiliation(),
+            blocRelations.friendliness());
     }
 
     // What the claim block lists: the one line naming whoever holds the system, and nothing at all

@@ -18,12 +18,11 @@ import java.util.Optional;
  * The hover box that would draw this frame, together with what it would draw for: the active layer's
  * injected tooltip, the live sector, and the star system under the cursor.
  *
- * <p>Held as one value because the three are resolved by one chain of conditions - a cell is hovered, the
- * screen's layers are on, a layer injected a box, a sector is live, and the hovered id still resolves to
- * a system - and two passes
- * need the answer: the pass that draws the box, and the pass that claims the key which switches it. A
- * chain spelled out twice is one edit away from the key acting on a frame the box does not draw, or
- * falling through on one it does.
+ * <p>Held as one value because the three are resolved by one chain of conditions - a cell is hovered,
+ * the screen's layers are on, a layer injected a box, a sector is live, and the hovered id still
+ * resolves to a system - and two passes need the answer: the pass that draws the box, and the pass
+ * that claims the key which switches it. A chain spelled out twice is one edit away from the key
+ * acting on a frame the box does not draw, or falling through on one it does.
  *
  * <p>It answers what <em>would</em> draw rather than what did: the input pass runs before the render
  * pass and gets no GL context, so it can only ask the same questions and trust that they are the same
