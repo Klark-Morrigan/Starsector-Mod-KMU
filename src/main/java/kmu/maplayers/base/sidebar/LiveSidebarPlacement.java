@@ -24,6 +24,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.PaintingLayers;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
+import kmu.settings.KmuMapControlSettings;
 import kmu.settings.KmuMapSidebarSettings;
 import kmu.util.KmuValues;
 
@@ -239,7 +240,7 @@ public final class LiveSidebarPlacement {
     // the opener whatever the roster holds.
     private static boolean isThereAnythingToArrange() {
 
-        if (KmuMapSidebarSettings.isMapLayerArrangementOpenerAlwaysShown()) {
+        if (KmuMapControlSettings.isMapLayerArrangementOpenerAlwaysShown()) {
             return true;
         }
         return PaintingLayers.countPaintingLayers(MapLayerRegistry.getLayers())

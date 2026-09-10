@@ -1,10 +1,9 @@
 package kmu.settings;
 
 /**
- * The sidebar box's own chrome - where it sits, how it is drawn, how fast it moves - plus the three
- * hatches that are neither appearance nor geometry: whether the vanilla filter row is reached into
- * at all, whether the bar's arranging button stands where the roster gives it nothing to do, and
- * what one frame's layer work is allowed to cost.
+ * The sidebar box's own chrome: where it sits, how it is drawn, how fast it moves. Every knob here
+ * is a look, which is what makes the class one thing - the hatches that used to sit among them are
+ * {@link KmuMapControlSettings}' and the capture budget {@link KmuProfilingSettings}'.
  *
  * <p>The panel is drawn on two screens whose chrome differs, so several knobs come in pairs: what
  * reads correctly beside the intel screen's buttons is not what reads correctly under the sector
@@ -18,24 +17,6 @@ public final class KmuMapSidebarSettings {
 
     private static final String MAP_LAYER_HIDE_FADE_SECONDS_FIELD =
         "kmu_map_visuals_layers_hideFadeSeconds";
-
-    // Whether the control that drives the fade above is put on the vanilla filter row at all. Dev
-    // rather than visuals: what it governs is a reach into another party's widget, so it is the hatch
-    // a player opens when that reach misbehaves, not a knob they set to taste.
-    private static final String FILTER_ROW_TOGGLE_ENABLED_FIELD =
-        "kmu_map_dev_ui_controls_mapLayersToggle_isEnabled";
-
-    // Whether the bar's opener stands where the roster gives it nothing to arrange. Dev rather than
-    // visuals for the same reason as the row above: it is not a look the player sets to taste but a
-    // hatch onto a box that is otherwise correctly out of the way. The row says "button" because
-    // that is what the player is looking at; the mod's own word for the control is the opener.
-    private static final String ARRANGEMENT_OPENER_ALWAYS_SHOWN_FIELD =
-        "kmu_map_dev_ui_controls_layersArrangementButton_isAlwaysShown";
-
-    // Dev rather than visuals: nothing on screen moves with it, and it is read only while a
-    // profile capture is running.
-    private static final String FRAME_BEAT_BUDGET_MILLIS_FIELD =
-        "kmu_map_dev_profiling_frameBeat_budgetMillis";
 
     private static final String SIDEBAR_PADDING_TOP_FIELD =
         "kmu_map_visuals_sidebar_paddingTop";
@@ -139,22 +120,6 @@ public final class KmuMapSidebarSettings {
     // value, so there is no unset state a dynamic default could fall back from, and a sentinel for
     // "follow the other slider" would collide with 0 already meaning snap.
     private static final float DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS = 0.25f;
-
-    // On: switched off no screen is given the control, and a screen with no control holds its layers
-    // shown - so a player who never opens the settings would get a feature that draws with no way to
-    // put it away. An escape hatch is reached for after something misbehaves, so it ships open.
-    private static final boolean DEFAULT_FILTER_ROW_TOGGLE_ENABLED = true;
-
-    // Off: the count is the answer the bar should give a player, and an opener onto a box with one
-    // row and nothing to do in it teaches them the feature is empty rather than that it is not
-    // theirs yet. What this exists for is reaching that box on an install carrying one layer, which
-    // is a thing to be asked for rather than the state everyone is put in.
-    private static final boolean DEFAULT_ARRANGEMENT_OPENER_ALWAYS_SHOWN = false;
-
-    // A sixtieth of a second is the whole frame, and the map layers are one thing drawn in it beside
-    // the game's own sector map - so a quarter of it is the share a beat can take before the frame
-    // it sits in is the layers' fault.
-    private static final double DEFAULT_FRAME_BEAT_BUDGET_MILLIS = 4.0;
 
     // The sidebar is drawn among vanilla chrome, all of which answers to the fixed UI palette
     // whatever faction the player flies, so a panel following the faction is the one thing on the
@@ -274,42 +239,6 @@ public final class KmuMapSidebarSettings {
         return KmuLunaSettings.readFloat(
             MAP_LAYER_HIDE_FADE_SECONDS_FIELD,
             DEFAULT_MAP_LAYER_HIDE_FADE_SECONDS);
-    }
-
-    /**
-     * @return whether the tick box that shows and hides the map layers is added to the vanilla map
-     *         filter row on either map screen; on by default. Off makes no attempt on either screen,
-     *         so both rows are left exactly as the game builds them, and a screen with no control of
-     *         its own never hides its layers whatever the save holds
-     */
-    public static boolean isMapFilterRowToggleEnabled() {
-        return KmuLunaSettings.readBoolean(
-            FILTER_ROW_TOGGLE_ENABLED_FIELD,
-            DEFAULT_FILTER_ROW_TOGGLE_ENABLED);
-    }
-
-    /**
-     * @return whether the bar's opener stands at the end of the map layer tab row whatever the
-     *         roster holds; off by default, which stands it only where there is more than one layer
-     *         that paints. On is how the arranging box is reached at all on an install carrying one
-     *         layer, where the row it would open has nowhere to move and nothing to uncheck
-     */
-    public static boolean isMapLayerArrangementOpenerAlwaysShown() {
-        return KmuLunaSettings.readBoolean(
-            ARRANGEMENT_OPENER_ALWAYS_SHOWN_FIELD,
-            DEFAULT_ARRANGEMENT_OPENER_ALWAYS_SHOWN);
-    }
-
-    /**
-     * @return how long one beat of a map frame - a preparation, a paint band, a cursor read, a
-     *         tooltip - may take before a running profile capture reports it as over budget, in
-     *         milliseconds; 4ms by default, and 0 for no bound at all. Read as each beat ends
-     *         while a capture is running, so moving it holds the next frame to what it now says
-     */
-    public static double getMapFrameBeatBudgetMillis() {
-        return KmuLunaSettings.readDouble(
-            FRAME_BEAT_BUDGET_MILLIS_FIELD,
-            DEFAULT_FRAME_BEAT_BUDGET_MILLIS);
     }
 
     /**

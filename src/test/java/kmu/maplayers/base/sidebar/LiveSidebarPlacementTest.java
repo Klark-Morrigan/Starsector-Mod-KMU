@@ -20,6 +20,7 @@ import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.sidebar.style.SidebarStyles;
+import kmu.settings.KmuMapControlSettings;
 import kmu.settings.KmuMapSidebarSettings;
 import kmu.settings.SidebarSettingsMock;
 import kmu.starsector.StarsectorUiColoursMock;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 import java.util.List;
 import java.util.Set;
@@ -363,18 +365,26 @@ final class LiveSidebarPlacementTest {
 
         private StarsectorUiColoursMock uiColoursMock;
         private SidebarSettingsMock sidebarSettingsMock;
+        private MockedStatic<KmuMapControlSettings> controlSettingsMock;
 
         @BeforeEach
         void mockLiveColoursAndSettings() {
-            // What the host row's own style is composed from, the opener wearing that style unchanged
-            // but for its box.
+            // The first two are what the host row's own style is composed from, the opener wearing that
+            // style unchanged but for its box.
             uiColoursMock = StarsectorUiColoursMock.install();
             sidebarSettingsMock = SidebarSettingsMock.install();
+
+            // The hatch, stood in at the state its row ships in rather than left to the mock's own
+            // default: every case but one turns on the count being what answers, so the case that says
+            // otherwise should be the only one that mentions it.
+            controlSettingsMock = mockStatic(KmuMapControlSettings.class);
+            closeTheArrangementOpenerHatch();
         }
 
         @AfterEach
         void closeLiveColoursAndSettings() {
 
+            controlSettingsMock.close();
             sidebarSettingsMock.close();
             uiColoursMock.close();
         }
@@ -437,7 +447,7 @@ final class LiveSidebarPlacementTest {
             // read beside it.
             registerOneLayerThatPaintsBesideTheEmptyView();
 
-            sidebarSettingsMock.openTheArrangementOpenerHatch();
+            openTheArrangementOpenerHatch();
 
             assertThat(LiveSidebarPlacement.resolveOpenerSpec(buildHostTabStyle()))
                 .isNotNull();
@@ -458,6 +468,20 @@ final class LiveSidebarPlacementTest {
                 .isEqualTo(openerAskedForDirectly.icon());
             assertThat(opener.style())
                 .isEqualTo(openerAskedForDirectly.style());
+        }
+
+        // The hatch as its row ships: the count is what answers.
+        private void closeTheArrangementOpenerHatch() {
+            controlSettingsMock
+                .when(KmuMapControlSettings::isMapLayerArrangementOpenerAlwaysShown)
+                .thenReturn(false);
+        }
+
+        // The hatch a player opens to reach the box whatever the roster holds.
+        private void openTheArrangementOpenerHatch() {
+            controlSettingsMock
+                .when(KmuMapControlSettings::isMapLayerArrangementOpenerAlwaysShown)
+                .thenReturn(true);
         }
 
         // The host row the opener is asked to stand in: the strip's own style, boxed as the sector map

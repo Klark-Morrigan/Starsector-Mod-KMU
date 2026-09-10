@@ -103,20 +103,6 @@ public final class SidebarSettingsMock implements AutoCloseable {
     }
 
     /**
-     * Opens the dev hatch that stands the bar's opener whatever the roster holds, for a case about what
-     * that hatch overrides. Named rather than left to a case stubbing the reader itself, since the whole
-     * of what it does is bypass a rule stated elsewhere.
-     *
-     * <p>Not set at install: an unstubbed switch answers false, which is the state the row ships in and
-     * the one every case about the count needs.
-     */
-    public void openTheArrangementOpenerHatch() {
-        sidebarSettingsMock
-            .when(KmuMapSidebarSettings::isMapLayerArrangementOpenerAlwaysShown)
-            .thenReturn(true);
-    }
-
-    /**
      * Points the panel at another colour scheme, for a case about what a scheme change moves. Re-stubs
      * rather than installing a second mock, so the choice can be changed mid-case and the look rebuilt
      * from it.
