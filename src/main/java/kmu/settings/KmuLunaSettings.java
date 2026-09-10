@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>The knobs sit in classes beside this one, split first by which package reads them:
  * the {@code KmuMap*Settings} readers and {@link KmuMapKeybindSettings} for what the map-layer
  * framework's own chrome, geometry and keys need, {@link KmuMarketConditionSettings} for the
- * condition picker, {@link KmuProfilingSettings} for how much of what the mod does is measured and
- * what a capture flags, {@link KmuLoggingSettings} for how much of it the mod says, and the
- * political map layer's own set. Splitting on the reader rather than on the settings tab
+ * condition picker, {@link KmuProfilingSettings} for how much of what the mod does is measured,
+ * {@link KmuLoggingSettings} for how much of it the mod says, and the political map layer's own
+ * set. Splitting on the reader rather than on the settings tab
  * is what keeps a layer's knobs out of reach of the framework: a class no framework code imports
  * cannot leak a feature's vocabulary into it, which a tab-shaped split could not promise.
  * {@code Map - Dev} is where the two part company - it carries the tuning of geometry every layer

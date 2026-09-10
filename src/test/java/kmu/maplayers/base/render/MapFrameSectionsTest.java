@@ -6,7 +6,7 @@ import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
-import kmu.settings.KmuProfilingSettings;
+import kmu.settings.KmuMapProfilingSettings;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -163,10 +163,10 @@ final class MapFrameSectionsTest {
             double millisecondsAllowed,
             long elapsedNanos) {
 
-        try (var settingsMock = mockStatic(KmuProfilingSettings.class)) {
+        try (var settingsMock = mockStatic(KmuMapProfilingSettings.class)) {
 
             settingsMock
-                .when(KmuProfilingSettings::getMapFrameBeatBudgetMillis)
+                .when(KmuMapProfilingSettings::getMapFrameBeatBudgetMillis)
                 .thenReturn(millisecondsAllowed);
 
             return MapFrameSections.PREPARE
