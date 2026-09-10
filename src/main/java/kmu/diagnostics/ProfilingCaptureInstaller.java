@@ -7,6 +7,7 @@ import kmlib.profiling.SilentProfiler;
 import kmlib.profiling.recording.RecordingProfiler;
 
 import kmu.KmuWiringSteps;
+import kmu.maplayers.base.profiling.MapFrameBudgets;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuProfilingSettings;
 
@@ -35,6 +36,16 @@ public final class ProfilingCaptureInstaller {
      * <p>Each step is guarded on its own, so the entry point calls this directly.
      */
     public static void installAll() {
+
+        // The bound a capture judges a map frame by, handed to the framework rather than read there.
+        // Here because this is where a settings class may be named on the framework's behalf: a file
+        // under the framework naming one would have the level beside it within reach, and code able
+        // to read whether it is measured can act on it. Bound ahead of the profiler for tidiness
+        // only - nothing consults a bound until a capture is running.
+        KmuWiringSteps.runGuardedStep(
+            () -> MapFrameBudgets.registerFrameBeatBudget(
+                KmuProfilingSettings::getMapFrameBeatBudgetMillis),
+            "Failed to bind the KMU map frame beat budget");
 
         KmuWiringSteps.runGuardedStep(
             ProfilingCaptureInstaller::applySettingsLevel,

@@ -11,19 +11,27 @@ import kmlib.profiling.ProfileLevel;
  * are what a capture mostly measures - must not be the ones deciding whether they are being
  * watched.
  *
- * <p>That is why the other row of the same settings section is not here:
- * {@link KmuMapProfilingSettings} holds the map frame's budget, which the measured code reads back
- * for itself, and holding both would put this decision within reach of every framework file that
- * wanted that one.
+ * <p>The frame-beat budget is the other row of the same section, and is here beside the level even
+ * though the measured code is what reads it back. It reaches that code as a bound value the
+ * composition root binds rather than as a read of its own, so the framework names nothing here -
+ * which is what lets the two rows share the one class the section has.
  *
- * <p>What the knob does for the player is stated once, in the description column of
+ * <p>What each knob does for the player is stated once, in the description column of
  * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
- * here answers only what that column cannot: why the default is what it is, and what a caller has
+ * here answers only what that column cannot: why a default is what it is, and what a caller has
  * to know to use the value.
  */
 public final class KmuProfilingSettings {
 
+    private static final String FRAME_BEAT_BUDGET_MILLIS_FIELD =
+        "kmu_map_dev_profiling_frameBeat_budgetMillis";
+
     private static final String PROFILING_LEVEL_FIELD = "kmu_map_dev_profiling_level";
+
+    // A sixtieth of a second is the whole frame, and the map layers are one thing drawn in it beside
+    // the game's own sector map - so a quarter of it is the share a beat can take before the frame
+    // it sits in is the layers' fault.
+    private static final double DEFAULT_FRAME_BEAT_BUDGET_MILLIS = 4.0;
 
     // Off, because a capture is a diagnostic rather than a feature: it keeps a tree of every
     // measured call for as long as it is bound, which is memory spent on nobody's behalf until
@@ -32,6 +40,18 @@ public final class KmuProfilingSettings {
     private static final ProfilingLevelChoice DEFAULT_PROFILING_LEVEL = ProfilingLevelChoice.OFF;
 
     private KmuProfilingSettings() {
+    }
+
+    /**
+     * @return how long one beat of a map frame - a preparation, a paint band, a cursor read, a
+     *         tooltip - may take before a running capture reports it as over budget, in
+     *         milliseconds; 4ms by default, and 0 for no bound at all. Asked as each beat ends
+     *         while a capture is running, so moving it holds the next frame to what it now says
+     */
+    public static double getMapFrameBeatBudgetMillis() {
+        return KmuLunaSettings.readDouble(
+            FRAME_BEAT_BUDGET_MILLIS_FIELD,
+            DEFAULT_FRAME_BEAT_BUDGET_MILLIS);
     }
 
     /**

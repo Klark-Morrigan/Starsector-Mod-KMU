@@ -6,7 +6,7 @@ import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
-import kmu.settings.KmuMapProfilingSettings;
+import kmu.maplayers.base.profiling.MapFrameBudgets;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Pins what the frame's section names have to be for a capture to read: one section per name, so
@@ -33,6 +32,10 @@ final class MapFrameSectionsTest {
     // stated in - the tighter setting being what the case about a knob moved mid-session turns to.
     private static final double FOUR_MILLISECOND_BUDGET = 4.0;
     private static final double HALF_MILLISECOND_BUDGET = 0.5;
+
+    // What the holder answers with nothing bound, and what each case puts it back to.
+    private static final double NO_BOUND_MILLIS = 0.0;
+
     private static final long ONE_MILLISECOND_IN_NANOS = 1_000_000L;
     private static final long TEN_MILLISECONDS_IN_NANOS = 10_000_000L;
 
@@ -156,22 +159,24 @@ final class MapFrameSectionsTest {
         }
     }
 
-    // What one beat's bound makes of a call of that length, with the knob behind it reading
-    // millisecondsAllowed. Stated through the settings the bound actually reads, so a knob that
-    // stopped reaching the budget would fail this rather than pass it.
+    // What one beat's bound makes of a call of that length, with millisecondsAllowed bound as the
+    // budget. Stated through the holder the bound actually reads, so a beat that stopped reaching it
+    // would fail this rather than pass it - and bound rather than mocked, that being how a running
+    // game supplies it too.
     private static BudgetBreach findBreachInABeatAllowed(
             double millisecondsAllowed,
             long elapsedNanos) {
 
-        try (var settingsMock = mockStatic(KmuMapProfilingSettings.class)) {
+        MapFrameBudgets.registerFrameBeatBudget(() -> millisecondsAllowed);
 
-            settingsMock
-                .when(KmuMapProfilingSettings::getMapFrameBeatBudgetMillis)
-                .thenReturn(millisecondsAllowed);
-
+        try {
             return MapFrameSections.PREPARE
                 .getBudget()
                 .findBreachInCall(elapsedNanos, counter -> 0L);
+        } finally {
+            // The holder is process-wide, so a bound left standing here would judge every later
+            // suite's beats by a number this case chose.
+            MapFrameBudgets.registerFrameBeatBudget(() -> NO_BOUND_MILLIS);
         }
     }
 
