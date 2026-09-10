@@ -15,6 +15,7 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilde
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.ResolvedHolding;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 
 import java.util.ArrayList;
@@ -198,18 +199,23 @@ final class PoliticalMapDrawables {
      * @param pass          the rebuild's one reading of the sector
      * @param view          the view the territories are built under
      * @param contentInputs the sidebar preferences the rebuild sampled
+     * @param holding       who holds what and who is where, resolved off the pass by this rebuild
+     *                      or kept from the one before it - which of the two is the caller's call,
+     *                      being a question about what moved since
      */
     public void rebuildTerritoriesAndBands(
             RevisedCellGeometry cellGeometry,
             HolderPass pass,
             PoliticalMapView view,
-            ContentInputs contentInputs) {
+            ContentInputs contentInputs,
+            ResolvedHolding holding) {
 
         territories = TerritoryBuilder.buildTerritories(
             cellGeometry.cells(),
             pass,
             view,
-            contentInputs);
+            contentInputs,
+            holding);
         borderStageOverlay = null;
 
         // The cells go over carrying the revision they stand at rather than the live

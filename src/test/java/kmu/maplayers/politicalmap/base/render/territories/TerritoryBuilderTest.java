@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
@@ -59,11 +60,16 @@ final class TerritoryBuilderTest {
 
     private static final Color NEUTRAL = new Color(150, 150, 150);
 
-    // The rows a build's four reported stages land on.
+    // The rows a resolve's three scans and their parent land on, and the build's shaping stage.
+    private static final String RESOLVE_HOLDING_SECTION = "politicalMap.resolveHolding";
     private static final String RESOLVE_POLITICS_SECTION = "politicalMap.resolvePolitics";
     private static final String FIND_INHABITED_SECTION = "politicalMap.findInhabited";
     private static final String FIND_SPOTLIT_PRESENCE_SECTION = "politicalMap.findSpotlitPresence";
     private static final String SHAPE_AND_STYLE_SECTION = "politicalMap.shapeAndStyleCells";
+
+    // One held system, for the cases about a holding handed in rather than read.
+    private static final String HELD_SYSTEM_ID = "corvus";
+    private static final DominantHolder HELD_BY = new DominantHolder("hegemony", NEUTRAL, NEUTRAL);
 
     // The picks a pass off filter was baked under. No case here spotlights a bloc, so the whole
     // reading is inert and the build reduces to the passes it hands down.
@@ -128,11 +134,11 @@ final class TerritoryBuilderTest {
     }
 
     @Nested
-    class BuildTerritories {
+    class ResolveHolding {
 
         @Test
-        void buildTerritoriesReadsTheSectorThroughTheHandedPassForEveryReaderBeneathIt() {
-            // A rebuild resolves holding and then asks where the spotlit bloc lives outside it.
+        void resolveHoldingReadsTheSectorThroughTheHandedPassForEveryReaderBeneathIt() {
+            // A resolve reads who holds what and then asks where the spotlit bloc lives outside it.
             // Both walk every system, so a pass apiece is a second traversal of the sector for
             // colonies the first one has already read - and, less visibly, a second reading of a
             // sector that is free to have moved between them.
@@ -145,11 +151,7 @@ final class TerritoryBuilderTest {
                 });
             var rebuildPass = buildPassOverAnEmptySector();
 
-            TerritoryBuilder.buildTerritories(
-                new CellGeometryCache(),
-                rebuildPass,
-                viewFake,
-                UNFILTERED_INPUTS);
+            TerritoryBuilder.resolveHolding(rebuildPass, viewFake, UNFILTERED_INPUTS);
 
             // The handed pass at every reader - stated as identity rather than as equality, since
             // two passes over one sector carry two separate walks of it while agreeing about
@@ -166,7 +168,7 @@ final class TerritoryBuilderTest {
         }
 
         @Test
-        void buildTerritoriesNamesWhatTheHoldingResolveFound() {
+        void resolveHoldingNamesWhatTheHoldingResolveFound() {
             // The counts the resolve used to print in a log line the profiler never saw. They ride
             // on the call rather than as counters: none is a volume of work its duration divides
             // by, and the row is read against what the readers beneath it walked.
@@ -174,8 +176,7 @@ final class TerritoryBuilderTest {
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
 
-            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.buildTerritories(
-                new CellGeometryCache(),
+            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.resolveHolding(
                 buildPassOverAnEmptySector(),
                 viewFake,
                 UNFILTERED_INPUTS));
@@ -185,15 +186,14 @@ final class TerritoryBuilderTest {
         }
 
         @Test
-        void buildTerritoriesNamesWhatEachSystemScanSelected() {
+        void resolveHoldingNamesWhatEachSystemScanSelected() {
             // Both scans report identically, which is what one shared helper is for: two spellings
             // would be two chances for one of them to state its cost differently from the other.
             var viewFake = new PoliticalMapViewFake(
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
 
-            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.buildTerritories(
-                new CellGeometryCache(),
+            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.resolveHolding(
                 buildPassOverAnEmptySector(),
                 viewFake,
                 UNFILTERED_INPUTS));
@@ -205,6 +205,88 @@ final class TerritoryBuilderTest {
         }
 
         @Test
+        void resolveHoldingIsMeasuredOnARowOfItsOwnAboveItsThreeScans() {
+            // A rebuild that kept the standing holding shows as missing this row, which is a
+            // plainer reading than three scan rows that each happened to cost nothing.
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+
+            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.resolveHolding(
+                buildPassOverAnEmptySector(),
+                viewFake,
+                UNFILTERED_INPUTS));
+
+            assertThat(capture.findNode(RESOLVE_HOLDING_SECTION).getChildren())
+                .extracting(node -> node.getSection().getName())
+                .containsExactly(
+                    RESOLVE_POLITICS_SECTION,
+                    FIND_INHABITED_SECTION,
+                    FIND_SPOTLIT_PRESENCE_SECTION);
+        }
+    }
+
+    @Nested
+    class BuildTerritories {
+
+        @Test
+        void buildTerritoriesBuildsFromTheHandedHoldingWithoutReadingTheSectorAgain() {
+            // The whole point of resolving apart from building: a rebuild a style pick owes is
+            // handed the holding the last one read, and must paint from it rather than walk the
+            // economy for an answer it already holds.
+            var holderPasses = new ArrayList<HolderPass>();
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> {
+                    holderPasses.add(pass);
+                    return new HolderResolution(Map.of(), Set.of(), Set.of());
+                });
+
+            var territories = TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                buildPassOverAnEmptySector(),
+                viewFake,
+                UNFILTERED_INPUTS,
+                new ResolvedHolding(
+                    new HolderResolution(
+                        Map.of(HELD_SYSTEM_ID, HELD_BY), Set.of(), Set.of()),
+                    Set.of(HELD_SYSTEM_ID),
+                    Set.of()));
+
+            assertThat(holderPasses)
+                .isEmpty();
+            assertThat(inhabitationScanPasses)
+                .isEmpty();
+            assertThat(territories.getHolderBySystemId())
+                .containsExactly(Map.entry(HELD_SYSTEM_ID, HELD_BY));
+        }
+
+        @Test
+        void buildTerritoriesCopiesTheHandedHoldingRatherThanAdoptingIt() {
+            // The territories are folded into by the incremental refresh, and a holding handed to a
+            // later rebuild has to still say what it said - so what the build holds is its own.
+            var viewFake = new PoliticalMapViewFake(
+                Map.of(),
+                (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+            var holding = new ResolvedHolding(
+                new HolderResolution(Map.of(HELD_SYSTEM_ID, HELD_BY), Set.of(), Set.of()),
+                Set.of(HELD_SYSTEM_ID),
+                Set.of());
+
+            var territories = TerritoryBuilder.buildTerritories(
+                new CellGeometryCache(),
+                buildPassOverAnEmptySector(),
+                viewFake,
+                UNFILTERED_INPUTS,
+                holding);
+
+            territories.getOccupancy().recordHolderOf(HELD_SYSTEM_ID, null);
+
+            assertThat(holding.resolution().ownerBySystemId())
+                .containsKey(HELD_SYSTEM_ID);
+        }
+
+        @Test
         void buildTerritoriesCountsTheCellsItShaped() {
             // The number the shaping stage's duration is read against. Nothing is shaped over an
             // empty geometry, which is what the zero states - the counter is on the row either way,
@@ -213,11 +295,7 @@ final class TerritoryBuilderTest {
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
 
-            var capture = RecordedCapture.recordWhile(() -> TerritoryBuilder.buildTerritories(
-                new CellGeometryCache(),
-                buildPassOverAnEmptySector(),
-                viewFake,
-                UNFILTERED_INPUTS));
+            var capture = RecordedCapture.recordWhile(() -> buildOverAnEmptySector(viewFake));
 
             var shapeRow = capture.findNode(SHAPE_AND_STYLE_SECTION);
 
@@ -237,16 +315,32 @@ final class TerritoryBuilderTest {
             var viewFake = new PoliticalMapViewFake(
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
+            var pass = HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, grouping);
 
             var territories = TerritoryBuilder.buildTerritories(
                 new CellGeometryCache(),
-                HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, grouping),
+                pass,
                 viewFake,
-                UNFILTERED_INPUTS);
+                UNFILTERED_INPUTS,
+                TerritoryBuilder.resolveHolding(pass, viewFake, UNFILTERED_INPUTS));
 
             assertThat(territories.getViewGrouping().grouping())
                 .isSameAs(grouping);
         }
+    }
+
+    // A build over nothing from a holding read for it, which is the whole of a rebuild that owes a
+    // new reading - the shape every case not about the split takes.
+    private static PoliticalMapTerritories buildOverAnEmptySector(PoliticalMapViewFake viewFake) {
+
+        var pass = buildPassOverAnEmptySector();
+
+        return TerritoryBuilder.buildTerritories(
+            new CellGeometryCache(),
+            pass,
+            viewFake,
+            UNFILTERED_INPUTS,
+            TerritoryBuilder.resolveHolding(pass, viewFake, UNFILTERED_INPUTS));
     }
 
     // A reading of a sector holding nothing, which is every case here: the readers are stood in

@@ -26,6 +26,8 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.ResolvedHolding;
+import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapGeometrySettings;
@@ -34,6 +36,7 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Keeps the political map's derived draw lists fresh with the least work per frame, and hands
@@ -125,6 +128,15 @@ final class PoliticalMapCache {
     // (settings) or whenever the geometry itself was rebuilt. This starts at the unbuilt seed and
     // the value fields at null, so the first refresh builds both halves.
     private int lastContentRevision = UNBUILT_REVISION;
+
+    // The holding the last rebuild resolved and the revision it resolved it under, kept so a
+    // rebuild that owes no new reading of the sector - a style pick moved and nothing else - can
+    // paint over what the last one read rather than walk the economy for the same answer. The
+    // revision is the content revision's holding half: the inputs that reach the resolve, and none
+    // of the picks that only reach the paint. Dropped, not just superseded, whenever the sector
+    // moves under it, which is what the marked-system drains below say.
+    private int lastHoldingRevision = UNBUILT_REVISION;
+    private ResolvedHolding standingHolding;
 
     // What the cells currently held were cut from. One value rather than a revision, the seed
     // inputs and the dev toggles side by side, because each of the three recuts every cell and
@@ -276,6 +288,7 @@ final class PoliticalMapCache {
             isCellCutStale,
             contentInputs,
             contentRevision,
+            computeHoldingRevision(view, contentInputs),
             isContentStale);
     }
 
@@ -310,21 +323,22 @@ final class PoliticalMapCache {
                 .resolveProfiler()
                 .open(REBUILD_DRAWABLES_SECTION)) {
 
-            rebuildDrawables(staleHalves, view, sector, colonies);
+            var wasHoldingReused = rebuildDrawables(staleHalves, view, sector, colonies);
 
             // Traces the content rebuild's result: what the render will paint, so a wrong or empty
             // render can be confirmed against what was built. The count reported is whichever view
             // was built this rebuild - the normal styled cells or the debug overlay's base loops -
             // which is why it is named rather than counted: the two are not one quantity.
             //
-            // Beside it, which sidebar preference a player touched since the last rebuild. Those
-            // signals decide nothing - the bake folds the sampled values - so this is the only
-            // place the answer lands where the rebuild it preceded can be read against it. It is
-            // context rather than cause: a signal may be raised with no rebuild owed, and a
-            // rebuild may be owed with none raised.
+            // Beside it, whether the holding was carried over rather than read, and which sidebar
+            // preference a player touched since the last rebuild. Those signals decide nothing -
+            // the bake folds the sampled values - so this is the only place the answer lands where
+            // the rebuild it preceded can be read against it. It is context rather than cause: a
+            // signal may be raised with no rebuild owed, and a rebuild may be owed with none raised.
             drawablesScope.tagCall("contentRevision=" + staleHalves.contentRevision()
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + staleHalves.isCellCutStale()
+                + " holdingReused=" + wasHoldingReused
                 + " signalsRaised=" + describeSignalsRaisedSinceTheLastRebuild());
         }
     }
@@ -348,33 +362,63 @@ final class PoliticalMapCache {
 
     // The draw lists themselves: one view or the other, the names minted from the placements it
     // left, and the staleness this rebuild has just answered drained.
-    private void rebuildDrawables(
+    //
+    // Reports whether the holding was carried over from the last rebuild rather than read, for the
+    // line the rebuild writes: a rebuild that reused it cost what the paint costs, and a reader of
+    // that line should be able to tell the two apart without the scan rows beneath.
+    private boolean rebuildDrawables(
             StaleHalves staleHalves,
             PoliticalMapView view,
             SectorAPI sector,
             SystemColoniesIndex colonies) {
+
+        // Drained before the holding is chosen rather than after the build, because whether any
+        // system is marked is half of whether the standing holding may be kept: a marked system is
+        // one the sector moved under, and a holding read before it moved no longer says who holds
+        // it. A system marked after this drain sits on the board for the next frame's fold, which
+        // is what the fold is for - where a drain after the build discarded it on the assumption
+        // that the build had read everything, an assumption a reused holding does not meet.
+        var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
+        var wasHoldingReused = false;
 
         // Build one view or the other, never both: the debug overlay replaces the normal
         // render, so in debug mode the production draw lists are not built at all, and the
         // unused view is nulled. The toggle is a KMU setting, so flipping it bumps the content
         // revision and forces this rebuild - which is what swaps the two.
         if (KmuPoliticalMapDiagnosticsSettings.shouldTraceBordersForDebug()) {
+
             drawables.rebuildBorderTracingOverlay(
                 cellGeometry,
                 sector,
                 view,
                 staleHalves.contentInputs());
 
+            // The overlay reads holding from the sector for itself and drops what was marked, so
+            // nothing standing can be trusted to say who holds what once it has run.
+            standingHolding = null;
+
         } else {
 
+            var pass = new HolderPass(
+                view.resolveGrouping(),
+                staleHalves.cellCut().visibilityRules().colonyVisibility(),
+                colonies);
+
+            wasHoldingReused = canReuseStandingHolding(staleHalves, staleSystemIds);
+
+            if (!wasHoldingReused) {
+                standingHolding = TerritoryBuilder.resolveHolding(
+                    pass,
+                    view,
+                    staleHalves.contentInputs());
+                lastHoldingRevision = staleHalves.holdingRevision();
+            }
             drawables.rebuildTerritoriesAndBands(
                 cellGeometry,
-                new HolderPass(
-                    view.resolveGrouping(),
-                    staleHalves.cellCut().visibilityRules().colonyVisibility(),
-                    colonies),
+                pass,
                 view,
-                staleHalves.contentInputs());
+                staleHalves.contentInputs(),
+                standingHolding);
         }
 
         // The name choice comes off this rebuild's own sampling rather than the preference, so
@@ -383,10 +427,19 @@ final class PoliticalMapCache {
 
         lastContentRevision = staleHalves.contentRevision();
 
-        // A full rebuild re-derives every system, so any pending per-system staleness is
-        // already reflected - drain and discard it rather than re-processing the same systems
-        // immediately after.
-        installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
+        return wasHoldingReused;
+    }
+
+    // Whether the holding the last rebuild read still says who holds what. It does unless the
+    // sector moved under it - a marked system, or a recut, which admits or drops systems - or the
+    // rule reading it did, which the holding revision folds. Never on a cache's first rebuild,
+    // there being nothing standing to keep.
+    private boolean canReuseStandingHolding(StaleHalves staleHalves, Set<String> staleSystemIds) {
+
+        return standingHolding != null
+            && staleSystemIds.isEmpty()
+            && !staleHalves.isCellCutStale()
+            && staleHalves.holdingRevision() == lastHoldingRevision;
     }
 
     // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
@@ -411,7 +464,16 @@ final class PoliticalMapCache {
 
         var staleSystemIds = installation.resolveRefreshBoard().drainStaleGroupingSystemIds();
 
-        if (staleSystemIds.isEmpty() || !drawables.canFoldHolderChanges()) {
+        if (staleSystemIds.isEmpty()) {
+            return;
+        }
+        // A marked system is one the sector moved under, so the holding the last rebuild read no
+        // longer says who holds it - whether or not the fold below is allowed to run. Dropped on
+        // both outcomes: the fold edits the standing map rather than the kept holding, and the
+        // deferral leaves the change for a full rebuild that has to read it for itself.
+        standingHolding = null;
+
+        if (!drawables.canFoldHolderChanges()) {
             return;
         }
         // The four halves go over as one value, and the standing pair goes in whole: a re-fit
@@ -462,6 +524,24 @@ final class PoliticalMapCache {
             view.getId(),
             view.getContentRevision(board),
             contentInputs);
+    }
+
+    // The content revision's holding half: the same fold over only what reaches the resolve. Of the
+    // sidebar picks that is the spotlight alone - the two recedes, the name format and the outline
+    // reach the paint and nothing before it. The settings revision stays in, since the rule a view
+    // resolves holding by can read LunaLib fields, and the view's own live inputs stay in since the
+    // alliance set is exactly what moves an alliances view's holding. A style pick moves the content
+    // revision and leaves this one where it was, which is what lets the rebuild it owes keep the
+    // holding.
+    private int computeHoldingRevision(PoliticalMapView view, ContentInputs contentInputs) {
+
+        var board = installation.resolveRefreshBoard();
+
+        return Objects.hash(
+            KmuLunaSettings.getSettingsRevision(),
+            view.getId(),
+            view.getContentRevision(board),
+            contentInputs.selectedBlocId());
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
@@ -517,6 +597,9 @@ final class PoliticalMapCache {
      * @param isCellCutStale  whether those differ from what the standing cells were cut from
      * @param contentInputs   the sidebar preferences a rebuild would bake under, sampled once
      * @param contentRevision the fold of every input the territories are styled under
+     * @param holdingRevision the fold of only those inputs that reach the resolve of who holds
+     *                        what, so a rebuild can tell a pick that moved the paint from one that
+     *                        moved the holding
      * @param isContentStale  whether anything at all is owed, the cut included - false is the frame
      *                        that stops at the decision
      */
@@ -525,6 +608,7 @@ final class PoliticalMapCache {
         boolean isCellCutStale,
         ContentInputs contentInputs,
         int contentRevision,
+        int holdingRevision,
         boolean isContentStale) {
     }
 }

@@ -479,7 +479,8 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 cellsMock,
                 pass,
                 FactionsView.INSTANCE,
-                contentInputs);
+                contentInputs,
+                TerritoryBuilder.resolveHolding(pass, FactionsView.INSTANCE, contentInputs));
 
             var standingAnchors = new StandingClusterAnchors();
             var factionLabels = new ArrayList<Label>();

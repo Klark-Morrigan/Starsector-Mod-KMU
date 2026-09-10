@@ -41,11 +41,18 @@ import java.util.function.Supplier;
  * ({@link StyledCellBuilder} and {@link FactionTerritoryBuilder}) on a handful of cells and
  * get a result identical to a full rebuild.
  *
- * <p>It runs as four stages, each a method below: the holding, the occupancy asked of what that
- * holding left out, the paint scheme, and the shaping the first three are spent on. They are apart
- * because their order is the whole of the arrangement - a stage that ran before the one it reads
- * would key off a snapshot nothing else in the pass shares - and a single method long enough to
- * hide that order is a method whose reader has to reconstruct it.
+ * <p>Two entry points, because a rebuild has two halves that go stale for different reasons. The
+ * holding - who holds what, who is where - is a reading of the sector, and is owed again only when
+ * the sector or the rule reading it moved. The build - the paint scheme and the shaping it is spent
+ * on - is owed on any style pick as well. Resolved apart from built, a rebuild a style pick owes is
+ * handed the holding the last one resolved rather than walking the economy for an answer it already
+ * has. Which of the two is stale is the caller's to decide: this resolves what it is asked to and
+ * builds from what it is handed.
+ *
+ * <p>Each stage is a method below, apart because their order is the whole of the arrangement - a
+ * stage that ran before the one it reads would key off a snapshot nothing else in the pass shares -
+ * and a single method long enough to hide that order is a method whose reader has to reconstruct
+ * it.
  */
 public final class TerritoryBuilder {
 
@@ -67,8 +74,13 @@ public final class TerritoryBuilder {
     private static final ProfileSection SHAPE_AND_STYLE_SECTION = ProfileSection.registerSection(
         "politicalMap.shapeAndStyleCells", RebuildStepTerms.LOGGED_EVERY_CALL);
 
-    // The whole build and the two steps of the shaping worth a row of their own, read in the report
-    // rather than the log: what they cost is read against the stage around them.
+    // The whole of each half and the two steps of the shaping worth a row of their own, read in the
+    // report rather than the log: what they cost is read against the stage around them. The holding
+    // has a row of its own so a rebuild that carried it over reads as missing that row, rather than
+    // as three scans that each happened to cost nothing.
+    private static final ProfileSection RESOLVE_HOLDING_SECTION =
+        ProfileSection.registerSection("politicalMap.resolveHolding");
+
     private static final ProfileSection REBUILD_SECTION =
         ProfileSection.registerSection("politicalMap.rebuildTerritories");
 
@@ -80,6 +92,68 @@ public final class TerritoryBuilder {
 
     // Builds only; never instantiated.
     private TerritoryBuilder() {
+    }
+
+    /**
+     * Reads the sector for who holds what and who is where: the half of a rebuild that goes stale
+     * only when the sector moves or the rule reading it does, and so the half a rebuild owed by a
+     * style pick alone is handed rather than made to repeat.
+     *
+     * <p>Three readings, in this order because each is asked of what the one before left: who holds
+     * each system, then what stands in each, then where the spotlit pick lives among the settled
+     * systems nobody holds. All three off the one handed pass, so each system is walked once for
+     * the three and the answers cannot disagree about a colony the dev toggle admits.
+     *
+     * @param pass          the rebuild's one reading of the sector, opened under the view's grouping
+     * @param view          the view whose rule resolves holding
+     * @param contentInputs the sidebar preferences the rebuild sampled, of which only the spotlight
+     *                      reaches the holding
+     * @return what the three readings found, ready to be built from - now or by a later rebuild
+     *         that owes no new reading
+     */
+    public static ResolvedHolding resolveHolding(
+            HolderPass pass,
+            PoliticalMapView view,
+            ContentInputs contentInputs) {
+
+        var profiler = ActiveProfiler.resolveProfiler();
+
+        try (var holdingScope = profiler.open(RESOLVE_HOLDING_SECTION)) {
+
+            var resolution = resolveHolders(profiler, pass, view, contentInputs);
+
+            // What stands in each system, read once for the whole pass. Independent of the holding
+            // and deliberately so: the holding answers who this view gives a system to, and a view
+            // whose rule admits only some markets - claims, for the several reasons
+            // base.politics.holders sets out - leaves inhabited systems with no holder. Only this
+            // read tells those apart from empty space.
+            var inhabitedSystemIds = measureSystemScan(
+                profiler,
+                FIND_INHABITED_SECTION,
+                () -> PoliticalMapInhabitation.readInhabitedSystemIds(pass));
+
+            // Where the spotlit bloc is living outside anything this build attributed to it, so
+            // the factionless cells over its own colonies are spared the recede. Asked only of the
+            // inhabited systems the holding left out, and which view is painting decides whether
+            // that set holds anything for it: the claims views leave a system unheld whenever
+            // nobody claims it, so a bloc's own unclaimed colonies land here and this read is what
+            // spares their cells. The faction and alliance views resolve holding through
+            // FilteredPolitics, which already keys every system the bloc is present in and can be
+            // coloured for, so their leftovers are systems it is absent from and the read comes
+            // back empty for the cost of the set arithmetic.
+            //
+            // Asked of the same habitation the scan above classified by, so a cell spared here is
+            // never one that scan called empty space.
+            var spotlitPresenceSystemIds = measureSystemScan(
+                profiler,
+                FIND_SPOTLIT_PRESENCE_SECTION,
+                () -> FilteredPolitics.findPresentSystemIds(
+                    pass,
+                    contentInputs.selectedBlocId(),
+                    selectUnheldSystemIdsAmong(resolution, inhabitedSystemIds)));
+
+            return new ResolvedHolding(resolution, inhabitedSystemIds, spotlitPresenceSystemIds);
+        }
     }
 
     // Shapes the cached raw cells into merged clusters and partitions them into the
@@ -94,26 +168,30 @@ public final class TerritoryBuilder {
     // each system is the same walk the geometry and the band bake either side of it make. It is
     // the rebuild's, and is discarded with it. The sidebar preferences arrive for the same reason:
     // the rebuild sampled them once when it decided it was owed, so reading them again here could
-    // paint the map under a pick the decision never saw.
+    // paint the map under a pick the decision never saw. The holding arrives for a third: it may
+    // be the reading a previous rebuild made, kept because nothing it read has moved since.
     public static PoliticalMapTerritories buildTerritories(
             CellGeometryCache geometryCache,
             HolderPass pass,
             PoliticalMapView view,
-            ContentInputs contentInputs) {
+            ContentInputs contentInputs,
+            ResolvedHolding holding) {
 
         var profiler = ActiveProfiler.resolveProfiler();
 
         try (var rebuildScope = profiler.open(REBUILD_SECTION)) {
 
-            // The three readings a build is made of, in this order because each needs the one
-            // before it: who holds what, then who is in each system (asked of what the holding left
-            // out), then the theme those two are painted in.
-            var resolution = resolveHolding(profiler, pass, view, contentInputs);
-            var occupancy = readOccupancyOf(profiler, pass, contentInputs, resolution);
+            var resolution = holding.resolution();
             var styling = readMapStyling(pass.sector(), contentInputs);
 
             var territories = new PoliticalMapTerritories(
-                occupancy,
+                // Copied out of the holding rather than adopted: the incremental refresh folds
+                // into what the territories hold, and a holding handed to a later rebuild has to
+                // still say what it said.
+                SystemOccupancy.createCopyOf(
+                    resolution.ownerBySystemId(),
+                    holding.inhabitedSystemIds(),
+                    holding.spotlitPresenceSystemIds()),
                 // The owned systems this resolution paints no fill for - held by their bloc but
                 // drawn empty inside its one border. Empty for the faction/alliance and filter
                 // paths today; the split reads it so a source that populates it needs no wiring.
@@ -139,7 +217,7 @@ public final class TerritoryBuilder {
     // profiled on its own and names what it resolved on the call, which is the reading its duration
     // has to be judged against. The contested set is reported here because the whole spotlit
     // footprint shares one key, leaving that set the only record of the dominant/contested split.
-    private static HolderResolution resolveHolding(
+    private static HolderResolution resolveHolders(
             Profiler profiler,
             HolderPass pass,
             PoliticalMapView view,
@@ -160,60 +238,16 @@ public final class TerritoryBuilder {
         }
     }
 
-    // Who is in each system: the resolved holding, what stands there, and where the spotlit pick
-    // lives in a system nobody holds. Assembled here rather than by the caller because the third
-    // fact is asked of the first two - of the settled systems the holding left out - and folded
-    // straight back in, so no pass ever holds a loose presence set the incremental refresh would
-    // then have to be handed separately.
-    private static SystemOccupancy readOccupancyOf(
-            Profiler profiler,
-            HolderPass pass,
-            ContentInputs contentInputs,
-            HolderResolution resolution) {
+    // The settled systems the holding gave to nobody, which is the only place a spotlit pick can
+    // be living unattributed. Asked through the occupancy's own rule rather than restated here, so
+    // a full build and an incremental refresh cannot disagree about what "unheld" means.
+    private static Set<String> selectUnheldSystemIdsAmong(
+            HolderResolution resolution,
+            Set<String> inhabitedSystemIds) {
 
-        // What stands in each system, read once for the whole pass. Independent of the holding and
-        // deliberately so: the holding answers who this view gives a system to, and a view whose
-        // rule admits only some markets - claims, for the several reasons base.politics.holders
-        // sets out - leaves inhabited systems with no holder. Only this read tells those apart
-        // from empty space.
-        //
-        // Taken off the pass the holding resolved through, so a colony the dev toggle admits to
-        // one is admitted to the other and the two cannot disagree about whether a system holds
-        // anything - and each system is read once for both rather than once apiece.
-        var inhabitedSystemIds = measureSystemScan(
-            profiler,
-            FIND_INHABITED_SECTION,
-            () -> PoliticalMapInhabitation.readInhabitedSystemIds(pass));
-
-        var occupancy = SystemOccupancy.createCopyOf(
-            resolution.ownerBySystemId(),
-            inhabitedSystemIds,
-            Set.of());
-
-        // Where the spotlit bloc is living outside anything this build attributed to it, so the
-        // factionless cells over its own colonies are spared the recede. Asked only of the
-        // inhabited systems the holding left out, and which view is painting decides whether that
-        // set holds anything for it: the claims views leave a system unheld whenever nobody claims
-        // it, so a bloc's own unclaimed colonies land here and this read is what spares their
-        // cells. The faction and alliance views resolve holding through FilteredPolitics, which
-        // already keys every system the bloc is present in and can be coloured for, so their
-        // leftovers are systems it is absent from and the read comes back empty for the cost of
-        // the set arithmetic.
-        //
-        // Asked of the same habitation the scan above classified by, so a cell spared here is
-        // never one that scan called empty space.
-        var spotlitPresenceSystemIds = measureSystemScan(
-            profiler,
-            FIND_SPOTLIT_PRESENCE_SECTION,
-            () -> FilteredPolitics.findPresentSystemIds(
-                pass,
-                contentInputs.selectedBlocId(),
-                occupancy.selectUnheldSystemIdsAmong(inhabitedSystemIds)));
-
-        for (var systemId : spotlitPresenceSystemIds) {
-            occupancy.foldSpotlitPresenceOf(systemId, true);
-        }
-        return occupancy;
+        return SystemOccupancy
+            .createCopyOf(resolution.ownerBySystemId(), inhabitedSystemIds, Set.of())
+            .selectUnheldSystemIdsAmong(inhabitedSystemIds);
     }
 
     // The paint scheme this build styles every cell from: the whole theme read once through the
