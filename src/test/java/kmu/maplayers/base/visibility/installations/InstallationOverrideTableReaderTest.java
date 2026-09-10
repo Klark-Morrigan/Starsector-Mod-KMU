@@ -106,6 +106,20 @@ final class InstallationOverrideTableReaderTest {
         }
 
         @Test
+        void leaves_every_question_to_the_sector_where_a_merged_row_carries_none_of_the_columns()
+                throws Exception {
+            // Another mod's copy of the table need not be the same shape as ours: the merge folds
+            // whatever columns that file has, so a row can arrive carrying only the type it names.
+            var row = new JSONObject();
+            row.put(ENTITY_TYPE_COLUMN, ARTILLERY_STATION_TYPE);
+
+            shipRows(row);
+
+            assertThat(tableReader.readTable().readOverrideOf(ARTILLERY_STATION_TYPE))
+                .isEqualTo(InstallationOverride.NONE);
+        }
+
+        @Test
         void leaves_admission_to_the_sector_where_a_row_states_a_word_it_does_not_understand()
                 throws Exception {
             // Not "false": a mistyped word is a row whose author meant something, and reading every

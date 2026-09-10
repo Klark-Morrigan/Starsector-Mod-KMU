@@ -37,10 +37,6 @@ import static org.mockito.Mockito.when;
  */
 final class InstallationsCsvIntegrationTest {
 
-    // The path the game is handed, spelled out here as the header line is: this suite exists to
-    // catch the two spellings drifting apart.
-    private static final String TABLE_PATH = "data/config/kmu/installations.csv";
-
     private static final String SHIPPED_HEADER = "entityTypeId,isAdmitted,kind";
 
     private static final String COLUMN_SEPARATOR = ",";
@@ -116,8 +112,9 @@ final class InstallationsCsvIntegrationTest {
     }
 
     // A plain split rather than a CSV parser, which the shipped file is written to stay within: no
-    // quoting, no embedded separators, one cell per column. A row that outgrew that would fail here
-    // rather than being read one way by this suite and another by the game.
+    // quoting, no embedded separators, one cell per column. A row that outgrew that is failed here
+    // rather than padded, since a suite that quietly reads a broken row one way while the game
+    // reads it another is worth less than no suite at all.
     private JSONArray parseShippedRows() throws IOException, JSONException {
 
         var lines = readShippedLines();
@@ -127,24 +124,30 @@ final class InstallationsCsvIntegrationTest {
         for (var line : lines.subList(1, lines.size())) {
 
             var cells = line.split(COLUMN_SEPARATOR, -1);
+
+            assertThat(cells)
+                .as("row '%s' of the shipped table", line)
+                .hasSameSizeAs(columnNames);
+
             var row = new JSONObject();
 
             for (var columnIndex = 0; columnIndex < columnNames.length; columnIndex++) {
-                row.put(
-                    columnNames[columnIndex],
-                    columnIndex < cells.length ? cells[columnIndex] : "");
+                row.put(columnNames[columnIndex], cells[columnIndex]);
             }
             rows.put(row);
         }
         return rows;
     }
 
-    // The file's own lines, blank ones dropped, so a trailing newline is not read as a row.
+    // The file's own lines, blank ones dropped, so a trailing newline is not read as a row. Opened
+    // at the path the reader hands the game, so the file this suite holds to account is the file
+    // that ships.
     private List<String> readShippedLines() throws IOException {
 
         var lines = new ArrayList<String>();
 
-        for (var line : Files.readAllLines(Path.of(TABLE_PATH), StandardCharsets.UTF_8)) {
+        for (var line : Files.readAllLines(
+                Path.of(InstallationOverrideTableReader.TABLE_PATH), StandardCharsets.UTF_8)) {
 
             if (!line.isBlank()) {
                 lines.add(line.trim());

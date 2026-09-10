@@ -39,13 +39,15 @@ import static kmu.util.KmuValues.normalizeText;
  */
 public final class InstallationOverrideTableReader {
 
-    // The file, and the column names a row is read by. Package-private because the suite that
-    // holds the shipped file against this reader has to open the very path the game is handed:
-    // a second spelling of it there could go stale in either direction without either noticing.
+    // The file the game is handed. Package-private so that whatever holds the shipped rows against
+    // this reader opens that very file: a second spelling of the path would let the two drift apart
+    // silently, each still passing on a file the other never sees.
     static final String TABLE_PATH = "data/config/kmu/installations.csv";
-    static final String ENTITY_TYPE_COLUMN = "entityTypeId";
-    static final String ADMISSION_COLUMN = "isAdmitted";
-    static final String KIND_COLUMN = "kind";
+
+    // The columns a row is read by, and the id column the game folds every mod's rows onto.
+    private static final String ENTITY_TYPE_COLUMN = "entityTypeId";
+    private static final String ADMISSION_COLUMN = "isAdmitted";
+    private static final String KIND_COLUMN = "kind";
 
     // Which mod owns the table, which is what makes the read a merge: the game gathers this path
     // from every enabled mod and folds the rows onto the ones shipped here, keyed by entity type.
@@ -170,6 +172,9 @@ public final class InstallationOverrideTableReader {
     // nobody wrote down.
     private Optional<InstallationKind> readKind(JSONObject rowFields, String entityTypeId) {
 
+        // Normalised here as well as inside the lookup, because a blank cell and a cell nothing
+        // answers to are the same absent answer and must not be the same log line: the first is
+        // how most rows leave the kind to the facts.
         var stated = normalizeText(rowFields.optString(KIND_COLUMN, null));
         var kind = InstallationKind.findKindNamed(stated);
 
