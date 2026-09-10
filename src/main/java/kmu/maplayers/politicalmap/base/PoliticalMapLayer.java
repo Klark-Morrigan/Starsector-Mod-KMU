@@ -6,6 +6,7 @@ import kmu.KmuMod;
 import kmu.maplayers.base.installation.MapLayerInstallation;
 import kmu.maplayers.base.installation.MapLayerInstallations;
 import kmu.maplayers.base.layer.MapLayer;
+import kmu.maplayers.base.layer.MapLayerStanding;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.maplayers.base.sidebar.ColumnSelectionBinder;
@@ -42,6 +43,10 @@ public final class PoliticalMapLayer implements MapLayer {
 
     // LunaLib stores this tab's key under the field id; the row it names is where the key is decided.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
+
+    // What this tab runs on a sector while it is on the bar. One for the tab rather than one per
+    // ask, the pair holding nothing and every sector arriving as an argument.
+    private static final MapLayerStanding STANDING = new PoliticalMapStanding();
 
     private PoliticalMapLayer() {
     }
@@ -106,6 +111,14 @@ public final class PoliticalMapLayer implements MapLayer {
         // lookup is this tab's own: the field id is a row in KMU's settings file, which is a fact
         // about this mod rather than about the bar the tab stands in.
         return KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_FIELD);
+    }
+
+    @Override
+    public MapLayerStanding resolveStanding() {
+        // The save heal, the four refresh listeners and the staleness poll, as the pair the
+        // framework stands up and takes back. One instance for the tab, the pair holding nothing:
+        // which sector each half acts on arrives with the call.
+        return STANDING;
     }
 
     @Override

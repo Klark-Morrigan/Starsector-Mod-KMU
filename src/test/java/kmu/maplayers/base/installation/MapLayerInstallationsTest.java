@@ -292,6 +292,36 @@ class MapLayerInstallationsTest {
     }
 
     @Nested
+    class GetEveryInstallation {
+
+        @Test
+        void listsTheInstallationOfEverySectorInstalledOn() {
+            // What a preference shared by every campaign is applied through: a sector left out of
+            // the walk would keep wiring the player took off the bar for all of them.
+            var sectorMock = mock(SectorAPI.class);
+            var otherSectorMock = mock(SectorAPI.class);
+
+            var installation = MapLayerInstallations.installMachineryOn(sectorMock);
+            var otherInstallation = MapLayerInstallations.installMachineryOn(otherSectorMock);
+
+            assertThat(MapLayerInstallations.getEveryInstallation())
+                .containsExactlyInAnyOrder(installation, otherInstallation);
+        }
+
+        @Test
+        void listsNoneOfTheDetachedInstallationOrTheSectorsReleased() {
+            // The detached one is nobody's sector and a released one is a sector the load replaced,
+            // so neither is something a walk over the installed sectors may act on.
+            MapLayerInstallations.installMachineryOn(mock(SectorAPI.class));
+            MapLayerInstallations.installMachineryOn(null);
+            MapLayerInstallations.disposeEveryInstallation();
+
+            assertThat(MapLayerInstallations.getEveryInstallation())
+                .isEmpty();
+        }
+    }
+
+    @Nested
     class ResolveInstallationFor {
 
         @Test

@@ -4,6 +4,7 @@ import kmlib.starsector.ui.coreui.OverlayPresence;
 
 import kmu.maplayers.base.layer.LiveMapLayerArrangement;
 import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerStandings;
 
 /**
  * The dialog the player arranges the layer bar in: what is being arranged, when it may be started,
@@ -20,6 +21,11 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
  * modal base, so whatever stands down under one has to read this dialog beside that reading -
  * {@link #isDialogRaised()} where the question is input, and {@link #resolveDialogPresence()} where it
  * is input and paint together.
+ *
+ * <p>It is also where an arrangement reaches the layers themselves: the editor records what the
+ * player did, and this asks {@link MapLayerStandings} to bring each layer's wiring into line with the
+ * bar they now have. Here rather than in the editor because standing a layer up on a sector is the
+ * framework's business and the editor is deliberately reachable without a running game.
  *
  * <p>The editor is seeded at each open and dropped at each close, so a second visit reads the store
  * again rather than the rows it left. It is thereafter its own source of truth: re-reading the store
@@ -124,6 +130,13 @@ public final class MapLayerArrangementDialog {
         }
 
         editor.applyRowAction(layerId, action);
+
+        // The bar the press just changed is also the answer to which layers are worth wiring, so a
+        // tab taken off stops costing at the press rather than at the next load. Asked after every
+        // press rather than after the hide alone: which press moved an id between shown and hidden
+        // is the standings' own diff to make, and a caller deciding it here would be a second
+        // statement of that rule.
+        MapLayerStandings.applyArrangementWhereverInstalled();
 
         rebuildBody();
     }

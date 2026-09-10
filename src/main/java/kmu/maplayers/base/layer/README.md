@@ -14,6 +14,7 @@ vocabulary and the per-screen key scheme these types compose their keys through.
 - [A screen's two picks](#a-screens-two-picks)
 - [Which tabs a screen is offered](#which-tabs-a-screen-is-offered)
 - [The bar arrangement](#the-bar-arrangement)
+- [What a hidden tab stands down](#what-a-hidden-tab-stands-down)
 
 ## What a layer is
 
@@ -22,7 +23,10 @@ shortcut key.
 
 A layer is registered once for the process while what it draws with belongs to one sector, so it
 holds no renderer. It is asked for the one belonging to the installation being drawn, and
-`MapLayerRegistry` passes that installation through rather than resolving one of its own.
+`MapLayerRegistry` passes that installation through rather than resolving one of its own. What it
+*runs* on a sector is held the same way round and for the same reason: a layer states a
+`MapLayerStanding` rather than registering anything itself, and is asked to stand up or down against
+a named sector.
 
 A layer also letters and binds its own tab. `resolveTabLabelText` hands the bar drawn text rather
 than a strings key, and `resolveShortcutKeycode` hands it the key in force rather than a settings
@@ -77,7 +81,8 @@ two lists would switch to the layer one along from the tab they lit. It never wi
 standing, a row emptied by hiding and a row emptied by withholding being the same unusable bar.
 
 Both subtractions are from the strip and never from the roster, a stored pick being an id resolved
-against it, so a hidden layer stays registered and its id goes on resolving.
+against it, so a hidden layer stays registered and its id goes on resolving. What it does lose is its
+standing on a sector, [below](#what-a-hidden-tab-stands-down).
 
 What becomes of a pick the row no longer offers a tab for is `healPickOntoOfferedTabs`, stated in
 [the map chrome README](../chrome/README.md#the-pick-follows-the-bar) beside the pass that asks it.
@@ -110,3 +115,29 @@ opened. An arrangement recorded through that holding is what the next frame read
 the next start does.
 
 [The arranging dialog](../chrome/README.md#the-arranging-dialog) is what writes it.
+
+## What a hidden tab stands down
+
+`MapLayer.resolveStanding` is what a layer runs on a sector while its tab is on the bar and how to
+take it back - a save heal, a listener, a poll. A layer with no sector wiring states none, and is
+simply always standing.
+
+`MapLayerStandings` decides when each half is owed, and reads one thing to decide it: the hidden set.
+An id entering it stands that layer down on every installed sector, an id leaving it stands the layer
+up, and a reorder moves no id between the two - which is what keeps a drag from tearing a layer's
+listeners down and building them again. Each layer is diffed against what it was last applied as,
+the same shape `KmuToggledFeature` compares a settings switch by.
+
+It is asked on load, so a layer hidden in the store never stands up on a sector at all, and again
+from [the arranging dialog](../chrome/README.md#the-arranging-dialog) whenever a press changes the
+bar. Every layer goes behind its own failure boundary: an install carrying another mod's layer calls
+a stranger's code here, and one that throws on the way up is not a reason for the tabs after it to go
+unwired.
+
+Standing is per sector, so what is standing where is `StandingLayers`, held as
+[installed machinery](../installation/README.md#standing-a-layer-up-on-one-sector) and beginning and
+ending with the sector it describes.
+
+The order matters against the strip: a stood-down layer must never be a screen's pick, or the render
+pass asks a layer with no machinery behind it to paint. `healPickOntoOfferedTabs` is exactly that
+guarantee - a pick follows the tabs the bar offers, and a hidden layer offers none.

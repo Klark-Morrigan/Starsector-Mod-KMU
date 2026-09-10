@@ -122,6 +122,21 @@ final class PoliticalMapLayerTest {
     }
 
     @Nested
+    class ResolveStanding {
+
+        @Test
+        void resolveStandingYieldsThePairThatWiresThePoliticalMapToASector() {
+            // The counterpart to No Layer's null: this tab is the one with sector wiring - a save
+            // heal, four listeners and a poll - so taking its tab off the bar has something to save.
+            // One pair for the tab, since the pair holds nothing and every sector arrives as an
+            // argument.
+            assertThat(PoliticalMapLayer.INSTANCE.resolveStanding())
+                .isInstanceOf(PoliticalMapStanding.class)
+                .isSameAs(PoliticalMapLayer.INSTANCE.resolveStanding());
+        }
+    }
+
+    @Nested
     class ResolveRenderer {
 
         @Test

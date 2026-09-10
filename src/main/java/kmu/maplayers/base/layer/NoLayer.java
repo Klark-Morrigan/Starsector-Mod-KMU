@@ -64,6 +64,14 @@ public final class NoLayer implements MapLayer {
     }
 
     @Override
+    public MapLayerStanding resolveStanding() {
+        // Nothing to stand up: this tab registers no listener, polls nothing and heals nothing, so
+        // there is no sector wiring for taking its tab off the bar to save. It is always standing in
+        // the only sense that means anything here - selecting it costs a paint that draws nothing.
+        return null;
+    }
+
+    @Override
     public MapLayerRenderer resolveRenderer(MapLayerInstallation installation) {
         // No renderer is the "show nothing" pick expressed to the map surface: it draws whatever the
         // active layer draws, and this layer draws nothing. The installation goes unread for the

@@ -7,12 +7,12 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.layer.MapLayerStandings;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
-import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.rat.RandomAssortmentOfThingsSettings;
 
@@ -205,8 +205,8 @@ class KMU_ModPluginTest {
             mockStatic(MapLayerInstallations.class);
         private final MockedStatic<MapSubstrateRefreshInstaller> substrateRefreshMock =
             mockStatic(MapSubstrateRefreshInstaller.class);
-        private final MockedStatic<PoliticalMapInstaller> politicalMapMock =
-            mockStatic(PoliticalMapInstaller.class);
+        private final MockedStatic<MapLayerStandings> standingsMock =
+            mockStatic(MapLayerStandings.class);
         private final MockedStatic<MapSurfaceInstaller> surfaceMock =
             mockStatic(MapSurfaceInstaller.class);
         private final MockedStatic<SidebarInstaller> sidebarMock =
@@ -226,7 +226,7 @@ class KMU_ModPluginTest {
                 () -> MapLayerInstallations.installMachineryOn(sector), howOften);
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.installAll(sector), howOften);
-            politicalMapMock.verify(() -> PoliticalMapInstaller.installAll(sector), howOften);
+            standingsMock.verify(() -> MapLayerStandings.applyArrangementTo(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.installAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.installAll(sector), howOften);
             hoverMock.verify(() -> MapHoverInstaller.installAll(sector), howOften);
@@ -239,7 +239,8 @@ class KMU_ModPluginTest {
                 () -> MapLayerInstallations.uninstallMachineryFrom(sector), howOften);
             substrateRefreshMock.verify(
                 () -> MapSubstrateRefreshInstaller.uninstallAll(sector), howOften);
-            politicalMapMock.verify(() -> PoliticalMapInstaller.uninstallAll(sector), howOften);
+            standingsMock.verify(
+                () -> MapLayerStandings.standEveryLayerDownFrom(sector), howOften);
             surfaceMock.verify(() -> MapSurfaceInstaller.uninstallAll(sector), howOften);
             sidebarMock.verify(() -> SidebarInstaller.uninstallAll(sector), howOften);
             hoverMock.verify(() -> MapHoverInstaller.uninstallAll(sector), howOften);
@@ -253,7 +254,7 @@ class KMU_ModPluginTest {
             hoverMock.close();
             sidebarMock.close();
             surfaceMock.close();
-            politicalMapMock.close();
+            standingsMock.close();
             substrateRefreshMock.close();
             installationsMock.close();
         }

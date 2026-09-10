@@ -8,13 +8,13 @@ import kmu.diagnostics.ProfilingCaptureInstaller;
 import kmu.maplayers.MapLayers;
 import kmu.maplayers.base.chrome.MapChromeInstaller;
 import kmu.maplayers.base.installation.MapLayerInstallations;
+import kmu.maplayers.base.layer.MapLayerStandings;
 import kmu.maplayers.base.refresh.MapSubstrateRefreshInstaller;
 import kmu.maplayers.base.render.MapSurfaceInstaller;
 import kmu.maplayers.base.sidebar.runtime.SidebarInstaller;
 import kmu.maplayers.base.tooltip.MapHoverInstaller;
 import kmu.maplayers.base.visibility.colonies.ColonySightingInstaller;
 import kmu.maplayers.politicalmap.base.FilterSelectionHeal;
-import kmu.maplayers.politicalmap.base.PoliticalMapInstaller;
 import kmu.settings.KmuFeatureSettings;
 import kmu.settings.KmuLunaSettings;
 import kmu.starsector.rat.RandomAssortmentOfThingsCompatibilityInstaller;
@@ -193,8 +193,14 @@ public class KMU_ModPlugin extends BaseModPlugin {
         // than for as long as one particular layer is on the bar.
         MapSubstrateRefreshInstaller.installAll(sector);
 
-        // Before the render surfaces, because its save heal repairs what the terrain then reads.
-        PoliticalMapInstaller.installAll(sector);
+        // Every layer the player has on their bar, stood up on this sector; every tab they took off
+        // it left unwired, so a layer nobody can reach costs nothing. Named as the framework's walk
+        // rather than as one installer per layer: which layers exist is the registry's, and a layer
+        // another mod ships is stood up here on the same terms as KMU's own.
+        //
+        // Before the render surfaces, because the political map's save heal - one of the halves this
+        // walk runs - repairs what the terrain then reads.
+        MapLayerStandings.applyArrangementTo(sector);
 
         // Before the hover box, which asks the frame preparation claim this stands up for a frame.
         MapSurfaceInstaller.installAll(sector);
@@ -219,7 +225,7 @@ public class KMU_ModPlugin extends BaseModPlugin {
         MapHoverInstaller.uninstallAll(sector);
         SidebarInstaller.uninstallAll(sector);
         MapSurfaceInstaller.uninstallAll(sector);
-        PoliticalMapInstaller.uninstallAll(sector);
+        MapLayerStandings.standEveryLayerDownFrom(sector);
         MapSubstrateRefreshInstaller.uninstallAll(sector);
 
         // Last, mirroring the install: the six above are taken back through the state this holds,

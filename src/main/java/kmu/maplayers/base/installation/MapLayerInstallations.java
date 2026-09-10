@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import org.apache.log4j.Logger;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -128,6 +129,21 @@ public final class MapLayerInstallations {
         installationsBySector.clear();
 
         LOG.debug("Map layer machinery discarded for every installed sector");
+    }
+
+    /**
+     * Every installation there is, for a caller acting on all of them at once rather than on the
+     * sector it was handed - a change to a preference that is one preference for every sector, which
+     * is what the bar arrangement is.
+     *
+     * <p>A snapshot rather than the index's own view, so a walk that installs or removes as it goes
+     * is acting on the row it asked for. The detached installation is not among them: it is nobody's
+     * sector, so there is nothing on it to act on.
+     *
+     * @return the installation of every installed sector, in no particular order
+     */
+    public static List<MapLayerInstallation> getEveryInstallation() {
+        return List.copyOf(installationsBySector.values());
     }
 
     /**

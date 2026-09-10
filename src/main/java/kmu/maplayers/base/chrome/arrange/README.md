@@ -23,7 +23,7 @@ Seven types, split along one line: what needs a running game, and what does not.
 
 | Type | Owns |
 | --- | --- |
-| `MapLayerArrangementDialog` | what is being arranged, when it may start, and what ends it |
+| `MapLayerArrangementDialog` | what is being arranged, when it may start, what ends it, and asking the layers to follow the bar it left |
 | `ArrangementDialogPanel` | the surface - the panel in the core UI, its claim, its paint, its lifetime |
 | `ArrangementDialogFade` | whether the dialog holds the screen, and how far onto it the box is painted |
 | `MapLayerArrangementEditor` | the rows, the three things a press can do to one, and when it refuses |
@@ -40,6 +40,11 @@ widget, the clock and the frame hooks. Neither reaches into the other: the panel
 when the widgets need replacing, and reports back the two things it cannot rule on - a press on the
 way out, and a screen gone out from under it - because whether either ends the arrangement is a
 question about an arrangement rather than about a surface.
+
+The same line settles where an arrangement reaches the layers themselves. A tab taken off the bar
+[stands its layer down](../../layer/README.md#what-a-hidden-tab-stands-down), and it is the dialog
+that asks for it after each press - not the editor, which is deliberately reachable with no running
+game, and standing a layer up on a sector needs one.
 
 `MapLayerArrangementRow` and `ArrangementRowAction` pass between the halves. The action is its own
 type rather than nested in either, since the column puts it on a button and the editor acts on it -

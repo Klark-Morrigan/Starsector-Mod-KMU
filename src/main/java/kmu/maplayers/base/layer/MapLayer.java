@@ -93,6 +93,21 @@ public interface MapLayer {
     int resolveShortcutKeycode();
 
     /**
+     * What this layer needs of a sector while its tab is on the bar, and how to take it back, or
+     * null for a layer with no sector wiring at all - which is a layer that is simply always
+     * standing. Declared rather than defaulted for the reason the renderer below is: a new view
+     * answers the question deliberately instead of coming up silently unwired.
+     *
+     * <p>Held apart from registration because the two are asked at different times and of different
+     * scopes. A layer registers once for the process, while what it registers on a sector begins and
+     * ends with that sector - and with whether the player has that layer's tab on their bar at all,
+     * which is what lets a tab they took off stop costing.
+     *
+     * @return this layer's pair, or null for a layer that needs nothing of a sector
+     */
+    MapLayerStanding resolveStanding();
+
+    /**
      * What draws this layer's overlay for one sector while it is the active pick, or null for a
      * layer that draws nothing - a switch-only tab, which the map surface reads as nothing to draw.
      * Declared here rather than defaulted to null so every layer answers the question deliberately;

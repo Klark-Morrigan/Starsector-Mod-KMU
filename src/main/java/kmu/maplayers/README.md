@@ -14,6 +14,7 @@ Part of Klark Morrigan's Utilities; see the
 ## Index
 
 - [The layers](#the-layers)
+- [A tab off the bar stands down](#a-tab-off-the-bar-stands-down)
 - [The one-way arrow](#the-one-way-arrow)
 - [The vocabulary](#the-vocabulary)
 - [Two screens, two picks](#two-screens-two-picks)
@@ -37,6 +38,35 @@ sector map opens. A tab may also
 answer a shortcut, printed on the tab, on both screens the box draws; since the picks are per-screen,
 a shortcut moves only the tab of the screen it was pressed on. KMU's two tabs take theirs from
 LunaLib rows the player can rebind, and a tab with no key simply has no hint and answers no press.
+
+## A tab off the bar stands down
+
+The bar is arranged in [the arranging dialog](base/chrome/README.md#the-arranging-dialog), and a tab
+taken off it stops costing. Being registered and standing on a sector are two different things, and
+this is where they part company:
+
+| | What it is | What a hidden layer keeps |
+| --- | --- | --- |
+| **Registered** | a place in the roster, and an id a stored pick resolves against | kept - the dialog has to list the layer to offer it back, and a save naming it must not read as an id from a build that dropped the layer |
+| **Standing** | what a layer runs on one sector: its listeners, its polls, its save heals | lost, on every sector |
+
+A layer states the pair - how to stand up on a sector, how to stand back down - or states neither,
+which is a layer with no sector wiring and so one that is simply always standing. Asked on load, so
+a layer hidden in the store never stands up at all, and again whenever the player writes an
+arrangement. The details are [the layer framework's](base/layer/README.md#what-a-hidden-tab-stands-down).
+
+**The hidden set drives it, not the order.** An id entering the hidden list stands one layer down
+and an id leaving it stands one up; a reorder moves no id between the two, so dragging a tab a place
+up the column wires nothing and unwires nothing.
+
+The mod-wide switch keeps its own job beside all of that: every layer down at once whatever the bar
+says, and the path a player uninstalls KMU from a save through. It also stays the *only* settings row
+about layers, and this is why there is no second one per layer beside it. Such a row could speak only
+for KMU's own layers, would move a tab at the next launch rather than at the click since the roster is
+filled at load, and could not be undone from the bar - a layer it switched off never joins the roster
+the dialog lists, so the way back would be a screen the player has to remember going to. The bar asks
+the same question in the place where the answer shows, and asks it of every registered layer whoever
+ships it.
 
 ## The one-way arrow
 
@@ -189,8 +219,9 @@ bar once does not order it again per save.
   arrival order (`MapLayerRegistry`), each screen's tab and show-or-hide pick under its own frozen
   keys (`MapLayerScreens`, `ScreenLayerPicks`, `ControlBackedMapLayerVisibility`), which of the
   registered layers a screen is offered as tabs (`ScreenLayerTabs`), and the bar arrangement laid
-  over the roster (`MapLayerArrangement`, `ArrangedLayers`). Nothing in it paints, and none of it
-  knows what a layer paints.
+  over the roster (`MapLayerArrangement`, `ArrangedLayers`). It is also what a layer runs on a
+  sector while its tab is on the bar (`MapLayerStanding`, `MapLayerStandings`), so a tab the player
+  took off stops costing. Nothing in it paints, and none of it knows what a layer paints.
 - **[The arranging dialog](base/chrome/README.md#the-arranging-dialog)** - what writes that
   arrangement, opened from the bar and from nowhere else. Its rules, its modality and the box it
   stands in are [the map chrome README](base/chrome/README.md)'s.

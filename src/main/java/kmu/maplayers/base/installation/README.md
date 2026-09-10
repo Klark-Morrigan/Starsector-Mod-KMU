@@ -15,6 +15,7 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 - [What an installation holds](#what-an-installation-holds)
 - [How a layer's own machinery gets in](#how-a-layers-own-machinery-gets-in)
 - [The lifetime](#the-lifetime)
+- [Standing a layer up on one sector](#standing-a-layer-up-on-one-sector)
 - [Three ways to resolve one](#three-ways-to-resolve-one)
 - [The detached installation](#the-detached-installation)
 - [Where a sector-less seam still reads the global](#where-a-sector-less-seam-still-reads-the-global)
@@ -105,14 +106,39 @@ sweep.
   stopped from outliving it - nothing else in the engine is told that a sector went away, and the
   index holds each sector by reference.
 
-`KMU_ModPlugin` drives all three: `installMapLayers` stands the installation up first, before the
-four installers that stack on it, and `uninstallMapLayers` takes it back last, since those four are
-taken back *through* the state it holds.
+`KMU_ModPlugin` drives all three: `installMapLayers` stands the installation up first, before
+everything that stacks on it, and `uninstallMapLayers` takes it back last, since all of that is taken
+back *through* the state it holds.
+
+A fourth reading is over all of them rather than over one. `getEveryInstallation()` lists the
+installed sectors' installations, for a caller acting on a preference that is one preference for
+every campaign - which is what the bar arrangement is. It is a snapshot rather than the index's own
+view, so a walk that installs or removes as it goes acts on the row it asked for, and the detached
+installation is not among them.
 
 Concurrent throughout: installing and removing happen on the campaign thread while a frame resolves
 what it is about to draw on the render thread. `MapLayerInstallation` also carries a volatile
 `isDisposed`, because a resolution taken at the top of a frame outlives a removal that happens
 during it.
+
+## Standing a layer up on one sector
+
+Installing the machinery is not the same as a layer running on the sector. The machinery is the
+holders everything drawn is derived from; a layer's **standing** is what that layer itself registers
+on the sector - its listeners, its polls, its save heals - and whether it gets one is the player's,
+decided by whether they keep its tab on the bar. The rule is
+[the layer framework's](../layer/README.md#what-a-hidden-tab-stands-down); what this package settles
+is the scope it acts in.
+
+That scope is one sector, so a change to the bar is applied by walking the installations rather than
+the loaded sector alone: a sector the walk skipped would keep the wiring of a tab that is no longer
+on the bar for any campaign.
+
+Which layers are standing on a sector is `StandingLayers`, and it comes in as `InstalledMachinery`
+like a renderer does - made on the first ask, released with the installation, never named by this
+package. Disposal forgets rather than stands anything down: an installation is disposed for a sector
+the load has already replaced, and everything a layer registers on a sector is transient, so there is
+nothing left to take back and a stand-down aimed at it would reach the sector that replaced it.
 
 ## Three ways to resolve one
 
