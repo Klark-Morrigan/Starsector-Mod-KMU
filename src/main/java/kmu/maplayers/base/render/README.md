@@ -179,8 +179,9 @@ rule the framework's indexes exist to keep, so a second walk is a pass that went
 sector rather than asking for what had already been gathered. That one traversal is the pass's own
 systems-by-id index: the cell sites and the band bake's system lookups both come off it, either
 being enough on its own to put a rebuild over the bound if it indexed the sector for itself. A
-broken bound marks the row, keeps the call that broke it as the row's worst whatever it took, and
-is written to the log once per section as it happens.
+broken bound marks the row, keeps the call that broke it as the row's kept call whatever it took -
+which the report then names as the latest breach rather than as the row's worst - and is written to
+the log once per section as it happens.
 
 Inside each beat sits one row per layer, `mapLayer.layer.<layer id>`, opened around the layer's
 callback rather than by the layer. So what a layer costs is read against the beat it cost it in, a

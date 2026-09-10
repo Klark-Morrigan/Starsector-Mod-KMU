@@ -40,6 +40,10 @@ import java.util.List;
  */
 public final class ScreenLayerTabs {
 
+    // The end of a screen's hide ramp: none of its layers left on it, which is where a pick is free to move
+    // without cutting anything away.
+    private static final float FULLY_HIDDEN = 0f;
+
     private ScreenLayerTabs() {
     }
 
@@ -91,10 +95,18 @@ public final class ScreenLayerTabs {
      * lays a row out may not write. A pick the row still offers is left alone, which is every call but
      * the ones just after something moved.
      *
+     * <p>The two writes are not one moment. Switching the screen off is immediate, so the box the player
+     * can see says what is happening from that frame on; landing the pick waits until the ramp the
+     * switch-off started has run out. Both orders leave the same settled state and only one of them can be
+     * watched: a pick moved onto a tab that paints nothing takes the picture off the screen in the frame
+     * the dissolve begins, leaving the ramp nothing to dissolve. Left where it is, the outgoing layer goes
+     * the way the player's own hide takes it.
+     *
      * @param screenPicks the screen's own picks, both of which this may write
      * @return whether that screen is now on a tab its row offers. False where the move did not take -
-     *         a selection with nowhere to write drops it silently - so a caller holding off until the
-     *         row next moves knows not to hold off on this one
+     *         a selection with nowhere to write drops it silently, and one waiting on a dissolve has not
+     *         been tried yet - so a caller holding off until the row next moves knows not to hold off on
+     *         this one
      */
     public static boolean healPickOntoOfferedTabs(ScreenLayerPicks screenPicks) {
 
@@ -113,14 +125,35 @@ public final class ScreenLayerTabs {
             return true;
         }
         var leadingTab = offeredLayers.get(0);
+        var visibility = screenPicks.layerVisibility();
+        var doesLeadingTabPaint = isLayerPainting(leadingTab);
+
+        visibility.showLayers(doesLeadingTabPaint);
+
+        // Only a landing on a tab that paints nothing has a dissolve to wait for, and it waits: the frame
+        // the pick moves is the frame the outgoing layer stops being drawn, so landing it now would cut
+        // away what the switch-off above just began dissolving. A landing on a tab that paints is a switch
+        // between two pictures rather than a picture leaving, so it takes effect at once.
+        if (!doesLeadingTabPaint && isScreenStillFadingOut(visibility)) {
+            return false;
+        }
 
         screenPicks.layerSelection().selectLayer(leadingTab);
-        screenPicks.layerVisibility().showLayers(isLayerPainting(leadingTab));
 
         // Read back rather than assumed. A pick persisted in sector memory drops the write where there
         // is no memory to write into, and a caller that took the attempt for the outcome would record
         // this screen as settled and never come back to a bar still lit wrong.
         return screenPicks.layerSelection().getActiveLayer() == leadingTab;
+    }
+
+    // Whether any of this screen's layers is still on it while switched off - the tail of a dissolve, which
+    // is the one state a pick must not move during.
+    //
+    // The crisp pick is read first and the ramp only where the answer could still turn on it: a screen that
+    // is shown, or one with no control of its own to be switched off from, is settled by a flag read, and
+    // the fade behind it is a clock read with a settings read behind that.
+    private static boolean isScreenStillFadingOut(MapLayerVisibility visibility) {
+        return !visibility.areLayersShown() && visibility.resolveShownFade() > FULLY_HIDDEN;
     }
 
     // The given row without the empty view's tab, unless that would leave no tab at all: a row with no

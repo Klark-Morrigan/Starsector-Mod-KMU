@@ -38,11 +38,19 @@ import static org.mockito.Mockito.when;
  * they are one case. When the heal is asked is
  * {@link kmu.maplayers.base.chrome.MapLayerPickUpkeepTest}'s, this answering only what it does.
  *
+ * <p>Its two writes are pinned apart as well as together, the control going down at once where the pick
+ * waits out the dissolve that switch-off begins. Both ends of the wait and the landing that has none of it
+ * to do are posed, a wait that never ended being a bar stranded on a tab it stopped offering.
+ *
  * <p>Beside it, the revision a holder skips that work on: one case per ingredient the row is built
  * from, because an ingredient left out of the revision is a change no holder would ever see. Those
  * cases are what makes the two move together rather than only being written side by side.
  */
 final class ScreenLayerTabsTest {
+
+    // Part-way through a hide ramp: some of the screen's picture still on it, which is what a pick landing
+    // now would cut away. Any value short of the far end serves, this being read as "more than none".
+    private static final float HALF_FADED_OUT = 0.5f;
 
     // The ids the stored arrangement names its layers by, the store holding ids rather than layers.
     private static final String NO_LAYER_ID = "no_layer";
@@ -395,6 +403,90 @@ final class ScreenLayerTabsTest {
         }
 
         @Test
+        void healPickOntoOfferedTabsHoldsThePickWhileTheLayerItStillDrawsFadesOff() {
+            // The control goes down at once, so the box says what is happening from this frame on, but
+            // the pick stays put: the frame it lands is the frame that layer stops being drawn, and the
+            // player would see the map cut rather than dissolve.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+
+            var screenPicks = createPicksMidFadeOut();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerVisibility().getStoredVisibility())
+                .showLayers(false);
+            verify(screenPicks.layerSelection(), never())
+                .selectLayer(any());
+        }
+
+        @Test
+        void healPickOntoOfferedTabsReportsAScreenUnsettledWhileItIsStillFadingOut() {
+            // What brings the pass back next frame. A dissolve is the one reason to hold off that ends
+            // on its own, so a holder recording this row as done with would leave the pick on a tab the
+            // bar stopped offering for as long as nobody touched the dialog again.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+
+            var screenPicks = createPicksMidFadeOut();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+
+            assertThat(ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks))
+                .isFalse();
+        }
+
+        @Test
+        void healPickOntoOfferedTabsLandsThePickOnceNothingIsLeftOnTheScreen() {
+            // The far end of the same wait. Nothing of the outgoing layer is on screen to be cut away,
+            // so the pick lands - and a wait that did not end here would strand every hidden screen on
+            // a tab its bar no longer carries.
+            registerTheEmptyViewBesideALayerThatPaints();
+
+            MapLayerArrangements.arrangeBarWith(List.of(), List.of(PAINTING_LAYER_ID));
+
+            var screenPicks = createPicksWithAControlStanding();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+            when(screenPicks.layerVisibility().getStoredVisibility().resolveShownFade())
+                .thenReturn(0f);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection())
+                .selectLayer(NoLayer.INSTANCE);
+        }
+
+        @Test
+        void healPickOntoOfferedTabsLandsThePickAtOnceWhereTheTabItReachesPaints() {
+            // Nothing is leaving the screen: one picture is replaced by another, which is a switch and
+            // not a dissolve. A wait here would hold the bar on a tab it no longer offers for as long as
+            // whatever ramp happened to be running.
+            registerTwoLayersThatPaintBesideTheEmptyView();
+
+            MapLayerArrangements.arrangeBarWith(
+                List.of(),
+                List.of(PAINTING_LAYER_ID));
+
+            var screenPicks = createPicksMidFadeOut();
+
+            when(screenPicks.layerSelection().getActiveLayer())
+                .thenReturn(paintingLayerMock);
+
+            ScreenLayerTabs.healPickOntoOfferedTabs(screenPicks);
+
+            verify(screenPicks.layerSelection())
+                .selectLayer(otherPaintingLayerMock);
+        }
+
+        @Test
         void healPickOntoOfferedTabsReportsAScreenSettledOnceThePickLands() {
             // What a holder records on. The pick was written and read back as the tab it was sent to,
             // so there is nothing owed at this row.
@@ -509,6 +601,22 @@ final class ScreenLayerTabsTest {
             mock(ActiveLayerSelection.class),
             new ControlBackedMapLayerVisibility(mock(MapLayerVisibility.class)),
             ScreenMemoryScopes.createStandInScreen());
+    }
+
+    // A screen carrying a box, switched off with part of its picture still on it: the frames between the
+    // player taking the last painting tab off the bar and the map finishing its dissolve.
+    //
+    // Stated rather than produced by the write the heal makes, the stored pick here being a mock: what the
+    // rule reads is the state after that write, and a mock reports whatever it was told to whatever is
+    // written to it.
+    private static ScreenLayerPicks createPicksMidFadeOut() {
+
+        var screenPicks = createPicksWithAControlStanding();
+
+        when(screenPicks.layerVisibility().getStoredVisibility().resolveShownFade())
+            .thenReturn(HALF_FADED_OUT);
+
+        return screenPicks;
     }
 
     // A screen carrying a box and still set to the tab that box takes over from, which is the one
