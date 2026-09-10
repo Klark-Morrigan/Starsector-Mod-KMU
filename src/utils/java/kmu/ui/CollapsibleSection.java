@@ -5,7 +5,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Insets;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
@@ -51,17 +50,6 @@ public final class CollapsibleSection {
     // How far the body sits in from the heading, in pixels. Enough that the run reads as
     // belonging to the heading rather than merely following it.
     private static final int BODY_INDENT = 12;
-
-    // ASCII only, for the reason the reset button is: the viewer runs wherever the JDK's
-    // default font does, and a glyph that renders as a box makes the control unreadable
-    // rather than merely plain.
-    private static final String FOLDED_LABEL = "+";
-    private static final String UNFOLDED_LABEL = "-";
-
-    private static final String FOLD_TOOLTIP = "Fold this section away";
-
-    private static final int FOLD_BUTTON_WIDTH = 22;
-    private static final int FOLD_BUTTON_HEIGHT = 18;
 
     private CollapsibleSection() {
     }
@@ -155,7 +143,7 @@ public final class CollapsibleSection {
     private static JButton prepareFoldableBody(String foldKey, JPanel body) {
 
         var isUnfolded = SavedValues.findSavedValues().getBoolean(foldKey, true);
-        var fold = buildFoldButton(isUnfolded);
+        var fold = FoldControls.buildFoldButton(isUnfolded);
 
         body.setBorder(BorderFactory.createEmptyBorder(0, BODY_INDENT, 0, 0));
         body.setVisible(isUnfolded);
@@ -163,7 +151,7 @@ public final class CollapsibleSection {
         fold.addActionListener(event -> {
 
             body.setVisible(!body.isVisible());
-            fold.setText(body.isVisible() ? UNFOLDED_LABEL : FOLDED_LABEL);
+            FoldControls.showFoldState(fold, body.isVisible());
 
             SavedValues.findSavedValues().putBoolean(foldKey, body.isVisible());
         });
@@ -209,18 +197,6 @@ public final class CollapsibleSection {
         section.add(body);
 
         return section;
-    }
-
-    private static JButton buildFoldButton(boolean isUnfolded) {
-
-        var fold = new JButton(isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL);
-
-        fold.setToolTipText(FOLD_TOOLTIP);
-        fold.setMargin(new Insets(0, 0, 0, 0));
-        fold.setPreferredSize(new Dimension(FOLD_BUTTON_WIDTH, FOLD_BUTTON_HEIGHT));
-        fold.setFocusable(false);
-
-        return fold;
     }
 
     // Swing does not pass enablement down a container, so a disabled panel still draws its
