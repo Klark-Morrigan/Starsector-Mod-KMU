@@ -7,7 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
@@ -62,7 +62,7 @@ class MapVisibilityPassTest {
             // whole core would vanish from the map with nothing on screen saying why.
             assertThatThrownBy(() ->
                     new MapVisibilityPass(
-                        new SystemColoniesIndex(null),
+                        new SectorPassIndex(null),
                         null,
                         MapVisibilityRules.BASE))
                 .isInstanceOf(NullPointerException.class);
@@ -74,7 +74,7 @@ class MapVisibilityPassTest {
             // tick begins, so a null here is that one read having gone wrong.
             assertThatThrownBy(() ->
                     new MapVisibilityPass(
-                        new SystemColoniesIndex(null),
+                        new SectorPassIndex(null),
                         VisibleStars.scan(null),
                         null))
                 .isInstanceOf(NullPointerException.class);

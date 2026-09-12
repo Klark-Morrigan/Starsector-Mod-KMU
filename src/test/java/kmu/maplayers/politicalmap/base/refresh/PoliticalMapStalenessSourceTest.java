@@ -296,7 +296,7 @@ final class PoliticalMapStalenessSourceTest {
                     .thenAnswer(scan -> {
                         polledSector.set(scan
                             .<MapVisibilityPass>getArgument(0)
-                            .colonies()
+                            .sectorIndex()
                             .getSector());
                         return STEADY_SNAPSHOT;
                     });

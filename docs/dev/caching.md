@@ -95,7 +95,7 @@ its own, so nothing about the diff lives in the loop.
 The poll is a pass, and is read as one. Both of its passengers - the snapshot and the
 moving-set walk - ask every system who lives there, so the poll opens one
 [`MapVisibilityPass`](../../src/main/java/kmu/maplayers/base/visibility/systems/MapVisibilityPass.java) -
-a KMLib `SystemColoniesIndex`, a hyperspace scan, and the rules the two are read under - and
+a KMLib `SectorPassIndex`, a hyperspace scan, and the rules the two are read under - and
 hands it down. That is what keeps the cost at one selection per system per poll: a passenger
 given the sector instead would walk every entity in every system again. The pass is discarded
 with the poll, a kept one being a reading of the sector the *previous* poll saw.
@@ -131,14 +131,14 @@ sequenceDiagram
 ```
 
 The substrate's poll is the same shape over a narrower reading. It sweeps the sector to
-record what each system's own inhabitants can see, opening a bare `SystemColoniesIndex`
+record what each system's own inhabitants can see, opening a bare `SectorPassIndex`
 rather than a whole pass - the sweep asks only who lives where, so the hyperspace scan a
 pass opens beside the index would be paid for and never read.
 
 ```mermaid
 sequenceDiagram
     participant Poll as Substrate staleness poll
-    participant Index as SystemColoniesIndex
+    participant Index as SectorPassIndex
     participant Register as Sighting register
     participant Sector as The live sector
 
@@ -284,7 +284,7 @@ null draw list. The last good draw lists stay on screen in the meantime.
 runs every four to five campaign seconds, while a rebuild runs whenever the drawn set moves, a
 toggle flips, a view switches or a colony changes hands. Its three stages each ask every system
 who lives there - the cell cut deciding what is drawn, the fills resolving who holds each, and
-the band bake counting how each splits - so the rebuild opens **one** `SystemColoniesIndex` and
+the band bake counting how each splits - so the rebuild opens **one** `SectorPassIndex` and
 builds each stage's pass over it: a `MapVisibilityPass` for the geometry, a `HolderPass` under
 the view's grouping for the fills and the bands. Two pass types over one walk; the types stay
 apart because the render side has no use for the star scan and the membership side none for the

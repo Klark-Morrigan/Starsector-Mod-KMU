@@ -2,7 +2,7 @@ package kmu.maplayers.base.refresh;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
@@ -57,7 +57,7 @@ public class MapSubstrateStalenessSource implements MapLayerStalenessSource {
         if (systems == null) {
             return;
         }
-        var colonies = new SystemColoniesIndex(sector);
+        var colonies = new SectorPassIndex(sector);
         var observing = ColonyKnowledge.observingUnderTheFog();
 
         for (var system : systems) {

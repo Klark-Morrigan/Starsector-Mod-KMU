@@ -131,7 +131,7 @@ held cell by the footprints its fill was decided from, and
 [`claims.ribbon`](../../claims/ribbon/README.md) ranks a claims-layer cell by the contest over its
 system - including the cells no claim covers, which reach the rule above with no painter at all.
 
-**Where the colonies come from.** The walk itself is `SystemColoniesIndex`'s, reached through the
+**Where the colonies come from.** The walk itself is `SectorPassIndex`'s, reached through the
 pass on `RibbonPlanInputs` - so a planner counts what the bake already read rather than being able
 to walk a system again.
 

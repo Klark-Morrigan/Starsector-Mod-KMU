@@ -119,7 +119,7 @@ final class ClaimPresenceReadoutIntegrationTest {
             // and the hover above it read a claim.
             var claimBreakdownReader = new VanillaClaimBreakdownReader(
                 inputs.pass().colonyKnowledge(),
-                inputs.pass().colonies());
+                inputs.pass().sectorIndex());
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(system);
@@ -159,7 +159,7 @@ final class ClaimPresenceReadoutIntegrationTest {
 
             var claimBreakdownReader = new VanillaClaimBreakdownReader(
                 inputs.pass().colonyKnowledge(),
-                inputs.pass().colonies());
+                inputs.pass().sectorIndex());
 
             var band = new ClaimedSystemRibbonPlanner(claimBreakdownReader, inputs)
                 .planSystemRibbon(buildOnlySystem(sector));

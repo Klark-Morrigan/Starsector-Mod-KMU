@@ -3,7 +3,7 @@ package kmu.maplayers.politicalmap.base.tooltip;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimBreakdownReader;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.text.TextSpan;
@@ -498,7 +498,7 @@ final class SystemStandingsTooltipTest {
                 new HolderPass(
                     HolderGrouping.identity(),
                     UNDER_THE_REVEAL,
-                    new SystemColoniesIndex(null))));
+                    new SectorPassIndex(null))));
 
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 

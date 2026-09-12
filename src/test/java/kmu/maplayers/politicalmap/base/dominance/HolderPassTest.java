@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.markets.colonies.Colony;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
@@ -68,7 +68,7 @@ final class HolderPassTest {
         void rejectsNullGrouping() {
 
             assertThatThrownBy(() ->
-                    new HolderPass(null, BASE_FOG, new SystemColoniesIndex(null)))
+                    new HolderPass(null, BASE_FOG, new SectorPassIndex(null)))
                 .isInstanceOf(NullPointerException.class);
         }
 
@@ -79,7 +79,7 @@ final class HolderPassTest {
             // gone wrong. Standing the fog in would answer it with a map that draws less than it
             // should and says nothing about why.
             assertThatThrownBy(() ->
-                    new HolderPass(HolderGrouping.identity(), null, new SystemColoniesIndex(null)))
+                    new HolderPass(HolderGrouping.identity(), null, new SectorPassIndex(null)))
                 .isInstanceOf(NullPointerException.class);
         }
 

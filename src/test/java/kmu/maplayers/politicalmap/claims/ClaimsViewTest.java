@@ -6,7 +6,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
@@ -497,14 +497,14 @@ final class ClaimsViewTest {
             // be answered about colonies its market size was never shown.
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
-            var openedOver = new ArrayList<SystemColoniesIndex>();
+            var openedOver = new ArrayList<SectorPassIndex>();
             var openedUnder = new ArrayList<KnownColonyReader>();
 
             var aggregatedPasses = new ArrayList<HolderPass>();
 
-            var view = new ClaimsView((knownColonyReader, colonies) -> {
+            var view = new ClaimsView((knownColonyReader, sectorIndex) -> {
                 openedUnder.add(knownColonyReader);
-                openedOver.add(colonies);
+                openedOver.add(sectorIndex);
                 return claimReaderMock;
             });
 
@@ -530,7 +530,7 @@ final class ClaimsViewTest {
                 // as the one the market half was handed instead, which is the sharing that matters.
                 assertThat(openedOver)
                     .singleElement()
-                    .isSameAs(aggregatedPasses.get(0).colonies());
+                    .isSameAs(aggregatedPasses.get(0).sectorIndex());
             }
         }
 

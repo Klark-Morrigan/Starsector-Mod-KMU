@@ -35,7 +35,7 @@ public final class DrawnSystemPositions {
 
         var positions = new LinkedHashMap<String, double[]>();
 
-        for (var system : pass.colonies().readSystemsById().values()) {
+        for (var system : pass.sectorIndex().readSystemsById().values()) {
 
             var location = system.getLocation();
 

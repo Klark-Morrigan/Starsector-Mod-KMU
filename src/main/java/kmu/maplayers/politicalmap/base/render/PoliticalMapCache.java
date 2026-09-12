@@ -7,7 +7,7 @@ import kmlib.logging.SessionWarning;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
@@ -312,10 +312,10 @@ final class PoliticalMapCache {
         //
         // Discarded with the rebuild. A kept one would draw the next rebuild off the sector this
         // one saw, which is the change a rebuild exists to show.
-        var colonies = new SystemColoniesIndex(sector);
+        var sectorIndex = new SectorPassIndex(sector);
 
         if (staleHalves.isCellCutStale()) {
-            rebuildGeometry(staleHalves.cellCut(), sector, colonies);
+            rebuildGeometry(staleHalves.cellCut(), sector, sectorIndex);
         }
         // Everything derived from the cells under one scope, the cut having timed itself: what
         // the draw lists cost this rebuild is this span, and every stage it drives sits inside it.
@@ -323,7 +323,7 @@ final class PoliticalMapCache {
                 .resolveProfiler()
                 .open(REBUILD_DRAWABLES_SECTION)) {
 
-            var wasHoldingReused = rebuildDrawables(staleHalves, view, sector, colonies);
+            var wasHoldingReused = rebuildDrawables(staleHalves, view, sector, sectorIndex);
 
             // Traces the content rebuild's result: what the render will paint, so a wrong or empty
             // render can be confirmed against what was built. The count reported is whichever view
@@ -370,7 +370,7 @@ final class PoliticalMapCache {
             StaleHalves staleHalves,
             PoliticalMapView view,
             SectorAPI sector,
-            SystemColoniesIndex colonies) {
+            SectorPassIndex sectorIndex) {
 
         // Drained before the holding is chosen rather than after the build, because whether any
         // system is marked is half of whether the standing holding may be kept: a marked system is
@@ -402,7 +402,7 @@ final class PoliticalMapCache {
             var pass = new HolderPass(
                 view.resolveGrouping(),
                 staleHalves.cellCut().visibilityRules().colonyVisibility(),
-                colonies);
+                sectorIndex);
 
             wasHoldingReused = canReuseStandingHolding(staleHalves, staleSystemIds);
 
@@ -555,7 +555,7 @@ final class PoliticalMapCache {
     private void rebuildGeometry(
             CellCutInputs cellCut,
             SectorAPI sector,
-            SystemColoniesIndex colonies) {
+            SectorPassIndex sectorIndex) {
 
         // Transition trace: a stale cell or one left behind after an access change can be tied
         // to the revision step - or the seed inputs or toggle flip - that drove it.
@@ -563,7 +563,7 @@ final class PoliticalMapCache {
             + " from " + lastCellCut + " to " + cellCut);
 
         var pass = new MapVisibilityPass(
-            colonies,
+            sectorIndex,
             VisibleStars.scan(sector),
             cellCut.visibilityRules());
 

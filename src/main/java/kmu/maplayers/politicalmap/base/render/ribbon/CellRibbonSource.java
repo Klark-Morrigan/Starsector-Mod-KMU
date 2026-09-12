@@ -238,7 +238,7 @@ public final class CellRibbonSource {
             view.resolveRibbonPlanner(inputs),
             style,
             surface,
-            pass.colonies().readSystemsById());
+            pass.sectorIndex().readSystemsById());
     }
 
     // The ring this cell's band runs along: the one already traced inside the shape the cell holds

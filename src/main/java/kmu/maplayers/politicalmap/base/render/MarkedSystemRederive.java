@@ -67,7 +67,7 @@ final class MarkedSystemRederive {
         // Off the batch's own reading rather than a traversal opened here: every other read below
         // goes through that pass, and a second traversal for the ids alone is what the bound on a
         // batch counts against it.
-        var systemById = pass.holding().colonies().readSystemsById();
+        var systemById = pass.holding().sectorIndex().readSystemsById();
         var disturbance = new StalePoliticsDisturbance();
 
         for (var systemId : markedSystemIds) {

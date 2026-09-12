@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
@@ -111,7 +111,7 @@ final class FactionsViewTest {
                 HolderGrouping.identity(),
                 // Undiscovered colonies do not count, as on the live map.
                 BASE_FOG,
-                new SystemColoniesIndex(null));
+                new SectorPassIndex(null));
 
             try (var passMock = mockStatic(DominancePass.class)) {
                 passMock

@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.map.VisibleStars;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
@@ -39,7 +39,7 @@ import java.util.Objects;
 public final class MapVisibilityPass {
 
     private final ColonyKnowledge colonyKnowledge;
-    private final SystemColoniesIndex colonies;
+    private final SectorPassIndex sectorIndex;
     private final VisibleStars visibleStars;
     private final MapVisibilityRules rules;
 
@@ -51,18 +51,18 @@ public final class MapVisibilityPass {
      * nothing to state. Standing an empty scan in for a missing one would turn that fault into a
      * map that quietly draws less, which nothing on screen would report.
      *
-     * @param colonies     the pass's one walk of each system, which the habitation half is read
+     * @param sectorIndex  the pass's one reading of the sector, which the habitation half is read
      *                     through; also the sector every read is made against
      * @param visibleStars the pass's hyperspace scan of which stars the vanilla map draws
      * @param rules        the rules in force for this pass - what may be shown of a colony, and
      *                     whether a system is forced onto the drawn set
      */
     public MapVisibilityPass(
-            SystemColoniesIndex colonies,
+            SectorPassIndex sectorIndex,
             VisibleStars visibleStars,
             MapVisibilityRules rules) {
 
-        this.colonies = Objects.requireNonNull(colonies, "colonies");
+        this.sectorIndex = Objects.requireNonNull(sectorIndex, "sectorIndex");
         this.visibleStars = Objects.requireNonNull(visibleStars, "visibleStars");
         this.rules = Objects.requireNonNull(rules, "rules");
 
@@ -70,7 +70,7 @@ public final class MapVisibilityPass {
         // which both are in hand: the index names the sector, and a projection asked of a colony
         // set later would have nowhere to read what has been observed from.
         this.colonyKnowledge = ColonyKnowledge.over(
-            colonies.getSector(),
+            sectorIndex.getSector(),
             rules.colonyVisibility());
     }
 
@@ -87,7 +87,7 @@ public final class MapVisibilityPass {
     public static MapVisibilityPass over(SectorAPI sector, MapVisibilityRules rules) {
 
         return new MapVisibilityPass(
-            new SystemColoniesIndex(sector),
+            new SectorPassIndex(sector),
             VisibleStars.scan(sector),
             rules);
     }
@@ -106,12 +106,12 @@ public final class MapVisibilityPass {
     }
 
     /**
-     * The colony index this pass walks each system through.
+     * The reading of the sector this pass answers out of - its systems, and the colonies in each.
      *
      * @return the index, so a reader needing something of its own off the same walk can open it
      */
-    public SystemColoniesIndex colonies() {
-        return colonies;
+    public SectorPassIndex sectorIndex() {
+        return sectorIndex;
     }
 
     /**
@@ -144,7 +144,7 @@ public final class MapVisibilityPass {
      * @return the sector; null when the pass was opened over none
      */
     public SectorAPI sector() {
-        return colonies.getSector();
+        return sectorIndex.getSector();
     }
 
     /**
@@ -185,7 +185,7 @@ public final class MapVisibilityPass {
     public boolean isRevealedDecivilised(StarSystemAPI system) {
 
         for (var colony : colonyKnowledge
-                .readInhabitingColonies(colonies.readColoniesIn(system))) {
+                .readInhabitingColonies(sectorIndex.readColoniesIn(system))) {
 
             if (colonyKnowledge.readKindOf(colony) == ColonyKind.UNGOVERNED_COLONY) {
                 return true;
@@ -209,6 +209,6 @@ public final class MapVisibilityPass {
      */
     public boolean isSystemInhabited(StarSystemAPI system) {
 
-        return colonyKnowledge.hasInhabitingColony(colonies.readColoniesIn(system));
+        return colonyKnowledge.hasInhabitingColony(sectorIndex.readColoniesIn(system));
     }
 }

@@ -105,7 +105,7 @@ public record PoliticalMapSectorSnapshot(
             // from too: membership asks it whether anybody lives here, the dominance rule ranks
             // the footprints it weighs out of it. A null economy (early load) reads as no colonies
             // rather than faulting.
-            var systemColonies = pass.colonies().readColoniesIn(system);
+            var systemColonies = pass.sectorIndex().readColoniesIn(system);
 
             // Taken off the pass rather than read again: membership folds the ruin in and cannot
             // report it, but the fingerprint needs it on its own to salt a drawn system's

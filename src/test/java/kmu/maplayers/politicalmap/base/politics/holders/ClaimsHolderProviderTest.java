@@ -4,7 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
@@ -184,7 +184,7 @@ final class ClaimsHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var pass = HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity());
-            var openedOver = new ArrayList<SystemColoniesIndex>();
+            var openedOver = new ArrayList<SectorPassIndex>();
 
             var provider = new ClaimsHolderProvider((visibility, colonies) -> {
                 openedOver.add(colonies);
@@ -200,7 +200,7 @@ final class ClaimsHolderProviderTest {
                 provider.resolveHolder(pass, null);
 
                 assertThat(openedOver)
-                    .containsExactly(pass.colonies());
+                    .containsExactly(pass.sectorIndex());
             }
         }
 

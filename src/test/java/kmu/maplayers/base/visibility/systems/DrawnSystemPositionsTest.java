@@ -135,7 +135,7 @@ class DrawnSystemPositionsTest {
 
             var counts = RecordedCapture
                 .recordWhile(new RecordingProfiler(() -> FIXED_CLOCK_NANOS), () -> {
-                    pass.colonies().readSystemsById();
+                    pass.sectorIndex().readSystemsById();
                     DrawnSystemPositions.collectLivePositions(pass);
                 })
                 .findNode(ProfileSection.UNSCOPED_COUNTS.getName());

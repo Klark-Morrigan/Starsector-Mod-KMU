@@ -5,7 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
-import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.text.KmlibStrings;
@@ -63,16 +63,20 @@ public final class HolderPass {
     // repeated was the projection and the folds over it - cheap each, and paid for the whole sector
     // over again per reader.
     //
-    // Keyed by system id on the same terms the colony index is, and for the same reason: an
-    // unkeyable system is resolved afresh rather than pooled with every other under a shared key.
+    // Keyed by system id, which does not tell every system apart: a sector holds several under one
+    // id, and this pools each such pair into one entry that hands the first system's blocs to the
+    // second. The reading beneath already separates them by key, so the two disagree about what one
+    // system is - a defect owed a fix here, not a property of the memo worth keeping.
+    //
+    // An unkeyable system is resolved afresh rather than pooled with every other under a shared key.
     private final Map<String, SystemHabitation> habitationBySystemId = new HashMap<>();
 
     private final ColonyKnowledge colonyKnowledge;
     private final HolderGrouping grouping;
-    private final SystemColoniesIndex colonies;
+    private final SectorPassIndex sectorIndex;
 
     /**
-     * Opens a pass over an already-built colony index.
+     * Opens a pass over an already-built reading of the sector.
      *
      * <p>The rule is required on the same terms the grouping and the walk are: a pass is opened
      * where a rebuild begins, from a value the opener already holds, so a null is a fault at that
@@ -83,23 +87,23 @@ public final class HolderPass {
      *                         compares them; the identity grouping resolves the plain faction view
      * @param colonyVisibility the rule every read through this pass shows colonies under - the dev
      *                         reveal, and the gates holding back what a bare fog would leak
-     * @param colonies         the pass's one walk of each system, shared by every read made
+     * @param sectorIndex      the pass's one reading of the sector, shared by every read made
      *                         through it
      */
     public HolderPass(
             HolderGrouping grouping,
             ColonyVisibility colonyVisibility,
-            SystemColoniesIndex colonies) {
+            SectorPassIndex sectorIndex) {
 
         Objects.requireNonNull(colonyVisibility, "colonyVisibility");
 
         this.grouping = Objects.requireNonNull(grouping, "grouping");
-        this.colonies = Objects.requireNonNull(colonies, "colonies");
+        this.sectorIndex = Objects.requireNonNull(sectorIndex, "sectorIndex");
 
         // The rule is paired with the sector's sighting register here, which is the one point at
         // which both are in hand: the index names the sector, and a projection asked of a colony
         // set later would have nowhere to read what has been observed from.
-        this.colonyKnowledge = ColonyKnowledge.over(colonies.getSector(), colonyVisibility);
+        this.colonyKnowledge = ColonyKnowledge.over(sectorIndex.getSector(), colonyVisibility);
     }
 
     /**
@@ -121,7 +125,7 @@ public final class HolderPass {
         return new HolderPass(
             grouping,
             colonyVisibility,
-            new SystemColoniesIndex(sector));
+            new SectorPassIndex(sector));
     }
 
     /**
@@ -169,12 +173,12 @@ public final class HolderPass {
     }
 
     /**
-     * The colony index this pass walks each system through.
+     * The reading of the sector this pass answers out of - its systems, and the colonies in each.
      *
      * @return the index, so a reader needing to open something of its own over the same walk can
      */
-    public SystemColoniesIndex colonies() {
-        return colonies;
+    public SectorPassIndex sectorIndex() {
+        return sectorIndex;
     }
 
     /**
@@ -188,7 +192,7 @@ public final class HolderPass {
      * @return a reader answering off this pass, to be discarded with it
      */
     public ClaimReader openClaimReaderThrough(ClaimReaderSource claimReaderSource) {
-        return claimReaderSource.openReaderOver(colonyKnowledge, colonies);
+        return claimReaderSource.openReaderOver(colonyKnowledge, sectorIndex);
     }
 
     /**
@@ -197,7 +201,7 @@ public final class HolderPass {
      * @return the sector; null when the pass was opened over none
      */
     public SectorAPI sector() {
-        return colonies.getSector();
+        return sectorIndex.getSector();
     }
 
     /**
@@ -241,7 +245,7 @@ public final class HolderPass {
      * @return the system's colony set
      */
     public Colonies readColoniesIn(StarSystemAPI system) {
-        return colonies.readColoniesIn(system);
+        return sectorIndex.readColoniesIn(system);
     }
 
     /**

@@ -98,6 +98,6 @@ final class PoliticalMapBoxReads {
 
         var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
 
-        return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.colonies());
+        return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.sectorIndex());
     }
 }
