@@ -77,7 +77,7 @@ public final class ViewerSettingsPanel {
     private static final String INTERCONTINENTAL_BRIDGES = "showIntercontinentalBridges";
     private static final String INTERCONTINENTAL_FILL = "showIntercontinentalFill";
     private static final String INTERCONTINENTAL_SHORES = "showIntercontinentalShores";
-    private static final String INTERCONTINENTAL_SHORE_FILL = "showIntercontinentalShoreFill";
+    private static final String INTERCONTINENTAL_ENCLOSED_FILL = "showIntercontinentalEnclosedFill";
 
     // One name switch per kind of piece, under the layer that shuts that kind in.
     private static final String PUDDLE_NAMES = "showContinentPuddleNames";
@@ -804,7 +804,7 @@ public final class ViewerSettingsPanel {
                 "intercontinentalBridges",
                 "Intercontinental bridges",
                 INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES,
-                INTERCONTINENTAL_SHORE_FILL, INTERCONTINENTAL_NAMES),
+                INTERCONTINENTAL_ENCLOSED_FILL, INTERCONTINENTAL_NAMES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_BRIDGES, "Bridges", false,
                 on -> settings.showIntercontinentalBridges = on)),
@@ -820,11 +820,11 @@ public final class ViewerSettingsPanel {
                 INTERCONTINENTAL_SHORES, "Coastline", false,
                 on -> settings.showIntercontinentalShores = on)),
 
-            // Under the coastline it belongs to rather than beside the link fill, because what
-            // it answers for is that line: it is the water the stretch above shut in.
+            // Last of the branch, because it is defined by what the rest leave: the water the
+            // links enclose that no other layer paints.
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                INTERCONTINENTAL_SHORE_FILL, "Coastline fill", false,
-                on -> settings.showIntercontinentalShoreFill = on)),
+                INTERCONTINENTAL_ENCLOSED_FILL, "Enclosed water", false,
+                on -> settings.showIntercontinentalEnclosedFill = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_NAMES, "Names", false,
                 on -> settings.showIntercontinentalNames = on)));
@@ -861,7 +861,7 @@ public final class ViewerSettingsPanel {
                 "everyFill",
                 "Fill",
                 LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL,
-                INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORE_FILL),
+                INTERCONTINENTAL_FILL, INTERCONTINENTAL_ENCLOSED_FILL),
             ToggleTree.Row.ofRollUp(
                 1,
                 "everyName",

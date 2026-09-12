@@ -50,6 +50,9 @@ final class SectorPipeline {
     // trace, the spans and the links below are one answer each however many suites ask.
     private static final Map<String, BridgedContinents> LAYINGS = new ConcurrentHashMap<>();
 
+    // One inventory per sector and shaping, since a layer costs a walk and several suites ask.
+    private static final Map<String, FilledWater> WATER = new ConcurrentHashMap<>();
+
     private SectorPipeline() {
     }
 
@@ -106,6 +109,30 @@ final class SectorPipeline {
      */
     static List<CellGap> layLinks(String sector) {
         return layContinents(sector).layLinks();
+    }
+
+    /**
+     * The whole laying for one sector, for a suite that needs more of it than one search.
+     *
+     * @param sector which sector
+     * @return the laying, opened once
+     */
+    static BridgedContinents layContinentsIn(String sector) {
+        return layContinents(sector);
+    }
+
+    /**
+     * The water the construction fills, with every site unowned so the shapes are the subject.
+     *
+     * @param sector  which sector
+     * @param shaping whether to ask of the map as drawn or of the void's true extent
+     * @return the water, opened once per sector and shaping
+     */
+    static FilledWater fillWater(String sector, VoidPockets.PocketShaping shaping) {
+
+        return WATER.computeIfAbsent(sector + shaping, whichever ->
+            layContinents(sector).fillWater(
+                CoastPockets.markEverySiteUnowned(loadFixture(sector).getSites()), shaping));
     }
 
     /**

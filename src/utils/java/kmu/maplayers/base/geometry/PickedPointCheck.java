@@ -449,7 +449,7 @@ public final class PickedPointCheck {
             new String[] {"puddle", describeHit(water.collectPuddleWater(), pick)},
             new String[] {"link", describeHit(water.collectLinkWater(), pick)},
             new String[] {
-                "linked shore", describeHit(water.collectLinkedShoreWater(), pick)},
+                "linked shore", describeHit(water.collectLinkedSectorWater(), pick)},
             new String[] {"margin", describeMarginHolding(water.collectLakeMargins(), pick)});
 
         var holding = new ArrayList<String>();

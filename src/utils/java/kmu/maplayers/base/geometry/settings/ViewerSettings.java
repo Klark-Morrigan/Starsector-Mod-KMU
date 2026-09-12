@@ -262,11 +262,12 @@ public final class ViewerSettings {
     public boolean showIntercontinentalFill;
     public boolean showIntercontinentalShores;
 
-    // The water behind that coastline, which is a different claim from the fill above: that one
-    // is how much of the sector a run of links took in, this one is what the line they made now
-    // encloses. Its own switch for the reason the shores have one - the two are read together,
-    // and a line with nothing painted inside it is the state this exists to end.
-    public boolean showIntercontinentalShoreFill;
+    // The water the sector encloses once the links are laid that no other layer paints. A link
+    // closes basins between two continents that neither closed alone, and most of the boundary a
+    // reader sees round one is continent coastline that was always drawn - so a line with open
+    // void inside it is the state this ends. Kept clear of every layer above rather than laid
+    // over them, so switching it on shows what it alone is for.
+    public boolean showIntercontinentalEnclosedFill;
 
     // Whether each piece of void has its name written across it, one switch per kind of piece.
     // A kind is the layer that shut the piece in, so these sit one under each layer above: a
@@ -477,7 +478,7 @@ public final class ViewerSettings {
                 || showIntercontinentalBridges
                 || showIntercontinentalFill
                 || showIntercontinentalShores
-                || showIntercontinentalShoreFill);
+                || showIntercontinentalEnclosedFill);
     }
 
     /**

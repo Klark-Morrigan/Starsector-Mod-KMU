@@ -36,7 +36,7 @@ public final class FilledWater {
     private List<List<double[]>> lakeWater;
     private List<List<double[]>> puddleWater;
     private List<List<double[]>> linkWater;
-    private List<List<double[]>> linkedShoreWater;
+    private List<List<double[]>> linkedSectorWater;
     private List<LakeMargin> lakeMargins;
 
     FilledWater(
@@ -159,26 +159,26 @@ public final class FilledWater {
     }
 
     /**
-     * The water behind the coastline the links added.
+     * The water the sector encloses once the links are laid, that no layer above paints.
      *
-     * <p>Apart from the link fill above, because the two are different claims about the same
-     * corner of the map: that one is how much of the sector a run of links took in, this one is
-     * what the coastline they made now encloses. A reader judging either wants the other out of
-     * the way.
+     * <p>Last of the layers, and the only one defined by the others: what it adds is exactly the
+     * water the drawn map closes round and nobody had filled. A pocket any layer above touches is
+     * dropped whole, so the seven stay disjoint - which is what lets a reader switch this one on
+     * and see what it alone is for rather than a second copy of the coast fill.
      *
-     * @return one ring per pocket a new stretch of shore closed
+     * @return one ring per pocket the drawn map encloses and nothing else fills
      */
-    public List<List<double[]>> collectLinkedShoreWater() {
+    public List<List<double[]>> collectLinkedSectorWater() {
 
-        if (linkedShoreWater == null) {
+        if (linkedSectorWater == null) {
 
-            linkedShoreWater = LinkedShorePockets.findLinkedShorePockets(
+            linkedSectorWater = LinkedSectorPockets.findUnpaintedPockets(
                 laid.traceLinkedCoasts(),
-                laid.traceLinkedShores(),
+                gatherPaintedWater(),
                 ownerBySite,
                 new VoidPockets.PocketRules(laid.parameters(), shaping));
         }
-        return linkedShoreWater;
+        return linkedSectorWater;
     }
 
     /**
@@ -209,6 +209,21 @@ public final class FilledWater {
      */
     public VoidPockets.PocketShaping shaping() {
         return shaping;
+    }
+
+    // What the layers above already cover. The lake margins are left out: a margin is a band with
+    // its middle deliberately bare, and counted here it would refuse every pocket that fills one.
+    private List<List<double[]>> gatherPaintedWater() {
+
+        var rings = new ArrayList<List<double[]>>();
+
+        rings.addAll(collectShoreWater());
+        rings.addAll(collectInletWater());
+        rings.addAll(collectLakeWater());
+        rings.addAll(collectPuddleWater());
+        rings.addAll(collectLinkWater());
+
+        return rings;
     }
 
     // What one set of spans shut in, with those spans as the only walls. Only what a span

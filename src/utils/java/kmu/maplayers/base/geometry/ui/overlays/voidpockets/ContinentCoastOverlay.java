@@ -307,8 +307,8 @@ public final class ContinentCoastOverlay {
         if (settings.showIntercontinentalFill) {
             sheet.addRings(water.collectLinkWater());
         }
-        if (settings.showIntercontinentalShoreFill) {
-            sheet.addRings(water.collectLinkedShoreWater());
+        if (settings.showIntercontinentalEnclosedFill) {
+            sheet.addRings(water.collectLinkedSectorWater());
         }
 
         // Last, and the one layer that takes water back OUT of the sheet: a lake's open middle
@@ -332,7 +332,7 @@ public final class ContinentCoastOverlay {
         return settings.showIntercontinentalBridges
             || settings.showIntercontinentalFill
             || settings.showIntercontinentalShores
-            || settings.showIntercontinentalShoreFill;
+            || settings.showIntercontinentalEnclosedFill;
     }
 
     // The stretches a span was allowed to anchor on, read off the same trace the spans are
