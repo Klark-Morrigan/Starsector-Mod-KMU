@@ -181,7 +181,8 @@ much of the framework is measured sits in the same settings section, and nothing
 reach it. The refresh may make one traversal of the sector per call - the
 rule the framework's indexes exist to keep, so a second walk is a pass that went looking for the
 sector rather than asking for what had already been gathered. That one traversal is the pass's own
-systems-by-id index: the cell sites and the band bake's system lookups both come off it, either
+index of the sector's systems by `SystemKey`: the cell sites come off it, and the band bake's
+lookups by bare id are addressed off those same systems rather than off a walk of their own, either
 being enough on its own to put a rebuild over the bound if it indexed the sector for itself. A
 broken bound marks the row, keeps the call that broke it as the row's kept call whatever it took -
 which the report then names as the latest breach rather than as the row's worst - and is written to

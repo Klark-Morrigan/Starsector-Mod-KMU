@@ -1,10 +1,8 @@
 package kmu.maplayers.base.visibility.systems;
 
-import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
@@ -15,6 +13,7 @@ import kmlib.starsector.SectorWalkCounters;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import org.junit.jupiter.api.Nested;
@@ -51,11 +50,13 @@ class DrawnSystemPositionsTest {
     private static final MapVisibilityRules FORCED_ONTO_MAP =
         new MapVisibilityRules(BASE_FOG, true);
 
-    // The size the staged colony carries. Nothing the drawn-set rule reads weighs a colony,
-    // so a case varying this would vary nothing it can see.
-    private static final int COLONY_SIZE = 5;
-
     private static final String OWNING_FACTION = "hegemony";
+
+    // The keys of the two systems the sector lists under one id. Written out rather than read off
+    // the systems they belong to, an expectation taken from the code under test being no
+    // expectation at all.
+    private static final SystemKey THE_FIRST_DEEP_SPACE = new SystemKey("deep space", "", "8b3");
+    private static final SystemKey THE_SECOND_DEEP_SPACE = new SystemKey("deep space", "", "38d53");
 
     // Nothing about a traversal count is a duration, so one reading answers every clock read.
     private static final long FIXED_CLOCK_NANOS = 0L;
@@ -96,17 +97,13 @@ class DrawnSystemPositionsTest {
             // - vanilla's own deep space among them - and a point cloud gathered under ids is short
             // a site for each, which draws as a system with no cell on a map that cells every
             // neighbour it has.
-            var sector = buildSectorHolding(
-                buildKeyedSystemAt("deep space", "8b3", 3f, 4f),
-                buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
-
-            var positions = collectPositionsUnder(sector, FORCED_ONTO_MAP);
+            var positions = collectPositionsUnder(
+                buildSectorHoldingTwoSystemsSharingAnId(),
+                FORCED_ONTO_MAP);
 
             assertThat(positions)
-                .containsOnlyKeys(
-                    new SystemKey("deep space", "", "8b3"),
-                    new SystemKey("deep space", "", "38d53"));
-            assertThat(positions.get(new SystemKey("deep space", "", "38d53")))
+                .containsOnlyKeys(THE_FIRST_DEEP_SPACE, THE_SECOND_DEEP_SPACE);
+            assertThat(positions.get(THE_SECOND_DEEP_SPACE))
                 .containsExactly(-5.0, 6.0);
         }
 
@@ -142,7 +139,7 @@ class DrawnSystemPositionsTest {
             var system = buildSystemAt("a", 3f, 4f);
             var sector = buildSectorHolding(system);
 
-            listColonyIn(sector, system, buildOpenColony());
+            listColonyIn(sector, system, ColonyMarketFixture.buildVisibleColony(OWNING_FACTION));
 
             assertThat(collectPositionsUnder(sector, MapVisibilityRules.BASE))
                 .containsOnlyKeys(keyOf("a"));
@@ -177,12 +174,9 @@ class DrawnSystemPositionsTest {
         @Test
         void keysEachDrawnSystemsLivePositionById() {
 
-            var sector = buildSectorHolding(
+            var positions = collectPositionsByIdUnder(buildSectorHolding(
                 buildSystemAt("a", 3f, 4f),
-                buildSystemAt("b", -5f, 6f));
-
-            var positions = DrawnSystemPositions.collectLivePositionsById(
-                MapVisibilityPass.over(sector, FORCED_ONTO_MAP));
+                buildSystemAt("b", -5f, 6f)));
 
             assertThat(positions)
                 .containsOnlyKeys("a", "b");
@@ -195,12 +189,7 @@ class DrawnSystemPositionsTest {
             // What an id address costs, stated where a structure keyed that way takes it: the two
             // systems are one entry, holding the one every other id-keyed read of the sector
             // answers with.
-            var sector = buildSectorHolding(
-                buildKeyedSystemAt("deep space", "8b3", 3f, 4f),
-                buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
-
-            var positions = DrawnSystemPositions.collectLivePositionsById(
-                MapVisibilityPass.over(sector, FORCED_ONTO_MAP));
+            var positions = collectPositionsByIdUnder(buildSectorHoldingTwoSystemsSharingAnId());
 
             assertThat(positions)
                 .containsOnlyKeys("deep space");
@@ -218,6 +207,22 @@ class DrawnSystemPositionsTest {
 
         return DrawnSystemPositions.collectLivePositions(
             MapVisibilityPass.over(sector, visibilityRules));
+    }
+
+    // The same walk taken at the id address. Every case of that read is about the address rather
+    // than the rule, so the force override is fixed here and none of them states it.
+    private static Map<String, double[]> collectPositionsByIdUnder(SectorAPI sector) {
+        return DrawnSystemPositions.collectLivePositionsById(
+            MapVisibilityPass.over(sector, FORCED_ONTO_MAP));
+    }
+
+    // Two systems the sector lists under one id, apart in hyperspace and told apart by their
+    // anchors alone - vanilla's own deep space pair, and the world both addresses answer
+    // differently over.
+    private static SectorAPI buildSectorHoldingTwoSystemsSharingAnId() {
+        return buildSectorHolding(
+            buildKeyedSystemAt("deep space", "8b3", 3f, 4f),
+            buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
     }
 
     // The key a system posed with an id alone carries: a sector states no centre and no anchor for
@@ -294,40 +299,4 @@ class DrawnSystemPositionsTest {
         return system;
     }
 
-    // A discovered, openly held colony - what the habitation read admits, and the one route
-    // onto the map a case here can stage without the force override.
-    private static MarketAPI buildOpenColony() {
-
-        var entityMock = mock(SectorEntityToken.class);
-
-        when(entityMock.isDiscoverable())
-            .thenReturn(false);
-
-        var factionMock = mock(FactionAPI.class);
-
-        when(factionMock.getId())
-            .thenReturn(OWNING_FACTION);
-        // Answered off the faction as the engine answers it: the colony kind read parts an
-        // unowned hulk from a settlement on exactly this question, so leaving it false-by-
-        // default would pose this colony as something else entirely.
-        when(factionMock.isNeutralFaction())
-            .thenReturn(false);
-
-        var marketMock = mock(MarketAPI.class);
-
-        when(marketMock.getFaction())
-            .thenReturn(factionMock);
-        when(marketMock.getFactionId())
-            .thenReturn(OWNING_FACTION);
-        when(marketMock.getSize())
-            .thenReturn(COLONY_SIZE);
-        when(marketMock.isHidden())
-            .thenReturn(false);
-        when(marketMock.isPlanetConditionMarketOnly())
-            .thenReturn(false);
-        when(marketMock.getPrimaryEntity())
-            .thenReturn(entityMock);
-
-        return marketMock;
-    }
 }

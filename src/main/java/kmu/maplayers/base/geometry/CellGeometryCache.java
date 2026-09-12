@@ -101,9 +101,7 @@ public final class CellGeometryCache {
      * cell built around its old position.
      */
     public void clearCachedCells() {
-        siteBySystemId.clear();
-        cellEdgesByCellId.clear();
-        systemIdByCellId.clear();
+        dropEveryCachedCell();
         lastSeedInputs = null;
     }
 
@@ -221,10 +219,16 @@ public final class CellGeometryCache {
         if (seedInputs.equals(lastSeedInputs)) {
             return;
         }
+        dropEveryCachedCell();
+        lastSeedInputs = seedInputs;
+    }
+
+    // The three structures a cell lives in, emptied together. They are written in lockstep, so a
+    // caller clearing two of them would leave the partition describing cells it no longer holds.
+    private void dropEveryCachedCell() {
         siteBySystemId.clear();
         cellEdgesByCellId.clear();
         systemIdByCellId.clear();
-        lastSeedInputs = seedInputs;
     }
 
     // Which systems entered and which left the partition since the cells were last cut. A system
