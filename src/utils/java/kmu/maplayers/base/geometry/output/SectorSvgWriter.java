@@ -242,6 +242,7 @@ public final class SectorSvgWriter {
         bodies.addAll(water.collectLakeWater());
         bodies.addAll(water.collectPuddleWater());
         bodies.addAll(water.collectLinkWater());
+        bodies.addAll(water.collectLinkedShoreWater());
 
         for (var margin : water.collectLakeMargins()) {
 

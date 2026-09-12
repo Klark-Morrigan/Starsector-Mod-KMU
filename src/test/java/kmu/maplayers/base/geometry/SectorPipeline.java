@@ -109,6 +109,26 @@ final class SectorPipeline {
     }
 
     /**
+     * The sector traced again with the links laid, which is what the linked shore is cut from.
+     *
+     * @param sector which sector
+     * @return the second trace, laid once
+     */
+    static Coastlines.TracedCoasts traceLinkedCoasts(String sector) {
+        return layContinents(sector).traceLinkedCoasts();
+    }
+
+    /**
+     * The stretches of coastline the links added, as the map strokes them.
+     *
+     * @param sector which sector
+     * @return the runs, cut once
+     */
+    static List<List<double[]>> traceLinkedShores(String sector) {
+        return layContinents(sector).traceLinkedShores();
+    }
+
+    /**
      * The coasts with every wall the construction lays, as the pieces of void are named off.
      *
      * @param sector which sector

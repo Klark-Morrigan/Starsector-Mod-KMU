@@ -5,7 +5,6 @@ import kmu.maplayers.base.geometry.CellGap;
 import kmu.maplayers.base.geometry.CoastFrontages;
 import kmu.maplayers.base.geometry.CoastRounding;
 import kmu.maplayers.base.geometry.FilledWater;
-import kmu.maplayers.base.geometry.IntercontinentalCoasts;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillSheet;
 import kmu.maplayers.base.geometry.render.MapLook;
@@ -164,11 +163,7 @@ public final class ContinentCoastOverlay {
             // under its own switch rather than found alongside the links.
             if (settings.showIntercontinentalShores) {
 
-                linkShores = IntercontinentalCoasts.findLinkedShores(
-                    coast.getTrace(),
-                    links,
-                    settings.parameters,
-                    settings.resolveContinentCoastRules());
+                linkShores = laid.traceLinkedShores();
             }
         }
     }
@@ -312,6 +307,9 @@ public final class ContinentCoastOverlay {
         if (settings.showIntercontinentalFill) {
             sheet.addRings(water.collectLinkWater());
         }
+        if (settings.showIntercontinentalShoreFill) {
+            sheet.addRings(water.collectLinkedShoreWater());
+        }
 
         // Last, and the one layer that takes water back OUT of the sheet: a lake's open middle
         // stays bare unless the spans' pockets fill it, which is what the two layers each mean
@@ -333,7 +331,8 @@ public final class ContinentCoastOverlay {
 
         return settings.showIntercontinentalBridges
             || settings.showIntercontinentalFill
-            || settings.showIntercontinentalShores;
+            || settings.showIntercontinentalShores
+            || settings.showIntercontinentalShoreFill;
     }
 
     // The stretches a span was allowed to anchor on, read off the same trace the spans are

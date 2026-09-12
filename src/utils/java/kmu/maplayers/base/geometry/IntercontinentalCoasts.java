@@ -78,38 +78,23 @@ public final class IntercontinentalCoasts {
     /**
      * Finds the coastline the links added.
      *
-     * @param traced     the continent coasts as they are drawn, which are what the second trace
-     *                   is cut against and which carry the sites both are walked over
-     * @param links      the links, as {@link IntercontinentalBridges} laid them
-     * @param parameters the knobs the cells are built under
-     * @param rules      the knobs the coast is traced under, which have to be the ones the drawn
-     *                   line was traced under: two coasts smoothed differently agree nowhere,
-     *                   and the cut would then keep the whole sector
+     * @param traced the continent coasts as they are drawn, which are what the second trace is
+     *               cut against
+     * @param linked the sector traced again with the links laid, which has to have been traced
+     *               under the same rules as the drawn line: two coasts smoothed differently
+     *               agree nowhere, and the cut would then keep the whole sector
      * @return one open run per stretch no drawn coastline carries. A ring the drawn coasts have
      *         no point of at all comes back whole, ending where it began
      */
     public static List<List<double[]>> findLinkedShores(
             Coastlines.TracedCoasts traced,
-            List<CellGap> links,
-            SectorGeometryParameters parameters,
-            Coastlines.CoastRules rules) {
+            Coastlines.TracedCoasts linked) {
 
-        if (links.isEmpty()) {
+        // Nothing was laid, so the second trace is the first and every stretch of it is already
+        // drawn.
+        if (linked == traced) {
             return List.of();
         }
-
-        // The links laid as walls, pinched on every cell whose whole frontage is one point: the
-        // walk then runs the border up to the anchor there instead of stopping a channel short
-        // of it. The same walls the link fill is laid against, or the two would meet the cell
-        // in different places.
-        var linked = Coastlines.traceCoastsAcrossWalls(
-            traced.union().sites(),
-            parameters,
-            rules,
-            new DiscUnionBoundary.Walls(
-                DiscUnionBoundary.buildChordsFrom(links),
-                parameters.borderInset(),
-                CoastFrontages.collectPinchedCells(traced)));
 
         // Every line the first trace drew, since all of them are already on the map: a stretch
         // this pass would lay over a lake shore is as duplicated as one over an outer coast.

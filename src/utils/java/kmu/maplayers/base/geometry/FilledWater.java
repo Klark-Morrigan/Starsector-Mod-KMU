@@ -36,6 +36,7 @@ public final class FilledWater {
     private List<List<double[]>> lakeWater;
     private List<List<double[]>> puddleWater;
     private List<List<double[]>> linkWater;
+    private List<List<double[]>> linkedShoreWater;
     private List<LakeMargin> lakeMargins;
 
     FilledWater(
@@ -155,6 +156,29 @@ public final class FilledWater {
                 new VoidPockets.PocketRules(laid.parameters(), shaping));
         }
         return linkWater;
+    }
+
+    /**
+     * The water behind the coastline the links added.
+     *
+     * <p>Apart from the link fill above, because the two are different claims about the same
+     * corner of the map: that one is how much of the sector a run of links took in, this one is
+     * what the coastline they made now encloses. A reader judging either wants the other out of
+     * the way.
+     *
+     * @return one ring per pocket a new stretch of shore closed
+     */
+    public List<List<double[]>> collectLinkedShoreWater() {
+
+        if (linkedShoreWater == null) {
+
+            linkedShoreWater = LinkedShorePockets.findLinkedShorePockets(
+                laid.traceLinkedCoasts(),
+                laid.traceLinkedShores(),
+                ownerBySite,
+                new VoidPockets.PocketRules(laid.parameters(), shaping));
+        }
+        return linkedShoreWater;
     }
 
     /**

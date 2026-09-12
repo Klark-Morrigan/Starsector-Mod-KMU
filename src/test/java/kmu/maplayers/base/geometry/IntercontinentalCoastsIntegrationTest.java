@@ -19,6 +19,7 @@ import static kmu.maplayers.base.geometry.SectorPipeline.PARAMETERS;
 import static kmu.maplayers.base.geometry.SectorPipeline.layLinks;
 import static kmu.maplayers.base.geometry.SectorPipeline.loadFixture;
 import static kmu.maplayers.base.geometry.SectorPipeline.traceContinentCoast;
+import static kmu.maplayers.base.geometry.SectorPipeline.traceLinkedCoasts;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -347,8 +348,6 @@ class IntercontinentalCoastsIntegrationTest {
         return SHORES.computeIfAbsent(sector, named ->
             IntercontinentalCoasts.findLinkedShores(
                 traceContinentCoast(named),
-                layLinks(named),
-                PARAMETERS,
-                COAST_RULES));
+                traceLinkedCoasts(named)));
     }
 }

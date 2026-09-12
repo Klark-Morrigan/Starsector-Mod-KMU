@@ -17,7 +17,7 @@ import java.util.Locale;
  *
  * <p>The bridge between what a reader sees and what the layers think they drew. A patch of
  * black raises one question - who was supposed to draw this - and answering it by eye means
- * guessing which of six layers owns the spot, at which of two reaches, and whether the void
+ * guessing which of seven layers owns the spot, at which of two reaches, and whether the void
  * there is enclosed at all. Each of those is one column here.
  *
  * <p>Driven by the log the window writes rather than by a list kept in the source, so a fresh
@@ -34,7 +34,7 @@ public final class PickedPointCheck {
     private static final int NOTHING_HOLDS_IT = -1;
 
     // What a layer answers when none of its rings holds the point, so the layers that do can
-    // be picked out of the six by comparing against one word rather than six.
+    // be picked out by comparing against one word rather than against each in turn.
     private static final String NO_HIT = "no";
 
     // How many ways out to try, how big a stride to take, and how far counts as out. The
@@ -448,6 +448,8 @@ public final class PickedPointCheck {
             new String[] {"lake", describeHit(water.collectLakeWater(), pick)},
             new String[] {"puddle", describeHit(water.collectPuddleWater(), pick)},
             new String[] {"link", describeHit(water.collectLinkWater(), pick)},
+            new String[] {
+                "linked shore", describeHit(water.collectLinkedShoreWater(), pick)},
             new String[] {"margin", describeMarginHolding(water.collectLakeMargins(), pick)});
 
         var holding = new ArrayList<String>();

@@ -51,6 +51,8 @@ public final class BridgedContinents {
     private List<CellGap> lakeSpans;
     private List<CellGap> puddleSpans;
     private List<CellGap> links;
+    private Coastlines.TracedCoasts linked;
+    private List<List<double[]>> linkedShores;
     private LaidCoast walled;
 
     private BridgedContinents(
@@ -230,6 +232,62 @@ public final class BridgedContinents {
                 traceCoasts(), layInletSpans(), parameters, bridgeRules);
         }
         return links;
+    }
+
+    /**
+     * The sector traced a second time with the links laid as walls.
+     *
+     * <p>What the links made drawable, before anything is read off it: the isthmus each link
+     * becomes, the island a link takes out of the void, and the outer silhouette closing round
+     * the pair of continents a run of them joins.
+     *
+     * <p>Kept here rather than made where it is read, because two readers want it - the shore
+     * the map strokes and the water behind that shore - and a second trace of a whole sector is
+     * the most expensive thing either of them does. Traced apart from it, the two would also be
+     * free to lay the links under different rules and answer about different maps.
+     *
+     * @return the second trace, or the first where no link was laid and there is nothing for a
+     *         second one to differ about
+     */
+    public Coastlines.TracedCoasts traceLinkedCoasts() {
+
+        if (linked == null) {
+
+            linked = layLinks().isEmpty()
+                ? traceCoasts()
+                : Coastlines.traceCoastsAcrossWalls(
+                    sites,
+                    parameters,
+                    coastRules,
+                    // Pinched on every cell whose whole frontage is one point, so the walk runs
+                    // the border up to the anchor there instead of stopping a channel short of
+                    // it - the same walls the link fill is laid against, or the two would meet
+                    // the cell in different places.
+                    new DiscUnionBoundary.Walls(
+                        DiscUnionBoundary.buildChordsFrom(layLinks()),
+                        parameters.borderInset(),
+                        CoastFrontages.collectPinchedCells(traceCoasts())));
+        }
+        return linked;
+    }
+
+    /**
+     * The stretches of coastline the links added, as the map strokes them.
+     *
+     * <p>Kept beside the trace they are cut from, because the line and the water behind it are
+     * one decision: the fill keeps exactly the pockets one of these runs along, so a second
+     * cutting of the same trace could stroke one line and fill behind another.
+     *
+     * @return one open run per stretch no continent coast already carries
+     */
+    public List<List<double[]>> traceLinkedShores() {
+
+        if (linkedShores == null) {
+
+            linkedShores = IntercontinentalCoasts.findLinkedShores(
+                traceCoasts(), traceLinkedCoasts());
+        }
+        return linkedShores;
     }
 
     /**

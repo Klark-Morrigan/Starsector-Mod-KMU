@@ -153,6 +153,9 @@ public final class UndrawnVoid {
         for (var outline : water.collectLinkWater()) {
             fills.add(BoxedFill.boxFill(outline));
         }
+        for (var outline : water.collectLinkedShoreWater()) {
+            fills.add(BoxedFill.boxFill(outline));
+        }
         for (var margin : water.collectLakeMargins()) {
             fills.add(BoxedFill.boxMargin(margin.waterEdge(), margin.drawnShore()));
         }

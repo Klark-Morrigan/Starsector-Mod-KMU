@@ -262,6 +262,12 @@ public final class ViewerSettings {
     public boolean showIntercontinentalFill;
     public boolean showIntercontinentalShores;
 
+    // The water behind that coastline, which is a different claim from the fill above: that one
+    // is how much of the sector a run of links took in, this one is what the line they made now
+    // encloses. Its own switch for the reason the shores have one - the two are read together,
+    // and a line with nothing painted inside it is the state this exists to end.
+    public boolean showIntercontinentalShoreFill;
+
     // Whether each piece of void has its name written across it, one switch per kind of piece.
     // A kind is the layer that shut the piece in, so these sit one under each layer above: a
     // reader judging that layer's water wants its names and no other's, and a map with every
@@ -470,7 +476,8 @@ public final class ViewerSettings {
                 || showContinentLakePocketFill
                 || showIntercontinentalBridges
                 || showIntercontinentalFill
-                || showIntercontinentalShores);
+                || showIntercontinentalShores
+                || showIntercontinentalShoreFill);
     }
 
     /**

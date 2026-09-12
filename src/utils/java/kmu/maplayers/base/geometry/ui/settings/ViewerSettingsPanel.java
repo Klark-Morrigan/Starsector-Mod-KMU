@@ -77,6 +77,7 @@ public final class ViewerSettingsPanel {
     private static final String INTERCONTINENTAL_BRIDGES = "showIntercontinentalBridges";
     private static final String INTERCONTINENTAL_FILL = "showIntercontinentalFill";
     private static final String INTERCONTINENTAL_SHORES = "showIntercontinentalShores";
+    private static final String INTERCONTINENTAL_SHORE_FILL = "showIntercontinentalShoreFill";
 
     // One name switch per kind of piece, under the layer that shuts that kind in.
     private static final String PUDDLE_NAMES = "showContinentPuddleNames";
@@ -803,7 +804,7 @@ public final class ViewerSettingsPanel {
                 "intercontinentalBridges",
                 "Intercontinental bridges",
                 INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES,
-                INTERCONTINENTAL_NAMES),
+                INTERCONTINENTAL_SHORE_FILL, INTERCONTINENTAL_NAMES),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_BRIDGES, "Bridges", false,
                 on -> settings.showIntercontinentalBridges = on)),
@@ -818,6 +819,12 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_SHORES, "Coastline", false,
                 on -> settings.showIntercontinentalShores = on)),
+
+            // Under the coastline it belongs to rather than beside the link fill, because what
+            // it answers for is that line: it is the water the stretch above shut in.
+            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                INTERCONTINENTAL_SHORE_FILL, "Coastline fill", false,
+                on -> settings.showIntercontinentalShoreFill = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
                 INTERCONTINENTAL_NAMES, "Names", false,
                 on -> settings.showIntercontinentalNames = on)));
@@ -854,7 +861,7 @@ public final class ViewerSettingsPanel {
                 "everyFill",
                 "Fill",
                 LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL,
-                INTERCONTINENTAL_FILL),
+                INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORE_FILL),
             ToggleTree.Row.ofRollUp(
                 1,
                 "everyName",
