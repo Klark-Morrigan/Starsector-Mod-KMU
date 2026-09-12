@@ -111,8 +111,10 @@ public final class CoastPockets {
             // the very map that exists to show it.
             //
             // What guards the rule the cut was meant to enforce is a measure, not a clip: no
-            // run of any outline lies outside the drawn coast, on either fixture, at either
-            // shaping.
+            // run of any outline lies outside the coast AT ITS OWN REACH, on either fixture, at
+            // either shaping. The reach is half the statement - a pocket a channel out is
+            // walked against discs a channel wider, and those close straits the cells' own
+            // reach leaves open.
             var outline = hole.boundary();
 
             // A pocket with nothing to draw is still a pocket - it keeps its extent, its span

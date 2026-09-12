@@ -39,6 +39,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>A pocket may legitimately disappear when the coast coarsens: a bay whose mouth the coarser
  * line no longer closes is open sea again, and open sea wants no fill. That is why that check
  * is not "no pocket is lost" but "a lost pocket's water is no longer enclosed".
+ *
+ * <p>The converse fault has its own check: a pocket drawn where there is no water to draw. Both
+ * directions matter to a reader, and neither catches the other - missing fill leaves a hole in
+ * the map, and fill out at sea colours space nothing encloses.
  */
 class CoastPocketsIntegrationTest {
 
@@ -72,6 +76,32 @@ class CoastPocketsIntegrationTest {
     // as a share of the way there. Enough to step off the boundary the corner sits on, and
     // little enough to stay in the corner's own neighbourhood of the water.
     private static final double CORNER_NUDGE_SHARE = 0.05;
+
+    @Nested
+    class FindSpills {
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void noPocketOutlineLiesOutsideTheCoastAtItsOwnReach(String sector) {
+            // The rule the construction states about itself: a pocket is void the coast shut
+            // in, so its outline is inside the coast. Asked at the reach the pocket was walked
+            // at, since a pocket a channel out is walked against discs a channel wider - and
+            // those close every strait narrower than two channels, where the cells' own reach
+            // leaves an opening. Judged across that difference, whole inland seas read as
+            // standing one channel out at sea.
+            var spills = new ArrayList<String>();
+
+            for (var shaping : VoidPockets.PocketShaping.values()) {
+                for (var spill : findSpillsAt(sector, shaping)) {
+                    spills.add(shaping + ": " + spill);
+                }
+            }
+
+            assertThat(spills)
+                .as("%s: pocket outline outside the coast that defines it", sector)
+                .isEmpty();
+        }
+    }
 
     @Nested
     class FindCoastPockets {
@@ -131,6 +161,27 @@ class CoastPocketsIntegrationTest {
                 }
             }
         }
+    }
+
+    // The coast's own pockets measured against the coast at the reach they were walked at.
+    //
+    // Off the shared laying rather than off a coast traced here, so the line judging a pocket
+    // and the line the pocket was built from are the same construction at two reaches.
+    private static List<CoastPocketFaults.Spill> findSpillsAt(
+            String sector,
+            VoidPockets.PocketShaping shaping) {
+        var laying = SectorPipeline.layContinentsIn(sector);
+        var rules = new VoidPockets.PocketRules(PARAMETERS, shaping);
+
+        return CoastPocketFaults.findSpills(
+            CoastPockets.findCoastPockets(
+                laying.traceCoasts(),
+                CoastPockets.markEverySiteUnowned(loadFixture(sector).getSites()),
+                rules),
+            Coastlines.collectCoastOutlines(shaping.isAtTrueExtent()
+                ? laying.traceCoasts()
+                : laying.traceCoastsAtDrawnReach()),
+            rules);
     }
 
     // Every piece of shut-in water inside the coast that the fill owing it does not cover,

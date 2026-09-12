@@ -53,6 +53,7 @@ public final class BridgedContinents {
     private List<CellGap> links;
     private Coastlines.TracedCoasts linked;
     private List<List<double[]>> linkedShores;
+    private Coastlines.TracedCoasts atDrawnReach;
     private LaidCoast walled;
 
     private BridgedContinents(
@@ -288,6 +289,43 @@ public final class BridgedContinents {
                 traceCoasts(), traceLinkedCoasts());
         }
         return linkedShores;
+    }
+
+    /**
+     * The same continents traced at the reach a drawn shape is walked at.
+     *
+     * <p>The line to judge anything built a channel out from the cells against. A void shape
+     * takes the channel by being walked against discs one channel wider, so where a strait is
+     * narrower than two channels the wider discs close it and the cells' own reach does not -
+     * and the basin behind it is enclosed water on one reading and open sea on the other. A
+     * shape measured across that disagreement reads as standing a whole channel out at sea while
+     * sitting exactly where it belongs.
+     *
+     * <p>Traced under this laying's own rules, so it is the same coast at another reach rather
+     * than a second opinion about where the coast runs. The channel is spent on the reach itself
+     * and so is nothing here: a coast holds nothing back from its own line.
+     *
+     * <p>Not the map's line - nothing is drawn from this. What a reader sees is
+     * {@link #traceCoasts()}, and this exists so that a measure can ask about the shapes at the
+     * reach they were built at.
+     *
+     * @return the continents at the drawn reach, traced once and kept
+     */
+    public Coastlines.TracedCoasts traceCoastsAtDrawnReach() {
+
+        if (atDrawnReach == null) {
+
+            atDrawnReach = Coastlines.traceContinentCoasts(
+                sites,
+                new SectorGeometryParameters(
+                    parameters.measureDrawnReach(),
+                    parameters.boundSegments(),
+                    0,
+                    parameters.weldTolerance(),
+                    parameters.miterSpikeLimit()),
+                coastRules);
+        }
+        return atDrawnReach;
     }
 
     /**

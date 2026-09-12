@@ -93,7 +93,7 @@ public final class CoastVoidReport {
             "each crossing as depth/stretches skipped across it (0 = neighbours): %s%n",
             formatAgainstDepth(CoastMeasures.measureCrossingGaps(traced)));
 
-        reportTrappedVoid(laid);
+        reportTrappedVoid(continents);
 
         // Asked of the shaping the viewer opens on, because that is the picture being
         // complained about, and with every site unowned, because a pocket one owner rings is
@@ -109,10 +109,13 @@ public final class CoastVoidReport {
     // nothing has bought no pocket space and is only redrawing the cells' own outline, so the
     // count is the number that says whether the smoothing did the thing it exists to do -
     // and how many of them survive the channel is the number that says they can be drawn.
-    private static void reportTrappedVoid(LaidCoast laid) {
+    private static void reportTrappedVoid(BridgedContinents continents) {
 
+        var laid = continents.layEveryWall();
         var traced = laid.traced();
-        var pockets = findTrappedPockets(laid, VoidPockets.PocketShaping.WITH_CHANNEL);
+        var rules = new VoidPockets.PocketRules(
+            laid.parameters(), VoidPockets.PocketShaping.WITH_CHANNEL);
+        var pockets = findTrappedPockets(laid, rules);
 
         if (pockets.isEmpty()) {
             System.out.println("the coast traps no void at all");
@@ -128,7 +131,7 @@ public final class CoastVoidReport {
 
         reportEachEmptyPocket(pockets);
 
-        var spills = findSpillsOf(laid, pockets);
+        var spills = findSpillsOf(continents, pockets, rules);
 
         System.out.printf(
             Locale.ROOT,
@@ -138,8 +141,8 @@ public final class CoastVoidReport {
 
         System.out.printf(
             Locale.ROOT,
-            "%d runs of pocket outline lie outside the drawn coast, worst by %.0f "
-                + "(has to be 0)%n",
+            "%d runs of pocket outline lie outside the coast at their own reach, worst by "
+                + "%.0f (has to be 0)%n",
             spills.size(),
             spills.isEmpty() ? 0 : spills.get(0).depth());
 
@@ -155,22 +158,25 @@ public final class CoastVoidReport {
             ReportFigures.findPercentile(spans, REPORTED_PERCENTILES[1]),
             ReportFigures.findPercentile(spans, REPORTED_PERCENTILES[2]));
 
-        reportTrappedVoidAtTrueExtent(laid);
+        reportTrappedVoidAtTrueExtent(continents);
     }
 
     // The same void with nothing given up. Reported beside the drawn shaping because the two
     // differ in what they can show: at their true extent the pockets with no room for a
     // channel still have an outline, so a count that falls between the two says the channel
     // closed something over rather than that anything went wrong.
-    private static void reportTrappedVoidAtTrueExtent(LaidCoast laid) {
+    private static void reportTrappedVoidAtTrueExtent(BridgedContinents continents) {
 
-        var pockets = findTrappedPockets(laid, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
-        var spills = findSpillsOf(laid, pockets);
+        var laid = continents.layEveryWall();
+        var rules = new VoidPockets.PocketRules(
+            laid.parameters(), VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+        var pockets = findTrappedPockets(laid, rules);
+        var spills = findSpillsOf(continents, pockets, rules);
 
         System.out.printf(
             Locale.ROOT,
-            "at their true extent: %d pockets, %d of them drawn, %d runs outside the drawn "
-                + "coast, worst by %.0f (has to be 0)%n",
+            "at their true extent: %d pockets, %d of them drawn, %d runs outside the coast at "
+                + "that reach, worst by %.0f (has to be 0)%n",
             pockets.size(),
             countDrawn(pockets),
             spills.size(),
@@ -183,12 +189,12 @@ public final class CoastVoidReport {
     // the SHAPES, which move with a colouring if one is handed in.
     private static List<WalledPocket> findTrappedPockets(
             LaidCoast laid,
-            VoidPockets.PocketShaping shaping) {
+            VoidPockets.PocketRules rules) {
 
         return CoastPockets.findCoastPockets(
             laid.traced(),
             CoastPockets.markEverySiteUnowned(laid.sites()),
-            new VoidPockets.PocketRules(laid.parameters(), shaping));
+            rules);
     }
 
     // Every run of pocket outline lying outside the coast that shut it in - judged against the
@@ -198,12 +204,24 @@ public final class CoastVoidReport {
     // include every pocket the rounding itself stepped inside of. Those are a fault of the
     // rounding radius and not of the construction being reported on, and a report that mixes
     // the two says a coast is wrong wherever the map is merely being tidy.
+    //
+    // And against the border at the pocket's OWN reach. A pocket a channel out is walked
+    // against discs a channel wider, which close every strait narrower than two channels; the
+    // coast at the cells' reach runs down into those straits instead, so the basin behind one
+    // is enclosed water to the pocket and open sea to the line judging it. That disagreement
+    // read as a fill standing a whole channel out at sea, on shapes that were exactly where
+    // they belonged.
     private static List<CoastPocketFaults.Spill> findSpillsOf(
-            LaidCoast laid,
-            List<WalledPocket> pockets) {
+            BridgedContinents continents,
+            List<WalledPocket> pockets,
+            VoidPockets.PocketRules rules) {
 
         return CoastPocketFaults.findSpills(
-            pockets, Coastlines.collectCoastOutlines(laid.traced()));
+            pockets,
+            Coastlines.collectCoastOutlines(rules.shaping().isAtTrueExtent()
+                ? continents.traceCoasts()
+                : continents.traceCoastsAtDrawnReach()),
+            rules);
     }
 
     // How many pockets have anything to draw, which the channel is what decides.

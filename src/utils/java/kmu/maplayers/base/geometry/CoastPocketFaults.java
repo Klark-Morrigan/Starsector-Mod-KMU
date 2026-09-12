@@ -16,6 +16,13 @@ import java.util.Locale;
  * it. So a run of a pocket's outline lying OUTSIDE that line is not a matter of taste - it is
  * void being claimed where there is nothing to claim it.
  *
+ * <p><b>At the reach the pocket was walked at, not at the cells' own.</b> A pocket takes the
+ * channel by being walked against discs one channel wider, and a strait narrower than two
+ * channels is closed by those and open at the cells' reach. Judged against the narrower map, the
+ * whole basin behind such a strait reads as at sea - by exactly one channel, since the outline
+ * hugs the cells - while it is water enclosed by coastline on every side. The caller says which
+ * line it means by handing one in.
+ *
  * <p><b>Against the drawn coast, never against one reach's line.</b> A reach is one straight
  * piece of that coast and its line runs on forever; a pocket closed by a reach at one end and
  * a BRIDGE at the other legitimately lies past that reach's line, out where the bridge shuts
@@ -39,12 +46,6 @@ import java.util.Locale;
  * this one's job is to say whether it managed. One class doing both grades its own work.
  */
 public final class CoastPocketFaults {
-
-    // A pocket closed by a reach of coast runs ALONG that piece of coast for most of its
-    // length, a channel inside it. Only a run that has crossed to the far side is at fault,
-    // and this slack is what stops the sampling of an outline lying flat against the line
-    // reading as a fault every other vertex.
-    private static final double PAST_THE_COAST = 1;
 
     // Two, so a run is something drawable rather than a lone sample. One vertex outside the
     // coast is a rounding at a corner the outline is already turning on.
@@ -151,19 +152,27 @@ public final class CoastPocketFaults {
      * wrong however it got there.
      *
      * @param pockets the pockets, each paired with the reaches that walled it
-     * @param coasts  the drawn coast, as the rings the map puts on screen
+     * @param coasts  the coast at the reach the pockets were walked at, as closed rings. A coast
+     *                traced at another reach answers about a different map: where a strait is
+     *                narrower than two channels, the wider discs close it and the narrower ones
+     *                do not, so the water behind it is enclosed on one reading and open sea on
+     *                the other
+     * @param rules   the knobs and shaping the pockets were built under, which say what reach
+     *                their outlines lie on and how finely that reach is flattened
      * @return one entry per offending run, deepest first
      */
     public static List<Spill> findSpills(
             List<WalledPocket> pockets,
-            List<List<double[]>> coasts) {
+            List<List<double[]>> coasts,
+            VoidPockets.PocketRules rules) {
 
         var found = new ArrayList<Spill>();
+        var slack = measureFlatteningSag(rules);
 
         for (var walled : pockets) {
             for (var outline : walled.pocket().outlines()) {
 
-                collectRunsAtSea(outline, coasts, found);
+                collectRunsAtSea(outline, coasts, slack, found);
             }
         }
         found.sort(Comparator.comparingDouble(Spill::depth).reversed());
@@ -171,11 +180,29 @@ public final class CoastPocketFaults {
         return found;
     }
 
+    // How far a point lying ON an arc can fall outside the straight run that flattens it.
+    //
+    // The one slack this measure needs, and the reason it is not a chosen number. Both lines
+    // compared here are arcs of the same discs turned into straight runs - the pocket's outline
+    // and the coast alike - so an outline lying exactly along the coast reads as a sagitta
+    // outside it wherever the two flattenings do not land on the same points. Taken from the
+    // reach and the resolution, it follows them: a finer bound or a smaller cell narrows it
+    // with no one having to remember that it wanted narrowing.
+    private static double measureFlatteningSag(VoidPockets.PocketRules rules) {
+
+        var reach = rules.shaping().isAtTrueExtent()
+            ? rules.parameters().cellRadius()
+            : rules.parameters().measureDrawnReach();
+
+        return reach * (1 - Math.cos(Math.PI / rules.parameters().boundSegments()));
+    }
+
     // Every maximal stretch of one outline lying outside the drawn coast, with how far out the
     // worst of it went.
     private static void collectRunsAtSea(
             List<double[]> outline,
             List<List<double[]>> coasts,
+            double slack,
             List<Spill> found) {
 
         var run = new ArrayList<double[]>();
@@ -185,7 +212,7 @@ public final class CoastPocketFaults {
 
             var out = measureDepthAtSea(point, coasts);
 
-            if (out > PAST_THE_COAST) {
+            if (out > slack) {
 
                 run.add(point);
                 deepest = Math.max(deepest, out);
