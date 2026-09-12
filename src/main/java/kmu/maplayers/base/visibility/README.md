@@ -41,8 +41,9 @@ at the price of a null arm in every reader.
 
 ## What is drawn at all (`systems`)
 
-Which star systems a layer draws. `MapVisibility` admits a system on either of two paths - reachable
-and drawn by the vanilla map, or inhabited - and hashes the admitted set into the fingerprint that
+Which star systems a layer draws. `MapVisibility` admits a system on any of three paths - reachable
+and drawn by the vanilla map, reached by an installed mod's own route, or inhabited - and hashes the
+admitted set into the fingerprint that
 says it moved; `MapVisibilityPass` is one reading of the sector answering that rule, and
 `DrawnSystemPositions` reads each drawn system's live hyperspace position off it.
 
@@ -51,6 +52,11 @@ and hyperspace scan it composes them off - so a caller running several walks in 
 system once between them and asks one thing which systems are drawn. The positions come off the
 index's own systems-by-id traversal rather than one opened here, which is what keeps a pass to the
 single traversal a frame allows it however many of its readers want the sector's systems.
+
+The route path is the one that does not also have to be drawn. A mod-made destination is reached by
+an entity of the mod's own rather than a jump point, and marked by an icon of the mod's own rather
+than a star anchor, so both vanilla reads answer no about a place plainly on the map; KMLib's
+`SystemAccessRoutes` answers for both at once, and an install running no such mod consults nothing.
 
 Inhabited means somebody lives there - the colony set's habitation projection - so a system whose
 only market is an abandoned station is admitted by access alone, and a star-hidden one holding a

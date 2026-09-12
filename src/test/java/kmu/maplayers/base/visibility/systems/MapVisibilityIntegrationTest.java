@@ -16,9 +16,12 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
+import kmlib.starsector.systems.SystemAccessRoutes;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.lwjgl.util.vector.Vector2f;
@@ -73,6 +76,19 @@ class MapVisibilityIntegrationTest {
     // The inhabitation the pre-computed entry point is handed when the caller has already
     // decided the system holds nothing, so admission rests on access or the force override.
     private static final boolean UNINHABITED = false;
+
+    // The installed routes are one set per running game rather than per holder, so a case staging
+    // one has to empty them around itself - and every case that stages none is then posed on an
+    // install that has none, whatever order the suite runs in.
+    @BeforeEach
+    void setUp() {
+        SystemAccessRoutes.clearRoutes();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SystemAccessRoutes.clearRoutes();
+    }
 
     @Nested
     class IsDrawn {
@@ -138,6 +154,33 @@ class MapVisibilityIntegrationTest {
             hangMarketsOnSystemEntities(system, buildAbandonedStation());
 
             assertThat(isDrawnUnderNoReveal(sector, system))
+                .isFalse();
+        }
+
+        @Test
+        void isDrawnIsTrueForASystemWithNoVisibleStarAnInstalledRouteReaches() {
+            // The shape a mod-made destination arrives in: no jump point, no star the vanilla map
+            // draws, and nobody living there - a mod carries fleets in by an entity of its own and
+            // marks the spot itself. Neither vanilla read can see any of that, so the route is the
+            // only thing that can admit it, and it has to admit it without a drawn star.
+            var system = buildUnreachableSystem("a");
+
+            SystemAccessRoutes.registerRoute("a mod", askedSystem -> askedSystem == system);
+
+            assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
+                .isTrue();
+        }
+
+        @Test
+        void isDrawnIsFalseForASystemWithNoVisibleStarNoInstalledRouteReaches() {
+            // A route is asked per system, so one installed for somewhere else leaves this system
+            // exactly where it found it - the widening above is the mod's answer about this place,
+            // not a standing yes for every place on an install carrying the mod.
+            var system = buildUnreachableSystem("a");
+
+            SystemAccessRoutes.registerRoute("a mod", askedSystem -> false);
+
+            assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                 .isFalse();
         }
 
