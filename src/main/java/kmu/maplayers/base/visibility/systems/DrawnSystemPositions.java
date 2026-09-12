@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Where each drawn system sits: the read that turns a pass's membership answer into the
- * point cloud a partition is cut from.
+ * point cloud a partition is cut from and a motion poll compares between ticks.
  *
  * <p>Membership itself is {@link MapVisibilityPass}'s, so this states the positions alone.
  * The two were one class while the rule needed somewhere to live; a pass that answers the

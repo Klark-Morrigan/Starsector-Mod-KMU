@@ -48,7 +48,8 @@ Three properties make that safe:
   built once and only reconciled when the *set* of drawn systems changes. Systems
   that move are the exception, and are excluded from the partition rather than
   chased (see `MovingSystems`, one tracker per sector held by that sector's
-  machinery, since an observation is keyed by system id).
+  machinery, since an observation is keyed by `SystemKey`, which one sector mints
+  without regard to another's).
 - **Ownership changes are local.** Dominance is decided per system from the
   colonies seated in it, so a colony event can only shift its own system - which
   makes a targeted re-shape of that system and its neighbours possible instead of

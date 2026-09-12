@@ -9,23 +9,19 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import java.util.Set;
 
 /**
- * One sector's motion tracking, and the reason a moving system is left out of an overlay.
+ * One sector's motion tracking: which drawn systems are rewriting their own hyperspace position,
+ * so the cell partition can leave them out rather than chase them.
  *
- * <p>The cell partition assumes a system's hyperspace position is fixed.
- * Some mods break that: a system can be a mobile entity that rewrites its own
- * {@code getLocation()} every frame and drifts across hyperspace (the motivating case
- * is Legacy of Arkgneisis' Anarakis Reparations Society, whose capital patrols a
- * waypoint loop). A moving site has no stable cell to draw, and letting it clip its
- * neighbours would drag their borders around with it. So a system in motion is dropped
- * from the partition: it seeds no cell and clips no neighbour, and the surrounding
- * cells fill the space as if it were absent. When it comes to rest it rejoins at
- * wherever it stopped. A one-time relocation (a rehomed colony) falls out for free: it
- * reads as moving on the poll it jumps, then rejoins once it holds still.
+ * <p>Some mods make a system a mobile entity that drifts across hyperspace - the motivating case
+ * is Legacy of Arkgneisis' Anarakis Reparations Society, whose capital patrols a waypoint loop.
+ * What the partition does with a mover is {@code CellGeometryCache}'s; what is decided here is
+ * which systems are movers, and by observation alone: a system reads as moving on the poll it
+ * shifts past the noise floor and rejoins once it holds still, so a one-time relocation (a
+ * rehomed colony) needs no special case.
  *
- * <p>Detection is delegated to {@link SystemMotionTracker}, fed the positions of the systems
- * the shared drawn-set rule ({@link MapVisibilityPass#isDrawn}) admits, so the motion walk
- * sees exactly the systems the geometry draws - including any a reveal override put on the
- * map.
+ * <p>Detection is {@link SystemMotionTracker}'s, fed the positions of the systems the shared
+ * drawn-set rule ({@link MapVisibilityPass#isDrawn}) admits, so the motion walk sees exactly the
+ * systems the geometry draws - including any a reveal override put on the map.
  *
  * <p>What stays here is the coupling the map needs: one tracker joins a sector's
  * campaign-thread writer (the poll) to its render-thread reader (the geometry cache, which
