@@ -51,8 +51,8 @@ public final class MovableSystemSectorFake {
     private final SectorAPI sectorMock = mock(SectorAPI.class);
 
     /**
-     * @param systemId the id the one staged system reports, which is what a motion observation is
-     *                 keyed by
+     * @param systemId the id the one staged system reports; it states no centre and no anchor, so
+     *                 the key a motion observation is made under is this id alone
      */
     public MovableSystemSectorFake(String systemId) {
 

@@ -302,10 +302,10 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
         @Test
         void refreshCutsASystemAnotherMachinerySawMoving() {
-            // The half a cache holding its own machinery is for. A tracker is keyed by bare
-            // system id and nothing forbids two sectors from generating a system under the same
-            // one, so a cache reading the running game's movers would drop this sector's system
-            // for a drift the other sector's made.
+            // The half a cache holding its own machinery is for. A tracker is keyed by system
+            // key and nothing forbids two sectors from minting a system under the same one, so a
+            // cache reading the running game's movers would drop this sector's system for a
+            // drift the other sector's made.
             var sector = buildContestedSectorWithASettledNeighbour();
 
             observeSystemMovingInto(otherMachinery.resolveMovingSystems(), sector, ALPHA_ID);

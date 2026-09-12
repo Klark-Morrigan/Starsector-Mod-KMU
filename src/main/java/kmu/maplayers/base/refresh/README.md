@@ -34,7 +34,9 @@ change earns are the source's answers, so the loop names no layer and no signal.
 
 `MovingSystems` rides the political map's poll as a passenger: it stages which drawn systems rewrite
 their own hyperspace position, so the geometry leaves a mover out of the partition rather than chase
-it.
+it. A mover is named by `SystemKey`, since a system id is not unique and two systems sharing one
+would otherwise be one observation - a move by either reading as a move by whichever the sector
+lists last.
 
 ## Two scripts, two classes
 

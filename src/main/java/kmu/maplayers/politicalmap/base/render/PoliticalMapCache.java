@@ -8,6 +8,7 @@ import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellSeedInputs;
@@ -34,6 +35,8 @@ import kmu.settings.KmuPoliticalMapGeometrySettings;
 
 import org.apache.log4j.Logger;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -224,6 +227,20 @@ final class PoliticalMapCache {
                 exception);
             drawables.ensureTerritoriesNonNull(view);
         }
+    }
+
+    // The moving set at the address the cut takes it by: the tracker names a mover by key where the
+    // cut addresses its sites by id, so each key narrows to its id at this seam. Both of two systems
+    // sharing an id are left out of the partition while either moves, the id being all the cut can
+    // tell them apart by.
+    private static Set<String> narrowMovingSystemsToIds(Collection<SystemKey> movingSystemKeys) {
+
+        var movingSystemIds = new LinkedHashSet<String>();
+
+        for (var movingSystemKey : movingSystemKeys) {
+            movingSystemIds.add(movingSystemKey.systemId());
+        }
+        return movingSystemIds;
     }
 
     // Asks what this frame owes and then either patches the standing map or rebuilds it. The two
@@ -571,7 +588,7 @@ final class PoliticalMapCache {
         // second row over the same span, differing only in which of the two names it carried.
         cellGeometry.cells().updateFromSector(
             pass,
-            machinery.resolveMovingSystems().getMovingSystemIds(),
+            narrowMovingSystemsToIds(machinery.resolveMovingSystems().getMovingSystemKeys()),
             cellCut.seedInputs());
 
         // A fresh cut number the moment the cells are recut, whichever of the four inputs

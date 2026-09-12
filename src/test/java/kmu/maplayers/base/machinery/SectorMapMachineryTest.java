@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.characters.PersonAPI;
 
 import kmlib.profiling.ProfileOrigin;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
@@ -46,6 +47,11 @@ class SectorMapMachineryTest {
     // system under one id, and it is the case a shared holder gets wrong rather than merely
     // draws twice.
     private static final String SHARED_SYSTEM_ID = "a";
+
+    // The key that system carries in either sector: the id alone, a staged system stating no
+    // centre and no anchor. Written out rather than read off the system, an expectation taken
+    // from the code under test being no expectation at all.
+    private static final SystemKey SHARED_SYSTEM_KEY = new SystemKey("a", "", "");
 
     // Two games one session could load in turn, and the character playing both - the seed is what
     // tells them apart, so it is what differs.
@@ -161,10 +167,10 @@ class SectorMapMachineryTest {
 
         @Test
         void yieldsATrackerOfItsOwnSoOneSectorsDriftIsNotJudgedAgainstAnothers() {
-            // An observation is keyed by system id. Sharing a tracker, the second sector's system
-            // would be measured against the position the first sector's system of that id was last
-            // seen at - so a system that never moved reads as drifting, and one that did reads as
-            // still.
+            // An observation is keyed by system key, which one sector mints without regard to
+            // another's. Sharing a tracker, the second sector's system would be measured against
+            // the position the first sector's system of that key was last seen at - so a system
+            // that never moved reads as drifting, and one that did reads as still.
             var sectorFake = new MovableSystemSectorFake(SHARED_SYSTEM_ID);
             var otherSectorFake = new MovableSystemSectorFake(SHARED_SYSTEM_ID);
             var movingSystems = machinery.resolveMovingSystems();
@@ -178,9 +184,9 @@ class SectorMapMachineryTest {
             otherSectorFake.observePositionsInto(otherMovingSystems, FORCED_ONTO_MAP);
             otherSectorFake.observePositionsInto(otherMovingSystems, FORCED_ONTO_MAP);
 
-            assertThat(movingSystems.getMovingSystemIds())
-                .containsExactly(SHARED_SYSTEM_ID);
-            assertThat(otherMovingSystems.getMovingSystemIds())
+            assertThat(movingSystems.getMovingSystemKeys())
+                .containsExactly(SHARED_SYSTEM_KEY);
+            assertThat(otherMovingSystems.getMovingSystemKeys())
                 .isEmpty();
         }
     }

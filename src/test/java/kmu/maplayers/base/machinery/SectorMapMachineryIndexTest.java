@@ -38,8 +38,9 @@ import static org.mockito.Mockito.when;
  */
 class SectorMapMachineryIndexTest {
 
-    // The id the staged drifting system reports, which is what a motion observation is keyed by
-    // and so what a discarded machinery could leave behind for the next one.
+    // The id the staged drifting system reports. A staged system states no centre and no anchor,
+    // so this alone is the key a motion observation is made under - and so what a discarded
+    // machinery could leave behind for the next one.
     private static final String DRIFTER_ID = "a";
 
     // The id a published hover names, a hover being the other thing keyed by bare system id that a
@@ -215,7 +216,7 @@ class SectorMapMachineryIndexTest {
         @Test
         void leavesNoneOfADiscardedSectorsMotionObservationsToTheMachineryAfterIt() {
             // The whole of what a per-load flush of the motion tracker used to be for. An
-            // observation is keyed by system id, so a save reloaded in the same session would
+            // observation is keyed by system key, so a save reloaded in the same session would
             // otherwise have its systems measured against the positions the previous save last
             // saw them at, and a system that never moved would read as having teleported.
             var sectorFake = new MovableSystemSectorFake(DRIFTER_ID);
@@ -235,7 +236,7 @@ class SectorMapMachineryIndexTest {
                 .installMachineryOn(sector)
                 .resolveMovingSystems();
 
-            assertThat(reinstalledMovingSystems.getMovingSystemIds())
+            assertThat(reinstalledMovingSystems.getMovingSystemKeys())
                 .isEmpty();
 
             // And the first observation after the load seeds a baseline rather than reporting the

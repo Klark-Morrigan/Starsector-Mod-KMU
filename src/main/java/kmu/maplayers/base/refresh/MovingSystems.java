@@ -1,5 +1,6 @@
 package kmu.maplayers.base.refresh;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.SystemMotionTracker;
 
 import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
@@ -21,17 +22,19 @@ import java.util.Set;
  * wherever it stopped. A one-time relocation (a rehomed colony) falls out for free: it
  * reads as moving on the poll it jumps, then rejoins once it holds still.
  *
- * <p>Detection is delegated to {@link SystemMotionTracker}, fed the shared drawn-set rule
- * ({@link MapVisibilityPass#isDrawn}) so the motion walk sees exactly
- * the systems the geometry draws - including any a reveal override put on the map.
+ * <p>Detection is delegated to {@link SystemMotionTracker}, fed the positions of the systems
+ * the shared drawn-set rule ({@link MapVisibilityPass#isDrawn}) admits, so the motion walk
+ * sees exactly the systems the geometry draws - including any a reveal override put on the
+ * map.
  *
  * <p>What stays here is the coupling the map needs: one tracker joins a sector's
  * campaign-thread writer (the poll) to its render-thread reader (the geometry cache, which
  * skips the movers) with no owner between them. One per sector, held by that sector's
- * installed map machinery, because an observation is keyed by system id: two sectors sharing
- * a tracker would measure one sector's system against the last-seen position of the system
- * holding that id in the other, and report a drift neither made. The observations go with the
- * machinery when it is released, so a sector's tracking begins from nothing rather than
+ * installed map machinery, because an observation is keyed by {@link SystemKey}, whose
+ * engine-minted arms one sector mints without regard to another's: two sectors sharing a
+ * tracker would measure one sector's system against the last-seen position of the system
+ * carrying that key in the other, and report a drift neither made. The observations go with
+ * the machinery when it is released, so a sector's tracking begins from nothing rather than
  * from whatever the sector before it last saw.
  */
 public final class MovingSystems {
@@ -41,12 +44,12 @@ public final class MovingSystems {
     private final SystemMotionTracker systemMotionTracker = new SystemMotionTracker();
 
     /**
-     * @return the ids of systems currently moving - the ones the geometry cache leaves
+     * @return the keys of systems currently moving - the ones the geometry cache leaves
      *         out of the Voronoi partition. An immutable snapshot safe to read from the
      *         render thread; empty until the first poll observes anything
      */
-    public Set<String> getMovingSystemIds() {
-        return systemMotionTracker.getMovingSystemIds();
+    public Set<SystemKey> getMovingSystemKeys() {
+        return systemMotionTracker.getMovingSystemKeys();
     }
 
     /**
@@ -77,9 +80,9 @@ public final class MovingSystems {
         if (pass == null || pass.sector() == null) {
             return false;
         }
-        // Addressed by id because that is what the tracker observes under and what the moving set
-        // is published as, which is the address the geometry cut consults it by.
+        // Read by key, so two drawn systems sharing an id are two observations: a move by one is
+        // reported for that one, rather than for whichever of the pair the sector lists last.
         return systemMotionTracker.updateMovingSystems(
-            DrawnSystemPositions.collectLivePositionsById(pass));
+            DrawnSystemPositions.collectLivePositions(pass));
     }
 }

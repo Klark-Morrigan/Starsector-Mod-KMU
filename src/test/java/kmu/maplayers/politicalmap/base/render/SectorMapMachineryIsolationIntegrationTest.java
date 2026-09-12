@@ -4,6 +4,7 @@ import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.listeners.RecordingListenerManager;
 
 import kmu.maplayers.base.hover.MapHover;
@@ -75,9 +76,15 @@ final class SectorMapMachineryIsolationIntegrationTest {
     private static final String PERSEAN_ID = "persean";
 
     // The system id both sectors hold, which is the whole point of the pairing: every holder below
-    // keys on a bare system id and nothing forbids two sectors from generating one alike, so this is
-    // the id under which a shared holder would have one sector answer for the other.
+    // keys on the sector's own naming of a system - the bare id, or the key read off it - and
+    // nothing forbids two sectors from generating one alike, so this is the id under which a shared
+    // holder would have one sector answer for the other.
     private static final String SHARED_SYSTEM_ID = "alpha";
+
+    // The key that system carries in either sector: the id alone, a staged system stating no
+    // centre and no anchor. Written out rather than read off the system, an expectation taken
+    // from the code under test being no expectation at all.
+    private static final SystemKey SHARED_SYSTEM_KEY = new SystemKey("alpha", "", "");
 
     // One system each sector holds alone, so a cut that strayed into the other sector shows up as a
     // key that has no business being there rather than as a count.
@@ -239,11 +246,11 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             assertThat(resolveMachineryOf(firstSector)
                     .resolveMovingSystems()
-                    .getMovingSystemIds())
-                .containsExactly(SHARED_SYSTEM_ID);
+                    .getMovingSystemKeys())
+                .containsExactly(SHARED_SYSTEM_KEY);
             assertThat(resolveMachineryOf(secondSector)
                     .resolveMovingSystems()
-                    .getMovingSystemIds())
+                    .getMovingSystemKeys())
                 .isEmpty();
         }
 
@@ -321,7 +328,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             assertThat(loadedMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();
-            assertThat(loadedMachinery.resolveMovingSystems().getMovingSystemIds())
+            assertThat(loadedMachinery.resolveMovingSystems().getMovingSystemKeys())
                 .isEmpty();
             assertThat(loadedMachinery.resolveHoverState().getHover())
                 .isSameAs(MapHover.NONE);

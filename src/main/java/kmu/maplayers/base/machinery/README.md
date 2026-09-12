@@ -25,12 +25,14 @@ Part of [the map layers](../../README.md), in Klark Morrigan's Utilities; see th
 
 Two sectors sharing one holder is not merely unsupported, it is wrong and quiet.
 
-Everything under the drawing is keyed by **bare system id**. The stale set names systems by id, the
-motion tracker keys observations by id, and [the geometry cache](../geometry/README.md) reconciles
-cells by id. Nothing forbids two sectors from generating a system under the same one. So a shared
-holder means one sector's colony change marks the other's system stale; one sector's drift reads as
-the other's; and a system present in both at different positions is not seen to have moved, so each
-sector keeps the cells the other cut rather than overwriting them.
+Everything under the drawing is keyed by **one sector's naming of its systems**. The stale set names
+systems by bare id, the motion tracker keys observations by `SystemKey`, and
+[the geometry cache](../geometry/README.md) reconciles cells by id. Nothing forbids two sectors from
+generating a system under the same id, and the key's engine-minted arms are minted by each sector
+without regard to another's. So a shared holder means one sector's colony change marks the other's
+system stale; one sector's drift reads as the other's; and a system present in both at different
+positions is not seen to have moved, so each sector keeps the cells the other cut rather than
+overwriting them.
 
 The revisions make it worse rather than better: shared counters leave neither sector able to be
 stale on its own, since either one's change rebuilds both.

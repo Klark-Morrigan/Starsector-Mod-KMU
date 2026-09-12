@@ -1,5 +1,7 @@
 package kmu.maplayers.base.refresh;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
@@ -25,6 +27,11 @@ class MovingSystemsTest {
     // only to read the moving set back.
     private static final String DRIFTER_ID = "a";
 
+    // The key the staged system carries: the id alone, a staged system stating no centre and no
+    // anchor. Written out rather than read off the system, an expectation taken from the code
+    // under test being no expectation at all.
+    private static final SystemKey DRIFTER_KEY = new SystemKey("a", "", "");
+
     @Nested
     class UpdateMovingSystems {
 
@@ -41,7 +48,7 @@ class MovingSystemsTest {
             assertThat(movingSystems.updateMovingSystems(null))
                 .isFalse();
 
-            assertThat(movingSystems.getMovingSystemIds())
+            assertThat(movingSystems.getMovingSystemKeys())
                 .isEmpty();
         }
 
@@ -53,7 +60,7 @@ class MovingSystemsTest {
 
             assertThat(sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP))
                 .isFalse();
-            assertThat(movingSystems.getMovingSystemIds())
+            assertThat(movingSystems.getMovingSystemKeys())
                 .isEmpty();
         }
 
@@ -68,8 +75,8 @@ class MovingSystemsTest {
 
             assertThat(sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP))
                 .isTrue();
-            assertThat(movingSystems.getMovingSystemIds())
-                .containsExactly(DRIFTER_ID);
+            assertThat(movingSystems.getMovingSystemKeys())
+                .containsExactly(DRIFTER_KEY);
         }
 
         @Test
@@ -87,8 +94,8 @@ class MovingSystemsTest {
 
             assertThat(sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP))
                 .isFalse();
-            assertThat(movingSystems.getMovingSystemIds())
-                .containsExactly(DRIFTER_ID);
+            assertThat(movingSystems.getMovingSystemKeys())
+                .containsExactly(DRIFTER_KEY);
         }
 
         @Test
@@ -104,7 +111,7 @@ class MovingSystemsTest {
 
             assertThat(sectorFake.observePositionsInto(movingSystems, FORCED_ONTO_MAP))
                 .isTrue();
-            assertThat(movingSystems.getMovingSystemIds())
+            assertThat(movingSystems.getMovingSystemKeys())
                 .isEmpty();
         }
 
@@ -121,7 +128,7 @@ class MovingSystemsTest {
 
             assertThat(sectorFake.observePositionsInto(movingSystems, MapVisibilityRules.BASE))
                 .isFalse();
-            assertThat(movingSystems.getMovingSystemIds())
+            assertThat(movingSystems.getMovingSystemKeys())
                 .isEmpty();
         }
     }
