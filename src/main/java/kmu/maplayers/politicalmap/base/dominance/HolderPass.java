@@ -6,9 +6,9 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
-import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -63,13 +63,16 @@ public final class HolderPass {
     // repeated was the projection and the folds over it - cheap each, and paid for the whole sector
     // over again per reader.
     //
-    // Keyed by system id, which does not tell every system apart: a sector holds several under one
-    // id, and this pools each such pair into one entry that hands the first system's blocs to the
-    // second. The reading beneath already separates them by key, so the two disagree about what one
-    // system is - a defect owed a fix here, not a property of the memo worth keeping.
+    // Keyed by the system's key rather than its id, because an id is not unique: a sector holds
+    // several systems under one, and a memo keyed on it pools each such pair into one entry that
+    // hands the first system's blocs to the second - on the one layer whose whole output is who
+    // lives where. The colony memo beneath is keyed the same way, and the fold here reads whatever
+    // it answers, so the two have to agree about what one system is; keyed differently they would
+    // disagree exactly over such a pair, one holding two entries where the other holds one.
     //
-    // An unkeyable system is resolved afresh rather than pooled with every other under a shared key.
-    private final Map<String, SystemHabitation> habitationBySystemId = new HashMap<>();
+    // A system stating no arm at all has the blank key, which equals every other blank one, so it
+    // is resolved afresh rather than pooled with every other under it.
+    private final Map<SystemKey, SystemHabitation> habitationBySystemKey = new HashMap<>();
 
     private final ColonyKnowledge colonyKnowledge;
     private final HolderGrouping grouping;
@@ -323,17 +326,18 @@ public final class HolderPass {
         if (system == null) {
             return resolveHabitationIn(null);
         }
-        var systemId = system.getId();
+        var key = SystemKey.readKeyOf(system);
 
-        if (!KmlibStrings.hasText(systemId)) {
-            // Nothing to key the memo on. Resolving afresh costs a second fold a later ask would
-            // have saved, which is the honest price of an unkeyable system - pooling every one of
-            // them under a shared key would hand one system's blocs to another.
+        if (!key.hasStatedArm()) {
+            // Nothing to tell this system from another. Resolving afresh costs a second fold a
+            // later ask would have saved, which is the honest price of a system the sector states
+            // nothing about - pooling every one of them under the blank key would hand one
+            // system's blocs to another. A system carrying any one arm is memoised like the rest.
             return resolveHabitationIn(system);
         }
-        return habitationBySystemId.computeIfAbsent(
-            systemId,
-            id -> resolveHabitationIn(system));
+        return habitationBySystemKey.computeIfAbsent(
+            key,
+            memoKey -> resolveHabitationIn(system));
     }
 
     // One system's habitation worked out, for the memo above to remember: the habitation

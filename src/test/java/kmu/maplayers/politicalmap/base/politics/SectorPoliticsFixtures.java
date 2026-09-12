@@ -12,6 +12,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -625,19 +626,41 @@ public final class SectorPoliticsFixtures {
      */
     public static SectorAPI buildSectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
 
+        // Each system finishes its own wiring before the sector's opens, so Mockito sees no
+        // stubbing nested inside another; the sector is then wired the one way every posed
+        // sector is.
+        var heldSystems = new HeldSystemMarkets[systems.length];
+
+        for (var i = 0; i < systems.length; i++) {
+            heldSystems[i] = new HeldSystemMarkets(
+                StarSystemFixture.buildSystem(systems[i].id()),
+                systems[i].markets());
+        }
+        return buildSectorHoldingSystems(factions, heldSystems);
+    }
+
+    /**
+     * Wires a sector spanning systems a case has already posed, each with its own markets and
+     * the owning factions resolvable by id - the shape for a case whose systems carry more than
+     * an id, such as two sharing one id and told apart by the entities they are built around.
+     *
+     * @param factions the factions the resolve must resolve by id for their palette
+     * @param systems  each posed system paired with its markets
+     * @return the sector mock
+     */
+    public static SectorAPI buildSectorHoldingSystems(
+            List<FactionAPI> factions,
+            HeldSystemMarkets... systems) {
+
         var economyMock = mock(EconomyAPI.class);
         var systemMocks = new ArrayList<StarSystemAPI>();
 
         for (var system : systems) {
 
-            var systemMock = mock(StarSystemAPI.class);
-
-            when(systemMock.getId())
-                .thenReturn(system.id());
-            when(economyMock.getMarkets(systemMock))
+            when(economyMock.getMarkets(system.system()))
                 .thenReturn(system.markets());
 
-            systemMocks.add(systemMock);
+            systemMocks.add(system.system());
         }
         var sectorMock = mock(SectorAPI.class);
 
@@ -754,6 +777,29 @@ public final class SectorPoliticsFixtures {
      */
     public static SystemMarkets listSystemMarkets(String id, MarketAPI... markets) {
         return new SystemMarkets(id, List.of(markets));
+    }
+
+    /**
+     * A posed system paired with the markets its economy holds, for
+     * {@link #buildSectorHoldingSystems}.
+     *
+     * @param system  the system, as a case posed it
+     * @param markets the markets the system's economy holds
+     */
+    public record HeldSystemMarkets(
+        StarSystemAPI system,
+        List<MarketAPI> markets) {
+    }
+
+    /**
+     * Pairs a posed system with its markets for {@link #buildSectorHoldingSystems}.
+     *
+     * @param system  the system, as a case posed it
+     * @param markets the markets the system's economy holds
+     * @return the system-markets pairing
+     */
+    public static HeldSystemMarkets listMarketsIn(StarSystemAPI system, MarketAPI... markets) {
+        return new HeldSystemMarkets(system, List.of(markets));
     }
 
     /**

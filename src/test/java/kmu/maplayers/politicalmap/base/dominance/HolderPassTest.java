@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 
@@ -43,6 +44,9 @@ import static org.mockito.Mockito.mock;
 final class HolderPassTest {
 
     private static final String SYSTEM_ID = "corvus";
+
+    // The id a live sector really lists several systems under, for the case posing such a pair.
+    private static final String SHARED_SYSTEM_ID = "deep space";
 
     // The one owner the projection cases read a colony back for.
     private static final FactionAPI HEGEMONY_FACTION = SectorPoliticsFixtures
@@ -421,6 +425,35 @@ final class HolderPassTest {
 
             assertThat(pass.readHabitationIn(system))
                 .isSameAs(pass.readHabitationIn(system));
+        }
+
+        @Test
+        void answersEachOfTwoSystemsSharingAnIdItsOwnInhabitants() {
+            // The defect a memo keyed on the id carries, on the one layer whose whole output is
+            // who lives where: a sector holds two systems under one id, so the pair is a single
+            // entry and the second system is handed the first's blocs. The key separates them, an
+            // anchor id being minted per system - and it is the address the colony memo beneath
+            // already reads, so the two cannot disagree about what one system is.
+            var first = StarSystemFixture.buildKeyedSystem(SHARED_SYSTEM_ID, null, "8b3");
+            var second = StarSystemFixture.buildKeyedSystem(SHARED_SYSTEM_ID, null, "38d53");
+
+            var sector = SectorPoliticsFixtures.buildSectorHoldingSystems(
+                List.of(),
+                SectorPoliticsFixtures.listMarketsIn(
+                    first,
+                    SectorPoliticsFixtures.buildVisibleMarket(HEGEMONY_FACTION, COLONY_SIZE)),
+                SectorPoliticsFixtures.listMarketsIn(
+                    second,
+                    SectorPoliticsFixtures.buildVisibleMarket(
+                        SectorPoliticsFixtures.buildFaction("tritachyon"),
+                        COLONY_SIZE)));
+
+            var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+
+            assertThat(pass.readHabitationIn(first).blocIds())
+                .containsExactly("hegemony");
+            assertThat(pass.readHabitationIn(second).blocIds())
+                .containsExactly("tritachyon");
         }
 
         @Test
