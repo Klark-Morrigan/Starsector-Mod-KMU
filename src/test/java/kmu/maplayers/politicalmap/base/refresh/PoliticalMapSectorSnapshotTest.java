@@ -1,12 +1,9 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.JumpPointAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
@@ -14,6 +11,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.maplayers.base.visibility.systems.MapSectorFixture;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.weighting.BaseSizeWeighting;
@@ -211,31 +209,15 @@ class PoliticalMapSectorSnapshotTest {
             STABILITY_WEIGHTED);
     }
 
-    // A single-system sector whose economy returns the given markets for that
-    // system. Hyperspace holds no star anchor, so no system reads as star-visible:
+    // A single-system sector whose economy lists the given markets for that system. Unrouted, so
     // inhabitation is the only route onto the map here.
     private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
 
-        var economyMock = mock(EconomyAPI.class);
+        var sector = MapSectorFixture.buildUnroutedSectorOf(system);
 
-        when(economyMock.getMarkets(system))
-            .thenReturn(List.of(markets));
+        MapSectorFixture.listMarketsIn(sector, system, markets);
 
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of());
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(system));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
-
-        return sectorMock;
+        return sector;
     }
 
     // A single-system sector whose economy lists nothing in that system, the colony hanging on

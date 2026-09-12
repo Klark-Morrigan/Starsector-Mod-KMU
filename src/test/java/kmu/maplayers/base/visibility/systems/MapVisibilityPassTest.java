@@ -1,10 +1,6 @@
 package kmu.maplayers.base.visibility.systems;
 
-import com.fs.starfarer.api.campaign.JumpPointAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
@@ -17,9 +13,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -90,7 +87,7 @@ class MapVisibilityPassTest {
             // poll's whole use of it: the salt asks the ruin outright, and membership asks it
             // through inhabitation.
             var system = buildSystem("a");
-            var pass = MapVisibilityPass.over(buildSectorHolding(system), MapVisibilityRules.BASE);
+            var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), MapVisibilityRules.BASE);
 
             pass.isRevealedDecivilised(system);
             pass.isSystemInhabited(system);
@@ -110,7 +107,7 @@ class MapVisibilityPassTest {
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(ruinedSystem);
 
             var pass = MapVisibilityPass.over(
-                buildSectorHolding(ruinedSystem, emptySystem),
+                buildUnroutedSectorOf(ruinedSystem, emptySystem),
                 MapVisibilityRules.BASE);
 
             assertThat(pass.isRevealedDecivilised(ruinedSystem))
@@ -118,28 +115,6 @@ class MapVisibilityPassTest {
             assertThat(pass.isRevealedDecivilised(emptySystem))
                 .isFalse();
         }
-    }
-
-    // A sector whose hyperspace carries no star anchor and whose economy lists nothing, so
-    // inhabitation rests on what a case hangs on a system rather than on any route the fixture
-    // opens.
-    private static SectorAPI buildSectorHolding(StarSystemAPI... systems) {
-
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of());
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(systems));
-        when(sectorMock.getEconomy())
-            .thenReturn(mock(EconomyAPI.class));
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
-
-        return sectorMock;
     }
 
     // A system holding nothing at all, which each case then furnishes. Its planets are stubbed

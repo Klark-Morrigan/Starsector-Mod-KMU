@@ -1,11 +1,7 @@
 package kmu.maplayers.base.visibility.systems;
 
-import com.fs.starfarer.api.campaign.JumpPointAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.recording.RecordingProfiler;
@@ -23,9 +19,10 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.listMarketsIn;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -77,7 +74,7 @@ class DrawnSystemPositionsTest {
         @Test
         void keysEachDrawnSystemsLivePositionByItsKey() {
 
-            var sector = buildSectorHolding(
+            var sector = buildUnroutedSectorOf(
                 buildSystemAt("a", 3f, 4f),
                 buildSystemAt("b", -5f, 6f));
 
@@ -98,7 +95,7 @@ class DrawnSystemPositionsTest {
             // a site for each, which draws as a system with no cell on a map that cells every
             // neighbour it has.
             var positions = collectPositionsUnder(
-                buildSectorHoldingTwoSystemsSharingAnId(),
+                buildUnroutedSectorOfTwoSystemsSharingAnId(),
                 FORCED_ONTO_MAP);
 
             assertThat(positions)
@@ -112,7 +109,7 @@ class DrawnSystemPositionsTest {
             // A site is a position, so a system without one cannot enter the partition however
             // the rule judges it - which is why the force override is on here.
             var positions = collectPositionsUnder(
-                buildSectorHolding(buildSystemWithoutAPosition("a")),
+                buildUnroutedSectorOf(buildSystemWithoutAPosition("a")),
                 FORCED_ONTO_MAP);
 
             assertThat(positions)
@@ -124,7 +121,7 @@ class DrawnSystemPositionsTest {
             // Unreachable, no visible star anchor and nobody living there, so nothing admits
             // it once the force override is off.
             var positions = collectPositionsUnder(
-                buildSectorHolding(buildSystemAt("a", 3f, 4f)),
+                buildUnroutedSectorOf(buildSystemAt("a", 3f, 4f)),
                 MapVisibilityRules.BASE);
 
             assertThat(positions)
@@ -137,9 +134,9 @@ class DrawnSystemPositionsTest {
             // made. This system has no other route onto the map, so it is drawn if and only if
             // the colony index behind the pass answered for it.
             var system = buildSystemAt("a", 3f, 4f);
-            var sector = buildSectorHolding(system);
+            var sector = buildUnroutedSectorOf(system);
 
-            listColonyIn(sector, system, ColonyMarketFixture.buildVisibleColony(OWNING_FACTION));
+            listMarketsIn(sector, system, ColonyMarketFixture.buildVisibleColony(OWNING_FACTION));
 
             assertThat(collectPositionsUnder(sector, MapVisibilityRules.BASE))
                 .containsOnlyKeys(keyOf("a"));
@@ -153,7 +150,7 @@ class DrawnSystemPositionsTest {
             // first - and the bound is per call, so it would break on every full rebuild rather
             // than on an unlucky one.
             var pass = MapVisibilityPass.over(
-                buildSectorHolding(buildSystemAt("a", 3f, 4f)),
+                buildUnroutedSectorOf(buildSystemAt("a", 3f, 4f)),
                 FORCED_ONTO_MAP);
 
             var counts = RecordedCapture
@@ -174,7 +171,7 @@ class DrawnSystemPositionsTest {
         @Test
         void keysEachDrawnSystemsLivePositionById() {
 
-            var positions = collectPositionsByIdUnder(buildSectorHolding(
+            var positions = collectPositionsByIdUnder(buildUnroutedSectorOf(
                 buildSystemAt("a", 3f, 4f),
                 buildSystemAt("b", -5f, 6f)));
 
@@ -189,7 +186,7 @@ class DrawnSystemPositionsTest {
             // What an id address costs, stated where a structure keyed that way takes it: the two
             // systems are one entry, holding the one every other id-keyed read of the sector
             // answers with.
-            var positions = collectPositionsByIdUnder(buildSectorHoldingTwoSystemsSharingAnId());
+            var positions = collectPositionsByIdUnder(buildUnroutedSectorOfTwoSystemsSharingAnId());
 
             assertThat(positions)
                 .containsOnlyKeys("deep space");
@@ -219,8 +216,8 @@ class DrawnSystemPositionsTest {
     // Two systems the sector lists under one id, apart in hyperspace and told apart by their
     // anchors alone - vanilla's own deep space pair, and the world both addresses answer
     // differently over.
-    private static SectorAPI buildSectorHoldingTwoSystemsSharingAnId() {
-        return buildSectorHolding(
+    private static SectorAPI buildUnroutedSectorOfTwoSystemsSharingAnId() {
+        return buildUnroutedSectorOf(
             buildKeyedSystemAt("deep space", "8b3", 3f, 4f),
             buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
     }
@@ -229,40 +226,6 @@ class DrawnSystemPositionsTest {
     // one, and an arm it does not state is absent rather than missing.
     private static SystemKey keyOf(String systemId) {
         return new SystemKey(systemId, "", "");
-    }
-
-    // A sector whose hyperspace carries no star anchor and whose economy lists nothing, so no
-    // system is drawn by access and each case decides admission through what it stages.
-    private static SectorAPI buildSectorHolding(StarSystemAPI... systems) {
-
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of());
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(systems));
-        when(sectorMock.getEconomy())
-            .thenReturn(mock(EconomyAPI.class));
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
-
-        return sectorMock;
-    }
-
-    // Lists a colony in one system's economy. The economy is read into a local before the
-    // stubbing opens, so Mockito sees no stubbing nested inside another.
-    private static void listColonyIn(
-            SectorAPI sector,
-            StarSystemAPI system,
-            MarketAPI colony) {
-
-        var economyMock = sector.getEconomy();
-
-        when(economyMock.getMarkets(system))
-            .thenReturn(List.of(colony));
     }
 
     // An unreachable system standing at a hyperspace position: no jump points, so only the

@@ -1,12 +1,10 @@
 package kmu.maplayers.base.visibility.systems;
 
 import com.fs.starfarer.api.campaign.FactionAPI;
-import com.fs.starfarer.api.campaign.JumpPointAPI;
 import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
@@ -32,6 +30,11 @@ import java.util.List;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildHyperspaceHolding;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchorTo;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildUnroutedSectorOf;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.listMarketsIn;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -419,49 +422,24 @@ class MapVisibilityIntegrationTest {
     // Wires a single-system sector whose economy returns the given markets for
     // that system - the read the inhabitation rule makes when judging colonies.
     private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
-        return buildSector(system, buildHyperspaceWithVisibleStarAnchorFor(system), markets);
+
+        var sector = buildStarAnchoredSectorOf(system);
+
+        listMarketsIn(sector, system, markets);
+
+        return sector;
     }
 
     // A reachable system whose only star anchor is hidden on the map, its economy listing nothing -
     // so the inhabited path cannot admit it either unless a case hangs something on its entities.
     private static SectorAPI buildSectorWithHiddenStar(StarSystemAPI system) {
-        return buildSector(system, buildHyperspaceWithHiddenStarAnchorFor(system));
+        return MapSectorFixture.buildSectorOf(buildHyperspaceWithHiddenStarAnchorFor(system), system);
     }
 
     // A sector whose hyperspace holds no star anchor, so no system reads as
     // star-visible: the route onto the map is the nebula draw or inhabitation.
     private static SectorAPI buildSectorWithoutStarAnchors(StarSystemAPI system) {
-        return buildSector(system, buildHyperspaceHolding());
-    }
-
-    // The single-system sector the three above are each one hyperspace of: an economy listing the
-    // staged markets for that system, and whatever the vanilla map draws around it.
-    //
-    // One wiring rather than three, since what a case varies is the hyperspace and the markets and
-    // never the sector itself - three copies of that stubbing is three chances for a case to be
-    // posed against a sector its neighbours are not.
-    private static SectorAPI buildSector(
-            StarSystemAPI system,
-            LocationAPI hyperspace,
-            MarketAPI... markets) {
-
-        // The economy finishes its own stubbing before the sector's opens, as the hyperspace the
-        // caller passes already has, so Mockito sees no stubbing nested inside another.
-        var economyMock = mock(EconomyAPI.class);
-
-        when(economyMock.getMarkets(system))
-            .thenReturn(List.of(markets));
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(system));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspace);
-
-        return sectorMock;
+        return buildUnroutedSectorOf(system);
     }
 
     // A star anchor tagged hidden leading into the system, so the vanilla map
@@ -474,39 +452,6 @@ class MapVisibilityIntegrationTest {
             .thenReturn(true);
 
         return buildHyperspaceHolding(anchorMock);
-    }
-
-    // A visible (untagged) star anchor leading into the system, so a reachable
-    // system reads as map-visible. A system with no jump point stays off the map
-    // regardless, so its anchor cannot wrongly admit it.
-    private static LocationAPI buildHyperspaceWithVisibleStarAnchorFor(StarSystemAPI system) {
-        return buildHyperspaceHolding(buildStarAnchorTo(system));
-    }
-
-    // A star anchor leading into the system, drawn on the map until a case tags it otherwise -
-    // which is what makes the hidden variant above read as the one thing it changes.
-    private static JumpPointAPI buildStarAnchorTo(StarSystemAPI system) {
-
-        var anchorMock = mock(JumpPointAPI.class);
-
-        when(anchorMock.isStarAnchor())
-            .thenReturn(true);
-        when(anchorMock.getDestinationStarSystem())
-            .thenReturn(system);
-
-        return anchorMock;
-    }
-
-    // Hyperspace holding the given anchors, and none is the case where no system reads as
-    // star-visible at all.
-    private static LocationAPI buildHyperspaceHolding(JumpPointAPI... anchors) {
-
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of(anchors));
-
-        return hyperspaceMock;
     }
 
     private static StarSystemAPI buildReachableSystem(String id) {

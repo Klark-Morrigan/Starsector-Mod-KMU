@@ -1,11 +1,7 @@
 package kmu.maplayers.base.geometry;
 
-import com.fs.starfarer.api.campaign.JumpPointAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
-import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
@@ -20,12 +16,12 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.base.visibility.systems.MapSectorFixture.buildStarAnchoredSectorOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -140,7 +136,7 @@ final class CellGeometryCacheTest {
 
             cache.updateFromSector(
                 MapVisibilityPass.over(
-                    buildSectorOf(
+                    buildStarAnchoredSectorOf(
                         buildAccessibleSystem("a", 0, 0),
                         buildInaccessibleSystem("hidden", 4000, 0)),
                     FORCED_ONTO_MAP),
@@ -188,7 +184,7 @@ final class CellGeometryCacheTest {
 
             cache.updateFromSector(
                 MapVisibilityPass.over(
-                    buildSectorOf(
+                    buildStarAnchoredSectorOf(
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
@@ -206,7 +202,7 @@ final class CellGeometryCacheTest {
             // so its edge count drops to the new count.
             cache.updateFromSector(
                 MapVisibilityPass.over(
-                    buildSectorOf(
+                    buildStarAnchoredSectorOf(
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
@@ -226,7 +222,7 @@ final class CellGeometryCacheTest {
 
             cache.updateFromSector(
                 MapVisibilityPass.over(
-                    buildSectorOf(
+                    buildStarAnchoredSectorOf(
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
@@ -243,7 +239,7 @@ final class CellGeometryCacheTest {
             // would leave in place, exactly as a frontier-resolution change reseeds it.
             cache.updateFromSector(
                 MapVisibilityPass.over(
-                    buildSectorOf(
+                    buildStarAnchoredSectorOf(
                         buildAccessibleSystem("a", 0, 0),
                         buildAccessibleSystem("b", FAR, 0)),
                     NO_REVEAL),
@@ -467,7 +463,7 @@ final class CellGeometryCacheTest {
             StarSystemAPI... systems) {
 
         cache.updateFromSector(
-            MapVisibilityPass.over(buildSectorOf(systems), NO_REVEAL),
+            MapVisibilityPass.over(buildStarAnchoredSectorOf(systems), NO_REVEAL),
             NO_MOVING_SYSTEMS,
             DEFAULT_SEED_INPUTS);
     }
@@ -481,59 +477,9 @@ final class CellGeometryCacheTest {
             StarSystemAPI... systems) {
 
         cache.updateFromSector(
-            MapVisibilityPass.over(buildSectorOf(systems), NO_REVEAL),
+            MapVisibilityPass.over(buildStarAnchoredSectorOf(systems), NO_REVEAL),
             movingSystemIds,
             DEFAULT_SEED_INPUTS);
-    }
-
-    private static SectorAPI buildSectorOf(StarSystemAPI... systems) {
-
-        // The hyperspace and economy mocks are built before the stubbings that
-        // return them, so their own stubbing is not nested inside this one.
-        var hyperspaceMock = buildHyperspaceWithVisibleStarAnchorsFor(systems);
-
-        // Listing nothing, which is the state every case here poses: the colonies
-        // that decide inhabitation hang on a system's own entities. The economy is
-        // stubbed all the same because the walk that finds those reads it to tell a
-        // listed market from an unlisted one, and answers empty without one - so an
-        // unstubbed economy would leave every case posing an empty sector.
-        var economyMock = mock(EconomyAPI.class);
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(systems));
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-
-        return sectorMock;
-    }
-
-    // A visible (untagged) star anchor leading into each system, so a system with
-    // a jump point reads as map-visible. A cut-off or jump-point-less system stays
-    // off the map regardless, so its anchor cannot admit it.
-    private static LocationAPI buildHyperspaceWithVisibleStarAnchorsFor(StarSystemAPI... systems) {
-
-        var anchors = new ArrayList<JumpPointAPI>();
-
-        for (var system : systems) {
-
-            var anchorMock = mock(JumpPointAPI.class);
-
-            when(anchorMock.isStarAnchor())
-                .thenReturn(true);
-            when(anchorMock.getDestinationStarSystem())
-                .thenReturn(system);
-
-            anchors.add(anchorMock);
-        }
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(anchors);
-
-        return hyperspaceMock;
     }
 
     private static StarSystemAPI buildAccessibleSystem(String id, float x, float y) {

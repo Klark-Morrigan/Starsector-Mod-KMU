@@ -1,12 +1,9 @@
 package kmu.maplayers.base.refresh;
 
-import com.fs.starfarer.api.campaign.JumpPointAPI;
-import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
-import com.fs.starfarer.api.campaign.econ.EconomyAPI;
-import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmu.maplayers.base.visibility.systems.MapSectorFixture;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
@@ -26,9 +23,8 @@ import static org.mockito.Mockito.when;
  * system per poll rather than per {@code getLocation()} call - the walk's call count is the motion
  * tracker's business, not something a suite should encode.
  *
- * <p>Hyperspace carries no star anchor and the system no jump point, so nothing here is drawn on
- * the normal gates; a caller decides admission through the visibility rules it opens its pass
- * under.
+ * <p>The sector is unrouted - no star anchor, no jump point - so nothing here is drawn on the
+ * normal gates; a caller decides admission through the visibility rules it opens its pass under.
  *
  * <p>Each instance holds its own system, so two of them stage the same system id at two positions -
  * which is what a claim about two sectors not reading each other's observations needs.
@@ -48,7 +44,7 @@ public final class MovableSystemSectorFake {
     private static final float CLEAR_OF_THE_NOISE_FLOOR = 500f;
 
     private final Vector2f livePosition = new Vector2f(0f, 0f);
-    private final SectorAPI sectorMock = mock(SectorAPI.class);
+    private final SectorAPI sectorMock;
 
     /**
      * @param systemId the id the one staged system reports; it states no centre and no anchor, so
@@ -65,22 +61,7 @@ public final class MovableSystemSectorFake {
         when(systemMock.getLocation())
             .thenReturn(livePosition);
 
-        var economyMock = mock(EconomyAPI.class);
-
-        when(economyMock.getMarkets(systemMock))
-            .thenReturn(List.<MarketAPI>of());
-
-        var hyperspaceMock = mock(LocationAPI.class);
-
-        when(hyperspaceMock.getEntities(JumpPointAPI.class))
-            .thenReturn(List.of());
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(systemMock));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-        when(sectorMock.getHyperspace())
-            .thenReturn(hyperspaceMock);
+        sectorMock = MapSectorFixture.buildUnroutedSectorOf(systemMock);
     }
 
     /**
