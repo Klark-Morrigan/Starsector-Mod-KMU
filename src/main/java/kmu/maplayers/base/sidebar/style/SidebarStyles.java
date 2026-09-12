@@ -72,8 +72,8 @@ public final class SidebarStyles {
     // size that atlas draws at. A condensed face is narrower per glyph than the title orbitron at the same
     // height, and vanilla's tab box was sized against that width - so the face is what lets a label sit in
     // a box built to vanilla's measure rather than one grown to fit the text. It travels inside the tab
-    // style, which both the layout's measurer and the paint pass read, so the width a tab is measured at
-    // is the width its text draws at.
+    // style, off which the layout's tab-face measurement is bound and from which the paint pass letters,
+    // so the width a tab is measured at is the width its text draws at.
     private static final TextFace STRIP_FACE = new TextFace(
         StarsectorFont.VANILLA_ORBITRON_12_CONDENSED,
         StarsectorFont.VANILLA_ORBITRON_12_CONDENSED.getNativeSize());
