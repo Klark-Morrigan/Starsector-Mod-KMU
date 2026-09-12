@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SystemColoniesIndex;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
@@ -146,10 +147,8 @@ class MapVisibilityPassTest {
     // above is of a read that happened.
     private static StarSystemAPI buildSystem(String id) {
 
-        var systemMock = mock(StarSystemAPI.class);
+        var systemMock = StarSystemFixture.buildSystem(id);
 
-        when(systemMock.getId())
-            .thenReturn(id);
         when(systemMock.getPlanets())
             .thenReturn(List.of());
 

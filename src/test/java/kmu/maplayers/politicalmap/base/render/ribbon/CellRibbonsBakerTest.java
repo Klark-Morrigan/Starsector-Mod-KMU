@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
@@ -398,13 +399,7 @@ final class CellRibbonsBakerTest {
     }
 
     private static StarSystemAPI buildSystem(String systemId) {
-
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(systemId);
-
-        return systemMock;
+        return StarSystemFixture.buildSystem(systemId);
     }
 
     // Any holder, which the fixture also counts as making its system inhabited - the set the band

@@ -74,7 +74,7 @@ record HoveredBox(
         // The hover carries a system id; resolve it to the live system, tolerating an id that no longer
         // resolves (a system dropped between the publish and this frame). Matched by getId - vanilla's
         // getStarSystem keys on the optional unique id first and would miss a base-name-keyed system.
-        var system = SectorStarSystems.findById(sector, hover.hoveredSystemId());
+        var system = SectorStarSystems.findSystemById(sector, hover.hoveredSystemId());
         if (system == null) {
             return Optional.empty();
         }

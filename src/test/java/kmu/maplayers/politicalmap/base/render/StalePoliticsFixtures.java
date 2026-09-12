@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -65,9 +67,7 @@ final class StalePoliticsFixtures {
     }
 
     static StarSystemAPI buildSystem(String systemId) {
-        var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId()).thenReturn(systemId);
-        return systemMock;
+        return StarSystemFixture.buildSystem(systemId);
     }
 
     // A sector listing the named systems and nothing else - what a batch resolves its marked

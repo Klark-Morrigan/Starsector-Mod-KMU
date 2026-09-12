@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -570,12 +571,6 @@ final class CellRibbonSourceTest {
     }
 
     private static StarSystemAPI buildSystem(String systemId) {
-
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(systemId);
-
-        return systemMock;
+        return StarSystemFixture.buildSystem(systemId);
     }
 }

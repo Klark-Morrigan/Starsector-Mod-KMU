@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.SectorColonySightings;
@@ -106,7 +107,7 @@ final class MapSubstrateStalenessSourceTest {
         // Mockito reports as an unfinished stubbing.
         var systems = Arrays
             .stream(systemIds)
-            .map(MapSubstrateStalenessSourceTest::mockSystem)
+            .map(StarSystemFixture::buildSystem)
             .toList();
 
         var sectorMock = mock(SectorAPI.class);
@@ -115,15 +116,5 @@ final class MapSubstrateStalenessSourceTest {
             .thenReturn(systems);
 
         return sectorMock;
-    }
-
-    private static StarSystemAPI mockSystem(String systemId) {
-
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(systemId);
-
-        return systemMock;
     }
 }

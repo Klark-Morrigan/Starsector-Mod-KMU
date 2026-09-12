@@ -14,10 +14,10 @@ import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 import java.util.Map;
@@ -193,21 +193,13 @@ class DrawnSystemPositionsTest {
     // An unreachable system standing at a hyperspace position: no jump points, so only the
     // force override or somebody living there can put it on the map.
     private static StarSystemAPI buildSystemAt(String id, float x, float y) {
-
-        var systemMock = buildSystemWithoutAPosition(id);
-
-        when(systemMock.getLocation())
-            .thenReturn(new Vector2f(x, y));
-
-        return systemMock;
+        return StarSystemFixture.placeSystemAt(buildSystemWithoutAPosition(id), x, y);
     }
 
     private static StarSystemAPI buildSystemWithoutAPosition(String id) {
 
-        var systemMock = mock(StarSystemAPI.class);
+        var systemMock = StarSystemFixture.buildSystem(id);
 
-        when(systemMock.getId())
-            .thenReturn(id);
         when(systemMock.getJumpPoints())
             .thenReturn(List.of());
 

@@ -10,6 +10,7 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.profiling.MapBuildCounters;
@@ -18,7 +19,6 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.util.vector.Vector2f;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -539,10 +539,8 @@ final class CellGeometryCacheTest {
     private static StarSystemAPI buildAccessibleSystem(String id, float x, float y) {
 
         // Wired into hyperspace by a jump point, so the access rule admits it.
-        var systemMock = mock(StarSystemAPI.class);
+        var systemMock = StarSystemFixture.buildSystemAt(id, x, y);
 
-        when(systemMock.getId()).thenReturn(id);
-        when(systemMock.getLocation()).thenReturn(new Vector2f(x, y));
         when(systemMock.getJumpPoints()).thenReturn(List.of(mock(SectorEntityToken.class)));
 
         return systemMock;
@@ -566,12 +564,7 @@ final class CellGeometryCacheTest {
         // access rule rejects it; the revealed decivilised planet is its only
         // route onto the map. The ruin is placed among the system's entities as
         // well as its planets, that walk being how a colony set reaches it.
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(id);
-        when(systemMock.getLocation())
-            .thenReturn(new Vector2f(x, y));
+        var systemMock = StarSystemFixture.buildSystemAt(id, x, y);
 
         DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(systemMock);
 

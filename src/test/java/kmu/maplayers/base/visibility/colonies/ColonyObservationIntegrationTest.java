@@ -7,6 +7,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.SystemColonies;
 import kmlib.testfixtures.starsector.markets.colonies.ColonyPlacementFixture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -238,13 +238,7 @@ final class ColonyObservationIntegrationTest {
     // A star system the fixture's sector does not list - somewhere a colony can be found standing
     // after it has moved, which is all a case about moving asks of a second place.
     private static StarSystemAPI buildSystemElsewhere() {
-
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(OTHER_SYSTEM_ID);
-
-        return systemMock;
+        return StarSystemFixture.buildSystem(OTHER_SYSTEM_ID);
     }
 
     // Kills a colony the way the game does, by turning its market into the condition-only shell a

@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
 import kmlib.testfixtures.starsector.markets.colonies.ColonyMarketFixture;
 import kmlib.testfixtures.starsector.markets.colonies.ColonyPlacementFixture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -122,10 +123,7 @@ final class ColonySightingRecorderTest {
     // because what is under test is which places are walked, not which listing a colony sits in.
     private StarSystemAPI buildSystemHolding(String systemId, MarketAPI... colonies) {
 
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(systemId);
+        var systemMock = StarSystemFixture.buildSystem(systemId);
 
         ColonyPlacementFixture.listColonies(economyMock, systemMock, colonies);
 

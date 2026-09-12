@@ -11,6 +11,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
+
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
@@ -22,7 +24,6 @@ import kmu.settings.HiddenMarketScalingChoice;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
@@ -264,12 +265,8 @@ class PoliticalMapSectorSnapshotTest {
     // it is uninhabited unless a caller adds a colony or a decivilised planet.
     private static StarSystemAPI buildSystem(String id) {
 
-        var systemMock = mock(StarSystemAPI.class);
+        var systemMock = StarSystemFixture.buildSystemAt(id, 2f, 2f);
 
-        when(systemMock.getId())
-            .thenReturn(id);
-        when(systemMock.getLocation())
-            .thenReturn(new Vector2f(2f, 2f));
         when(systemMock.getJumpPoints())
             .thenReturn(List.of());
 

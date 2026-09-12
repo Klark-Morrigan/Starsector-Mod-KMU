@@ -17,6 +17,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.systems.SystemAccessRoutes;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
 
@@ -511,12 +512,8 @@ class MapVisibilityIntegrationTest {
     private static StarSystemAPI buildReachableSystem(String id) {
         // Wired into hyperspace by a jump point and its star drawn on the map, so
         // the access rule admits it.
-        var systemMock = mock(StarSystemAPI.class);
+        var systemMock = StarSystemFixture.buildSystemAt(id, 1f, 1f);
 
-        when(systemMock.getId())
-            .thenReturn(id);
-        when(systemMock.getLocation())
-            .thenReturn(new Vector2f(1f, 1f));
         when(systemMock.getJumpPoints())
             .thenReturn(List.of(mock(SectorEntityToken.class)));
 
