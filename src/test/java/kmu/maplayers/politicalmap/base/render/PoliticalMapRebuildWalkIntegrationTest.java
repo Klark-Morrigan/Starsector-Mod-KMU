@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.FactionAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
+import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.profiling.recording.RecordingProfiler;
@@ -12,6 +13,7 @@ import kmlib.starsector.SectorWalkCounters;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -87,6 +89,11 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // above so a cell cut from the running sector rather than the installed one is visible as a key
     // that has no business being there, rather than as a count.
     private static final String GAMMA_ID = "gamma";
+
+    // The anchors that tell the contested system's twin from it: the sector lists both under
+    // ALPHA_ID at one site, so the anchor is the one arm their keys differ by.
+    private static final String ALPHA_ANCHOR_ID = "8b3";
+    private static final String TWIN_ANCHOR_ID = "38d53";
 
     private static final String HEGEMONY_ID = "hegemony";
     private static final String TRITACHYON_ID = "tritachyon";
@@ -290,7 +297,28 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // and read by a real cut - neither end of which a stand-in could stage.
             var sector = buildContestedSectorWithASettledNeighbour();
 
-            observeSystemMovingInto(machinery.resolveMovingSystems(), sector, ALPHA_ID);
+            observeSystemMovingInto(
+                machinery.resolveMovingSystems(),
+                SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID));
+            var cache = new PoliticalMapCache(machinery);
+
+            cache.refresh(FactionsView.INSTANCE, SCREEN);
+
+            assertThat(cache.getTerritories().getStyledCellByCellId())
+                .containsKey(BETA_ID)
+                .doesNotContainKey(ALPHA_ID);
+        }
+
+        @Test
+        void refreshLeavesOutTheCellOfAPairSharingAnIdWhileTheTwinMoves() {
+            // The tracker tells the pair apart by key while the cut still addresses its sites by
+            // id, so a mover's key narrows to the id both share and the cell under that id leaves
+            // the partition whichever of the two moved. Posed with the twin moving - the one an
+            // observation by id would have folded into the first - so it is the narrowing, and not
+            // the first system's own drift, that takes the cell out.
+            var sector = buildContestedSectorWithACoLocatedTwin();
+
+            observeSystemMovingInto(machinery.resolveMovingSystems(), findTheTwinIn(sector));
             var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
@@ -308,7 +336,9 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             // drift the other sector's made.
             var sector = buildContestedSectorWithASettledNeighbour();
 
-            observeSystemMovingInto(otherMachinery.resolveMovingSystems(), sector, ALPHA_ID);
+            observeSystemMovingInto(
+                otherMachinery.resolveMovingSystems(),
+                SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID));
             var cache = new PoliticalMapCache(machinery);
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
@@ -411,19 +441,19 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
     // Drifts one system far enough for two observations either side of the move to read it as
     // moving, and stages those observations into the given tracker - which is the state the cut
-    // consults when it decides what to leave out of the partition.
+    // consults when it decides what to leave out of the partition. The system is handed over
+    // rather than named, since an id names every system sharing it and the first is not always
+    // the one a case moves.
     //
     // Staged through real observations rather than by writing a set, since the moving set is
     // published by the tracker and there is no other way in.
-    private static void observeSystemMovingInto(
-            MovingSystems movingSystems,
-            SectorAPI sector,
-            String systemId) {
+    private void observeSystemMovingInto(MovingSystems movingSystems, StarSystemAPI system) {
+
+        var sector = machinery.resolveSector();
 
         movingSystems.updateMovingSystems(MapVisibilityPass.over(sector, MapVisibilityRules.BASE));
 
-        SectorPoliticsFixtures.findSystemIn(sector, systemId).getLocation().x
-            += CLEAR_OF_THE_NOISE_FLOOR;
+        system.getLocation().x += CLEAR_OF_THE_NOISE_FLOOR;
 
         movingSystems.updateMovingSystems(MapVisibilityPass.over(sector, MapVisibilityRules.BASE));
     }
@@ -463,23 +493,54 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // The sector both shapes above are, differing only in how their two colonies are staged - so
     // the reveal case and the plain one cannot drift apart on anything else, which is what makes
     // the rule the only thing between them.
-    //
-    // Installed on, since that is where a rebuild's sector comes from, and staged as the running one
-    // besides, which the incremental path still reaches for. Every system is given a site to seed a
-    // cell at: without one neither seeds a cell and the rebuild would draw nothing for the count to
-    // be taken over.
     private SectorAPI buildContestedSectorStagedBy(ColonyStaging stageColony) {
 
         var hegemony = SectorPoliticsFixtures.buildFaction(HEGEMONY_ID);
         var tritachyon = SectorPoliticsFixtures.buildFaction(TRITACHYON_ID);
 
-        var sector = SectorPoliticsFixtures.buildSectorWithSystems(
+        return installAsTheRebuildsSector(SectorPoliticsFixtures.buildSectorWithSystems(
             List.of(hegemony, tritachyon),
             listSystemMarkets(
                 ALPHA_ID,
                 stageColony.stageColony(hegemony, HOLDING_COLONY_SIZE),
                 stageColony.stageColony(tritachyon, RIVAL_COLONY_SIZE)),
-            listSystemMarkets(BETA_ID));
+            listSystemMarkets(BETA_ID)));
+    }
+
+    // The settled sector with a twin of its contested system: listed under the same id and, being
+    // placed off that id, on the same site - the co-located pair a live sector holds under one
+    // id - told apart by their anchors alone.
+    private SectorAPI buildContestedSectorWithACoLocatedTwin() {
+
+        var hegemony = SectorPoliticsFixtures.buildFaction(HEGEMONY_ID);
+        var tritachyon = SectorPoliticsFixtures.buildFaction(TRITACHYON_ID);
+
+        var sector = installAsTheRebuildsSector(SectorPoliticsFixtures.buildSectorWithSystems(
+            List.of(hegemony, tritachyon),
+            listSystemMarkets(
+                ALPHA_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(hegemony, HOLDING_COLONY_SIZE),
+                SectorPoliticsFixtures.buildVisibleMarket(tritachyon, RIVAL_COLONY_SIZE)),
+            listSystemMarkets(
+                ALPHA_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(hegemony, HOLDING_COLONY_SIZE)),
+            listSystemMarkets(
+                BETA_ID,
+                SectorPoliticsFixtures.buildVisibleMarket(tritachyon, HOLDING_COLONY_SIZE))));
+
+        StarSystemFixture.anchorSystemTo(
+            SectorPoliticsFixtures.findSystemIn(sector, ALPHA_ID),
+            ALPHA_ANCHOR_ID);
+        StarSystemFixture.anchorSystemTo(findTheTwinIn(sector), TWIN_ANCHOR_ID);
+
+        return sector;
+    }
+
+    // Makes a staged sector the one the rebuild under test reads. Installed on, since that is where
+    // a rebuild's sector comes from, and staged as the running one besides, which the incremental
+    // path still reaches for. Every system is given a site to seed a cell at: without one none
+    // seeds a cell and the rebuild would draw nothing for the count to be taken over.
+    private SectorAPI installAsTheRebuildsSector(SectorAPI sector) {
 
         SectorPoliticsFixtures.placeEverySystemInHyperspace(sector);
         machinery = new SectorMapMachinery(sector);
@@ -489,6 +550,16 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             .thenReturn(sector);
 
         return sector;
+    }
+
+    // The second system the sector lists under the shared id - the one no address by id reaches,
+    // every id read answering the first.
+    private static StarSystemAPI findTheTwinIn(SectorAPI sector) {
+        return sector.getStarSystems().stream()
+            .filter(system -> ALPHA_ID.equals(system.getId()))
+            .skip(1)
+            .findFirst()
+            .orElseThrow();
     }
 
     // Puts a sector of one settled system under the global lookup, leaving the installed one where
