@@ -50,8 +50,15 @@ says it moved; `MapVisibilityPass` is one reading of the sector answering that r
 The rule takes the answers rather than the sector to read them from - a pass holds the colony index
 and hyperspace scan it composes them off - so a caller running several walks in one tick selects each
 system once between them and asks one thing which systems are drawn. The positions come off the
-index's own systems-by-id traversal rather than one opened here, which is what keeps a pass to the
-single traversal a frame allows it however many of its readers want the sector's systems.
+index's own traversal rather than one opened here, which is what keeps a pass to the single traversal
+a frame allows it however many of its readers want the sector's systems.
+
+They come off it keyed by `SystemKey`, because a star system id is not unique: a live modded sector
+lists several systems under one - vanilla's own unnamed deep space and abyssal systems among them -
+and a point cloud gathered under ids is short a site for each, which draws as a system with no cell
+on a map that cells every neighbour it has. `collectLivePositionsById` re-addresses the same answer
+for a structure still keyed by id, holding the first system of a colliding set as every id-keyed read
+of the sector does.
 
 The route path is the one that does not also have to be drawn. A mod-made destination is reached by
 an entity of the mod's own rather than a jump point, and marked by an icon of the mod's own rather

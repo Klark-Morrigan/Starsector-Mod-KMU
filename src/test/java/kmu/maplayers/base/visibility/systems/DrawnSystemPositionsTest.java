@@ -12,6 +12,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.recording.RecordingProfiler;
 import kmlib.starsector.SectorWalkCounters;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
@@ -38,6 +39,10 @@ import static org.mockito.Mockito.when;
  *
  * <p>The other half is the skip: a system with no hyperspace position has no site to place a
  * cell at, and is left out whatever the rule says about it.
+ *
+ * <p>Both addresses get a case posing two systems that share an id, since a live modded sector
+ * lists several such pairs: the keyed read holds a site for each, the id read holds the first of
+ * them - which is what a structure keyed by id gives up by being keyed that way.
  */
 class DrawnSystemPositionsTest {
 
@@ -69,7 +74,7 @@ class DrawnSystemPositionsTest {
         }
 
         @Test
-        void keysEachDrawnSystemsLivePositionById() {
+        void keysEachDrawnSystemsLivePositionByItsKey() {
 
             var sector = buildSectorHolding(
                 buildSystemAt("a", 3f, 4f),
@@ -78,10 +83,30 @@ class DrawnSystemPositionsTest {
             var positions = collectPositionsUnder(sector, FORCED_ONTO_MAP);
 
             assertThat(positions)
-                .containsOnlyKeys("a", "b");
-            assertThat(positions.get("a"))
+                .containsOnlyKeys(keyOf("a"), keyOf("b"));
+            assertThat(positions.get(keyOf("a")))
                 .containsExactly(3.0, 4.0);
-            assertThat(positions.get("b"))
+            assertThat(positions.get(keyOf("b")))
+                .containsExactly(-5.0, 6.0);
+        }
+
+        @Test
+        void seedsASiteForEachOfTwoSystemsSharingAnId() {
+            // What the key address is for. A live modded sector lists several systems under one id
+            // - vanilla's own deep space among them - and a point cloud gathered under ids is short
+            // a site for each, which draws as a system with no cell on a map that cells every
+            // neighbour it has.
+            var sector = buildSectorHolding(
+                buildKeyedSystemAt("deep space", "8b3", 3f, 4f),
+                buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
+
+            var positions = collectPositionsUnder(sector, FORCED_ONTO_MAP);
+
+            assertThat(positions)
+                .containsOnlyKeys(
+                    new SystemKey("deep space", "", "8b3"),
+                    new SystemKey("deep space", "", "38d53"));
+            assertThat(positions.get(new SystemKey("deep space", "", "38d53")))
                 .containsExactly(-5.0, 6.0);
         }
 
@@ -120,15 +145,16 @@ class DrawnSystemPositionsTest {
             listColonyIn(sector, system, buildOpenColony());
 
             assertThat(collectPositionsUnder(sector, MapVisibilityRules.BASE))
-                .containsOnlyKeys("a");
+                .containsOnlyKeys(keyOf("a"));
         }
 
         @Test
         void opensNoTraversalOfTheSystemListItsPassHasNotAlreadyMade() {
             // What holds a rebuild inside the one traversal the frame allows it. The band bake
-            // resolves its systems off the same pass, so a traversal opened here would be the
-            // second in a rebuild whichever of the two ran first - and the bound is per call,
-            // so it would break on every full rebuild rather than on an unlucky one.
+            // resolves its systems off the same pass by id while this addresses them by key, so a
+            // traversal opened here would be the second in a rebuild whichever of the two ran
+            // first - and the bound is per call, so it would break on every full rebuild rather
+            // than on an unlucky one.
             var pass = MapVisibilityPass.over(
                 buildSectorHolding(buildSystemAt("a", 3f, 4f)),
                 FORCED_ONTO_MAP);
@@ -145,15 +171,59 @@ class DrawnSystemPositionsTest {
         }
     }
 
+    @Nested
+    class CollectLivePositionsById {
+
+        @Test
+        void keysEachDrawnSystemsLivePositionById() {
+
+            var sector = buildSectorHolding(
+                buildSystemAt("a", 3f, 4f),
+                buildSystemAt("b", -5f, 6f));
+
+            var positions = DrawnSystemPositions.collectLivePositionsById(
+                MapVisibilityPass.over(sector, FORCED_ONTO_MAP));
+
+            assertThat(positions)
+                .containsOnlyKeys("a", "b");
+            assertThat(positions.get("a"))
+                .containsExactly(3.0, 4.0);
+        }
+
+        @Test
+        void holdsTheFirstPositionOfTwoSystemsSharingAnId() {
+            // What an id address costs, stated where a structure keyed that way takes it: the two
+            // systems are one entry, holding the one every other id-keyed read of the sector
+            // answers with.
+            var sector = buildSectorHolding(
+                buildKeyedSystemAt("deep space", "8b3", 3f, 4f),
+                buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
+
+            var positions = DrawnSystemPositions.collectLivePositionsById(
+                MapVisibilityPass.over(sector, FORCED_ONTO_MAP));
+
+            assertThat(positions)
+                .containsOnlyKeys("deep space");
+            assertThat(positions.get("deep space"))
+                .containsExactly(3.0, 4.0);
+        }
+    }
+
     // One walk over a pass opened the way a rebuild opens one: built per call and discarded
     // with it, which is what the production caller does - a kept pass would answer a second
     // walk off the sector the first one saw.
-    private static Map<String, double[]> collectPositionsUnder(
+    private static Map<SystemKey, double[]> collectPositionsUnder(
             SectorAPI sector,
             MapVisibilityRules visibilityRules) {
 
         return DrawnSystemPositions.collectLivePositions(
             MapVisibilityPass.over(sector, visibilityRules));
+    }
+
+    // The key a system posed with an id alone carries: a sector states no centre and no anchor for
+    // one, and an arm it does not state is absent rather than missing.
+    private static SystemKey keyOf(String systemId) {
+        return new SystemKey(systemId, "", "");
     }
 
     // A sector whose hyperspace carries no star anchor and whose economy lists nothing, so no
@@ -197,13 +267,31 @@ class DrawnSystemPositionsTest {
     }
 
     private static StarSystemAPI buildSystemWithoutAPosition(String id) {
+        return closeTheJumpRoutesOf(StarSystemFixture.buildSystem(id));
+    }
 
-        var systemMock = StarSystemFixture.buildSystem(id);
+    // A system standing where another of the same id stands too, told apart by its anchor alone -
+    // the shape a live modded sector lists and the one nothing but a key separates.
+    private static StarSystemAPI buildKeyedSystemAt(
+            String id,
+            String anchorEntityId,
+            float x,
+            float y) {
 
-        when(systemMock.getJumpPoints())
+        return StarSystemFixture.placeSystemAt(
+            closeTheJumpRoutesOf(StarSystemFixture.buildKeyedSystem(id, null, anchorEntityId)),
+            x,
+            y);
+    }
+
+    // Leaves a posed system unreachable, so only the force override or somebody living there can
+    // put it on the map - which is what lets a case decide admission by what it stages.
+    private static StarSystemAPI closeTheJumpRoutesOf(StarSystemAPI system) {
+
+        when(system.getJumpPoints())
             .thenReturn(List.of());
 
-        return systemMock;
+        return system;
     }
 
     // A discovered, openly held colony - what the habitation read admits, and the one route

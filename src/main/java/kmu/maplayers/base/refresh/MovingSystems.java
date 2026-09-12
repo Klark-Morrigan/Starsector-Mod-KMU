@@ -77,7 +77,9 @@ public final class MovingSystems {
         if (pass == null || pass.sector() == null) {
             return false;
         }
+        // Addressed by id because that is what the tracker observes under and what the moving set
+        // is published as, which is the address the geometry cut consults it by.
         return systemMotionTracker.updateMovingSystems(
-            DrawnSystemPositions.collectLivePositions(pass));
+            DrawnSystemPositions.collectLivePositionsById(pass));
     }
 }

@@ -319,7 +319,9 @@ public final class CellGeometryCache {
             MapVisibilityPass pass,
             Set<String> movingSystemIds) {
 
-        var sites = DrawnSystemPositions.collectLivePositions(pass);
+        // Addressed by id because a cell is keyed by the system it is cut for and a cell id is a
+        // system id, which is the address the movers are named by as well.
+        var sites = DrawnSystemPositions.collectLivePositionsById(pass);
         sites.keySet().removeAll(movingSystemIds);
         return sites;
     }
