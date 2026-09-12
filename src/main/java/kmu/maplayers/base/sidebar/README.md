@@ -39,9 +39,18 @@ The two entry points (`resolveMapPlacement`, `resolveIntelPlacement`) differ onl
 padding; `computeIntelPadding` converts the visor rect into top-left-anchored padding, and is
 package-private so the anchor maths stands apart from the sector read around it. The `TabStyle` is the host's
 and is injected, so the band a strip stands in stays with the rest of that host's look rather than
-being half here. Both return `null` when the tab font cannot load - the face taken off that injected
-style, so the tabs are snapped to the face they are painted in - since layout snaps tabs to measured
-text; callers then draw and consume nothing.
+being half here. Both return `null` when either of the panel's two faces cannot load, since layout
+snaps every row to measured text; callers then draw and consume nothing.
+
+Those two faces are why the placement hands the layout a `StripTextMeasurers` pair rather than one
+measurer. A panel is not lettered in a single atlas: the band reads in the tab face taken off that
+injected style, and the controls beneath it read in the body face (`SidebarStyles.resolveBodyFont`).
+Measuring a row through the face it is *not* drawn in sizes it against letters it never wears, and the
+box, framed to its widest row, inherits the error. Because the two hosts state different tab
+faces - the sector map's condensed orbitron against the intel screen's pixel face - a strip snapped
+wholly to the tab face would stand the same body at a different width on each screen. The pair is
+built through `StripTextMeasurers.loadFaceMeasurers`, whose two parameters are differently typed so
+the faces cannot arrive the wrong way round.
 
 The layer selector is a single `ControlSpec.Tabs` whose action selects the layer at the clicked
 index, so the switch rides on the control and no tab callback is threaded through the input pass.

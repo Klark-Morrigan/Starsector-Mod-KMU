@@ -3,9 +3,7 @@ package kmu.maplayers.base.sidebar;
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
 import kmlib.starsector.ui.controls.ControlSpec;
-import kmlib.starsector.ui.font.LazyFontCache;
-import kmlib.starsector.ui.font.LazyFontMeasurer;
-import kmlib.starsector.ui.font.LineWidthMeasurer;
+import kmlib.starsector.ui.font.StripTextMeasurers;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
 import kmlib.starsector.ui.screen.VanillaScreen;
@@ -24,6 +22,7 @@ import kmu.maplayers.base.layer.MapLayerRegistry;
 import kmu.maplayers.base.layer.PaintingLayers;
 import kmu.maplayers.base.layer.ScreenLayerPicks;
 import kmu.maplayers.base.layer.ScreenLayerTabs;
+import kmu.maplayers.base.sidebar.style.SidebarStyles;
 import kmu.settings.KmuMapControlSettings;
 import kmu.settings.KmuMapSidebarSettings;
 import kmu.util.KmuValues;
@@ -53,9 +52,11 @@ import java.util.Set;
  *
  * <p>The layer selector is one {@link ControlSpec.Tabs} control whose action selects the layer at
  * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
- * callback. Layout snaps each tab to its measured label, so the placement needs the tab font's width
- * measurer; the face travels inside the same {@link TabStyle} the renderer paints from, so a snapped tab
- * width matches the text drawn into it.
+ * callback. Layout snaps every row to its measured label, so the placement needs a width measurer per face
+ * the panel letters in: the tab face, which travels inside the same {@link TabStyle} the renderer paints
+ * from, and the body face the controls beneath the band read in. Measuring each row in the face it draws
+ * in is what keeps a snapped row as wide as the text laid into it - and, because the two hosts state
+ * different tab faces, what keeps the same body standing the same width on either screen.
  *
  * <p>Past the last tab stands {@link BarOpeners the bar's own opener}, asked for here and described there.
  * It is the panel's band button rather than a tab, so it wears the row's look while the row's own indexing
@@ -78,7 +79,7 @@ public final class LiveSidebarPlacement {
      *
      * @param panel the on-map host's own panel: its look, its scroll and fold, its active-layer pick, and
      *              the frame edges it reserves - the on-map sidebar frames all four
-     * @return the placement to draw and hit-test, or {@code null} when the tab font cannot load (see
+     * @return the placement to draw and hit-test, or {@code null} when either face cannot load (see
      *         {@link #resolvePlacement})
      */
     public static TabPanelPlacement resolveMapPlacement(SidebarHostPanel panel) {
@@ -95,7 +96,7 @@ public final class LiveSidebarPlacement {
      *                     scroll and fold, its own active-layer pick, so a switch on one screen never moves
      *                     the other's tab - and the frame edges it reserves, which drop the ones it shares
      *                     with the visor so the box sits flush
-     * @return the placement to draw and hit-test, or {@code null} when the tab font cannot load (see
+     * @return the placement to draw and hit-test, or {@code null} when either face cannot load (see
      *         {@link #resolvePlacement})
      */
     public static TabPanelPlacement resolveIntelPlacement(
@@ -190,7 +191,7 @@ public final class LiveSidebarPlacement {
 
     // Lays the panel out for the given anchor and host panel - the one path both host entry points share,
     // so the map and intel panels are the same layout differing only in where they anchor and how tall they
-    // stand their tab band. Returns null when the tab font cannot load - the layout snaps tabs to measured
+    // stand their tab band. Returns null when either face cannot load - the layout snaps every row to measured
     // text and cannot run without it - so the caller draws nothing and consumes nothing that frame.
     //
     // Reads the panel's scroll and fold without writing either. Settling the stored scroll request against
@@ -200,8 +201,8 @@ public final class LiveSidebarPlacement {
     private static TabPanelPlacement resolvePlacement(Padding padding, SidebarHostPanel panel) {
 
         var tabStyle = panel.tabStyle();
-        var measurer = loadTabMeasurer(tabStyle);
-        if (measurer == null) {
+        var measurers = loadFaceMeasurers(tabStyle);
+        if (measurers == null) {
             return null;
         }
 
@@ -226,7 +227,7 @@ public final class LiveSidebarPlacement {
                 buildTabsSpec(layers, activeLayer, screenPicks.layerSelection()),
                 resolveOpenerSpec(tabStyle)),
             buildBodyControls(activeLayer, screenPicks),
-            measurer,
+            measurers,
             // The live scroll and fold, so the body lays out at its interpolated width and the notch
             // rides the shrinking edge; the render pass advances the fold each frame and both passes
             // resolve against the same value, so the drawn fold and the hit-tested notch line up.
@@ -307,16 +308,15 @@ public final class LiveSidebarPlacement {
         return Keyboard.getKeyName(keycode);
     }
 
-    // The tab font wrapped as a width measurer, or null when it cannot load. Taken off the injected style
-    // rather than named here, so the face the tabs are snapped to is by construction the face they are
-    // painted in. One measurer serves both the tab and body snapping in the layout: body labels drawn in
-    // the narrower insignia face fit inside boxes snapped to this face, so the body reads correctly and
-    // only the tabs, drawn in this same face, need it to match exactly.
-    private static LineWidthMeasurer loadTabMeasurer(TabStyle tabStyle) {
-        var font = LazyFontCache.loadByFace(tabStyle.face().font());
-        if (font == null) {
-            return null;
-        }
-        return new LazyFontMeasurer(font);
+    // The panel's two faces wrapped as width measurers, or null when either cannot load. The tab face is
+    // taken off the injected style rather than named here, so the face the tabs are snapped to is by
+    // construction the face they are painted in; the body face is the one the controls beneath them
+    // letter in. Both are needed because the two hosts state different tab faces while sharing one body
+    // face - a strip snapped wholly to the tab face would size its body rows differently on each screen,
+    // and the panel, framed to its widest row, would stand a different width on each.
+    private static StripTextMeasurers loadFaceMeasurers(TabStyle tabStyle) {
+        return StripTextMeasurers.loadFaceMeasurers(
+            tabStyle.face(),
+            SidebarStyles.resolveBodyFont());
     }
 }

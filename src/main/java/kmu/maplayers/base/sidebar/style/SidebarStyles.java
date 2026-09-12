@@ -92,6 +92,19 @@ public final class SidebarStyles {
     }
 
     /**
+     * The face the body controls letter in - the same value {@link #composeStyle} spends on the look the
+     * paint pass reads, so a caller measuring a body row snaps it to the letters it will be drawn in.
+     * Exposed because the tab face and this one are two different atlases: a strip measured wholly in the
+     * tab face sizes every body row against letters it never wears, and the panel framed to the widest row
+     * inherits that error.
+     *
+     * @return the atlas the body-control labels draw in
+     */
+    public static StarsectorFont resolveBodyFont() {
+        return BODY_FONT;
+    }
+
+    /**
      * The strip tab style at the given band height: the sector map's seamless run of abutting tabs, and
      * the underlined-key hotkey convention that goes with it.
      *
