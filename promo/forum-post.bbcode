@@ -33,8 +33,63 @@ This mod is made compatible with [b][url=https://fractalsoftworks.com/forum/inde
 [hr]
 [color=maroon][b]Sector Map Layers[/b][/color] is an overlay for the map screen [b](Tab, Q)[/b], the intel screen [b](E, 1)[/b], the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have [b]Random Assortment of Things[/b] installed.
 
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Map screen.
+sector-2-modded-light.png
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Intel screen.
+intel-screen.png
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+[b]Random Assortment of Things[/b] minimap.
+random-assortment-of-things-minimap.png
+[/center]
+[/spoiler]
+
+Everything is calculated and drawn off of game data, and it gets updated as the state of the sector shanges. Map layers don't alter any of the data being used to draw it, making map layers [b]read-only[/b] by design.
+
+[spoiler=Sector examples]
+[center]
+[table]
+[tr]
+[td]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Vanilla.
+sector-1-vanilla.png
+[/center]
+[/td]
+[td]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Lightly modded.
+sector-2-modded-light.png
+[/center]
+[/td]
+[td]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Heavily modded.
+sector-3-modded-heavy.png
+[/center]
+[/td]
+[/tr]
+[/table]
+[/center]
+[/spoiler]
 [spoiler=How to access map layers]
 [color=maroon][b]KMU[/b][/color] comes with [color=maroon][b]Sector Map Layers[/b][/color] feature [color=green]turned on by default[/color]. After loading a save or starting a new game, when you open the [b]map screen[/b] or the [b]intel screen[/b], you'll see a new [b]Map layers[/b] button among map filter buttons. Clicking that button or pressing [b](M)[/b] enables the map layer overlay and its sidebar.
+
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Map screen.
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Intel screen.
+[/center]
 [/spoiler]
 
 The main control surface of map layers is the collapsible [b]sidebar[/b] that lists all available layers and related knobs and toggles.
@@ -42,16 +97,90 @@ The main control surface of map layers is the collapsible [b]sidebar[/b] that li
 [spoiler=Available map layers]
 [spoiler=Political Map (P)]
 [list]
-[li]Focuses on [b]populated colonies[/b] and their affiliation.[/li]
-[li]Any given system can be painted by only a single faction, so each system draws a [b]presence ribbon[/b] hugging its border that represents each populated colony with the color of the faction holding them.[/li]
-[li]Expandable [b]system tooltips[/b] provide detailed information on how each market affects the balance of power.[/li]
-[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. In the domination mode ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color] views) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems. On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.[/li]
+[li]Focuses on [b]populated colonies[/b] and their affiliation.
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Unpopulated systems are drawn recessed just to show where systems touch. Those outlines of unpopulated systems can be toggled off.
+domination-factions-unpopulated.png
+[/center]
+[/spoiler]
+[/li]
+[li]Any given system can be painted by only a single faction, so each system draws a [b]presence ribbon[/b] hugging its border that represents each populated colony with the color of the faction holding them.
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Presence ribbons: Samarra draws one showing 3 Hegemony markets and 1 Independent market.
+domination-factions-presence-ribbon.png
+[/center]
+[/spoiler]
+[/li]
+[li]Expandable [b]system tooltips[/b] provide detailed information on how each market affects the balance of power.
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Tooltips list neutral markets.
+domination-factions-tooltip-lists-neutral-markets.png
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Tooltips list markets producing no domination score.
+domination-factions-tooltip-lists-not-contributing-markets.png
+[/center]
+[/spoiler]
+[/li]
+[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. In domination views ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color] views) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems. On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Faction filter, expanded to 2 columns, sorted by faction attitude toward the player.
+domination-factions-filter.png
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Factions view filtered by [b]Luddic Church[/b].
+domination-factions-luddic-church.png
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Factions view filtered by [b]Pirates[/b].
+domination-factions-pirates.png
+
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Unpopulated systems get no paint in domination views. Tia star system is shown as Hegemony-owned because Hegemony holds a claim for it.
+domination-factions-unpopulated-claimed.png
+[/center]
+[/spoiler]
+[/li]
 [/list]
+
 The [color=maroon][b]Political Map[/b][/color] comes with 3 views:
 [list]
-[li][color=maroon][b]Factions[/b][/color] - paints faction territory based on a custom [b]domination algorithm[/b] (highly customisable in settings) that weighs markets sizes, stability, whether a market is hidden, presence of an orbital station (or if a station is militarised), and the number of patrol fleets generated (by their sizes).[/li]
-[li][color=maroon][b]Alliances[/b][/color] (only visible with [b]Nexerelin[/b] installed) - same as [color=maroon][b]Factions[/b][/color] but allied factions stand as a single political entity with their holdings combined.[/li]
-[li][color=maroon][b]Claims[/b][/color] - paints faction territory based on the vanilla [b]system claim[/b] mechanic - dynamic or forced. [b]Forced claims[/b] are set via sector memory and are the highest authority. [b]Unless a claim is forced, system claim is resolved dynamically[/b] - the single biggest market (that participates in the economy) wins, boosted by the presence of same-faction markets (of any kind) and any military industry constructed. [color=red]The player faction and non-territorial factions cannot lay claims dynamically.[/color] If you filter by a non-territorial faction, unclaimed systems with their presence will be spotlit.[/li]
+[li][color=maroon][b]Factions[/b][/color] - paints faction territory based on a custom [b]domination algorithm[/b] (highly customisable in settings) that weighs markets sizes, stability, whether a market is hidden, presence of an orbital station (or if a station is militarised), and the number of patrol fleets generated (by their sizes).
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+[b]Luddic Church[/b] claims Penelope's Star but isn't present there, and per domination rules actually present faction reads as the holder. The claim is still listed in the tooltip.
+domination-factions-penelope_star.png
+[/li]
+[li][color=maroon][b]Alliances[/b][/color] (only visible with [b]Nexerelin[/b] installed) - same as [color=maroon][b]Factions[/b][/color] but allied factions stand as a single political entity with their holdings combined.
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+Tooltips in the [color=maroon][b]Alliances[/b][/color] view combine domination score of alliance members.
+domination-alliances-tooltip.png
+[/li]
+[li][color=maroon][b]Claims[/b][/color] - paints faction territory based on the vanilla [b]system claim[/b] mechanic - dynamic or forced. [b]Forced claims[/b] are set via sector memory and are the highest authority. [b]Unless a claim is forced, system claim is resolved dynamically[/b] - the single biggest market (that participates in the economy) wins, boosted by the presence of same-faction markets (of any kind) and any military industry constructed. [color=red]The player faction and non-territorial factions cannot lay claims dynamically.[/color] If you filter by a non-territorial faction, unclaimed systems with their presence will be spotlit.
+
+[spoiler=Examples]
+[center]
+[img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
+[b]Luddic Church[/b] isn't present in Penelope's Star system, holds a claim on it, and there's a non-territorial faction (Independent) present.
+claims-cored-but-somebody-else-is-present.png
+[/li]
 [/list][/spoiler][/spoiler]
 [spoiler=Spoiler protection]
 To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] system:
