@@ -126,7 +126,7 @@ To avoid spoilers, map layers operate on a vanilla-derived **visibility** system
 
 | Command | Syntax | What it does |
 | --- | --- | --- |
-| `kmu_profiling` | `[tree/flat/walks] [namespace=<prefix>] [top=<count>] [perframe] [reset]` | Writes full or scoped performance measurements to game logs on demand. Calls exceeding the budget are logged automatically without this command. **Requires profiling to be enabled in settings.** |
+| `kmu_profiling` | `[tree\|flat\|walks] [namespace=<prefix>] [top=<count>] [perframe] [reset]` | Writes full or scoped performance measurements to game logs on demand. Calls exceeding the budget are logged automatically without this command. **Requires profiling to be enabled in settings.** |
 
 ### Compatibility
 
