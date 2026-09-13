@@ -4,6 +4,8 @@ import kmlib.colour.Colours;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.render.MapFrame;
+
 import org.lwjgl.opengl.GL11;
 
 import java.util.List;
@@ -45,12 +47,12 @@ public final class LabelRenderer {
     // empty-list check; a fully faded-out map (alphaMult 0) emits nothing rather than
     // drawing invisible text. Profiled like the other map passes since it runs every frame
     // the map is open.
-    public static void renderOnMap(List<Label> labels, float factor, float alphaMult) {
-        if (labels.isEmpty() || alphaMult <= 0f) {
+    public static void renderOnMap(List<Label> labels, MapFrame mapFrame) {
+        if (labels.isEmpty() || mapFrame.isFadedOut()) {
             return;
         }
         try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
-            drawLabels(labels, factor, alphaMult);
+            drawLabels(labels, mapFrame);
         }
     }
 
@@ -58,13 +60,13 @@ public final class LabelRenderer {
     // coordinates so the glyphs scale with the cluster. Each label's colour is refaded to
     // the map's alpha first (no buffer rebuild, since there is no per-substring colour), so
     // the names fade with the fills at the edges of the map's zoom range.
-    private static void drawLabels(List<Label> labels, float factor, float alphaMult) {
+    private static void drawLabels(List<Label> labels, MapFrame mapFrame) {
         GL11.glPushMatrix();
-        GL11.glScalef(factor, factor, 1f);
+        GL11.glScalef(mapFrame.factor(), mapFrame.factor(), 1f);
         for (var label : labels) {
             // Refade the label to the frame's alpha so it dims in step with the cluster
             // it sits on; scaleAlpha keeps a copy, so the cached base colour is untouched.
-            label.text().setBaseColor(Colours.scaleAlpha(label.baseColour(), alphaMult));
+            label.text().setBaseColor(Colours.scaleAlpha(label.baseColour(), mapFrame.alphaMult()));
             label.text().drawAtAngle(label.hangX(), label.hangY(), label.slantDegrees());
         }
         GL11.glPopMatrix();

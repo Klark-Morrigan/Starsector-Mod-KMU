@@ -3,6 +3,7 @@ package kmu.maplayers.base.render.clusters;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 
@@ -37,9 +38,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class ClusterRendererTest {
 
-    private static final float FULL_ALPHA = 1f;
-    private static final float FADED_OUT_ALPHA = 0f;
-    private static final float ANY_MAP_FACTOR = 1f;
+    // A frame that paints, and one at the far end of the map.s fade. The scale is the same in
+    // both and is never read: what these cases are about is the guard in front of the emission.
+    private static final MapFrame PAINTING_FRAME = new MapFrame(1f, 1f);
+    private static final MapFrame FADED_OUT_FRAME = new MapFrame(1f, 0f);
 
     @Nested
     class RenderFillsOnMap {
@@ -48,7 +50,7 @@ final class ClusterRendererTest {
         void renderFillsOnMapReadsNoDrawListsWhenThereIsNothingToPaint() {
             var drawListsFake = new ClusterDrawListsFake(true);
 
-            ClusterRenderer.renderFillsOnMap(drawListsFake, ANY_MAP_FACTOR, FULL_ALPHA);
+            ClusterRenderer.renderFillsOnMap(drawListsFake, PAINTING_FRAME);
 
             assertThat(drawListsFake.hasReadDrawLists())
                 .isFalse();
@@ -60,7 +62,7 @@ final class ClusterRendererTest {
             // every run would emit at zero effective alpha, paying the whole pass for nothing.
             var drawListsFake = new ClusterDrawListsFake(false);
 
-            ClusterRenderer.renderFillsOnMap(drawListsFake, ANY_MAP_FACTOR, FADED_OUT_ALPHA);
+            ClusterRenderer.renderFillsOnMap(drawListsFake, FADED_OUT_FRAME);
 
             assertThat(drawListsFake.hasReadDrawLists())
                 .isFalse();
@@ -74,7 +76,7 @@ final class ClusterRendererTest {
         void renderBordersOnMapReadsNoDrawListsWhenThereIsNothingToPaint() {
             var drawListsFake = new ClusterDrawListsFake(true);
 
-            ClusterRenderer.renderBordersOnMap(drawListsFake, ANY_MAP_FACTOR, FULL_ALPHA);
+            ClusterRenderer.renderBordersOnMap(drawListsFake, PAINTING_FRAME);
 
             assertThat(drawListsFake.hasReadDrawLists())
                 .isFalse();
@@ -86,7 +88,7 @@ final class ClusterRendererTest {
             // every run would emit at zero effective alpha, paying the whole pass for nothing.
             var drawListsFake = new ClusterDrawListsFake(false);
 
-            ClusterRenderer.renderBordersOnMap(drawListsFake, ANY_MAP_FACTOR, FADED_OUT_ALPHA);
+            ClusterRenderer.renderBordersOnMap(drawListsFake, FADED_OUT_FRAME);
 
             assertThat(drawListsFake.hasReadDrawLists())
                 .isFalse();

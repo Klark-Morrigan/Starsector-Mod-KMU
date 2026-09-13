@@ -8,6 +8,8 @@ import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.render.MapFrame;
+
 import org.lwjgl.opengl.GL11;
 
 import java.util.Collection;
@@ -53,15 +55,13 @@ public final class CellPresenceRibbonRenderer {
      *                  none are not among them. Taken as the bands alone rather than as the map
      *                  they are held in, since which cell a band belongs to is settled where it
      *                  was baked and says nothing about how it is painted
-     * @param factor    the map's world-to-screen scale, applied to every coordinate
-     * @param alphaMult the map's own fade, applied over each run's colour
+     * @param mapFrame  the scale every coordinate is multiplied by and the fade over each run
      */
     public static void renderOnMap(
             Collection<CellRibbon> ribbons,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
-        if (ribbons.isEmpty() || alphaMult <= 0f) {
+        if (ribbons.isEmpty() || mapFrame.isFadedOut()) {
             return;
         }
         // Profiled like the other map passes, since this runs every frame the map is open; only
@@ -70,7 +70,7 @@ public final class CellPresenceRibbonRenderer {
             GlPasses.runBlendedPass(
                 GlBlendMode.ALPHA,
                 GlLineQuality.ALIASED,
-                () -> drawBands(ribbons, factor, alphaMult));
+                () -> drawBands(ribbons, mapFrame));
         }
     }
 
@@ -82,13 +82,12 @@ public final class CellPresenceRibbonRenderer {
     // rebuild.
     private static void drawBands(
             Collection<CellRibbon> ribbons,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         for (var ribbon : ribbons) {
             for (var band : ribbon.bands()) {
-                GlColour.set(band.colour(), alphaMult);
-                GlRuns.drawScaled(GL11.GL_TRIANGLES, band.triangles(), factor);
+                GlColour.set(band.colour(), mapFrame.alphaMult());
+                GlRuns.drawScaled(GL11.GL_TRIANGLES, band.triangles(), mapFrame.factor());
             }
         }
     }

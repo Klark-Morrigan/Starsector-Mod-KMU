@@ -8,6 +8,7 @@ import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.hover.MapHoverCues;
 import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
@@ -238,7 +239,11 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
                 return;
             }
             try (var layerScope = frameBeats.openLayerRow()) {
-                overlayRenderer.renderOnMap(cache, factor, alphaMult, band);
+                // The engine's two loose values become the frame every pass below takes whole. Built
+                // here because this is the last point that still speaks the engine's signature: the
+                // seam above mirrors vanilla's call so the trail back to it survives, and everything
+                // under this line is ours to give a better shape.
+                overlayRenderer.renderOnMap(cache, new MapFrame(factor, alphaMult), band);
             }
         }
     }

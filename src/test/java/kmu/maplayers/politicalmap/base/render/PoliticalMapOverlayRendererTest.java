@@ -5,6 +5,7 @@ import kmu.maplayers.base.hover.MapHover;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
@@ -29,7 +30,6 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -57,8 +57,9 @@ import static org.mockito.Mockito.when;
  */
 final class PoliticalMapOverlayRendererTest {
 
-    private static final float FACTOR = 1f;
-    private static final float ALPHA_MULT = 1f;
+    // A frame that paints: neither value is read by anything asserted here, the subject being
+    // which renderer each band reaches rather than what it emits.
+    private static final MapFrame PAINTING_FRAME = new MapFrame(1f, 1f);
 
     // What the cursor was resolved to on this sector's map, for the case about which holder the
     // highlight traces.
@@ -96,17 +97,16 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 // Both halves, since the framework hands the territories out as two entries and
                 // this band is what puts them back together - a compositor that emitted only one
                 // would draw fills with no borders, or borders round nothing.
                 clusterRendererMock.verify(() ->
-                    ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderFillsOnMap(any(), any()));
                 clusterRendererMock.verify(() ->
-                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderBordersOnMap(any(), any()));
 
                 anchorRendererMock
                     .verifyNoInteractions();
@@ -132,8 +132,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 // The ordering context is opened on the mocked class rather than on the handle:
@@ -142,9 +141,9 @@ final class PoliticalMapOverlayRendererTest {
                 var clusterCallOrder = inOrder(ClusterRenderer.class);
 
                 clusterCallOrder.verify(clusterRendererMock, () ->
-                    ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderFillsOnMap(any(), any()));
                 clusterCallOrder.verify(clusterRendererMock, () ->
-                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderBordersOnMap(any(), any()));
             }
         }
 
@@ -166,18 +165,16 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
                     CellPresenceRibbonRenderer.renderOnMap(
                         any(),
-                        anyFloat(),
-                        anyFloat()));
+                        any()));
 
                 labelRendererMock.verify(() ->
-                    LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    LabelRenderer.renderOnMap(any(), any()));
 
                 clusterRendererMock
                     .verifyNoInteractions();
@@ -206,15 +203,14 @@ final class PoliticalMapOverlayRendererTest {
                 // there is no seam to inject one through.
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 anchorRendererMock.verify(() ->
-                    ClusterAnchorRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterAnchorRenderer.renderOnMap(any(), any()));
 
                 verify(hoverRendererConstructionMock.constructed().get(0))
-                    .renderCursorHighlightOnMap(any(), any(), any(), anyFloat(), anyFloat());
+                    .renderCursorHighlightOnMap(any(), any(), any(), any());
             }
         }
 
@@ -238,8 +234,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 verify(hoverRendererConstructionMock.constructed().get(0))
@@ -247,8 +242,7 @@ final class PoliticalMapOverlayRendererTest {
                         any(),
                         any(),
                         eq(HOVERED_CELL),
-                        anyFloat(),
-                        anyFloat());
+                        any());
             }
         }
 
@@ -268,8 +262,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 anchorRendererMock
@@ -305,12 +298,11 @@ final class PoliticalMapOverlayRendererTest {
 
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 verify(previewHighlightRendererMock)
-                    .renderPreviewOnMap(any(), anyFloat(), anyFloat());
+                    .renderPreviewOnMap(any(), any());
             }
         }
 
@@ -328,8 +320,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 verifyNoInteractions(previewHighlightRendererMock);
@@ -351,12 +342,11 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildDebugCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 borderStageRendererMock.verify(() ->
-                    ClusterBorderStageRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterBorderStageRenderer.renderOnMap(any(), any()));
 
                 clusterRendererMock
                     .verifyNoInteractions();
@@ -386,15 +376,14 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildDebugCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock
                     .verifyNoInteractions();
 
                 labelRendererMock.verify(() ->
-                    LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    LabelRenderer.renderOnMap(any(), any()));
             }
         }
 
@@ -419,14 +408,13 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 clusterRendererMock.verify(() ->
-                    ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderFillsOnMap(any(), any()));
                 clusterRendererMock.verify(() ->
-                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderBordersOnMap(any(), any()));
             }
         }
 
@@ -450,8 +438,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 clusterRendererMock
@@ -479,15 +466,14 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 clusterRendererMock.verify(() ->
-                    ClusterRenderer.renderBordersOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterRenderer.renderBordersOnMap(any(), any()));
 
                 clusterRendererMock.verify(
-                    () -> ClusterRenderer.renderFillsOnMap(any(), anyFloat(), anyFloat()),
+                    () -> ClusterRenderer.renderFillsOnMap(any(), any()),
                     never());
             }
         }
@@ -514,15 +500,14 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock.verify(() ->
-                    CellPresenceRibbonRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    CellPresenceRibbonRenderer.renderOnMap(any(), any()));
 
                 labelRendererMock.verify(() ->
-                    LabelRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    LabelRenderer.renderOnMap(any(), any()));
             }
         }
 
@@ -549,15 +534,14 @@ final class PoliticalMapOverlayRendererTest {
 
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 anchorRendererMock.verify(() ->
-                    ClusterAnchorRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterAnchorRenderer.renderOnMap(any(), any()));
 
                 verify(hoverRendererConstructionMock.constructed().get(0))
-                    .renderCursorHighlightOnMap(any(), any(), any(), anyFloat(), anyFloat());
+                    .renderCursorHighlightOnMap(any(), any(), any(), any());
             }
         }
 
@@ -584,12 +568,11 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildDebugCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 borderStageRendererMock.verify(() ->
-                    ClusterBorderStageRenderer.renderOnMap(any(), anyFloat(), anyFloat()));
+                    ClusterBorderStageRenderer.renderOnMap(any(), any()));
 
                 clusterRendererMock
                     .verifyNoInteractions();
@@ -618,8 +601,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 buildOverlayRenderer().renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
 
                 anchorRendererMock
@@ -655,8 +637,7 @@ final class PoliticalMapOverlayRendererTest {
 
                 overlayRenderer.renderOnMap(
                     buildCacheMock(),
-                    FACTOR,
-                    ALPHA_MULT,
+                    PAINTING_FRAME,
                     MapOverlayBand.ABOVE_STARSCAPE_NEBULAE);
 
                 ribbonRendererMock

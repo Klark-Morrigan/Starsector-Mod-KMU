@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
@@ -83,11 +84,10 @@ final class PoliticalMapOverlayRenderer {
      */
     public void renderOnMap(
             PoliticalMapCache cache,
-            float factor,
-            float alphaMult,
+            MapFrame mapFrame,
             MapOverlayBand band) {
 
-        logFirstRenderOnce(cache, factor, alphaMult);
+        logFirstRenderOnce(cache, mapFrame);
 
         var layout = PoliticalMapBandLayout.readChosenLayout();
 
@@ -105,15 +105,13 @@ final class PoliticalMapOverlayRenderer {
             if (isPaintingFills) {
                 ClusterBorderStageRenderer.renderOnMap(
                     cache.getBorderStageOverlay(),
-                    factor,
-                    alphaMult);
+                    mapFrame);
             }
         } else {
             if (isPaintingFills) {
                 ClusterRenderer.renderFillsOnMap(
                     cache.getTerritories(),
-                    factor,
-                    alphaMult);
+                    mapFrame);
             }
 
             // After the fills wherever the two meet, which the layout guarantees: the borders can
@@ -121,8 +119,7 @@ final class PoliticalMapOverlayRenderer {
             if (isPaintingBorders) {
                 ClusterRenderer.renderBordersOnMap(
                     cache.getTerritories(),
-                    factor,
-                    alphaMult);
+                    mapFrame);
             }
 
             // The sidebar picker's preview, first of the two highlights and gated by neither hover
@@ -132,8 +129,7 @@ final class PoliticalMapOverlayRenderer {
             if (isPaintingFills) {
                 previewHighlightRenderer.renderPreviewOnMap(
                     cache.getTerritories(),
-                    factor,
-                    alphaMult);
+                    mapFrame);
             }
 
             // Only under the production view: the debug overlay replaced the draw lists the
@@ -143,7 +139,7 @@ final class PoliticalMapOverlayRenderer {
             // published for the box's sake: with only the tooltip on, the cursor is still resolved
             // every frame and nothing may be painted over the map for it.
             if (isPaintingFills && PoliticalMapHoverGates.isHoverEffectsEnabled()) {
-                renderHoverHighlight(cache, factor, alphaMult);
+                renderHoverHighlight(cache, mapFrame);
             }
         }
 
@@ -152,20 +148,20 @@ final class PoliticalMapOverlayRenderer {
         // being empty): the placements are also built for the faction names, so the list can be
         // non-empty while the debug overlay is off.
         if (isPaintingFills && KmuPoliticalMapDiagnosticsSettings.getPoliticalMapShowClusterAnchors()) {
-            ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), factor, alphaMult);
+            ClusterAnchorRenderer.renderOnMap(cache.getClusterAnchors(), mapFrame);
         }
 
         // The debug overlay replaced the draw lists the bands were baked into, so there is nothing
         // to paint them from - the same reason the hover feedback stands down under it.
         if (layout.ribbonBand() == band && !cache.isDebug()) {
-            renderPresenceBands(cache, factor, alphaMult);
+            renderPresenceBands(cache, mapFrame);
         }
 
         // Last of the stack, so a name wins where it meets a band: a name says which bloc a whole
         // territory belongs to, which is the coarser statement of the two and the one a player is
         // reading the map for. An empty-list check when the name choice draws none.
         if (layout.labelBand() == band) {
-            LabelRenderer.renderOnMap(cache.getFactionLabels(), factor, alphaMult);
+            LabelRenderer.renderOnMap(cache.getFactionLabels(), mapFrame);
         }
     }
 
@@ -173,13 +169,12 @@ final class PoliticalMapOverlayRenderer {
     // brightens the fill beneath it rather than being painted over. The frame's draw lists are
     // wrapped as the highlight's source, so the framework's pass asks this layer what the cursor is
     // on rather than reading the political model itself.
-    private void renderHoverHighlight(PoliticalMapCache cache, float factor, float alphaMult) {
+    private void renderHoverHighlight(PoliticalMapCache cache, MapFrame mapFrame) {
         hoverHighlightRenderer.renderCursorHighlightOnMap(
             new PoliticalMapHoverHighlightSource(cache.getTerritories()),
             cache.getTerritories().getGlobalStyle().hoverHighlight(),
             hoverState.getHover(),
-            factor,
-            alphaMult);
+            mapFrame);
     }
 
     // The per-cell presence bands, and the debug overlay explaining them straight after: the path
@@ -189,23 +184,20 @@ final class PoliticalMapOverlayRenderer {
     // bands are gated the same way - a cell where no rival is present bakes none.
     private static void renderPresenceBands(
             PoliticalMapCache cache,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         CellPresenceRibbonRenderer.renderOnMap(
             cache.getTerritories().getPaintedCells().getRibbonByCellKey().values(),
-            factor,
-            alphaMult);
+            mapFrame);
 
         CellRibbonPathRenderer.renderOnMap(
             cache.getTerritories().getPaintedCells().getRibbonPathByCellKey().values(),
-            factor,
-            alphaMult);
+            mapFrame);
     }
 
     // One-shot diagnostic for the no-draw investigation. Guarded on isDebugEnabled so the once-flag
     // only trips when the line actually emits. Set KMU log verbosity to DEBUG in LunaLib to see it.
-    private void logFirstRenderOnce(PoliticalMapCache cache, float factor, float alphaMult) {
+    private void logFirstRenderOnce(PoliticalMapCache cache, MapFrame mapFrame) {
         if (hasLoggedFirstRender || !LOG.isDebugEnabled()) {
             return;
         }
@@ -219,7 +211,7 @@ final class PoliticalMapOverlayRenderer {
 
         LOG.debug("Political map render renderOnMap fired: "
             + builtCounts
-            + " factor=" + factor
-            + " alphaMult=" + alphaMult);
+            + " factor=" + mapFrame.factor()
+            + " alphaMult=" + mapFrame.alphaMult());
     }
 }

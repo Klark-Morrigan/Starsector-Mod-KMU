@@ -8,6 +8,7 @@ import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
 
 import org.lwjgl.opengl.GL11;
@@ -77,15 +78,14 @@ public final class CellRibbonPathRenderer {
      * effective alpha.
      *
      * @param ribbonPaths the frame's traced paths, one per cell that has one
-     * @param factor      the map's world-to-screen scale, applied to every coordinate
-     * @param alphaMult   the map's own fade, applied over each path's shade
+     * @param mapFrame    the scale every coordinate is multiplied by, and the map's own fade
+     *                    applied over each path's shade
      */
     public static void renderOnMap(
             Collection<CellRibbonPath> ribbonPaths,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
-        if (ribbonPaths.isEmpty() || alphaMult <= 0f) {
+        if (ribbonPaths.isEmpty() || mapFrame.isFadedOut()) {
             return;
         }
         // Aliased, like the other measurement overlays: smoothing spreads a one-pixel rule across
@@ -95,7 +95,7 @@ public final class CellRibbonPathRenderer {
             GlLineQuality.ALIASED,
             () -> {
                 try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
-                    drawRibbonPaths(ribbonPaths, factor, alphaMult);
+                    drawRibbonPaths(ribbonPaths, mapFrame);
                 }
             });
     }
@@ -106,10 +106,9 @@ public final class CellRibbonPathRenderer {
     // what lets the point size be bound once for all of them.
     private static void drawRibbonPaths(
             Collection<CellRibbonPath> ribbonPaths,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
-        var pathAlpha = PATH_ALPHA * alphaMult;
+        var pathAlpha = PATH_ALPHA * mapFrame.alphaMult();
 
         GL11.glLineWidth(PATH_LINE_WIDTH);
         for (var ribbonPath : ribbonPaths) {
@@ -120,10 +119,10 @@ public final class CellRibbonPathRenderer {
             // Read as part of the path it would say the geometry escaped the cell; read as its own
             // shade it says how much of the outline the band never had.
             GlColour.set(DiagnosticPalette.DISCARDED_COLOUR, pathAlpha);
-            drawStretches(ribbonPath.carvedStretches(), factor);
+            drawStretches(ribbonPath.carvedStretches(), mapFrame.factor());
 
             GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
-            drawStretches(ribbonPath.heldStretches(), factor);
+            drawStretches(ribbonPath.heldStretches(), mapFrame.factor());
         }
 
         // The path's own start - the cell's top centre, where a band begins and runs clockwise
@@ -135,8 +134,8 @@ public final class CellRibbonPathRenderer {
         for (var ribbonPath : ribbonPaths) {
             GlColour.set(resolveVerdictColour(ribbonPath.verdict()), pathAlpha);
             GL11.glVertex2f(
-                ribbonPath.startPoint()[START_X] * factor,
-                ribbonPath.startPoint()[START_Y] * factor);
+                ribbonPath.startPoint()[START_X] * mapFrame.factor(),
+                ribbonPath.startPoint()[START_Y] * mapFrame.factor());
         }
         GL11.glEnd();
     }

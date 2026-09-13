@@ -23,6 +23,11 @@ import java.util.Map;
  * {@link PolygonOffsets#insetSelectedEdges}, handing the render layer a ready fill polygon and a
  * per-edge boundary flag so it never re-derives adjacency. The owner is opaque here, so the same
  * clustering serves any layer.
+ *
+ * <p>What an edge faces is decided here; how much that earns it is not. The depth and the
+ * choice of which edges take it arrive as arguments - an {@link EdgeInsetRule} and a distance -
+ * so the true cell partition and the cosmetic channel over it stay two separate statements
+ * rather than one baked shape.
  */
 public final class CellShaper {
     /**
@@ -52,12 +57,14 @@ public final class CellShaper {
      * @param grouping       which system each cell draws as and each system's owner -
      *                       a cell with no system, or whose system is unowned, shapes as
      *                       unowned
-     * @param borderInset    inward inset applied to every border edge
+     * @param insetRule      which edges take the inset
+     * @param borderInset    inward inset applied to every edge the rule pulls in
      * @return one shaped cell per input cell, keyed by cell key, in iteration order
      */
     public static Map<SystemKey, ShapedCell> shapeCells(
             Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
+            EdgeInsetRule insetRule,
             double borderInset) {
 
         var shaped = new LinkedHashMap<SystemKey, ShapedCell>();
@@ -68,6 +75,7 @@ public final class CellShaper {
                     entry.getValue(),
                     grouping.resolveOwnerOf(entry.getKey()),
                     grouping.ownerBySystemKey(),
+                    insetRule,
                     borderInset));
         }
         return shaped;
@@ -83,13 +91,15 @@ public final class CellShaper {
      * @param cellOwner        the owner of this cell, or null if unowned
      * @param ownerBySystemKey the owner per system, to classify each edge
      *                         as a same-owner seam or a border
-     * @param borderInset      inward inset applied to every border edge
+     * @param insetRule        which edges take the inset
+     * @param borderInset      inward inset applied to every edge the rule pulls in
      * @return the shaped cell: its inset fill polygon and per-edge boundary flags
      */
     public static ShapedCell shapeCell(
             List<CellEdge> edges,
             String cellOwner,
             Map<SystemKey, String> ownerBySystemKey,
+            EdgeInsetRule insetRule,
             double borderInset) {
 
         var vertices = new ArrayList<double[]>(edges.size());
@@ -97,23 +107,25 @@ public final class CellShaper {
         for (var i = 0; i < edges.size(); i++) {
             var edge = edges.get(i);
             vertices.add(new double[] {edge.x1(), edge.y1()});
-            edgeInsets[i] = computeEdgeInset(edge, cellOwner, ownerBySystemKey, borderInset);
+            edgeInsets[i] = computeEdgeInset(
+                edge, cellOwner, ownerBySystemKey, insetRule, borderInset);
         }
         var inset = PolygonOffsets.insetSelectedEdges(vertices, edgeInsets);
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());
     }
 
-    // The inward inset one edge receives: none for a same-owner seam (left on the raw cell
-    // border to fuse), the border channel for every other edge - a different owner, unowned
-    // space, or the map frontier alike - so the cluster keeps one uniform channel against
-    // everything outside it.
+    // What one edge faces, handed to the rule that decides what that earns it. A same-owner
+    // seam fuses with the rest of the cluster and so is no border of it; a different owner,
+    // unowned space and the map frontier alike are, which is what keeps one uniform channel
+    // round the whole cluster rather than a different one per thing it meets.
     private static double computeEdgeInset(
             CellEdge edge,
             String cellOwner,
             Map<SystemKey, String> ownerBySystemKey,
+            EdgeInsetRule insetRule,
             double borderInset) {
 
         var edgeClass = EdgeClassifier.classifyAcross(edge, cellOwner, ownerBySystemKey);
-        return edgeClass == EdgeClass.INTERIOR_SEAM ? 0.0 : borderInset;
+        return insetRule.resolveInsetOf(edgeClass.isBoundary(), borderInset);
     }
 }

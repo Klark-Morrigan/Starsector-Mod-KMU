@@ -7,6 +7,7 @@ import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 import kmlib.time.Timings;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.theme.HoverGlowStyle;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 import kmu.maplayers.base.theme.HoverWashStyle;
@@ -44,15 +45,14 @@ public final class HoverHighlightRenderer {
      * @param style     the theme's highlight tier, which owns the shape of the halo and the
      *                  weight of the wash
      * @param hover     what the cursor is over this frame
-     * @param factor    the per-vertex scale the map applies to world coordinates
-     * @param alphaMult the map's own fade, applied on top of every element's opacity
+     * @param mapFrame  the scale every coordinate is multiplied by, and the map's own fade applied
+     *                  on top of every element's opacity
      */
     public void renderCursorHighlightOnMap(
             HoverHighlightSource source,
             HoverHighlightStyle style,
             MapHover hover,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         var colour = HoverHighlightColour.resolveColourFor(source, hover, style);
         // Checked here rather than left to the pass's own gate, since it is what says whether the
@@ -65,8 +65,7 @@ public final class HoverHighlightRenderer {
             geometry.resolveHighlightFor(source, hover),
             colour,
             style,
-            factor,
-            alphaMult);
+            mapFrame);
     }
 
     /**
@@ -75,20 +74,19 @@ public final class HoverHighlightRenderer {
      * @param highlight the loops to bloom off and the extents to wash
      * @param colour    the single shade both burn in
      * @param style     the tier owning the shape of the halo and the weight of the wash
-     * @param factor    the per-vertex scale the map applies to world coordinates
-     * @param alphaMult the map's own fade, applied on top of every element's opacity
+     * @param mapFrame  the scale every coordinate is multiplied by, and the map's own fade applied
+     *                  on top of every element's opacity
      */
     public static void renderHighlightOnMap(
             HoverHighlight highlight,
             Color colour,
             HoverHighlightStyle style,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         // Nothing to paint when the highlight resolved no shape, no colour was resolved for it, or
         // the map has fully faded at the ends of its zoom fade - each would emit every run for
         // nothing, so each skips the GL state push rather than being left to blend away.
-        if (highlight.isEmpty() || colour == null || alphaMult <= 0f) {
+        if (highlight.isEmpty() || colour == null || mapFrame.isFadedOut()) {
             return;
         }
         // Additive and smoothed: the halo is layers of one loop stacked on each other, which only
@@ -100,8 +98,8 @@ public final class HoverHighlightRenderer {
             GlBlendMode.ADDITIVE,
             GlLineQuality.SMOOTHED,
             () -> {
-                drawGlow(highlight, style.glow(), colour, factor, alphaMult);
-                drawWash(highlight, style.wash(), colour, factor, alphaMult);
+                drawGlow(highlight, style.glow(), colour, mapFrame);
+                drawWash(highlight, style.wash(), colour, mapFrame);
             });
     }
 
@@ -111,8 +109,7 @@ public final class HoverHighlightRenderer {
             HoverHighlight highlight,
             HoverGlowStyle style,
             Color colour,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         if (style.opacity() <= 0 || style.layers() < 1) {
             return;
@@ -127,13 +124,13 @@ public final class HoverHighlightRenderer {
             GL11.glLineWidth((float) style.computeLayerWidth(layer));
             GlColour.set(
                 colour,
-                (float) (alphaMult * style.computeLayerAlpha(layer, timeSeconds)));
+                (float) (mapFrame.alphaMult() * style.computeLayerAlpha(layer, timeSeconds)));
 
             for (var loop : highlight.glowLoops()) {
                 GlRuns.drawScaled(
                     GL11.GL_LINE_LOOP,
                     loop,
-                    factor);
+                    mapFrame.factor());
             }
         }
     }
@@ -146,27 +143,26 @@ public final class HoverHighlightRenderer {
             HoverHighlight highlight,
             HoverWashStyle style,
             Color colour,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         if (style.fillOpacity() > 0) {
-            GlColour.set(colour, (float) (alphaMult * style.fillOpacity()));
+            GlColour.set(colour, (float) (mapFrame.alphaMult() * style.fillOpacity()));
             GlRuns.drawScaled(
                 GL11.GL_TRIANGLES,
                 highlight.washTriangles(),
-                factor);
+                mapFrame.factor());
         }
         if (style.outlineOpacity() > 0) {
             GL11.glLineWidth((float) style.outlineWidth());
             GlColour.set(
                 colour,
-                (float) (alphaMult * style.outlineOpacity()));
+                (float) (mapFrame.alphaMult() * style.outlineOpacity()));
 
             for (var loop : highlight.washOutline()) {
                 GlRuns.drawScaled(
                     GL11.GL_LINE_LOOP,
                     loop,
-                    factor);
+                    mapFrame.factor());
             }
         }
     }

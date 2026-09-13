@@ -7,6 +7,7 @@ import kmlib.opengl.GlPasses;
 import kmlib.opengl.GlRuns;
 
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
+import kmu.maplayers.base.render.MapFrame;
 
 import org.lwjgl.opengl.GL11;
 
@@ -45,8 +46,7 @@ public final class ClusterBorderStageRenderer {
     // GL state the normal render uses. An empty overlay skips the push entirely.
     public static void renderOnMap(
             ClusterBorderStageOverlay stageOverlay,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         if (stageOverlay.isEmpty()) {
             return;
@@ -60,7 +60,7 @@ public final class ClusterBorderStageRenderer {
                 // Drawn in list order, so the last stage lands on top and the earlier ones halo
                 // out from under it; the view transform is the same for every stage.
                 for (var stageStroke : listStageStrokesBottomToTop(stageOverlay)) {
-                    drawStageStroke(stageStroke, factor, alphaMult);
+                    drawStageStroke(stageStroke, mapFrame);
                 }
             });
     }
@@ -89,15 +89,15 @@ public final class ClusterBorderStageRenderer {
 
     // Strokes one stage's loops in its colour and width; each loop is a closed ring, so it
     // draws as a GL_LINE_LOOP. An empty stage - its pass was gated off - draws nothing.
-    private static void drawStageStroke(StageStroke stageStroke, float factor, float alphaMult) {
+    private static void drawStageStroke(StageStroke stageStroke, MapFrame mapFrame) {
         if (stageStroke.loopRuns().isEmpty()) {
             return;
         }
         GL11.glLineWidth(stageStroke.lineWidth());
-        GlColour.set(stageStroke.strokeColour(), alphaMult);
+        GlColour.set(stageStroke.strokeColour(), mapFrame.alphaMult());
 
         for (var loopRun : stageStroke.loopRuns()) {
-            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loopRun, factor);
+            GlRuns.drawScaled(GL11.GL_LINE_LOOP, loopRun, mapFrame.factor());
         }
     }
 

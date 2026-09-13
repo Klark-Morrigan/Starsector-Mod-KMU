@@ -12,6 +12,7 @@ import kmlib.opengl.GlQuads;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.settings.KmuMapLabelSettings;
 
 import org.lwjgl.opengl.GL11;
@@ -73,10 +74,10 @@ public final class ClusterAnchorRenderer {
     // pile of lines. Empty (nothing emitted) unless the dev toggle built the anchors, so
     // the normal map pays only an empty-list check; the pass's own saved state isolates its
     // blend, line, and point settings from the rest of the map render.
-    public static void renderOnMap(List<ClusterAnchor> anchors, float factor, float alphaMult) {
+    public static void renderOnMap(List<ClusterAnchor> anchors, MapFrame mapFrame) {
         // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would
         // emit everything at zero effective alpha - all cost, nothing on screen.
-        if (anchors.isEmpty() || alphaMult <= 0f) {
+        if (anchors.isEmpty() || mapFrame.isFadedOut()) {
             return;
         }
         // Aliased: this is a diagnostic read for where a line lands, and smoothing spreads a
@@ -88,7 +89,7 @@ public final class ClusterAnchorRenderer {
             // open, so only the profiler's accumulated view is affordable here.
             () -> {
                 try (var renderScope = ActiveProfiler.resolveProfiler().open(RENDER_SECTION)) {
-                    drawClusterAnchors(anchors, factor, alphaMult);
+                    drawClusterAnchors(anchors, mapFrame);
                 }
             });
     }
@@ -104,26 +105,25 @@ public final class ClusterAnchorRenderer {
     // stronger than the wash they sit on.
     private static void drawClusterAnchors(
             List<ClusterAnchor> anchors,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
-        var bandAlpha = (float) KmuMapLabelSettings.getMapAnchorBandOpacity() * alphaMult;
-        var lineAlpha = (float) KmuMapLabelSettings.getMapAnchorBandLineOpacity() * alphaMult;
+        var bandAlpha = (float) KmuMapLabelSettings.getMapAnchorBandOpacity() * mapFrame.alphaMult();
+        var lineAlpha = (float) KmuMapLabelSettings.getMapAnchorBandLineOpacity() * mapFrame.alphaMult();
 
         for (var layer : VERDICT_LAYERS) {
-            drawBandLayer(anchors, layer, factor, bandAlpha, lineAlpha);
+            drawBandLayer(anchors, layer, mapFrame.factor(), bandAlpha, lineAlpha);
         }
 
         GL11.glLineWidth(ANCHOR_AXIS_WIDTH);
         for (var layer : VERDICT_LAYERS) {
-            drawCentrelineLayer(anchors, layer, factor, lineAlpha);
+            drawCentrelineLayer(anchors, layer, mapFrame.factor(), lineAlpha);
         }
 
         GL11.glPointSize(ANCHOR_DOT_SIZE);
         for (var anchor : anchors) {
             GlColour.set(anchor.colour(), lineAlpha);
             GL11.glBegin(GL11.GL_POINTS);
-            GL11.glVertex2f(anchor.anchorX() * factor, anchor.anchorY() * factor);
+            GL11.glVertex2f(anchor.anchorX() * mapFrame.factor(), anchor.anchorY() * mapFrame.factor());
             GL11.glEnd();
         }
     }
@@ -168,9 +168,9 @@ public final class ClusterAnchorRenderer {
             List<ClusterAnchor> anchors,
             AnchorVerdictLayer layer,
             float factor,
-            float alphaMult) {
+            float lineAlpha) {
 
-        GlColour.set(layer.layerColour(), alphaMult);
+        GlColour.set(layer.layerColour(), lineAlpha);
         for (var anchor : anchors) {
             var segment = layer.axisAccessor().apply(anchor);
             if (segment == null) {

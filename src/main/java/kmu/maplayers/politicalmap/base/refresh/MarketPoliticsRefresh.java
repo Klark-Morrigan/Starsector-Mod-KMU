@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
 import kmlib.starsector.markets.colonies.SystemColonies;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
@@ -84,10 +85,12 @@ public final class MarketPoliticsRefresh {
             + " system=" + system.getId()
             + (context.isEmpty() ? "" : " " + context));
 
+        // Marked by key rather than by ID: the market seats the system itself, so the mark can
+        // name exactly the system the event happened in rather than every system sharing its ID.
         SectorMapMachineryIndex
             .resolveMachineryFor(sector)
             .resolveRefreshBoard()
-            .markSystemGroupingStale(system.getId());
+            .markSystemGroupingStale(SystemKey.readKeyOf(system));
 
         recordObservationsIn(sector, system);
     }

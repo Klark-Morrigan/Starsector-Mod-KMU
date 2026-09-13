@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.opengl.GlPasses;
 
+import kmu.maplayers.base.render.MapFrame;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -34,13 +36,14 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class CellPresenceRibbonRendererTest {
 
-    private static final float FULL_ALPHA = 1f;
-    private static final float FADED_OUT_ALPHA = 0f;
-    private static final float ANY_MAP_FACTOR = 1f;
+    // A frame that paints, and one at the far end of the map's fade. The scale is the same in
+    // both and is never read: what these cases are about is the guard in front of the emission.
+    private static final MapFrame PAINTING_FRAME = new MapFrame(1f, 1f);
+    private static final MapFrame FADED_OUT_FRAME = new MapFrame(1f, 0f);
 
-    // Far enough out that a two-hundred-unit band lands well under a pixel across, which is the
-    // scale a screen-sized rule would have refused.
-    private static final float ZOOMED_FAR_OUT_MAP_FACTOR = 0.001f;
+    // A painting frame zoomed far enough out that a two-hundred-unit band lands well under a pixel
+    // across, which is the scale a screen-sized rule would have refused.
+    private static final MapFrame ZOOMED_FAR_OUT_FRAME = new MapFrame(0.001f, 1f);
 
     @Nested
     class RenderOnMap {
@@ -52,8 +55,7 @@ final class CellPresenceRibbonRendererTest {
 
             CellPresenceRibbonRenderer.renderOnMap(
                 ribbonsFake,
-                ANY_MAP_FACTOR,
-                FULL_ALPHA);
+                PAINTING_FRAME);
 
             assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
@@ -68,8 +70,7 @@ final class CellPresenceRibbonRendererTest {
 
             CellPresenceRibbonRenderer.renderOnMap(
                 ribbonsFake,
-                ANY_MAP_FACTOR,
-                FADED_OUT_ALPHA);
+                FADED_OUT_FRAME);
 
             assertThat(ribbonsFake.hasReadBands())
                 .isFalse();
@@ -85,8 +86,7 @@ final class CellPresenceRibbonRendererTest {
 
                 CellPresenceRibbonRenderer.renderOnMap(
                     buildRibbonsCarryingOneBand(),
-                    ZOOMED_FAR_OUT_MAP_FACTOR,
-                    FULL_ALPHA);
+                    ZOOMED_FAR_OUT_FRAME);
 
                 glPassesMock.verify(() -> GlPasses.runBlendedPass(any(), any(), any()));
             }

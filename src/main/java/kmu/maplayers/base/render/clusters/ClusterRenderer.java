@@ -9,6 +9,7 @@ import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.clusters.StyledCell.FusedCell;
 import kmu.maplayers.base.render.clusters.StyledCell.LoneCell;
 import kmu.maplayers.base.theme.GlLineHatchStroke;
@@ -61,13 +62,11 @@ public final class ClusterRenderer {
     // decision rather than something to inherit from whatever wraps it.
     public static void renderFillsOnMap(
             ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         renderMeasuredPassOnMap(
             drawLists,
-            factor,
-            alphaMult,
+            mapFrame,
             GlLineQuality.ALIASED,
             FILLS_SECTION,
             ClusterRenderer::drawFills);
@@ -80,23 +79,21 @@ public final class ClusterRenderer {
     // library applies rather than a pair of GL calls restated here.
     public static void renderBordersOnMap(
             ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         renderMeasuredPassOnMap(
             drawLists,
-            factor,
-            alphaMult,
+            mapFrame,
             GlLineQuality.SMOOTHED,
             BORDERS_SECTION,
             ClusterRenderer::strokeBorderRuns);
     }
 
-    // The scaffold both entry points are: skip a frame with nothing on it, bundle the ambient three,
-    // and emit under a measured blended pass. Written once because the two halves differ only in the
-    // three values named at the call sites - a second copy is where a guard gets tightened on one
-    // entry and not the other, which shows up as an overlay half-drawn at the ends of the map's fade
-    // and nothing in the frame to say why.
+    // The scaffold both entry points are: skip a frame with nothing on it, pair the draw lists with
+    // the frame, and emit under a measured blended pass. Written once because the two halves differ
+    // only in the three values named at the call sites - a second copy is where a guard gets
+    // tightened on one entry and not the other, which shows up as an overlay half-drawn at the ends
+    // of the map's fade and nothing in the frame to say why.
     //
     // A fully faded-out overlay (alphaMult 0, at the ends of the map's fade) would emit every run at
     // zero effective alpha - all cost, nothing on screen - so the whole GL pass is skipped rather
@@ -107,16 +104,15 @@ public final class ClusterRenderer {
     // this runs every frame the map is open, so only the profiler's accumulated view is affordable.
     private static void renderMeasuredPassOnMap(
             ClusterDrawLists drawLists,
-            float factor,
-            float alphaMult,
+            MapFrame mapFrame,
             GlLineQuality lineQuality,
             ProfileSection section,
             Consumer<ClusterMapFrame> emitRuns) {
 
-        if (drawLists.isEmpty() || alphaMult <= 0f) {
+        if (drawLists.isEmpty() || mapFrame.isFadedOut()) {
             return;
         }
-        var frame = new ClusterMapFrame(drawLists, factor, alphaMult);
+        var frame = new ClusterMapFrame(drawLists, mapFrame);
 
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
@@ -164,11 +160,11 @@ public final class ClusterRenderer {
             LoneCell.class,
             lone -> emitIfVisible(
                 lone.fillPaint(),
-                frame.alphaMult(),
+                frame.getAlphaMult(),
                 () -> GlRuns.drawScaled(
                     GL11.GL_TRIANGLES,
                     lone.fillTriangles(),
-                    frame.factor())));
+                    frame.getFactor())));
     }
 
     // Lays the hatch over the solid fill, in whichever way the theme's stroke says. The stroke
@@ -219,13 +215,13 @@ public final class ClusterRenderer {
         for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
             emitIfVisible(
                 group.fill(),
-                frame.alphaMult(),
+                frame.getAlphaMult(),
                 () -> {
                     for (var cluster : group.clusters()) {
                         GlRuns.drawScaled(
                             primitiveMode,
                             selectRun.apply(cluster),
-                            frame.factor());
+                            frame.getFactor());
                     }
             });
         }
@@ -275,10 +271,10 @@ public final class ClusterRenderer {
             FusedCell.class,
             fused -> emitIfVisible(
                 fused.seamPaint(),
-                frame.alphaMult(),
+                frame.getAlphaMult(),
                 () -> {
                     GL11.glLineWidth(fused.seamWidth());
-                    GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), frame.factor());
+                    GlRuns.drawScaled(GL11.GL_LINES, fused.seamEdges(), frame.getFactor());
                 }));
 
         drawEachCellOfForm(
@@ -286,10 +282,10 @@ public final class ClusterRenderer {
             LoneCell.class,
             lone -> emitIfVisible(
                 lone.outlinePaint(),
-                frame.alphaMult(),
+                frame.getAlphaMult(),
                 () -> {
                     GL11.glLineWidth(lone.outlineWidth());
-                    GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), frame.factor());
+                    GlRuns.drawScaled(GL11.GL_LINES, lone.outlineEdges(), frame.getFactor());
                 }));
 
         // The cluster boundaries in the owner's own style, over the interior seams so a boundary
@@ -299,7 +295,7 @@ public final class ClusterRenderer {
         for (var group : frame.drawLists().getStyledClusterGroupByOwnerId().values()) {
             emitIfVisible(
                 group.border(),
-                frame.alphaMult(),
+                frame.getAlphaMult(),
                 () -> {
                     GL11.glLineWidth(group.borderWidth());
                     for (var cluster : group.clusters()) {
@@ -309,9 +305,9 @@ public final class ClusterRenderer {
                         GlRuns.drawScaled(
                             GL11.GL_LINE_LOOP,
                             cluster.outerLoop(),
-                            frame.factor());
+                            frame.getFactor());
                         for (var enclaveLoop : cluster.enclaveLoops()) {
-                            GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, frame.factor());
+                            GlRuns.drawScaled(GL11.GL_LINE_LOOP, enclaveLoop, frame.getFactor());
                         }
                     }
             });

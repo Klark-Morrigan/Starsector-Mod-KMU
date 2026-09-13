@@ -1,27 +1,35 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmu.maplayers.base.render.MapFrame;
+
 /**
- * One frame of the cluster overlay: what there is to paint, and the two map-wide values every
- * emission in that frame scales and fades by.
+ * One frame of the cluster overlay: what there is to paint, and the frame it is painted in.
  *
- * <p>The three travel together through every pass of the overlay and none of them varies within a
- * frame, so carrying them as one value leaves each pass's own signature to say what that pass
- * actually decides - the primitive it emits, the run it selects, the stroke it strokes with -
- * rather than restating the ambient three in front of it.
+ * <p>The two travel together through every pass of the overlay and neither varies within a frame,
+ * so carrying them as one value leaves each pass's own signature to say what that pass actually
+ * decides - the primitive it emits, the run it selects, the stroke it strokes with - rather than
+ * restating the ambient pair in front of it.
  *
- * <p>It is deliberately not shared with the other renderers of the same map pass. A record that
- * one class builds and unpacks stays cheap to change; lifted to the render surface on this
- * evidence alone it would become the bag every renderer adds its own field to. A second consumer
- * reaching for it is what would justify the lift.
+ * <p>The scale and fade half is {@link MapFrame}, shared with every other pass of the map; what is
+ * local to this overlay is only its pairing with the draw lists.
  *
  * @param drawLists the already-baked runs this frame paints, opaque to the emission
- * @param factor    the world-to-map scale every coordinate is multiplied by, from vanilla's
- *                  {@code CampaignTerrainPlugin.renderOnMap} and named as vanilla names it so the
- *                  trail back to that call survives
- * @param alphaMult the map's own fade for this frame, multiplied into every element's opacity
+ * @param mapFrame  the scale and fade this frame emits under
  */
 record ClusterMapFrame(
     ClusterDrawLists drawLists,
-    float factor,
-    float alphaMult) {
+    MapFrame mapFrame) {
+
+    // The frame's two values read through, since nearly every emission below needs one of them and
+    // this record is the single argument each of those passes takes. Read-through rather than a
+    // second copy of the pair: there is one door to either value, so these cannot come to disagree
+    // with the frame they are read from.
+
+    float getFactor() {
+        return mapFrame.factor();
+    }
+
+    float getAlphaMult() {
+        return mapFrame.alphaMult();
+    }
 }

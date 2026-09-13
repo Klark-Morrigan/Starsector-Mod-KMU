@@ -4,6 +4,7 @@ import kmu.KmuMod;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.PreviewHighlightGeometry;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.sidebar.FilterHoverSlot;
 import kmu.maplayers.base.sidebar.PickerScope;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
@@ -58,13 +59,12 @@ public final class PoliticalMapPreviewHighlightRenderer {
      *
      * @param territories the draw lists the frame painted, which is the only geometry the preview
      *                    traces and the theme it draws to
-     * @param factor      the per-vertex scale the map applies to world coordinates
-     * @param alphaMult   the map's own fade, applied on top of every element's opacity
+     * @param mapFrame    the scale every coordinate is multiplied by, and the map's own fade
+     *                    applied on top of every element's opacity
      */
     public void renderPreviewOnMap(
             PoliticalMapTerritories territories,
-            float factor,
-            float alphaMult) {
+            MapFrame mapFrame) {
 
         var paint = resolvePreviewPaint(territories);
         if (!paint.isPainting()) {
@@ -74,8 +74,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
             paint.highlight(),
             paint.colour(),
             readPreviewTierOf(territories),
-            factor,
-            alphaMult);
+            mapFrame);
     }
 
     // What this frame's preview lights up and in what shade, or nothing.
