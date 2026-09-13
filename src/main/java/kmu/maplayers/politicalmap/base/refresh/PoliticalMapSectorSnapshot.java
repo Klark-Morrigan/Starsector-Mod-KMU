@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.refresh;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.visibility.systems.MapVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
@@ -125,9 +127,11 @@ public record PoliticalMapSectorSnapshot(
             if (!pass.isDrawn(system)) {
                 continue;
             }
-            var systemId = system.getId();
+            // Contributed under the system's key, which this walk holds the system to read, so two
+            // systems answering to one id contribute two values rather than one - keyed by id, one
+            // of them entering the drawn set as the other left would not move the fingerprint.
             visibility += MapVisibility.computeVisibilityContribution(
-                systemId,
+                SystemKey.readKeyOf(system),
                 hasRevealedDecivilised);
 
             // A decivilised-only system is drawn yet unowned, so it counts toward
@@ -143,7 +147,7 @@ public record PoliticalMapSectorSnapshot(
                 HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
 
             if (dominantFactionId != null) {
-                ownerBySystemId.put(systemId, dominantFactionId);
+                ownerBySystemId.put(system.getId(), dominantFactionId);
             }
         }
         return new PoliticalMapSectorSnapshot(visibility, ownerBySystemId);

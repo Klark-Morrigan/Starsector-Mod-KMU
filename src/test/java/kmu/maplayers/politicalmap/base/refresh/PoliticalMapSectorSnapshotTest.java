@@ -100,6 +100,28 @@ class PoliticalMapSectorSnapshotTest {
         }
 
         @Test
+        void visibilityFingerprintMovesWhenOneOfTwoSystemsSharingAnIdReplacesTheOther() {
+            // The collision the key exists for, met at the walk that fingerprints the drawn set: a
+            // sector holds two systems answering to one id, told apart only by the entities they
+            // are built around. Contributed by id, the twin arriving as the other left would leave
+            // the fingerprint standing still and the map would go on drawing the system that went.
+            var before = scanUnderStabilityWeighting(
+                    buildSectorWith(
+                        StarSystemFixture.anchorSystemTo(buildSystem("a"), "anchor-1"),
+                        buildOwnedMarket("hegemony", 5)))
+                .visibilityFingerprint();
+
+            var after = scanUnderStabilityWeighting(
+                    buildSectorWith(
+                        StarSystemFixture.anchorSystemTo(buildSystem("a"), "anchor-2"),
+                        buildOwnedMarket("hegemony", 5)))
+                .visibilityFingerprint();
+
+            assertThat(after)
+                .isNotEqualTo(before);
+        }
+
+        @Test
         void ownerMapChangesWhenAColonysHolderChangesButVisibilityHolds() {
             // The AI-captures-or-founds case: the same system stays on the map, but
             // its holder flips. The holder map must move while the visibility hash

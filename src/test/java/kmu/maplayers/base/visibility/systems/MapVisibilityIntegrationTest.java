@@ -15,6 +15,7 @@ import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.systems.SystemAccessRoutes;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
@@ -72,6 +73,11 @@ class MapVisibilityIntegrationTest {
     // The size every colony these cases stage carries. Nothing the visibility rule reads weighs a
     // colony, so a case varying this would vary nothing the rule can see.
     private static final int COLONY_SIZE = 5;
+
+    // The key of a system the sector states nothing about - no id, no centre, no anchor. Every arm
+    // hashes to zero, which is the avalanche's own fixed point, so this is the key the fingerprint
+    // seed exists to lift off zero.
+    private static final SystemKey KEY_HASHING_TO_ZERO = new SystemKey("", "", "");
 
     // The faction behind every colony staged here. Which faction holds a colony reaches no answer
     // the rule gives, so one name serves them all and no case reads as being about whose it is.
@@ -332,42 +338,87 @@ class MapVisibilityIntegrationTest {
         void visibilityContributionDiffersBetweenSystems() {
             // Distinct ids must land distinct contributions so two systems do not
             // cancel when summed into the fingerprint.
-            assertThat(MapVisibility.computeVisibilityContribution("a", false))
-                .isNotEqualTo(MapVisibility.computeVisibilityContribution("b", false));
+            assertThat(MapVisibility.computeVisibilityContribution(buildKeyOfIdAlone("a"), false))
+                .isNotEqualTo(
+                    MapVisibility.computeVisibilityContribution(buildKeyOfIdAlone("b"), false));
+        }
+
+        @Test
+        void visibilityContributionDiffersBetweenTwoSystemsSharingAnId() {
+            // The collision the key exists for: a sector holds two systems answering to one id,
+            // told apart only by the entities they are built around. Keyed by id both would
+            // contribute the same value, so one entering the drawn set as the other left would
+            // leave the fingerprint standing still.
+            var firstOfThePair = new SystemKey("a", "centre-1", "anchor-1");
+            var secondOfThePair = new SystemKey("a", "centre-2", "anchor-2");
+
+            assertThat(MapVisibility.computeVisibilityContribution(firstOfThePair, false))
+                .isNotEqualTo(
+                    MapVisibility.computeVisibilityContribution(secondOfThePair, false));
+        }
+
+        @Test
+        void visibilityContributionDiffersForAPairWhoseArmsShiftEachOtherBack() {
+            // The pair a linear fold cannot tell apart, in the shape a live sector holds it: one
+            // id, procgen centre names one character apart, and short engine-minted anchor ids.
+            // String hashes are linear in their characters, so the centres' hashes differ by 1 and
+            // the anchors' by exactly 31 the other way - a fold weighting the centre arm by 31
+            // would move one arm by what the other moves back, and hand both systems one value.
+            var centredOnTheThirdStar = new SystemKey("deep space", "deep_space_star_3", "8c3");
+            var centredOnTheFourthStar = new SystemKey("deep space", "deep_space_star_4", "8b3");
+
+            assertThat("8c3".hashCode() - "8b3".hashCode())
+                .isEqualTo(31 * ("deep_space_star_4".hashCode() - "deep_space_star_3".hashCode()));
+            assertThat(MapVisibility.computeVisibilityContribution(centredOnTheThirdStar, false))
+                .isNotEqualTo(
+                    MapVisibility.computeVisibilityContribution(centredOnTheFourthStar, false));
+        }
+
+        @Test
+        void visibilityContributionDiffersWhenOneIdMovesBetweenTheArms() {
+            // The arms are folded by position, so an entity id standing as one system's centre
+            // and another's anchor tells the two apart. Folded without position they would read
+            // as one system and the pair would share a contribution.
+            var centredOnTheEntity = new SystemKey("a", "shared-entity", "");
+            var anchoredToIt = new SystemKey("a", "", "shared-entity");
+
+            assertThat(MapVisibility.computeVisibilityContribution(centredOnTheEntity, false))
+                .isNotEqualTo(
+                    MapVisibility.computeVisibilityContribution(anchoredToIt, false));
         }
 
         @Test
         void visibilityContributionShiftsWhenASystemBecomesDecivilised() {
             // A live-to-dead flip on the same system - its draw class changing while
             // it stays on the map - must move its contribution via the deciv salt.
-            assertThat(MapVisibility.computeVisibilityContribution("a", true))
-                .isNotEqualTo(MapVisibility.computeVisibilityContribution("a", false));
+            assertThat(MapVisibility.computeVisibilityContribution(buildKeyOfIdAlone("a"), true))
+                .isNotEqualTo(
+                    MapVisibility.computeVisibilityContribution(buildKeyOfIdAlone("a"), false));
         }
 
         @Test
-        void visibilityContributionIsNonZeroForAnIdThatHashesToZero() {
-            // The avalanche has a fixed point at 0, so an unseeded 0-hash id would
+        void visibilityContributionIsNonZeroForAKeyThatHashesToZero() {
+            // The avalanche has a fixed point at 0, so an unseeded 0-hash key would
             // contribute 0 and be invisible to the summed fingerprint - the system
-            // could enter or leave the map without moving it. The empty string is
-            // the canonical 0-hash id; the seed spreads it to a non-zero value.
-            var idHashingToZero = "";
-
-            assertThat(idHashingToZero.hashCode())
+            // could enter or leave the map without moving it. The key stating no arm
+            // at all is the canonical 0-hash key; the seed spreads it to a non-zero value.
+            assertThat("".hashCode())
                 .isZero();
-            assertThat(MapVisibility.computeVisibilityContribution(idHashingToZero, false))
+            assertThat(MapVisibility.computeVisibilityContribution(KEY_HASHING_TO_ZERO, false))
                 .isNotZero();
         }
 
         @Test
         void summedFingerprintMovesWhenAZeroHashSystemJoinsTheDrawnSet() {
             // The fingerprint is a sum of contributions, so a system joining the
-            // drawn set must change it - including a 0-hash id, whose contribution
+            // drawn set must change it - including a 0-hash key, whose contribution
             // has to be non-zero for its arrival to register in the sum.
             assertThat("".hashCode())
                 .isZero();
 
-            var before = MapVisibility.computeVisibilityContribution("a", false);
-            var after = before + MapVisibility.computeVisibilityContribution("", false);
+            var before = MapVisibility.computeVisibilityContribution(buildKeyOfIdAlone("a"), false);
+            var after = before
+                + MapVisibility.computeVisibilityContribution(KEY_HASHING_TO_ZERO, false);
 
             assertThat(after)
                 .isNotEqualTo(before);
@@ -375,13 +426,14 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void visibilityContributionShiftsWhenAZeroHashSystemBecomesDecivilised() {
-            // A draw-class flip must move the contribution even for a 0-hash id, so a
+            // A draw-class flip must move the contribution even for a 0-hash key, so a
             // live-to-dead change on such a system still moves the summed fingerprint
             // rather than reading identically live and dead.
             assertThat("".hashCode())
                 .isZero();
-            assertThat(MapVisibility.computeVisibilityContribution("", true))
-                .isNotEqualTo(MapVisibility.computeVisibilityContribution("", false));
+            assertThat(MapVisibility.computeVisibilityContribution(KEY_HASHING_TO_ZERO, true))
+                .isNotEqualTo(
+                    MapVisibility.computeVisibilityContribution(KEY_HASHING_TO_ZERO, false));
         }
     }
 
@@ -417,6 +469,13 @@ class MapVisibilityIntegrationTest {
         return MapVisibilityPass
             .over(sector, visibilityRules)
             .isSystemInhabited(system);
+    }
+
+    // The key of a system carrying neither a centre nor an anchor, so the id is the whole of what
+    // tells it apart. Minted rather than read off a staged system: a case about the fold states
+    // the arms it means, and one taking them from the read under test would expect nothing.
+    private static SystemKey buildKeyOfIdAlone(String systemId) {
+        return new SystemKey(systemId, "", "");
     }
 
     // Wires a single-system sector whose economy returns the given markets for

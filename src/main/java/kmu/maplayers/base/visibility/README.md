@@ -41,11 +41,15 @@ at the price of a null arm in every reader.
 
 ## What is drawn at all (`systems`)
 
-Which star systems a layer draws. `MapVisibility` admits a system on any of three paths - reachable
-and drawn by the vanilla map, reached by an installed mod's own route, or inhabited - and hashes the
-admitted set into the fingerprint that
-says it moved; `MapVisibilityPass` is one reading of the sector answering that rule, and
-`DrawnSystemPositions` reads each drawn system's live hyperspace position off it.
+Which star systems a layer draws.
+`MapVisibility` admits a system on any of three paths -
+reachable and drawn by the vanilla map,
+reached by an installed mod's own route,
+or inhabited -
+and hashes the admitted set into the fingerprint that says it moved,
+each system contributing under its `SystemKey` so that two systems answering to one id are two contributions rather than one;
+`MapVisibilityPass` is one reading of the sector answering that rule,
+and `DrawnSystemPositions` reads each drawn system's live hyperspace position off it.
 
 The rule takes the answers rather than the sector to read them from - a pass holds the colony index
 and hyperspace scan it composes them off - so a caller running several walks in one tick selects each
