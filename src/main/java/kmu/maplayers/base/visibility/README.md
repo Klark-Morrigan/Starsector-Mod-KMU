@@ -99,7 +99,7 @@ KMLib publishes it as `StarSystems.hasActiveGate` beside the reachability read t
 A mod-made destination is reached by an entity of the mod's own rather than a jump point,
 and marked by an icon of the mod's own rather than a star anchor,
 so both vanilla reads answer no about a place plainly on the map;
-KMLib's `SystemAccessRoutes` answers for both at once,
+KMLib's `ModdedSystemAccessRoutes` answers for both at once,
 and an install running no such mod consults nothing.
 
 Inhabited means somebody lives there -

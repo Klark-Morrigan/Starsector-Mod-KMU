@@ -14,8 +14,8 @@ import com.fs.starfarer.api.impl.campaign.ids.Tags;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.systems.ModdedSystemAccessRoutes;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.SystemAccessRoutes;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
@@ -87,12 +87,12 @@ class MapVisibilityIntegrationTest {
     // install that has none, whatever order the suite runs in.
     @BeforeEach
     void setUp() {
-        SystemAccessRoutes.clearRoutes();
+        ModdedSystemAccessRoutes.clearRoutes();
     }
 
     @AfterEach
     void tearDown() {
-        SystemAccessRoutes.clearRoutes();
+        ModdedSystemAccessRoutes.clearRoutes();
     }
 
     @Nested
@@ -195,7 +195,7 @@ class MapVisibilityIntegrationTest {
             // only thing that can admit it, and it has to admit it without a drawn star.
             var system = buildUnreachableSystem("a");
 
-            SystemAccessRoutes.registerRoute("a mod", askedSystem -> askedSystem == system);
+            ModdedSystemAccessRoutes.registerRoute("a mod", askedSystem -> askedSystem == system);
 
             assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                 .isTrue();
@@ -208,7 +208,7 @@ class MapVisibilityIntegrationTest {
             // not a standing yes for every place on an install carrying the mod.
             var system = buildUnreachableSystem("a");
 
-            SystemAccessRoutes.registerRoute("a mod", askedSystem -> false);
+            ModdedSystemAccessRoutes.registerRoute("a mod", askedSystem -> false);
 
             assertThat(isDrawnUnderNoReveal(buildSectorWithoutStarAnchors(system), system))
                 .isFalse();

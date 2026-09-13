@@ -4,8 +4,8 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.colonies.Colonies;
+import kmlib.starsector.systems.ModdedSystemAccessRoutes;
 import kmlib.starsector.systems.StarSystems;
-import kmlib.starsector.systems.SystemAccessRoutes;
 
 /**
  * Decides which star systems appear on a map layer. What that set hashes to, once decided, is
@@ -15,7 +15,7 @@ import kmlib.starsector.systems.SystemAccessRoutes;
  * ({@link StarSystems#hasJumpPointArrival}) is only one of them. A system appears when it
  * has that normal means of arrival and the map draws it, OR when a lit gate
  * ({@link StarSystems#hasActiveGate}) or an installed mod carries fleets in by a way of its own
- * ({@link SystemAccessRoutes#isReachedByAnyRoute}), OR when it is inhabited - somebody living there the
+ * ({@link ModdedSystemAccessRoutes#isReachedByAnyRoute}), OR when it is inhabited - somebody living there the
  * player knows of, the people left on a collapsed colony among them. What "knows of" admits is the
  * pass's own colony rule rather than anything decided here, so the cell, the band
  * inside it and the box over it are all reading the one rule.
@@ -111,7 +111,7 @@ public final class MapVisibility {
             VisibleStars visibleStars) {
 
         return StarSystems.hasActiveGate(system)
-            || SystemAccessRoutes.isReachedByAnyRoute(system)
+            || ModdedSystemAccessRoutes.isReachedByAnyRoute(system)
             || (StarSystems.hasJumpPointArrival(system) && isDrawnOnMap(system, visibleStars));
     }
 
