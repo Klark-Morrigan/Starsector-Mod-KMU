@@ -177,14 +177,16 @@ the mod has been made specifically compatible with:
 
 KMU follows the consumer-mod rules in
 [KMLib's versioning policy](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/blob/master/docs/dev/versioning.md).
-In short: MAJOR for save-breaking changes, MINOR for save-safe new features,
-PATCH for fixes and tweaks. The same policy defines how KMU pins the KMLib
-dependency in both `mod_info.json` and `.github/workflows/*.yml`.
+In short:
+MAJOR for save-breaking changes,
+MINOR for save-safe new features,
+PATCH for fixes and tweaks.
+The same policy defines how KMU pins the KMLib dependency in both `mod_info.json` and `.github/workflows/*.yml`.
 
 ### Build And Release
 
-KMU is built with Gradle using the local Starsector install as a compile-only
-API source. Production code targets Java 17 to match the bundled runtime.
+KMU is built with Gradle using the local Starsector install as a compile-only API source.
+Production code targets Java 17 to match the bundled runtime.
 
 Local build commands:
 
@@ -193,34 +195,36 @@ Local build commands:
 .\gradlew.bat -PstarsectorRoot=C:\a_Games\Starsector jar
 ```
 
-The Gradle wrapper is the supported local and CI build path. Pass the install
-root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
+The Gradle wrapper is the supported local and CI build path.
+Pass the install root via `STARSECTOR_HOME` or `-PstarsectorRoot=<path>`.
 
-Releases are cut by KMLib's reusable pipeline, which
-[release.yml](.github/workflows/release.yml) calls on every push to `master`
-with no inputs - the pipeline reads `mod_info.json` for everything it needs.
+Releases are cut by KMLib's reusable pipeline,
+which [release.yml](.github/workflows/release.yml) calls on every push to `master` with no inputs -
+the pipeline reads `mod_info.json` for everything it needs.
 A push whose version matches the latest git tag stops after one cheap job;
-a version bump re-runs the PR gates on that commit, packages
-`KMU-<version>.zip`, pushes the tag, and publishes a GitHub release whose body
-is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version - so a
-release with no changelog section fails rather than shipping empty notes.
+a version bump re-runs the PR gates on that commit,
+packages `KMU-<version>.zip`,
+pushes the tag,
+and publishes a GitHub release whose body
+is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version -
+so a release with no changelog section fails rather than shipping empty notes.
 
 Two committed files feed the update-check side of that release.
-[kmu.version.template](kmu.version.template) is the VersionChecker template: a
-complete `.version` file stating the shape KMU publishes, whose release-varying
-values are written as tokens for KMLib's `fill-version-file-template` action to
-substitute from `mod_info.json` - so no version number is restated by hand
-outside that file. The filled result rides inside the zip and is attached to
-the release in its own right, that copy being the only form an update checker
-can poll. [data/config/version/version_files.csv](data/config/version/version_files.csv)
+[kmu.version.template](kmu.version.template) is the VersionChecker template:
+a complete `.version` file stating the shape KMU publishes,
+whose release-varying values are written as tokens for KMLib's `fill-version-file-template` action to substitute from `mod_info.json` -
+so no version number is restated by hand outside that file.
+The filled result rides inside the zip and is attached to the release in its own right,
+that copy being the only form an update checker can poll.
+[data/config/version/version_files.csv](data/config/version/version_files.csv)
 is what points VersionChecker at the filled `kmu.version` in an install.
 
-`gradlew jar` fills the same template into `kmu.version` at the repo root, so a
-checkout symlinked into `mods/` as a dev install reports the version a published
-zip would rather than the tokens. That generated file is never committed. The
-task doing it is `writeVersionFile`, which KMLib's shared Starsector conventions
-register for any mod that commits a template - KMU states no build wiring of its
-own for it.
+`gradlew jar` fills the same template into `kmu.version` at the repo root,
+so a checkout symlinked into `mods/` as a dev install reports the version a published ZIP would rather than the tokens.
+That generated file is never committed.
+The task doing it is `writeVersionFile`,
+which KMLib's shared Starsector conventions register for any mod that commits a template -
+KMU states no build wiring of its own for it.
 
 ### Local linting
 
