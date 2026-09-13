@@ -17,7 +17,6 @@ import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.render.clusters.TracedFill;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
-import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 
@@ -57,6 +56,10 @@ public final class FactionTerritoryBuilder {
      *
      * @param territories    this pass's retained holding, theme, and filter state
      * @param geometryCache  the raw cells the border is traced from
+     * @param cellGrouping   how the drawn cells group under this pass's holding, resolved once by
+     *                       the caller: it spans every cell on the map rather than this bloc's, so
+     *                       a bloc resolving its own would rebuild the whole map's grouping per
+     *                       bloc, and two blocs could be traced against two readings of it
      * @param blocId         the bloc's holder - a faction ID under the faction view, or
      *                       one of the filter's synthetic spotlight keys
      * @param memberCellKeys the cells this bloc draws
@@ -66,10 +69,9 @@ public final class FactionTerritoryBuilder {
     public static StyledClusterGroup buildFactionTerritory(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
+            CellGrouping cellGrouping,
             String blocId,
             List<SystemKey> memberCellKeys) {
-
-        var cellGrouping = resolveCellGroupingOf(territories, geometryCache);
 
         // A desaturated bloc's fill and border swap to the pass's shared desaturation palette
         // instead of its own two shades, exactly as its cells' seams do - both read this one call.
@@ -159,17 +161,21 @@ public final class FactionTerritoryBuilder {
      *
      * @param territories   the pass state to write the territories into
      * @param geometryCache the raw cells the borders are traced from
+     * @param cellGrouping  how the drawn cells group under this pass's holding, which both the
+     *                      bloc membership below and every bloc's own trace read
      */
     public static void buildAllFactionTerritories(
             PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache) {
+            CellGeometryCache geometryCache,
+            CellGrouping cellGrouping) {
 
-        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellKeysByOwner();
+        var grouped = cellGrouping.groupCellKeysByOwner();
         for (var bloc : grouped.entrySet()) {
 
             var territory = buildFactionTerritory(
                 territories,
                 geometryCache,
+                cellGrouping,
                 bloc.getKey(),
                 bloc.getValue());
 
@@ -233,14 +239,4 @@ public final class FactionTerritoryBuilder {
         return runs;
     }
 
-    // The drawn cells' grouping this bloc is traced against: which system each cell draws as,
-    // off the geometry cache, paired with each owned system's bloc key.
-    private static CellGrouping resolveCellGroupingOf(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache) {
-
-        return DominantHolder.mapCellGrouping(
-            geometryCache.getSystemKeyByCellKey(),
-            territories.getHolderBySystemKey());
-    }
 }

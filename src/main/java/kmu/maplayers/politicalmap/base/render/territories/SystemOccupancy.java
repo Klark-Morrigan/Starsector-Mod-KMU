@@ -144,6 +144,25 @@ public final class SystemOccupancy {
      * @return those of them no holder was resolved for
      */
     public Set<SystemKey> selectUnheldSystemKeysAmong(Set<SystemKey> candidateSystemKeys) {
+        return selectUnheldSystemKeysIn(holderBySystemKey, candidateSystemKeys);
+    }
+
+    /**
+     * The same rule over a holder map nothing has been folded into yet - what a full build asks
+     * before it has an occupancy to ask.
+     *
+     * <p>The rule itself rather than a second copy of it, so the build that resolves a holding and
+     * the refresh that folds one cannot come to disagree about what "unheld" means. Taken as the
+     * bare map because a build asking it holds only that: composing an occupancy to ask would copy
+     * the whole holding and the settled set for one containment test.
+     *
+     * @param holderBySystemKey   who holds each system; a system nobody holds is absent
+     * @param candidateSystemKeys the systems to filter, in the order they are to be answered in
+     * @return those of them no holder was resolved for
+     */
+    public static Set<SystemKey> selectUnheldSystemKeysIn(
+            Map<SystemKey, DominantHolder> holderBySystemKey,
+            Set<SystemKey> candidateSystemKeys) {
 
         var unheldSystemKeys = new LinkedHashSet<SystemKey>();
 

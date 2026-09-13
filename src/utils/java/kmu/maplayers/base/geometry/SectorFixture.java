@@ -174,10 +174,24 @@ public final class SectorFixture {
      * system maps to its owner ID, and an unowned one is absent from the map entirely -
      * which is what makes it a frontier star to {@link EdgeClassifier}.
      *
-     * @return the key map, keyed by system id
+     * <p>Re-addressed by {@link SystemKey} on the way out, since that is the one address the
+     * geometry holds both its cells and its owners under; the rows carry an ID and nothing else,
+     * so each key states that arm alone.
+     *
+     * @return the key map, keyed by system key
      */
-    Map<String, String> getOwnerBySystemId() {
-        return ownerBySystemId;
+    Map<SystemKey, String> getOwnerBySystemKey() {
+
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, String>();
+
+        for (var index = 0; index < systemIds.size(); index++) {
+
+            var owner = ownerBySystemId.get(systemIds.get(index));
+            if (owner != null) {
+                ownerBySystemKey.put(readSystemKeyAt(index), owner);
+            }
+        }
+        return ownerBySystemKey;
     }
 
     Map<String, Integer> getScoreBySystemId() {

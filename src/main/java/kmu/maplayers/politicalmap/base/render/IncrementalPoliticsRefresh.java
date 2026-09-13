@@ -8,6 +8,7 @@ import kmlib.profiling.ProfileSection;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
@@ -18,8 +19,8 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilde
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
-import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PaintedCellBuilder;
+import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 
 import org.apache.log4j.Logger;
 
@@ -234,15 +235,16 @@ final class IncrementalPoliticsRefresh {
             CellGeometryCache geometryCache,
             StalePoliticsDisturbance disturbance) {
 
-        var cellsByFaction = DominantHolder.mapCellGrouping(
-                geometryCache.getSystemKeyByCellKey(),
-                territories.getHolderBySystemKey())
-            .groupCellKeysByOwner();
+        var cellGrouping = territories.resolveCellGroupingOver(
+            geometryCache.getSystemKeyByCellKey());
+
+        var cellsByFaction = cellGrouping.groupCellKeysByOwner();
 
         for (var factionId : disturbance.getAffectedFactionIds()) {
             rebuildFactionTerritoryInPlace(
                 territories,
                 geometryCache,
+                cellGrouping,
                 factionId,
                 cellsByFaction.get(factionId));
         }
@@ -346,6 +348,7 @@ final class IncrementalPoliticsRefresh {
     private static void rebuildFactionTerritoryInPlace(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
+            CellGrouping cellGrouping,
             String factionId,
             List<SystemKey> memberCellKeys) {
 
@@ -354,6 +357,7 @@ final class IncrementalPoliticsRefresh {
             : FactionTerritoryBuilder.buildFactionTerritory(
                 territories,
                 geometryCache,
+                cellGrouping,
                 factionId,
                 memberCellKeys);
 

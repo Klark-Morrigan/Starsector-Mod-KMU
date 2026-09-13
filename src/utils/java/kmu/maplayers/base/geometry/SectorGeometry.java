@@ -67,11 +67,11 @@ public record SectorGeometry(
         // draws-as map is identity over the cell ids.
         var grouping = new CellGrouping(
             identityOver(cellEdges.keySet()),
-            fixture.getOwnerBySystemId());
+            fixture.getOwnerBySystemKey());
 
         // The owners re-addressed by cell, so a consumer asking which owner a cell it holds falls
-        // under asks under the key it holds that cell by - the fixture's own map is keyed by id,
-        // which is the address the grouping resolves through rather than the one the cells carry.
+        // under asks under the key it holds that cell by - the grouping's own map is keyed by the
+        // system a cell draws as, which is the same key only while every cell is its own star's.
         var owners = mapOwnerByCellKey(cellEdges.keySet(), grouping);
         var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
         var rings = new LinkedHashMap<String, List<List<double[]>>>();

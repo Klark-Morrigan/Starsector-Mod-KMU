@@ -5,6 +5,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
+import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
@@ -162,7 +162,7 @@ final class FactionTerritoryBuilderTest {
             holders.put(anchoredCell, HEGEMONY_OWNER);
             holders.put(twin, TRITACHYON_OWNER);
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesHeldBy(buildDrawnStyle(), holders),
                 listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
                 HEGEMONY,
@@ -177,7 +177,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryTracesTwoTouchingSystemsAsOneFrontier() {
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 HEGEMONY,
@@ -200,7 +200,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryTracesDisjointHoldingsAsAClusterApiece() {
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
                 HEGEMONY,
@@ -222,7 +222,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryTracesAnEnclosedRivalAsAnEnclaveOfTheOneBody() {
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildDrawnStyle(), listGridHolders()),
                 listGridCells(),
                 HEGEMONY,
@@ -246,7 +246,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryPaintsEachSlotFromItsOwnPaletteChoiceAndOpacity() {
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
@@ -268,7 +268,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryBakesNoBorderRunsForANoColourBorder() {
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildFillOnlyStyle()),
                 listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
@@ -290,7 +290,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryBakesNothingWhenNeitherFillNorBorderDrawsAColour() {
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildNoColourStyle()),
                 listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
@@ -315,7 +315,7 @@ final class FactionTerritoryBuilderTest {
                     HELD_SYSTEM,
                     HELD_SYSTEM)));
 
-            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+            var clusterGroup = buildTerritoryOf(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 geometryCacheMock,
                 HEGEMONY,
@@ -342,7 +342,7 @@ final class FactionTerritoryBuilderTest {
                 RIVAL_SYSTEM,
                 TRITACHYON_OWNER));
 
-            FactionTerritoryBuilder.buildAllFactionTerritories(
+            buildAllTerritoriesOf(
                 territories,
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM, RIVAL_SYSTEM));
 
@@ -377,7 +377,7 @@ final class FactionTerritoryBuilderTest {
                     RIVAL_SYSTEM,
                     RIVAL_SYSTEM)));
 
-            FactionTerritoryBuilder.buildAllFactionTerritories(territories, geometryCacheMock);
+            buildAllTerritoriesOf(territories, geometryCacheMock);
 
             // Absent rather than mapped to null: every reader of this map paints what it finds.
             assertThat(territories.getStyledClusterGroupByOwnerId())
@@ -522,6 +522,34 @@ final class FactionTerritoryBuilderTest {
             HEGEMONY_OWNER,
             RIVAL_SYSTEM,
             TRITACHYON_OWNER));
+    }
+
+    // One bloc's territory, traced against the pass's own grouping. The builder takes that
+    // grouping rather than resolving it, since production resolves it once for the whole map; a
+    // case states the holding and the cells and this composes the two the way a rebuild does.
+    private static StyledClusterGroup buildTerritoryOf(
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache,
+            String blocId,
+            List<SystemKey> memberCellKeys) {
+
+        return FactionTerritoryBuilder.buildFactionTerritory(
+            territories,
+            geometryCache,
+            territories.resolveCellGroupingOver(geometryCache.getSystemKeyByCellKey()),
+            blocId,
+            memberCellKeys);
+    }
+
+    // Every bloc's territory, under that same one grouping.
+    private static void buildAllTerritoriesOf(
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache) {
+
+        FactionTerritoryBuilder.buildAllFactionTerritories(
+            territories,
+            geometryCache,
+            territories.resolveCellGroupingOver(geometryCache.getSystemKeyByCellKey()));
     }
 
     private static PoliticalMapTerritories buildTerritoriesStyledBy(

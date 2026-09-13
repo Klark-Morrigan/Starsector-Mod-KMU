@@ -20,7 +20,6 @@ import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
-import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
@@ -246,9 +245,9 @@ public final class TerritoryBuilder {
             HolderResolution resolution,
             Set<SystemKey> inhabitedSystemKeys) {
 
-        return SystemOccupancy
-            .createCopyOf(resolution.ownerBySystemKey(), inhabitedSystemKeys, Set.of())
-            .selectUnheldSystemKeysAmong(inhabitedSystemKeys);
+        return SystemOccupancy.selectUnheldSystemKeysIn(
+            resolution.ownerBySystemKey(),
+            inhabitedSystemKeys);
     }
 
     // The paint scheme this build styles every cell from: the whole theme read once through the
@@ -314,7 +313,9 @@ public final class TerritoryBuilder {
         // Shape the raw cells into merged clusters once, holding-aware. The agnostic geometry
         // clusters by holder, so hand it each system's faction ID as the key. Cells consumed by
         // the inset (fewer than three vertices left) drop out.
-        var cellGrouping = resolveCellGrouping(territories, geometryCache);
+        var cellGrouping = territories.resolveCellGroupingOver(
+            geometryCache.getSystemKeyByCellKey());
+
         var shapedCells = shapeCells(profiler, geometryCache, cellGrouping);
 
         // No band is laid here. A band keeps clear of the cluster names, and the names are fitted
@@ -345,7 +346,10 @@ public final class TerritoryBuilder {
         // seams used, and profiled on its own since chaining, smoothing, and tessellating every
         // faction's outline is comparable in cost to shaping the cells.
         try (var territoriesScope = profiler.open(BUILD_FACTION_TERRITORIES_SECTION)) {
-            FactionTerritoryBuilder.buildAllFactionTerritories(territories, geometryCache);
+            FactionTerritoryBuilder.buildAllFactionTerritories(
+                territories,
+                geometryCache,
+                cellGrouping);
         }
 
         // The cells this pass shaped are what its duration is read against. What became of them -
@@ -392,14 +396,4 @@ public final class TerritoryBuilder {
         }
     }
 
-    // The drawn cells' grouping this pass shapes and traces against: which system each cell draws
-    // as, off the geometry cache, paired with each owned system's faction id. Resolved once per
-    // pass so every stage groups the cells identically.
-    private static CellGrouping resolveCellGrouping(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache) {
-        return DominantHolder.mapCellGrouping(
-            geometryCache.getSystemKeyByCellKey(),
-            territories.getHolderBySystemKey());
-    }
 }

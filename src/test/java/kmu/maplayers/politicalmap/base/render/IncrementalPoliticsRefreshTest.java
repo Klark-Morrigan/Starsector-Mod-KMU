@@ -30,9 +30,9 @@ import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
+import kmu.maplayers.politicalmap.base.render.territories.PaintedCellBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
-import kmu.maplayers.politicalmap.base.render.territories.PaintedCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.settings.KmuMapVisibilitySettings;
@@ -200,6 +200,7 @@ final class IncrementalPoliticsRefreshTest {
             territoriesMock = seams.openSeam(FactionTerritoryBuilder.class);
             territoriesMock
                 .when(() -> FactionTerritoryBuilder.buildFactionTerritory(
+                    any(),
                     any(),
                     any(),
                     any(),
@@ -726,10 +727,12 @@ final class IncrementalPoliticsRefreshTest {
                 () -> FactionTerritoryBuilder.buildFactionTerritory(
                     any(),
                     any(),
+                    any(),
                     eq(HEGEMONY),
                     anyList()));
             territoriesMock.verify(
                 () -> FactionTerritoryBuilder.buildFactionTerritory(
+                    any(),
                     any(),
                     any(),
                     eq(TRITACHYON),

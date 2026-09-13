@@ -67,6 +67,27 @@ final class SplitFillBuilderTest {
         Map.of(HELD_SYSTEM, HELD_SYSTEM, HATCHED_SYSTEM, HATCHED_SYSTEM),
         Map.of(HELD_SYSTEM, REGION_KEY, HATCHED_SYSTEM, REGION_KEY));
 
+    // The same two cells under two systems the sector answers to one ID for, which only their
+    // anchors tell apart - the pair a sub-cluster key written by ID could not hold in two states.
+    private static final SystemKey FIRST_TWIN = new SystemKey(HELD_SYSTEM_ID, "", "8b3");
+    private static final SystemKey SECOND_TWIN = new SystemKey(HELD_SYSTEM_ID, "", "38d53");
+
+    private static final Map<SystemKey, List<CellEdge>> TWIN_EDGES = Map.of(
+        FIRST_TWIN, List.of(
+            buildEdgeFacingCell(0, 0, 2000, 0, null),
+            buildEdgeFacingCell(2000, 0, 2000, 2000, SECOND_TWIN),
+            buildEdgeFacingCell(2000, 2000, 0, 2000, null),
+            buildEdgeFacingCell(0, 2000, 0, 0, null)),
+        SECOND_TWIN, List.of(
+            buildEdgeFacingCell(2000, 0, 4000, 0, null),
+            buildEdgeFacingCell(4000, 0, 4000, 2000, null),
+            buildEdgeFacingCell(4000, 2000, 2000, 2000, null),
+            buildEdgeFacingCell(2000, 2000, 2000, 0, FIRST_TWIN)));
+
+    private static final CellGrouping TWIN_GROUPING = new CellGrouping(
+        Map.of(FIRST_TWIN, FIRST_TWIN, SECOND_TWIN, SECOND_TWIN),
+        Map.of(FIRST_TWIN, REGION_KEY, SECOND_TWIN, REGION_KEY));
+
     // The body the fill is clipped to: the square [0, 1000] x [0, 1000], area 1e6, overlapping
     // the members' own cells.
     private static final RingRegion HOME_BODY = new RingRegion(
@@ -78,6 +99,11 @@ final class SplitFillBuilderTest {
     // is caught by area rather than by mere presence. Area 25e4.
     private static final RingRegion DISTANT_BODY =
         new RingRegion(buildSquare(10000, 0, 500), List.of());
+
+    // A body enclosing both cells whole, so a fill spread across the pair reads as twice the area
+    // of one - which is what the colliding-pair case turns on.
+    private static final RingRegion BOTH_CELLS_BODY =
+        new RingRegion(buildSquare(0, 0, 4000), List.of());
 
     @Nested
     class TraceFill {
@@ -142,6 +168,35 @@ final class SplitFillBuilderTest {
 
             assertThat(fill.solidTriangles())
                 .isNotEmpty();
+        }
+
+        @Test
+        void traceFillCarvesTwoMembersSharingAnIdIntoTheirOwnStates() {
+            // The sub-cluster keys are written under each member's own SystemKey, so a pair
+            // answering to one vanilla ID can be carved apart: the solid state covers the solid
+            // member's cell alone. Written by ID, the hatched member's key would have overwritten
+            // the solid member's, leaving both cells one sub-cluster and the solid fill spread
+            // over the pair.
+            var fill = new SplitFillBuilder(
+                    TWIN_EDGES,
+                    TWIN_GROUPING,
+                    new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
+                    HATCH)
+                .traceFill(
+                    false, // Is not spotlit.
+                    FillSplit.splitMembersByFillState(
+                        TWIN_GROUPING,
+                        List.of(FIRST_TWIN, SECOND_TWIN),
+                        Set.of(SECOND_TWIN),
+                        Set.of()),
+                    REGION_KEY,
+                    Color.RED)
+                .buildFillFor(BOTH_CELLS_BODY);
+
+            // One inset cell: 1850 wide (150 off the outer edge, nothing off the shared seam) by
+            // 1700 tall. Both cells carved as one would come back at twice this.
+            assertThat(computeTotalTriangleArea(fill.solidTriangles()))
+                .isCloseTo(3.145e6, within(1.0));
         }
 
         @Test

@@ -4,6 +4,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.SystemClusterIndex;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
@@ -334,6 +335,24 @@ public final class PoliticalMapTerritories implements
     }
 
     /**
+     * How the drawn cells group under this build's holding: which system each cell draws as,
+     * paired with the bloc holding that system.
+     *
+     * <p>The one composition of the cut's draws-as map with this build's holding. Every stage that
+     * shapes, traces, clusters or names a cell groups by it, and each composing it for itself is
+     * how two stages of one pass come to disagree about which cells fuse - so it is asked of the
+     * build that owns the holding half rather than assembled at each of them.
+     *
+     * @param systemKeyByCellKey the system each cell draws as, off the geometry cache
+     * @return the cells grouped by the bloc holding the system each draws as
+     */
+    public CellGrouping resolveCellGroupingOver(Map<SystemKey, SystemKey> systemKeyByCellKey) {
+        return DominantHolder.mapCellGrouping(
+            systemKeyByCellKey,
+            occupancy.getHolderBySystemKey());
+    }
+
+    /**
      * Re-derives the cluster index from the current holders.
      *
      * <p>Clusters are a function of holding, so any pass that edits the holder map re-runs this:
@@ -349,9 +368,7 @@ public final class PoliticalMapTerritories implements
             Map<SystemKey, SystemKey> systemKeyByCellKey) {
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
             cellEdgesByCellKey,
-            DominantHolder.mapCellGrouping(
-                systemKeyByCellKey,
-                occupancy.getHolderBySystemKey())));
+            resolveCellGroupingOver(systemKeyByCellKey)));
     }
 
     // Each bloc's bodies with the fill, hatch, and national border they share, keyed by its
