@@ -6,12 +6,17 @@
 - [Features](#features)
   - [Map layers](#map-layers)
     - [Political map](#political-map)
+    - [Spoiler protection](#spoiler-protection)
+  - [Console commands](#console-commands)
+  - [Compatibility](#compatibility)
+  - [Diagnostic](#diagnostics)
 - [For developers](#for-developers)
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
   - [Local linting](#local-linting)
   - [Caching](#caching)
   - [Documentation](#documentation)
+- [Acknowledgements](#acknowledgements)
 
 ## Dependencies
 
@@ -20,11 +25,13 @@
 | Klark Morrigan's Library (KMLib) | Required | Shared library; version pinned in `mod_info.json` |
 | [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | **Required** | Settings framework backing KMU's configuration tabs |
 | [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | **Required** | Exposes game fonts for map labels |
-| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | *Optional* | Enables `kmu_` commands  |
+| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | *Optional* | Enables `kmu_` commands |
 | [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | *Optional* | Adds the **Alliances** view to the **Political Map** |
 | [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260) | *Optional* | The **compatibility mode** is on the `Map - Compatibility` tab |
 
 ## Features
+
+This mod comes with a suite of **LunaLib** settings that allow you to tweak, visuals, sound volume, keybinds, underlying mechanics.
 
 ### Map layers
 
@@ -94,6 +101,75 @@ The **Political Map** comes with 3 views:
   unclaimed systems with their presence will be spotlit.
 
 See [more on the political map](src/main/java/kmu/maplayers/README.md).
+
+#### Spoiler protection
+
+To avoid spoilers, map layers operate on a vanilla-derived **visibility** system:
+
+- **Hidden systems**
+  (with no hyperspace anchor generated off of a star, nebula, or a black hole)
+  are not revealed unless there's a visible population center present or it holds an active gate.
+- Entities marked as **discoverable**
+  (hidden on the system map until in range of player fleet sensors)
+  are not revealed.
+  They are also listed on **Claims** tooltips because vanilla uses them in claim calculations,
+  but are redacted.
+- Markets marked as **hidden** are not revealed if there are no visible colonies held by other non-allied factions,
+  or until the player visits their system.
+  They are also listed on **Claims** tooltips because vanilla uses them in claim calculations,
+  but are redacted.
+- **Decivilised markets** are not revealed unless they start so,
+  or until the player visits their system.
+- **Unowned markets** with the **Abandoned Station** condition follow visibility rules of **hidden markets**.
+
+### Console commands
+
+| Command | Syntax | What it does |
+| --- | --- | --- |
+| `kmu_profiling` | `[tree/flat/walks] [namespace=<prefix>] [top=<count>] [perframe] [reset]` | Writes full or scoped performance measurements to game logs on demand. Calls exceeding the budget are logged automatically without this command. **Requires profiling to be enabled in settings.** |
+
+### Compatibility
+
+Map layers are injected into the map widget as **map-only terrain**.
+And to be visible in the **Starscape** mode,
+the *starscape terrain variant* is tagged as a **slipstream**.
+Custom terrain is the only thing that has to be serialised into saves as Java class references,
+and that's why a clean uninstall is required for disabling the mod.
+
+The game reuses the map widget,
+and so do many mods.
+Those custom placements of the widget get map layers for free,
+but they should come with no mouseover detection and no controls
+(borrowing selections from the map screen as the main instance)
+without a compatibility patch.
+
+Additionally,
+the mod has been made specifically compatible with:
+
+- [Fast Rendering](https://fractalsoftworks.com/forum/index.php?topic=33870.0)
+  and its **optimisations**.
+- [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175.0)
+  to support its **alliance** mechanics.
+- [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260.0)
+  and its **minimap replacement**.
+  The minimap draws the map widget via a tooltip in the corner of the screen.
+  This mod comes with a RAT **compatibility mode** enabled by default that *scopes mouse detection to the widget*.
+  Layer selection is inherited from the map screen.
+  As a bonus,
+  the *map widget is made invisible when it's docked off-screen*
+  (docking is RAT's way of hiding the map widget when the player docks at markets or opens any UI screens) -
+  that disables any related rendering and should provide a marginal performance improvement
+  (more so when in hyperspace)
+  in the menus that don't show the sector map.
+
+### Diagnostics
+
+- The **DEBUG** logging level in both **KMLib** and **KMU** dev settings.
+  To write all internal mod logs.
+- A **reflection** logs toggle in **KMU** dev settings.
+  To trace issues interacting with vanilla UI.
+- **Profiling** toggle and level in **KMU** map dev settings.
+  To trace where performance drops occur.
 
 ## For developers
 
@@ -210,3 +286,18 @@ carries more than prose. Start from [map layers](src/main/java/kmu/maplayers/REA
 
 Diagrams are Mermaid, written inline in the README that needs them. There is no
 separate diagram source format and no standalone diagram files to keep in sync.
+
+## Thanks
+
+- To the **Fractal Softworks** team
+  for bringing us Starsector and continuously improving it.
+- To the **modding community**
+  for producing awesome and inspiring mods that bring me back to Starsector every time.
+- To developers and maintainers of
+  **LazyLib**,
+  **LunaLib**,
+  **MagicLib**,
+  **Console Commands**
+  for providing features this mod relies on.
+- To awesome folks over at **r/Starsector** and in **Discord** communities
+  for feedback and support.

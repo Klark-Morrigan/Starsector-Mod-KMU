@@ -117,7 +117,7 @@ The main control surface of map layers is the collapsible [b]sidebar[/b] that li
 [center]
 [img height=250]https://fractalsoftworks.com/forum/Themes/core/images/post/question.gif[/img]
 [color=red]Unclaimed[/color] [b]unpopulated systems[/b] are drawn very faintly just to show where systems touch.
-Those outlines of unpopulated systems can be toggled on and off independently from [b]populated systems[/b]
+Those outlines of unpopulated systems can be toggled on and off independently from [b]populated systems[/b],
 which are always drawn even when there's no organised faction in the system (e.g. all colonies in a system are [b]decivilised[/b]).
 domination-factions-unpopulated.png
 [/center]
@@ -147,7 +147,7 @@ domination-factions-tooltip-lists-not-contributing-markets.png
 [/center]
 [/spoiler]
 [/li]
-[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. In domination views ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color] views) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems. On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.
+[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. In domination views ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color]) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems. On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.
 
 [spoiler=Examples]
 [center]
@@ -227,7 +227,7 @@ Provided by [color=maroon][b]KMLib[/b][/color]:
 [list]
 [li][b]kmlib_activate_gate <id>[/b] - Activates the gate with that id in the current system.[/li]
 [li][b]kmlib_colonise [entity-id] [faction-id][/b] - Founds a colony. [b][entity-id][/b] defaults to the nearest colonisable market. [b][faction-id][/b] defaults to the player faction.[/li]
-[li][b]kmlib_list_factions [markets|hidden|discoverable|no_markets][/b] - Lists every faction with what it holds - how many places, how many hidden, how many discoverable, and the systems they sit in. By default no filter is applied.[/li]
+[li][b]kmlib_list_factions [markets|hidden|discoverable|no_markets] [no_holdings] [no_attitude] [to_log][/b] - Lists every faction with what it holds - how many places, how many hidden, how many discoverable, and the systems they sit in. By default no filter is applied.[/li]
 [li][b]kmlib_list_map_spoilers[/b] - Lists faction-owned systems as a tree of system, entities and factions, flagging cut-off systems and undiscovered markets.[/li]
 [li][b]kmlib_list_system_entities [gates][/b] - Lists the current system's entities as an orbit tree, then the unorbited ones and fleets with coordinates. By default the [b][gates][/b] filter is not applied.[/li]
 [li][b]kmlib_spawn <gate|jump_point> [orbit_focus_id] [speed] [jitter=<frac>][/b] - Spawns a gate or a jump point at the fleet position. [b][orbit_focus_id][/b] defaults to system center. [b][speed][/b] is derived from radius by default. [b][jitter][/b] defaults to 0.25.[/li]
