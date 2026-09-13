@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.SectorEntityToken;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
+import com.fs.starfarer.api.impl.campaign.GateEntityPlugin;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 import com.fs.starfarer.api.impl.campaign.ids.Tags;
@@ -139,7 +140,8 @@ class MapVisibilityIntegrationTest {
         @Test
         void isDrawnIsFalseForReachableSystemWhoseStarIsHiddenOnMap() {
             // Reachable by a jump point, but the vanilla map hides its star (an
-            // abyssal rogue object), so reachability alone does not admit it.
+            // abyssal rogue object), so reachability alone does not admit it. No gate stands in
+            // it: a lit one is its own reason to draw, which is the case below.
             var system = buildReachableSystem("a");
 
             assertThat(isDrawnUnderNoReveal(buildSectorWithHiddenStar(system), system))
@@ -158,6 +160,30 @@ class MapVisibilityIntegrationTest {
             hangMarketsOnSystemEntities(system, buildAbandonedStation());
 
             assertThat(isDrawnUnderNoReveal(sector, system))
+                .isFalse();
+        }
+
+        @Test
+        void isDrawnIsTrueForAnEmptyStarHiddenSystemALitGateLeadsTo() {
+            // Lighting a gate joins it to the network every other gate lists, so the player is
+            // shown this system from wherever they are standing. The vanilla draw check asks only
+            // whether something is painted where it sits and answers no, which is why the gate has
+            // to admit it without composing with that check - or a gate the player has just lit
+            // leads somewhere the map draws as nothing.
+            var system = buildStarHiddenSystemWithGate("a", buildLitGate());
+
+            assertThat(isDrawnUnderNoReveal(buildSectorWithHiddenStar(system), system))
+                .isTrue();
+        }
+
+        @Test
+        void isDrawnIsFalseForAnEmptyStarHiddenSystemWhoseGateIsDark() {
+            // The other half: an unlit gate joins no network and is listed by nobody, so it says
+            // nothing about the system to a player standing anywhere else - and the system stays
+            // where the draw check left it.
+            var system = buildStarHiddenSystemWithGate("a", buildDarkGate());
+
+            assertThat(isDrawnUnderNoReveal(buildSectorWithHiddenStar(system), system))
                 .isFalse();
         }
 
@@ -403,6 +429,45 @@ class MapVisibilityIntegrationTest {
             .thenReturn(List.of(mock(SectorEntityToken.class)));
 
         return systemMock;
+    }
+
+    // A star-hidden system holding one gate and nothing else: no jump point, nobody living there,
+    // and no star the vanilla map draws - so the gate is the only thing that can admit it.
+    private static StarSystemAPI buildStarHiddenSystemWithGate(String id, SectorEntityToken gate) {
+
+        var systemMock = buildUnreachableSystem(id);
+
+        when(systemMock.getEntitiesWithTag(Tags.GATE))
+            .thenReturn(List.of(gate));
+
+        return systemMock;
+    }
+
+    private static SectorEntityToken buildLitGate() {
+        return buildGateWhoseActivationIs(true);
+    }
+
+    private static SectorEntityToken buildDarkGate() {
+        return buildGateWhoseActivationIs(false);
+    }
+
+    // A gate reporting the given activation. Activation is read off the entity's own plugin, which
+    // is what makes a gate the player has lit read differently from the same gate before.
+    private static SectorEntityToken buildGateWhoseActivationIs(boolean isActive) {
+
+        // The plugin finishes its own wiring before the gate's opens, since building one inside a
+        // when(...) call leaves Mockito's stubbing half finished.
+        var pluginMock = mock(GateEntityPlugin.class);
+
+        when(pluginMock.isActive())
+            .thenReturn(isActive);
+
+        var gateMock = mock(SectorEntityToken.class);
+
+        when(gateMock.getCustomPlugin())
+            .thenReturn(pluginMock);
+
+        return gateMock;
     }
 
     private static StarSystemAPI buildReachableNebula(String id) {

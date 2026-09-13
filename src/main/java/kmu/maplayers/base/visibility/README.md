@@ -49,10 +49,13 @@ and a union would buy one signature at the price of a null arm in every reader.
 ## What is drawn at all (`systems`)
 
 Which star systems a layer draws.
-`MapVisibility` admits a system on any of three paths -
-reachable and drawn by the vanilla map,
+`MapVisibility` admits a system on any of four paths -
+reached by an ordinary jump point and drawn by the vanilla map,
+lit by an active gate,
 reached by an installed mod's own route,
 or inhabited.
+The first three are KMLib's reachability arms taken singly rather than through the fold that sums them,
+since only one of the three has to compose with the draw check.
 `MapVisibilityFingerprint` hashes the admitted set into the scalar that says it moved,
 `MapVisibilityPass` is one reading of the sector answering that rule,
 and `DrawnSystemPositions` reads each drawn system's live hyperspace position off it.
@@ -79,7 +82,20 @@ a colliding pair keyed by id contributes one value twice,
 so one of them entering the drawn set as the other left would move nothing at all,
 and the map would go on drawing a system that is no longer there with no rebuild ever asked for.
 
-The route path is the one that does not also have to be drawn.
+Two arrival paths do not also have to be drawn,
+and for one reason:
+each is itself something the player is shown,
+which the vanilla draw check -
+asking only whether a star or a cloud is painted at that point -
+cannot know about.
+
+A lit gate joins the network every other gate lists,
+so a player standing at any gate is shown this one
+and can conclude the system is there whatever the map paints where it sits.
+Composed with the draw check instead,
+a gate the player has just lit would lead somewhere the map draws as nothing.
+KMLib publishes it as `StarSystems.hasActiveGate` beside the reachability read that also consults it.
+
 A mod-made destination is reached by an entity of the mod's own rather than a jump point,
 and marked by an icon of the mod's own rather than a star anchor,
 so both vanilla reads answer no about a place plainly on the map;

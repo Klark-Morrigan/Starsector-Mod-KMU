@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.systems.SystemKeyedMemo;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
@@ -37,6 +38,12 @@ import java.util.Objects;
  * naming one sector while answering out of another.
  */
 public final class MapVisibilityPass {
+
+    // Several walks ask the drawn question of the same system in one tick, and the rule behind it
+    // reads the sector directly - the system's gates, its jump points, its cut-off tag - where the
+    // habitation half is already served off the index's own memo. Without this the second walk
+    // pays for the first walk's answer again, per system, every rebuild.
+    private final SystemKeyedMemo<Boolean> drawnBySystem = new SystemKeyedMemo<>();
 
     private final ColonyKnowledge colonyKnowledge;
     private final SectorPassIndex sectorIndex;
@@ -152,18 +159,21 @@ public final class MapVisibilityPass {
      * own reading of the sector.
      *
      * <p>The one place that rule is answered, so the geometry sites, the motion tracker and the
-     * fingerprint scan share it rather than each re-deriving it and drifting.
+     * fingerprint scan share it rather than each re-deriving it and drifting. Remembered per
+     * system for the life of the pass, so sharing it costs one reading between them rather than
+     * one each.
      *
      * @param system the system to test
      * @return true when the map draws the system under this pass's rules
      */
     public boolean isDrawn(StarSystemAPI system) {
 
-        return MapVisibility.shouldAppearOnMap(
-            system,
-            visibleStars,
-            isSystemInhabited(system),
-            rules);
+        if (system == null) {
+            // Nothing to remember it under, and the rule already states its own answer for no
+            // system - a forced pass draws one, anything else does not.
+            return resolveIsDrawn(null);
+        }
+        return drawnBySystem.readValueFor(system, this::resolveIsDrawn);
     }
 
     /**
@@ -210,5 +220,16 @@ public final class MapVisibilityPass {
     public boolean isSystemInhabited(StarSystemAPI system) {
 
         return colonyKnowledge.hasInhabitingColony(sectorIndex.readColoniesIn(system));
+    }
+
+    // The rule itself, applied over this pass's own values. Split out so the memo has something to
+    // call on a miss and the null case has the same answer to fall back on.
+    private boolean resolveIsDrawn(StarSystemAPI system) {
+
+        return MapVisibility.shouldAppearOnMap(
+            system,
+            visibleStars,
+            isSystemInhabited(system),
+            rules);
     }
 }

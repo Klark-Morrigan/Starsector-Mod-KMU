@@ -1,6 +1,7 @@
 package kmu.maplayers.base.visibility.systems;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
+import com.fs.starfarer.api.impl.campaign.ids.Tags;
 
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
@@ -30,9 +31,11 @@ import static org.mockito.Mockito.when;
  * asks would go on giving every one of those cases the right answer, and would quietly walk every
  * planet in the sector again on each of the reads a poll makes.
  *
- * <p>The ruin read is what the count is taken off. The colony half is memoised in the index
- * beneath, so it was never what repeated; the ruin walk had no memo of its own until the pass gave
- * it one.
+ * <p>Two counts are taken, one per thing the pass remembers. The ruin walk is the first: the colony
+ * half is memoised in the index beneath, so it was never what repeated, and the ruin walk had no
+ * memo of its own until the pass gave it one. The drawn answer is the second, and it repeats for a
+ * different reason - the access half of the rule reads the sector directly, the system's gates
+ * among it, where no index stands between.
  */
 class MapVisibilityPassTest {
 
@@ -75,6 +78,68 @@ class MapVisibilityPassTest {
                         VisibleStars.scan(null),
                         null))
                 .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
+    class Rules {
+
+        @Test
+        void answersTheRulesThePassWasOpenedUnder() {
+            // A reader taking a walk of its own off this pass judges by the rules the tick began
+            // under, which is only possible if the pass hands back the very ones it was given -
+            // re-reading the settings would let two walks in one tick disagree.
+            var rules = MapVisibilityRules.BASE;
+            var pass = MapVisibilityPass.over(buildUnroutedSectorOf(buildSystem("a")), rules);
+
+            assertThat(pass.rules())
+                .isSameAs(rules);
+        }
+    }
+
+    @Nested
+    class IsDrawn {
+
+        @Test
+        void readsOneSystemsAccessOnceHoweverOftenTheDrawnAnswerIsAsked() {
+            // The gate walk stands for the whole access half: it is the first thing the rule asks
+            // of the system and the only one a mock counts cleanly. Several walks share a pass and
+            // each asks this of every system, so a pass that forgot between asks would multiply
+            // the sector traversal a rebuild is budgeted one of.
+            var system = buildSystem("a");
+            var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), MapVisibilityRules.BASE);
+
+            pass.isDrawn(system);
+            pass.isDrawn(system);
+            pass.isDrawn(system);
+
+            verify(system, times(ONE_READ)).getEntitiesWithTag(Tags.GATE);
+        }
+
+        @Test
+        void asksTheSystemForItsGatesOncePerReading() {
+            // The arms of reachability are taken singly rather than through the fold that sums
+            // them, so one reading costs one gate walk. Asking the fold as well would walk them
+            // again to be told what this has already established.
+            var system = buildSystem("a");
+            var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), MapVisibilityRules.BASE);
+
+            pass.isDrawn(system);
+
+            verify(system, times(ONE_READ)).getEntitiesWithTag(Tags.GATE);
+        }
+
+        @Test
+        void answersForNoSystemWithoutTryingToRememberIt() {
+            // A system there is nothing of has no key to file an answer under, so the ask goes
+            // straight to the rule. What the rule says of nothing is its own business, and under
+            // the base rules it says the map draws nothing.
+            var pass = MapVisibilityPass.over(
+                buildUnroutedSectorOf(buildSystem("a")),
+                MapVisibilityRules.BASE);
+
+            assertThat(pass.isDrawn(null))
+                .isFalse();
         }
     }
 
