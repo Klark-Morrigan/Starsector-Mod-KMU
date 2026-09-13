@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.base.visibility.systems.MapVisibility;
+import kmu.maplayers.base.visibility.systems.MapVisibilityFingerprint;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.dominance.BlocCandidacy;
 import kmu.maplayers.politicalmap.base.dominance.HolderRankingRules;
@@ -39,8 +39,17 @@ import java.util.Map;
  * footprints, since a footprint is weighed only for a colony the
  * economy lists - a system settled by an unregistered one alone lives, and would go
  * missing from the fingerprint that notices it appear. The concerns stay separated: the
- * visibility contribution is {@link MapVisibility}'s and the dominant holder is
+ * visibility contribution is {@link MapVisibilityFingerprint}'s and the dominant holder is
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
+ *
+ * @param visibilityFingerprint what the drawn set hashes to, contributed per system under its
+ *                              {@link SystemKey}, so two systems answering to one id are two
+ *                              contributions rather than one
+ * @param ownerBySystemId       the dominant holder of each owned drawn system, by faction id.
+ *                              Addressed by vanilla system id rather than by key, because the
+ *                              stale set this is diffed into still names systems by id - so a
+ *                              colliding pair is one entry here, holding whichever of them the
+ *                              walk reached last
  */
 public record PoliticalMapSectorSnapshot(
     int visibilityFingerprint,
@@ -103,36 +112,41 @@ public record PoliticalMapSectorSnapshot(
 
         for (var system : sector.getStarSystems()) {
 
-            // The pass's one colony read per system, which the drawn-set answer above is composed
-            // from too: membership asks it whether anybody lives here, the dominance rule ranks
-            // the footprints it weighs out of it. A null economy (early load) reads as no colonies
-            // rather than faulting.
-            var systemColonies = pass.sectorIndex().readColoniesIn(system);
+            // Asked of the pass rather than derived from the footprints below, which is the
+            // narrower question: a footprint is only ever weighed for an economy-listed colony,
+            // so a system settled by an unregistered one alone would read as empty here while the
+            // drawn set - which asks the pass - draws it. The fingerprint would then never move
+            // for it, and the map would go on showing whatever it last built there.
+            //
+            // Asked first so that an undrawn system costs nothing beyond it: everything below is
+            // spent per drawn system, and the colony read it makes is the one the pass has already
+            // memoised answering this.
+            if (!pass.isDrawn(system)) {
+                continue;
+            }
 
             // Taken off the pass rather than read again: membership folds the ruin in and cannot
             // report it, but the fingerprint needs it on its own to salt a drawn system's
             // contribution, so a live-to-dead flip moves the hash without the drawn set changing.
             var hasRevealedDecivilised = pass.isRevealedDecivilised(system);
 
+            // Contributed under the system's key, which this walk holds the system to read, so two
+            // systems answering to one id contribute two values rather than one - keyed by id, one
+            // of them entering the drawn set as the other left would not move the fingerprint.
+            visibility += MapVisibilityFingerprint.computeSystemContribution(
+                SystemKey.readKeyOf(system),
+                hasRevealedDecivilised);
+
+            // The pass's one colony read per system, which the drawn-set answer above is composed
+            // from too: membership asks it whether anybody lives here, the dominance rule ranks
+            // the footprints it weighs out of it. A null economy (early load) reads as no colonies
+            // rather than faulting.
+            var systemColonies = pass.sectorIndex().readColoniesIn(system);
+
             var footprintByFactionId = KnownMarketFootprints.readByFaction(
                 systemColonies,
                 rules,
                 pass.colonyKnowledge());
-
-            // Asked of the pass rather than derived from the footprints below, which is the
-            // narrower question: a footprint is only ever weighed for an economy-listed colony,
-            // so a system settled by an unregistered one alone would read as empty here while the
-            // drawn set - which asks the pass - draws it. The fingerprint would then never move
-            // for it, and the map would go on showing whatever it last built there.
-            if (!pass.isDrawn(system)) {
-                continue;
-            }
-            // Contributed under the system's key, which this walk holds the system to read, so two
-            // systems answering to one id contribute two values rather than one - keyed by id, one
-            // of them entering the drawn set as the other left would not move the fingerprint.
-            visibility += MapVisibility.computeVisibilityContribution(
-                SystemKey.readKeyOf(system),
-                hasRevealedDecivilised);
 
             // A decivilised-only system is drawn yet unowned, so it counts toward
             // visibility but is left out of the holder map - a system gaining or

@@ -2,16 +2,14 @@ package kmu.maplayers.base.visibility.systems;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
-import kmlib.math.hashing.Avalanche;
 import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.systems.StarSystems;
 import kmlib.starsector.systems.SystemAccessRoutes;
-import kmlib.starsector.systems.SystemKey;
 
 /**
- * Decides which star systems appear on a map layer, and fingerprints that
- * set so the overlay knows when to rebuild.
+ * Decides which star systems appear on a map layer. What that set hashes to, once decided, is
+ * {@link MapVisibilityFingerprint}'s.
  *
  * <p>Three independent reasons put a system on the map, and reachability
  * ({@link StarSystems#isReachable}) is only one of them. A system appears when it
@@ -30,7 +28,7 @@ import kmlib.starsector.systems.SystemKey;
  * <p>Inhabited means somebody lives there or did, which a derelict hulk is exactly the
  * case against: a system drawn as settled because an abandoned station orbits its star
  * says something false about that system, quite apart from whether the player has been
- * near it. So the callers below take the habitation projection rather than the wider
+ * near it. So the rule below takes the habitation projection rather than the wider
  * listing of what the player may be told about.
  *
  * <p>The inhabitation path is what admits
@@ -50,18 +48,6 @@ import kmlib.starsector.systems.SystemKey;
  * answer here lets the geometry seeding and the refresh fingerprint share one rule.
  */
 public final class MapVisibility {
-
-    // Salt XORed into a decivilised system's folded key before the avalanche, so a
-    // shown collapse - a draw-class change on a system already on the map - lands a
-    // different contribution from that same system drawn live, and the fingerprint
-    // moves even when the membership set does not.
-    private static final int DECIVILISED_FINGERPRINT_SALT = 31;
-
-    // Seed XORed into every contribution before the avalanche. fmix32 maps 0 to 0,
-    // so a key folding to 0 would otherwise contribute 0 and vanish from the sum;
-    // seeding shifts that single blind spot off 0 onto an arbitrary value (the
-    // golden-ratio constant) that no real system's key folds to.
-    private static final int FINGERPRINT_SEED = 0x9e3779b9;
 
     private MapVisibility() {
     }
@@ -91,69 +77,6 @@ public final class MapVisibility {
         return visibilityRules.isForcedOntoMap()
             || hasVisibleMapAccess(system, visibleStars)
             || isInhabited;
-    }
-
-    /**
-     * The fingerprint contribution of one on-map system, identifying it by key and
-     * folding in its draw class so a decivilised shell reads differently from a
-     * live colony on the same system. Summing this over every on-map system gives
-     * the visibility fingerprint the sector watcher polls: order-independent, so it
-     * still moves when one system enters as another leaves, and collision-resistant
-     * because each contribution is avalanched before the sum - a freshly revealed
-     * collapse, a draw-class flip on a system already shown, shifts it without the
-     * membership set changing.
-     *
-     * <p>Identified by the whole key rather than by the id alone, because two systems may answer
-     * to one id. Both would then contribute the same value, so one entering the drawn set as the
-     * other left would move the fingerprint by nothing and the map would go on showing whatever it
-     * last built there.
-     *
-     * <p>The ownership half of the picture (who holds each system) is tracked
-     * separately, as a per-system owner map collected in the same walk but never
-     * blended in here - this hashes which systems are drawn, not who owns them.
-     *
-     * @param systemKey             the on-map system's key
-     * @param isRevealedDecivilised whether the system is drawn only as a revealed
-     *                              collapsed colony, which salts its contribution so a
-     *                              live-to-dead flip is caught
-     * @return the value to add into the visibility fingerprint
-     */
-    public static int computeVisibilityContribution(
-            SystemKey systemKey,
-            boolean isRevealedDecivilised) {
-
-        // Seed, fold the draw class in, then avalanche before the caller sums it.
-        // Summing raw key hashes lets structured values cancel - hashes that are
-        // small or related can net to no change across a swap - so the drawn set
-        // could shift without moving the fingerprint. Spreading each key across all
-        // 32 bits makes such a cancellation need a full 32-bit coincidence, while
-        // staying a sum keeps the fingerprint order-independent. The seed covers
-        // fmix32's lone fixed point at 0, so a 0-hash key still contributes non-zero.
-        var keyHash = foldKeyArms(systemKey);
-        var drawClassSalt = isRevealedDecivilised ? DECIVILISED_FINGERPRINT_SALT : 0;
-
-        return Avalanche.mixBits(keyHash ^ FINGERPRINT_SEED ^ drawClassSalt);
-    }
-
-    // A key's three arms folded into one value, each arm avalanched into the chain before the next
-    // is XORed in, so two keys fold together only on a full 32-bit coincidence - the same bar the
-    // sum above sets. A linear fold (a multiplier per arm, as a string hashes its characters) would
-    // not clear it: string hashes are themselves linear in their characters, so the pair a live
-    // sector actually holds - one id, procgen centre names one character apart, short engine-minted
-    // anchor ids - can shift one arm by exactly what the other arm shifts back, and fold to one
-    // value. Chaining also keeps the fold positional: an entity id standing as one system's centre
-    // and another's anchor enters at a different link and lands apart.
-    //
-    // Folded here rather than taken off the key's own hash, which is derived from the same three
-    // arms but by a combination the language does not pin down - a fingerprint has to state how it
-    // identifies a system rather than inherit it.
-    private static int foldKeyArms(SystemKey systemKey) {
-
-        var fold = Avalanche.mixBits(systemKey.systemId().hashCode());
-
-        fold = Avalanche.mixBits(fold ^ systemKey.centreEntityId().hashCode());
-
-        return Avalanche.mixBits(fold ^ systemKey.anchorEntityId().hashCode());
     }
 
     // The access path onto the map: an installed mod's own route reaches the

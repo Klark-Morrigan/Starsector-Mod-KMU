@@ -59,6 +59,7 @@ See [more on map layers](src/main/java/kmu/maplayers/README.md).
   On the **Claims** view all systems are painted with solid fill.
 
 The **Political Map** comes with 3 views:
+
 - **Factions** -
   paints faction territory based on a custom **domination algorithm** (highly customisable in settings)
   that weighs markets sizes,
@@ -86,7 +87,7 @@ See [more on the political map](src/main/java/kmu/maplayers/README.md).
 ## Dependencies
 
 | Mod | Author | Required | Notes |
-|-----|--------|----------|-------|
+| ----- | -------- | ---------- | ------- |
 | Klark Morrigan's Library (KMLib) | Klark Morrigan | Required | Shared library; version pinned in `mod_info.json` |
 | [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | Lukas04 | Required | Settings framework backing KMU's configuration tabs |
 | [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | LazyWizard | Required | Utility library |

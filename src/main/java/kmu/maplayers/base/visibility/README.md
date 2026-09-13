@@ -45,9 +45,8 @@ Which star systems a layer draws.
 `MapVisibility` admits a system on any of three paths -
 reachable and drawn by the vanilla map,
 reached by an installed mod's own route,
-or inhabited -
-and hashes the admitted set into the fingerprint that says it moved,
-each system contributing under its `SystemKey` so that two systems answering to one id are two contributions rather than one;
+or inhabited.
+`MapVisibilityFingerprint` hashes the admitted set into the scalar that says it moved,
 `MapVisibilityPass` is one reading of the sector answering that rule,
 and `DrawnSystemPositions` reads each drawn system's live hyperspace position off it.
 
@@ -63,6 +62,11 @@ and a point cloud gathered under ids is short a site for each, which draws as a 
 on a map that cells every neighbour it has. `collectLivePositionsById` re-addresses the same answer
 for a structure still keyed by id, holding the first system of a colliding set as every id-keyed read
 of the sector does.
+
+The fingerprint contributes under that same key for the same reason, and its version of the loss is
+quieter: a colliding pair keyed by id contributes one value twice, so one of them entering the drawn
+set as the other left would move nothing at all, and the map would go on drawing a system that is no
+longer there with no rebuild ever asked for.
 
 The route path is the one that does not also have to be drawn. A mod-made destination is reached by
 an entity of the mod's own rather than a jump point, and marked by an icon of the mod's own rather

@@ -122,28 +122,34 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     // Requests a whole-map geometry rebuild when either trigger fired: the drawn set moved
     // (the visibility fingerprint differs) or a system started or stopped moving. One
     // request covers both, since the rebuild reads the fresh moving set and reachable set
-    // whole. The fingerprint baseline advances even on the first poll, where there is
-    // nothing to compare against and so nothing to request.
+    // whole.
     private void markGeometryChange(
             PoliticalMapSectorSnapshot snapshot,
             boolean hasMovingSetChanged,
             boolean isFirstPoll) {
 
-        var hasVisibilityChanged = isFirstPoll
-            || snapshot.visibilityFingerprint() != lastVisibilityFingerprint;
+        // A first poll has nothing to compare against, so nothing changed by definition - it only
+        // establishes the baseline below. Kept out of the change itself so that neither the log
+        // line nor the request has to subtract it back out.
+        var hasVisibilityChanged = !isFirstPoll
+            && snapshot.visibilityFingerprint() != lastVisibilityFingerprint;
 
         if (hasVisibilityChanged) {
 
             LOG.debug("Political map visibility fingerprint changed; old="
-                + (isFirstPoll ? 0 : lastVisibilityFingerprint)
+                + lastVisibilityFingerprint
                 + " new="
-                + snapshot.visibilityFingerprint()
-                + " firstPoll="
-                + isFirstPoll);
-
-            lastVisibilityFingerprint = snapshot.visibilityFingerprint();
+                + snapshot.visibilityFingerprint());
         }
-        if (isFirstPoll || !(hasVisibilityChanged || hasMovingSetChanged)) {
+        lastVisibilityFingerprint = snapshot.visibilityFingerprint();
+
+        // The first poll establishes both baselines and requests nothing, whatever the motion walk
+        // answered. Stated here rather than left to that walk returning false on its own first
+        // observation, so this axis's first-poll behaviour is readable without opening it.
+        if (isFirstPoll) {
+            return;
+        }
+        if (!hasVisibilityChanged && !hasMovingSetChanged) {
             return;
         }
         if (!hasVisibilityChanged) {

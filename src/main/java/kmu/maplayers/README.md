@@ -251,14 +251,23 @@ bar once does not order it again per save.
   cells and opaque owner ids into borders, fills, and GL-ready runs. The cluster-border trace,
   the smoothing passes, the vertex packing, and the split fill that puts several fills inside one
   border - none of which interprets a key.
-- **[What the map may say](base/visibility/README.md)** - what a layer is allowed to state about a
-  place, as against what the sector holds. Which star systems are drawn at all (`MapVisibility` and
-  the pass, rules and positions around it), and beneath that the three disjoint families of place -
-  a colony (it carries a market), a structure (it carries `Tags.OBJECTIVE`), and a market-less
-  installation - each with its own knowledge and its own rule rather than a union type over places.
-  The register they share is there too: one store per family key, the recency triad every concealed
-  fact is stated in, and the single note a row is dated by. Which sector fact reaches which surface,
-  and which way each default errs, are that README's.
+- **[What the map may say](base/visibility/README.md)** -
+  what a layer is allowed to state about a place,
+  as against what the sector holds.
+  Which star systems are drawn at all
+  (`MapVisibility` and the pass, rules, fingerprint and positions around it),
+  and beneath that the three disjoint families of place -
+  a colony (it carries a market),
+  a structure (it carries `Tags.OBJECTIVE`),
+  and a market-less installation -
+  each with its own knowledge and its own rule rather than a union type over places.
+  The register they share is there too:
+  one store per family key,
+  the recency triad every concealed fact is stated in,
+  and the single note a row is dated by.
+  Which sector fact reaches which surface,
+  and which way each default errs,
+  are that README's.
 - **[Map build profiling](base/profiling/README.md)** - the counters a rebuild's stages add to and
   the terms a rebuild step registers its section on, beneath both the geometry and the render so
   neither imports the other to name them.
