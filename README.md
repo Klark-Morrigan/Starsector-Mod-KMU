@@ -2,16 +2,27 @@
 
 ## Index
 
+- [Dependencies](#dependencies)
 - [Features](#features)
   - [Map layers](#map-layers)
     - [Political map](#political-map)
-- [Dependencies](#dependencies)
 - [For developers](#for-developers)
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
   - [Local linting](#local-linting)
   - [Caching](#caching)
   - [Documentation](#documentation)
+
+## Dependencies
+
+| Mod | Required | Notes |
+| ----- | ---------- | ------- |
+| Klark Morrigan's Library (KMLib) | Required | Shared library; version pinned in `mod_info.json` |
+| [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | **Required** | Settings framework backing KMU's configuration tabs |
+| [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | **Required** | Exposes game fonts for map labels |
+| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | *Optional* | Enables `kmu_` commands  |
+| [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | *Optional* | Adds the **Alliances** view to the **Political Map** |
+| [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260) | *Optional* | The **compatibility mode** is on the `Map - Compatibility` tab |
 
 ## Features
 
@@ -83,17 +94,6 @@ The **Political Map** comes with 3 views:
   unclaimed systems with their presence will be spotlit.
 
 See [more on the political map](src/main/java/kmu/maplayers/README.md).
-
-## Dependencies
-
-| Mod | Author | Required | Notes |
-| ----- | -------- | ---------- | ------- |
-| Klark Morrigan's Library (KMLib) | Klark Morrigan | Required | Shared library; version pinned in `mod_info.json` |
-| [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | Lukas04 | Required | Settings framework backing KMU's configuration tabs |
-| [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | LazyWizard | Required | Utility library |
-| [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | LazyWizard | Optional | Enables `kmu_` developer commands (e.g. `kmu_mcm_open`, which opens the unfinished Market Condition Manager and only once that feature is switched on); the map-layer sidebar and the map's hover feedback both stand down while its overlay is up |
-| [Nexerelin](https://fractalsoftworks.com/forum/index.php?topic=9175) | Histidine | Optional | Adds the alliances view to the political map |
-| [Random Assortment of Things](https://fractalsoftworks.com/forum/index.php?topic=26260) | Lukas04 & SnazzyPantsMcGee | Optional | Detected, with its own mini-map setting, by the compatibility mode on the `Map - Compatibility` tab |
 
 ## For developers
 
