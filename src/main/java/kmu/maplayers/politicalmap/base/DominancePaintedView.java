@@ -127,7 +127,7 @@ public interface DominancePaintedView extends PoliticalMapView {
      *
      * @param grouping the grouping the blocs were folded under, so a gate that asks what a bloc is
      *                 (an alliance, a lone faction) reads the same snapshot the numbers came from
-     * @return the test a present bloc's id passes to be listed; always-true for a view that offers
+     * @return the test a present bloc's ID passes to be listed; always-true for a view that offers
      *         every present bloc
      */
     @Override

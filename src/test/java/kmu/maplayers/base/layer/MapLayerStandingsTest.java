@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  */
 final class MapLayerStandingsTest {
 
-    // The ids the stored arrangement names its layers by, the store holding ids rather than layers.
+    // The IDs the stored arrangement names its layers by, the store holding IDs rather than layers.
     private static final String WIRED_LAYER_ID = "wired";
     private static final String OTHER_WIRED_LAYER_ID = "other_wired";
     private static final String PAIRLESS_LAYER_ID = "pairless";

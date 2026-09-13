@@ -80,7 +80,7 @@ class AllianceGroupingFactoryTest {
             var grouping = AllianceGroupingFactory.buildFrom(List.of(
                 new AllianceRecord("empty-alliance", "Empty Pact", List.of())));
 
-            // No member folds into it and no colour faction is picked, so the bloc id is
+            // No member folds into it and no colour faction is picked, so the bloc ID is
             // not an alliance and colours as itself - the record left no trace.
             assertThat(grouping.isAlliance("empty-alliance"))
                 .isFalse();

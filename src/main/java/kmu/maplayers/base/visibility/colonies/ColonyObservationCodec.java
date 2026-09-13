@@ -11,7 +11,7 @@ import kmu.util.KmuValues;
  * this way, and nothing in a loaded game could tell an entry it can no longer read from a colony
  * nobody has ever met - so the separator and the field order are fixed once and for good.
  *
- * <p>The time is this family's fixed field and the place its free-form one, an id the game composed
+ * <p>The time is this family's fixed field and the place its free-form one, an ID the game composed
  * that may be spelt with anything at all - so the time leads and whatever follows the first
  * separator is the place verbatim.
  *
@@ -47,7 +47,7 @@ final class ColonyObservationCodec implements ObservationCodec<ColonyObservation
                 Long.parseLong(storedObservation.substring(0, separatorIndex)));
 
         } catch (NumberFormatException notATimestamp) {
-            // A location id that happens to hold the separator, which only an entry written before
+            // A location ID that happens to hold the separator, which only an entry written before
             // observations were timed can be. The whole of it is the place.
             return ColonyObservation.createUndatedObservation(storedObservation);
         }

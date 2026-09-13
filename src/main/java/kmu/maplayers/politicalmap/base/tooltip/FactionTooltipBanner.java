@@ -26,7 +26,7 @@ public final class FactionTooltipBanner {
      * one.
      *
      * @param sector    the sector the faction's name and crest are read from
-     * @param factionId the id of the faction the banner names; an id the sector no longer knows is shown
+     * @param factionId the ID of the faction the banner names; an ID the sector no longer knows is shown
      *                  as itself rather than leaving the line nameless
      * @return the row, ready to add to a body and to be qualified by the caller
      */

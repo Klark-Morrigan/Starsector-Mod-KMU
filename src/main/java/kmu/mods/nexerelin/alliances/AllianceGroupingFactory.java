@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Folds a flat list of {@link AllianceRecord}s into the {@link HolderGrouping} the
- * dominance pipeline reads: every member faction maps to its alliance's bloc id, each
+ * dominance pipeline reads: every member faction maps to its alliance's bloc ID, each
  * bloc colours off its dominant member, and each bloc carries the alliance name. Pure
  * over plain data - no Nexerelin or Starsector type - so it is exercised directly on
  * hand-built records, and {@link NexerelinAlliances} is left as the only Nex-touching

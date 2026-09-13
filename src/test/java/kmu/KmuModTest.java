@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the mod id against its literal, because it is not only ours to choose: LunaLib keys the
+ * Pins the mod ID against its literal, because it is not only ours to choose: LunaLib keys the
  * settings screen on it, and it names the subtree the library's scoped loggers land in. Changing it
  * silently orphans a player's stored settings and stops their verbosity setting reaching library
  * code, neither of which fails loudly.

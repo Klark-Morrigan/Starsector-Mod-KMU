@@ -140,7 +140,7 @@ final class ClaimedSystemRibbonPlannerTest {
             // nobody to be a rival of, the count is what makes it a contest.
             //
             // Neither bloc is ranked, the contest having listed neither, so both fall to the tail
-            // in id order.
+            // in ID order.
             var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON);
 
             var contest = new SystemClaimBreakdown(NO_DECREE, NO_CLAIMANT, List.of());

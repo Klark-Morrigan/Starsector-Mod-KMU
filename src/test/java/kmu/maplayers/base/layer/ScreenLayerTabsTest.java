@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * closed hatch and a row with no room all being the same absence, and all of them the state in which it
  * is the player's only way to empty the map.
  *
- * <p>Pins what must not move with it. The roster is untouched, since a save's pick is an id resolved
+ * <p>Pins what must not move with it. The roster is untouched, since a save's pick is an ID resolved
  * against it and a filtered roster would read a save left on that tab as stale and start painting; and
  * a lone tab is never withheld, an empty strip having no way back to itself.
  *
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
  */
 final class ScreenLayerTabsTest {
 
-    // The ids the stored arrangement names its layers by, the store holding ids rather than layers.
+    // The IDs the stored arrangement names its layers by, the store holding IDs rather than layers.
     private static final String NO_LAYER_ID = "no_layer";
     private static final String PAINTING_LAYER_ID = "painting";
     private static final String OTHER_PAINTING_LAYER_ID = "other_painting";
@@ -94,8 +94,8 @@ final class ScreenLayerTabsTest {
 
         @Test
         void resolveTabbedLayersLeavesTheRosterWhole() {
-            // Withheld from the strip and never from the roster: a save's pick is an id resolved
-            // against these, so a roster without the empty view would read a save left on it as an id
+            // Withheld from the strip and never from the roster: a save's pick is an ID resolved
+            // against these, so a roster without the empty view would read a save left on it as an ID
             // from an older build and fall back to the layer that paints - starting an overlay over
             // the map of a player who asked for nothing.
             registerTheEmptyViewBesideALayerThatPaints();
@@ -510,7 +510,7 @@ final class ScreenLayerTabsTest {
 
     // What the layer that paints answers, whichever roster it stands in: it offers itself as the
     // default pick, which is what a migration off the withheld tab moves the screen to, and it answers
-    // the id a stored arrangement would name it by - the store holding ids rather than layers. The
+    // the ID a stored arrangement would name it by - the store holding IDs rather than layers. The
     // empty view leads the row and declines the pick, as it does in play.
     private void stubTheLayerThatPaints() {
 

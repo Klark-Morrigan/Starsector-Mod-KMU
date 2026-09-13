@@ -750,8 +750,8 @@ final class MarketWeightRowResolverTest {
 
         @Test
         void resolveMarketRowsRemarksHowOldTheNewsOfAWeighedColonyIs() {
-            // The remark is matched to the line by the colony's own id rather than by its name,
-            // which is what carrying the id this far is for.
+            // The remark is matched to the line by the colony's own ID rather than by its name,
+            // which is what carrying the ID this far is for.
             var rows = MarketWeightRowResolver.resolveMarketRows(
                 List.of(buildBreakdown("Jangala", PLAIN_SIZE)),
                 NO_UNWEIGHED_COLONIES,
@@ -872,8 +872,8 @@ final class MarketWeightRowResolverTest {
             buildMarkedColony(marketName));
     }
 
-    // The id a colony is known by, which no case here reads: a line is placed by its name and its
-    // depth. Taken from the name so two colonies posed in one case cannot share an id, that being
+    // The ID a colony is known by, which no case here reads: a line is placed by its name and its
+    // depth. Taken from the name so two colonies posed in one case cannot share an ID, that being
     // the one way a field nothing asserts on could still change a result.
     private static String nameColonyId(String marketName) {
         return marketName.toLowerCase(Locale.ROOT).replace(' ', '_');

@@ -35,7 +35,7 @@ public interface RecordedObservations<T> {
     /**
      * What was last observed of one subject.
      *
-     * @param subjectId the subject's own id, as the family names it; an id the register has never
+     * @param subjectId the subject's own ID, as the family names it; an ID the register has never
      *                  held reads as never observed
      * @return what was observed, or empty where nothing was ever written down about it
      */
@@ -49,7 +49,7 @@ public interface RecordedObservations<T> {
      * otherwise unwrap this at each register it opens, one copy of the adaptation per family and
      * each free to answer differently.
      *
-     * @param subjectId the subject's own id, as the family names it
+     * @param subjectId the subject's own ID, as the family names it
      * @return what was observed, or null where nothing was ever written down about it
      */
     default T readObservationOrNull(String subjectId) {

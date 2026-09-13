@@ -220,7 +220,7 @@ final class MapHoverPublisherTest {
             // Two sectors' machinery, each with a publisher of its own. A read taken over one
             // sector's cells has to reach that sector's highlight and hover box and leave the
             // other's where it stood - a publisher resolving the running sector's holder instead
-            // would light a cell on whichever map happened to be loaded, under an id nothing
+            // would light a cell on whichever map happened to be loaded, under an ID nothing
             // forbids both sectors from holding.
             var otherSectorHoverState = new MapHoverState();
 

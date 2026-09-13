@@ -106,7 +106,7 @@ final class ColonySightingRecorderTest {
         }
     }
 
-    // A colony that conceals itself, named by the id an observation is kept against. Gated, since
+    // A colony that conceals itself, named by the ID an observation is kept against. Gated, since
     // an ungated colony is never recorded and a case posing one could not tell a recorder that
     // walked the wrong places from one that walked none.
     private static MarketAPI buildGatedColony(String colonyId) {

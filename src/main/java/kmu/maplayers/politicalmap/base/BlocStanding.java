@@ -31,7 +31,7 @@ public sealed interface BlocStanding {
     BlocStanding PLAYERS_OWN = new PlayersOwn();
 
     /**
-     * A bloc none of whose members answered a standing at all - every id it names being one the
+     * A bloc none of whose members answered a standing at all - every ID it names being one the
      * sector cannot look up. It draws nothing and holds the tail of the scale, since a bloc nothing
      * is known about is exactly what must not be ranked as though it were neutral.
      */

@@ -10,7 +10,7 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
  * growing a field for the other's benefit.
  *
  * <p>This is the political map's declaration of the picker's {@link SelectableListItem} seam, and the
- * split is where the seam's three values end: the id, label, and crest are the {@link SelectableBloc}
+ * split is where the seam's three values end: the ID, label, and crest are the {@link SelectableBloc}
  * the row draws and a pick reports, while {@code stats} is the part only the calling view's own
  * {@link kmlib.starsector.ui.widgets.lists.ListSortMode} comparators and trailing values open. The
  * picker itself never sees {@code S} at all.
@@ -28,7 +28,7 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
  *
  * @param <S>      the ranking metrics this view's picker sorts and labels by - one stats record per
  *                 sort vocabulary, never shared between vocabularies
- * @param identity the bloc this row is about: the id the filter stores plus the label and crest the
+ * @param identity the bloc this row is about: the ID the filter stores plus the label and crest the
  *                 row draws
  * @param stats    the bloc's metrics under this view, read only by that view's sort vocabulary
  */
@@ -37,11 +37,11 @@ public record RankedBloc<S extends BlocMetrics>(
     S stats) implements SelectableListItem {
 
     /**
-     * The seam's neutral name for the bloc's id, so the picker reports an id without learning it
+     * The seam's neutral name for the bloc's ID, so the picker reports an ID without learning it
      * names a bloc. The political side keeps reading {@link SelectableBloc#blocId()} through
-     * {@link #identity()} - the resolvers and the heal key presence off a bloc id, not off "an item".
+     * {@link #identity()} - the resolvers and the heal key presence off a bloc ID, not off "an item".
      *
-     * @return the bloc's save-stable id
+     * @return the bloc's save-stable ID
      */
     @Override
     public String itemId() {

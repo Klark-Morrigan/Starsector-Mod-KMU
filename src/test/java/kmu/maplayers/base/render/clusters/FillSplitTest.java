@@ -87,7 +87,7 @@ final class FillSplitTest {
         @Test
         void classifyFillStateDrawsTwoSystemsSharingAnIdInTheirOwnStates() {
             // The sets name a system the way the members do, so a colliding pair can draw in two
-            // different states - where a set keyed by id could only have hatched both or neither.
+            // different states - where a set keyed by ID could only have hatched both or neither.
             var hatched = new SystemKey(SYSTEM_ID, "", "8b3");
             var solid = new SystemKey(SYSTEM_ID, "", "38d53");
 

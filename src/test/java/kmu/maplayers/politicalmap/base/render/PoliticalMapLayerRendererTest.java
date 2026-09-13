@@ -89,7 +89,7 @@ final class PoliticalMapLayerRendererTest {
         ProfileOrigin.registerOrigin("test.politicalMapSector");
 
     // The layer whose work sits inside each beat, named as the framework names one: from the
-    // layer's id, through the resolver every layer's row is registered by.
+    // layer's ID, through the resolver every layer's row is registered by.
     private static final ProfileSection LAYER_SECTION =
         MapFrameSections.resolveLayerSection("test_political_map");
 

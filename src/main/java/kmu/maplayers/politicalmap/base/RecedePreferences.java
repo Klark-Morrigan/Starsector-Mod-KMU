@@ -136,7 +136,7 @@ public final class RecedePreferences {
     public ElementStyleAdjustment resolveRecedeAdjustment(ScreenMemoryScope memoryScope) {
         // Mute scales by the Luna modifier reading, not a constant, so the screen knob tunes how far a
         // receded bloc dims; unread while Mute is off, which leaves opacity untouched at 1. The getter
-        // keeps its shipped "alliance" spelling - a frozen LunaLib field id shared by every set, not a
+        // keeps its shipped "alliance" spelling - a frozen LunaLib field ID shared by every set, not a
         // claim about which set reads it.
         double opacityMultiplier = isMuted(memoryScope)
             ? KmuPoliticalMapTerritorySettings.getPoliticalMapAllianceMutedOpacityModifier()

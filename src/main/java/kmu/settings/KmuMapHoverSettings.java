@@ -14,7 +14,7 @@ package kmu.settings;
  */
 public final class KmuMapHoverSettings {
 
-    // The upper two hover tiers, over every layer's own pair. The lower two ids read as the
+    // The upper two hover tiers, over every layer's own pair. The lower two IDs read as the
     // political map's because they predate the framework.
     private static final String HOVERING_ENABLED_FIELD =
         "kmu_map_visuals_hovering_isEnabled";
@@ -39,14 +39,14 @@ public final class KmuMapHoverSettings {
         "kmu_map_compatibility_foreignMapSurfaces_isMouseoverEnabledInGameSpace";
 
     // The one foreign map surface named rather than described, because naming the mod is how a
-    // player arrives at this tab. The id files the player's choice, so it is fixed by what is
+    // player arrives at this tab. The ID files the player's choice, so it is fixed by what is
     // already saved rather than by what the mode is called here.
     private static final String RANDOM_ASSORTMENT_OF_THINGS_COMPATIBILITY_MODE_FIELD =
         "kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled";
 
     // A tiered gate that shipped with any level off would read to a player as a feature that is
     // broken rather than switched off, and defaulting them on is what keeps the tiering invisible
-    // to an existing player: the two ids they may already have switched off still switch the same
+    // to an existing player: the two IDs they may already have switched off still switch the same
     // feedback off.
     private static final boolean DEFAULT_HOVERING_ENABLED = true;
 

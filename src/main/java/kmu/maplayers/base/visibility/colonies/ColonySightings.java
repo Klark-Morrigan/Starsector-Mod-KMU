@@ -37,7 +37,7 @@ public interface ColonySightings {
     /**
      * What was last observed of this colony.
      *
-     * @param colonyId the colony's market id, as {@code MarketAPI#getId} reports it; an id the
+     * @param colonyId the colony's market ID, as {@code MarketAPI#getId} reports it; an ID the
      *                 register has never held reads as never seen
      * @return where the colony was last observed standing and when, or null when nobody has seen
      *         it anywhere

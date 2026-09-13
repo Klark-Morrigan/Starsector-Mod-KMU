@@ -210,7 +210,7 @@ final class SectorColonySightingsTest {
         @Test
         void recordsNothingWhereTheSystemNamesItselfWithNothing() {
             // A sighting is filed as the place the colony was seen standing in, and a reader
-            // matches that against where it stands now. A place with no id to be matched by would
+            // matches that against where it stands now. A place with no ID to be matched by would
             // put an entry into the save that every later reading declines.
             when(systemMock.getId())
                 .thenReturn(null);
@@ -375,7 +375,7 @@ final class SectorColonySightingsTest {
         @Test
         void dropsASightingOfAColonyNoLongerAnywhereInTheSector() {
             // A sighting outliving what it was about would go on answering for whatever next took
-            // the id, which is an observation nobody ever made.
+            // the ID, which is an observation nobody ever made.
             var stored = openStoredSightings();
 
             stored.put("sentinel_gantries", SYSTEM_ID);
@@ -476,7 +476,7 @@ final class SectorColonySightingsTest {
         return nameColony(ColonyMarketFixture.buildVisibleColony(factionId), colonyId);
     }
 
-    // The id a sighting is kept against. Given here rather than by the colony builders, none of
+    // The ID a sighting is kept against. Given here rather than by the colony builders, none of
     // which needs one - only the register does, and only because a stored entry has to be named.
     private static MarketAPI nameColony(MarketAPI colony, String colonyId) {
 

@@ -18,7 +18,7 @@ import java.util.function.IntSupplier;
  * <p>Which words and which key are named here rather than passed in, because this is the one part
  * of the attachment that knows the control is the map layers'. Everything under it is a box on a row
  * and would read the same for any control put there. Where each is declared is not this class's
- * business: the words are a string id and the key a settings accessor, both owned by the classes
+ * business: the words are a string ID and the key a settings accessor, both owned by the classes
  * that own every other one of their kind.
  *
  * <p>Both are asked at each attachment rather than once, so a control built after the player

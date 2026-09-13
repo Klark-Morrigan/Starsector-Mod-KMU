@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the shape every political-map sort vocabulary gets by declaring its numbers: where the mode's
- * own key sits, how a tie falls down the canonical chain and then to the name and the id, which key
+ * own key sits, how a tie falls down the canonical chain and then to the name and the ID, which key
  * the player's direction reaches, and what a plain numeric value draws. The tail is pinned twice
  * over: as the end of that shape, and on its own, which is how a mode ranking by something no
  * vocabulary declares reaches it.
@@ -272,7 +272,7 @@ final class BlocSortModeComposerTest {
         }
     }
 
-    // Assembles the comparator for a mode promoting this metric and reads the blocs' ids off it, in the
+    // Assembles the comparator for a mode promoting this metric and reads the blocs' IDs off it, in the
     // primary key's own natural direction, so an assertion reads the default arrangement without
     // spelling out the direction. The flip cases use the direction overload.
     @SafeVarargs
@@ -286,7 +286,7 @@ final class BlocSortModeComposerTest {
             blocs);
     }
 
-    // Puts the shared tail behind a caller's own order and reads the blocs' ids off the result, which
+    // Puts the shared tail behind a caller's own order and reads the blocs' IDs off the result, which
     // is how a mode outside the two vocabularies reaches the tail.
     @SafeVarargs
     private static List<String> listIdsWithSharedTailBehind(

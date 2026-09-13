@@ -684,7 +684,7 @@ final class ClusterAnchorPlacementTest {
         @Test
         void computeClusterAnchorsReadsTheOwnerOfAMemberUnderItsOwnKey() {
             // The members and the owner map share one address, so a cluster whose member shares a
-            // vanilla id with another system takes its own owner - where a lookup by id alone
+            // vanilla ID with another system takes its own owner - where a lookup by ID alone
             // could only have named whichever of the pair the map happened to hold.
             var anchoredMember = new SystemKey("A", "", "8b3");
             var twin = new SystemKey("A", "", "38d53");

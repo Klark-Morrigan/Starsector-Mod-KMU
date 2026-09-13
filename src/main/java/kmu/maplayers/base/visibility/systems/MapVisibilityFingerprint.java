@@ -12,7 +12,7 @@ import kmlib.starsector.systems.SystemKey;
  * sector lists its systems in - and {@link Avalanche} is what keeps a sum of related values from
  * cancelling back to no change.
  *
- * <p>A system is identified by its whole {@link SystemKey} rather than by its id, because two
+ * <p>A system is identified by its whole {@link SystemKey} rather than by its ID, because two
  * systems may answer to one id. Both would then contribute the same value, so one entering the
  * drawn set as the other left would move the fingerprint by nothing, and the map would go on
  * showing whatever it last built there.
@@ -61,10 +61,10 @@ public final class MapVisibilityFingerprint {
     //
     // Chained rather than folded linearly - an arm weighted by a multiplier, the way a string
     // hashes its characters - because a linear fold lets the arms cancel. String hashes are
-    // themselves linear in their characters, so the pair a live sector actually holds (one id,
-    // procgen centre names one character apart, short engine-minted anchor ids) can shift one arm
+    // themselves linear in their characters, so the pair a live sector actually holds (one ID,
+    // procgen centre names one character apart, short engine-minted anchor IDs) can shift one arm
     // by exactly what another shifts back, and fold to a single value. Chaining also keeps the fold
-    // positional: an entity id standing as one system's centre and another's anchor enters the
+    // positional: an entity ID standing as one system's centre and another's anchor enters the
     // chain at a different link.
     //
     // The last arm is mixed here rather than left for the caller's own mix, so that no arm shares

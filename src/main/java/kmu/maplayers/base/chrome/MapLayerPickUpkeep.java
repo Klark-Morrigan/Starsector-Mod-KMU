@@ -29,7 +29,7 @@ import java.util.function.Supplier;
  * nothing about picks.
  *
  * <p>Asked every frame is not the same as answered every frame. Building the offered row costs an
- * index of the roster by id, three lists and two stream passes, which is not a thing to spend sixty
+ * index of the roster by ID, three lists and two stream passes, which is not a thing to spend sixty
  * times a second for an answer that changes when the player opens a dialog. So each screen's
  * {@link OfferedTabsRevision} is held from the frame it was last settled at, and a frame whose
  * revision has not moved is two field reads and a comparison of two short lists. The revision is

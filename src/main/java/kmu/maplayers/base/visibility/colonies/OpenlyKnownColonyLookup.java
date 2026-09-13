@@ -10,13 +10,13 @@ import java.util.Set;
  * id.
  *
  * <p>For the reader {@link ColonyKindLookup} serves and folded on the same walk: an account built
- * from a contest meets a colony as an id beside a number, and whether the place behind it is a
+ * from a contest meets a colony as an ID beside a number, and whether the place behind it is a
  * landmark lives on its entity - which no row carries.
  *
  * <p>Answers what a box may say about a colony and nothing about what it may show, for the reason
  * {@link OpenlyKnownColonyRegistry} states.
  *
- * @param openlyKnownColonyIds the market ids of the concealed colonies the sector openly points at
+ * @param openlyKnownColonyIds the market IDs of the concealed colonies the sector openly points at
  */
 public record OpenlyKnownColonyLookup(
     Set<String> openlyKnownColonyIds) {
@@ -40,7 +40,7 @@ public record OpenlyKnownColonyLookup(
      * would leave a listed row unanswered for reasons the caller had nothing to do with.
      *
      * @param colonies the location's colonies, as one walk of it reported; null yields {@link #NONE}
-     * @return the openly known ones among them, by colony id
+     * @return the openly known ones among them, by colony ID
      */
     public static OpenlyKnownColonyLookup readOpenlyKnownIn(Colonies colonies) {
 
@@ -69,9 +69,9 @@ public record OpenlyKnownColonyLookup(
     }
 
     /**
-     * Whether the colony with this id conceals itself only in the sector's bookkeeping.
+     * Whether the colony with this ID conceals itself only in the sector's bookkeeping.
      *
-     * @param colonyId the colony's market id; an id the fold never met reads as a secret, which is
+     * @param colonyId the colony's market ID; an ID the fold never met reads as a secret, which is
      *                 the direction that states no finding - a box cannot excuse a concealment on
      *                 the strength of a fold nobody made
      * @return true when the colony is one the sector openly points at

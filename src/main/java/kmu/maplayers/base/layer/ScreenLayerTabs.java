@@ -13,9 +13,9 @@ import java.util.List;
  * settled afresh each session and can be settled no, so a strip that withheld the last way of emptying a
  * map on a screen the box never reached would leave the player nothing at all.
  *
- * <p>Withheld from the strip and never from the roster. A save's pick is a layer id resolved against the
+ * <p>Withheld from the strip and never from the roster. A save's pick is a layer ID resolved against the
  * registered layers, so a roster with that tab filtered out of it would read a save left on it as a stale
- * id and fall back to the default - which is to say, start painting over the map of a player who asked for
+ * ID and fall back to the default - which is to say, start painting over the map of a player who asked for
  * nothing.
  *
  * <p>The player's own arrangement is laid over the roster first, so the row is in the order they put it in
@@ -35,7 +35,7 @@ import java.util.List;
  * screen accounts for, and a lit tab standing over an empty map is that same disagreement from the other
  * end. It reaches a tab the player took off as well as one a control took over, and the first of those
  * deliberately reverses the older reading that hiding a tab is not switching a layer off - true of the
- * store, where the layer stays registered and its id resolvable, and blind to the bar the player is
+ * store, where the layer stays registered and its ID resolvable, and blind to the bar the player is
  * looking at.
  *
  * <p>Both halves land in one frame, and nothing here waits for the picture to leave. What the player was

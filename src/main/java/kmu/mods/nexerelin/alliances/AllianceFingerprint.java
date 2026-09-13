@@ -11,7 +11,7 @@ import java.util.List;
  * alliances view's rebuild; an unchanged token drives nothing.
  *
  * <p>Two things count: <em>who is allied</em> and <em>which member leads</em>. Each
- * alliance's canonical form is its id, its members as a sorted set, and its lead member
+ * alliance's canonical form is its ID, its members as a sorted set, and its lead member
  * (Nexerelin's dominant-by-market-size, element 0). The sorted set makes a reshuffle
  * <em>below</em> the lead read as no change - it alters neither the membership nor the
  * colour - while the lead is carried explicitly because it sets the bloc's colour, so a
@@ -51,7 +51,7 @@ public final class AllianceFingerprint {
             }
             List<String> sortedMembers = new ArrayList<>(members);
             Collections.sort(sortedMembers);
-            // Canonical form: id, sorted member set, and lead member. The lead (element 0,
+            // Canonical form: ID, sorted member set, and lead member. The lead (element 0,
             // Nexerelin's dominant by market size) is carried apart from the set because it
             // sets the bloc's colour, so a lead swap moves the token even when the set is
             // unchanged while a reshuffle below the lead does not.

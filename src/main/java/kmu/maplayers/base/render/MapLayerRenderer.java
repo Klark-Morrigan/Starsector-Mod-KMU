@@ -12,7 +12,7 @@ import java.util.Optional;
  * layer the player has selected rather than by either pass naming a feature.
  *
  * <p>It is a separate type from {@code MapLayer} rather than a method on it because the two are
- * different roles: a layer is a descriptor (id, tab label, body controls, hotkey) that the tab strip
+ * different roles: a layer is a descriptor (ID, tab label, body controls, hotkey) that the tab strip
  * composes, while a renderer emits geometry for a frame. Keeping them apart is also what lets a
  * switch-only tab exist at all - it simply has no renderer, and both passes treat that as nothing to
  * draw.

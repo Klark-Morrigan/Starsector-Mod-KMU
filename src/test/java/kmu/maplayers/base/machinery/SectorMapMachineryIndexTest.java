@@ -39,12 +39,12 @@ import static org.mockito.Mockito.when;
  */
 class SectorMapMachineryIndexTest {
 
-    // The id the staged drifting system reports. A staged system states no centre and no anchor,
+    // The ID the staged drifting system reports. A staged system states no centre and no anchor,
     // so this alone is the key a motion observation is made under - and so what a discarded
     // machinery could leave behind for the next one.
     private static final String DRIFTER_ID = "a";
 
-    // The id a published hover names, a hover being the other thing keyed by bare system id that a
+    // The ID a published hover names, a hover being the other thing keyed by bare system ID that a
     // discarded machinery could leave lit for the next one.
     private static final String HOVERED_SYSTEM_ID = "b";
 
@@ -249,7 +249,7 @@ class SectorMapMachineryIndexTest {
         @Test
         void leavesNoneOfADiscardedSectorsHoverToTheMachineryAfterIt() {
             // The whole of what a per-load hover park used to be for. The hover names its system by
-            // bare id, so a save reloaded in the same session would otherwise open with a cell lit -
+            // bare ID, so a save reloaded in the same session would otherwise open with a cell lit -
             // and a box naming it - for whatever the loaded sector happens to hold that id.
             var sectorMock = mock(SectorAPI.class);
 

@@ -49,7 +49,7 @@ public final class FilteredClaims {
      *                       resolved and that names the selected bloc's colour faction; a pass
      *                       over no sector yields an empty map
      * @param claimReader    the claim source, read once per system
-     * @param selectedBlocId the spotlighted bloc's id, or null off filter
+     * @param selectedBlocId the spotlighted bloc's ID, or null off filter
      * @return the claiming holder keyed by {@link SystemKey}, in star-system walk order
      */
     public static Map<SystemKey, DominantHolder> resolveFilteredClaims(

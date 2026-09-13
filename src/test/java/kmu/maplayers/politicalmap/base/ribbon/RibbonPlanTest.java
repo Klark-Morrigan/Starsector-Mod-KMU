@@ -614,7 +614,7 @@ final class RibbonPlanTest {
     // be told from its neighbour's and a bright segment from the parting inside it. Each names
     // only what makes it that bloc, leaving how many markets it holds the one thing a case says.
     //
-    // Both the ids and the shades are the shared ones, since a bloc drawing one colour here and
+    // Both the IDs and the shades are the shared ones, since a bloc drawing one colour here and
     // another in the suites that read a band back through a palette would let two of them mean
     // different things by the same faction while all of them passed.
     private static BlocPresence buildHegemonyPresence(int marketCount) {

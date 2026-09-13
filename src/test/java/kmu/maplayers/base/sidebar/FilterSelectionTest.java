@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the per-slot filter selection state: the read reports one slot's stored id or none, a pick
+ * Pins the per-slot filter selection state: the read reports one slot's stored ID or none, a pick
  * persists that slot's frozen key and bumps the filter revision on the board it was handed so that
  * sector's reading layer repaints, a clear drops the key and bumps too, every mutation no-ops cleanly
- * before the sector exists, and the self-heal clears only a stored id that is no longer selectable.
+ * before the sector exists, and the self-heal clears only a stored ID that is no longer selectable.
  * The keys are pinned as literals so a rename that would silently reset every save's filter choice
  * fails here rather than shipping.
  *
@@ -98,7 +98,7 @@ final class FilterSelectionTest {
 
         @Test
         void getSelectedIdOfIsNullWhenNoIdIsStored() {
-            // A slot that never picked an id holds no key, which is the un-filtered state.
+            // A slot that never picked an ID holds no key, which is the un-filtered state.
             assertThat(FilterSelection.getSelectedIdOf(SLOT))
                 .isNull();
         }
@@ -126,7 +126,7 @@ final class FilterSelectionTest {
 
         @Test
         void getSelectedIdOfReadsEachScreensOwnSelection() {
-            // Per-screen isolation under one scope id: a bloc spotlighted on one panel and a different
+            // Per-screen isolation under one scope ID: a bloc spotlighted on one panel and a different
             // one on the other read back as each panel left them.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
             sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, OTHER_SELECTED_ID);
@@ -221,7 +221,7 @@ final class FilterSelectionTest {
         @Test
         void clearSelectionLeavesAnotherSlotsSelectionUntouched() {
             // Isolation on the clear side: clearing a slot with no selection of its own drops nothing,
-            // in particular not the neighbouring slots' ids, and bumps no revision while they hold one.
+            // in particular not the neighbouring slots' IDs, and bumps no revision while they hold one.
             sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, SELECTED_ID);
             sectorMemoryFake.storeValue(OTHER_SCOPE_KEY, SELECTED_ID);
 
@@ -253,7 +253,7 @@ final class FilterSelectionTest {
         @Test
         void healStaleSelectionClearsAnIdThatIsNoLongerSelectable() {
             // A slot whose stored selection stopped being on offer between sessions holds a dangling
-            // id; the heal drops it so the filter falls back to none.
+            // ID; the heal drops it so the filter falls back to none.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
             FilterSelection.healStaleSelection(SLOT, storedId -> false);
@@ -264,7 +264,7 @@ final class FilterSelectionTest {
 
         @Test
         void healStaleSelectionKeepsAnIdThatIsStillSelectable() {
-            // A still-valid pick survives untouched, so the slot keeps filtering to the id the player
+            // A still-valid pick survives untouched, so the slot keeps filtering to the ID the player
             // last chose.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
 
@@ -277,7 +277,7 @@ final class FilterSelectionTest {
         @Test
         void healStaleSelectionClearsOnlyTheSlotItWasNamedFor() {
             // The heal is per slot, so a caller owing every screen runs it once each: healing one
-            // leaves the other's stored id standing until its own call comes.
+            // leaves the other's stored ID standing until its own call comes.
             sectorMemoryFake.storeValue(KEY, SELECTED_ID);
             sectorMemoryFake.storeValue(OTHER_SCREEN_KEY, OTHER_SELECTED_ID);
 
@@ -315,7 +315,7 @@ final class FilterSelectionTest {
                 });
 
             // Nothing to assert beyond it neither throwing nor consulting the check - there is no
-            // memory to have read a stored id from.
+            // memory to have read a stored ID from.
         }
     }
 }

@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins {@link TooltipFactionNames}: a resolvable faction reads as its long title, and one the sector
- * no longer knows falls back to the bare id rather than leaving the row nameless.
+ * no longer knows falls back to the bare ID rather than leaving the row nameless.
  */
 final class TooltipFactionNamesTest {
 

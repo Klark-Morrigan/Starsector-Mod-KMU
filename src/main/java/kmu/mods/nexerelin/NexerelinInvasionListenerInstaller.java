@@ -36,7 +36,7 @@ public final class NexerelinInvasionListenerInstaller {
     public static void installIfPresent(SectorAPI sector) {
         // Short-circuit before touching Installer so a Nex-free install never
         // loads the class that names the Nex InvasionListener. The gate is the
-        // library's rather than a mod-manager hop of this class's own: the id
+        // library's rather than a mod-manager hop of this class's own: the ID
         // belongs to the mod, and an install being asked about before the game
         // has stood its settings up answers rather than throwing.
         if (sector == null || !NexerelinPresence.isModEnabled()) {

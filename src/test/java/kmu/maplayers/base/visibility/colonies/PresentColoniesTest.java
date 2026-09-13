@@ -101,7 +101,7 @@ final class PresentColoniesTest {
 
         @Test
         void readsEveryColonyOnceWhereBothListingsHoldIt() {
-            // The economy and the entity walk overlap on a registered colony, and an id counted
+            // The economy and the entity walk overlap on a registered colony, and an ID counted
             // twice would say nothing different - so the answer is a set rather than a tally.
             var colony = nameColony(
                 ColonyMarketFixture.buildVisibleColony("hegemony"),
@@ -116,8 +116,8 @@ final class PresentColoniesTest {
 
         @Test
         void readsNothingOfAColonyTheGameNamesWithNothing() {
-            // A sighting is filed under the very id this walk is compared against, so a colony with
-            // no id can hold none - and putting a null into the answer would only shed by accident.
+            // A sighting is filed under the very ID this walk is compared against, so a colony with
+            // no ID can hold none - and putting a null into the answer would only shed by accident.
             ColonyPlacementFixture.hangColoniesOnEntitiesIn(
                 systemMock,
                 nameColony(ColonyMarketFixture.buildDerelictStation(), null));
@@ -150,7 +150,7 @@ final class PresentColoniesTest {
         }
     }
 
-    // The id a sighting is kept against. Given here rather than by the colony builders, none of
+    // The ID a sighting is kept against. Given here rather than by the colony builders, none of
     // which needs one - only a register does, and only because a stored entry has to be named.
     private static MarketAPI nameColony(MarketAPI colony, String colonyId) {
 

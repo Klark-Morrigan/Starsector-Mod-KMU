@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
  * <p>The two cases it serves are deliberately parallel - each pins that its host writes its own screen's
  * pick and no other's, so a host wired to the neighbouring screen's selection fails one of them - and an
  * arrangement written out twice is exactly where that parallel stops holding quietly: one suite left
- * registering a layer bound to a different key, or asserting a different id, goes on passing while
+ * registering a layer bound to a different key, or asserting a different ID, goes on passing while
  * testing something else.
  *
  * <p>The host arrives as a supplier rather than as a value because a host resolves the fold it opens at
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  */
 final class LayerShortcutPresses {
 
-    /** The registered layer's id - what a host writes into its own screen's active-layer slot. */
+    /** The registered layer's ID - what a host writes into its own screen's active-layer slot. */
     static final String LAYER_ID = "political_map";
 
     // The key that layer answers to, and the one the press carries. LWJGL's KEY_P, but arbitrary here:

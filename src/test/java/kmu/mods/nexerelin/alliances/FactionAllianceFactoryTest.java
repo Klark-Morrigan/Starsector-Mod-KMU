@@ -118,7 +118,7 @@ class FactionAllianceFactoryTest {
 
         @Test
         void skipsARecordTheGameNeverNamed() {
-            // The memberships are keyed on the alliance's own id, and one that is absent cannot be
+            // The memberships are keyed on the alliance's own ID, and one that is absent cannot be
             // compared against another - nor stored, the copy the result takes refusing it.
             var alliances = FactionAllianceFactory.buildFrom(List.of(
                 new AllianceRecord(null, "Unnamed Pact", List.of(HEGEMONY, ASTRAL_ARMADA))));

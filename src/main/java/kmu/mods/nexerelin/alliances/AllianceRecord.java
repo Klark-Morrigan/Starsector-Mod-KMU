@@ -9,11 +9,11 @@ import java.util.List;
  * {@code HolderGrouping}; every field here is a snapshot taken at read time, not a
  * live handle back into Nexerelin.
  *
- * @param allianceId              the alliance's stable id (its Nexerelin {@code uuId}),
- *                                used as the bloc id every member faction shares
+ * @param allianceId              the alliance's stable ID (its Nexerelin {@code uuId}),
+ *                                used as the bloc ID every member faction shares
  * @param name                    the alliance's display name, carried through as the
  *                                bloc's label
- * @param membersSortedDescending the member faction ids ordered by descending market
+ * @param membersSortedDescending the member faction IDs ordered by descending market
  *                                size, so element 0 is the de-facto dominant member
  *                                whose palette the bloc paints in
  */

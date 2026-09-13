@@ -9,7 +9,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the two things the arrangement value itself answers for: which ids the player has taken off
+ * Pins the two things the arrangement value itself answers for: which IDs the player has taken off
  * the bar, and that the lists it was built from cannot be moved out from under a reader afterwards.
  *
  * <p>The second is not incidental. Both lists arrive from something still being edited - a file

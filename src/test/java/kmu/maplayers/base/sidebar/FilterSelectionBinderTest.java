@@ -32,7 +32,7 @@ import static org.mockito.Mockito.never;
 
 /**
  * Pins the join between KMLib's picker and the calling mod's save slots, which is the whole of what the
- * binder does: the spotlighted id and the stored sort are read off the shared stores for the slot on
+ * binder does: the spotlighted ID and the stored sort are read off the shared stores for the slot on
  * the way in, and each of the picker's three picks reaches the store that keeps it on the way out. The
  * picker's own shape and click rules are KMLib's and are pinned there; the stores are mocked, so this
  * reads the wiring alone.
@@ -138,7 +138,7 @@ final class FilterSelectionBinderTest {
 
         @Test
         void buildPickerLightsTheRowTheSlotsStoredIdNames() {
-            // The id the picker lights comes from this slot, which is the read half of the
+            // The ID the picker lights comes from this slot, which is the read half of the
             // binding - a picker handed nothing would light no row whatever the save holds.
             try (var stringsMock = mockStatic(KmuStrings.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {

@@ -59,7 +59,7 @@ class BlocAffiliationTest {
 
         @Test
         void isFalseForABlocTheAllianceSetNeverNamed() {
-            // An unknown id falls through to itself, so it stands with nothing - neither with an
+            // An unknown ID falls through to itself, so it stands with nothing - neither with an
             // alliance member nor with another unknown.
             assertThat(buildAlliedAffiliation().areBlocsAllied("pirates", "hegemony"))
                 .isFalse();
@@ -69,7 +69,7 @@ class BlocAffiliationTest {
 
         @Test
         void isFalseForABlocWithNoId() {
-            // A bloc with no id resolves to no bloc, and two such ids must not read as standing
+            // A bloc with no ID resolves to no bloc, and two such IDs must not read as standing
             // together merely because both resolved to nothing.
             assertThat(buildAlliedAffiliation().areBlocsAllied(null, "hegemony"))
                 .isFalse();
@@ -79,7 +79,7 @@ class BlocAffiliationTest {
 
         @Test
         void isFalseForTwoAllianceBlocIds() {
-            // The alliances-layer case: the pass's bloc ids are alliance ids the alliance set names
+            // The alliances-layer case: the pass's bloc IDs are alliance IDs the alliance set names
             // no faction for, so each falls through to itself and no two distinct blocs there ever
             // stand together - the rule stays uniform with no per-layer branch.
             var grouping = new HolderGrouping(

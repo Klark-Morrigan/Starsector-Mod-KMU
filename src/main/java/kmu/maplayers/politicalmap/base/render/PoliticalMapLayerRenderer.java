@@ -161,9 +161,9 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
      *                     its cells from, whose movers that cut leaves out, whose hover holder the
      *                     cursor read publishes into, whose picker the preview is read off, and
      *                     whose origin its profiling rows are grouped under
-     * @param layerId      the id of the layer this renderer draws, which its rows are reported
+     * @param layerId      the ID of the layer this renderer draws, which its rows are reported
      *                     under - handed in by the layer rather than named here, so the renderer
-     *                     holds no second spelling of an id the layer already owns
+     *                     holds no second spelling of an ID the layer already owns
      * @return a renderer for that machinery, its cache empty until the first frame builds it
      */
     public static PoliticalMapLayerRenderer createForLiveScreen(

@@ -33,10 +33,10 @@ public final class SectorClaims {
     }
 
     /**
-     * Builds the claiming holder - claimant bloc id paired with the shades it paints in - for
+     * Builds the claiming holder - claimant bloc ID paired with the shades it paints in - for
      * every claimed star system, under an holder grouping.
      *
-     * <p>Each system's claimant faction id is folded to its bloc under the grouping and
+     * <p>Each system's claimant faction ID is folded to its bloc under the grouping and
      * coloured through {@link SectorPolitics#resolveBlocHolder}, so a claim carries the same
      * bloc key and palette a held system of that bloc would. A system with no claim is absent;
      * a claim whose colour faction does not resolve is dropped, exactly as an unresolved held

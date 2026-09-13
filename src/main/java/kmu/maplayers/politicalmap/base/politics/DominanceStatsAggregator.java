@@ -57,7 +57,7 @@ public final class DominanceStatsAggregator {
      *             under, sampled once by the caller so the whole read resolves under one set of
      *             knobs; a pass over no sector (or one whose sector has no economy) yields an
      *             empty read
-     * @return each present bloc's stats and the systems it lives in, keyed by bloc id in walk
+     * @return each present bloc's stats and the systems it lives in, keyed by bloc ID in walk
      *         order; empty when nobody lives anywhere the player can see
      */
     public static DominanceStatsRead aggregateDominanceStats(DominancePass pass) {

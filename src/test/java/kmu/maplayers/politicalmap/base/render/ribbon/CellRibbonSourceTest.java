@@ -112,7 +112,7 @@ final class CellRibbonSourceTest {
     private static final SystemKey OTHER_CELL = buildCellKey("other");
 
     // Two factions a case stands together, for the alliance-set cases. Named rather than any pair
-    // because the fixture's fold has to be asked back about the same ids it was built from.
+    // because the fixture's fold has to be asked back about the same IDs it was built from.
     private static final String HEGEMONY = "hegemony";
     private static final String ASTRAL_ARMADA = "astral_armada";
 
@@ -168,7 +168,7 @@ final class CellRibbonSourceTest {
         @Test
         void narrowsTheDrawnSystemToTheIdTheInhabitedSetIsKeyedBy() {
             // The join with the holding: the cell's system arrives keyed and the inhabited set
-            // names a system by id, so a system whose key states an anchor arm still passes the
+            // names a system by ID, so a system whose key states an anchor arm still passes the
             // gate and is offered a band.
             assertThat(buildWith(system -> ANY_PLAN)
                     .buildCellRibbon(CELL, ANCHORED_SYSTEM, SQUARE_CELL, passScope)
@@ -226,7 +226,7 @@ final class CellRibbonSourceTest {
 
         @Test
         void drawsNoBandForACellWithNoStarOfItsOwn() {
-            // A cell drawn as no system names nowhere anyone could be living, so the null id is
+            // A cell drawn as no system names nowhere anyone could be living, so the null ID is
             // answered rather than used as a key.
             assertThat(buildFor(null))
                 .isEqualTo(CellRibbon.NONE);

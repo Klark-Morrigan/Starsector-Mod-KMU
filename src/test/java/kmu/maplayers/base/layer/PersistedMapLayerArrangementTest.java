@@ -153,7 +153,7 @@ final class PersistedMapLayerArrangementTest {
         commonDataStoreFake.storeFile(FILE_NAME, storedFile);
     }
 
-    // The ids one field of the written file holds, read back the way anything else would read it.
+    // The IDs one field of the written file holds, read back the way anything else would read it.
     private static List<String> readStoredIds(JSONObject storedFile, String fieldName) {
 
         var storedArray = storedFile.optJSONArray(fieldName);

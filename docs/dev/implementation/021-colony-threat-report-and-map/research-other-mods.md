@@ -275,7 +275,7 @@ Decompiles cleanly.
      `get()` via the inherited `GenericRaidFGI.get(KEY)` helper
      (`<core>\intel\group\GenericRaidFGI.java:48-:50`).
    - Forces the attacking fleet to faction `"independent"` and tags it with `$dpl_Mercenary_fleet` (`:53-:54`).
-     KMU's "who is attacking" label should use this tag rather than the faction id,
+     KMU's "who is attacking" label should use this tag rather than the faction ID,
      otherwise the threat looks like a random Independent.
 
 **Lifecycle / progress getters** worth using:
@@ -336,7 +336,7 @@ so enumerate via `HostileActivityEventIntel`.
 **Soft-dep risk**:
 class is `public`,
 `data.scripts.campaign.plugins.dustkeepers.SotfDustkeeperHAFactor`.
-Faction id `"sotf_dustkeepers"` is hard-coded in the class;
+Faction ID `"sotf_dustkeepers"` is hard-coded in the class;
 KMU should not depend on it directly -
 go through the factor's own colour getters.
 

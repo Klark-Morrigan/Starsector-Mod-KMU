@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * Resolves a hovered system's pure two-tier standings into the entries the tooltip's block lists,
- * turning each id into the name, crest, and number it presents as.
+ * turning each ID into the name, crest, and number it presents as.
  *
  * <p>Separates "who ranks where" - {@code SystemStandings}, pure over the factions present and a
  * grouping - from "how a group and its factions present", the Starsector and grouping lookups

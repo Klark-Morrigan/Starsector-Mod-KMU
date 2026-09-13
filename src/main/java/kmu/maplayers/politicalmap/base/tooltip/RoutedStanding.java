@@ -23,7 +23,7 @@ import java.util.Objects;
  * @param standing        the group the block lists, holding the members on this block's side of it
  * @param fraction        how far this block's heading reaches over the group, or
  *                        {@link StandingFraction#NOTHING_TO_STATE} where nothing qualifies it
- * @param memberFractions how far it reaches over each member, keyed by faction id; a member missing
+ * @param memberFractions how far it reaches over each member, keyed by faction ID; a member missing
  *                        from it states nothing
  */
 public record RoutedStanding(

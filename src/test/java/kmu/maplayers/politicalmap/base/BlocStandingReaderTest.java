@@ -112,7 +112,7 @@ final class BlocStandingReaderTest {
         void readBlocStandingReportsABlocWithNoIdAsUnreadable() {
 
             // The player faction is established here, so the case also pins that a bloc nothing
-            // named is not matched against the player's own bloc by two absent ids agreeing.
+            // named is not matched against the player's own bloc by two absent IDs agreeing.
             var relationSourceFake = new PlayerRelationSourceFake("player", Map.of());
             var reader = new BlocStandingReader(HolderGrouping.identity(), relationSourceFake);
 

@@ -21,8 +21,8 @@ public final class MapLayerArrangements {
     /**
      * Arranges the bar as a past session would have left it, from this point on.
      *
-     * @param orderedLayerIds the ids the player placed, left to right
-     * @param hiddenLayerIds  the ids whose tabs they took off the bar
+     * @param orderedLayerIds the IDs the player placed, left to right
+     * @param hiddenLayerIds  the IDs whose tabs they took off the bar
      */
     public static void arrangeBarWith(List<String> orderedLayerIds, List<String> hiddenLayerIds) {
 

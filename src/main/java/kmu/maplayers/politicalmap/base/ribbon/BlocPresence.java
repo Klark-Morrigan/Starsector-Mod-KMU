@@ -28,8 +28,8 @@ import java.util.Map;
  * where another bloc's follows - so a run draws in the same two shades the rest of the map
  * already gives that bloc.
  *
- * @param blocId      the bloc this stake belongs to: a faction id in the faction view, an
- *                    alliance bloc id in the alliances view
+ * @param blocId      the bloc this stake belongs to: a faction ID in the faction view, an
+ *                    alliance bloc ID in the alliances view
  * @param palette     the bloc's bright and dark shades, the segment and parting colours of
  *                    its run
  * @param marketCount how many colonies the bloc holds in the cell that the player may be

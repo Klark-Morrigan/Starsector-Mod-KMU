@@ -58,7 +58,7 @@ final class PoliticalMapHoverHighlightSourceTest {
         @Test
         void resolveCandidateFrontierLoopsOfAnswersTheHoveredSystemOfAPairSharingAnId() {
             // The cursor and the holding share one address, so hovering one of two systems that
-            // answer to "A" haloes that system's own holder - where a lookup by id alone would
+            // answer to "A" haloes that system's own holder - where a lookup by ID alone would
             // have handed back the other's frontier.
             var hovered = new SystemKey("A", "", "8b3");
             var loops = List.of(buildSquareRun(0, 0, 100));
@@ -195,7 +195,7 @@ final class PoliticalMapHoverHighlightSourceTest {
     }
 
     // The same territories with its holders stated by key, for the one case a name cannot pose:
-    // two systems sharing a vanilla id, only one of which the cursor is over.
+    // two systems sharing a vanilla ID, only one of which the cursor is over.
     private static PoliticalMapTerritories buildTerritoriesHeldByKey(
             Map<SystemKey, DominantHolder> ownerBySystemKey,
             Map<String, List<double[]>> fillPolygonBySystemId,

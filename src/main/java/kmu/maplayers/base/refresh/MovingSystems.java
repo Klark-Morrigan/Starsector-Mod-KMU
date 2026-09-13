@@ -76,7 +76,7 @@ public final class MovingSystems {
         if (pass == null || pass.sector() == null) {
             return false;
         }
-        // Read by key, so two drawn systems sharing an id are two observations: a move by one is
+        // Read by key, so two drawn systems sharing an ID are two observations: a move by one is
         // reported for that one, rather than for whichever of the pair the sector lists last.
         return systemMotionTracker.updateMovingSystems(
             DrawnSystemPositions.collectLivePositions(pass));

@@ -66,7 +66,7 @@ public final class KnownMarketFootprints {
      * @param colonyKnowledge what the player may be shown of a colony, read once per pass by
      *                         the caller; the fold runs over the known projection, so a colony
      *                         the rule withholds hands its owner no weight
-     * @return each faction's footprint in the system, keyed by faction id; empty
+     * @return each faction's footprint in the system, keyed by faction ID; empty
      *         when the system holds no folded market
      */
     public static Map<String, MarketFootprint> readByFaction(
@@ -109,7 +109,7 @@ public final class KnownMarketFootprints {
      * @param colonyKnowledge what the player may be shown of a colony, the same rule the totals
      *                         this explains were folded under
      * @return each faction's counted markets in the system with the breakdown of each market's
-     *         weight, keyed by faction id and in the economy's own market order; empty when the
+     *         weight, keyed by faction ID and in the economy's own market order; empty when the
      *         system holds no counted market
      */
     public static Map<String, List<MarketWeightBreakdown>> readBreakdownByFaction(
@@ -154,7 +154,7 @@ public final class KnownMarketFootprints {
      * @param colonyKnowledge what the player may be shown of a colony, the same rule the weighed
      *                         half is selected under so the two stay exact complements
      * @return each faction's unlisted colonies in the system, identified and nothing more, keyed by
-     *         faction id and in the system's own entity order; empty when every colony present is
+     *         faction ID and in the system's own entity order; empty when every colony present is
      *         one the economy lists
      */
     public static Map<String, List<UnweighedColony>> readUnweighedColoniesByFaction(

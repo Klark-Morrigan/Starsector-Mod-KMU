@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>Called once from {@code KMU_ModPlugin.onApplicationLoad}. The fields themselves are
  * declared in data/config/LunaSettings.csv rather than in Java, so binding is the logger
  * hookup and the settings-change listener and nothing more; what this class really owns is
- * the mod id every read is scoped by.
+ * the mod ID every read is scoped by.
  *
  * <p>The knobs sit in classes beside this one, split first by which package reads them:
  * the {@code KmuMap*Settings} readers and {@link KmuMapKeybindSettings} for what the map-layer
@@ -47,9 +47,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * isolation, the framework reading both halves; what it buys is that one screen of the settings
  * dialog has one class behind it, so a key added to that tab has an obvious home.
  *
- * <p>All of them hold field ids, fallbacks and accessors only. The mod id, the revision and
+ * <p>All of them hold field IDs, fallbacks and accessors only. The mod ID, the revision and
  * the reads stay here because they are mod-wide - a second layer's settings would want the
- * same reads against the same id - and because a fallback that mirrors a CSV default belongs
+ * same reads against the same ID - and because a fallback that mirrors a CSV default belongs
  * beside the accessor that answers with it, not beside the reader that fetches it. The keybind
  * section is the one that mirrors no default at all, and says there why.
  *
@@ -58,15 +58,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * in those classes answers only what that column cannot: why a default is the number it is, and
  * what a caller has to know to use the value.
  *
- * <p>Every field id spells the tab path a player finds the row under, segment by segment -
+ * <p>Every field ID spells the tab path a player finds the row under, segment by segment -
  * {@code kmu_<tab>_<section>_<group>_<knob>} - so a knob's stored key says where it is set
  * rather than which feature first wanted it. A noun two or more knobs share is a segment of
  * its own and the leaf never repeats it, so {@code cellGeometry_radius} rather than
  * {@code cellGeometry_cellRadius}. A switch names itself as a predicate ({@code is},
- * {@code are}, {@code should}) so its id reads as the question the row answers, and a group's
+ * {@code are}, {@code should}) so its ID reads as the question the row answers, and a group's
  * own on/off is {@code <group>_isEnabled}.
  *
- * <p>A LunaLib field id is the key its value is stored under, so ids are frozen once
+ * <p>A LunaLib field ID is the key its value is stored under, so IDs are frozen once
  * shipped: renaming one resets that setting for every existing player, exactly as a
  * persisted class or memory key cannot be renamed. LunaLib only ever adds - it seeds a default
  * for every row the shipped table declares and prunes nothing - so a value left behind by a
@@ -75,7 +75,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class KmuLunaSettings {
 
-    // The id every read below is scoped by. What the log-level binding needs beside it - the field
+    // The ID every read below is scoped by. What the log-level binding needs beside it - the field
     // the player sets and the logger subtree it tunes - is named in KmuLoggingSettings with the rest
     // of that section's rows, so which logging rows exist has one answer rather than two.
     private static final String MOD_ID = KmuMod.MOD_ID;
@@ -137,7 +137,7 @@ public final class KmuLunaSettings {
             fallback);
     }
 
-    // The typed reads, each binding this mod's LunaLib settings id once, so the LunaLib coupling
+    // The typed reads, each binding this mod's LunaLib settings ID once, so the LunaLib coupling
     // narrows to these few lines and an accessor names only its own field and default. Package
     // private rather than public: they are the shared machinery of one package, not a surface the
     // mod reads settings through.

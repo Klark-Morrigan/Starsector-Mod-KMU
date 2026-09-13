@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  * Pins the chain that answers what the cursor is over, which two passes read and must agree on: the
  * one that draws the box and the one that claims the key switching it. Every way the chain can come up
  * empty is a case here - nothing hovered, the screen's layers switched off, no layer showing a box for
- * it, no live sector, an id that no longer names a system - because each is a frame on which the key must
+ * it, no live sector, an ID that no longer names a system - because each is a frame on which the key must
  * fall through to vanilla rather than flip a mode over a box that is not there.
  *
  * <p>Which box a layer injects is pinned with a stand-in layer, since which concrete layers exist is
@@ -50,7 +50,7 @@ final class HoveredBoxTest {
 
     private static final String SYSTEM_ID = "system";
 
-    // An id the sector holds no system under, which is what a hover left behind by a system dropped
+    // An ID the sector holds no system under, which is what a hover left behind by a system dropped
     // since the publish looks like.
     private static final String DROPPED_SYSTEM_ID = "gone";
 

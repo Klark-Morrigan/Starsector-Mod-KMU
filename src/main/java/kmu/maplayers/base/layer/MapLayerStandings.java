@@ -12,12 +12,12 @@ import static kmu.KmuWiringSteps.runGuardedStep;
  * tab they took off stops costing, and one they put back starts paying again.
  *
  * <p>Registration and standing part company here. A hidden layer stays registered - the arranging
- * dialog has to list it to offer it back, and a stored pick naming it must not read as an id from a
+ * dialog has to list it to offer it back, and a stored pick naming it must not read as an ID from a
  * build that dropped it - but it loses its wiring on every sector, so its listeners stop firing and
  * its polls stop sweeping the sector for a picture nobody can reach.
  *
- * <p><b>Driven by the hidden set, not by the order.</b> An id entering the hidden list stands one
- * layer down and an id leaving it stands one up; a reorder moves no id between the two and so stands
+ * <p><b>Driven by the hidden set, not by the order.</b> An ID entering the hidden list stands one
+ * layer down and an ID leaving it stands one up; a reorder moves no ID between the two and so stands
  * nothing up or down. Which is why each layer is diffed against what it was last applied as rather
  * than acted on wholesale: the alternative has a tab dragged one place up tearing a layer's
  * listeners down and building them again.

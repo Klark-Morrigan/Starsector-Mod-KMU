@@ -45,7 +45,7 @@ public final class BlocMetricSortMode<S extends BlocMetrics> implements ListSort
 
     /**
      * @param persistenceKey       the save-stable key this mode's choice persists under
-     * @param labelKey             this mod's string id for the text the mode's selector row draws
+     * @param labelKey             this mod's string ID for the text the mode's selector row draws
      * @param metric               the number this mode promotes to the primary key, kept as the
      *                             accessor so the ordering and the drawn value read the same one, or
      *                             null for a mode that ranks by name

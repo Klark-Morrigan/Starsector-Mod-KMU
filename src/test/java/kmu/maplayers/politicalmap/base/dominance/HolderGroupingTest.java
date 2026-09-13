@@ -69,7 +69,7 @@ class HolderGroupingTest {
 
         // A faction the game itself would always have named, and a mod may not. Every lookup here
         // reads an immutable map, which faults on a null key rather than reporting it absent - even
-        // the identity grouping's empty ones - so an owner with no id would otherwise take down
+        // the identity grouping's empty ones - so an owner with no ID would otherwise take down
         // whatever walk reached it: a band's count, the dominance regroup, or a render rule asking
         // whether its bloc is an alliance.
         @Test
@@ -101,7 +101,7 @@ class HolderGroupingTest {
 
         @Test
         void resolveMemberFactionIdsNamesNoMemberForABlocWithNoId() {
-            // The lone-faction fallback must not fire here: a bloc with no id standing in as its own
+            // The lone-faction fallback must not fire here: a bloc with no ID standing in as its own
             // sole member would hand a rule read over membership a member named nothing at all.
             assertThat(buildAllianceGrouping().resolveMemberFactionIds(null))
                 .isEmpty();
@@ -352,7 +352,7 @@ class HolderGroupingTest {
 
         @Test
         void namesALoneFactionBlocAsItsOwnSoleMember() {
-            // Nothing folds into an outsider's bloc, and its id is that faction's own - the
+            // Nothing folds into an outsider's bloc, and its ID is that faction's own - the
             // membership of one every read under no alliance comes back with.
             assertThat(buildAllianceGrouping().resolveMemberFactionIds("tritachyon"))
                 .containsExactly("tritachyon");

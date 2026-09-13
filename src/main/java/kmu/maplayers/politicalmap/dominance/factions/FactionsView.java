@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  * owning faction's own display name. These reproduce the political map's original
  * per-faction behaviour exactly - the faction view is the identity case the shared
  * pipeline was carved out of, so its grouping is {@link HolderGrouping#identity()}
- * and its two per-bloc decisions read the bloc id as a plain faction id.
+ * and its two per-bloc decisions read the bloc ID as a plain faction id.
  */
 public final class FactionsView implements DominancePaintedView {
 
@@ -99,7 +99,7 @@ public final class FactionsView implements DominancePaintedView {
             HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
-        // A faction bloc id is a real faction id, so the label is the faction's own name
+        // A faction bloc ID is a real faction ID, so the label is the faction's own name
         // in the player's chosen form; a faction that will not resolve carries no name.
         var faction = sector.getFaction(blocId);
         return faction == null ? null : resolveFactionName(faction, nameFormat);

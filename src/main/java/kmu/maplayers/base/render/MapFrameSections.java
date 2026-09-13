@@ -74,7 +74,7 @@ public final class MapFrameSections {
         ProfileSection.registerSection("mapLayer.render.aboveNebulae", FRAME_BEAT_BUDGET_TERMS);
 
     // Under the framework's own namespace rather than bare, so every layer's row is found under one
-    // prefix whoever registered the layer, and two mods picking the same layer id collide where the
+    // prefix whoever registered the layer, and two mods picking the same layer ID collide where the
     // registry already reports them rather than silently sharing a row.
     private static final String LAYER_SECTION_PREFIX = "mapLayer.layer.";
 
@@ -84,11 +84,11 @@ public final class MapFrameSections {
     /**
      * The section one layer's work is measured under, within whichever beat is running.
      *
-     * <p>Keyed by the layer's id, that being what the layer is known by everywhere else it is
+     * <p>Keyed by the layer's ID, that being what the layer is known by everywhere else it is
      * recorded. Resolve it once and hold it: the concatenation and the registry lookup behind it
      * are not a per-frame cost, while the section it returns is.
      *
-     * @param layerId the id of the layer whose work is being measured
+     * @param layerId the ID of the layer whose work is being measured
      * @return the one section that layer's rows sit on
      */
     public static ProfileSection resolveLayerSection(String layerId) {

@@ -19,11 +19,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what a reader holding an id and no colony is told about whether the player has found it: the
- * fold off a colony set, and what an id the fold never met reads as. Each member's cases live in a
+ * Pins what a reader holding an ID and no colony is told about whether the player has found it: the
+ * fold off a colony set, and what an ID the fold never met reads as. Each member's cases live in a
  * {@link Nested} group so the suite reports as a per-member tree.
  *
- * <p>The unmet id is the case worth pinning rather than the plain one, for the reason its sibling
+ * <p>The unmet ID is the case worth pinning rather than the plain one, for the reason its sibling
  * fold's is ({@link ColonyKindLookupTest}): a row the fold never met has to go on reading, and here
  * it must read as found - calling a colony undiscovered is a finding the box has nothing behind.
  */
@@ -136,7 +136,7 @@ final class ColonyDiscoveryLookupTest {
         }
     }
 
-    // The id a row is paired back to its colony by. Colonies are built without one because almost
+    // The ID a row is paired back to its colony by. Colonies are built without one because almost
     // nothing reads it, and every unnamed colony would otherwise share one entry.
     private static MarketAPI nameColony(MarketAPI colony, String colonyId) {
 

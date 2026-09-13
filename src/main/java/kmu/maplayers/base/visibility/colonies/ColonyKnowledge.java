@@ -60,7 +60,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
 
     // Each colony's kind, resolved on first ask and remembered for the rest of the pass.
     //
-    // Keyed by identity rather than by market id, because the colonies of one pass are the very
+    // Keyed by identity rather than by market ID, because the colonies of one pass are the very
     // objects the colony index memoised: two indistinguishable twin colonies are distinct entries
     // the set kept apart, and an id-keyed memo would let one answer for the other. A colony that
     // outlives the pass is nobody's concern - the pass is discarded with it.

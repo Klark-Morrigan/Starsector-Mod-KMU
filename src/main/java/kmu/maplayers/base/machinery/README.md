@@ -33,10 +33,10 @@ Two sectors sharing one holder is not merely unsupported,
 it is wrong and quiet.
 
 Everything under the drawing is keyed by **one sector's naming of its systems**.
-The stale set names systems by bare id,
+The stale set names systems by bare ID,
 the motion tracker keys observations by `SystemKey`,
 and [the geometry cache](../geometry/README.md) reconciles cells by `SystemKey`.
-Nothing forbids two sectors from generating a system under the same id,
+Nothing forbids two sectors from generating a system under the same ID,
 and the key's engine-minted arms are minted by each sector without regard to another's.
 So a shared holder means one sector's colony change marks the other's system stale;
 one sector's drift reads as the other's;

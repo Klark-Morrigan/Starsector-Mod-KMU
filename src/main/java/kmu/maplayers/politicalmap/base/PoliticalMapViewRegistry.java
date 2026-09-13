@@ -39,12 +39,12 @@ import java.util.List;
  */
 public final class PoliticalMapViewRegistry {
 
-    // Save-serialised id of the active view, or the off sentinel, before the screen's own segment;
+    // Save-serialised ID of the active view, or the off sentinel, before the screen's own segment;
     // frozen once shipped, since renaming it silently resets every existing save to the default.
     private static final String ACTIVE_VIEW_KEY = "$kmu_political_active_view";
 
     // The stored value meaning "no view paints" - the map is dark while the political-map tab stays
-    // open. Empty because no view id is empty, so it never collides with a real pick. Only the
+    // open. Empty because no view ID is empty, so it never collides with a real pick. Only the
     // legacy-overlay self-heal writes it: the view radio always lands on a view, and turning the map
     // off is the No Layer tab's job.
     private static final String OFF_SELECTION = "";
@@ -71,7 +71,7 @@ public final class PoliticalMapViewRegistry {
      * place a concrete view or tab is named, so the framework here stays agnostic to which exist.
      *
      * @param views       the registered views in radio-segment order
-     * @param defaultView the pick an untouched save (or a stale stored id) resolves to
+     * @param defaultView the pick an untouched save (or a stale stored ID) resolves to
      * @param hostTab     the tab whose active-ness gates the paint (the political-map tab)
      */
     public static void registerViews(
@@ -90,7 +90,7 @@ public final class PoliticalMapViewRegistry {
     }
 
     /**
-     * @return the view an untouched save (or a stale stored id) resolves to; null before the
+     * @return the view an untouched save (or a stale stored ID) resolves to; null before the
      *         composition root has registered the views at startup
      */
     public static PoliticalMapView getDefaultView() {
@@ -101,7 +101,7 @@ public final class PoliticalMapViewRegistry {
      * @param memoryScope the screen whose pick is wanted - the panel the radio in question sits on
      * @return that screen's stored view pick regardless of which tab is open - the view its radio
      *         lights when the political-map tab is up; the default when the save holds no pick yet
-     *         for that screen or an id from an older build no longer registered; null when the off
+     *         for that screen or an ID from an older build no longer registered; null when the off
      *         sentinel is stored
      */
     public static PoliticalMapView getSelectedView(ScreenMemoryScope memoryScope) {
@@ -117,7 +117,7 @@ public final class PoliticalMapViewRegistry {
                 return view;
             }
         }
-        // Stale id from a build that shipped a view since removed: fall back rather than paint
+        // Stale ID from a build that shipped a view since removed: fall back rather than paint
         // nothing while the player expects a view.
         return defaultView;
     }
@@ -167,7 +167,7 @@ public final class PoliticalMapViewRegistry {
 
     /**
      * Stores the view a radio segment names as one screen's pick. Selecting the already-selected view
-     * rewrites the same id rather than clearing, so the radio always lands on a view - the map is
+     * rewrites the same ID rather than clearing, so the radio always lands on a view - the map is
      * turned off by switching to the No Layer tab, not by re-clicking the lit view. A no-op before the
      * sector exists, since there is no save to write into yet.
      *

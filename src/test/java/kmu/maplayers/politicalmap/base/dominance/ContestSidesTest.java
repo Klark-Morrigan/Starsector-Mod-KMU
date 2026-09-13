@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins the split every surface reporting a contest routes its blocks by: the contestants standing
  * with the holder against the rest, in the order they arrived.
  *
- * <p>Posed over plain bloc ids, since what a surface lists a contestant as is its own business and
+ * <p>Posed over plain bloc IDs, since what a surface lists a contestant as is its own business and
  * the split reads nothing of one but the bloc it names.
  */
 class ContestSidesTest {
@@ -22,7 +22,7 @@ class ContestSidesTest {
     private static final String RIVAL = "tritachyon";
     private static final String OUTSIDER = "pirates";
 
-    // What names a bloc when the contestant is the bloc id itself.
+    // What names a bloc when the contestant is the bloc ID itself.
     private static final Function<String, String> BLOC_ID_ITSELF = Function.identity();
 
     @Nested

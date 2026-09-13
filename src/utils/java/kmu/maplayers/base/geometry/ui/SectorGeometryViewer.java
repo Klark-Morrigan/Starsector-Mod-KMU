@@ -490,8 +490,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 continue;
             }
-            // Named by the cell's own id: the region's name is read by a person off the status
-            // line, and the id is the arm of a key a person calls a system by.
+            // Named by the cell's own ID: the region's name is read by a person off the status
+            // line, and the ID is the arm of a key a person calls a system by.
             named.add(NamedRegion.nameRegion(entry.getKey().systemId(), ring));
         }
         return List.copyOf(named);

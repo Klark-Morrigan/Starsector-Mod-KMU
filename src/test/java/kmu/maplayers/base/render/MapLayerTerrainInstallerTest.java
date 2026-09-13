@@ -20,22 +20,22 @@ import static org.mockito.Mockito.when;
 
 class MapLayerTerrainInstallerTest {
 
-    // The live terrain type id, pinned as a literal: it is written into every save, so a rename
+    // The live terrain type ID, pinned as a literal: it is written into every save, so a rename
     // must break this test rather than ship and quietly strand the entity existing saves hold.
     private static final String CURRENT_TERRAIN_TYPE = "kmu_sector_map_layer_terrain";
 
-    // The live type id of the Starscape variant, pinned as a literal for the reason the schematic
+    // The live type ID of the Starscape variant, pinned as a literal for the reason the schematic
     // one is, and read back off the production constant below because that variant's install cannot
-    // be driven far enough to observe the id it adds under.
+    // be driven far enough to observe the ID it adds under.
     private static final String CURRENT_STARSCAPE_TERRAIN_TYPE =
         "kmu_sector_map_layer_starscape_terrain";
 
-    // The live type id of the variant that paints above the map's nebulae, pinned as a literal
+    // The live type ID of the variant that paints above the map's nebulae, pinned as a literal
     // for the reason the two above it are.
     private static final String CURRENT_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE =
         "kmu_sector_map_layer_above_starscape_nebulae_terrain";
 
-    // What the Starscape variant's entity reports in place of the id it was installed under - the
+    // What the Starscape variant's entity reports in place of the ID it was installed under - the
     // one terrain type the map widget draws in Starscape mode. A literal here rather than a read of
     // the production constant because it is the engine's string, not the mod's: the mod cannot
     // rename it and a test agreeing with a changed copy of it would be agreeing with a broken
@@ -146,7 +146,7 @@ class MapLayerTerrainInstallerTest {
         @Test
         void recognisesTheStarscapeVariantWhateverItReports() {
             // Nothing this variant reports identifies it: its entity answers with the engine's
-            // whitelisted map type rather than with the id it was installed under, so the presence
+            // whitelisted map type rather than with the ID it was installed under, so the presence
             // check has only the plugin class to go on. One that consulted the reported type would
             // miss the live entity on every load and stack a second Starscape surface on it.
             var starscapeTerrainMock = buildTerrainMock(
@@ -166,9 +166,9 @@ class MapLayerTerrainInstallerTest {
         void installsUnderTheTypeIdTheShippedTerrainSpecDeclares() {
             // Pinned on the constant rather than through the add, which cannot be driven from a
             // test: building the entity loads a chain of obfuscated core classes a verifying JVM
-            // refuses. The id is a terrain.json row key, and a constant that drifts from it resolves
+            // refuses. The ID is a terrain.json row key, and a constant that drifts from it resolves
             // to no spec at game load - with no way back, since this variant's entity cannot report
-            // the id it was built with and so cannot be recognised as stale on a later load.
+            // the ID it was built with and so cannot be recognised as stale on a later load.
             assertThat(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE)
                 .isEqualTo(CURRENT_STARSCAPE_TERRAIN_TYPE);
         }
@@ -208,7 +208,7 @@ class MapLayerTerrainInstallerTest {
         @Test
         void neverRetiresTheAboveNebulaeVariantOverWhatItReports() {
             // Nothing this variant reports can date it either: it shares the entity class of the
-            // variant below, so it reports the engine's whitelisted map type rather than the id it
+            // variant below, so it reports the engine's whitelisted map type rather than the ID it
             // was installed under.
             var aboveNebulaeTerrainMock = buildTerrainMock(
                 "some_other_reported_type",
@@ -226,7 +226,7 @@ class MapLayerTerrainInstallerTest {
         @Test
         void installsUnderTheTypeIdTheShippedTerrainSpecDeclares() {
             // Pinned on the constant for the reason the variant below it is: the add builds an
-            // entity whose obfuscated supertype chain a verifying JVM refuses to load, and this id
+            // entity whose obfuscated supertype chain a verifying JVM refuses to load, and this ID
             // is a terrain.json row key with no way back once a save is written under a wrong one.
             assertThat(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE)
                 .isEqualTo(CURRENT_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE);
@@ -234,9 +234,9 @@ class MapLayerTerrainInstallerTest {
 
         @Test
         void installsUnderAnIdOfItsOwn() {
-            // The two Starscape variants share an entity class and a reported type, so the row id
+            // The two Starscape variants share an entity class and a reported type, so the row ID
             // handed to that class at construction is the only thing that decides which plugin an
-            // entity resolves to - and a shared id would give both surfaces the same one.
+            // entity resolves to - and a shared ID would give both surfaces the same one.
             assertThat(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE)
                 .isNotEqualTo(MapLayerTerrainInstaller.SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE);
         }

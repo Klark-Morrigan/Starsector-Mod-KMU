@@ -34,7 +34,7 @@ final class SystemColonyReadingFixture {
      * A walk of a system holding one colony whose entity the player has yet to discover, which is
      * the half of a line's account neither a score nor a weight can supply.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return a reading answering that colony undiscovered and every other discovered
      */
     static SystemColonyReading buildReadingWithUndiscovered(String colonyId) {
@@ -49,7 +49,7 @@ final class SystemColonyReadingFixture {
      * A walk of a system holding one concealed colony the sector openly points at, which is the
      * other half of a line's account no carrier of either box holds.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return a reading answering that colony openly known and every other a secret
      */
     static SystemColonyReading buildReadingWithOpenlyKnown(String colonyId) {
@@ -65,7 +65,7 @@ final class SystemColonyReadingFixture {
      * is the notes' own question, pinned by {@link ColonyObservationNotesTest}; what the suites
      * taking this are about is which line carries the answer.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return a reading remarking on that colony and on nothing else
      */
     static SystemColonyReading buildReadingRemarkingOn(String colonyId) {

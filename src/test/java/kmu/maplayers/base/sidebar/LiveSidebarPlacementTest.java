@@ -68,7 +68,7 @@ final class LiveSidebarPlacementTest {
     // A visor whose left edge is x = 100, bottom edge y = 50, and top edge y + height = 650.
     private static final Rectangle MAP_VISOR = new Rectangle(100f, 50f, 800f, 600f);
 
-    // The ids two registered layers stand under, the arrangement naming its layers by id.
+    // The IDs two registered layers stand under, the arrangement naming its layers by id.
     private static final String FIRST_PAINTING_LAYER_ID = "political";
     private static final String SECOND_PAINTING_LAYER_ID = "trade_routes";
 
@@ -508,7 +508,7 @@ final class LiveSidebarPlacementTest {
         }
 
         // A registered layer that is not the empty view, which is the whole of what makes it count. Its
-        // id is stubbed because the roster arbitrates by id and the arrangement names layers by one.
+        // ID is stubbed because the roster arbitrates by ID and the arrangement names layers by one.
         private MapLayer buildLayerMockUnder(String layerId) {
 
             var layerMock = mock(MapLayer.class);

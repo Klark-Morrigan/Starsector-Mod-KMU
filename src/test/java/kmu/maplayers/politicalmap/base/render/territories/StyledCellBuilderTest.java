@@ -75,7 +75,7 @@ final class StyledCellBuilderTest {
 
         // Two of the systems in the factionless fixture's inhabited set - one settled by a dead
         // colony, one by a live colony no holder was resolved for - so a test can address either
-        // factionless category by which id it builds the cell as, and can tell the two reasons a
+        // factionless category by which ID it builds the cell as, and can tell the two reasons a
         // cell counts as settled apart.
         private static final String DECIVILISED_SYSTEM_ID = "some-decivilised-system";
         private static final String UNHELD_INHABITED_SYSTEM_ID = "some-pirate-haven";
@@ -104,7 +104,7 @@ final class StyledCellBuilderTest {
         private static final DominantHolder OWNER =
             new DominantHolder("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
 
-        // Two systems the sector answers to one id for - vanilla's own unnamed deep space, which
+        // Two systems the sector answers to one ID for - vanilla's own unnamed deep space, which
         // only their anchors tell apart - and the rival holding the second of them. Its seam shade
         // is distinct from every other colour here, so an observed seam names which of the pair's
         // holders the cell read.
@@ -149,8 +149,8 @@ final class StyledCellBuilderTest {
         @Test
         void buildStyledCellForSystemDrawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
             // The collision the whole address exists for, at the cell that shows it: both systems
-            // answer to one vanilla id and are held by different blocs, so the two cells paint in
-            // two shades - where a holding keyed by id drew the second in the first's colours.
+            // answer to one vanilla ID and are held by different blocs, so the two cells paint in
+            // two shades - where a holding keyed by ID drew the second in the first's colours.
             var territories = buildDrawablesHeldByTwins();
 
             assertThat(requireFusedCell(StyledCellBuilder.buildStyledCellForSystem(
@@ -250,7 +250,7 @@ final class StyledCellBuilderTest {
             // redistribution pass leaves behind - has no holder and no market to have died, so it
             // paints as plain uninhabited. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
-            // here, so had the null id been routed there the cell would have dropped to null.
+            // here, so had the null ID been routed there the cell would have dropped to null.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 null,
@@ -702,9 +702,9 @@ final class StyledCellBuilderTest {
             return buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE), true, recede);
         }
 
-        // The same backdrop holding the two systems that answer to one id, each under its own
+        // The same backdrop holding the two systems that answer to one ID, each under its own
         // bloc - the only arrangement that tells a cell reading its holder by key from one
-        // narrowing to the id first.
+        // narrowing to the ID first.
         private static PoliticalMapTerritories buildDrawablesHeldByTwins() {
 
             var holders = new LinkedHashMap<SystemKey, DominantHolder>();
@@ -736,8 +736,8 @@ final class StyledCellBuilderTest {
                 boolean isFiltering,
                 ElementStyleAdjustment recede) {
 
-            // A filtered pass carries the selected bloc's id; the fixture's holder is never that
-            // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
+            // A filtered pass carries the selected bloc's ID; the fixture's holder is never that
+            // bloc, so it reads as non-spotlit and the recede applies. Off filter the ID is null.
             return new PoliticalMapTerritories(
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
                 Set.of(),

@@ -47,12 +47,12 @@ public final class BlocAffiliation {
     /**
      * Whether two distinct blocs stand together - both fold into one bloc under the alliance set.
      *
-     * <p>A bloc id the alliance set names no faction for falls through to itself, which is what
+     * <p>A bloc ID the alliance set names no faction for falls through to itself, which is what
      * keeps the rule uniform across the layers with no per-layer branch: on the alliances layer
-     * the pass's bloc ids are alliance ids, members are already folded into them, and so no two
+     * the pass's bloc IDs are alliance IDs, members are already folded into them, and so no two
      * distinct blocs there ever stand together.
      *
-     * @param firstBlocId  one bloc of the pair; a bloc with no id stands with nothing, there being
+     * @param firstBlocId  one bloc of the pair; a bloc with no ID stands with nothing, there being
      *                     nothing to have allied it
      * @param secondBlocId the other bloc of the pair
      * @return true when the two are distinct blocs folded into one under the alliance set
@@ -67,7 +67,7 @@ public final class BlocAffiliation {
         }
         var firstAllianceBlocId = allianceSet.resolveBlocId(firstBlocId);
 
-        // resolveBlocId answers null for an id with no text, and two ids that both resolved to
+        // resolveBlocId answers null for an ID with no text, and two IDs that both resolved to
         // nothing must not read as standing together for it.
         return firstAllianceBlocId != null
             && firstAllianceBlocId.equals(allianceSet.resolveBlocId(secondBlocId));

@@ -212,7 +212,7 @@ public record DominancePass(
      *
      * @param system the system whose markets are folded
      * @return each faction's weighed colonies with the breakdown of each colony's weight, keyed by
-     *         faction id and in the economy's own market order; empty when the system holds no
+     *         faction ID and in the economy's own market order; empty when the system holds no
      *         weighed colony
      */
     public Map<String, List<MarketWeightBreakdown>> readWeightBreakdownsByFaction(
@@ -257,7 +257,7 @@ public record DominancePass(
      * system cannot lose a faction to a filter applied on the weighed side.
      *
      * @param system the system whose colonies are read
-     * @return the ids of the factions present there; empty when the player knows of no colony
+     * @return the IDs of the factions present there; empty when the player knows of no colony
      */
     public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
         return holding.readKnownColonyFactionIds(system);

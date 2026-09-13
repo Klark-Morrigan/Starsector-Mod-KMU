@@ -1709,7 +1709,7 @@ class KnownMarketFootprintsIntegrationTest {
         return market;
     }
 
-    // Stubs the id the economy knows a colony by, which a plain stubbed market answers null for.
+    // Stubs the ID the economy knows a colony by, which a plain stubbed market answers null for.
     // Given only where a case reads it, since nothing else about a colony turns on it.
     private static MarketAPI withId(MarketAPI market, String marketId) {
 

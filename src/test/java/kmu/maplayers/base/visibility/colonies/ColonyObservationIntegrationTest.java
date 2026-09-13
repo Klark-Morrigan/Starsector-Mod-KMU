@@ -249,7 +249,7 @@ final class ColonyObservationIntegrationTest {
             .thenReturn(true);
     }
 
-    // The id an observation is kept against. Colonies are built without one because almost nothing
+    // The ID an observation is kept against. Colonies are built without one because almost nothing
     // reads it, and every unnamed colony would otherwise share one entry in the register.
     private static MarketAPI nameColony(MarketAPI colony, String colonyId) {
 

@@ -29,7 +29,7 @@ import java.util.Set;
  * the spotlight reads against a muted background.
  *
  * <p>The spotlighted bloc's whole footprint - the systems it dominates and the systems it is
- * merely present in - carries one synthetic group key distinct from any faction id, so the
+ * merely present in - carries one synthetic group key distinct from any faction ID, so the
  * agnostic geometry ({@code CellShaper}, {@code SystemClusters}, and the border trace) fuses
  * the whole footprint into a single territory outlined by one frontier, with no awareness of
  * the filter. Which of those systems are contested is reported apart from the key, in
@@ -43,7 +43,7 @@ public final class FilteredPolitics {
 
     // The spotlighted bloc's single synthetic group key, carried by every system it is present
     // in - dominated or not - so the geometry fuses its whole footprint into one bordered
-    // territory. The "$" sentinel prefix cannot occur in a real faction or alliance id, so the
+    // territory. The "$" sentinel prefix cannot occur in a real faction or alliance ID, so the
     // key never collides with a rival's. Internal to this class - callers read isSpotlitBloc
     // rather than the raw string; contested-vs-dominant is reported separately, not by key.
     private static final String SPOTLIT_KEY = "$kmu_filter_spotlit";
@@ -111,7 +111,7 @@ public final class FilteredPolitics {
      *                          active view's grouping; empty means nothing here was weighed
      * @param presentBlocIds    the blocs somebody the player knows of lives in the system under,
      *                          which the footprints are a subset of
-     * @param selectedBlocId    the spotlighted bloc's id (a faction id, or an alliance id)
+     * @param selectedBlocId    the spotlighted bloc's ID (a faction ID, or an alliance ID)
      * @param rankingRules      how the system's holder is settled - who may win it, and who takes
      *                          a dead heat - so the spotlight's "dominates" is judged against the
      *                          same field the fills were
@@ -172,7 +172,7 @@ public final class FilteredPolitics {
      *
      * @param pass              the rebuild's reading of the sector, whose walk of each system this
      *                          read shares; a pass over no sector yields an empty set
-     * @param selectedBlocId      the spotlighted bloc's id; null yields an empty set (no filter)
+     * @param selectedBlocId      the spotlighted bloc's ID; null yields an empty set (no filter)
      * @param candidateSystemKeys the systems to test - those this pass resolved no holder for
      * @return the candidates the spotlighted bloc holds a colony somebody lives on in
      */
@@ -224,7 +224,7 @@ public final class FilteredPolitics {
      *
      * @param pass           the rebuild's reading of the sector, whose walk of each system this
      *                       resolve shares; a pass over no sector yields empty holding
-     * @param selectedBlocId the spotlighted bloc's id; null yields empty holding (no filter)
+     * @param selectedBlocId the spotlighted bloc's ID; null yields empty holding (no filter)
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
     public static FilteredHolder resolveFilteredHolder(
@@ -249,7 +249,7 @@ public final class FilteredPolitics {
      *
      * @param pass           the weighting rule, colony rule, grouping, and sector walk this pass
      *                       resolves under; a pass over no sector yields empty holding
-     * @param selectedBlocId the spotlighted bloc's id; null yields empty holding
+     * @param selectedBlocId the spotlighted bloc's ID; null yields empty holding
      * @return the presence-aware holders: the holder per system and the contested spotlit systems
      */
     public static FilteredHolder resolveFilteredHolder(

@@ -43,13 +43,13 @@ public final class StarsectorFactionFixtures {
     }
 
     /**
-     * A sector holding that one faction under {@code factionId} and nothing under any other id, so
-     * a case can tell a lookup that went through the id it meant from one that fell back.
+     * A sector holding that one faction under {@code factionId} and nothing under any other ID, so
+     * a case can tell a lookup that went through the ID it meant from one that fell back.
      *
      * <p>The faction is built before the sector's own stubbing opens: it is itself a mock, and
      * building one inside another stub reads to Mockito as a stub left unfinished.
      *
-     * @param factionId    the id the faction answers to
+     * @param factionId    the ID the faction answers to
      * @param brightColour the faction's bright colour
      * @param darkColour   the faction's dark colour
      * @return the sector mock

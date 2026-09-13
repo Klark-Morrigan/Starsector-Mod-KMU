@@ -137,9 +137,9 @@ public final class SectorFixture {
     }
 
     /**
-     * The id of the system each site was loaded from, in the sites' own order.
+     * The ID of the system each site was loaded from, in the sites' own order.
      *
-     * @return the ids
+     * @return the IDs
      */
     public List<String> getSystemIds() {
         return systemIds;
@@ -171,7 +171,7 @@ public final class SectorFixture {
 
     /**
      * The owner per system, in the shape every geometry consumer takes: an owned
-     * system maps to its owner id, and an unowned one is absent from the map entirely -
+     * system maps to its owner ID, and an unowned one is absent from the map entirely -
      * which is what makes it a frontier star to {@link EdgeClassifier}.
      *
      * @return the key map, keyed by system id
@@ -195,8 +195,8 @@ public final class SectorFixture {
      * pins nothing about the cache's own diffing.
      *
      * <p>Keyed by {@link SystemKey} as the live cut keys its own cells. The fixture's rows carry
-     * an id and nothing else, so each key states that arm alone - which is enough to key a cell,
-     * a fixture being free of the colliding ids a live sector holds.
+     * an ID and nothing else, so each key states that arm alone - which is enough to key a cell,
+     * a fixture being free of the colliding IDs a live sector holds.
      *
      * @param cellRadius    how far a cell may reach from its site
      * @param boundSegments sides of the polygon approximating each cell's radius bound
@@ -240,7 +240,7 @@ public final class SectorFixture {
         return edges;
     }
 
-    // One row's system as the cells address it: the id the fixture states, with neither entity
+    // One row's system as the cells address it: the ID the fixture states, with neither entity
     // arm, since the rows carry no entities to state.
     private SystemKey readSystemKeyAt(int index) {
         return new SystemKey(systemIds.get(index), null, null);

@@ -326,7 +326,7 @@ final class CellGeometryCacheTest {
         @Test
         void updateSeedsACellForEachOfTwoSystemsSharingAnId() {
             // The defect the cell address is here to fix: a sector holding two systems under one
-            // id - which a live modded sector does, vanilla's own unnamed deep space among them -
+            // ID - which a live modded sector does, vanilla's own unnamed deep space among them -
             // cuts a cell for each of them rather than one for the pair.
             var cache = new CellGeometryCache();
             var first = new SystemKey("deep space", "", "8b3");
@@ -462,7 +462,7 @@ final class CellGeometryCacheTest {
         }
     }
 
-    // The distinct neighbouring system ids one cell names across its edges,
+    // The distinct neighbouring system IDs one cell names across its edges,
     // dropping the reach-bound edges - the adjacency the merge step reads.
     private static Set<SystemKey> listNeighboursOf(CellGeometryCache cache, String systemId) {
 
@@ -516,7 +516,7 @@ final class CellGeometryCacheTest {
     }
 
     // An admitted system carrying a hyperspace anchor of its own, so a case can pose two systems
-    // the sector states one id about and still tell them apart - which is what the anchor arm is
+    // the sector states one ID about and still tell them apart - which is what the anchor arm is
     // for.
     private static StarSystemAPI buildAccessibleAnchoredSystem(
             String id,

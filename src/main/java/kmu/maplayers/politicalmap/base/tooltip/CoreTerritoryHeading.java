@@ -37,7 +37,7 @@ public final class CoreTerritoryHeading {
      * Resolves what heads a box over a system held by decree.
      *
      * @param sector                 the sector the faction's name and crest are read from
-     * @param coreFactionId          the id of the faction holding the system as core territory, or null
+     * @param coreFactionId          the ID of the faction holding the system as core territory, or null
      *                               (or blank) when no decree holds it
      * @param isDecreeStatedInBody   whether the box's own body already names the decree, in which case
      *                               heading with it would state one fact twice

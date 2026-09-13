@@ -1,7 +1,7 @@
 # Clusters: cells into drawable fills (`base.render.clusters`)
 
 The shape work every painting layer needs:
-turning shaped cells and opaque owner ids into the borders,
+turning shaped cells and opaque owner IDs into the borders,
 fills,
 and GL-ready runs a renderer emits.
 Same-owner cells fuse into one cluster,
@@ -149,7 +149,7 @@ split along the line between deciding and drawing.
 
 `FillSplit` is the pure partition -
 which of three states (solid, hatched, unfilled) each member system draws in,
-decidable from plain id sets.
+decidable from plain ID sets.
 Which systems land in the two non-solid sets is the layer's call,
 handed in;
 nothing here decides it.
@@ -217,7 +217,7 @@ with the fills below the seams below the borders.
 It knows nothing of settings,
 caches,
 or how any run was shaped,
-and the ids it walks are opaque to it.
+and the IDs it walks are opaque to it.
 
 It hands that out as two entry points -
 `renderFillsOnMap` and `renderBordersOnMap` -

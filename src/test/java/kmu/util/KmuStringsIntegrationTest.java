@@ -110,7 +110,7 @@ final class KmuStringsIntegrationTest {
         }
     }
 
-    // Every string id KmuStrings names, kept against the constant naming it so a failure says which
+    // Every string ID KmuStrings names, kept against the constant naming it so a failure says which
     // constant is at fault rather than only which key is missing.
     private static Map<String, String> readStringIdsByConstantName() {
 

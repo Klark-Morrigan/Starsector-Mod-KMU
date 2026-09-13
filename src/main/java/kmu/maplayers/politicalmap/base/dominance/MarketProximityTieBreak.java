@@ -16,9 +16,9 @@ import java.util.Map;
  * Breaks an exact dominance tie by which bloc holds the market nearest the system's centre,
  * so a tie resolves the same on every view instead of by the arbitrary ordering of bloc ids.
  *
- * <p>A tie once fell to the lowest id, which is a faction id on the faction view but an
- * alliance's own id on the alliances view - so the same two tied markets could flip holder
- * between views purely because an alliance id sorts differently than the member faction's. A
+ * <p>A tie once fell to the lowest ID, which is a faction ID on the faction view but an
+ * alliance's own ID on the alliances view - so the same two tied markets could flip holder
+ * between views purely because an alliance ID sorts differently than the member faction's. A
  * physical measure - proximity to the system centre - is the same on both views, so a system
  * a tie decides paints the same holder however factions are grouped.
  *
@@ -28,7 +28,7 @@ import java.util.Map;
  * position makes the result identical every frame: a planet is as far out as its orbit,
  * wherever it currently sits on it. A bloc's distance is its nearest market's; the closer
  * bloc wins the tie, and two blocs whose nearest markets orbit at the same depth fall back to
- * the lowest colour-faction id - which is grouping-invariant, so even that rare case stays
+ * the lowest colour-faction ID - which is grouping-invariant, so even that rare case stays
  * consistent across views.
  *
  * <p>The colonies are the pass's own set rather than a walk of the sector made here, and which of
@@ -52,9 +52,9 @@ public final class MarketProximityTieBreak {
     }
 
     /**
-     * A lazy tie-break comparator over bloc ids for one system, ordering the bloc whose
+     * A lazy tie-break comparator over bloc IDs for one system, ordering the bloc whose
      * nearest market orbits closest to the system's central star first, and falling back to
-     * the lowest colour-faction id when two nearest markets orbit at the same depth. Reads no
+     * the lowest colour-faction ID when two nearest markets orbit at the same depth. Reads no
      * geometry until first compared, so a system that never ties costs nothing.
      *
      * @param system           the system the tie is decided within

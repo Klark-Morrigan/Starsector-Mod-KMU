@@ -34,7 +34,7 @@ public final class PaintingLayers {
      * @return whether it draws anything at all
      */
     public static boolean isLayerPainting(MapLayer layer) {
-        // Layers are singletons, so identity settles it without an id compare.
+        // Layers are singletons, so identity settles it without an ID compare.
         return layer != NoLayer.INSTANCE;
     }
 }

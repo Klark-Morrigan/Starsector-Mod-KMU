@@ -142,7 +142,7 @@ class FilteredPoliticsTest {
 
         @Test
         void returnsFalseForARealFactionId() {
-            // The synthetic key uses a sentinel a real id cannot carry, so no faction is ever
+            // The synthetic key uses a sentinel a real ID cannot carry, so no faction is ever
             // mistaken for the spotlighted bloc and wrongly kept at full strength.
             assertThat(FilteredPolitics.isSpotlitBloc("hegemony"))
                 .isFalse();

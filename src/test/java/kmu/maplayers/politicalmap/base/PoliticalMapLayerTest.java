@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
  */
 final class PoliticalMapLayerTest {
 
-    // The live LunaLib field id, pinned as a literal: a rename here silently drops the player's rebind
+    // The live LunaLib field ID, pinned as a literal: a rename here silently drops the player's rebind
     // and leaves the tab keyless.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
 
@@ -93,7 +93,7 @@ final class PoliticalMapLayerTest {
     // Sentinels standing in for the two view-agnostic pieces, so the assertions read the composition
     // order without depending on the real shared controls or selector contents. Their tone is
     // arbitrary - composition order is what is under test, not what colour a control draws in.
-    // The id the one bloc-offering view registers under, and the scope the picker must therefore be
+    // The ID the one bloc-offering view registers under, and the scope the picker must therefore be
     // built for - shared between the registration helper and the assertion so the two cannot drift.
     private static final String PICKER_VIEW_ID = "picker-view";
 
@@ -367,10 +367,10 @@ final class PoliticalMapLayerTest {
         @Test
         void getBodyControlsScopesThePickerToTheSelectedViewsId() {
             // The scope this layer hands over is what makes each view remember its own spotlight and
-            // its own sort: the stores partition by whatever id they are given, so a layer passing a
+            // its own sort: the stores partition by whatever ID they are given, so a layer passing a
             // constant would still read and write consistently and every store-level test would stay
             // green while all three views shared one slot. Pinned here because this is the only place
-            // the id is chosen.
+            // the ID is chosen.
             registerViewWithOneBloc(viewWithoutControlsMock);
             try (var globalMock = mockStatic(Global.class);
                     var controlsMock = mockStatic(PoliticalMapBodyControls.class);
@@ -524,7 +524,7 @@ final class PoliticalMapLayerTest {
 
         @Test
         void resolveShortcutKeycodeReadsThePoliticalMapsOwnRebindingField() {
-            // Which row the rebind lands in is this tab's own fact now, so a wrong id here silently
+            // Which row the rebind lands in is this tab's own fact now, so a wrong ID here silently
             // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 
@@ -631,7 +631,7 @@ final class PoliticalMapLayerTest {
         }
     }
 
-    // Registers a view offering one spotlightable bloc, under an id and revision of its own so the
+    // Registers a view offering one spotlightable bloc, under an ID and revision of its own so the
     // picker memo misses on it rather than serving the empty list the composition tests leave
     // cached - these cases resolve no sector, so they all reach the one detached machinery and
     // share the memo it holds. The bloc's contents do not matter - what matters is that the picker
@@ -714,7 +714,7 @@ final class PoliticalMapLayerTest {
     // Registers the one view as both the sole registered view and the default, with a host tab the
     // layer registry treats as active, so a sector-less read resolves this view as selected. Also
     // stubs the view's identity and empty picker, since the body build now reads its picker options
-    // through the memo (keyed on the view id and its content revision) rather than off the view
+    // through the memo (keyed on the view ID and its content revision) rather than off the view
     // directly - an empty picker contributes no controls, keeping these composition assertions about
     // where the picker sits, not what it holds.
     private static void registerDefaultView(PoliticalMapView view) {

@@ -294,7 +294,7 @@ final class ArrangementRowWidgetsTest {
             List.of(mockLayer("alpha", "Alpha"), mockLayer("beta", "Beta")));
     }
 
-    // One registered layer, which a row needs for its id and the label its tab reads.
+    // One registered layer, which a row needs for its ID and the label its tab reads.
     private static MapLayer mockLayer(String layerId, String tabLabel) {
 
         var layerMock = mock(MapLayer.class);

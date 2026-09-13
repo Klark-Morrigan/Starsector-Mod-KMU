@@ -32,7 +32,7 @@ import java.util.function.Function;
  * Resolves a cluster label's non-geometric attributes - its colour and its name - the way
  * the fills resolve theirs, so a label never drifts from the territory it names. The
  * placement search owns where a label sits; this owns what shade it draws in and which
- * bloc's name it spells, and hands the search both as plain functions of a bloc id so the
+ * bloc's name it spells, and hands the search both as plain functions of a bloc ID so the
  * search itself stays ignorant of blocs.
  *
  * <p>Both attributes follow the active view off filter and the filter rules under one. The
@@ -40,7 +40,7 @@ import java.util.function.Function;
  * off the shared {@link BlocStyleResolver#resolveBlocStyleDecision} the fills read - so a
  * desaturated bloc's name recolours with its fill. The name comes from the view, except that
  * a filter's synthetic spotlight key (which the view cannot name) resolves back to the
- * selected bloc. Both resolvers memoise per bloc id, since every cluster of a bloc shares one
+ * selected bloc. Both resolvers memoise per bloc ID, since every cluster of a bloc shares one
  * decision, colour, and name.
  */
 final class ClusterLabelStyling {
@@ -104,7 +104,7 @@ final class ClusterLabelStyling {
     // The per-bloc label colours one rebuild draws in, as the plain colour-by-key function the
     // placement search takes. Each bloc's shade is resolved from any one of its holders (every
     // system of a bloc carries the same two palette shades, so the first one found speaks for
-    // the whole bloc) under that bloc's shared style decision, and cached per bloc id since
+    // the whole bloc) under that bloc's shared style decision, and cached per bloc ID since
     // every cluster of a bloc draws its name the same.
     static Function<String, Color> newLabelColourResolver(
             Map<SystemKey, DominantHolder> ownerBySystemKey,
@@ -122,7 +122,7 @@ final class ClusterLabelStyling {
 
     // The per-bloc style decisions one rebuild applies: each bloc's independent-style and
     // adjustment call as the shared resolver makes it (the active view's off filter, the filter
-    // rules under one), cached per bloc id like the name estimator resolver below, since every
+    // rules under one), cached per bloc ID like the name estimator resolver below, since every
     // cluster of a bloc shares one decision and the two label consumers both read it.
     static Function<String, BlocStyleDecision> newBlocStyleDecisionResolver(
             PoliticalMapView view,
@@ -139,7 +139,7 @@ final class ClusterLabelStyling {
     // The per-bloc name estimators one rebuild fits against: each bloc's display name
     // (a faction's under the faction view, an alliance's under the alliances view) as the
     // active view resolves it, measured with the label font, or the aspect stand-in when
-    // the font or the name will not resolve. Cached per bloc id because every cluster of a
+    // the font or the name will not resolve. Cached per bloc ID because every cluster of a
     // bloc shares one name, so its wrap is measured once per rebuild, not per cluster.
     //
     // The full/short choice comes off the rebuild's own sampling rather than being read here: it
@@ -175,7 +175,7 @@ final class ClusterLabelStyling {
         return blocId -> valueByBlocId.computeIfAbsent(blocId, resolver);
     }
 
-    // One holder per bloc id, so a bloc's shade can be resolved from its id alone. Every system
+    // One holder per bloc ID, so a bloc's shade can be resolved from its ID alone. Every system
     // of a bloc resolves to the same two palette shades, so which of them is kept is
     // immaterial; first seen wins.
     private static Map<String, DominantHolder> mapHolderByBlocId(
@@ -188,8 +188,8 @@ final class ClusterLabelStyling {
         return ownerByBlocId;
     }
 
-    // The bloc id whose name a cluster's label reads: the selected bloc under the filter's synthetic
-    // spotlight key (the view cannot name a synthetic id), the group key itself otherwise. The whole
+    // The bloc ID whose name a cluster's label reads: the selected bloc under the filter's synthetic
+    // spotlight key (the view cannot name a synthetic ID), the group key itself otherwise. The whole
     // spotlit footprint shares one key, so each disjoint spotlit cluster still carries its own
     // per-cluster label spelling the selected bloc's name.
     private static String resolveNameBlocId(
@@ -205,8 +205,8 @@ final class ClusterLabelStyling {
     // One bloc's name estimator: font-measured when both the font and a non-blank name
     // resolved, the aspect stand-in otherwise (a stand-in fit still sizes the debug band;
     // it wraps no lines, so no label is minted from it). The active view resolves the name
-    // for the bloc - a faction id is not always what the label reads (an alliance bloc id
-    // is not a faction id), so the lookup goes through the view, not straight to the sector.
+    // for the bloc - a faction ID is not always what the label reads (an alliance bloc ID
+    // is not a faction ID), so the lookup goes through the view, not straight to the sector.
     private static LabelLengthEstimator resolveNameEstimator(
             SectorAPI sector,
             PoliticalMapView view,

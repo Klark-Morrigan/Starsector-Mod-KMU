@@ -752,7 +752,7 @@ final class PoliticalMapTerritoriesTest {
         return PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(ownerBySystemId);
     }
 
-    // Clustering keys off the faction id alone, so the palette shades are inert here.
+    // Clustering keys off the faction ID alone, so the palette shades are inert here.
     private static DominantHolder readOwnerOf(String factionId) {
         return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }

@@ -99,7 +99,7 @@ final class MapSubstrateStalenessSourceTest {
         }
     }
 
-    // A sector listing one mock system per id, which is all the sweep asks of it before handing
+    // A sector listing one mock system per ID, which is all the sweep asks of it before handing
     // each on to the register.
     private static SectorAPI buildSectorWithSystems(String... systemIds) {
 

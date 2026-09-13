@@ -9,7 +9,7 @@ package kmu.maplayers.base.visibility.observations;
  * register underneath stays the same one for all of them.
  *
  * <p><strong>Fixed fields first, the free-form one last.</strong> An entry is a single string, so
- * whichever field may hold anything - an id the game composed, separators and punctuation and all -
+ * whichever field may hold anything - an ID the game composed, separators and punctuation and all -
  * has to be the one that runs to the end. Written first it takes the separator with it and every
  * field after it parts in the wrong place; written last it reads back verbatim however it is spelt.
  *

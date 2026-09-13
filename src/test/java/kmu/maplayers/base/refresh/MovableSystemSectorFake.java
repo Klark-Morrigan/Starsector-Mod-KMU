@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * <p>The sector is unrouted - no star anchor, no jump point - so nothing here is drawn on the
  * normal gates; a caller decides admission through the visibility rules it opens its pass under.
  *
- * <p>Each instance holds its own system, so two of them stage the same system id at two positions -
+ * <p>Each instance holds its own system, so two of them stage the same system ID at two positions -
  * which is what a claim about two sectors not reading each other's observations needs.
  */
 public final class MovableSystemSectorFake {
@@ -47,8 +47,8 @@ public final class MovableSystemSectorFake {
     private final SectorAPI sectorMock;
 
     /**
-     * @param systemId the id the one staged system reports; it states no centre and no anchor, so
-     *                 the key a motion observation is made under is this id alone
+     * @param systemId the ID the one staged system reports; it states no centre and no anchor, so
+     *                 the key a motion observation is made under is this ID alone
      */
     public MovableSystemSectorFake(String systemId) {
 

@@ -29,8 +29,8 @@ public record SelectionSlot(
     String scopeId) implements MemoryKeyAddress {
 
     public SelectionSlot {
-        // A blank id composes every scope to one key, which is one third of the partitioning this type
-        // carries: the picker that lost its id would quietly share a slot with every other picker on
+        // A blank ID composes every scope to one key, which is one third of the partitioning this type
+        // carries: the picker that lost its ID would quietly share a slot with every other picker on
         // the screen.
         if (scopeId == null || scopeId.isBlank()) {
             throw new IllegalArgumentException("A selection's scope id must not be blank");

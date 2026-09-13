@@ -44,7 +44,7 @@ public final class InstallationOverrideTableReader {
     // silently, each still passing on a file the other never sees.
     static final String TABLE_PATH = "data/config/kmu/installations.csv";
 
-    // The columns a row is read by, and the id column the game folds every mod's rows onto.
+    // The columns a row is read by, and the ID column the game folds every mod's rows onto.
     private static final String ENTITY_TYPE_COLUMN = "entityTypeId";
     private static final String ADMISSION_COLUMN = "isAdmitted";
     private static final String KIND_COLUMN = "kind";
@@ -114,9 +114,9 @@ public final class InstallationOverrideTableReader {
 
     // One row folded into the table under the entity type it names.
     //
-    // The id is what a row cannot do without: a statement about no type is a statement about
+    // The ID is what a row cannot do without: a statement about no type is a statement about
     // nothing, and filing one under a blank key would hand its answers to every other unnamed row.
-    // A row stating only its id is kept as it is - it says nothing, which is a fair thing for a row
+    // A row stating only its ID is kept as it is - it says nothing, which is a fair thing for a row
     // to say, and dropping it would make an author's placeholder look like a row that failed.
     private void readRowInto(
             Map<String, InstallationOverride> overridesByEntityTypeId,

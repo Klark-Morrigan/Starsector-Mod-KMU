@@ -45,7 +45,7 @@ final class BlocPresenceIndexTest {
 
         @Test
         void readPresentSystemKeysAnswersEmptyForNoBlocAtAll() {
-            // The pointer resting on no row at all reaches the lookup as a null id, so it answers
+            // The pointer resting on no row at all reaches the lookup as a null ID, so it answers
             // the same nothing rather than throwing at the top of a render pass.
             assertThat(BlocPresenceIndex.EMPTY.readPresentSystemKeys(null))
                 .isEmpty();

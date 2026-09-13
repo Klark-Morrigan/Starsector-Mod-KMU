@@ -9,7 +9,7 @@ package kmu.maplayers.base.refresh;
  * which is what lets a layer keep a closed set the compiler checks its lookups against while the
  * board stays open to any set.
  *
- * <p>An id because every raise is logged, and a signal that cannot name itself leaves that line
+ * <p>An ID because every raise is logged, and a signal that cannot name itself leaves that line
  * unable to say which one moved - the one thing a reader chasing an overlay that did not repaint
  * is after.
  *

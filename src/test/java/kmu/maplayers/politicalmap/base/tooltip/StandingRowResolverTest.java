@@ -384,7 +384,7 @@ final class StandingRowResolverTest {
 
         @Test
         void resolveRowsFallsBackToTheIdWhenAFactionDoesNotResolve() {
-            // A footprint id the sector no longer knows still ranks, so the line shows the bare id
+            // A footprint ID the sector no longer knows still ranks, so the line shows the bare ID
             // rather than a nameless line - a tooltip draws one faction per line and cannot fall back
             // to the stand-in band the picker uses for a null name. Its crest resolves absent.
             var sectorMock = buildEmptySector();

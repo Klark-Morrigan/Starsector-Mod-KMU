@@ -20,7 +20,7 @@ import java.util.Map;
  * exists those are settled, and a caller holding one can only be told what it states.
  *
  * @param overridesByEntityTypeId what the file states about each type it mentions, by entity type
- *                                id
+ *                                ID
  */
 public record InstallationOverrideTable(
     Map<String, InstallationOverride> overridesByEntityTypeId) {
@@ -38,7 +38,7 @@ public record InstallationOverrideTable(
     /**
      * What the file states about one entity type.
      *
-     * @param entityTypeId the custom entity type's id; a type the file never mentions - and an
+     * @param entityTypeId the custom entity type's ID; a type the file never mentions - and an
      *                     entity naming no type at all - reads as {@link InstallationOverride#NONE},
      *                     which leaves every question to the facts
      * @return what the table states about that type

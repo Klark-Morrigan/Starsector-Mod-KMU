@@ -12,11 +12,11 @@ import java.util.Objects;
  * have to travel together to be weighed against each other. Kept apart, whichever fact turned out
  * to date the row would be stated in whatever wording happened to be nearest.
  *
- * <p>The lead-in arrives as a string id rather than as text, so no shared class holds a phrase it
+ * <p>The lead-in arrives as a string ID rather than as text, so no shared class holds a phrase it
  * chose itself. The family that owns the fact supplies the words, and {@link ObservationNotes} only
  * picks which of them the row states.
  *
- * @param leadInKey the words introducing a date off this fact, as a string id taking the span and
+ * @param leadInKey the words introducing a date off this fact, as a string ID taking the span and
  *                  the date in that order
  * @param recency   how old the news on this fact is
  */
@@ -29,7 +29,7 @@ public record ObservationAxis(
      * a remark is the last thing composed on a surface, and a fault carried that far reads as a
      * fault in the surface.
      *
-     * <p>The lead-in is held to having text rather than merely to being present. A blank id
+     * <p>The lead-in is held to having text rather than merely to being present. A blank ID
      * resolves to nothing at all, so an axis carrying one would compose a remark with no words in
      * front of the date and read as a surface fault rather than as the missing string it is.
      */

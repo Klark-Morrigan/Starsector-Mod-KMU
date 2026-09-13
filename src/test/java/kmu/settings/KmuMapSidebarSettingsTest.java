@@ -25,7 +25,7 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class KmuMapSidebarSettingsTest {
 
-    // The live field ids, as the shipped table spells them. A rename in the reader would otherwise read a
+    // The live field IDs, as the shipped table spells them. A rename in the reader would otherwise read a
     // row the table never writes, leaving the panel on its fallback with nothing to say why.
     private static final String OPACITY_FIELD = "kmu_map_visuals_sidebar_opacity";
     private static final String SCROLLBAR_THICKNESS_FIELD = "kmu_map_visuals_sidebar_scrollbarThickness";

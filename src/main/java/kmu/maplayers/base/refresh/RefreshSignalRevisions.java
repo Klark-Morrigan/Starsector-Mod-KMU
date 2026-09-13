@@ -59,7 +59,7 @@ public final class RefreshSignalRevisions {
      * Names the signals of this reading that stand higher than they did in {@code previous}.
      *
      * @param previous the earlier reading, commonly the one taken when the caller last acted
-     * @return the raised signals' ids, separated by commas, or {@code "none"} where none moved. A
+     * @return the raised signals' IDs, separated by commas, or {@code "none"} where none moved. A
      *         signal the earlier reading did not cover counts as raised, that reading having no
      *         answer for it to have stood still against
      */

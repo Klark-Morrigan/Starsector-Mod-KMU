@@ -16,14 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins {@link SystemDominance}'s four-level rule: combined weight, then
  * heaviest single market, then planet weight, then a tie-break over the tied
- * ids (lowest id by default, or the supplied comparator). Each test forces a
+ * IDs (lowest ID by default, or the supplied comparator). Each test forces a
  * tie on every earlier level so it isolates exactly one tie-break, and lists
- * the higher faction id first so the winner is shown to come from the rule, not
+ * the higher faction ID first so the winner is shown to come from the rule, not
  * from map iteration order.
  *
- * <p>Also pins who is ranked at all: a candidacy bars an id from winning
+ * <p>Also pins who is ranked at all: a candidacy bars an ID from winning
  * whatever it scored, and lifts where no footprint is a candidate. The barred
- * ids here are hand-named rather than taken from the live rule, so the pure
+ * IDs here are hand-named rather than taken from the live rule, so the pure
  * comparison stays free of what any one faction happens to be.
  */
 class SystemDominanceTest {
@@ -35,8 +35,8 @@ class SystemDominanceTest {
     // the weight levels poses its candidacy as plainly as a case about the bar does.
     private static final Predicate<String> EVERY_BLOC = factionId -> true;
 
-    // Both placeholder ids sort below the scoring factions below, so a case a bar decides cannot
-    // be passing on the natural id order instead.
+    // Both placeholder IDs sort below the scoring factions below, so a case a bar decides cannot
+    // be passing on the natural ID order instead.
     private static final Predicate<String> BARS_PLACEHOLDERS =
         factionId -> !Set.of(PLACEHOLDER, SECOND_PLACEHOLDER).contains(factionId);
 
@@ -114,7 +114,7 @@ class SystemDominanceTest {
 
         @Test
         void breaksFullTieByLowestFactionId() {
-            // Identical footprints fall to the lowest faction id, so the result
+            // Identical footprints fall to the lowest faction ID, so the result
             // is deterministic and independent of insertion order.
             var footprints = listOrderedFootprints(
                 "tritachyon",
@@ -130,9 +130,9 @@ class SystemDominanceTest {
 
         @Test
         void breaksAFullTieWithTheSuppliedComparator() {
-            // With a comparator given, the full tie falls to whichever id it
-            // orders first - here reverse order, so the higher id wins, proving
-            // the tie-break comes from the comparator and not the natural id order.
+            // With a comparator given, the full tie falls to whichever ID it
+            // orders first - here reverse order, so the higher ID wins, proving
+            // the tie-break comes from the comparator and not the natural ID order.
             var footprints = listOrderedFootprints(
                 "hegemony",
                 buildWeightedFootprint(9, 5, 5),
@@ -168,7 +168,7 @@ class SystemDominanceTest {
 
         @Test
         void leavesTheSystemToACandidateOutscoredByABarredHolder() {
-            // The bar is on the id and never on the weight, so a barred holder outscoring
+            // The bar is on the ID and never on the weight, so a barred holder outscoring
             // everything present still loses the system to whoever may actually win it.
             var footprints = listOrderedFootprints(
                 PLACEHOLDER,
@@ -184,7 +184,7 @@ class SystemDominanceTest {
 
         @Test
         void leavesTheSystemToACandidateTiedWithABarredHolderAtNought() {
-            // Nought against nought, with the barred id both listed first and sorting lower, so
+            // Nought against nought, with the barred ID both listed first and sorting lower, so
             // it would take the system on either reading were it in the running at all.
             var footprints = listOrderedFootprints(
                 PLACEHOLDER,

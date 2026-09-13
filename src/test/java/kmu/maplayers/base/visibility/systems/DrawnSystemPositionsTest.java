@@ -36,9 +36,9 @@ import static org.mockito.Mockito.when;
  * <p>The other half is the skip: a system with no hyperspace position has no site to place a
  * cell at, and is left out whatever the rule says about it.
  *
- * <p>Both addresses get a case posing two systems that share an id, since a live modded sector
- * lists several such pairs: the keyed read holds a site for each, the id read holds the first of
- * them - which is what a structure keyed by id gives up by being keyed that way.
+ * <p>Both addresses get a case posing two systems that share an ID, since a live modded sector
+ * lists several such pairs: the keyed read holds a site for each, the ID read holds the first of
+ * them - which is what a structure keyed by ID gives up by being keyed that way.
  */
 class DrawnSystemPositionsTest {
 
@@ -90,8 +90,8 @@ class DrawnSystemPositionsTest {
 
         @Test
         void seedsASiteForEachOfTwoSystemsSharingAnId() {
-            // What the key address is for. A live modded sector lists several systems under one id
-            // - vanilla's own deep space among them - and a point cloud gathered under ids is short
+            // What the key address is for. A live modded sector lists several systems under one ID
+            // - vanilla's own deep space among them - and a point cloud gathered under IDs is short
             // a site for each, which draws as a system with no cell on a map that cells every
             // neighbour it has.
             var positions = collectPositionsUnder(
@@ -176,7 +176,7 @@ class DrawnSystemPositionsTest {
             MapVisibilityPass.over(sector, visibilityRules));
     }
 
-    // Two systems the sector lists under one id, apart in hyperspace and told apart by their
+    // Two systems the sector lists under one ID, apart in hyperspace and told apart by their
     // anchors alone - vanilla's own deep space pair, and the world both addresses answer
     // differently over.
     private static SectorAPI buildUnroutedSectorOfTwoSystemsSharingAnId() {
@@ -185,7 +185,7 @@ class DrawnSystemPositionsTest {
             buildKeyedSystemAt("deep space", "38d53", -5f, 6f));
     }
 
-    // The key a system posed with an id alone carries: a sector states no centre and no anchor for
+    // The key a system posed with an ID alone carries: a sector states no centre and no anchor for
     // one, and an arm it does not state is absent rather than missing.
     private static SystemKey keyOf(String systemId) {
         return new SystemKey(systemId, "", "");
@@ -201,7 +201,7 @@ class DrawnSystemPositionsTest {
         return closeTheJumpRoutesOf(StarSystemFixture.buildSystem(id));
     }
 
-    // A system standing where another of the same id stands too, told apart by its anchor alone -
+    // A system standing where another of the same ID stands too, told apart by its anchor alone -
     // the shape a live modded sector lists and the one nothing but a key separates.
     private static StarSystemAPI buildKeyedSystemAt(
             String id,

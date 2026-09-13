@@ -30,7 +30,7 @@ public interface BlocStatsRead<S extends BlocMetrics> {
     BlocPresenceIndex presenceIndex();
 
     /**
-     * @return each surfaced bloc's whole-sector totals, keyed by bloc id in walk order
+     * @return each surfaced bloc's whole-sector totals, keyed by bloc ID in walk order
      */
     Map<String, S> statsByBlocId();
 }

@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins how a ranked bloc answers the framework's picker seam. The stats half is the calling view's own
  * and needs no pinning here; what needs pinning is each seam value reaching the picker from the half
  * that owns it - the identity for what a row draws and a pick reports, since a row drawn from one
- * bloc's identity and a spotlight resolved from another's id would light a row the map cannot paint,
+ * bloc's identity and a spotlight resolved from another's ID would light a row the map cannot paint,
  * and the metrics for whether the row reads back, since the identity has no number to judge that by.
  */
 final class RankedBlocTest {
@@ -22,7 +22,7 @@ final class RankedBlocTest {
     private static final DominanceStats ANY_STATS = new DominanceStats(5, 8, 40, 12);
 
     // One fully-populated bloc every case reads a different seam value off, so a delegation that
-    // crossed its wires (a crest answered from the id, say) shows up as a mismatch rather than
+    // crossed its wires (a crest answered from the ID, say) shows up as a mismatch rather than
     // passing against a fixture built to suit it.
     private static final RankedBloc<DominanceStats> HEGEMONY = new RankedBloc<>(
         new SelectableBloc("hegemony", "Hegemony", "crest_heg"),
@@ -33,7 +33,7 @@ final class RankedBlocTest {
 
         @Test
         void itemIdIsTheBlocId() {
-            // The id is the one value the seam renames, and it must stay the bloc id the filter stores.
+            // The ID is the one value the seam renames, and it must stay the bloc ID the filter stores.
             assertThat(HEGEMONY.itemId())
                 .isEqualTo("hegemony");
         }

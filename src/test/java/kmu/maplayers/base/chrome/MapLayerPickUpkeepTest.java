@@ -61,7 +61,7 @@ final class MapLayerPickUpkeepTest {
     // runs at.
     private static final float PAUSED_FRAME = 0f;
 
-    // The id the arrangement store would name the layer that paints by, which nothing here arranges -
+    // The ID the arrangement store would name the layer that paints by, which nothing here arranges -
     // stated because registration reads every layer's id.
     private static final String PAINTING_LAYER_ID = "painting";
 
@@ -192,7 +192,7 @@ final class MapLayerPickUpkeepTest {
             upkeep.advance(PAUSED_FRAME);
             upkeep.advance(PAUSED_FRAME);
 
-            // Building the offered row costs an index of the roster by id, three lists and two stream
+            // Building the offered row costs an index of the roster by ID, three lists and two stream
             // passes, which is not a thing to spend sixty times a second on an answer that moves when
             // the player opens a dialog. Counted on the pick read, since a pass that skipped only the
             // write would still be rebuilding the row to find out it had nothing to write - so the
@@ -358,15 +358,15 @@ final class MapLayerPickUpkeepTest {
         return screenPicks;
     }
 
-    // A roster whose one layer refuses to answer its own id, which is how a foreign mod's layer takes
+    // A roster whose one layer refuses to answer its own ID, which is how a foreign mod's layer takes
     // the row read down with it - and the only fault this pass can actually have.
     private void registerARosterWhoseLayerRefusesItsOwnId() {
         registerARosterWhoseLayerRefusesItsOwnId(new AtomicInteger());
     }
 
-    // The same, counting how often the id was asked for, so a case can tell one attempt from sixty.
+    // The same, counting how often the ID was asked for, so a case can tell one attempt from sixty.
     //
-    // Registered while the layer still answers, the registry reading every id to place its layer: a
+    // Registered while the layer still answers, the registry reading every ID to place its layer: a
     // layer that refused from the outset could not get onto a bar to break one. What is posed is a
     // read that starts failing later, which is what a layer reaching a settings file or a sector for
     // its own name does.

@@ -47,11 +47,11 @@ import java.util.function.Predicate;
 public interface PoliticalMapView {
 
     /**
-     * This view's stable id - the string the active-view selection serialises into the save and
+     * This view's stable ID - the string the active-view selection serialises into the save and
      * the view registry resolves a stored pick back to. Frozen once shipped, since renaming it
      * silently resets a save that selected this view to the default.
      *
-     * @return the view's save-stable id
+     * @return the view's save-stable ID
      */
     String getId();
 
@@ -226,7 +226,7 @@ public interface PoliticalMapView {
     /**
      * The spotlight picker this view offers: the blocs it lists - factions with a visible weighted
      * market under the factions view, current alliances under the alliances view - together with the
-     * sort vocabulary that ranks them. Each bloc carries the id the filter stores, its picker label,
+     * sort vocabulary that ranks them. Each bloc carries the ID the filter stores, its picker label,
      * and (for a faction) its crest. The list is what the picker draws and what
      * {@link kmu.maplayers.base.sidebar.FilterSelection} heals a stale saved selection against, so a
      * bloc that is no longer here is no longer spotlightable.
@@ -364,7 +364,7 @@ public interface PoliticalMapView {
      *
      * @param grouping the grouping the blocs were folded under, so a gate that asks what a bloc is
      *                 (an alliance, a lone faction) reads the same snapshot the numbers came from
-     * @return the test a present bloc's id passes to be listed
+     * @return the test a present bloc's ID passes to be listed
      */
     default Predicate<String> resolveSelectableBlocGate(HolderGrouping grouping) {
         return blocId -> true;

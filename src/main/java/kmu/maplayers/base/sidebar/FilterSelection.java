@@ -7,14 +7,14 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import java.util.function.Predicate;
 
 /**
- * The single id a sidebar filter currently selects, or none - held per {@link SelectionSlot}, so each
+ * The single ID a sidebar filter currently selects, or none - held per {@link SelectionSlot}, so each
  * mod, screen and scope keeps its own choice and moving between any of them neither clears nor
- * cross-reads another's. While an id is selected the layer reading it draws that one standing out and the rest
+ * cross-reads another's. While an ID is selected the layer reading it draws that one standing out and the rest
  * receded; with none selected it renders exactly as it does un-filtered. This holds only the choice - a
- * bare id - and the plumbing to persist, clear, and invalidate on it; what the id names, and how it
+ * bare ID - and the plumbing to persist, clear, and invalidate on it; what the ID names, and how it
  * resolves into anything drawn, is the reading layer's concern, not this class's.
  *
- * <p>Partitioned because no axis of a slot is optional: one scope's id read under another scope is
+ * <p>Partitioned because no axis of a slot is optional: one scope's ID read under another scope is
  * meaningless, a spotlight is a pick the player made on one panel rather than a statement about the
  * sector, and one mod's picker has no business reading a pick made on another's. The class stays
  * ignorant of what any of the three is - it hands a slot its own key and takes back the key that slot
@@ -24,7 +24,7 @@ import java.util.function.Predicate;
  * picker, never a settings-screen control, so it persists in sector memory (each save keeps its own
  * choice and it survives reload) rather than as a LunaLib field - a LunaLib field would render on a
  * settings tab and an unregistered key would not round-trip. Key absence is the no-filter state,
- * which is also the default a fresh save holds, so no off sentinel is needed: a stored id means
+ * which is also the default a fresh save holds, so no off sentinel is needed: a stored ID means
  * "filtering to that id", no key means "not filtering".
  *
  * <p>Unlike those stores, a pick or a clear raises {@link MapLayerCommonRefreshSignal#FILTER} so
@@ -35,7 +35,7 @@ import java.util.function.Predicate;
  */
 public final class FilterSelection {
 
-    // The selected id, under the key a slot composes its namespace, scope and screen onto. Layer-neutral
+    // The selected ID, under the key a slot composes its namespace, scope and screen onto. Layer-neutral
     // because every map layer's picker stores through this one class - a key naming one layer would have
     // every other layer persisting its selection under that layer's. Mod-neutral for the reason
     // MapLayerStoreNamespace exists: which mod's picker this is arrives with the slot, so this class
@@ -50,7 +50,7 @@ public final class FilterSelection {
 
     /**
      * @param slot the mod, screen and scope whose selection is read
-     * @return that slot's selected id, or null when it has no selection (the un-filtered state) - also
+     * @return that slot's selected ID, or null when it has no selection (the un-filtered state) - also
      *         null before a save exists, since there is nothing to have picked yet
      */
     public static String getSelectedIdOf(SelectionSlot slot) {
@@ -58,12 +58,12 @@ public final class FilterSelection {
     }
 
     /**
-     * Selects an id in one slot, persisting the choice in this save and raising the filter signal so
+     * Selects an ID in one slot, persisting the choice in this save and raising the filter signal so
      * the pick shows at once. A no-op before the sector exists, since there is no save to write into
      * and nothing painting to repaint.
      *
      * @param slot       the mod, screen and scope the pick belongs to
-     * @param selectedId the stable id to filter to
+     * @param selectedId the stable ID to filter to
      * @param board      the refresh board of the sector whose picker made the pick, raised on so
      *                   that sector's overlay repaints
      */
@@ -80,7 +80,7 @@ public final class FilterSelection {
     /**
      * Clears one slot's filter, dropping its stored choice and raising the filter signal so the reading
      * layer returns to its un-filtered look at once. A no-op before the sector exists, or when that
-     * slot had no id selected - nothing to unset and nothing to repaint.
+     * slot had no ID selected - nothing to unset and nothing to repaint.
      *
      * @param slot  the mod, screen and scope whose filter is cleared
      * @param board the refresh board of the sector whose picker made the clear, raised on so that
@@ -93,18 +93,18 @@ public final class FilterSelection {
     }
 
     /**
-     * Clears one slot's filter when its stored id is no longer selectable - the self-heal for a save
-     * whose selection stopped being on offer between sessions, so a dangling id never filters to
-     * something that is no longer there. A no-op when the slot has no stored id or the stored id is
+     * Clears one slot's filter when its stored ID is no longer selectable - the self-heal for a save
+     * whose selection stopped being on offer between sessions, so a dangling ID never filters to
+     * something that is no longer there. A no-op when the slot has no stored ID or the stored ID is
      * still selectable. Clears without a refresh request, so it is safe to run on load before the
      * reading layer paints and on a scope switch before the switched-in scope repaints.
      *
      * <p>Heals the one slot it is named for. A caller healing a scope every screen holds - which is
-     * every scope, since the screens offer the same layers - runs it once per screen, because an id
+     * every scope, since the screens offer the same layers - runs it once per screen, because an ID
      * that lapsed lapsed for both panels while only the one being looked at would otherwise clear.
      *
      * @param slot         the mod, screen and scope whose selection is healed
-     * @param isSelectable reports whether a stored id is still selectable in that scope
+     * @param isSelectable reports whether a stored ID is still selectable in that scope
      */
     public static void healStaleSelection(SelectionSlot slot, Predicate<String> isSelectable) {
 

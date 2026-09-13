@@ -8,7 +8,7 @@ package kmu.maplayers.base.sidebar;
  * already on the map, so only the screen being looked at can have one - and the pass that reads it
  * back is drawing that screen, with no pick of its own to resolve a screen from.
  *
- * <p>The mod is not optional even here. The scope id is opaque and every consumer picks its own, so
+ * <p>The mod is not optional even here. The scope ID is opaque and every consumer picks its own, so
  * two mods listing under {@code "factions"} would preview each other's rows - the same collision the
  * persisted stores take {@link MapLayerStoreNamespace} for, arriving unpersisted and per sector.
  *
@@ -21,7 +21,7 @@ public record PickerScope(
     String scopeId) {
 
     public PickerScope {
-        // A blank id composes every list to one entry, so the picker that lost its id would preview
+        // A blank ID composes every list to one entry, so the picker that lost its ID would preview
         // whatever row the pointer last rested on in any other list on the panel.
         if (scopeId == null || scopeId.isBlank()) {
             throw new IllegalArgumentException("A picker's scope id must not be blank");

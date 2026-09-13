@@ -53,7 +53,7 @@ public final class FilterSelectionBinder {
     }
 
     /**
-     * Builds the picker for one slot against this mod's stores: the spotlighted id and the stored
+     * Builds the picker for one slot against this mod's stores: the spotlighted ID and the stored
      * sort read live off that slot, the columns caption resolved out of this mod's strings, and
      * every pick wired back to the store that keeps it.
      *

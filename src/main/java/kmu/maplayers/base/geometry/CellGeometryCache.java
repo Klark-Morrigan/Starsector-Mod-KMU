@@ -59,7 +59,7 @@ import java.util.Set;
  * shared edge - so it belongs to the render pass, not to this ownership-agnostic
  * geometry that rebuilds only on an access change.
  *
- * <p>Every address here is a {@link SystemKey} rather than a system id, because an id is not
+ * <p>Every address here is a {@link SystemKey} rather than a system ID, because an ID is not
  * unique: a sector holding several systems under one would cut a single cell for them, leaving
  * every system after the first with no cell on a map that cells its neighbours.
  *
@@ -331,7 +331,7 @@ public final class CellGeometryCache {
             Collection<SystemKey> movingSystemKeys) {
 
         // Addressed by key because a cell is keyed by the system it is cut for, which is the
-        // address the movers are named by as well - and the address two systems sharing an id are
+        // address the movers are named by as well - and the address two systems sharing an ID are
         // told apart by, each of them seeding a cell of its own.
         var sites = DrawnSystemPositions.collectLivePositions(pass);
         sites.keySet().removeAll(movingSystemKeys);

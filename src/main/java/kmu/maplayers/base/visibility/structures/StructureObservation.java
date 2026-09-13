@@ -76,7 +76,7 @@ public record StructureObservation(
     }
 
     // A holder stated as nothing at all is a holder nobody established, so the two spellings of
-    // that - no optional, and one holding a blank id - cannot reach a reader as different answers.
+    // that - no optional, and one holding a blank ID - cannot reach a reader as different answers.
     private static Optional<String> readStatedHolderId(Optional<String> holderFactionId) {
 
         if (holderFactionId == null) {

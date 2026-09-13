@@ -17,7 +17,7 @@ import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
  * place each is, whether the player has found it, whether a concealed one is concealed in name
  * only, and how old its news of each is.
  *
- * <p>For an account whose rows arrive as scores rather than as colonies. A claim row carries the id
+ * <p>For an account whose rows arrive as scores rather than as colonies. A claim row carries the ID
  * of the market it was weighed from and nothing of the place behind it, so the things a line says
  * that no arithmetic can supply - that a colony is a collapse rather than a hulk, that nobody has
  * found it, that nobody has looked at it in four cycles - have to be read from the system itself
@@ -126,9 +126,9 @@ public final class SystemColonyReading {
     }
 
     /**
-     * What kind of place the colony with this id is.
+     * What kind of place the colony with this ID is.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return that colony's kind
      */
     public ColonyKind readKindOf(String colonyId) {
@@ -136,9 +136,9 @@ public final class SystemColonyReading {
     }
 
     /**
-     * Whether the player has found the entity the colony with this id sits on.
+     * Whether the player has found the entity the colony with this ID sits on.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return true when the colony's entity has been found
      */
     public boolean isDiscoveredColony(String colonyId) {
@@ -146,10 +146,10 @@ public final class SystemColonyReading {
     }
 
     /**
-     * Whether the colony with this id conceals itself only in the sector's bookkeeping - a landmark
+     * Whether the colony with this ID conceals itself only in the sector's bookkeeping - a landmark
      * that keeps no comm directory rather than a base hiding from anyone.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return true when the colony is one the sector openly points at
      */
     public boolean isOpenlyKnownColony(String colonyId) {
@@ -157,14 +157,14 @@ public final class SystemColonyReading {
     }
 
     /**
-     * The three ways the colony with this id may be out of plain view, gathered into the value a
+     * The three ways the colony with this ID may be out of plain view, gathered into the value a
      * line's wording is chosen from.
      *
      * <p>Assembled here because two of the three are this reading's own answers and only the third
      * comes off the account. Left to each account, the assembly is the same three arguments written
      * out per box, where transposing two of them still compiles and simply calls out the wrong word.
      *
-     * @param colonyId       the colony's market id, as the account listing it carries
+     * @param colonyId       the colony's market ID, as the account listing it carries
      * @param isHiddenMarket whether the colony conceals itself, which only the account's own
      *                       breakdown carries
      * @return the three facts, in the order the value names them
@@ -193,7 +193,7 @@ public final class SystemColonyReading {
      * account that has the place itself in hand fills them in from that instead.
      *
      * @param line     the colony's own line, as its account built it
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @param facts    what the account has found out about the colony; null states nothing
      * @return the line, called out and remarked on where either is due and untouched where neither
      *         is

@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins {@link BlocCandidacy}: the neutral placeholder is barred from holding a system and everyone
- * else may hold one, at both shapes the rule is asked at - a plain faction id, and a bloc id read
+ * else may hold one, at both shapes the rule is asked at - a plain faction ID, and a bloc ID read
  * through the grouping that names its colour faction.
  */
 class BlocCandidacyTest {
@@ -55,7 +55,7 @@ class BlocCandidacyTest {
 
         @Test
         void barsTheNeutralBlocUnderIdentity() {
-            // Under identity a bloc id is its own faction id, so the two forms of the rule agree.
+            // Under identity a bloc ID is its own faction ID, so the two forms of the rule agree.
             assertThat(BlocCandidacy.createForGrouping(HolderGrouping.identity())
                     .test(Factions.NEUTRAL))
                 .isFalse();
@@ -70,7 +70,7 @@ class BlocCandidacyTest {
 
         @Test
         void admitsAnAlliancePaintingInAnOrdinaryFaction() {
-            // An alliance id is no faction id at all, so it is judged by the faction it stands as.
+            // An alliance ID is no faction ID at all, so it is judged by the faction it stands as.
             var grouping = buildAllianceGrouping(HEGEMONY);
 
             assertThat(BlocCandidacy.createForGrouping(grouping).test(ALLIANCE_ID))
@@ -87,7 +87,7 @@ class BlocCandidacyTest {
 
         @Test
         void admitsABlocTheGroupingDoesNotName() {
-            // An id the grouping has no entry for falls through to itself, which is what keeps the
+            // An ID the grouping has no entry for falls through to itself, which is what keeps the
             // rule uniform whether or not anything grouped the factions.
             var grouping = buildAllianceGrouping(HEGEMONY);
 

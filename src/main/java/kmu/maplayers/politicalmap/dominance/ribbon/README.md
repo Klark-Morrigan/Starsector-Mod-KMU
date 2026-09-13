@@ -27,7 +27,7 @@ The bloc the cell was **painted for** leads,
 whatever settled that.
 The dominance rule can hand a system to a bloc that leads on none of the weights -
 a tie settled by the market nearest the system centre,
-or by id -
+or by ID -
 so a band re-ranked from the weights alone would open on a bloc the cell is not painted in.
 
 Behind the leader:
@@ -42,7 +42,7 @@ which have no industries,
 conditions or stability for the arithmetic to read -
 takes no place in this ranking.
 It is present in the system and counted like any other bloc,
-and draws behind the weighed ones in id order under the shared rule's fallback.
+and draws behind the weighed ones in ID order under the shared rule's fallback.
 
 ## Held or claimed
 

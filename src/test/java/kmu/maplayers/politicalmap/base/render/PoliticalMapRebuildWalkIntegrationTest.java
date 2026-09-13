@@ -88,7 +88,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     private static final String BETA_ID = "beta";
 
     // The cells those systems seed, as the cut keys them: a system posed with no centre and no
-    // anchor reads as its id alone. The co-located pair below is the exception, each of its two
+    // anchor reads as its ID alone. The co-located pair below is the exception, each of its two
     // carrying the anchor that tells them apart.
     private static final SystemKey ALPHA_CELL = buildCellKey(ALPHA_ID);
     private static final SystemKey BETA_CELL = buildCellKey(BETA_ID);
@@ -323,8 +323,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         @Test
         void refreshLeavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
             // The tracker and the cut address a system the same way now, so a mover leaves the
-            // partition as itself and its twin under the shared id stays cut. Posed with the twin
-            // moving - the one an address by id would have folded into the first - so it is the
+            // partition as itself and its twin under the shared ID stays cut. Posed with the twin
+            // moving - the one an address by ID would have folded into the first - so it is the
             // twin's own cell, and not the first system's, that goes.
             var sector = buildContestedSectorWithACoLocatedTwin();
 
@@ -360,7 +360,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         @Test
         void refreshDrainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
             // The board's half of the same claim. A full rebuild re-derives every system, so it
-            // drains the marks it has just accounted for - and the marks are bare system ids, so a
+            // drains the marks it has just accounted for - and the marks are bare system IDs, so a
             // rebuild draining a shared board would swallow another sector's pending re-shape and
             // leave that sector drawing a holder that has already moved, with nothing on either map
             // to say a mark went missing.
@@ -452,7 +452,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     // Drifts one system far enough for two observations either side of the move to read it as
     // moving, and stages those observations into the given tracker - which is the state the cut
     // consults when it decides what to leave out of the partition. The system is handed over
-    // rather than named, since an id names every system sharing it and the first is not always
+    // rather than named, since an ID names every system sharing it and the first is not always
     // the one a case moves.
     //
     // Staged through real observations rather than by writing a set, since the moving set is
@@ -517,9 +517,9 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             listSystemMarkets(BETA_ID)));
     }
 
-    // The settled sector with a twin of its contested system: listed under the same id and, being
-    // placed off that id, on the same site - the co-located pair a live sector holds under one
-    // id - told apart by their anchors alone.
+    // The settled sector with a twin of its contested system: listed under the same ID and, being
+    // placed off that ID, on the same site - the co-located pair a live sector holds under one
+    // ID - told apart by their anchors alone.
     private SectorAPI buildContestedSectorWithACoLocatedTwin() {
 
         var hegemony = SectorPoliticsFixtures.buildFaction(HEGEMONY_ID);
@@ -562,8 +562,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         return sector;
     }
 
-    // The second system the sector lists under the shared id - the one no address by id reaches,
-    // every id read answering the first.
+    // The second system the sector lists under the shared ID - the one no address by ID reaches,
+    // every ID read answering the first.
     private static StarSystemAPI findTheTwinIn(SectorAPI sector) {
         return sector.getStarSystems().stream()
             .filter(system -> ALPHA_ID.equals(system.getId()))

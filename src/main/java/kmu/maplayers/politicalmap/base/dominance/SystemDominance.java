@@ -7,7 +7,7 @@ import java.util.Map;
  * Picks the faction that dominates a star system from its market footprint.
  *
  * <p>Pure rule, no Starsector types: the caller hands in each faction's
- * {@link MarketFootprint} in one system, and this returns the id of the
+ * {@link MarketFootprint} in one system, and this returns the ID of the
  * faction that holds the most. Keeping it free of {@code MarketAPI} / economy
  * access lets the dominance rule be exercised directly on hand-built inputs,
  * independent of how the live markets are read (that is
@@ -20,21 +20,21 @@ import java.util.Map;
  *   <li>combined weight across all of the faction's markets;</li>
  *   <li>heaviest single market;</li>
  *   <li>planet-only weight, ranking planets above stations;</li>
- *   <li>a caller-supplied tie-break over the tied ids - by default the lowest
- *       id, so map iteration order never decides the winner; the live pass
+ *   <li>a caller-supplied tie-break over the tied IDs - by default the lowest
+ *       ID, so map iteration order never decides the winner; the live pass
  *       instead breaks the tie by system geometry.</li>
  * </ol>
  *
  * <p>Who is ranked at all, and who wins a dead heat, arrive together as
  * {@link HolderRankingRules}. Only candidates compete; where no footprint is
  * one, the whole map is ranked instead, so a holder barred from the contest
- * still holds what nobody contests. The bar is on the id and never on the
+ * still holds what nobody contests. The bar is on the ID and never on the
  * weight, so every score this rule compares is the one the weighting produced.
  *
  * <p>Weights arrive as exact integers (the fixed-point grid the footprint read
  * rounds onto), so every comparison here is exact and the tie-break is only
  * reached on a genuine tie - no epsilon math inside the rule. Confining the
- * tie-break to a comparator over ids keeps this rule pure while letting the
+ * tie-break to a comparator over IDs keeps this rule pure while letting the
  * live pass resolve a tie by which bloc holds the market nearest the system
  * centre (see {@link MarketProximityTieBreak}), a call it need make only when a
  * tie actually arises.
@@ -56,7 +56,7 @@ public final class SystemDominance {
      *                             empty map means no owned markets
      * @param rankingRules         who may win the system, and who wins a dead
      *                             heat
-     * @return the dominant faction's id, or {@code null} when the map is empty
+     * @return the dominant faction's ID, or {@code null} when the map is empty
      *         (an uninhabited system has no holder)
      */
     public static String resolveDominantFactionId(
@@ -72,7 +72,7 @@ public final class SystemDominance {
             : resolveLeaderAmong(footprintByFactionId, rankingRules.reopenToEveryBloc());
     }
 
-    // The top of one pass over the footprints, counting only the ids the rules admit. Answers null
+    // The top of one pass over the footprints, counting only the IDs the rules admit. Answers null
     // where they admitted none, which is what the reopened second pass is taken on.
     private static String resolveLeaderAmong(
             Map<String, MarketFootprint> footprintByFactionId,

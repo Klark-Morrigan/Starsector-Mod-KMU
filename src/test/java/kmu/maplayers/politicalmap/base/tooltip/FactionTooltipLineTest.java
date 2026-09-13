@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins how a faction appears wherever a hovered system's breakdown lists one: its long title beside its
- * crest, its bare id when the sector no longer knows it, and whatever the block counts it in.
+ * crest, its bare ID when the sector no longer knows it, and whatever the block counts it in.
  */
 final class FactionTooltipLineTest {
 
@@ -44,7 +44,7 @@ final class FactionTooltipLineTest {
 
         @Test
         void buildFactionLineFallsBackToTheIdForAnUnknownFaction() {
-            // A line naming one faction reads better as a bare id than as a blank where the name
+            // A line naming one faction reads better as a bare ID than as a blank where the name
             // belongs, and a faction with no crest simply draws its name alone.
             var line = FactionTooltipLine.buildFactionLine(
                 buildEmptySector(),

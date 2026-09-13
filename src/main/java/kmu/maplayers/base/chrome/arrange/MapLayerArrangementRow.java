@@ -10,10 +10,10 @@ package kmu.maplayers.base.chrome.arrange;
  * layer would also let a row be moved by something other than the dialog while the dialog was showing
  * it in its old place.
  *
- * <p>The id is what the arrangement is written in, so it is what a row is addressed by - a position
+ * <p>The ID is what the arrangement is written in, so it is what a row is addressed by - a position
  * would be stale the moment the row above it moved, and the label is not unique.
  *
- * @param layerId    the layer's registered id, as the stored arrangement names it
+ * @param layerId    the layer's registered ID, as the stored arrangement names it
  * @param layerLabel what this layer's tab says, resolved when the dialog was built
  * @param isHidden   whether the player has taken this layer's tab off the bar
  */

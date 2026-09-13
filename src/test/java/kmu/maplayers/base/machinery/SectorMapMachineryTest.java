@@ -44,12 +44,12 @@ import static org.mockito.Mockito.when;
  */
 class SectorMapMachineryTest {
 
-    // The id both staged sectors give their system. Nothing forbids two sectors generating a
-    // system under one id, and it is the case a shared holder gets wrong rather than merely
+    // The ID both staged sectors give their system. Nothing forbids two sectors generating a
+    // system under one ID, and it is the case a shared holder gets wrong rather than merely
     // draws twice.
     private static final String SHARED_SYSTEM_ID = "a";
 
-    // The key that system carries in either sector: the id alone, a staged system stating no
+    // The key that system carries in either sector: the ID alone, a staged system stating no
     // centre and no anchor. Written out rather than read off the system, an expectation taken
     // from the code under test being no expectation at all.
     private static final SystemKey SHARED_SYSTEM_KEY = new SystemKey("a", "", "");
@@ -120,7 +120,7 @@ class SectorMapMachineryTest {
         @Test
         void yieldsOneOfItsOwnSoOneSectorsDrawingIsNotAnothers() {
             // The whole of why a renderer stopped being the layer's: the caches behind it reconcile
-            // by system id, so two sectors through one would keep each other's cells rather than
+            // by system ID, so two sectors through one would keep each other's cells rather than
             // overwrite them.
             assertThat(resolveCountingMachineryIn(machinery))
                 .isNotSameAs(resolveCountingMachineryIn(otherMachinery));
@@ -241,7 +241,7 @@ class SectorMapMachineryTest {
 
         @Test
         void yieldsABoardOfItsOwnSoOneSectorsStaleSystemsAreNotAnothers() {
-            // The stale set is bare system ids, and nothing forbids two sectors from generating a
+            // The stale set is bare system IDs, and nothing forbids two sectors from generating a
             // system under the same one - so a shared board is where two sectors corrupt each
             // other silently rather than merely draw each other's picture.
             machinery.resolveRefreshBoard().markSystemGroupingStale("sys");

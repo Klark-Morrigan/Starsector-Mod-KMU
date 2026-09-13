@@ -256,14 +256,14 @@ the three addresses they take and the hover slot is the whole of this half of th
 
 The stores are leaves:
 they hold the raw stored keys and nothing that resolves one.
-What a filtered-to id points at stays with the layer that offers the choices,
+What a filtered-to ID points at stays with the layer that offers the choices,
 and a stored sort or column key only means something to the model that owns it,
 so this package carries the storage without learning what any one layer's list holds.
 
 The picker itself is not here at all -
 `ListPickerControl`,
 `SelectableListItem`
-(an id, a label, a crest, and whether the row reads back),
+(an ID, a label, a crest, and whether the row reads back),
 `ListPickerStore`,
 `RevisionMemo`,
 and the sort and column model behind them
@@ -290,7 +290,7 @@ which mod's picker is asking.
 Without it the three stores are shared in the wrong sense,
 since two mods choosing the scope string `factions` write the same key.
 It has no default and is derived from nothing -
-a namespace standing in from a layer id would part one mod's two layers,
+a namespace standing in from a layer ID would part one mod's two layers,
 which the scope already does correctly,
 and a fixed fallback would put every consumer that forgot to name itself back in one shared namespace.
 It carries its own separator,
@@ -303,7 +303,7 @@ named there because whose picks these are is a fact about the mod rather than ab
 a namespace,
 a screen and one opaque scope,
 the three that compose the key.
-The scope because an id read under the wrong scope names nothing
+The scope because an ID read under the wrong scope names nothing
 and a mode key read under the wrong one resolves against nothing,
 making every switch look like a reset;
 the screen because a pick is something the player did to one panel;
@@ -333,13 +333,13 @@ since a report can land after the player has moved to the other screen.
 Beyond the read,
 pick,
 and clear,
-`FilterSelection` heals a stored id a caller-supplied predicate no longer accepts -
+`FilterSelection` heals a stored ID a caller-supplied predicate no longer accepts -
 a selection that stopped being on offer,
 whether between sessions or while the game runs.
 Binding that predicate to a live source of what is selectable *now* is the reading layer's,
 since the source is exactly the knowledge these classes refuse;
 so is deciding at which moments the offer can have moved.
-The predicate is asked only when a stored id is there to judge,
+The predicate is asked only when a stored ID is there to judge,
 so binding it to an expensive source costs nothing on a slot holding no pick.
 
 One heal is one screen's,
@@ -352,7 +352,7 @@ The screens are walked off `MapLayerScreens`,
 which is where how many there are is known.
 
 `FilterHoverSlot` is the transient counterpart:
-holding the id a pointer rests on instead of the id that was picked,
+holding the ID a pointer rests on instead of the ID that was picked,
 so a reading layer can preview what picking it would spotlight.
 It persists nothing and raises no refresh,
 and both follow from what a hover is -
@@ -367,7 +367,7 @@ the mod and the list,
 since only one screen is ever up to preview on
 and the pass that reads a hover back is drawing that screen with no pick of its own to resolve one from.
 The mod half is not optional even so:
-the scope id is opaque and every consumer picks its own,
+the scope ID is opaque and every consumer picks its own,
 so two mods listing under `factions` would preview each other's rows -
 the persisted stores' collision arriving unpersisted and per sector.
 A scope is resolved off the slot the picker was built for (`PickerScope.resolveScopeOf`)
@@ -389,7 +389,7 @@ since neither is visible from here.
 
 `FilterSelectionBinder` is the one binder that also builds,
 because the picker's three ties resolve at one point:
-it reads the scope's spotlighted id and the scope's stored sort on the way in,
+it reads the scope's spotlighted ID and the scope's stored sort on the way in,
 resolves the columns caption out of this mod's strings,
 and routes each of the picker's three reported picks to the slot that keeps it -
 the item pick to `FilterSelection` under that scope,
@@ -448,7 +448,7 @@ since these are the spellings every existing save holds:
 | `sort_mode_` | `$kmu_map_sort_mode_<scope>_<screen>` | one screen's picked sort mode key in one scope, absent until first picked |
 | `sort_direction_` | `$kmu_map_sort_direction_<scope>_<screen>` | one screen's picked direction (`asc` / `desc`) in one scope, absent until first flipped |
 | `list_columns` | `$kmu_map_list_columns_<screen>` | one screen's picked column count key, absent until first picked |
-| `filter_bloc_` | `$kmu_map_filter_bloc_<scope>_<screen>` | one screen's filtered-to id in one scope, absent while un-filtered |
+| `filter_bloc_` | `$kmu_map_filter_bloc_<scope>_<screen>` | one screen's filtered-to ID in one scope, absent while un-filtered |
 
 The store keys are layer-neutral because every map layer's picker stores through these classes -
 one naming a layer would have every other layer persisting under it -

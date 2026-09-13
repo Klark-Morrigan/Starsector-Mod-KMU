@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Pins that a row's toggle turns over rather than only turning off, and that it moves nothing else.
  *
  * <p>Worth its own suite because the editor exercises it only in the direction its own guard allows -
- * hiding a tab, and showing one back. A toggle that quietly rewrote the id or the label would leave the
+ * hiding a tab, and showing one back. A toggle that quietly rewrote the ID or the label would leave the
  * editor recording an arrangement about a layer the player never touched, and nothing in the editor's
  * own cases would name it.
  */

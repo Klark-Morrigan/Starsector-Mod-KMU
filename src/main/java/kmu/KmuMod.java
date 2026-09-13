@@ -3,7 +3,7 @@ package kmu;
 import kmu.maplayers.base.sidebar.MapLayerStoreNamespace;
 
 /**
- * The mod's own identity: the id its settings and scoped loggers are keyed on, the name it presents
+ * The mod's own identity: the ID its settings and scoped loggers are keyed on, the name it presents
  * under, and the namespace its map-layer sidebar stores save beneath.
  *
  * <p>Held apart from {@link KMU_ModPlugin} so a class deep in the mod can say who it belongs to
@@ -15,7 +15,7 @@ import kmu.maplayers.base.sidebar.MapLayerStoreNamespace;
  */
 public final class KmuMod {
 
-    /** The mod id: its LunaLib settings key, and the owner its scoped library loggers name. */
+    /** The mod ID: its LunaLib settings key, and the owner its scoped library loggers name. */
     public static final String MOD_ID = "kmu";
 
     /** The mod's display name. */

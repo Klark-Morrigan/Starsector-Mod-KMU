@@ -111,8 +111,8 @@ final class IncrementalPoliticsRefresh {
 
     // The drawn cells the marked systems name, in the order the cells were cut.
     //
-    // The board still marks a system by bare id, and an id names every system carrying it, so a
-    // mark fans out to each drawn cell whose key states that id rather than resolving to one. The
+    // The board still marks a system by bare ID, and an ID names every system carrying it, so a
+    // mark fans out to each drawn cell whose key states that ID rather than resolving to one. The
     // fan-out runs over the cut's own cells rather than over a reading of the sector, which is what
     // keeps a system the sector has since dropped in the batch: its cell stands until the next cut,
     // and a mark on it is exactly the change the redraw has to show.

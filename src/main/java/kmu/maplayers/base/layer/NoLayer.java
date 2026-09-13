@@ -24,7 +24,7 @@ public final class NoLayer implements MapLayer {
     /** The one shared instance; the registration and any state gate reference this pick. */
     public static final NoLayer INSTANCE = new NoLayer();
 
-    // LunaLib stores this tab's key under the field id; the row it names is where the key is decided.
+    // LunaLib stores this tab's key under the field ID; the row it names is where the key is decided.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_noLayer";
 
     private NoLayer() {

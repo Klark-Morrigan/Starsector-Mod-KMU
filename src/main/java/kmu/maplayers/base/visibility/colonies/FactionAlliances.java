@@ -17,7 +17,7 @@ import java.util.Map;
  * ever asked of it is whether two factions are on the same side - which is two lookups here, and a
  * scan of every membership the other way round.
  *
- * @param allianceIdByFactionId the alliance each allied faction belongs to, by faction id; a faction
+ * @param allianceIdByFactionId the alliance each allied faction belongs to, by faction ID; a faction
  *                              the map does not name is in none
  */
 public record FactionAlliances(
@@ -48,14 +48,14 @@ public record FactionAlliances(
      * relationship, and whether a colony's own owner is settling its place is the caller's own test
      * rather than this one's.
      *
-     * @param factionId      one faction's id; a colony no faction holds names none, which allies it
+     * @param factionId      one faction's ID; a colony no faction holds names none, which allies it
      *                       with nobody
-     * @param otherFactionId the other faction's id, read the same way
+     * @param otherFactionId the other faction's ID, read the same way
      * @return true when both name the same alliance
      */
     public boolean areFactionsAllied(String factionId, String otherFactionId) {
 
-        // Asked before the map is, an unowned colony reaching this with no id at all - which the
+        // Asked before the map is, an unowned colony reaching this with no ID at all - which the
         // immutable map refuses outright rather than answering.
         if (factionId == null || otherFactionId == null) {
             return false;

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the two ways an entity is admitted as a landmark - the ids a composition root registers and
+ * Pins the two ways an entity is admitted as a landmark - the IDs a composition root registers and
  * the tag another mod hangs on content of its own - and the direction the registry errs in when
  * neither says anything.
  *
@@ -56,7 +56,7 @@ final class OpenlyKnownColonyRegistryTest {
         @Test
         void readsATaggedEntityTheRegisteredSetDoesNotNameAsOpenlyKnown() {
             // How another mod's quest hub opts in without this mod carrying a list of other mods'
-            // content, which is the whole reason the ids are not a constant.
+            // content, which is the whole reason the IDs are not a constant.
             registerTheAcademy();
 
             var entityMock = buildEntity("station_some_other_mods_hub");

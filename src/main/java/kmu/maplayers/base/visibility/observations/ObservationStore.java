@@ -22,7 +22,7 @@ import java.util.Set;
  * bakes its own name into every save holding one: moving or renaming it later fails the load rather
  * than the read, and there is nowhere in a loaded game to repair that from. So each entry is a
  * string built by the family's own {@link ObservationCodec}, which is also where the fixed-fields-
- * first convention that keeps a free-form id readable is stated.
+ * first convention that keeps a free-form ID readable is stated.
  *
  * <p><strong>The key is save state.</strong> Whoever opens a store names it once and never again:
  * renaming a key silently drops every observation in every existing save, and nothing in a loaded
@@ -68,7 +68,7 @@ public final class ObservationStore<T> {
      *
      * @param sector the sector whose memory holds the register; null - or one holding no register
      *               yet - reads as nothing having been observed
-     * @return what was last observed of each subject, by subject id; never null
+     * @return what was last observed of each subject, by subject ID; never null
      */
     public RecordedObservations<T> readObservations(SectorAPI sector) {
 
@@ -90,7 +90,7 @@ public final class ObservationStore<T> {
      *
      * @param sector                  the sector whose memory holds the register; one with no memory
      *                                to write into is a no-op
-     * @param observationsBySubjectId what was observed, by the subject's own id; nothing to
+     * @param observationsBySubjectId what was observed, by the subject's own ID; nothing to
      *                                record - or nothing in it that can be filed - is a no-op, and
      *                                leaves no empty register behind
      */
@@ -112,7 +112,7 @@ public final class ObservationStore<T> {
      * Drops every observation whose subject is no longer anywhere in the sector.
      *
      * <p>An observation outliving what it was about would go on answering for whatever next took
-     * the id, which is a thing nobody ever observed.
+     * the ID, which is a thing nobody ever observed.
      *
      * @param sector          the sector to reconcile the register against; null is a no-op
      * @param presentSubjects which of the family's subjects the sector still holds; asked only when
@@ -257,7 +257,7 @@ public final class ObservationStore<T> {
          * Every subject of this family the sector still holds.
          *
          * @param sector the sector being reconciled
-         * @return the ids of every one of them, wherever it stands; never null
+         * @return the IDs of every one of them, wherever it stands; never null
          */
         Set<String> readPresentSubjectIds(SectorAPI sector);
     }

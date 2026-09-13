@@ -11,7 +11,7 @@ import java.util.Map;
  * four plain numbers a picker row sorts and displays on, and a collection among them would be
  * sorted by nothing and summed by nothing.
  *
- * @param statsByBlocId each present bloc's whole-sector totals, keyed by bloc id in walk order
+ * @param statsByBlocId each present bloc's whole-sector totals, keyed by bloc ID in walk order
  * @param presenceIndex the systems each of those blocs lives in, over the same key set
  */
 public record DominanceStatsRead(

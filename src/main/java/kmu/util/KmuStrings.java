@@ -4,7 +4,7 @@ import kmlib.starsector.strings.StarsectorStrings;
 
 /**
  * KMU's localisation entry point. Holds the KMU settings category
- * and the string ids registered in {@code data/strings/strings.json},
+ * and the string IDs registered in {@code data/strings/strings.json},
  * and exposes thin {@link #get(String)} / {@link #format(String, Object...)}
  * accessors that bind the KMU category so call sites do not have to
  * repeat it.

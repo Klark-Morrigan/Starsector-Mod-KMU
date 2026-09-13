@@ -22,8 +22,8 @@ import com.fs.starfarer.campaign.CampaignTerrain;
  * rings.
  *
  * <p>One class serves every Starscape surface. Reporting the whitelisted type is the entirety of
- * what this entity does, and it is already told at construction which type id to resolve its spec
- * and plugin from, so the surfaces differ by the id they are built with rather than by class. A
+ * what this entity does, and it is already told at construction which type ID to resolve its spec
+ * and plugin from, so the surfaces differ by the ID they are built with rather than by class. A
  * second shell restating the trick would be the same rationale written twice, of which one goes
  * stale at the first thing learned about the widget's filter.
  *

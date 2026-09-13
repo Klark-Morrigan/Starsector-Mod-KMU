@@ -140,10 +140,10 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
-     * A faction stub resolvable by id with no palette, for the footprint read that keys on the
-     * market's faction id and never resolves colours.
+     * A faction stub resolvable by ID with no palette, for the footprint read that keys on the
+     * market's faction ID and never resolves colours.
      *
-     * @param id the faction id
+     * @param id the faction ID
      * @return the faction mock
      */
     public static FactionAPI buildFaction(String id) {
@@ -154,7 +154,7 @@ public final class SectorPoliticsFixtures {
      * A faction stub carrying its authored UI palette, for the resolves that colour a cell: the
      * bright colour as the fill/border shade and {@link #buildDarkTheme} of it as the seam shade.
      *
-     * @param id     the faction id
+     * @param id     the faction ID
      * @param bright the faction's bright fill colour
      * @return the faction mock with its palette stubbed
      */
@@ -328,7 +328,7 @@ public final class SectorPoliticsFixtures {
     // a drawn line rather than in the fixture that staged it. A case that reads a name stubs its own
     // afterwards, which wins over this.
     //
-    // Named after the id identifying the market, so no two staged colonies of one system share a
+    // Named after the ID identifying the market, so no two staged colonies of one system share a
     // name: a station is told from the colony it stands over by name, and two of them alike would
     // pose a system the fixture never meant to build.
     private static void nameStagedColony(MarketAPI market) {
@@ -565,7 +565,7 @@ public final class SectorPoliticsFixtures {
      * Wires a sector with one system whose economy holds the given markets, with no faction
      * palette stubbed - the shape the footprint read uses, which never resolves colours.
      *
-     * @param systemId the system id
+     * @param systemId the system ID
      * @param markets  the markets its economy holds
      * @return the sector mock
      */
@@ -574,11 +574,11 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
-     * Wires a sector with one system, whose owning factions are also resolvable by id so a resolve
+     * Wires a sector with one system, whose owning factions are also resolvable by ID so a resolve
      * can look up each winner's palette.
      *
-     * @param systemId the system id
-     * @param factions the factions the resolve must resolve by id for their palette
+     * @param systemId the system ID
+     * @param factions the factions the resolve must resolve by ID for their palette
      * @param markets  the markets its economy holds
      * @return the sector mock
      */
@@ -588,11 +588,11 @@ public final class SectorPoliticsFixtures {
 
     /**
      * Wires a sector spanning several systems, each with its own markets and the owning factions
-     * resolvable by id, so a bloc's footprint accumulates across the sector and a resolve can
+     * resolvable by ID, so a bloc's footprint accumulates across the sector and a resolve can
      * see a bloc present in one system and absent from another within one pass.
      *
-     * @param factions the factions the resolve must resolve by id for their palette
-     * @param systems  each system's id paired with its markets
+     * @param factions the factions the resolve must resolve by ID for their palette
+     * @param systems  each system's ID paired with its markets
      * @return the sector mock
      */
     public static SectorAPI buildSectorWithSystems(List<FactionAPI> factions, SystemMarkets... systems) {
@@ -612,10 +612,10 @@ public final class SectorPoliticsFixtures {
 
     /**
      * Wires a sector spanning systems a case has already posed, each with its own markets and
-     * the owning factions resolvable by id - the shape for a case whose systems carry more than
-     * an id, such as two sharing one id and told apart by the entities they are built around.
+     * the owning factions resolvable by ID - the shape for a case whose systems carry more than
+     * an ID, such as two sharing one ID and told apart by the entities they are built around.
      *
-     * @param factions the factions the resolve must resolve by id for their palette
+     * @param factions the factions the resolve must resolve by ID for their palette
      * @param systems  each posed system paired with its markets
      * @return the sector mock
      */
@@ -656,8 +656,8 @@ public final class SectorPoliticsFixtures {
      * lets a case state a change to that system without a second handle on the mock.
      *
      * @param sector   the sector to read
-     * @param systemId the id to find
-     * @return the system listed under that id
+     * @param systemId the ID to find
+     * @return the system listed under that ID
      * @throws IllegalArgumentException when the sector lists no such system
      */
     public static StarSystemAPI findSystemIn(SectorAPI sector, String systemId) {
@@ -676,7 +676,7 @@ public final class SectorPoliticsFixtures {
      * skips it before the drawn-set rule is ever asked about it - so a suite counting what that
      * walk read would be blind to the very systems it staged.
      *
-     * <p>Distinct per system so no two share a site, and taken off the id's hash rather than from
+     * <p>Distinct per system so no two share a site, and taken off the ID's hash rather than from
      * an argument: nothing that wants this moves a system, so coordinates on the call would look
      * like they meant something.
      *
@@ -711,7 +711,7 @@ public final class SectorPoliticsFixtures {
      * system is there deliberately: it makes the sector one a walk <em>could</em> enter, so a read
      * that yields nothing is shown to have stopped at its guard rather than at an empty sector.
      *
-     * @param systemId the id of its one star system
+     * @param systemId the ID of its one star system
      * @return the sector mock, with no economy stubbed
      */
     public static SectorAPI buildEconomylessSectorWithSystem(String systemId) {
@@ -728,10 +728,10 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
-     * One system's id paired with the markets its economy holds, so a multi-system sector can be
+     * One system's ID paired with the markets its economy holds, so a multi-system sector can be
      * wired for the sector-wide accumulation a single-system sector cannot express.
      *
-     * @param id      the system id
+     * @param id      the system ID
      * @param markets the markets the system's economy holds
      */
     public record SystemMarkets(
@@ -740,9 +740,9 @@ public final class SectorPoliticsFixtures {
     }
 
     /**
-     * Pairs a system id with its markets for {@link #buildSectorWithSystems}.
+     * Pairs a system ID with its markets for {@link #buildSectorWithSystems}.
      *
-     * @param id      the system id
+     * @param id      the system ID
      * @param markets the markets the system's economy holds
      * @return the system-markets pairing
      */
@@ -781,7 +781,7 @@ public final class SectorPoliticsFixtures {
      * write posed over one records nothing and a working recorder cannot be told from a broken
      * one. The colony is another faction's, which is what lets it vouch for the hulk at all.
      *
-     * @param systemId    the system's id, which a recorded sighting names
+     * @param systemId    the system's ID, which a recorded sighting names
      * @param colonySize  the open colony's size
      * @param derelictSize the derelict's size
      * @return the sector, holding that one system

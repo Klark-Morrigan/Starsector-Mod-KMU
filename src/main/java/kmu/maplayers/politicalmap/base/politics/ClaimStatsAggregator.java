@@ -72,7 +72,7 @@ public final class ClaimStatsAggregator {
      *                    knobs; a pass over no sector yields an empty read
      * @param claimReader the claim source, read once per system
      * @return each claiming or living bloc's stats and the systems each claiming bloc claims, keyed
-     *         by bloc id in star-system walk order; empty when the sector holds neither
+     *         by bloc ID in star-system walk order; empty when the sector holds neither
      */
     public static ClaimStatsRead aggregateClaimStats(
             HolderPass pass,

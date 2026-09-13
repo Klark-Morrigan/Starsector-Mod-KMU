@@ -23,11 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MovingSystemsTest {
 
-    // The id the staged system reports. Nothing here turns on which id it is; the cases name it
+    // The ID the staged system reports. Nothing here turns on which ID it is; the cases name it
     // only to read the moving set back.
     private static final String DRIFTER_ID = "a";
 
-    // The key the staged system carries: the id alone, a staged system stating no centre and no
+    // The key the staged system carries: the ID alone, a staged system stating no centre and no
     // anchor. Written out rather than read off the system, an expectation taken from the code
     // under test being no expectation at all.
     private static final SystemKey DRIFTER_KEY = new SystemKey("a", "", "");

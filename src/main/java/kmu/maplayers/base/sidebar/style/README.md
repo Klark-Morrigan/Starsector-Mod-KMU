@@ -103,7 +103,7 @@ The look also says how the panel *sounds*,
 and `SidebarStyles.buildSidebarSoundScheme` composes that:
 the engine's own roles -
 a vanilla button's press and its mouseover,
-and the id vanilla scrolls its own readouts with -
+and the ID vanilla scrolls its own readouts with -
 at the levels the player set on the `Map - Sound` settings tab.
 The roles are vanilla's because the panel is drawn among vanilla chrome;
 the levels are not,

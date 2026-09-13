@@ -652,8 +652,8 @@ with the relevant slice:
 Observed usage on the threat classes:
 
 - `HostileActivityEventIntel.getIntelTags(...)` adds `"Colony threats"` (`:863-:867`).
-- `HegemonyInspectionIntel.getIntelTags(...)` adds `"Military"` + `"Colony threats"` + the inspecting faction id (`:392-:396`).
-- `PunitiveExpeditionIntel.getIntelTags(...)` adds `"Military"` + `"Colony threats"` + faction id (`:351-:355`).
+- `HegemonyInspectionIntel.getIntelTags(...)` adds `"Military"` + `"Colony threats"` + the inspecting faction ID (`:392-:396`).
+- `PunitiveExpeditionIntel.getIntelTags(...)` adds `"Military"` + `"Colony threats"` + faction ID (`:351-:355`).
 - `PirateActivityIntel.getIntelTags(...)` adds `"pirates"` and `"Colony threats"` when player markets exist in-system (`:160-:166`).
 - `LuddicPathCellsIntel.getIntelTags(...)` adds `"luddic_path"` and `"Colony threats"` when player-owned (`:463-:468`).
 - `PirateBaseIntel.getIntelTags(...)` adds `"Bounties"`,
@@ -662,7 +662,7 @@ Observed usage on the threat classes:
   plus the host market faction (`:809-:823`).
 - `LuddicPathBaseIntel.getIntelTags(...)` -
   same shape as `PirateBaseIntel` (`:532-:545`).
-- `FactionHostilityIntel.getIntelTags(...)` uses `"Hostilities"` plus both faction ids (`:163-:167`) -
+- `FactionHostilityIntel.getIntelTags(...)` uses `"Hostilities"` plus both faction IDs (`:163-:167`) -
   notably NOT `"Colony threats"`.
 
 **Recommendation for the consolidated intel item:** add `"Colony threats"`

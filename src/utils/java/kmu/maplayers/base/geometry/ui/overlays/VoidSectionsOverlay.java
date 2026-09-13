@@ -56,7 +56,7 @@ public final class VoidSectionsOverlay {
     /**
      * Finds the sections again and names them.
      *
-     * @param fixture the sector to name in, which carries the system ids a section is named
+     * @param fixture the sector to name in, which carries the system IDs a section is named
      *                from as well as the sites it is measured against
      * @param laid    the laying to name the void of, shared with the drawing of the same frame
      */

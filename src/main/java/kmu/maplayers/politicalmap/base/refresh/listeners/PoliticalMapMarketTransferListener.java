@@ -120,7 +120,7 @@ public class PoliticalMapMarketTransferListener implements InvasionListener {
         boolean success) {
     }
 
-    // Null-safe faction id for the trace line; a transfer to or from an unowned
+    // Null-safe faction ID for the trace line; a transfer to or from an unowned
     // state is logged as "null" rather than crashing the callback.
     private static String resolveFactionId(FactionAPI faction) {
         return faction == null ? "null" : faction.getId();

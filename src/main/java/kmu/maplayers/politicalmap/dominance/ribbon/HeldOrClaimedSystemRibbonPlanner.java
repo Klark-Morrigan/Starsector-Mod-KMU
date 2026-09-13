@@ -14,7 +14,7 @@ import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
  * <p>The holder resolve those views run gives a claim the system only where the held resolve
  * left it unowned, so "does any bloc hold a weighed market here" is the very question that
  * decided which mechanic painted the cell. Asking it of the held read itself - which weighs the
- * system's colonies anyway - is what lets the band follow the fill without a set of system ids
+ * system's colonies anyway - is what lets the band follow the fill without a set of system IDs
  * carried alongside to remember the split.
  *
  * <p>Composed rather than branched inside either planner, so each one stays a plain statement of

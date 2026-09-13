@@ -32,7 +32,7 @@ final class SelectionSlotTest {
 
         @Test
         void refusesASlotWhoseListNameResolvesToNothing() {
-            // A blank id composes every scope on a screen to one key, so the picker that lost its id
+            // A blank ID composes every scope on a screen to one key, so the picker that lost its ID
             // would quietly share a stored pick with every other picker on the panel.
             assertThatThrownBy(() -> new SelectionSlot(SCREEN_SLOT, "   "))
                 .isInstanceOf(IllegalArgumentException.class);

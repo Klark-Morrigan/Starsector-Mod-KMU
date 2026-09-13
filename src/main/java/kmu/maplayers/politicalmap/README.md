@@ -215,7 +215,7 @@ is `BlocMetricSortMode`;
 how its declaration becomes a ranking -
 the chosen metric first,
 the rest of the chain behind it,
-then the name and the bloc id -
+then the name and the bloc ID -
 is `BlocSortModeComposer`.
 So the numbers stay one layer's while the shape of the ordering,
 and the tail that keeps a fully-level pair from reshuffling,
@@ -241,7 +241,7 @@ the player's own bloc -
 the point the scale is measured from,
 so it holds the top of it and draws no number -
 and unreadable,
-a bloc whose every member is an id the sector cannot look up,
+a bloc whose every member is an ID the sector cannot look up,
 which belongs past everything that was read rather than ranked as though it were neutral.
 Sealed over the three,
 because the two that draw nothing sit at opposite ends
@@ -677,7 +677,7 @@ the colonies the economy does not list
 (`KnownMarketFootprints.readUnweighedColoniesByFaction`),
 carried as an `UnweighedColony` -
 a nameplate,
-the colony's own id,
+the colony's own ID,
 and the two facts its line calls out that no weight would carry:
 what kind of place it is and whether it conceals itself -
 rather than as a zeroed `MarketWeightBreakdown`.
@@ -721,7 +721,7 @@ which would otherwise be listed exactly as a colony the player is standing over.
 No visibility rule reads the time:
 the moment being shown turned on how recent an observation was,
 a colony would blink out of a box the player was reading it in.
-Which is also why the remark is matched to its line by the colony's own id
+Which is also why the remark is matched to its line by the colony's own ID
 (`MarketWeightBreakdown.marketId`, `UnweighedColony.marketId`) rather than by name -
 vanilla names a station colony and its defending station alike.
 
@@ -818,8 +818,8 @@ and marks hidden to keep off the books,
 so it wears the identical flag a pirate base does for an entirely different reason.
 Nothing on either market parts them,
 so the exemption is an identity:
-`OpenlyKnownColonyRegistry` holds the entity ids `MapLayers` seeds it with beside a tag another mod hangs on content of its own,
-and `OpenlyKnownColonyLookup` folds the answer by colony id off the box's own walk.
+`OpenlyKnownColonyRegistry` holds the entity IDs `MapLayers` seeds it with beside a tag another mod hangs on content of its own,
+and `OpenlyKnownColonyLookup` folds the answer by colony ID off the box's own walk.
 The Academy then falls through to `unlisted`,
 which is the separation the word was wanted for.
 The exemption excuses that one word and nothing else:

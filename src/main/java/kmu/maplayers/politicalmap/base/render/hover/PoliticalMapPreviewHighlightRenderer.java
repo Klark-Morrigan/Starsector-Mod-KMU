@@ -90,8 +90,8 @@ public final class PoliticalMapPreviewHighlightRenderer {
 
         var view = territories.getView();
 
-        // The view's id under this mod's own store namespace, which is how the picker reported the
-        // hover: the id is opaque, so a view named the same by another mod's picker is a different
+        // The view's ID under this mod's own store namespace, which is how the picker reported the
+        // hover: the ID is opaque, so a view named the same by another mod's picker is a different
         // list and must not preview here.
         var previewedBlocId = FilterHoverSlot
             .resolveHoverSlotIn(machinery)

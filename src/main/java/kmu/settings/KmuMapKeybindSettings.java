@@ -11,12 +11,12 @@ package kmu.settings;
  * sifting a large one.
  *
  * <p>The two readings here are different in kind, which is the other reason they sit together.
- * A layer's tab key is looked up by an id the caller supplies, because a layer owns the row its own
+ * A layer's tab key is looked up by an ID the caller supplies, because a layer owns the row its own
  * key is stored under and is the only thing that can name it; the callers are KMU's own two layers,
  * each answering the keycode its tab is in force with. The map-layer framework itself never reaches
  * here - it asks a layer for the key rather than for a field - so a layer shipped by another mod
  * binds its tab out of that mod's own settings and this file has nothing to say about it. The filter
- * row's box is KMU's own chrome with no such caller, so its id is stated here like any other knob's.
+ * row's box is KMU's own chrome with no such caller, so its ID is stated here like any other knob's.
  *
  * <p><b>No key is defaulted here</b>, unlike every other settings section: what a row is worth on a
  * fresh install is declared once, in the default column of data/config/LunaSettings.csv. A second
@@ -62,11 +62,11 @@ public final class KmuMapKeybindSettings {
      * Resolves a layer tab's shortcut keycode from its LunaLib Keycode field, so the player can
      * rebind which key jumps to that layer.
      *
-     * <p>The field id is the caller's rather than a constant here: each layer owns the id its own
+     * <p>The field ID is the caller's rather than a constant here: each layer owns the ID its own
      * shortcut is stored under, so one reader serves every KMU layer with a row on the tab and a
      * layer added later needs no case of its own here.
      *
-     * @param settingKey the LunaLib field id holding the keycode
+     * @param settingKey the LunaLib field ID holding the keycode
      * @return the LWJGL keycode the layer's tab jumps to, or 0 when the shortcut is unbound
      */
     public static int getMapLayerShortcut(String settingKey) {

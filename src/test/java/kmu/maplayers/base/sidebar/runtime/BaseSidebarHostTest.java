@@ -68,7 +68,7 @@ final class BaseSidebarHostTest {
     private static final int FIRST_LAYER_TAB_INDEX = 0;
     private static final int SECOND_LAYER_TAB_INDEX = 1;
 
-    // The ids the roster arbitrates by, and the ones a stored bar arrangement names its layers with.
+    // The IDs the roster arbitrates by, and the ones a stored bar arrangement names its layers with.
     private static final String FIRST_LAYER_ID = "first";
     private static final String SECOND_LAYER_ID = "second";
 
@@ -100,7 +100,7 @@ final class BaseSidebarHostTest {
         when(secondLayerMock.resolveShortcutKeycode())
             .thenReturn(SECOND_KEYCODE);
 
-        // Ids as well, the roster arbitrating by them: a layer registering under an id already in the
+        // IDs as well, the roster arbitrating by them: a layer registering under an ID already in the
         // row takes that place rather than a second tab, so registering reads what each one answers.
         when(firstLayerMock.getId())
             .thenReturn(FIRST_LAYER_ID);

@@ -250,7 +250,7 @@ public final class MapHoverPublisher {
 
     /**
      * One pass's completed answer about where the cursor is, kept whole so the moment and the line
-     * that explains it come from the same reading. Carried together rather than as a cell id alone
+     * that explains it come from the same reading. Carried together rather than as a cell ID alone
      * because the trace is only worth having if it describes the transform the announced cell was
      * resolved through, and a frame can hold more than one.
      *

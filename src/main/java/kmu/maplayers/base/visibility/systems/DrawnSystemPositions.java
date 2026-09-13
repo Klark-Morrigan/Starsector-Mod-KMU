@@ -18,9 +18,9 @@ import java.util.Map;
  * systems off that same pass, so a second traversal opened here would be charged to the rebuild
  * whichever of the two ran first.
  *
- * <p>Read off the systems the pass holds by {@link SystemKey} rather than by id, because a system
- * id is not unique: a live modded sector holds several systems sharing one, and a point cloud
- * gathered under ids is short a site for each of them - a system with no cell on a map that draws
+ * <p>Read off the systems the pass holds by {@link SystemKey} rather than by ID, because a system
+ * ID is not unique: a live modded sector holds several systems sharing one, and a point cloud
+ * gathered under IDs is short a site for each of them - a system with no cell on a map that draws
  * every other one.
  */
 public final class DrawnSystemPositions {
@@ -36,7 +36,7 @@ public final class DrawnSystemPositions {
      *             membership; a pass over no sector yields an empty map
      * @return each drawn system's live hyperspace position keyed by its key, in the sector's
      *         star-system order; a system with no location is skipped, since it has no site to
-     *         place a cell at. Two systems sharing an id hold a position each
+     *         place a cell at. Two systems sharing an ID hold a position each
      */
     public static Map<SystemKey, double[]> collectLivePositions(MapVisibilityPass pass) {
 

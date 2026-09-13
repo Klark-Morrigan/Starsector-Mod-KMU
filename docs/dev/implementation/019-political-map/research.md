@@ -218,7 +218,7 @@ per faction:
    (so a size-4 planet beats a size-4 station).
    Compare the lists element-wise;
    the first index where they differ decides.
-3. **Final tie-breaker.** Faction id ascending.
+3. **Final tie-breaker.** Faction ID ascending.
    Deterministic,
    never matters in practice.
 
@@ -227,7 +227,7 @@ The result of this step is `Map<SystemId, SystemPolitics>` where `SystemPolitics
 - `dominantFactionId: String` (the winner above)
 - `presentFactionIds: List<FactionPresence>` sorted descending by metric,
   one entry per faction with any presence (live or decivilised)
-- where `FactionPresence` records the faction id and its top tier
+- where `FactionPresence` records the faction ID and its top tier
   (see [Presence tiers](#presence-tiers-under-candidate-a))
 - Faction colour:
   `FactionAPI.getBaseUIColor()` (full saturation),
@@ -464,7 +464,7 @@ the render layer can swap to Candidate B/C without touching the data pipeline.
 - Per-save wiring
   (in `KMU_ModPlugin.onGameLoad(boolean newGame)`):
   - Ensure exactly one anchor entity exists per inhabited system in hyperspace
-    (idempotent — match by id `kmu_pm_<systemId>`).
+    (idempotent — match by ID `kmu_pm_<systemId>`).
   - Re-create or repair the intel item if missing.
   - Refresh the anchor set and dominant-faction caches when the political picture changes.
     No vanilla listener fires on `MarketAPI.setFactionId`,
@@ -699,9 +699,9 @@ any mismatch means truncate the log from that event onward and rely on the next 
   The anchor lives in hyperspace;
   do not also draw inside individual star systems.
 - Save compat:
-  custom entities are serialised by id;
-  renaming the `custom_entities.json` type id will break loaded saves.
-  Pick the id once.
+  custom entities are serialised by ID;
+  renaming the `custom_entities.json` type ID will break loaded saves.
+  Pick the ID once.
 - Decivilised / Pather / Remnant / pirate factions all return a base UI colour.
   Decide whether to draw them
   (probably yes for Pather/pirate; skip no-market factions).

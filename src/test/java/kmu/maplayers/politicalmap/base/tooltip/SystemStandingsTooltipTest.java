@@ -82,7 +82,7 @@ final class SystemStandingsTooltipTest {
         CellTooltipMark.resolveMarkAsAuthored(ALLY_CREST);
 
     // The blocs the three groups are, which is all a case about routing needs of them: an alliance
-    // set is read against bloc ids alone.
+    // set is read against bloc IDs alone.
     private static final String LEADER_BLOC = "hegemony";
     private static final String ALLY_BLOC = "tritachyon";
     private static final String RIVAL_BLOC = "persean_league";

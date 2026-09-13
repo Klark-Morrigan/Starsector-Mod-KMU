@@ -21,7 +21,7 @@ import java.util.Map;
  * colour - and the player points each map element (fill, outer border, inner seam)
  * at one of them through the "Faction ... colour" settings. Naming them by palette
  * slot rather than by element keeps the record neutral about which element uses
- * which, since that pairing is the player's choice. Retaining the id beside the
+ * which, since that pairing is the player's choice. Retaining the ID beside the
  * colours keeps the holder available for per-holder styling (dimming independent-held
  * space, for one) and later per-holder behaviour, decided off the same dominance the
  * fill was.
@@ -32,14 +32,14 @@ public record DominantHolder(
     Color secondaryColour) {
 
     /**
-     * Maps each owned system to its dominant-faction id - the per-system holder the
+     * Maps each owned system to its dominant-faction ID - the per-system holder the
      * political-map geometry clusters by. Adapts the faction-holder map to the opaque
      * {@code Map<SystemKey, String>} the agnostic geometry ({@code CellShaper},
      * {@code SystemClusters}, {@code SystemClusterBorders}, {@code ClusterBorderTrace}) fuses on, so
      * the faction layer supplies "who owns this" while the geometry stays ignorant of factions.
      *
      * @param ownerBySystemKey the dominant holder per owned system
-     * @return each system's faction id, in the map's iteration order
+     * @return each system's faction ID, in the map's iteration order
      */
     public static Map<SystemKey, String> mapFactionIdBySystemKey(
             Map<SystemKey, DominantHolder> ownerBySystemKey) {
@@ -63,7 +63,7 @@ public record DominantHolder(
      *
      * @param systemKeyByCellKey the system each cell draws as, from the geometry cache
      * @param ownerBySystemKey   the dominant holder per owned system
-     * @return the cells grouped by the faction id of the system each draws as
+     * @return the cells grouped by the faction ID of the system each draws as
      */
     public static CellGrouping mapCellGrouping(
             Map<SystemKey, SystemKey> systemKeyByCellKey,

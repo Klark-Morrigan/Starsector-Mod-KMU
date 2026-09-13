@@ -13,7 +13,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
  * another way by the next is a case posed against a graph its neighbours are not.
  *
  * <p>The neighbour is named as a case names its systems, and keyed through {@link CellKeyFixture}
- * on the way in. A case about two systems sharing an id keys the neighbour itself, that being what
+ * on the way in. A case about two systems sharing an ID keys the neighbour itself, that being what
  * the case is about.
  *
  * <p>Final class with a private constructor: fixture of static wiring, no instances.

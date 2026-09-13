@@ -78,7 +78,7 @@ public final class StarsectorConditionRepository implements KmuConditionReposito
     //
     // Broad on purpose: every field below is another mod's data, and any of them can raise. What
     // the caller loses is the same whichever does - one condition - so the listing goes on without
-    // it rather than the picker failing to open over somebody else's spec. The id is read on its
+    // it rather than the picker failing to open over somebody else's spec. The ID is read on its
     // own for the log line, because the throw is frequently in the fields after it and a dropped
     // condition nobody can name is a report the player cannot act on.
     private KmuConditionSpec buildSpecOrNull(MarketConditionSpecAPI spec) {

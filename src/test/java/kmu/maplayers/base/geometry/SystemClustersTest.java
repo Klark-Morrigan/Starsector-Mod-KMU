@@ -164,7 +164,7 @@ final class SystemClustersTest {
         void twoAdjacentSystemsSharingAnIdUnderDifferentOwnersDoNotFuse() {
             // The owners are addressed the same way, so a colliding pair can be held apart: the
             // shared seam is a boundary and each cell is its own cluster, where an owner map keyed
-            // by id could only ever have given them one owner between them.
+            // by ID could only ever have given them one owner between them.
             var first = new SystemKey("deep space", "", "8b3");
             var second = new SystemKey("deep space", "", "38d53");
             var edges = new LinkedHashMap<SystemKey, List<CellEdge>>();

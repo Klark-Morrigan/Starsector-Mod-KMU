@@ -13,9 +13,9 @@ import java.util.Map;
  * the partition, everything cut from it, and the holding over it are addressed by - all one
  * address, so one fixture mints it.
  *
- * <p>Every key states the id arm alone, which is what lets a case go on naming its systems "A" and
+ * <p>Every key states the ID arm alone, which is what lets a case go on naming its systems "A" and
  * "B" while the code under it addresses them the way a live cut does. A case about two systems
- * sharing an id states the other arms itself, that being the very thing it is about.
+ * sharing an ID states the other arms itself, that being the very thing it is about.
  *
  * <p>Final class with a private constructor: fixture of static wiring, no instances.
  */
@@ -26,7 +26,7 @@ public final class CellKeyFixture {
     }
 
     /**
-     * The key one named system is addressed by, stating its id and neither entity arm.
+     * The key one named system is addressed by, stating its ID and neither entity arm.
      */
     public static SystemKey buildCellKey(String systemId) {
         return new SystemKey(systemId, null, null);
@@ -89,7 +89,7 @@ public final class CellKeyFixture {
 
     /**
      * The identity grouping with its owners stated by key, for the one case a name cannot pose:
-     * two systems sharing a vanilla id, held by two different owners.
+     * two systems sharing a vanilla ID, held by two different owners.
      */
     public static CellGrouping buildIdentityGroupingUnder(
             Collection<SystemKey> cellKeys,

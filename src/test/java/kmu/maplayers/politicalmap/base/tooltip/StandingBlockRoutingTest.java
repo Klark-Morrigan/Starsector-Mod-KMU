@@ -49,7 +49,7 @@ class StandingBlockRoutingTest {
 
     // The six factions of the worked case, three a side and lettered as the case is posed: A and E
     // are at odds and B and F are, so D is the rival alliance's one friendly member and E and F have
-    // one quarrel each among the holder's three. Written as bare ids because the routing resolves no
+    // one quarrel each among the holder's three. Written as bare IDs because the routing resolves no
     // names - what the case is about is which quarrels fall where.
     private static final String HOLDER_MEMBER_A = "faction-a";
     private static final String HOLDER_MEMBER_B = "faction-b";

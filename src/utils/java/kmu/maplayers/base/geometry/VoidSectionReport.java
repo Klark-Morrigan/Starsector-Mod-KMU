@@ -43,7 +43,7 @@ public final class VoidSectionReport {
     /**
      * Reports every section of void the sector comes out as.
      *
-     * @param fixture the sector, for the system ids sections are named in and the owners they
+     * @param fixture the sector, for the system IDs sections are named in and the owners they
      *                are claimed by
      * @param laid    the coast with its walls down, which is what shuts the void into sections
      */
@@ -132,7 +132,7 @@ public final class VoidSectionReport {
             overlapping);
     }
 
-    // Whether the naming scheme actually names. Distinct ids short of the section count is the
+    // Whether the naming scheme actually names. Distinct IDs short of the section count is the
     // one failure it can have, and it is a failure of the SCHEME rather than of a section - so
     // the offending names are printed, since a count cannot say which rule fell short.
     private static void reportNaming(
@@ -203,7 +203,7 @@ public final class VoidSectionReport {
             loneCell);
     }
 
-    // Whether a key is made of what a generated system id is made of. The scheme is meant to
+    // Whether a key is made of what a generated system ID is made of. The scheme is meant to
     // guarantee this; asking anyway is what turns the guarantee into something the report
     // would notice breaking.
     private static boolean isKeyShaped(String id) {

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Every case is about two systems failing to cancel. A fingerprint is a sum, so what breaks it
  * is two systems contributing the same value - one entering the drawn set as the other leaves then
  * moves nothing, and the map goes on drawing what it last built. The pairs below are the ones that
- * can really arise: two systems sharing an id, the same system drawn live and drawn collapsed, and
+ * can really arise: two systems sharing an ID, the same system drawn live and drawn collapsed, and
  * a system the sector states nothing at all about.
  */
 class MapVisibilityFingerprintTest {
@@ -26,7 +26,7 @@ class MapVisibilityFingerprintTest {
     private static final boolean DRAWN_LIVE = false;
     private static final boolean DRAWN_AS_A_REVEALED_RUIN = true;
 
-    // The key of a system the sector states nothing about - no id, no centre, no anchor. Every arm
+    // The key of a system the sector states nothing about - no ID, no centre, no anchor. Every arm
     // hashes to zero and the avalanche's one fixed point is zero, so this is the key whose whole
     // fold is zero, and the one the seed exists to lift off it.
     private static final SystemKey KEY_STATING_NOTHING = new SystemKey("", "", "");
@@ -36,7 +36,7 @@ class MapVisibilityFingerprintTest {
 
         @Test
         void contributionsDifferBetweenSystems() {
-            // Distinct ids must land distinct contributions so two systems do not cancel when
+            // Distinct IDs must land distinct contributions so two systems do not cancel when
             // summed into the fingerprint.
             assertThat(computeContributionOf(buildKeyOfIdAlone("a")))
                 .isNotEqualTo(computeContributionOf(buildKeyOfIdAlone("b")));
@@ -44,8 +44,8 @@ class MapVisibilityFingerprintTest {
 
         @Test
         void contributionsDifferBetweenTwoSystemsSharingAnId() {
-            // The collision the key exists for: a sector holds two systems answering to one id,
-            // told apart only by the entities they are built around. Keyed by id both would
+            // The collision the key exists for: a sector holds two systems answering to one ID,
+            // told apart only by the entities they are built around. Keyed by ID both would
             // contribute the same value, so one entering the drawn set as the other left would
             // leave the fingerprint standing still.
             var firstOfThePair = new SystemKey("a", "centre-1", "anchor-1");
@@ -58,7 +58,7 @@ class MapVisibilityFingerprintTest {
         @Test
         void contributionsDifferForAPairWhoseArmsShiftEachOtherBack() {
             // The pair a linear fold cannot tell apart, in the shape a live sector holds it: one
-            // id, procgen centre names one character apart, and short engine-minted anchor ids.
+            // ID, procgen centre names one character apart, and short engine-minted anchor ids.
             // String hashes are linear in their characters, so the centres' hashes differ by 1 and
             // the anchors' by exactly 31 the other way - a fold weighting the centre arm by 31
             // would move one arm by what the other moves back, and hand both systems one value.
@@ -73,7 +73,7 @@ class MapVisibilityFingerprintTest {
 
         @Test
         void contributionsDifferWhenOneIdMovesBetweenTheArms() {
-            // The arms are folded by position, so an entity id standing as one system's centre
+            // The arms are folded by position, so an entity ID standing as one system's centre
             // and another's anchor tells the two apart. Folded without position they would read
             // as one system and the pair would share a contribution.
             var centredOnTheEntity = new SystemKey("a", "shared-entity", "");
@@ -136,7 +136,7 @@ class MapVisibilityFingerprintTest {
         return MapVisibilityFingerprint.computeSystemContribution(systemKey, DRAWN_LIVE);
     }
 
-    // The key of a system carrying neither a centre nor an anchor, so the id is the whole of what
+    // The key of a system carrying neither a centre nor an anchor, so the ID is the whole of what
     // tells it apart. Minted rather than read off a staged system: a case about the fold states
     // the arms it means, and one taking them from the read under test would expect nothing.
     private static SystemKey buildKeyOfIdAlone(String systemId) {

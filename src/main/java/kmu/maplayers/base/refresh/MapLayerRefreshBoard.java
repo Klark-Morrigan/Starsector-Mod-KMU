@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>One board per sector, however many layers raise signals on it. Every signal here is a fact
  * about one sector - a counter says that sector's alliances moved, and the stale set names that
- * sector's systems by id - so two sectors sharing a board would have one sector's colony change mark
- * the other's system stale, under an id nothing forbids both from holding. A layer still declares
+ * sector's systems by ID - so two sectors sharing a board would have one sector's colony change mark
+ * the other's system stale, under an ID nothing forbids both from holding. A layer still declares
  * its own signals and raises them on whichever sector's board it was handed, so a second layer's
  * arrival does not split the mechanism in two.
  *
@@ -106,14 +106,14 @@ public final class MapLayerRefreshBoard {
      * processes each staleness once. A full rebuild (a settings change or a geometry change) drains
      * and discards them, since it already re-derives every system.
      *
-     * @return the drained stale system ids; empty when none are pending
+     * @return the drained stale system IDs; empty when none are pending
      */
     public Set<String> drainStaleGroupingSystemIds() {
 
         if (groupingStaleSystemIds.isEmpty()) {
             return Set.of();
         }
-        // Snapshot then remove exactly what was snapshotted, so an id added by the
+        // Snapshot then remove exactly what was snapshotted, so an ID added by the
         // campaign thread between the copy and the removal survives to the next
         // drain rather than being silently dropped.
         var drained = new LinkedHashSet<>(groupingStaleSystemIds);

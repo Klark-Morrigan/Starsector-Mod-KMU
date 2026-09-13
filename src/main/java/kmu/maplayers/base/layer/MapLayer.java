@@ -17,7 +17,7 @@ import java.util.List;
  * <p>The framework exists so a new view is a matter of adding an implementation and
  * registering it: the bar draws its tab, the input listener hit-tests it, and its hotkey
  * switches to it, all with no change to the UI code.
- * A layer here is a descriptor - id, tab label, body controls, hotkey - not a renderer; drawing is
+ * A layer here is a descriptor - ID, tab label, body controls, hotkey - not a renderer; drawing is
  * a separate role a layer may fill, supplied through {@link #resolveRenderer} and driven by the
  * terrain surface that owns the map's render pass.
  *
@@ -28,7 +28,7 @@ import java.util.List;
 public interface MapLayer {
 
     /**
-     * @return the stable id stored in the save to remember the active layer; frozen once
+     * @return the stable ID stored in the save to remember the active layer; frozen once
      *         shipped, since renaming it silently resets existing saves to the default
      */
     String getId();
@@ -79,7 +79,7 @@ public interface MapLayer {
 
     /**
      * The keycode this layer's tab jumps to and prints as its hint, resolved rather than described by
-     * a rebinding field: a settings field id is only meaningful to the settings file holding it, and
+     * a rebinding field: a settings field ID is only meaningful to the settings file holding it, and
      * the framework reads one file while a layer may come from any mod.
      *
      * <p>Asked for per read, like the label above: the tab hints and the key claim are both rebuilt

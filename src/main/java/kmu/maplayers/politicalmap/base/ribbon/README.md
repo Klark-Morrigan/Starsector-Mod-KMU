@@ -104,7 +104,7 @@ What each mechanic still supplies is the **painter** and the **ranking**,
 which are what genuinely differ -
 whose fill the band sits inside,
 and the order that fill decided.
-A bloc the mechanic never ranked draws behind the ranked ones in id order,
+A bloc the mechanic never ranked draws behind the ranked ones in ID order,
 since any place among them would claim it took part in a contest it never entered.
 
 ## The ports it reads through
@@ -150,7 +150,7 @@ out of reach of the settings screen entirely.
 
 **What contested means** depends on whether the cell has a painter,
 which the rule takes as a value that can state absence
-rather than as an id no bloc happens to carry:
+rather than as an ID no bloc happens to carry:
 
 - **With a painter**,
   any other bloc holding something that does not stand with the painter.
@@ -165,7 +165,7 @@ rather than as an id no bloc happens to carry:
   so a lone side says nothing its fill contradicts.
 
 Under a sentinel painter the second case collapsed into the first,
-every bloc differing from an id nobody carries,
+every bloc differing from an ID nobody carries,
 and a lone haven banded at contested length as though it were fought over.
 
 **Who stands with whom** is a `BlocAffiliation` the rule is handed,

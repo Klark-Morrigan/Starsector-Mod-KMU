@@ -153,7 +153,7 @@ final class FactionTerritoryBuilderTest {
         @Test
         void buildFactionTerritoryReadsItsFirstMembersPaletteUnderThatMembersOwnKey() {
             // The members and the holding share one address, so a body whose member shares a
-            // vanilla id with another system paints from its own holder - where a lookup by id
+            // vanilla ID with another system paints from its own holder - where a lookup by ID
             // alone could only have named whichever of the pair the map happened to hold.
             var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
             var twin = new SystemKey(ISLAND_SYSTEM, null, "38d53");
@@ -474,7 +474,7 @@ final class FactionTerritoryBuilderTest {
         return column == GRID_CENTRE && row == GRID_CENTRE;
     }
 
-    // The same cut with one cell keyed as the sector states its system rather than by the id
+    // The same cut with one cell keyed as the sector states its system rather than by the ID
     // alone - the shape a system carrying an anchor cuts, and the one that reaches the holding
     // only by narrowing.
     private static CellGeometryCache listAnchoredCellFor(String systemId, SystemKey cellKey) {
@@ -545,7 +545,7 @@ final class FactionTerritoryBuilderTest {
     }
 
     // The same territories with its holders stated by key, for the one case a name cannot pose:
-    // two systems sharing a vanilla id, held by different blocs.
+    // two systems sharing a vanilla ID, held by different blocs.
     private static PoliticalMapTerritories buildTerritoriesHeldBy(
             CategoryStyle style,
             Map<SystemKey, DominantHolder> ownerBySystemKey) {

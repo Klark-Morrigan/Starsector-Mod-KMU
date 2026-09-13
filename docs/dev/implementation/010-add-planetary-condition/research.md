@@ -51,7 +51,7 @@ The condition data and mutation API is public and sufficient:
 - `MarketConditionAPI.setSurveyed(boolean)`
 
 The existing mods that modify planetary conditions generally validate the condition spec,
-add or remove by id,
+add or remove by ID,
 mark the added condition surveyed,
 and then reapply or let the market update naturally.
 
@@ -290,11 +290,11 @@ good examples that condition/market features can be exposed through public dialo
 
    - list candidate specs from `getAllMarketConditionSpecs()`;
    - filter to planetary specs by `isPlanetary()`;
-   - expose current market condition ids;
+   - expose current market condition IDs;
    - add condition only after spec validation;
    - avoid duplicates;
    - mark newly added condition surveyed;
-   - remove condition by id;
+   - remove condition by ID;
    - reapply conditions after mutation where needed.
 
 3. Prefer opening our own editor dialog/panel over deeply rewriting vanilla UI.

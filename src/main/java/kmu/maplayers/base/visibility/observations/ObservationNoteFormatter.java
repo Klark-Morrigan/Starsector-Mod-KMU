@@ -36,7 +36,7 @@ public final class ObservationNoteFormatter {
      *
      * @param clock             the campaign clock the moment is read against - what turns a stamp
      *                          into a span and into a date
-     * @param leadInKey         the axis's own words introducing the date, as a string id taking the
+     * @param leadInKey         the axis's own words introducing the date, as a string ID taking the
      *                          span and the date in that order
      * @param observedTimestamp when the axis was observed, on the clock's own scale
      * @return the composed remark

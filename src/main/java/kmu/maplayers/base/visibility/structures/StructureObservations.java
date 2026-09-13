@@ -29,8 +29,8 @@ public interface StructureObservations {
     /**
      * What was last observed of one structure.
      *
-     * @param structureId the structure entity's own id, as {@code SectorEntityToken#getId} reports
-     *                    it; an id the register has never held reads as never observed
+     * @param structureId the structure entity's own ID, as {@code SectorEntityToken#getId} reports
+     *                    it; an ID the register has never held reads as never observed
      * @return what it was last observed to be, or null where nobody has ever found it
      */
     StructureObservation readObservation(String structureId);

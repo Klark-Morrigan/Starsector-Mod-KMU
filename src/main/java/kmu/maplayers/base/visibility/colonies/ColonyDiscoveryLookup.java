@@ -10,11 +10,11 @@ import java.util.Set;
  * Which of one location's colonies the player has yet to discover, asked by the colony's own id.
  *
  * <p>For the reader {@link ColonyKindLookup} serves and folded on the same walk: an account built
- * from a contest meets a colony as an id beside a number, so a fact about the colony itself has to
+ * from a contest meets a colony as an ID beside a number, so a fact about the colony itself has to
  * be read from the system and matched back. Discovery is such a fact - it lives on the entity,
  * which no row carries.
  *
- * <p>The undiscovered ones rather than the discovered ones, so an id the fold never met reads as
+ * <p>The undiscovered ones rather than the discovered ones, so an ID the fold never met reads as
  * discovered. The answer is spent on calling a colony out as undiscovered, and a finding stated
  * about a colony nobody folded would be a claim the box has nothing behind.
  *
@@ -23,7 +23,7 @@ import java.util.Set;
  * a listed row unanswered for reasons the caller had nothing to do with. A colony nobody has
  * discovered is on the list wherever the box that built it said so, and says as much.
  *
- * @param undiscoveredColonyIds the market ids of the colonies whose entity the player has yet to
+ * @param undiscoveredColonyIds the market IDs of the colonies whose entity the player has yet to
  *                              discover
  */
 public record ColonyDiscoveryLookup(Set<String> undiscoveredColonyIds) {
@@ -46,7 +46,7 @@ public record ColonyDiscoveryLookup(Set<String> undiscoveredColonyIds) {
      * by a revelation gate has been discovered perfectly well, and one shown by a reveal has not.
      *
      * @param colonies the location's colonies, as one walk of it reported; null yields {@link #NONE}
-     * @return the undiscovered ones among them, by colony id
+     * @return the undiscovered ones among them, by colony ID
      */
     public static ColonyDiscoveryLookup readDiscoveriesIn(Colonies colonies) {
 
@@ -67,9 +67,9 @@ public record ColonyDiscoveryLookup(Set<String> undiscoveredColonyIds) {
     }
 
     /**
-     * Whether the player has found the entity the colony with this id sits on.
+     * Whether the player has found the entity the colony with this ID sits on.
      *
-     * @param colonyId the colony's market id; an id the fold never met reads as found, a finding
+     * @param colonyId the colony's market ID; an ID the fold never met reads as found, a finding
      *                 about a colony nothing walked being one the box cannot support
      * @return true when the colony's entity has been found
      */

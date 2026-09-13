@@ -57,7 +57,7 @@ public final class FactionTerritoryBuilder {
      *
      * @param territories    this pass's retained holding, theme, and filter state
      * @param geometryCache  the raw cells the border is traced from
-     * @param blocId         the bloc's holder - a faction id under the faction view, or
+     * @param blocId         the bloc's holder - a faction ID under the faction view, or
      *                       one of the filter's synthetic spotlight keys
      * @param memberCellKeys the cells this bloc draws
      * @return the bloc's bodies with the paints they share, or null when it paints neither fill

@@ -14,13 +14,13 @@ import static org.mockito.Mockito.mockStatic;
  * fallback, so the walk that holds the two spellings together covers them; a keycode has no second
  * spelling to hold it against, which leaves the fallback stated in exactly one place - here.
  *
- * <p>The field ids are pinned as literals alongside it, since a rename in the reader would otherwise read
+ * <p>The field IDs are pinned as literals alongside it, since a rename in the reader would otherwise read
  * a row the shipped table never writes and answer unbound forever, which looks exactly like a key the
  * player has cleared. What each row is worth on a fresh install is the table's, and pinned there.
  */
 final class KmuMapKeybindSettingsTest {
 
-    // The live field ids, as the shipped table spells them.
+    // The live field IDs, as the shipped table spells them.
     private static final String NO_LAYER_FIELD = "kmu_map_keybinds_layers_noLayer";
     private static final String FILTER_ROW_TOGGLE_FIELD = "kmu_map_keybinds_filters_mapLayersToggle";
 
@@ -73,7 +73,7 @@ final class KmuMapKeybindSettingsTest {
 
         @Test
         void getMapFilterRowToggleShortcutAnswersItsOwnRow() {
-            // Its id is the reader's own rather than a caller's, this box being KMU's chrome with no
+            // Its ID is the reader's own rather than a caller's, this box being KMU's chrome with no
             // layer behind it - so a typo here is invisible until a player finds the key does nothing.
             try (var settingsMock = mockStatic(KmuLunaSettings.class)) {
 

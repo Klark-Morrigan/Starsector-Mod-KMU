@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins how a faction presents wherever a hovered system's breakdown names it: its long title beside
- * its crest, its bare id and no crest when the sector no longer knows it.
+ * its crest, its bare ID and no crest when the sector no longer knows it.
  */
 final class FactionPresentationTest {
 
@@ -35,7 +35,7 @@ final class FactionPresentationTest {
         @Test
         void resolvePresentationFallsBackToTheIdForAnUnknownFaction() {
             // A breakdown naming a faction the sector has lost still has to name something, and the
-            // id is the only thing left that identifies it.
+            // ID is the only thing left that identifies it.
             var presentation =
                 FactionPresentation.resolvePresentation(buildEmptySector(), "ghost_faction");
 

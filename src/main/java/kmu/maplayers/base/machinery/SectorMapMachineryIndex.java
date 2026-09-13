@@ -49,7 +49,7 @@ public final class SectorMapMachineryIndex {
     private static final SectorMapMachinery DETACHED_MACHINERY =
         new SectorMapMachinery(null);
 
-    // One machinery per sector, keyed by the sector itself rather than by any id it carries: a
+    // One machinery per sector, keyed by the sector itself rather than by any ID it carries: a
     // sector is the thing being installed on, and two sectors are two objects whether or not
     // anything about their contents differs.
     private static final Map<SectorAPI, SectorMapMachinery> machineryBySector =

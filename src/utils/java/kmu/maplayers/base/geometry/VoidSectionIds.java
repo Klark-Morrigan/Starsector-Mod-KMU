@@ -10,7 +10,7 @@ import java.util.Locale;
  * What a section of void is called, in the namespace the cells are keyed by.
  *
  * <p>A section has to be keyed exactly as a cell is, because that is what makes it one: the
- * cluster trace keys its members and its coincident neighbours by cell id, and an edge names
+ * cluster trace keys its members and its coincident neighbours by cell ID, and an edge names
  * what lies across it by the same id. So a section's name is a {@code String} in the system-id
  * namespace, held apart from a real star's only by a prefix nothing else uses.
  *
@@ -35,8 +35,8 @@ import java.util.Locale;
  *
  * <h2>What the key is allowed to contain</h2>
  *
- * <p>A star's own id is generated rather than written by hand - vanilla procgen makes it
- * {@code "system_" + genUID()} - so the ids this is built out of are word characters and
+ * <p>A star's own ID is generated rather than written by hand - vanilla procgen makes it
+ * {@code "system_" + genUID()} - so the IDs this is built out of are word characters and
  * nothing else. A section's key is held to the same shape: lowercase, digits and underscore,
  * with the parts joined by a hyphen. Nothing parses these keys, so the point is not that they
  * can be taken apart again; it is that a key travels into maps, logs, reports and settings, and
@@ -47,12 +47,12 @@ import java.util.Locale;
  * is a character that survives nothing: a hyphen cannot come out of that reduction, so it can
  * only ever be a joiner and two different cell sets cannot produce one key between them.
  *
- * <p>That reduction can in principle fold two distinct ids together - two systems whose ids
+ * <p>That reduction can in principle fold two distinct IDs together - two systems whose IDs
  * differ only in punctuation - which would name two pieces of void alike. It is not guarded
  * against here because it cannot be fixed here: the report counts the distinct keys against the
  * sections, and that count is where such a fold would show.
  *
- * <p><b>The fixture's ids are not what production will hand this.</b> Its first column is the
+ * <p><b>The fixture's IDs are not what production will hand this.</b> Its first column is the
  * system's NAME, spaces and all, because a failure reading "Askonia" beats one reading an
  * opaque handle - so the keys this produces over a fixture are longer and more mangled than the
  * ones it will produce over a sector. That is the fixture's doing, not the scheme's.
@@ -61,7 +61,7 @@ public final class VoidSectionIds {
 
     // Marks the key as a region rather than a star, and says which kind of region. A section is
     // keyed into the same map as the cells, so the one thing its name must never do is collide
-    // with a system's - and it is shaped like one of vanilla's own generated ids so that it
+    // with a system's - and it is shaped like one of vanilla's own generated IDs so that it
     // reads as a key rather than as a sentence.
     private static final String PUDDLE_PREFIX = "void_puddle";
     private static final String LAKE_PREFIX = "void_lake";
@@ -73,7 +73,7 @@ public final class VoidSectionIds {
     // Doubled, so the joiner stands out from the underscores INSIDE a part. A single hyphen
     // would already be unambiguous - one cannot survive the reduction below - but a key is read
     // by eye far more often than it is compared, and at a glance "a-b-c" does not show where
-    // one system id ends and the next begins.
+    // one system ID ends and the next begins.
     private static final String PART_JOINER = "--";
 
     private static final String LEFT = "l";
@@ -88,7 +88,7 @@ public final class VoidSectionIds {
     // Two cells is what it takes to have a line between them.
     private static final int PAIR = 2;
 
-    // Everything a generated system id is made of. Anything else in a part is a run of one or
+    // Everything a generated system ID is made of. Anything else in a part is a run of one or
     // more characters that came out of a display name rather than out of an id.
     private static final String KEY_CHARACTERS = "[^a-z0-9_]+";
 
@@ -102,7 +102,7 @@ public final class VoidSectionIds {
      *
      * @param section        the section
      * @param sites          the sites, to find which two of its cells sit closest together
-     * @param systemIdBySite each site's system id, index-aligned with {@code sites}
+     * @param systemIdBySite each site's system ID, index-aligned with {@code sites}
      * @return its key, in the system-id namespace
      */
     static String nameSection(
@@ -118,7 +118,7 @@ public final class VoidSectionIds {
 
         // Sorted after the reduction rather than before it, so the order of the parts is the
         // order they read in - two keys listing the same cells cannot come out ordered
-        // differently because their original ids sorted another way.
+        // differently because their original IDs sorted another way.
         parts.sort(String::compareTo);
         parts.add(readSideOfClosestPair(section, sites, systemIdBySite));
 
@@ -138,12 +138,12 @@ public final class VoidSectionIds {
     }
 
     /**
-     * One part of a key, cut down to what a generated system id is made of.
+     * One part of a key, cut down to what a generated system ID is made of.
      *
      * <p>Lowercased and with every run of anything else replaced by a single underscore, so a
-     * display name arrives looking like an id instead of like prose.
+     * display name arrives looking like an ID instead of like prose.
      *
-     * @param part the id to reduce
+     * @param part the ID to reduce
      * @return it in key characters only
      */
     static String reduceToKeyCharacters(String part) {

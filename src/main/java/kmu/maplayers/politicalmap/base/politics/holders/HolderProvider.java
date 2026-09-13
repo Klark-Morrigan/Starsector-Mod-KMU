@@ -26,7 +26,7 @@ public interface HolderProvider {
      *
      * @param pass           the rebuild's reading of the sector, opened once where the rebuild
      *                       began; a pass over no sector yields empty holding
-     * @param selectedBlocId the spotlighted bloc's id, or null when no bloc is filtered - a
+     * @param selectedBlocId the spotlighted bloc's ID, or null when no bloc is filtered - a
      *                       provider that spotlights reads it, one that does not ignores it
      * @return the holding per system and the systems drawn hatched
      */

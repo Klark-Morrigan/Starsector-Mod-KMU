@@ -19,7 +19,7 @@ import java.util.function.Supplier;
  *
  * <p>Everything the layers draw is derived from one sector, so every holder behind that drawing is
  * a fact about one sector rather than about the process. Two sectors sharing one holder would not
- * merely be unsupported: the caches behind the drawing reconcile by system id, so a system present
+ * merely be unsupported: the caches behind the drawing reconcile by system ID, so a system present
  * in both at different positions is not seen to have moved, and each sector keeps the shapes the
  * other cut rather than overwriting them.
  *

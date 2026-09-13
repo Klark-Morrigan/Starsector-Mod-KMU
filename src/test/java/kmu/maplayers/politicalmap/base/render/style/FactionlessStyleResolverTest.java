@@ -64,7 +64,7 @@ final class FactionlessStyleResolverTest {
         @Test
         void resolveCategoryOfReturnsUninhabitedForACellWithNoStarOfItsOwn() {
             // A cell drawn as no system names nothing to look up, so it is uninhabited without the
-            // null id ever probing the set.
+            // null ID ever probing the set.
             assertThat(FactionlessStyleResolver.resolveCategoryOf(INHABITED_SYSTEM_KEYS, null))
                 .isEqualTo(PoliticalMapCategory.UNINHABITED);
         }

@@ -92,7 +92,7 @@ public final class PoliticalMapTerritoryFixtures {
 
     /**
      * The same territories with its holders stated by key rather than by name, for the one case a
-     * name cannot pose: two systems sharing a vanilla id, which differ only in the entity arms.
+     * name cannot pose: two systems sharing a vanilla ID, which differ only in the entity arms.
      *
      * @param ownerBySystemKey who holds each system, addressed as the build addresses it
      * @return a live territories, ready to have draw records written into it
@@ -160,7 +160,7 @@ public final class PoliticalMapTerritoryFixtures {
      * write on top afterwards, so a case that needs one states it here rather than editing a
      * territories built without.
      *
-     * @param selectedBlocId           the spotlighted bloc's id
+     * @param selectedBlocId           the spotlighted bloc's ID
      * @param ownerBySystemId          who holds each system
      * @param inhabitedSystemIds       every system something stands in
      * @param spotlitPresenceSystemIds the settled systems the pick lives in that nobody holds
@@ -242,7 +242,7 @@ public final class PoliticalMapTerritoryFixtures {
      * the theme are read-only once built - and a theme left null answers a global-tier read with
      * nothing at all rather than with a tier that paints nothing.
      *
-     * @param view        the view the build painted, whose id names the scope a hover is read under
+     * @param view        the view the build painted, whose ID names the scope a hover is read under
      * @param renderStyle the theme the build styled against, its global tier included
      * @return a live territories holding nobody, ready to have draw records written into it
      */

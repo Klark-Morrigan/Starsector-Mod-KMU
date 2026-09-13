@@ -14,10 +14,10 @@ import java.util.function.Predicate;
  * zeroing the weight is what leaves every number the weighting produced honest: the score is
  * computed and shown as it always was, and all it loses is the power to buy a system.
  *
- * <p>The same answer is wanted at two shapes - a ranking asks it of a bloc id, a per-faction read
- * asks it of a faction id - and a rule deciding who holds a system must not be stated twice, so
+ * <p>The same answer is wanted at two shapes - a ranking asks it of a bloc ID, a per-faction read
+ * asks it of a faction ID - and a rule deciding who holds a system must not be stated twice, so
  * both come from here. The bloc form reads through the grouping's colour faction, so an alliance is
- * judged by the faction it stands as rather than by a bloc id that is not a faction id at all.
+ * judged by the faction it stands as rather than by a bloc ID that is not a faction ID at all.
  */
 public final class BlocCandidacy {
 
@@ -27,7 +27,7 @@ public final class BlocCandidacy {
     /**
      * Whether a faction may hold a system - true for every faction but the neutral placeholder.
      *
-     * @param factionId the faction's id; a null or unknown id is a candidate, there being nothing
+     * @param factionId the faction's ID; a null or unknown ID is a candidate, there being nothing
      *                  about it that says otherwise
      * @return true where the faction may win a system
      */
@@ -36,12 +36,12 @@ public final class BlocCandidacy {
     }
 
     /**
-     * The candidacy over bloc ids under one grouping: a bloc may hold a system unless the faction
+     * The candidacy over bloc IDs under one grouping: a bloc may hold a system unless the faction
      * it paints in is the neutral one.
      *
-     * @param grouping the grouping naming each bloc's colour faction; under identity a bloc id is
-     *                 its own faction id, so the two forms agree
-     * @return the test a ranking over that grouping's bloc ids is taken under
+     * @param grouping the grouping naming each bloc's colour faction; under identity a bloc ID is
+     *                 its own faction ID, so the two forms agree
+     * @return the test a ranking over that grouping's bloc IDs is taken under
      */
     public static Predicate<String> createForGrouping(HolderGrouping grouping) {
         return blocId -> isCandidateFaction(grouping.resolveColourFactionId(blocId));

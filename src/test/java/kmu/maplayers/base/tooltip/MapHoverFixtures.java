@@ -34,7 +34,7 @@ public final class MapHoverFixtures {
      * is how a frame with something to draw a box about is posed.
      *
      * @param sector   the sector whose map the cursor is over
-     * @param systemId the id of the system under it
+     * @param systemId the ID of the system under it
      * @return that sector's machinery, which is what the box resolves as it draws
      */
     public static SectorMapMachinery hoverASystemOnAnInstalledSector(
@@ -53,12 +53,12 @@ public final class MapHoverFixtures {
      * belonging to some sector other than the one being drawn is posed.
      *
      * @param machinery the machinery the hover is published on
-     * @param systemId     the id of the system under the cursor, alone in its cluster since what a
+     * @param systemId     the ID of the system under the cursor, alone in its cluster since what a
      *                     hover lights beside it turns nothing about whether a box draws
      */
     public static void hoverASystemIn(SectorMapMachinery machinery, String systemId) {
 
-        // Keyed by the id alone, which is the key a system posed with no centre and no anchor is
+        // Keyed by the ID alone, which is the key a system posed with no centre and no anchor is
         // read off - so the box resolves the posed system back out of the sector.
         var systemKey = buildCellKey(systemId);
 

@@ -19,7 +19,7 @@ import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
  * case passes or fails by which run it lands in - which is what these two builders take away by
  * being the only way a consuming suite poses one.
  *
- * <p>The systems are named by id and keyed on the way in, each key stating the id arm alone, so a
+ * <p>The systems are named by ID and keyed on the way in, each key stating the ID arm alone, so a
  * consuming suite reads its systems back as {@code buildCellKey} spells them.
  */
 public final class BlocPresenceIndexFixtures {

@@ -161,7 +161,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     }
 
     // Marks politics-stale every system whose holder differs from the last poll: a system
-    // that gained an holder or changed hands (present now with a new id), and one that lost
+    // that gained an holder or changed hands (present now with a new ID), and one that lost
     // its holder (dropped since). Each mark funnels into the same set the listeners raise,
     // so an overlapping change reshapes once and is traced by markSystemGroupingStale's own
     // log line. The baseline advances even on the first poll, which has no prior to diff.

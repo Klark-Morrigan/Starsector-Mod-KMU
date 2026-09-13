@@ -12,12 +12,12 @@ import java.util.List;
  * ordered their bar once does not order it again per save.
  *
  * <p><b>Neither list is authoritative.</b> This is a preference laid over whatever is registered
- * rather than a roster of its own, and {@link ArrangedLayers} is that laying. So an id is kept here
+ * rather than a roster of its own, and {@link ArrangedLayers} is that laying. So an ID is kept here
  * rather than pruned when its mod goes - a layer put back finds the place it was given.
  *
- * @param orderedLayerIds the ids the player has placed, left to right; the layers they have never
+ * @param orderedLayerIds the IDs the player has placed, left to right; the layers they have never
  *                        arranged are simply absent rather than listed at the end
- * @param hiddenLayerIds  the ids whose tabs the player has taken off the bar. Hiding is not
+ * @param hiddenLayerIds  the IDs whose tabs the player has taken off the bar. Hiding is not
  *                        switching off: the layer stays registered and stays resolvable, so a save
  *                        holding a hidden layer as its pick still paints it
  */
@@ -41,7 +41,7 @@ public record MapLayerArrangement(
     }
 
     /**
-     * @param layerId the layer's registered id
+     * @param layerId the layer's registered ID
      * @return whether the player has taken this layer's tab off the bar
      */
     public boolean isLayerHidden(String layerId) {

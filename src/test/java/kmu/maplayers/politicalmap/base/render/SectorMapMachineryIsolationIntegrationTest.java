@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * Pins that two sectors with the map machinery really installed on both keep nothing in common: a
  * colony change in one marks only its own system stale, rebuilds only its own cells, and leaves the
  * other's draw lists, movers and hover exactly as they were - including where both sectors hold a
- * system under the same id, which is the case every part of the machinery keys on and none of them
+ * system under the same ID, which is the case every part of the machinery keys on and none of them
  * can tell apart on its own.
  *
  * <p>No unit can make this claim. Isolation is a fact about the composition: each part, handed its
@@ -76,13 +76,13 @@ final class SectorMapMachineryIsolationIntegrationTest {
     // off the other sector could not be told from the one it always had.
     private static final String PERSEAN_ID = "persean";
 
-    // The system id both sectors hold, which is the whole point of the pairing: every holder below
-    // keys on the sector's own naming of a system - the bare id, or the key read off it - and
-    // nothing forbids two sectors from generating one alike, so this is the id under which a shared
+    // The system ID both sectors hold, which is the whole point of the pairing: every holder below
+    // keys on the sector's own naming of a system - the bare ID, or the key read off it - and
+    // nothing forbids two sectors from generating one alike, so this is the ID under which a shared
     // holder would have one sector answer for the other.
     private static final String SHARED_SYSTEM_ID = "alpha";
 
-    // The key that system carries in either sector: the id alone, a staged system stating no
+    // The key that system carries in either sector: the ID alone, a staged system stating no
     // centre and no anchor. Written out rather than read off the system, an expectation taken
     // from the code under test being no expectation at all.
     private static final SystemKey SHARED_SYSTEM_KEY = new SystemKey("alpha", "", "");
@@ -111,7 +111,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
     // what these cases separate is two sectors, and both are drawn for the same panel throughout.
     private static final ScreenMemoryScope SCREEN = ScreenMemoryScopes.createStandInScreen();
 
-    // A cursor resting on the cell both sectors have an id for - the one hover that could be
+    // A cursor resting on the cell both sectors have an ID for - the one hover that could be
     // mistaken for the other sector's.
     private static final MapHover HOVERED_SHARED_CELL =
         new MapHover(buildCellKey(SHARED_SYSTEM_ID), List.of(buildCellKey(SHARED_SYSTEM_ID)));
@@ -150,7 +150,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
         @Test
         void marksOnlyTheChangedSectorsSystemStaleWhenAColonyResizesThere() {
-            // The mark is a bare system id on a board, so this is where two sectors collide most
+            // The mark is a bare system ID on a board, so this is where two sectors collide most
             // quietly: a shared board would have one sector's resize reshape the other's cell, with
             // nothing on either map to say where the mark came from. Driven through the listener the
             // installer actually registered, which is also what says that listener was built against
@@ -175,7 +175,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
         @Test
         void cutsEachSectorsOwnCellsWhereBothHoldASystemUnderOneId() {
-            // The drawing itself. The geometry cache reconciles by system id, so a cache serving two
+            // The drawing itself. The geometry cache reconciles by system ID, so a cache serving two
             // sectors would not overwrite one sector's cell with the other's - it would keep the
             // first cut and leave the second sector drawing a cell around a place it does not hold.
             var firstSector = installMachineryOnAFirstSector();
@@ -191,7 +191,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
                 .containsKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID))
                 .doesNotContainKey(buildCellKey(FIRST_SECTOR_SYSTEM_ID));
 
-            // The shared id is held by a different faction in each, so the cell they both have an id
+            // The shared ID is held by a different faction in each, so the cell they both have an ID
             // for still paints each sector's own holder.
             assertThat(firstTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(HEGEMONY_ID);
@@ -257,7 +257,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
         @Test
         void leavesTheOtherSectorsHoverParkedWhenACursorReadLandsOnOne() {
-            // A hover names a cell by bare system id too, so a shared holder would light a cell on
+            // A hover names a cell by bare system ID too, so a shared holder would light a cell on
             // the other sector's map and name that system in its box. Both ends go through the index
             // rather than through the handle the install returned, since what a render pass has is a
             // sector to resolve from.
@@ -384,7 +384,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
         return sector;
     }
 
-    // Hands the system both sectors have an id for to another faction, by re-listing its economy
+    // Hands the system both sectors have an ID for to another faction, by re-listing its economy
     // under a colony that faction holds - the change a resize event announces, staged as the
     // economy would answer it on the next read.
     private static void handTheSharedSystemOf(SectorAPI sector, String factionId) {
@@ -398,7 +398,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
         when(sector.getEconomy().getMarkets(system))
             .thenReturn(List.of(colony));
 
-        // Resolvable by id besides, which is how the fills reach the new holder's palette; a faction
+        // Resolvable by ID besides, which is how the fills reach the new holder's palette; a faction
         // the sector cannot name paints as nobody.
         when(sector.getFaction(factionId))
             .thenReturn(faction);

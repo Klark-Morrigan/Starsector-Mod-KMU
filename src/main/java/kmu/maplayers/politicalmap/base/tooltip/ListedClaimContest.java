@@ -181,7 +181,7 @@ record ListedClaimContest(
     // beneath both do.
     //
     // A faction is its own bloc on this layer, the fills being pinned to the claiming faction,
-    // so the faction id is the bloc id the alliance set is read against.
+    // so the faction ID is the bloc ID the alliance set is read against.
     private List<FactionClaimStanding> selectStandingsOn(ContestSide side) {
         return new ContestSides(breakdown.claimantFactionId(), affiliation)
             .selectSide(side, selectListedRivals(), FactionClaimStanding::factionId);

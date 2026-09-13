@@ -128,7 +128,7 @@ public final class ColonyObservationNotes {
     /**
      * The remark one colony's line carries about how current the box's news of it is.
      *
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return the remark, or empty where the colony is being observed now, where nothing was ever
      *         observed of it, where what was observed carries no time, or where there is no clock
      *         to date it by
@@ -165,7 +165,7 @@ public final class ColonyObservationNotes {
      * line without the findings that are due beside it.
      *
      * @param line     the colony's own line, as its account built it
-     * @param colonyId the colony's market id, as the account listing it carries
+     * @param colonyId the colony's market ID, as the account listing it carries
      * @return the line, remarked on where a remark is due and untouched where none is
      */
     CellTooltipEntryLine remarkOnColony(CellTooltipEntryLine line, String colonyId) {

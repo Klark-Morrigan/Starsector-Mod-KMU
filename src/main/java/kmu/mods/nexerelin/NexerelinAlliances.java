@@ -35,8 +35,8 @@ public final class NexerelinAlliances {
      * at all. Stable for a session (mod set does not change in play), so a caller may
      * compute it once.
      *
-     * <p>Asked through the library's own gate rather than through a mod id and a hop of
-     * this class's own: the id is the mod's, not KMU's, and the gate answers "not present"
+     * <p>Asked through the library's own gate rather than through a mod ID and a hop of
+     * this class's own: the ID is the mod's, not KMU's, and the gate answers "not present"
      * before the game has stood its settings up instead of throwing there.
      *
      * @return true when Nexerelin is present

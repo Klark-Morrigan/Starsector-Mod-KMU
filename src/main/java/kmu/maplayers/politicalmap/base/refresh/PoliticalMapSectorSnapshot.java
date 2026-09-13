@@ -43,11 +43,11 @@ import java.util.Map;
  * {@link SystemDominance}'s; this coordinator only sequences the shared walk.
  *
  * @param visibilityFingerprint what the drawn set hashes to, contributed per system under its
- *                              {@link SystemKey}, so two systems answering to one id are two
+ *                              {@link SystemKey}, so two systems answering to one ID are two
  *                              contributions rather than one
  * @param ownerBySystemId       the dominant holder of each owned drawn system, by faction id.
- *                              Addressed by vanilla system id rather than by key, because the
- *                              stale set this is diffed into still names systems by id - so a
+ *                              Addressed by vanilla system ID rather than by key, because the
+ *                              stale set this is diffed into still names systems by ID - so a
  *                              colliding pair is one entry here, holding whichever of them the
  *                              walk reached last
  */
@@ -66,7 +66,7 @@ public record PoliticalMapSectorSnapshot(
      * @param pass the poll's reading of the sector: which systems are drawn, what may be shown
      *             of a colony, and the one walk of each system every reader shares; a pass
      *             over no sector yields an empty snapshot
-     * @return the visibility fingerprint and the dominant holder (by faction id) of each
+     * @return the visibility fingerprint and the dominant holder (by faction ID) of each
      *         owned on-map system; a drawn-but-unowned system (a decivilised shell) is
      *         absent from the holder map
      */
@@ -94,7 +94,7 @@ public record PoliticalMapSectorSnapshot(
      * @param rules the dominance-weighting rules for this pass - whether stability scales each
      *              rating and whether an attached station lifts it - before dominance is
      *              compared
-     * @return the visibility fingerprint and the dominant holder (by faction id) of
+     * @return the visibility fingerprint and the dominant holder (by faction ID) of
      *         each owned on-map system; a drawn-but-unowned system (a decivilised
      *         shell) is absent from the holder map
      */
@@ -131,7 +131,7 @@ public record PoliticalMapSectorSnapshot(
             var hasRevealedDecivilised = pass.isRevealedDecivilised(system);
 
             // Contributed under the system's key, which this walk holds the system to read, so two
-            // systems answering to one id contribute two values rather than one - keyed by id, one
+            // systems answering to one ID contribute two values rather than one - keyed by ID, one
             // of them entering the drawn set as the other left would not move the fingerprint.
             visibility += MapVisibilityFingerprint.computeSystemContribution(
                 SystemKey.readKeyOf(system),

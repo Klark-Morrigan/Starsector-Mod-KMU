@@ -145,7 +145,7 @@ final class ColonyCellRibbonsIntegrationTest {
 
     // A system the Hegemony holds through the economy's own listing, with Tri-Tachyon's one
     // foothold hung on an entity of the system that the listing never held. Both factions are
-    // resolvable by id, since the spotlight resolve colours its bloc off the faction's palette.
+    // resolvable by ID, since the spotlight resolve colours its bloc off the faction's palette.
     private static SectorAPI buildSectorWhereTritachyonIsUnregistered() {
 
         var tritachyon = buildFaction(TRITACHYON, TRITACHYON_BRIGHT);

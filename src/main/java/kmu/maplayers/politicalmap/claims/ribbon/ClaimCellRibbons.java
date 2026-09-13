@@ -35,7 +35,7 @@ import java.util.Optional;
  * colours, and all their standing together reaches is the length the runs are laid at.
  *
  * <p>A bloc the contest never listed - one present only through colonies the mechanic's walk did
- * not reach - is not ranked here at all, and draws behind the ranked blocs in id order. Inventing
+ * not reach - is not ranked here at all, and draws behind the ranked blocs in ID order. Inventing
  * a place for it among the standings would say it took part in a contest it never entered.
  *
  * <p>Pure over a finished contest and a grouping, every live read reached through the inputs.

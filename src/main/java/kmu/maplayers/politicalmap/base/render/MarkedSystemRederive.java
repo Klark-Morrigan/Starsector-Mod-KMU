@@ -68,7 +68,7 @@ final class MarkedSystemRederive {
 
         // Off the batch's own reading rather than a traversal opened here: every other read below
         // goes through that pass, and a second traversal for the systems alone is what the bound on
-        // a batch counts against it. By key rather than by id, so a marked system that shares an id
+        // a batch counts against it. By key rather than by ID, so a marked system that shares an ID
         // with another is re-derived as itself rather than as whichever of them comes first.
         var systemByKey = pass.holding().sectorIndex().readSystemsByKey();
         var disturbance = new StalePoliticsDisturbance();

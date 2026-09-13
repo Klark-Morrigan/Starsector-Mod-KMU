@@ -150,12 +150,12 @@ class MapLayerRefreshBoardTest {
 
             // The reason the drain snapshots and then removes exactly what it snapshotted, rather
             // than clearing: the marks arrive on the campaign thread while the drain runs on the
-            // render thread, so a clear would drop every id marked between the copy and the clear.
+            // render thread, so a clear would drop every ID marked between the copy and the clear.
             // Those are silent losses - the system stays stale, and nothing rebuilds it until some
             // unrelated change forces a full rebuild.
             //
-            // Every id is marked exactly once, so the drains between them must hand back exactly
-            // MARKED_SYSTEM_COUNT ids: fewer means one was dropped, more means one was handed over
+            // Every ID is marked exactly once, so the drains between them must hand back exactly
+            // MARKED_SYSTEM_COUNT IDs: fewer means one was dropped, more means one was handed over
             // twice and would be re-shaped twice.
             var drained = new ArrayList<String>();
             var marking = new Thread(() -> {

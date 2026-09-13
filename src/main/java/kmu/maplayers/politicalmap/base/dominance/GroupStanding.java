@@ -14,10 +14,10 @@ import java.util.List;
  * score sits above its member factions.
  *
  * <p>The aggregate is the sum of the members' scores, so a group's ranking against another group
- * reads off the same weights its members are ranked by. Kept to plain ids and ints with no
+ * reads off the same weights its members are ranked by. Kept to plain IDs and ints with no
  * Starsector types, so the ranking is arithmetic over hand-built values.
  *
- * @param blocId         the group's bloc id - a faction id in the faction view, an alliance bloc id
+ * @param blocId         the group's bloc ID - a faction ID in the faction view, an alliance bloc ID
  *                       in the alliances view
  * @param aggregateScore the sum of the members' domination scores, the group's own ranking key
  * @param members        the member factions holding markets in the hovered system, ranked
@@ -39,7 +39,7 @@ public record GroupStanding(
      * caller adding the scores up itself states the same rule a second time, and two statements of it
      * are two chances for a group's ranking key to stop being the total of what it lists.
      *
-     * @param blocId  the group's bloc id
+     * @param blocId  the group's bloc ID
      * @param members the member factions the group is listed over, in the order they are listed
      * @return the group, weighed at what its members come to between them
      */

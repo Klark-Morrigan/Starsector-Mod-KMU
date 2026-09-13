@@ -8,9 +8,9 @@ import kmlib.starsector.memory.SectorMemoryAccess;
  * A screen's active-layer pick persisted in sector memory, so the pick survives reload. Each screen holds
  * its own instance under its own scope, so the picks stay independent - a switch on one screen writes only
  * its key and leaves any other screen's untouched - while both screens persist the same way, for one
- * consistent behaviour across screens. The stored value is a layer id resolved against {@link
+ * consistent behaviour across screens. The stored value is a layer ID resolved against {@link
  * MapLayerRegistry}'s registered layers, falling back to the registered default when the save holds no pick
- * yet or an id from an older build no longer registered.
+ * yet or an ID from an older build no longer registered.
  *
  * <p>The base key is held here rather than supplied, because it is this pick's identity and the same on
  * every screen; what a caller chooses is the screen, and the two compose to the slot. A caller that could
@@ -38,7 +38,7 @@ public final class PersistedActiveLayerSelection implements ActiveLayerSelection
         if (storedId == null) {
             return MapLayerRegistry.getDefaultLayer();
         }
-        // Stale id from a build that shipped a layer since removed, or from a mod uninstalled since the
+        // Stale ID from a build that shipped a layer since removed, or from a mod uninstalled since the
         // save was written: fall back rather than leave the bar pointing at nothing.
         var storedLayer = MapLayerRegistry.resolveLayerById(storedId);
 
@@ -55,7 +55,7 @@ public final class PersistedActiveLayerSelection implements ActiveLayerSelection
         memory.set(memoryKey, layer.getId());
     }
 
-    // Reads the stored layer id under this pick's key, or null when the sector is absent or the key was
+    // Reads the stored layer ID under this pick's key, or null when the sector is absent or the key was
     // never written - the caller resolves either to the default.
     private String readStoredLayerId() {
         MemoryAPI memory = SectorMemoryAccess.readSectorMemory();

@@ -173,7 +173,7 @@ public record RibbonPlan(
     //
     // Empty only where the cell has neither a painter nor a bloc in it, which is nothing to report
     // rather than a contest. A cell no fill covers is anchored on a bloc genuinely present rather
-    // than on an id no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no
+    // than on an ID no bloc carries: that sentinel leaves every bloc a rival, so a lone haven no
     // fill covers would band at contested length as though it were fought over.
     private static boolean isCellContested(
             Optional<String> judgedAgainstBlocId,
@@ -189,7 +189,7 @@ public record RibbonPlan(
     // with it. An ally is not a rival: the two of them hold the system between them, and a fill
     // naming one of them says nothing the other contradicts.
     //
-    // The judged bloc drops out on its own id, which is what lets an anchor drawn from the cell's
+    // The judged bloc drops out on its own ID, which is what lets an anchor drawn from the cell's
     // own presences ask about the rest without being counted as a side against itself.
     private static boolean hasRivalPresence(
             String judgedAgainstBlocId,

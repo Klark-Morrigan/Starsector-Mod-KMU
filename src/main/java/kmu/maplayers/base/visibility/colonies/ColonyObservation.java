@@ -20,7 +20,7 @@ import java.util.Optional;
  * were timed reads as, and it heals at the next observation of the same colony - so a reader states
  * the place it was seen and says nothing about when, rather than inventing a date for it.
  *
- * @param locationId        the id of the location the colony was observed standing in
+ * @param locationId        the ID of the location the colony was observed standing in
  * @param observedTimestamp when the colony was last observed there, on the campaign clock's own
  *                          scale, or empty for an observation made before they were timed
  */

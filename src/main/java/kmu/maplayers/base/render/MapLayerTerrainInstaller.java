@@ -23,29 +23,29 @@ public final class MapLayerTerrainInstaller {
     private static final Logger LOG = Global.getLogger(MapLayerTerrainInstaller.class);
 
     // Terrain type registered in data/campaign/terrain.json whose plugin paints the map layers on
-    // the sector map, through renderOnMap. The id is serialised into saves, so it is frozen once
+    // the sector map, through renderOnMap. The ID is serialised into saves, so it is frozen once
     // shipped for the reason the plugin class name is: an existing save holds an entity under
-    // whatever id it was written with, and nothing bridges a renamed one back.
+    // whatever ID it was written with, and nothing bridges a renamed one back.
     static final String SECTOR_MAP_LAYER_TERRAIN_TYPE = "kmu_sector_map_layer_terrain";
 
     // Terrain type registered in data/campaign/terrain.json whose plugin paints the same layers over
     // in Starscape mode - the mode the map widget suppresses the type above in. Its entity
-    // resolves spec and plugin from this id at construction and then reports the engine's whitelisted
-    // map type in the getter's place, so unlike the schematic variant the id cannot be read back off
+    // resolves spec and plugin from this ID at construction and then reports the engine's whitelisted
+    // map type in the getter's place, so unlike the schematic variant the ID cannot be read back off
     // a loaded entity at all.
     static final String SECTOR_MAP_LAYER_STARSCAPE_TERRAIN_TYPE =
         "kmu_sector_map_layer_starscape_terrain";
 
     // Terrain type registered in data/campaign/terrain.json whose plugin paints the upper band over
     // the nebulae - the part of the overlay the map's own fog must not cover. Its entity is the
-    // same class the row above installs, differing only in the id it resolves its plugin from.
+    // same class the row above installs, differing only in the ID it resolves its plugin from.
     static final String SECTOR_MAP_LAYER_ABOVE_STARSCAPE_NEBULAE_TERRAIN_TYPE =
         "kmu_sector_map_layer_above_starscape_nebulae_terrain";
 
     // Which terrain in hyperspace belongs to which variant, and the whole of what tells the three
-    // apart: the plugin class its entity carries. Not the type id, which two of them never report -
+    // apart: the plugin class its entity carries. Not the type ID, which two of them never report -
     // those entities answer with the engine's whitelisted map type instead, so nothing they say
-    // about themselves distinguishes one from the other. Package-private alongside the type ids so
+    // about themselves distinguishes one from the other. Package-private alongside the type IDs so
     // the presence guard names the same constants the install path does rather than a restatement
     // of them.
     private static final Class<? extends CampaignTerrainPlugin> SCHEMATIC_TERRAIN =
@@ -82,7 +82,7 @@ public final class MapLayerTerrainInstaller {
      * gets this variant past the map widget's Starscape filter; {@code addEntity} reaches the same
      * registration {@code addTerrain} would have.
      *
-     * <p>It stays a per-load sweep even though this variant is never moved, because a renamed row id
+     * <p>It stays a per-load sweep even though this variant is never moved, because a renamed row ID
      * would otherwise strand the entity an existing save holds - and because the sweep is what the
      * shared helper does for every variant regardless.
      */
@@ -100,7 +100,7 @@ public final class MapLayerTerrainInstaller {
      * paints its own band either way, and what would have ridden above the nebulae simply stops
      * appearing.
      *
-     * <p>The entity is the same class the surface below installs, differing only in the type id it
+     * <p>The entity is the same class the surface below installs, differing only in the type ID it
      * resolves its spec and plugin from, since reporting the whitelisted map type is the whole of
      * what that class does.
      *

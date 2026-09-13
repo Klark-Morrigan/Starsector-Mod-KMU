@@ -324,7 +324,7 @@ final class AlliancesViewTest {
 
         @Test
         void resolveNameReadsTheAllianceNameForAnAllianceBloc() {
-            // An alliance bloc id is not a faction id, so its label comes from the grouping, not the
+            // An alliance bloc ID is not a faction ID, so its label comes from the grouping, not the
             // sector - which is therefore never consulted.
             var sectorMock = mock(SectorAPI.class);
 

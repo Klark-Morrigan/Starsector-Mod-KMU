@@ -245,7 +245,7 @@ final class PoliticalMapStalenessSourceTest {
         void marksOnTheBoardOfTheMachineryItWasBuiltWith() {
             // The other half of the same claim, over the board rather than the sector. A holder
             // flip in one sector must reach only that sector's cache: marked on a board two
-            // sectors read, it would re-shape a cell in the other under an id nothing forbids both
+            // sectors read, it would re-shape a cell in the other under an ID nothing forbids both
             // from holding - and would do it invisibly, the re-shape being correct in every
             // respect but which map it happened on.
             var holderFlip = PollInputs.buildForSnapshotChange(

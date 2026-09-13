@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Pins the faction as a verdict about the whole system rather than as an entry in its table: crest and
  * name travel inside the line's own words so the two centre together, and a faction the sector no longer
- * knows still speaks as its bare id rather than as a blank.
+ * knows still speaks as its bare ID rather than as a blank.
  */
 final class FactionTooltipBannerTest {
 

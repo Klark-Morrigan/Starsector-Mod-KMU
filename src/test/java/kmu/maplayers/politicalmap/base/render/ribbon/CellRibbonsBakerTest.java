@@ -386,7 +386,7 @@ final class CellRibbonsBakerTest {
         return geometryCacheMock;
     }
 
-    // A sector listing the system each cell draws as, posed by the id its key states - which is
+    // A sector listing the system each cell draws as, posed by the ID its key states - which is
     // the key the pass reads back off it, the systems carrying no centre and no anchor.
     private static SectorAPI buildSectorOf(Set<SystemKey> systemKeys) {
 

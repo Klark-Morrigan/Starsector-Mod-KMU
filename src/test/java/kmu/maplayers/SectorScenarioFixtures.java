@@ -95,7 +95,7 @@ public final class SectorScenarioFixtures {
      * else is there. Founding one turns the same system from a place that reveals nothing into a
      * place that reveals both.
      *
-     * @param systemId     the id of the sector's one star system
+     * @param systemId     the ID of the sector's one star system
      * @param openColonies the openly-settled colonies its economy lists, if any
      * @return the sector mock
      */

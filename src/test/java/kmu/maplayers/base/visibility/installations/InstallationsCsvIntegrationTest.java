@@ -49,7 +49,7 @@ final class InstallationsCsvIntegrationTest {
 
     // The Domain-era hulks and infrastructure a sector is navigated by. The hypershunt is
     // "coronal_tap" to the game and a coronal hypershunt to the player, and a gate keeps the
-    // inactive type id whether or not it is running.
+    // inactive type ID whether or not it is running.
     private static final List<String> DOMAIN_LANDMARK_TYPES = List.of(
         "derelict_cryosleeper",
         "derelict_mothership",

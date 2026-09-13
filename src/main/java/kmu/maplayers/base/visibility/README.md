@@ -68,17 +68,17 @@ The positions come off the index's own traversal rather than one opened here,
 which is what keeps a pass to the single traversal a frame allows it however many of its readers want the sector's systems.
 
 They come off it keyed by `SystemKey`,
-because a star system id is not unique:
+because a star system ID is not unique:
 a live modded sector lists several systems under one -
 vanilla's own unnamed deep space and abyssal systems among them -
-and a point cloud gathered under ids is short a site for each,
+and a point cloud gathered under IDs is short a site for each,
 which draws as a system with no cell on a map that cells every neighbour it has.
 The partition is keyed the same way,
 so the positions reach it under the address it holds its cells by.
 
 The fingerprint contributes under that same key for the same reason,
 and its version of the loss is quieter:
-a colliding pair keyed by id contributes one value twice,
+a colliding pair keyed by ID contributes one value twice,
 so one of them entering the drawn set as the other left would move nothing at all,
 and the map would go on drawing a system that is no longer there with no rebuild ever asked for.
 
@@ -131,11 +131,11 @@ so the ruin in orbit is drawn beside the colony that can see it.
 `ColonyKind` says which kinds that reaches,
 and only while the survey asked for is no more than a sighting is worth.
 
-`ColonyKindLookup` folds those kinds by colony id for a reader that meets a colony as a row rather than as a colony,
+`ColonyKindLookup` folds those kinds by colony ID for a reader that meets a colony as a row rather than as a colony,
 and `ColonyDiscoveryLookup` folds the entity's own found-or-not flag the same way for the same reader.
 `OpenlyKnownColonyLookup` folds a third such answer -
 whether a concealed colony is one the sector openly points at,
-off the entity ids and tag `OpenlyKnownColonyRegistry` is seeded with at start-up.
+off the entity IDs and tag `OpenlyKnownColonyRegistry` is seeded with at start-up.
 That one excuses a word a hover box would otherwise say and reaches no gate:
 a landmark is concealed to every rule here,
 exactly as the base beside it is.
@@ -189,7 +189,7 @@ over `SectorStructureObservations`,
 whose entries sit in the shared `ObservationStore` under a key of its own and are spelt by `StructureObservationCodec` -
 the two moments,
 the state letters,
-then the holder id to the end of the entry.
+then the holder ID to the end of the entry.
 
 ## Installations (`installations`)
 
@@ -255,7 +255,7 @@ What one entry means stays with the family,
 as an `ObservationCodec` the store is handed -
 which is also where the fixed-fields-first convention lives,
 the free-form field running to the end of an entry
-so an id spelt with the separator reads back whole,
+so an ID spelt with the separator reads back whole,
 and an entry that does not part reading as the weaker true thing rather than as corrupt.
 The lifecycle is the store's because every family wants the same one:
 a load sheds what the register no longer describes

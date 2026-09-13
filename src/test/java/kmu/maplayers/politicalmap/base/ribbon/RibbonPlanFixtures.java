@@ -67,7 +67,7 @@ public final class RibbonPlanFixtures {
     public static final Color NEUTRAL_DARK = new Color(70, 70, 70);
 
     /**
-     * The shades every bloc draws in, read by bloc id exactly as the live map reads them. A bloc
+     * The shades every bloc draws in, read by bloc ID exactly as the live map reads them. A bloc
      * absent from this map has no colour to resolve, which is the drop case
      * {@link #VANISHED_BLOC} poses.
      *
@@ -153,7 +153,7 @@ public final class RibbonPlanFixtures {
      * <p>Every colony is the same size, since a band counts holdings rather than weighing them. A
      * suite whose mechanic does weigh them states its own sizes.
      *
-     * @param systemId   the system's id
+     * @param systemId   the system's ID
      * @param factionIds the owners, one colony each, in listing order
      * @return the stubbed sector
      */

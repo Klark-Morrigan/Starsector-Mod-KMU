@@ -37,7 +37,7 @@ public final class SectorStructureObservations {
      *
      * @param sector the sector whose memory holds the register; null - or one holding no register
      *               yet - reads as nothing having been observed of anything
-     * @return what was last observed of each structure, by entity id; never null
+     * @return what was last observed of each structure, by entity ID; never null
      */
     public static StructureObservations readObservations(SectorAPI sector) {
 

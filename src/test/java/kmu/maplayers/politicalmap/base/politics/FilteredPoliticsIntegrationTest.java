@@ -184,7 +184,7 @@ class FilteredPoliticsIntegrationTest {
 
         @Test
         void paintsASpotlitAllianceInItsDominantMembersPalette() {
-            // Under the alliance grouping the selected bloc is an alliance id; its spotlit cell
+            // Under the alliance grouping the selected bloc is an alliance ID; its spotlit cell
             // paints in its dominant member's (hegemony's) palette, reusing the same colour path
             // the normal alliance holder does.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);

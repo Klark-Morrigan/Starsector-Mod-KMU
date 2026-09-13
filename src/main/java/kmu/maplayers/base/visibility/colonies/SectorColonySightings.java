@@ -72,7 +72,7 @@ public final class SectorColonySightings {
      *
      * @param sector the sector whose memory holds the register; null - or one holding no
      *               register yet - reads as nothing having been seen anywhere
-     * @return what was last observed of each colony, by colony id; never null
+     * @return what was last observed of each colony, by colony ID; never null
      */
     public static ColonySightings readSightings(SectorAPI sector) {
 
@@ -174,7 +174,7 @@ public final class SectorColonySightings {
      * Drops every sighting whose colony is no longer anywhere in the sector.
      *
      * <p>Run once against a loaded save. A sighting outliving the colony it was about would go on
-     * answering for whatever next took the id, which is an observation nobody ever made.
+     * answering for whatever next took the ID, which is an observation nobody ever made.
      *
      * @param sector the sector to reconcile the register against; null is a no-op
      */
@@ -234,7 +234,7 @@ public final class SectorColonySightings {
     // is built once and shared, being the same event for all of them.
     //
     // A colony the game names with nothing is left to the register, which files entries by the very
-    // id a read would ask for and so refuses one that could never be reached.
+    // ID a read would ask for and so refuses one that could never be reached.
     private static Map<String, ColonyObservation> buildObservationsByColonyId(
             String locationId,
             Long observedTimestamp,

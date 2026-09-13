@@ -35,7 +35,7 @@ import java.util.Set;
  * preferred lean is capped short of vertical and fades to level for round clusters whose axis
  * carries no real direction.
  *
- * <p>Pure geometry over opaque owner ids: what a key means, what its name reads and what
+ * <p>Pure geometry over opaque owner IDs: what a key means, what its name reads and what
  * shade it draws in all arrive injected as {@link ClusterLabelResolvers}, so the search reads
  * no settings, ownership, or filter state, names nothing on the map, and is exercised on
  * hand-built clusters.

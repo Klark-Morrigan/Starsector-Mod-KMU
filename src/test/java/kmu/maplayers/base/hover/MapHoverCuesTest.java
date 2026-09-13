@@ -14,7 +14,7 @@ import static org.mockito.Mockito.mockStatic;
 /**
  * Pins what the map answers a new cell with: the typed tick rather than a button's mouseover, at the
  * level the player set, and nothing at all once that level reaches the bottom of its slider. All
- * three fail where nothing on screen shows them - a wrong id is silence, a wrong level is a map that
+ * three fail where nothing on screen shows them - a wrong ID is silence, a wrong level is a map that
  * merely feels loud - so the composition is asserted here rather than left to the ear.
  */
 final class MapHoverCuesTest {

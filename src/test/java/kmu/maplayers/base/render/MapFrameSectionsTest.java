@@ -55,7 +55,7 @@ final class MapFrameSectionsTest {
         @Test
         void resolveLayerSectionAnswersOneSectionForOneLayerId() {
             // The renderer resolves its row once and holds it, but the framework will resolve one
-            // per registered layer per sector - so two resolutions of one id have to be the row,
+            // per registered layer per sector - so two resolutions of one ID have to be the row,
             // not two rows a report shows side by side.
             assertThat(MapFrameSections.resolveLayerSection("political_map"))
                 .isSameAs(MapFrameSections.resolveLayerSection("political_map"));
@@ -71,7 +71,7 @@ final class MapFrameSectionsTest {
 
         @Test
         void resolveLayerSectionNamesTheRowAfterTheLayerId() {
-            // The id is what a reader matches a row back to the layer by, and the prefix is what
+            // The ID is what a reader matches a row back to the layer by, and the prefix is what
             // gathers every layer's row under one place in the report.
             assertThat(MapFrameSections.resolveLayerSection("political_map").getName())
                 .isEqualTo("mapLayer.layer.political_map");

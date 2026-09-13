@@ -34,7 +34,7 @@ import java.util.function.BiPredicate;
  * asking the same pair from either end is a rule that can sort a faction one way and count it the
  * other wherever a supplied disposition is not returned alike both ways round.
  *
- * <p>Pure rule with no Starsector types: the memberships arrive as plain ids and the faction-level
+ * <p>Pure rule with no Starsector types: the memberships arrive as plain IDs and the faction-level
  * disposition as a predicate over a pair of them, so the rule is exercised on hand-built inputs and
  * the live read binds where the two meet.
  */

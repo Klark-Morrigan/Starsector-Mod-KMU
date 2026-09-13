@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the per-picker hover slot: the read reports one list's live id or none, a record replaces
+ * Pins the per-picker hover slot: the read reports one list's live ID or none, a record replaces
  * whatever that list rested on, a null record and a clear both return it to resting, clearing an
  * already-resting list changes nothing, and a clear is invisible under another list - another mod's
  * included, which is the axis nothing else here would part. Pins its
@@ -30,7 +30,7 @@ final class FilterHoverSlotTest {
         MapLayerStoreNamespaces.createStandInNamespace(),
         "scope_b");
 
-    // The same scope id under another mod. Nothing here is persisted, so this is the only thing
+    // The same scope ID under another mod. Nothing here is persisted, so this is the only thing
     // keeping two mods that both listed a view called "scope_a" from previewing each other's rows.
     private static final PickerScope OTHER_MOD_SCOPE = new PickerScope(
         KmuMod.MAP_STORE_NAMESPACE,
@@ -58,7 +58,7 @@ final class FilterHoverSlotTest {
 
         @Test
         void resolveHoverSlotInDoesNotShareASlotBetweenMachinery() {
-            // A hovered id comes from one sector's own list, so reading it under another sector
+            // A hovered ID comes from one sector's own list, so reading it under another sector
             // would light a set that sector never produced.
             var machinery = new SectorMapMachinery(null);
             var otherMachinery = new SectorMapMachinery(null);
@@ -121,7 +121,7 @@ final class FilterHoverSlotTest {
 
         @Test
         void getHoveredIdOfDoesNotCrossReadAnotherModsHover() {
-            // The scope id is opaque and every mod picks its own, so two pickers listing under one
+            // The scope ID is opaque and every mod picks its own, so two pickers listing under one
             // name are two lists: previewing the other's row would light systems this layer's walk
             // never offered.
             var slot = new FilterHoverSlot();
@@ -151,7 +151,7 @@ final class FilterHoverSlotTest {
 
         @Test
         void recordHoveredIdClearsTheScopeWhenTheIdIsNull() {
-            // A hover channel reports the leave as a null id, which must rest the scope outright.
+            // A hover channel reports the leave as a null ID, which must rest the scope outright.
             var slot = new FilterHoverSlot();
 
             slot.recordHoveredId(PICKER_SCOPE, HOVERED_ID);

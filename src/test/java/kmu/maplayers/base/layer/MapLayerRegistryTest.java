@@ -176,7 +176,7 @@ final class MapLayerRegistryTest {
 
         @Test
         void registerLayerPutsALayerSharingAnIdInThePlaceOfTheOneItReplaces() {
-            // Two mods shipping one id will happen, and both tabs would read and write the one stored
+            // Two mods shipping one ID will happen, and both tabs would read and write the one stored
             // pick that names it. Arbitrated, the row holds one tab that the save agrees with; left
             // alone, it would hold two the save cannot tell apart.
             var replacementLayerMock = createLayerMockWithId("first");
@@ -555,7 +555,7 @@ final class MapLayerRegistryTest {
             .getMessages();
     }
 
-    // A layer answering nothing but the id it registers under, which is all the registration cases
+    // A layer answering nothing but the ID it registers under, which is all the registration cases
     // are about: where it lands in the row, and who it displaces.
     private static MapLayer createLayerMockWithId(String layerId) {
 

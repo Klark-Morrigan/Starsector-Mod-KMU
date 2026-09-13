@@ -10,7 +10,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipMark;
  * listing it counts it in.
  *
  * <p>The adapter between a political fact and the layer-blind {@linkplain CellTooltipEntryLine line}
- * model a block is populated from - what turns a faction id into words a list can hold. A line rather
+ * model a block is populated from - what turns a faction ID into words a list can hold. A line rather
  * than a whole entry, because every caller has something further to say about it: what hangs beneath
  * it, or how loudly its number reads. How the faction itself appears is not decided here but taken
  * from {@link FactionPresentation}, so a faction listed on one line and the same faction named
@@ -27,7 +27,7 @@ public final class FactionTooltipLine {
      * an alliance, say.
      *
      * @param sector    the sector the faction's name and crest are read from
-     * @param factionId the id of the faction the line names; an id the sector no longer knows is shown
+     * @param factionId the ID of the faction the line names; an ID the sector no longer knows is shown
      *                  as itself rather than leaving the line nameless
      * @param valueText what the block counts this line in, or {@link CellTooltipEntryLine#NO_SCORE} for a
      *                  line carrying no number
@@ -55,7 +55,7 @@ public final class FactionTooltipLine {
      * number can be summed.
      *
      * @param sector       the sector the faction's name and crest are read from
-     * @param factionId    the id of the faction the line names; an id the sector no longer knows is
+     * @param factionId    the ID of the faction the line names; an ID the sector no longer knows is
      *                     shown as itself rather than leaving the line nameless
      * @param countedValue what the block counts this line in
      * @return the line, ready to be listed or nested

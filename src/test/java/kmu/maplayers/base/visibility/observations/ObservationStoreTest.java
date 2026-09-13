@@ -284,7 +284,7 @@ final class ObservationStoreTest {
 
         @Test
         void recordsNothingAgainstASubjectTheGameNamesWithNothing() {
-            // An entry no read could ever reach, since a subject is asked about by the very id it
+            // An entry no read could ever reach, since a subject is asked about by the very ID it
             // would be filed under.
             var storedEntries = openRegister();
 
@@ -312,7 +312,7 @@ final class ObservationStoreTest {
         @Test
         void dropsAnObservationOfASubjectTheSectorNoLongerHolds() {
             // An observation outliving what it was about would go on answering for whatever next
-            // took the id, which is a thing nobody ever observed.
+            // took the ID, which is a thing nobody ever observed.
             var storedEntries = openRegister();
 
             storedEntries.put(SUBJECT_ID, OBSERVED_PLACE);

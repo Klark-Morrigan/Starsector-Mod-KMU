@@ -111,7 +111,7 @@ final class SortSelectionTest {
 
         @Test
         void getSortModeKeyOfReadsEachScreensOwnMode() {
-            // Per-screen isolation under one scope id: the same list ranked one way on one panel and
+            // Per-screen isolation under one scope ID: the same list ranked one way on one panel and
             // another way on the other reads back as each panel left it.
             sectorMemoryFake.storeValue(MODE_KEY, STORED_MODE);
             sectorMemoryFake.storeValue(OTHER_SCREEN_MODE_KEY, OTHER_STORED_MODE);

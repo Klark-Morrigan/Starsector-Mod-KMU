@@ -24,7 +24,7 @@ import java.util.List;
  * <p>{@link #getLayers()} is the roster and not the row of tabs any screen draws: which of them a
  * given screen offers is {@link ScreenLayerTabs}', a screen carrying a control of its own on the
  * game's chrome being offered one fewer. The roster stays whole underneath that, since a stored pick
- * is an id resolved against it - filtered, a save left on a withheld tab would read as an id from an
+ * is an ID resolved against it - filtered, a save left on a withheld tab would read as an ID from an
  * older build and fall back to a layer that paints.
  *
  * <p>The player's own state is not here: which layer each screen is set to, and whether that screen
@@ -69,13 +69,13 @@ public final class MapLayerRegistry {
      * wants otherwise, that is an arrangement to make over the whole row rather than a number each
      * mod picks for itself.
      *
-     * <p>Two <em>different</em> layers under one id are arbitrated rather than tabbed twice: the later
+     * <p>Two <em>different</em> layers under one ID are arbitrated rather than tabbed twice: the later
      * takes the earlier one's place in the row, and the exchange is logged naming both. They would
-     * otherwise share the stored pick that names the id, so a row offering both would carry two tabs a
+     * otherwise share the stored pick that names the ID, so a row offering both would carry two tabs a
      * save cannot tell apart. The same layer registering again is neither a clash nor a second tab -
      * it changes nothing and says nothing.
      *
-     * @param layer the layer to add, or to stand in the place of one already registered under its id
+     * @param layer the layer to add, or to stand in the place of one already registered under its ID
      */
     public static void registerLayer(MapLayer layer) {
 
@@ -104,11 +104,11 @@ public final class MapLayerRegistry {
     }
 
     /**
-     * The layer registered under {@code layerId}, or null for an id nothing has registered - an id a
+     * The layer registered under {@code layerId}, or null for an ID nothing has registered - an ID a
      * save holds from a build that shipped a layer since removed, or from a mod no longer installed.
      *
-     * @param layerId the stored id to resolve against the roster
-     * @return that layer, or null where nothing is registered under the id
+     * @param layerId the stored ID to resolve against the roster
+     * @return that layer, or null where nothing is registered under the ID
      */
     public static MapLayer resolveLayerById(String layerId) {
 
@@ -196,7 +196,7 @@ public final class MapLayerRegistry {
      * @return whether {@code layer} is the layer on that screen
      */
     public static boolean isDrawnLayerOn(ScreenLayerPicks screenPicks, MapLayer layer) {
-        // Layers are singletons, so identity settles it without an id compare.
+        // Layers are singletons, so identity settles it without an ID compare.
         return screenPicks.drawnLayer().resolveDrawnLayer() == layer;
     }
 
@@ -211,7 +211,7 @@ public final class MapLayerRegistry {
         orderedLayers = List.of();
     }
 
-    // Says one id reached the row twice, which is silent to the player: the log is where the author of
+    // Says one ID reached the row twice, which is silent to the player: the log is where the author of
     // the layer that lost finds out why their tab is not the one on the bar. Named by class, that
     // being what says which mod each side came from.
     private static void warnOfTheIdTwoLayersShare(MapLayer displacedLayer, MapLayer registeredLayer) {
@@ -221,9 +221,9 @@ public final class MapLayerRegistry {
             + registeredLayer.getClass().getName() + ", which takes its place in the row.");
     }
 
-    // Where a layer under this id already stands in the row, or -1 for an id nothing has registered.
-    // Compared by id rather than by identity, since the case this answers is two mods arriving with
-    // one id and no notion of each other's objects.
+    // Where a layer under this ID already stands in the row, or -1 for an ID nothing has registered.
+    // Compared by ID rather than by identity, since the case this answers is two mods arriving with
+    // one ID and no notion of each other's objects.
     private static int findIndexOfLayerId(String layerId) {
 
         for (var index = 0; index < orderedLayers.size(); index++) {

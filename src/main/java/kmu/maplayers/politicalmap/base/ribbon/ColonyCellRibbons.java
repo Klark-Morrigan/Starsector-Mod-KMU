@@ -29,7 +29,7 @@ import java.util.Set;
  * <p>What stays each mechanic's own is the painter and the ranking, which are the two things that
  * genuinely differ: whose fill the band sits inside, and the order the fill decided. A bloc neither
  * mechanic ranked - one present through colonies no score was ever computed from - falls to the end
- * in id order, so it draws its run without a place it never earned.
+ * in ID order, so it draws its run without a place it never earned.
  *
  * <p>The counts come off the pass's habitation projection, so a band never counts out a colony the
  * pass's colony rule is keeping back and never omits one it is showing. What that rule admits is
@@ -68,7 +68,7 @@ public final class ColonyCellRibbons {
      *                       from
      * @param system         the system the cell draws as, counted through the pass's own walk of it
      * @param rankedBlocIds  the order the painting mechanic ranked its blocs in, best placed first;
-     *                       a bloc absent from it draws behind those that are, ordered by id
+     *                       a bloc absent from it draws behind those that are, ordered by ID
      * @param inputs         everything one bake's bands are settled from, sampled once by the bake
      * @return the cell's runs in draw order, or {@link RibbonPlan#NONE} where nothing the rule
      *         counts is present in the cell
@@ -122,7 +122,7 @@ public final class ColonyCellRibbons {
     //
     // The tail is what the widening made possible. A mechanic ranks the blocs it scored, and the
     // shared set now hands back blocs no score was computed for - a faction present through a
-    // concealed base or an unlisted station alone. Ordering those by id is arbitrary and says so:
+    // concealed base or an unlisted station alone. Ordering those by ID is arbitrary and says so:
     // there is no place among the ranked blocs that would not be a claim about a contest they took
     // no part in.
     //
@@ -147,7 +147,7 @@ public final class ColonyCellRibbons {
         return orderedCountByBlocId;
     }
 
-    // The counted blocs the mechanic's ranking never named, in id order.
+    // The counted blocs the mechanic's ranking never named, in ID order.
     private static List<String> sortUnrankedBlocIds(
             Map<String, Integer> countByBlocId,
             Set<String> rankedBlocIds) {

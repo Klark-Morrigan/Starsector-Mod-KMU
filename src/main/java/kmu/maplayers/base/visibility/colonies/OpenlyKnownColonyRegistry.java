@@ -18,9 +18,9 @@ import java.util.Set;
  * place would take the word away exactly where it is doing its work. What is left is identity, and
  * identity is what the game itself uses to recognise such a place.
  *
- * <p>Held as registered ids rather than as a constant beside the reading, because a literal only
+ * <p>Held as registered IDs rather than as a constant beside the reading, because a literal only
  * ever covers what shipped with the game: another mod's quest hub wearing the same shape wants the
- * same treatment, and the tag beside the ids is how one opts in without this mod carrying a list of
+ * same treatment, and the tag beside the IDs is how one opts in without this mod carrying a list of
  * other mods' content.
  *
  * <p>Empty until a composition root registers a set, which is the answer a registry with nothing
@@ -33,12 +33,12 @@ import java.util.Set;
 public final class OpenlyKnownColonyRegistry {
 
     /**
-     * The tag an entity carries to be treated as openly known without its id being registered.
+     * The tag an entity carries to be treated as openly known without its ID being registered.
      * Frozen once shipped: it is content, hung on entities that this mod does not build.
      */
     public static final String OPENLY_KNOWN_TAG = "kmu_openly_known_colony";
 
-    // The registered ids, keyed as the game keys an entity. Empty until a composition root supplies
+    // The registered IDs, keyed as the game keys an entity. Empty until a composition root supplies
     // the set at startup, before any sector map can open.
     private static Set<String> openlyKnownEntityIds = Set.of();
 
@@ -51,7 +51,7 @@ public final class OpenlyKnownColonyRegistry {
      * root at startup: it is the only place a concrete entity is named, so the reading stays
      * ignorant of which of the sector's places are landmarks.
      *
-     * @param entityIds the ids to treat as openly known; null or empty registers nothing, leaving
+     * @param entityIds the IDs to treat as openly known; null or empty registers nothing, leaving
      *                  every concealed colony a secret
      */
     public static void registerEntityIds(Collection<String> entityIds) {
@@ -63,7 +63,7 @@ public final class OpenlyKnownColonyRegistry {
     /**
      * Whether this entity's concealment is public knowledge.
      *
-     * <p>The registered ids and the tag are asked together rather than in a preferred order,
+     * <p>The registered IDs and the tag are asked together rather than in a preferred order,
      * neither being a stronger statement than the other: one is what this mod knows of the sector
      * it shipped against, the other what another mod says of its own content.
      *

@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Inverts a flat list of {@link AllianceRecord}s into the {@link FactionAlliances} the visibility
- * rule reads: every member faction maps to its alliance's id, so two factions are on the same side
+ * rule reads: every member faction maps to its alliance's ID, so two factions are on the same side
  * exactly when they land on the same value.
  *
  * <p>The same list {@link AllianceGroupingFactory} folds, turned the other way round for a reader

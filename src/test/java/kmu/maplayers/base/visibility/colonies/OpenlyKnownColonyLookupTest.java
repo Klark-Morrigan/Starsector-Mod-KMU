@@ -26,12 +26,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins what a reader holding an id and no colony is told about whether a concealment is real: the
- * fold off a colony set, and what an id the fold never met reads as.
+ * Pins what a reader holding an ID and no colony is told about whether a concealment is real: the
+ * fold off a colony set, and what an ID the fold never met reads as.
  *
  * <p>Two things are asserted that no other suite can. The concealment is read before the registry,
  * so a colony held in the open is never excused whatever its entity is registered as - the word
- * being excused is one an open colony never earns. And the unmet id reads as a secret, for the
+ * being excused is one an open colony never earns. And the unmet ID reads as a secret, for the
  * reason its sibling folds err the way they do ({@link ColonyDiscoveryLookupTest}): excusing a
  * concealment on the strength of a fold nobody made is a finding the box has nothing behind.
  */
@@ -185,7 +185,7 @@ final class OpenlyKnownColonyLookupTest {
         }
     }
 
-    // The id a row is paired back to its colony by. Colonies are built without one because almost
+    // The ID a row is paired back to its colony by. Colonies are built without one because almost
     // nothing reads it, and every unnamed colony would otherwise share one entry.
     private static MarketAPI nameColony(MarketAPI colony, String colonyId) {
 

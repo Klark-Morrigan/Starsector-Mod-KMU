@@ -222,7 +222,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
      *                      left the box free to name
      * @param standing      the faction's ranked place in that contest, of either kind
      * @param colonyReading what the box may say about the system's colonies beyond their scores,
-     *                      folded once for the box - a claim row carries the id of the market it
+     *                      folded once for the box - a claim row carries the ID of the market it
      *                      was weighed from and nothing of the place behind it, so this is where
      *                      an account tells an unowned collapse from an unowned hulk, and where it
      *                      learns how old its news of either is

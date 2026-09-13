@@ -206,7 +206,7 @@ public final class SidebarStyles {
      * <p>The roles are vanilla's and the balance is not, which is the whole of what this composes. What
      * the engine mixed its mouseover for is a screen carrying a handful of hit targets, and this panel
      * packs a column of them into a strip - so matching the chrome around it means matching it under one
-     * pointer sweep, which the ids alone cannot do at any volume they ship with.
+     * pointer sweep, which the IDs alone cannot do at any volume they ship with.
      *
      * <p>Read here rather than watched, on the rule the colours beside it follow: a scheme is composed
      * whenever the panel's look is, which is often enough that a slider moved mid-session is heard

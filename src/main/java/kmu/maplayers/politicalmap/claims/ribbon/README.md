@@ -19,7 +19,7 @@ see the [mod README](../../../../../../../../README.md) for project context.
 
 ## Reading the contest, not just its winner
 
-The claim mechanic publishes one faction id per system through vanilla's `Misc.getClaimingFaction` and nothing else.
+The claim mechanic publishes one faction ID per system through vanilla's `Misc.getClaimingFaction` and nothing else.
 A band drawn from that alone would know who painted the cell
 and nothing about who else is standing in it.
 
@@ -51,7 +51,7 @@ and the band is the only readout there is.
 
 `ClaimedSystemRibbonPlanner` therefore plans such a system with **no painter** rather than refusing it.
 That absence is a case of its own,
-not an id no bloc happens to carry,
+not an ID no bloc happens to carry,
 and what the shared rule makes of it -
 there being nobody to be a rival of -
 is [`base.ribbon`](../../base/ribbon/README.md)'s to state.
@@ -80,5 +80,5 @@ A bloc the contest never listed -
 present only through colonies the mechanic's walk did not reach -
 is not ranked here at all.
 It still draws,
-behind the ranked blocs in id order,
+behind the ranked blocs in ID order,
 under the shared rule's own fallback.

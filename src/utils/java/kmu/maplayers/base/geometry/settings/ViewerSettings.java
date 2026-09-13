@@ -182,7 +182,7 @@ public final class ViewerSettings {
     // when moved.
     public boolean showContinentVoid = true;
 
-    // The cells' own names, whose system ids the void's names are built out of. Not part of the
+    // The cells' own names, whose system IDs the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
     public boolean showCellNames;
 

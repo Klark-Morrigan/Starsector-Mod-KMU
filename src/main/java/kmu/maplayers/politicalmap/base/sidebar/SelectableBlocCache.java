@@ -35,7 +35,7 @@ public final class SelectableBlocCache implements InstalledMachinery {
     private final SectorMapMachinery machinery;
 
     // One memo for the whole tab, not one per view: the picker draws a single view at a time, so a
-    // switch is a miss on the view id and the switched-in view's picker replaces the previous one.
+    // switch is a miss on the view ID and the switched-in view's picker replaces the previous one.
     // Which is also the constraint on every entry below - one held entry, so callers that do not
     // agree on the view thrash it rather than share it.
     // Held wildcarded because each view's blocs carry that view's own metrics, which is knowledge
@@ -87,7 +87,7 @@ public final class SelectableBlocCache implements InstalledMachinery {
      * living in a system under the dominance views, claiming it under the claims one.
      *
      * @param view   the selected political-map view the bloc was surfaced by
-     * @param blocId the bloc to look up; an id this view never surfaced answers empty
+     * @param blocId the bloc to look up; an ID this view never surfaced answers empty
      * @return that bloc's systems in walk order, never null
      */
     public Set<SystemKey> readPresentSystemKeys(PoliticalMapView view, String blocId) {

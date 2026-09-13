@@ -103,8 +103,8 @@ class PoliticalMapSectorSnapshotTest {
         @Test
         void visibilityFingerprintMovesWhenOneOfTwoSystemsSharingAnIdReplacesTheOther() {
             // The collision the key exists for, met at the walk that fingerprints the drawn set: a
-            // sector holds two systems answering to one id, told apart only by the entities they
-            // are built around. Contributed by id, the twin arriving as the other left would leave
+            // sector holds two systems answering to one ID, told apart only by the entities they
+            // are built around. Contributed by ID, the twin arriving as the other left would leave
             // the fingerprint standing still and the map would go on drawing the system that went.
             var before = scanUnderStabilityWeighting(
                     buildSectorWith(

@@ -32,7 +32,8 @@ and `resolveHoverTooltip()` for the box shown over one cell of it.
 All but the band default to nothing,
 so a layer states only what it has.
 It is kept apart from `MapLayer` itself,
-which is a descriptor (id, tab label, body controls, hotkey):
+which is a descriptor
+(ID, tab label, body controls, hotkey):
 folding drawing into the descriptor would merge two roles in one type,
 and a tab that only switches would be left with methods it has no answer for.
 
@@ -267,7 +268,7 @@ so a second walk is a pass that went looking for the sector
 rather than asking for what had already been gathered.
 That one traversal is the pass's own index of the sector's systems by `SystemKey`:
 the cell sites come off it,
-and the band bake's lookups by bare id are addressed off those same systems
+and the band bake's lookups by bare ID are addressed off those same systems
 rather than off a walk of their own,
 either being enough on its own to put a rebuild over the bound if it indexed the sector for itself.
 A broken bound marks the row,
@@ -453,7 +454,7 @@ while the map's Starscape filter is on -
 that filter hard-suppresses custom terrain,
 so the overlay needs a terrain the filter admits.
 Each rides its own `SectorMapLayerStarscapeTerrain`,
-one entity class parameterised by the row id it resolves its plugin from,
+one entity class parameterised by the row ID it resolves its plugin from,
 since reporting the whitelisted type is the whole of what that class does.
 All three surfaces dispatch to the same renderer over one set of draw lists -
 one sector resolves one machinery,
@@ -473,7 +474,7 @@ then the band.
 
 `MapLayerTerrainInstaller` is what puts any of them into a loaded save
 and keeps exactly one of each there,
-and it owns the type ids they are built under.
+and it owns the type IDs they are built under.
 `MapSurfaceInstaller` calls it and holds none of that knowledge itself,
 as the mod's entry point holds none of the installer's.
 Which entity in hyperspace belongs to which surface is decided by its plugin class alone,
@@ -481,20 +482,20 @@ compared exactly -
 the three form a subclass chain,
 so an `instanceof` would have one answer for another's,
 and two of them report the engine's whitelisted map type
-rather than the id they were installed under,
+rather than the ID they were installed under,
 so there is nothing else to tell them apart by.
 
 All three terrain rows are declared in `data/campaign/terrain.json`.
 Four class names from this package reach a save,
 which is why [renaming one loses saves](#renaming-a-class-here-loses-saves).
 
-The type ids are frozen once shipped,
+The type IDs are frozen once shipped,
 for the reason the class names are:
-a terrain entity resolves its spec from the id it was written under,
+a terrain entity resolves its spec from the ID it was written under,
 and nothing bridges a renamed one back.
 The Starscape surfaces make that worse rather than better -
 their entity reports the whitelisted map type in the getter's place,
-so the id it was installed under cannot be read back off it at all,
+so the ID it was installed under cannot be read back off it at all,
 and a renamed row leaves an entity nothing can even recognise as ours.
 
 ## Where the Starscape surfaces sit in the draw order

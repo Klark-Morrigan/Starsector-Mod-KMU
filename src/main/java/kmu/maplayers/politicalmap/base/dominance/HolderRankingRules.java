@@ -18,10 +18,10 @@ import java.util.function.Predicate;
  * inputs: what bars a bloc arrives as a predicate and what settles a tie as a comparator, and where
  * either comes from is the caller's business.
  *
- * @param tieBreak  consulted only where two blocs tie on every weight level; the id it orders first
- *                  wins. It must impose a total order over the ids, so a winner never depends on map
+ * @param tieBreak  consulted only where two blocs tie on every weight level; the ID it orders first
+ *                  wins. It must impose a total order over the IDs, so a winner never depends on map
  *                  iteration order
- * @param candidacy which ids may win the system at all; the rest are ranked only where it admits
+ * @param candidacy which IDs may win the system at all; the rest are ranked only where it admits
  *                  nobody
  */
 public record HolderRankingRules(
@@ -38,10 +38,10 @@ public record HolderRankingRules(
     }
 
     /**
-     * Rules breaking a dead heat by lowest id, under the given bar - what a reader with no geometry
+     * Rules breaking a dead heat by lowest ID, under the given bar - what a reader with no geometry
      * to settle a tie by takes, map iteration order never deciding a winner.
      *
-     * @param candidacy which ids may win the system
+     * @param candidacy which IDs may win the system
      * @return those rules
      */
     public static HolderRankingRules createByLowestId(Predicate<String> candidacy) {
@@ -49,7 +49,7 @@ public record HolderRankingRules(
     }
 
     /**
-     * Rules breaking a dead heat by lowest id with nobody barred - the ranking of a contest that is
+     * Rules breaking a dead heat by lowest ID with nobody barred - the ranking of a contest that is
      * about weights rather than about who is allowed to win one.
      *
      * @return those rules

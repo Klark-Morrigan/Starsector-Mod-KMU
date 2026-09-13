@@ -24,7 +24,7 @@ public final class FactionAllianceFixture {
     /**
      * Puts these factions in one alliance and leaves every other faction standing alone.
      *
-     * @param factionIds the members' faction ids
+     * @param factionIds the members' faction IDs
      * @return who stands with whom, for a case handing the set straight to a projection
      */
     public static FactionAlliances buildAllianceOf(String... factionIds) {
@@ -41,7 +41,7 @@ public final class FactionAllianceFixture {
      * Registers that alliance as the live one, as a composition root does at start-up. For a case
      * about a read that opens its own set rather than being handed one.
      *
-     * @param factionIds the members' faction ids
+     * @param factionIds the members' faction IDs
      */
     public static void registerAllianceOf(String... factionIds) {
 

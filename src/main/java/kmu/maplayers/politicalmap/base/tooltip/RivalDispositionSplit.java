@@ -129,7 +129,7 @@ final class RivalDispositionSplit {
         contestedRivals.add(routeRivalSide(rival, sourMembers, false, blocMemberFactionIds));
     }
 
-    // One bloc as a single side lists it: the bloc under its own id, holding only the members on that
+    // One bloc as a single side lists it: the bloc under its own ID, holding only the members on that
     // side, over the fractions the row and its members state.
     //
     // A bloc folded onto both sides is weighed at what the members listed under each row come to,

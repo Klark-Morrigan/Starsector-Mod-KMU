@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Which layers are standing on one sector, and so what a change to the player's arrangement has to
- * act on: an id entering the hidden list is a layer to take back only if it was up, and one leaving
+ * act on: an ID entering the hidden list is a layer to take back only if it was up, and one leaving
  * it is a layer to stand up only if it was not.
  *
  * <p>Held per machinery rather than per layer, because standing is a fact about a layer
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class StandingLayers implements InstalledMachinery {
 
-    // The ids of the layers standing on this sector. A set rather than a flag per registered layer,
+    // The IDs of the layers standing on this sector. A set rather than a flag per registered layer,
     // since the roster is not settled at any one moment - a mod may register after this was made.
     private final Set<String> standingLayerIds = ConcurrentHashMap.newKeySet();
 
@@ -35,7 +35,7 @@ public final class StandingLayers implements InstalledMachinery {
     }
 
     /**
-     * @param layerId the layer's registered id
+     * @param layerId the layer's registered ID
      * @return whether that layer is standing on this sector
      */
     public boolean isLayerStanding(String layerId) {
@@ -50,7 +50,7 @@ public final class StandingLayers implements InstalledMachinery {
      * direction that undoes whatever it managed, and repeating the failing call on every later
      * arrangement would only fail again.
      *
-     * @param layerId    the layer's registered id
+     * @param layerId    the layer's registered ID
      * @param isStanding whether it is standing on this sector from now on
      */
     public void recordLayerStanding(String layerId, boolean isStanding) {

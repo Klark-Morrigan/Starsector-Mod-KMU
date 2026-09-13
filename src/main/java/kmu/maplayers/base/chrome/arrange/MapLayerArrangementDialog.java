@@ -117,7 +117,7 @@ public final class MapLayerArrangementDialog {
         editor = null;
     }
 
-    // What a press on a row's controls does. The row is named by layer id rather than by position, the
+    // What a press on a row's controls does. The row is named by layer ID rather than by position, the
     // position having moved by the time a second press arrives. Which control means what is the editor's,
     // leaving this with the half that only a standing dialog has: drawing the result.
     //
@@ -133,7 +133,7 @@ public final class MapLayerArrangementDialog {
 
         // The bar the press just changed is also the answer to which layers are worth wiring, so a
         // tab taken off stops costing at the press rather than at the next load. Asked after every
-        // press rather than after the hide alone: which press moved an id between shown and hidden
+        // press rather than after the hide alone: which press moved an ID between shown and hidden
         // is the standings' own diff to make, and a caller deciding it here would be a second
         // statement of that rule.
         MapLayerStandings.applyArrangementWhereverInstalled();

@@ -339,7 +339,7 @@ final class ClaimStatsAggregatorIntegrationTest {
         @Test
         void aggregateClaimStatsIndexesAnAlliancesMembersClaimsUnderTheAlliance() {
             // The index folds through the pass's grouping exactly as the count does, so an alliance
-            // row lights both members' claimed systems rather than the one member the id names.
+            // row lights both members' claimed systems rather than the one member the ID names.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);
             var sectorMock = buildSectorWithSystems(

@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  * and for good.
  *
  * <p>The two moments and the fault letters are this family's fixed fields and the holder its
- * free-form one, a faction id a mod may spell with anything at all - so the holder runs to the end
+ * free-form one, a faction ID a mod may spell with anything at all - so the holder runs to the end
  * of the entry and reads back verbatim however it is spelt.
  *
  * <p>An entry that cannot be parted into its four fields, or whose moments are not moments, reads

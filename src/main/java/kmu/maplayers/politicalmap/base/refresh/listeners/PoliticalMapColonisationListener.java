@@ -52,7 +52,7 @@ public class PoliticalMapColonisationListener implements PlayerColonizationListe
 
         // The event carries the planet, not its market; the new colony's market
         // is already attached by the time this fires, so the shared refresh reads
-        // it off the planet. A null market is filtered downstream. The planet id
+        // it off the planet. A null market is filtered downstream. The planet ID
         // rides along in the log so a colony that does (or does not) paint on
         // founding can be traced to it.
         MarketAPI market = planet == null ? null : planet.getMarket();

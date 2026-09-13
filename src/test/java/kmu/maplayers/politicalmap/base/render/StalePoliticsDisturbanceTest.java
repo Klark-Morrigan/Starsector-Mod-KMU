@@ -216,7 +216,7 @@ final class StalePoliticsDisturbanceTest {
         }
     }
 
-    // Only the faction id is read here, so the shades are inert placeholders.
+    // Only the faction ID is read here, so the shades are inert placeholders.
     private static DominantHolder buildHolderOf(String factionId) {
         return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
     }

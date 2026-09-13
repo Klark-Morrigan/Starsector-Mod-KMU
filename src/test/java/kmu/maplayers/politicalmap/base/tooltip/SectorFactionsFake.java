@@ -27,7 +27,7 @@ public final class SectorFactionsFake {
     }
 
     /**
-     * Builds a sector that knows nothing, for the case where a line has only an id to go on.
+     * Builds a sector that knows nothing, for the case where a line has only an ID to go on.
      *
      * @return the sector, with no faction stubbed onto it
      */
@@ -40,7 +40,7 @@ public final class SectorFactionsFake {
      * line rather than in a chain of stubs.
      *
      * @param sectorMock      the sector the faction is stubbed onto
-     * @param factionId       the id the faction answers to
+     * @param factionId       the ID the faction answers to
      * @param longName        the faction's long display title
      * @param crestSpritePath the faction's crest path; blank stands for a faction with none authored
      */
@@ -69,7 +69,7 @@ public final class SectorFactionsFake {
      *
      * <p>Layered onto the faction the sector already answers with rather than standing a second one
      * up, so a faction's name, its crest and its standings are the one faction the box reads - two
-     * mocks under one id would leave whichever was stubbed last answering all three.
+     * mocks under one ID would leave whichever was stubbed last answering all three.
      *
      * <p>A faction never asked about answers no standing at all, which is the indifferent case every
      * suite gets without saying anything.

@@ -60,7 +60,7 @@ and this is where they part company:
 
 | | What it is | What a hidden layer keeps |
 | --- | --- | --- |
-| **Registered** | a place in the roster, and an id a stored pick resolves against | kept - the dialog has to list the layer to offer it back, and a save naming it must not read as an id from a build that dropped the layer |
+| **Registered** | a place in the roster, and an ID a stored pick resolves against | kept - the dialog has to list the layer to offer it back, and a save naming it must not read as an ID from a build that dropped the layer |
 | **Standing** | what a layer runs on one sector: its listeners, its polls, its save heals | lost, on every sector |
 
 A layer states the pair -
@@ -74,9 +74,9 @@ and again whenever the player writes an arrangement.
 The details are [the layer framework's](base/layer/README.md#what-a-hidden-tab-stands-down).
 
 **The hidden set drives it,
-not the order.** An id entering the hidden list stands one layer down
-and an id leaving it stands one up;
-a reorder moves no id between the two,
+not the order.** An ID entering the hidden list stands one layer down
+and an ID leaving it stands one up;
+a reorder moves no ID between the two,
 so dragging a tab a place up the column wires nothing and unwires nothing.
 
 The mod-wide switch keeps its own job beside all of that:
@@ -142,7 +142,7 @@ Read this table left to right as "what the framework calls it" -> "what the poli
 
 | `base` says | political map says | Means |
 | --- | --- | --- |
-| **owner** | **holder** (`DominantHolder`, `HolderProvider`) | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` - a faction id under the factions view, an alliance id under alliances, a claimant under claims |
+| **owner** | **holder** (`DominantHolder`, `HolderProvider`) | what a cell is attributed to; two cells fuse only if it matches. Opaque to `base` - a faction ID under the factions view, an alliance ID under alliances, a claimant under claims |
 | **unowned** | factionless, uninhabited, decivilised | a cell no owner is attributed to. It never fuses, and draws its own lone outline. Unowned is not the same as empty: a view whose holding rule admits only some markets (claims, for the reasons its own package sets out) leaves settled systems unowned, so the factionless split is read from the pass's inhabited-system set, not from the absent owner |
 | **cluster** (`StyledCluster`) | one body of a **territory** | the merged shape connected same-owner cells form, inside one traced border. A lone cell is a cluster of one |
 | **cluster group** (`StyledClusterGroup`) | **territory** | everything one owner paints: its clusters, plus the paints they all share. "Territory" is the political word for *all* of a bloc's cells, which may be several disjoint clusters - so a territory is a cluster group, never a cluster |
@@ -343,7 +343,7 @@ and a player who ordered their bar once does not order it again per save.
   rather than arbitrating between the two passes it would otherwise contribute.
 - **[Clusters](base/render/clusters/README.md)** -
   the shape work under that surface:
-  turning shaped cells and opaque owner ids into borders,
+  turning shaped cells and opaque owner IDs into borders,
   fills,
   and GL-ready runs.
   The cluster-border trace,

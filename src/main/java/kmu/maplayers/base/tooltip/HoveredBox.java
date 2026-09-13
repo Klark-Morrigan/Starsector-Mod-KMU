@@ -19,7 +19,7 @@ import java.util.Optional;
  * injected tooltip, the live sector, and the star system under the cursor.
  *
  * <p>Held as one value because the three are resolved by one chain of conditions - a cell is hovered,
- * the screen's layers are on, a layer injected a box, a sector is live, and the hovered id still
+ * the screen's layers are on, a layer injected a box, a sector is live, and the hovered ID still
  * resolves to a system - and two passes need the answer: the pass that draws the box, and the pass
  * that claims the key which switches it. A chain spelled out twice is one edit away from the key
  * acting on a frame the box does not draw, or falling through on one it does.
@@ -40,7 +40,7 @@ record HoveredBox(
     /**
      * Resolves what the cursor is over into the box that would draw for it, or empty where nothing
      * would: no cell hovered, the screen's layers switched off, no layer showing a box, no live sector,
-     * or an id that no longer names a system.
+     * or an ID that no longer names a system.
      *
      * <p>Resolves the running sector's machinery rather than taking it, because both callers are
      * passes the engine drives with nothing but a frame - neither is handed the state it would
@@ -73,7 +73,7 @@ record HoveredBox(
         }
         // The hover carries a system key; resolve it to the live system, tolerating a key that no
         // longer resolves (a system dropped between the publish and this frame). By key rather than
-        // by id, so a hovered cell whose system shares its id with another names the system whose
+        // by ID, so a hovered cell whose system shares its ID with another names the system whose
         // cell the cursor is actually on.
         var system = SectorStarSystems.findSystemByKey(sector, hover.hoveredSystemKey());
         if (system == null) {

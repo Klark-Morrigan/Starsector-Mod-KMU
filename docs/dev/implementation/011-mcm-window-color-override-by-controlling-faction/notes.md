@@ -115,7 +115,7 @@ Even before the outer-chrome research lands,
 we can do the interior recolour pass:
 
 1. **Owning-faction resolver.** Helper reading the controlling faction off the target market
-   (`market.faction`, or `market.factionId` -> `Global.getSector().getFaction(...)` when we only have the id).
+   (`market.faction`, or `market.factionId` -> `Global.getSector().getFaction(...)` when we only have the ID).
    Default to player faction when the market or lookup fails.
 2. **Thread the faction through the delegate.** Constructor-inject a `Supplier<FactionAPI>`
    (re-resolved per `createCustomDialog` so a relation flip or transfer mid-campaign re-paints on next open).

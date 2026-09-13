@@ -19,9 +19,9 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins how a bloc's two shades are found: through the grouping's colour faction rather than
- * through the bloc id, and as nothing at all when that faction is gone.
+ * through the bloc ID, and as nothing at all when that faction is gone.
  *
- * <p>Both matter because a bloc is not always a faction. An alliance bloc carries a synthetic id
+ * <p>Both matter because a bloc is not always a faction. An alliance bloc carries a synthetic ID
  * no {@code FactionAPI} answers to, so asking the sector for it directly would leave every
  * alliance colourless on a view where the fills are perfectly well coloured; and a bloc the sector
  * cannot name at all has to come back null, since that null is what has a caller drop the bloc
@@ -40,7 +40,7 @@ final class SectorBlocPalettesTest {
 
         @Test
         void readsTheShadesOfTheFactionTheGroupingColoursTheBlocBy() {
-            // The alliance case: the bloc's own id names no faction, and its lead member's authored
+            // The alliance case: the bloc's own ID names no faction, and its lead member's authored
             // pair is what the map paints it in.
             var sectorMock = StarsectorFactionFixtures.buildSectorShadingFaction(
                 LEAD_MEMBER,

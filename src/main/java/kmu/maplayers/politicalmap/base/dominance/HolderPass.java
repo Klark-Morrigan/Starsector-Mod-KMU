@@ -63,7 +63,7 @@ public final class HolderPass {
     //
     // Remembered on the same terms as the colony memo beneath it, whose answers the fold here
     // reads: the two have to agree about what one system is, and keyed differently they would
-    // disagree exactly over a pair sharing an id - one holding two entries where the other holds
+    // disagree exactly over a pair sharing an ID - one holding two entries where the other holds
     // one, so the second system draws the first's inhabitants over its cell, on the one layer
     // whose whole output is who lives where.
     private final SystemKeyedMemo<SystemHabitation> habitationBySystem = new SystemKeyedMemo<>();
@@ -292,7 +292,7 @@ public final class HolderPass {
      * this set and in no answer about who lives in the system.
      *
      * @param system the system to read; null yields an empty set
-     * @return the ids of the factions holding a colony the rule admits, in the projection's own
+     * @return the IDs of the factions holding a colony the rule admits, in the projection's own
      *         order
      */
     public Set<String> readKnownColonyFactionIds(StarSystemAPI system) {
@@ -360,7 +360,7 @@ public final class HolderPass {
     // The owners of one projection's colonies, each named once however many it holds there.
     //
     // Asked of the colony rather than of the faction hanging off its market, as the fold above is.
-    // A market states its owner twice - the id it stores, and the faction that id resolves to -
+    // A market states its owner twice - the ID it stores, and the faction that ID resolves to -
     // and a pass reading one where something beside it reads the other would be two answers to a
     // question the sector has one of.
     private static Set<String> collectFactionIdsOf(List<Colony> colonies) {

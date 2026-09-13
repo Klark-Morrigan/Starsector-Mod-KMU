@@ -61,7 +61,7 @@ public final class MapPainting {
         var hsb = Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), null);
 
         // Hashes cluster in their low bits, so the spread is taken from a well-mixed value
-        // rather than from the seed itself - otherwise consecutive ids come out identical.
+        // rather than from the seed itself - otherwise consecutive IDs come out identical.
         var mixed = Math.floorMod(Integer.reverse(seed * HASH_MIX_MULTIPLIER), HUE_RANGE) / (float) HUE_RANGE;
         var brightness = Math.max(0f, Math.min(
             1f,

@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
  * here rather than left to the in-game test alone.
  *
  * <p>It is also where the sector content the layers treat specially is named, so the entity a hover
- * box must not call out as hiding is pinned here too - the id being config exactly so that no
+ * box must not call out as hiding is pinned here too - the ID being config exactly so that no
  * reading carries a copy of it.
  *
  * <p>The roster is also where what every view owes the player can be held over all of them at once,
@@ -139,7 +139,7 @@ final class MapLayersTest {
         @Test
         void registerAllNamesTheAcademyTheTutorialSendsThePlayerTo() {
             // The one entity vanilla builds that a hover box must not call out as hiding, and the
-            // one place its id may be written. Driven through the whole registration rather than
+            // one place its ID may be written. Driven through the whole registration rather than
             // through the seam it lives on, so dropping the call from the wiring fails here - a
             // seam nothing invokes is registered nowhere.
             //

@@ -22,7 +22,7 @@ import java.util.Map;
  * <p>Both halves are addressed by {@link SystemKey}: a cell by the key of the system it draws as,
  * a system by its own. One type rather than a convention two maps happen to keep, so an edge
  * tagged with a system across it resolves to the neighbouring cell and to that neighbour's owner
- * through the same address, and two systems sharing a vanilla id stay two entries on both sides. A
+ * through the same address, and two systems sharing a vanilla ID stay two entries on both sides. A
  * cell with no system of its own takes a key belonging to neither, and is simply absent from
  * {@code systemKeyByCellKey}.
  *

@@ -89,7 +89,7 @@ final class FilterSelectionHealTest {
                 when(viewMock.getId())
                     .thenReturn("factions");
 
-                // The heal matches on the id alone, so the stats half of the option, the vocabulary
+                // The heal matches on the ID alone, so the stats half of the option, the vocabulary
                 // bundled beside the list, and the presence beside the rows all stand in. Stubbed
                 // through doReturn because the seam answers a wildcarded read, whose captured item
                 // type a when() stub would have to name.
@@ -143,7 +143,7 @@ final class FilterSelectionHealTest {
                             .map(ScreenLayerPicks::memoryScope)
                             .toList());
 
-                // Each under the active view's id, since a spotlight is per view as well as per screen.
+                // Each under the active view's ID, since a spotlight is per view as well as per screen.
                 assertThat(healedSlots)
                     .extracting(SelectionSlot::scopeId)
                     .containsOnly("factions");
@@ -169,7 +169,7 @@ final class FilterSelectionHealTest {
 
                 FilterSelectionHeal.healStaleSelectionAgainstActiveView();
 
-                // Each screen's slot under its own screen's view id, which is the pairing a shared view
+                // Each screen's slot under its own screen's view ID, which is the pairing a shared view
                 // read would collapse onto one id.
                 assertThat(captureHealedSlots(selectionMock))
                     .extracting(SelectionSlot::scopeId)
@@ -201,7 +201,7 @@ final class FilterSelectionHealTest {
         void healStaleSelectionAgainstActiveViewReadsNoBlocsUntilOneIsThereToJudge() {
             // The cost contract, which matters because every settings change now arrives here and
             // most saves hold no spotlight: resolving the view's blocs is a whole grouped dominance
-            // pass over the sector, so it must not run before the heal has found a stored id worth
+            // pass over the sector, so it must not run before the heal has found a stored ID worth
             // judging. Pinned on the seam that pass goes through, the pass itself being the view's.
             try (var globalMock = mockStatic(Global.class);
                     var registryMock = mockStatic(PoliticalMapViewRegistry.class);
@@ -228,7 +228,7 @@ final class FilterSelectionHealTest {
 
                 verify(viewMock, never()).resolveBlocPickerRead(sectorMock);
 
-                // And it is that same predicate that pays the cost once there is an id to judge, so
+                // And it is that same predicate that pays the cost once there is an ID to judge, so
                 // the work is deferred rather than dropped.
                 capturePredicate(selectionMock).test("hegemony");
 

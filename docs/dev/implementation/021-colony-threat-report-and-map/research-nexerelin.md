@@ -48,7 +48,7 @@ Nex version used:
   `getFaction()` (attacker),
   `getETA()` / `getCurrentStage()` (inherited from vanilla `RaidIntel`),
   `getFP()` / `getBaseFP()` / `getRaidStr()`,
-  and `getType()` returning a stable string id
+  and `getType()` returning a stable string ID
   (`"raid"`, `"satbomb"`, `"defense"`, `"blockade"`, plus subclass-specific overrides).
 - `InvasionFleetManager.getManager().getActiveIntelCopy()` (`InvasionFleetManager.java:1177`) returns every live `OffensiveFleetIntel`.
   It is **not** indexed by target market — KMU must loop and filter on `intel.getTarget() == market`.
@@ -156,7 +156,7 @@ Class:
 extends `OffensiveFleetIntel`,
 implements `GroundBattleCampaignListener`.
 
-Type id:
+Type ID:
 `"invasion"` (`InvasionIntel.java:564`).
 
 Extra fields KMU may want:
@@ -176,7 +176,7 @@ which then becomes the live "we are being invaded" intel for the duration of the
 Class:
 `exerelin.campaign.intel.raid.NexRaidIntel` (`NexRaidIntel.java`);
 extends `OffensiveFleetIntel`.
-Type id:
+Type ID:
 `"raid"` (`NexRaidIntel.java:197`).
 Adds the `"Colony threats"` tag inline (`NexRaidIntel.java:307`).
 Action stage:
@@ -197,7 +197,7 @@ but KMU should still include it under the "outgoing/incoming" filter so it shows
 Class:
 `exerelin.campaign.intel.satbomb.SatBombIntel` (`SatBombIntel.java:42-43`);
 extends `OffensiveFleetIntel`.
-Type id:
+Type ID:
 `"satbomb"` (`SatBombIntel.java:115`).
 Marks itself "important if targeting player" (`SatBombIntel.java:106-108`).
 KMU should render this at the **highest severity** in the per-colony summary — it is the only threat that can destroy the colony outright.
@@ -209,7 +209,7 @@ Variant flag:
 
 Class:
 `exerelin.campaign.intel.fleets.BlockadeWrapperIntel` (`BlockadeWrapperIntel.java`);
-type id `"blockade"` (`BlockadeWrapperIntel.java:178`).
+type ID `"blockade"` (`BlockadeWrapperIntel.java:178`).
 Wraps a `NexBlockadeFGI` (`BlockadeWrapperIntel.java:185`);
 the wrapper extends `OffensiveFleetIntel` but delegates display to the FGI.
 The underlying FGI is a `FleetGroupIntel` from vanilla.

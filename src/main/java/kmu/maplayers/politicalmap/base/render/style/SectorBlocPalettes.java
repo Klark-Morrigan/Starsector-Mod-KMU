@@ -10,7 +10,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
  * The live binding of {@link BlocPaletteReader}: a bloc's two shades read off the faction it
  * paints in.
  *
- * <p>A bloc is not always a faction - an alliance bloc is named by a synthetic id no
+ * <p>A bloc is not always a faction - an alliance bloc is named by a synthetic ID no
  * {@code FactionAPI} answers to - so the grouping names the colour faction first and the sector is
  * asked for that. The two shades are the faction's own authored UI pair, so whatever is drawn for
  * a bloc draws it in the same colours its fills and borders already give it.

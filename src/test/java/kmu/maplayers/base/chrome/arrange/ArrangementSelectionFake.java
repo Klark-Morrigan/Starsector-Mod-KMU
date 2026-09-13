@@ -31,7 +31,7 @@ final class ArrangementSelectionFake implements MapLayerArrangementSelection {
      * Poses what the player had arranged before this dialog opened.
      *
      * @param orderedLayerIds the row order, leading first
-     * @param hiddenLayerIds  the ids whose tabs are off the bar
+     * @param hiddenLayerIds  the IDs whose tabs are off the bar
      */
     void holdArrangement(List<String> orderedLayerIds, List<String> hiddenLayerIds) {
 

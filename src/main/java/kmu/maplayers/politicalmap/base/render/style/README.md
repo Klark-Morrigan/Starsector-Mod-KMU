@@ -168,7 +168,7 @@ and every rule here stays exercisable on hand-built shades.
   and brings the pair to `MapPalettes` to pick a slot.
   `SectorBlocPalettes` is the live implementation,
   naming the bloc's colour faction through the pass's grouping -
-  an alliance bloc's id is synthetic and answers to no faction -
+  an alliance bloc's ID is synthetic and answers to no faction -
   and returning null for a bloc the sector can no longer name at all,
   which is what has a caller drop the bloc rather than paint it in a stand-in shade.
 - `BlocStyleResolver` -

@@ -296,7 +296,7 @@ final class ClusterLabelStylingTest {
         @Test
         void newLabelColourResolverAnswersTheShadeOfTheBlocItIsAskedFor() {
             // Every system of a bloc carries that bloc's own two shades, so the resolver must
-            // key off the bloc id the search hands it rather than any one system.
+            // key off the bloc ID the search hands it rather than any one system.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
                 Map.of(buildCellKey("alpha"), FACTION_F, buildCellKey("beta"), FACTION_G),
                 nameStyles(FactionPaletteSlot.PRIMARY),

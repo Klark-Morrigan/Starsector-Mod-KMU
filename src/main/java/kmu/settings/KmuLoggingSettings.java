@@ -8,12 +8,12 @@ package kmu.settings;
  * is never read at a call site - it is bound once to the logger subtree at load, and every line the
  * mod writes then answers to it through log4j rather than through a check anyone wrote. So what this
  * holds for it is the pair {@link KmuLunaSettings} binds: the field the player sets, and the logger
- * subtree it sets the level on. The two coincide with the mod id as strings and mean different
+ * subtree it sets the level on. The two coincide with the mod ID as strings and mean different
  * things.
  *
- * <p>Keeping the level's field id here rather than beside the binding is what makes this class the
+ * <p>Keeping the level's field ID here rather than beside the binding is what makes this class the
  * one answer to which logging rows exist. A row named in the composition root instead would be a
- * second place to look, and the settings sweep that walks ids against the table would be walking
+ * second place to look, and the settings sweep that walks IDs against the table would be walking
  * against two homes for one section.
  *
  * <p>The reflection switch is the row a level cannot express. What sets it apart is not how

@@ -18,10 +18,10 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pins the shipped terrain spec against the classes it names and the ids it declares. The spec
+ * Pins the shipped terrain spec against the classes it names and the IDs it declares. The spec
  * reaches its plugin by fully-qualified class name in a data file, which no compiler ever checks, so
  * a class that moves package or changes name leaves the row pointing at nothing - and the mod still
- * builds green. Its row ids are unchecked from the other side for the same reason: the mod names
+ * builds green. Its row IDs are unchecked from the other side for the same reason: the mod names
  * them as strings to install under. Either failure surfaces only in play, as a terrain that never
  * installs and therefore a map that draws no layer at all. This reads the real file for that reason
  * rather than a fixture.
@@ -35,8 +35,8 @@ final class TerrainSpecIntegrationTest {
     // being parsed as JSON.
     private static final Pattern PLUGIN_FIELD = Pattern.compile("\"plugin\"\\s*:\\s*\"([^\"]+)\"");
 
-    // A row id: the terrain type the mod constructs its entity with and the game resolves the spec
-    // from. Matched by the object that opens after it, so a quoted id inside a comment or a field
+    // A row ID: the terrain type the mod constructs its entity with and the game resolves the spec
+    // from. Matched by the object that opens after it, so a quoted ID inside a comment or a field
     // value does not count as a declared row.
     private static final Pattern ROW_ID = Pattern.compile("\"(kmu_[A-Za-z0-9_]+)\"\\s*:\\s*\\{");
 
@@ -79,8 +79,8 @@ final class TerrainSpecIntegrationTest {
             // what makes the data file and the installer agree without either reading the other.
             //
             // The two Starscape rows are the ones that cannot be repaired after the fact: their
-            // entities report the engine's whitelisted map type in place of the id they were built
-            // with, so an id that drifts from this file resolves to no spec at game load and leaves
+            // entities report the engine's whitelisted map type in place of the ID they were built
+            // with, so an ID that drifts from this file resolves to no spec at game load and leaves
             // behind an entity no later sweep can even recognise.
             assertThat(readRowIds())
                 .containsExactlyInAnyOrder(

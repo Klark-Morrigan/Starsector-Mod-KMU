@@ -104,7 +104,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The non-political block is the exception among the blocks and is pinned here, because it is the
  * one whose routing turns on which faction a bloc actually is: the shape suite poses its groups as
- * bloc ids that stand for nobody in particular, which is right for every block placed by rank or by
+ * bloc IDs that stand for nobody in particular, which is right for every block placed by rank or by
  * alliance and cannot state this one at all.
  */
 final class SystemDominationTooltipTest {

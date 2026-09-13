@@ -23,13 +23,13 @@ import java.util.Optional;
  *
  * <p>The bloc the cell was painted for leads, whatever settled that - a plain weight lead, or one
  * of the tie-breaks below the weights - so a reader never finds the leading colour second in a band
- * on a cell painted in it. Behind the leader the blocs run by descending weight and then by id, the
+ * on a cell painted in it. Behind the leader the blocs run by descending weight and then by ID, the
  * same total order the standings box ranks them in, so the band and the box agree about who is
  * second.
  *
  * <p>A bloc the weights never reached - one holding nothing but colonies the economy does not list,
  * which have no industries, conditions or stability for the arithmetic to read - takes no place in
- * this ranking and draws behind it in id order. It is present in the system and counted like any
+ * this ranking and draws behind it in ID order. It is present in the system and counted like any
  * other bloc; what it has no claim to is a rank among the blocs that were weighed.
  *
  * <p>Pure over the footprints a pass already read, every live read reached through the inputs.
@@ -87,10 +87,10 @@ public final class HeldCellRibbons {
 
     // The band's order. The painter sorts ahead of everything because the dominance rule can
     // hand a system to a bloc that leads on none of the weights - a tie settled by the market
-    // nearest the system centre, or by id - and a band that re-ranked from the weights alone
+    // nearest the system centre, or by ID - and a band that re-ranked from the weights alone
     // would then open on a bloc the cell is not painted for.
     //
-    // Behind it, descending combined weight and then ascending id: the same two keys, in the
+    // Behind it, descending combined weight and then ascending ID: the same two keys, in the
     // same order, that the standings ranking uses, so the band cannot disagree with the box
     // about who stands second in a system.
     private static Comparator<Map.Entry<String, MarketFootprint>> orderByPaintedThenWeight(

@@ -17,7 +17,7 @@ import java.util.Set;
  * dominance weighting so the numbers match the fills and its own {@link HolderGrouping} so a
  * group's aggregate is exactly the territory that view paints as one bloc. Each faction's
  * {@link MarketFootprint#totalWeight()} folds into its group; groups rank by their summed score and
- * a group's members rank by their own, ties breaking by id at both tiers so the ordering is total.
+ * a group's members rank by their own, ties breaking by ID at both tiers so the ordering is total.
  *
  * <p>Presence is what puts a faction on the list, not weight - so the list is built from who is in
  * the system, with the weighed factions among them, rather than from the weighing plus whatever it
@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public final class SystemStandings {
 
-    // Groups rank descending by their summed score, a tie falling to the lowest bloc id so the order
+    // Groups rank descending by their summed score, a tie falling to the lowest bloc ID so the order
     // is total and never depends on the economy walk order the footprints arrive in.
     private static final Comparator<GroupStanding> GROUP_ORDER =
         Comparator
@@ -48,7 +48,7 @@ public final class SystemStandings {
             .reversed()
             .thenComparing(GroupStanding::blocId);
 
-    // A group's members rank descending by their own score, a tie falling to the lowest faction id
+    // A group's members rank descending by their own score, a tie falling to the lowest faction ID
     // on the same total-order rule as the groups above them.
     private static final Comparator<FactionStanding> MEMBER_ORDER =
         Comparator
@@ -87,7 +87,7 @@ public final class SystemStandings {
     /**
      * Folds a system's per-faction footprints into two-tier standings under a grouping: each faction
      * becomes a member of its group, groups rank by their summed score, and each group's members
-     * rank within it, ties breaking by id at both tiers. The pure rule the live entry delegates to,
+     * rank within it, ties breaking by ID at both tiers. The pure rule the live entry delegates to,
      * so it is exercised on hand-built footprints and a hand-built grouping.
      *
      * @param footprintByFactionId each faction's footprint in the hovered system; an empty map means
@@ -118,7 +118,7 @@ public final class SystemStandings {
         return List.copyOf(groups);
     }
 
-    // Buckets each faction's standing under its group's bloc id, so an alliance's members land in
+    // Buckets each faction's standing under its group's bloc ID, so an alliance's members land in
     // one bucket while every other faction is its own. First-seen bloc order is kept here only for a
     // stable build; the caller sorts the groups into ranked order regardless.
     //

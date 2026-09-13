@@ -116,7 +116,7 @@ public final class SplitFillBuilder {
     // collision-free as it already is.
     //
     // Written under each member's own key, the address the owner map already carries, so two
-    // members sharing a vanilla id take the sub-cluster key of the state each is actually in.
+    // members sharing a vanilla ID take the sub-cluster key of the state each is actually in.
     private Map<SystemKey, String> mapSubClusterOwnerBySystemKey(FillSplit split, String owner) {
 
         var keys = new HashMap<>(cellGrouping.ownerBySystemKey());

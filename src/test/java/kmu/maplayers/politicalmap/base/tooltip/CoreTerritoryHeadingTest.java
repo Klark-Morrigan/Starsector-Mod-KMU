@@ -44,7 +44,7 @@ final class CoreTerritoryHeadingTest {
     private static final String CORE_FACTION = "hegemony";
     private static final String CREST = "graphics/hegemony_crest.png";
 
-    // A faction id no sector resolves, which is what the fallback cases are read through.
+    // A faction ID no sector resolves, which is what the fallback cases are read through.
     private static final String UNKNOWN_FACTION = "ghost_faction";
 
     // Whether the box's body names the decree itself, spelled out so a case reads as the state it puts

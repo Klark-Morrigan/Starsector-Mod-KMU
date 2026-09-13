@@ -8,7 +8,7 @@ import java.util.Map;
  * The ownership rule that turns a cell-adjacency edge into an interior seam or a
  * cluster boundary.
  *
- * <p>Pure rule over opaque owner ids: an edge is an interior seam only when the
+ * <p>Pure rule over opaque owner IDs: an edge is an interior seam only when the
  * same non-null owner holds both the system and its neighbour across the edge; an edge
  * with an owner on exactly one side (a owned system facing unowned space)
  * is an open frontier; any other pairing - two different owners, or two unowned sides -
@@ -66,7 +66,7 @@ public final class EdgeClassifier {
      * interior seam outright - the far side is this same cell, so no owner can differ.
      *
      * <p>The neighbour and the owner map share one address, so the target's own
-     * {@link SystemKey} is the lookup: two systems sharing a vanilla id are two neighbours with
+     * {@link SystemKey} is the lookup: two systems sharing a vanilla ID are two neighbours with
      * two owners rather than one.
      *
      * @param edge             the cell edge, tagged with what lies across it

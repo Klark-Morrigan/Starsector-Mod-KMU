@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>The cases are posed on the ways that can go wrong: a painter that does not lead on weight,
  * which the dominance rule's tie-breaks below the weights genuinely produce; two rivals level on
- * weight, where only the id separates them; and a bloc the weights never reached at all, which the
+ * weight, where only the ID separates them; and a bloc the weights never reached at all, which the
  * widened count now puts in a band that has no rank for it. Each poses its footprints in an order
  * the assertion does not expect back, since an ordering rule is invisible against inputs already in
  * the order it would produce.
@@ -84,7 +84,7 @@ final class HeldCellRibbonsTest {
         @Test
         void leadsWithThePainterEvenWhereARivalOutweighsIt() {
             // The dominance rule can hand a system to a bloc that leads on none of the weights -
-            // a dead heat settled by the market nearest the system centre, or by id - and the band
+            // a dead heat settled by the market nearest the system centre, or by ID - and the band
             // has to open on the bloc the cell is actually painted for regardless.
             var sector = buildSectorHolding(SYSTEM_ID, TRITACHYON, HEGEMONY);
 
@@ -121,7 +121,7 @@ final class HeldCellRibbonsTest {
 
         @Test
         void breaksAWeightTieBetweenRivalsByBlocId() {
-            // Two rivals level on weight are separated by id and nothing else, so the order never
+            // Two rivals level on weight are separated by ID and nothing else, so the order never
             // depends on which of them the economy walk reached first.
             var sector = buildSectorHolding(SYSTEM_ID, HEGEMONY, TRITACHYON, PERSEAN);
 

@@ -21,7 +21,7 @@ import java.util.Objects;
  *
  * @param breakdown                    the whole scored contest the standing was ranked in
  * @param colonyReading                what the box may say about the system's colonies beyond their
- *                                     scores, folded once for the box - a claim row carries the id
+ *                                     scores, folded once for the box - a claim row carries the ID
  *                                     of the market it was scored from and nothing of the place
  *                                     behind it, so this is what parts an unowned collapse from an
  *                                     unowned hulk, says the player has yet to find either, and

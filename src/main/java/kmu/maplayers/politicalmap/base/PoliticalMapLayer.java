@@ -37,11 +37,11 @@ public final class PoliticalMapLayer implements MapLayer {
     /** The one shared instance; the tab registration and the view registry's host tab reference it. */
     public static final PoliticalMapLayer INSTANCE = new PoliticalMapLayer();
 
-    // The tab's save-serialised layer id: the political map, not a specific view. The value stored
+    // The tab's save-serialised layer ID: the political map, not a specific view. The value stored
     // in the active-tab memory key.
     private static final String LAYER_ID = "political_map";
 
-    // LunaLib stores this tab's key under the field id; the row it names is where the key is decided.
+    // LunaLib stores this tab's key under the field ID; the row it names is where the key is decided.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_factions";
 
     // What this tab runs on a sector while it is on the bar. One for the tab rather than one per
@@ -108,7 +108,7 @@ public final class PoliticalMapLayer implements MapLayer {
     @Override
     public int resolveShortcutKeycode() {
         // The framework asks for the key in force rather than for a field to read, so the LunaLib
-        // lookup is this tab's own: the field id is a row in KMU's settings file, which is a fact
+        // lookup is this tab's own: the field ID is a row in KMU's settings file, which is a fact
         // about this mod rather than about the bar the tab stands in.
         return KmuMapKeybindSettings.getMapLayerShortcut(SHORTCUT_SETTING_FIELD);
     }
@@ -130,7 +130,7 @@ public final class PoliticalMapLayer implements MapLayer {
         // the cut cells, the territories, the fitted labels - is one sector's. This tab is
         // registered once for the process and would otherwise be where two sectors met.
         //
-        // The id goes over beside it because the renderer reports its frame's rows under it. Handed
+        // The ID goes over beside it because the renderer reports its frame's rows under it. Handed
         // down rather than looked up, so there is one spelling of it.
         return machinery.resolveMachinery(
             PoliticalMapLayerRenderer.class,
@@ -163,7 +163,7 @@ public final class PoliticalMapLayer implements MapLayer {
         // The asking panel's screen goes to the picker's stores as well as to the controls above it,
         // so a spotlight, a sort or a column count picked here is that panel's own. It travels under
         // this mod's store namespace, which is what keeps these picks off another mod's layer, and
-        // paired with the view's id, since a view keeps its own picks: the three are the picker's
+        // paired with the view's ID, since a view keeps its own picks: the three are the picker's
         // whole address. Composed once here, so the picker's slot and the column count below cannot
         // name two different screens or two different mods.
         var screenSlot = new ScreenSelectionSlot(KmuMod.MAP_STORE_NAMESPACE, target.memoryScope());

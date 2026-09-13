@@ -68,7 +68,7 @@ import java.util.Set;
  * <p>It satisfies {@link ClusterDrawLists} directly, and so is what the framework's cluster
  * emission paints: the two draw lists it hands over are the two it already holds, and the
  * global tier the pass binds once is the one its own builders resolved against. Nothing
- * political crosses that seam - the ids in both maps stay opaque to the emission.
+ * political crosses that seam - the IDs in both maps stay opaque to the emission.
  *
  * <p>It satisfies {@link MapHoverTargets} directly rather than through an adapter, because the
  * two reads the cursor needs are already exactly the two it exposes - the shapes it painted and
@@ -82,7 +82,7 @@ public final class PoliticalMapTerritories implements
 
     // Render output, mutated in place by the incremental refresh. Created empty here since a
     // fresh build fills them and no caller ever supplies them pre-populated. A bloc's bodies are
-    // keyed by its holder - a faction id under the factions view, or one of the filter's
+    // keyed by its holder - a faction ID under the factions view, or one of the filter's
     // synthetic spotlight keys - which the emission never interprets.
     private final Map<SystemKey, StyledCell> styledCellByCellKey = new LinkedHashMap<>();
     private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
@@ -465,7 +465,7 @@ public final class PoliticalMapTerritories implements
      * getters: every input is this build's own retained snapshot, so a bloc's fill, its national
      * border, and its cells' interior seams all resolve from the same read and cannot diverge.
      *
-     * @param blocId the bloc to style - a faction id, or one of the filter's synthetic keys
+     * @param blocId the bloc to style - a faction ID, or one of the filter's synthetic keys
      * @return the category bundle and the adjustment applied over it
      */
     public BlocStyling resolveBlocStyling(String blocId) {
@@ -501,13 +501,13 @@ public final class PoliticalMapTerritories implements
         return viewGrouping.grouping();
     }
 
-    // Whether this build spotlights a bloc - it does exactly when a bloc id was selected, so the
+    // Whether this build spotlights a bloc - it does exactly when a bloc ID was selected, so the
     // shared cell and faction builders bypass the view's per-bloc styling seams for the filter's.
     public boolean isFiltering() {
         return contentInputs.isFiltering();
     }
 
-    // The spotlighted bloc's id this build recedes the rest of the sector around, or null off
+    // The spotlighted bloc's ID this build recedes the rest of the sector around, or null off
     // filter; the label rebuild resolves the filter's synthetic spotlight keys back to its name.
     public String getSelectedBlocId() {
         return contentInputs.selectedBlocId();

@@ -39,13 +39,13 @@ final class ArrangementRowWidgets {
     // What each row may do, asked afresh per row as it is built.
     private final MapLayerArrangementEditor editor;
 
-    // Where a press on a row's controls goes, by layer id rather than by position: the position has
+    // Where a press on a row's controls goes, by layer ID rather than by position: the position has
     // moved by the time a second press arrives.
     private final BiConsumer<String, ArrangementRowAction> onRowAction;
 
     /**
      * @param editor      what each row may do - which way it can move, and whether its box answers
-     * @param onRowAction where a press goes, as the row's layer id and what was pressed
+     * @param onRowAction where a press goes, as the row's layer ID and what was pressed
      */
     ArrangementRowWidgets(
             MapLayerArrangementEditor editor,
@@ -171,9 +171,9 @@ final class ArrangementRowWidgets {
     // another mod's, or one left over from a column already rebuilt - is dropped here rather than
     // reaching the editor as a guess.
     //
-    // Both objects the delegate is handed are searched, because which of them carries the id is the
-    // engine's business and differs by widget: the panel passes the button and expects the id to be
-    // read off it, while other surfaces hand the id over directly.
+    // Both objects the delegate is handed are searched, because which of them carries the ID is the
+    // engine's business and differs by widget: the panel passes the button and expects the ID to be
+    // read off it, while other surfaces hand the ID over directly.
     private void reportRowAction(String layerId, Object firstArgument, Object secondArgument) {
 
         var action = VanillaActionIds.resolveActionId(

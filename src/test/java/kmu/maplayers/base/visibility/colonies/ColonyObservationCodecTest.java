@@ -20,7 +20,7 @@ final class ColonyObservationCodecTest {
     private static final long OBSERVED_MOMENT = 4_200L;
     private static final String OBSERVED_PLACE = "kumari_kandam";
 
-    // A location id spelt with the separator in it - the one spelling that parts in the wrong place
+    // A location ID spelt with the separator in it - the one spelling that parts in the wrong place
     // unless the moment leads and the place runs to the end.
     private static final String PLACE_HOLDING_THE_SEPARATOR = "outer@kumari_kandam";
 

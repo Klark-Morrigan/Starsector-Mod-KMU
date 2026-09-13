@@ -25,7 +25,7 @@ the shared vocabulary and the per-screen key scheme these types compose their ke
 ## What a layer is
 
 `MapLayer` is the seam:
-an id,
+an ID,
 a tab label,
 the body controls that open beneath the tabs,
 and a shortcut key.
@@ -63,7 +63,7 @@ and the default pick falls out of it:
 the first layer that offers itself (`isOfferedAsDefaultPick`),
 so `NoLayer` leads the strip while declining and the political map is what a fresh save opens on.
 
-Two *different* layers under one id are arbitrated rather than tabbed twice,
+Two *different* layers under one ID are arbitrated rather than tabbed twice,
 both tabs otherwise reading and writing the one stored pick that names them.
 Nothing is settled at load,
 a mod registering after KMU's own load has returned being the ordinary case rather than the exception.
@@ -167,8 +167,8 @@ and so does [the bar opener's own gate](../sidebar/README.md#the-opener-on-the-b
 counting the roster rather than any screen's row.
 
 Both subtractions are from the strip and never from the roster,
-a stored pick being an id resolved against it,
-so a hidden layer stays registered and its id goes on resolving.
+a stored pick being an ID resolved against it,
+so a hidden layer stays registered and its ID goes on resolving.
 What it does lose is its standing on a sector,
 [below](#what-a-hidden-tab-stands-down).
 
@@ -185,16 +185,16 @@ so the two are one file's business and each ingredient has a case of its own.
 
 What the player makes of that row,
 held apart from the roster and living here beside it.
-`MapLayerArrangement` is their own order and the ids they took off the bar,
+`MapLayerArrangement` is their own order and the IDs they took off the bar,
 kept per user in the game's common data by `PersistedMapLayerArrangement` rather than in the save:
 which tab a screen is on is a fact about one campaign,
 while how the bar is laid out is a preference about the interface.
 
 It is a preference laid over whatever is registered rather than a roster of its own,
 and `ArrangedLayers` is that laying:
-an id nothing registers is skipped,
+an ID nothing registers is skipped,
 a registered layer the store does not name is appended in registration order,
-an id named twice is placed once,
+an ID named twice is placed once,
 and an arrangement that would leave no tab at all keeps the leading one -
 a bar with no tabs having no way back to itself.
 So a mod installed,
@@ -224,9 +224,9 @@ and is simply always standing.
 `MapLayerStandings` decides when each half is owed,
 and reads one thing to decide it:
 the hidden set.
-An id entering it stands that layer down on every installed sector,
-an id leaving it stands the layer up,
-and a reorder moves no id between the two -
+An ID entering it stands that layer down on every installed sector,
+an ID leaving it stands the layer up,
+and a reorder moves no ID between the two -
 which is what keeps a drag from tearing a layer's listeners down and building them again.
 Each layer is diffed against what it was last applied as,
 the same shape `KmuToggledFeature` compares a settings switch by.

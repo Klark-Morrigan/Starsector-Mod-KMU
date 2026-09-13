@@ -74,7 +74,7 @@ public final class MapLayerArrangementEditor {
     }
 
     /**
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      * @return whether this row has anywhere above it to go
      */
     public boolean canMoveRowUp(String layerId) {
@@ -82,7 +82,7 @@ public final class MapLayerArrangementEditor {
     }
 
     /**
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      * @return whether this row has anywhere below it to go
      */
     public boolean canMoveRowDown(String layerId) {
@@ -95,7 +95,7 @@ public final class MapLayerArrangementEditor {
      * <p>Only ever refuses in one direction. Putting a tab back is always allowed; taking the last one
      * off would leave a bar with no tabs, and the dialog that would undo it is opened from that bar.
      *
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      * @return whether the toggle on this row does anything
      */
     public boolean canToggleRowHidden(String layerId) {
@@ -109,7 +109,7 @@ public final class MapLayerArrangementEditor {
      * Swaps this row with the one above it and records the arrangement. A row with nothing above it is
      * left where it is, which is the same answer {@link #canMoveRowUp} gives the button that raised it.
      *
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      */
     public void moveRowUp(String layerId) {
         moveRow(layerId, ONE_PLACE_UP);
@@ -118,7 +118,7 @@ public final class MapLayerArrangementEditor {
     /**
      * Swaps this row with the one below it and records the arrangement.
      *
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      */
     public void moveRowDown(String layerId) {
         moveRow(layerId, ONE_PLACE_DOWN);
@@ -128,7 +128,7 @@ public final class MapLayerArrangementEditor {
      * Takes this row's tab off the bar or puts it back, and records the arrangement. A refused toggle
      * changes nothing and records nothing.
      *
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      */
     public void toggleRowHidden(String layerId) {
 
@@ -149,7 +149,7 @@ public final class MapLayerArrangementEditor {
      * without a running game: a press arrives through a vanilla panel's delegate, and a case wired to
      * the wrong one of these is silent - the button works, it simply does the other thing.
      *
-     * @param layerId the row's layer id
+     * @param layerId the row's layer ID
      * @param action  what was pressed
      */
     void applyRowAction(String layerId, ArrangementRowAction action) {
@@ -211,7 +211,7 @@ public final class MapLayerArrangementEditor {
         return targetIndex >= 0 && targetIndex < rows.size();
     }
 
-    // Where this layer's row stands, or NO_ROW for an id the dialog is not showing - which a caller
+    // Where this layer's row stands, or NO_ROW for an ID the dialog is not showing - which a caller
     // reaches by holding a button from a dialog whose rows have since been rebuilt.
     private int indexOfRow(String layerId) {
 
@@ -243,9 +243,9 @@ public final class MapLayerArrangementEditor {
             .count();
     }
 
-    // The rows as an arrangement: every id in the order they now stand, and the hidden ones named
-    // again. Every id is placed rather than only the ones the player moved, because after a visit to
-    // this dialog every row is where the player left it - an id omitted as "never arranged" would be
+    // The rows as an arrangement: every ID in the order they now stand, and the hidden ones named
+    // again. Every ID is placed rather than only the ones the player moved, because after a visit to
+    // this dialog every row is where the player left it - an ID omitted as "never arranged" would be
     // appended in registration order on the next read and jump out of the place they just saw it in.
     private void recordArrangement() {
 

@@ -171,7 +171,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         private FactionAPI tritachyonMock;
         private FactionAPI piratesMock;
 
-        // The systems the fixture sector lists, kept by id so a case can re-stub the colonies of
+        // The systems the fixture sector lists, kept by ID so a case can re-stub the colonies of
         // the one it moves.
         private Map<String, StarSystemAPI> systemMocksById;
         private EconomyAPI economyMock;
@@ -554,7 +554,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             new LinkedHashMap<>(territories.getRibbonByCellKey()));
     }
 
-    // The systems the fixture sector lists, keyed by id and in row order.
+    // The systems the fixture sector lists, keyed by ID and in row order.
     private static Map<String, StarSystemAPI> buildSystemMocksById() {
 
         var systemMocksById = new LinkedHashMap<String, StarSystemAPI>();
@@ -571,7 +571,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     }
 
     // The fixture sector: the given systems, the economy their colonies are listed on, and the
-    // factions resolvable by id so a holder can be coloured.
+    // factions resolvable by ID so a holder can be coloured.
     private static SectorAPI buildSectorListing(
             Collection<StarSystemAPI> systemMocks,
             EconomyAPI economyMock,

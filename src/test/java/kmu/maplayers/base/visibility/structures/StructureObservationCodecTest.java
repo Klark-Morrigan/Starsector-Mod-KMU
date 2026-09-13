@@ -24,7 +24,7 @@ final class StructureObservationCodecTest {
     private static final long OPERATION_DETECTED = 4_300L;
     private static final long OWNERSHIP_SEEN = 4_200L;
 
-    // A faction id spelt with the separator in it - the one spelling that parts in the wrong place
+    // A faction ID spelt with the separator in it - the one spelling that parts in the wrong place
     // unless the moments and the faults lead and the holder runs to the end.
     private static final String HOLDER_ID_HOLDING_THE_SEPARATOR = "hegemony|remnant";
 
@@ -98,7 +98,7 @@ final class StructureObservationCodecTest {
         @Test
         void readsAHolderIdHoldingTheSeparatorWhole() {
             // The fixed-fields-first convention from the reading side: a separator inside the
-            // holder id is part of what it says, not a boundary.
+            // holder ID is part of what it says, not a boundary.
             assertThat(codec.decodeObservation("4200|4300||hegemony|remnant"))
                 .isEqualTo(new StructureObservation(
                     Optional.of(HOLDER_ID_HOLDING_THE_SEPARATOR),
@@ -182,7 +182,7 @@ final class StructureObservationCodecTest {
 
         @Test
         void writesAHolderIdHoldingTheSeparatorWhereItReadsBackWhole() {
-            // The convention's other end, written and read by the same codec: an id a mod spelt
+            // The convention's other end, written and read by the same codec: an ID a mod spelt
             // with the separator survives the round trip rather than being mangled in a save.
             var observation = new StructureObservation(
                 Optional.of(HOLDER_ID_HOLDING_THE_SEPARATOR),

@@ -45,7 +45,7 @@ final class StructureObservationTest {
         @Test
         void readsAHolderStatedAsNothingAsOneNobodyEstablished() {
             // The two spellings of "nobody has been close enough to say" - no optional at all, and
-            // one holding a blank id - must not reach a reader as different answers, since one of
+            // one holding a blank ID - must not reach a reader as different answers, since one of
             // them would print an empty faction name beside a date.
             var observation = new StructureObservation(
                 Optional.of("   "),

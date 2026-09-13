@@ -14,8 +14,8 @@ package kmu.maplayers.politicalmap.base.dominance;
  * makes exhaustive.
  *
  * <p>Stated in the type rather than as a flag beside the score, so a presence-only standing carrying
- * a weight it was never given cannot be written. Kept to plain ids and an int with no Starsector
- * types, so the ranking is arithmetic over hand-built values; turning the id into a crest and a
+ * a weight it was never given cannot be written. Kept to plain IDs and an int with no Starsector
+ * types, so the ranking is arithmetic over hand-built values; turning the ID into a crest and a
  * display name is a later, separate step's job.
  *
  * <p>A presence-only standing can never take a system: dominance holding is resolved off footprints
@@ -26,7 +26,7 @@ public sealed interface FactionStanding
     permits WeighedFactionStanding, PresenceOnlyFactionStanding {
 
     /**
-     * @return the id of the faction this standing belongs to
+     * @return the ID of the faction this standing belongs to
      */
     String factionId();
 

@@ -38,7 +38,7 @@ public final class MapLayers {
     // visible - world-gen leaves the entity undiscoverable on purpose - while the market hung on it
     // is a stand-in vanilla never registers with the economy and marks hidden to keep off the
     // books. So the flag it wears is the same one a pirate base wears and says something else
-    // entirely. The id is written once at world-gen and persists in the save, so a sector built
+    // entirely. The ID is written once at world-gen and persists in the save, so a sector built
     // without the Academy - a random one, or a mod that removes it - simply never matches.
     //
     // Named here rather than beside the reading because a literal only ever covers what shipped

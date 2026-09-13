@@ -587,7 +587,7 @@ unlike the placements above,
 which are the one derived thing deliberately handed forward.
 `ClusterLabelStyling` resolves each bloc's style decision,
 label colour,
-and name estimator once per bloc id rather than once per cluster,
+and name estimator once per bloc ID rather than once per cluster,
 since every cluster of a bloc shares one name,
 one shade,
 and one style -
@@ -680,7 +680,7 @@ no transient marking required.
 That lifetime is exactly a sector's,
 and it has to be.
 Nothing else would notice a change of sector:
-the geometry cache reconciles by diffing system *ids*,
+the geometry cache reconciles by diffing system *IDs*,
 so a system present in both saves at a different position reads as unchanged.
 So a cache serves one sector and one only -
 it is made when the layers are installed on that sector and released when they are removed,
@@ -705,7 +705,7 @@ Each key is frozen once shipped:
 nothing carries an old spelling forward,
 so renaming one resets every existing save's choice under it to the default.
 A stored value the current build cannot resolve -
-a layer id no longer registered,
+a layer ID no longer registered,
 a spotlight on a bloc that has lapsed -
 falls back to the default rather than stranding the reader,
 and [`FilterSelectionHeal`](../../src/main/java/kmu/maplayers/politicalmap/base/FilterSelectionHeal.java)

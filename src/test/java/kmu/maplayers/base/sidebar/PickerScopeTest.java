@@ -35,7 +35,7 @@ final class PickerScopeTest {
 
         @Test
         void refusesAScopeWhoseListNameResolvesToNothing() {
-            // A blank id composes every list on a panel to one entry, so the picker that lost its id
+            // A blank ID composes every list on a panel to one entry, so the picker that lost its ID
             // would preview whatever row the pointer last rested on in any of them.
             assertThatThrownBy(() -> new PickerScope(NAMESPACE, "   "))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -43,7 +43,7 @@ final class PickerScopeTest {
 
         @Test
         void holdsTwoModsNamingOneListAsTwoLists() {
-            // The whole of what the namespace is doing here: the id is opaque, so two mods listing a
+            // The whole of what the namespace is doing here: the ID is opaque, so two mods listing a
             // view called "factions" must not share an entry.
             assertThat(new PickerScope(KmuMod.MAP_STORE_NAMESPACE, SCOPE_ID))
                 .isNotEqualTo(new PickerScope(NAMESPACE, SCOPE_ID));

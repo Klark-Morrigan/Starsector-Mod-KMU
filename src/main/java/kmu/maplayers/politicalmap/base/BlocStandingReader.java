@@ -75,14 +75,14 @@ public final class BlocStandingReader {
     /**
      * Where one bloc stands with the player.
      *
-     * @param blocId the bloc to read; a bloc with no id names no membership to read one from
+     * @param blocId the bloc to read; a bloc with no ID names no membership to read one from
      * @return the bloc's position on the scale
      */
     public BlocStanding readBlocStanding(String blocId) {
 
         // A bloc nothing named is unreadable rather than left to the lookups below: its membership
         // comes back empty anyway, and the player check would match it against an equally absent
-        // player bloc id, filing a bloc with no name as the player's own.
+        // player bloc ID, filing a bloc with no name as the player's own.
         if (!KmlibStrings.hasText(blocId)) {
             return BlocStanding.UNREADABLE;
         }
@@ -99,7 +99,7 @@ public final class BlocStandingReader {
     // Whether this bloc is the one the player's own faction folds into - false while no player
     // faction is established, there being no identity for a bloc to be recognised as yet.
     //
-    // Matched through the grouping rather than against the faction id itself, so a player faction
+    // Matched through the grouping rather than against the faction ID itself, so a player faction
     // standing in an alliance is recognised as that alliance: under an alliance grouping the player
     // is drawn as part of it, and a bloc the map paints as the player's would otherwise be ranked
     // by how its other members feel about them.
@@ -143,7 +143,7 @@ public final class BlocStandingReader {
         /**
          * The player's own faction, once they have an identity to be recognised by.
          *
-         * @return the player faction's id, or nothing while no player faction is established - in
+         * @return the player faction's ID, or nothing while no player faction is established - in
          *         which case no bloc is the player's own
          */
         Optional<String> resolveEstablishedPlayerFactionId();
@@ -179,7 +179,7 @@ public final class BlocStandingReader {
         @Override
         public Optional<FactionRelation> readRelationWithPlayer(String factionId) {
 
-            // An id naming nobody is looked up as nobody rather than handed to the sector, which is
+            // An ID naming nobody is looked up as nobody rather than handed to the sector, which is
             // free to fault on it.
             return KmlibStrings.hasText(factionId)
                 ? StarsectorPlayerRelations.readPlayerRelation(sector.getFaction(factionId))

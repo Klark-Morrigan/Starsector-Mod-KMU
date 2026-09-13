@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Where each bloc was found: a bloc's id against the star systems it is present in, resolved by
+ * Where each bloc was found: a bloc's ID against the star systems it is present in, resolved by
  * the same sector walk that totals the picker's stats beside it.
  *
  * <p>The systems are named by {@link SystemKey} because the surface reading them back lights cells,
- * and a cell is keyed that way: recorded by id, a bloc present in one of two systems sharing an id
+ * and a cell is keyed that way: recorded by ID, a bloc present in one of two systems sharing an ID
  * would light the other's cell as readily as its own.
  *
  * <p>It exists so a surface can light every system a bloc reaches without moving any paint state.
@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * <p>Plain data with no Starsector types, so it is built and asserted on hand-built inputs.
  *
- * @param systemKeysByBlocId the systems each present bloc was found in, keyed by bloc id in walk
+ * @param systemKeysByBlocId the systems each present bloc was found in, keyed by bloc ID in walk
  *                           order. Whatever order the maps and sets handed over iterate in is the
  *                           order stored and read back, so a caller posing one has to hand over an
  *                           ordered collection to get an order it can rely on
@@ -57,7 +57,7 @@ public record BlocPresenceIndex(Map<String, Set<SystemKey>> systemKeysByBlocId) 
      * <p>A lookup rather than the whole map, so a render pass asking about the one bloc under the
      * pointer never holds every bloc's set to get at it.
      *
-     * @param blocId the bloc to look up; an id this walk never surfaced answers empty, which is
+     * @param blocId the bloc to look up; an ID this walk never surfaced answers empty, which is
      *               also the answer for a bloc that has since stopped being present anywhere
      * @return that bloc's systems in walk order, never null
      */

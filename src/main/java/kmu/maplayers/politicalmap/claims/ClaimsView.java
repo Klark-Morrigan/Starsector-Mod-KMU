@@ -152,7 +152,7 @@ public final class ClaimsView implements PoliticalMapView {
             HolderGrouping grouping,
             SectorAPI sector,
             FactionNameFormatChoice nameFormat) {
-        // A claim bloc id is a plain faction id under identity grouping, so the label is the claiming
+        // A claim bloc ID is a plain faction ID under identity grouping, so the label is the claiming
         // faction's own name - resolved by the faction view so the two never drift on a faction label.
         return FactionsView.INSTANCE.resolveName(blocId, grouping, sector, nameFormat);
     }

@@ -35,7 +35,7 @@ final class NexAllianceSource implements AllianceSource {
         var records = new ArrayList<AllianceRecord>();
 
         for (var alliance : AllianceManager.getAllianceList()) {
-            // uuId is the stable bloc id; getMembersSorted() ranks members by descending
+            // uuId is the stable bloc ID; getMembersSorted() ranks members by descending
             // market size so element 0 is the dominant member the bloc colours off.
             records.add(new AllianceRecord(
                 alliance.uuId,

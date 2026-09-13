@@ -128,7 +128,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
         updateRenderedState(result);
     }
 
-    // Where the id sits among the two objects a vanilla action delegate is handed is a fact about the
+    // Where the ID sits among the two objects a vanilla action delegate is handed is a fact about the
     // engine's widgets rather than about this picker, so the search lives in KMLib beside the rest of what
     // is known about a button the game built. Wrapped here because this end already answers in Optional.
     static Optional<KmuConditionPickerAction> resolveActionFromUiEvent(Object buttonId, Object data) {

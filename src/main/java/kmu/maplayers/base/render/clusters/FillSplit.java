@@ -30,7 +30,7 @@ public record FillSplit(
      * system it draws as and classifying that system.
      *
      * <p>The cells and the two exception sets share one address, so a system's state is read
-     * under the very key its cell resolved to and two systems sharing a vanilla id can draw in
+     * under the very key its cell resolved to and two systems sharing a vanilla ID can draw in
      * two different states.
      *
      * @param cellGrouping       resolves which system each member cell draws as

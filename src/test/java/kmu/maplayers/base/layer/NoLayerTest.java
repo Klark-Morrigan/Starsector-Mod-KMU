@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mockStatic;
  */
 final class NoLayerTest {
 
-    // The live LunaLib field id, pinned as a literal: a rename here silently drops the player's rebind and
+    // The live LunaLib field ID, pinned as a literal: a rename here silently drops the player's rebind and
     // leaves the tab keyless.
     private static final String SHORTCUT_SETTING_FIELD = "kmu_map_keybinds_layers_noLayer";
 
@@ -66,7 +66,7 @@ final class NoLayerTest {
 
         @Test
         void resolveShortcutKeycodeReadsTheEmptyViewsOwnRebindingField() {
-            // Which row the rebind lands in is the layer's own fact now, so a wrong id here silently
+            // Which row the rebind lands in is the layer's own fact now, so a wrong ID here silently
             // ignores the player's rebind while every framework test stays green.
             try (var settingsMock = mockStatic(KmuMapKeybindSettings.class)) {
 

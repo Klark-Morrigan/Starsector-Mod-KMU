@@ -60,7 +60,7 @@ final class CellHitTestTest {
         @Test
         void twoCellsWhoseSystemsShareAnIdAreHitApart() {
             // The cut holds a cell for each of a colliding pair, so the cursor resolves to the
-            // one it is actually over rather than to whichever the id names first.
+            // one it is actually over rather than to whichever the ID names first.
             var second = new SystemKey("deep space", "", "38d53");
             var cells = new LinkedHashMap<SystemKey, List<double[]>>();
             cells.put(new SystemKey("deep space", "", "8b3"), buildSquare(0, 0, 10));

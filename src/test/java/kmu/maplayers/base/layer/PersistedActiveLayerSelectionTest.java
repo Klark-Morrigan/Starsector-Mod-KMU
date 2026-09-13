@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Pins the per-screen persisted pick: the slot it composes for the screen it was built for, that it
- * resolves the stored id against the registry, and that it falls back to the default for a missing or
+ * resolves the stored ID against the registry, and that it falls back to the default for a missing or
  * stale id. The independence case is the property the whole per-screen split rests on - a selection built
  * for one screen never touches another screen's slot, so a switch on one screen leaves the other's pick
  * where it was.

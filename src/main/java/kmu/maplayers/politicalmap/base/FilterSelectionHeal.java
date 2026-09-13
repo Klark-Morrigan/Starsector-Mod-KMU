@@ -20,7 +20,7 @@ import kmu.settings.KmuLunaSettings;
  *
  * <p>Only heals a screen while that screen has a view selected. A filter may persist while the
  * political map is toggled off, and with no selected view there is no grouping to judge which blocs are
- * selectable - a faction id would be meaningless under an alliance read and vice versa - so a persisted
+ * selectable - a faction ID would be meaningless under an alliance read and vice versa - so a persisted
  * filter is left intact until a view is up to validate it. It lives in {@code base} beside the view
  * registry it reads,
  * since resolving "the active view and its selectable blocs" is a view concern the framework's
@@ -47,13 +47,13 @@ public final class FilterSelectionHeal {
      * which is where how many there are is known.
      *
      * <p>Each screen is judged under its own selected view, since the view is that screen's pick as
-     * much as the spotlight is: a slot holding a faction id is stale or sound according to the view
+     * much as the spotlight is: a slot holding a faction ID is stale or sound according to the view
      * that panel is set to, and judging it under the other panel's view would clear a spotlight that
      * is perfectly live where it was set.
      *
      * <p>Costs nothing while no bloc is spotlighted. Judging selectability is a whole grouped
      * dominance pass over the sector, so it is left inside the predicate rather than prepared for it:
-     * {@link FilterSelection#healStaleSelection} asks only when a stored id is there to judge, which
+     * {@link FilterSelection#healStaleSelection} asks only when a stored ID is there to judge, which
      * is the minority of the calls now that every settings change arrives here - and the second
      * screen's call asks nothing at all unless it too has a spotlight of its own.
      */
@@ -89,7 +89,7 @@ public final class FilterSelectionHeal {
     }
 
     // Whether the view still lists one bloc. Asked through the picker seam rather than the bloc
-    // identity: the match is on the id alone, so it needs nothing a view's own metrics carry and
+    // identity: the match is on the ID alone, so it needs nothing a view's own metrics carry and
     // stays valid for any of them. That is also why the view's sort vocabulary is passed over, and
     // the presence beside the rows with it - a heal ranks nothing and lights nothing.
     private static boolean isBlocOfferedBy(PoliticalMapView view, String blocId) {

@@ -275,7 +275,7 @@ final class FactionsViewTest {
 
         @Test
         void resolveNameIsNullWhenTheFactionDoesNotResolve() {
-            // A bloc id with no faction behind it carries no name; the label fit then sizes
+            // A bloc ID with no faction behind it carries no name; the label fit then sizes
             // its stand-in band instead of drawing a name.
             var sectorMock = mock(SectorAPI.class);
 

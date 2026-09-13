@@ -106,7 +106,7 @@ class MarketProximityTieBreakTest {
                     buildKnowledgeUnderTheFog(),
                     GREATER_HEGEMONY);
 
-                // Equal distance: the colour-faction id decides - the alliance colours by
+                // Equal distance: the colour-faction ID decides - the alliance colours by
                 // hegemony, and blackrock < hegemony - so the alliance is ordered last. This
                 // backstop is grouping-invariant, so it lands the same on either view.
                 assertThat(comparator.compare("greater_hegemony", "blackrock"))
@@ -260,7 +260,7 @@ class MarketProximityTieBreakTest {
                 var systemMock = buildSystemCentredOn(starMock, starMock);
 
                 // hegemony's colony has no primary entity to place, so it is unplaceable and
-                // never wins the tie however the ids sort; the placed rival takes it.
+                // never wins the tie however the IDs sort; the placed rival takes it.
                 var colonies = listColonies(
                     buildListedColonyOwnedBy("hegemony", null),
                     buildListedColonyOwnedBy("blackrock", buildOrbitingEntity(ORBIT_FAR, starMock)));

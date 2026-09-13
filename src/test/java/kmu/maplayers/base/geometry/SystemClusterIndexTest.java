@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *  - a system in one of a key's disjoint pockets resolves to that pocket alone,
  *  - a system in no cluster - and no system at all - resolves to nothing.
  *
- * <p>The index reads only the member ids of the clusters handed to it, never the graph they
+ * <p>The index reads only the member IDs of the clusters handed to it, never the graph they
  * were found in, so the fixtures here are the cluster shapes {@link SystemClusters} reports
  * for each scenario rather than the edges and keys that produced them.
  */

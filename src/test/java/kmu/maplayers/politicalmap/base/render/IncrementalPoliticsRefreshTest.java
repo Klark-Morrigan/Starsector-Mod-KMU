@@ -140,7 +140,7 @@ final class IncrementalPoliticsRefreshTest {
             new RevisedCellGeometry(buildTwoAdjacentCells(), GEOMETRY_REVISION);
 
         // What the caller drained off its own machinery's board this frame, in the order it was
-        // marked. Held per case rather than raised on a shared board: the fold is handed the ids
+        // marked. Held per case rather than raised on a shared board: the fold is handed the IDs
         // rather than draining any board of its own, so a case states the batch directly.
         private final Set<String> staleSystemIds = new LinkedHashSet<>();
 
@@ -629,19 +629,19 @@ final class IncrementalPoliticsRefreshTest {
 
         @Test
         void applyStalePoliticsUpdatesFansOneStaleIdOutToEveryCellSharingIt() {
-            // The board still marks a system by bare id, and two systems the sector lists under
-            // one id each seed a cell of their own - so the one mark reaches both cells and both
+            // The board still marks a system by bare ID, and two systems the sector lists under
+            // one ID each seed a cell of their own - so the one mark reaches both cells and both
             // systems are re-derived, where resolving it to a single cell would leave the twin
             // standing on a reading the sector has moved under. The holding itself is still keyed
-            // by id, so the flip lands on the first cell and the twin's own redraw follows once the
+            // by ID, so the flip lands on the first cell and the twin's own redraw follows once the
             // holding is keyed the same way as the cells.
             var firstCell = new SystemKey(FLIPPED_SYSTEM, null, "8b3");
             var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             // Cut order is stated rather than left to a hash, because the fan-out walks the cut
-            // and the holding is keyed by id: the first cell walked is the one whose flip is
-            // recorded, and the id cannot tell a later walk that the holder has already moved.
+            // and the holding is keyed by ID: the first cell walked is the one whose flip is
+            // recorded, and the ID cannot tell a later walk that the holder has already moved.
             var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
             cellEdgesByCellKey.put(firstCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0));

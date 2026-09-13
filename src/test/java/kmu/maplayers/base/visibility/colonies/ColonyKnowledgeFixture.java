@@ -31,7 +31,7 @@ public final class ColonyKnowledgeFixture extends ColonyFixture {
     /**
      * Opens a world holding exactly one system, with nothing observed of it yet.
      *
-     * @param systemId the system's id, as {@code StarSystemAPI#getId} reports it
+     * @param systemId the system's ID, as {@code StarSystemAPI#getId} reports it
      */
     public ColonyKnowledgeFixture(String systemId) {
         super(systemId);

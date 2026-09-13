@@ -152,7 +152,7 @@ This reverses a rule the framework used to state -
 that hiding a tab is not switching a layer off,
 so a save holding a hidden layer as its pick still painted it.
 That reading defended the pick and was right about the store,
-a hidden id being no more a lost one than a hidden layer is an unregistered one.
+a hidden ID being no more a lost one than a hidden layer is an unregistered one.
 What it missed is that the player is looking at a bar:
 a layer painting from a tab that is not there is a map nothing on screen accounts for,
 and the only way back to it is a dialog they have to remember to open.
@@ -172,7 +172,7 @@ it runs while paused,
 every screen the bar draws on pausing the campaign.
 
 Asked every frame is not the same as answered every frame.
-Building the offered row costs an index of the roster by id,
+Building the offered row costs an index of the roster by ID,
 three lists and two stream passes -
 not a thing to spend sixty times a second on an answer that moves when the player opens a dialog.
 So the pass holds each screen's `OfferedTabsRevision` from the frame it last settled it at,

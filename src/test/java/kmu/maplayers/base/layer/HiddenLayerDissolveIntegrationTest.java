@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  */
 final class HiddenLayerDissolveIntegrationTest {
 
-    // The id the stored arrangement names the painting layer by, the store holding ids rather than
+    // The ID the stored arrangement names the painting layer by, the store holding IDs rather than
     // layers.
     private static final String PAINTING_LAYER_ID = "painting";
 

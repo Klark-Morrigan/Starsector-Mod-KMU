@@ -18,7 +18,7 @@ import java.util.List;
  * rather than per save - so it sits beside {@link PersistedActiveLayerSelection} and stores
  * somewhere else entirely, for the reason the arrangement itself gives.
  *
- * <p>The file name carries the mod id because common data is one folder shared by every installed
+ * <p>The file name carries the mod ID because common data is one folder shared by every installed
  * mod, so an unprefixed name is a collision waiting for the mod that picks the same word.
  *
  * <p><b>Every read fails open.</b> No file, an unreadable one, a field that is not a list, an entry
@@ -29,7 +29,7 @@ import java.util.List;
  */
 public final class PersistedMapLayerArrangement implements MapLayerArrangementSelection {
 
-    // Where this preference lives under the game's common data. Prefixed with the mod id for the
+    // Where this preference lives under the game's common data. Prefixed with the mod ID for the
     // reason above, and frozen once shipped: a rename leaves every player's arrangement behind in a
     // file nothing reads, with no failure to tell them so.
     private static final String ARRANGEMENT_FILE_NAME = "kmu_map_layer_arrangement.json";
@@ -103,7 +103,7 @@ public final class PersistedMapLayerArrangement implements MapLayerArrangementSe
         commonDataStore.writeJsonFile(ARRANGEMENT_FILE_NAME, content);
     }
 
-    // The ids under one field, or null where the field holds something this cannot read. Null
+    // The IDs under one field, or null where the field holds something this cannot read. Null
     // rather than an empty list, so a field that is not a list is told from one that is empty: the
     // first is a file to warn about and fall back from whole, the second is an ordinary state - a
     // player who has ordered their bar and hidden nothing.
@@ -123,7 +123,7 @@ public final class PersistedMapLayerArrangement implements MapLayerArrangementSe
 
         for (var index = 0; index < storedArray.length(); index++) {
 
-            // A layer id is a string; anything else in the list is a hand-edit this cannot make
+            // A layer ID is a string; anything else in the list is a hand-edit this cannot make
             // sense of, and taking the rest of the list on trust would leave the player with a
             // partly-honoured order they never asked for.
             if (!(storedArray.opt(index) instanceof String layerId)) {
@@ -134,7 +134,7 @@ public final class PersistedMapLayerArrangement implements MapLayerArrangementSe
         return layerIds;
     }
 
-    // One list of ids as the array the file holds. Built entry by entry rather than handed the
+    // One list of IDs as the array the file holds. Built entry by entry rather than handed the
     // collection, so what lands in the file is a list of strings whatever the library would have
     // made of the collection itself.
     private static JSONArray writeIdList(List<String> layerIds) {

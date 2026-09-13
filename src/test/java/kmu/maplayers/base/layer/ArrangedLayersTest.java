@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins how a stored arrangement lands over a live roster, which is the whole of what makes the
  * store safe to write once and read for years: it is a preference over what is registered rather
- * than a roster of its own, so an id nothing registers costs the player nothing and a layer the
+ * than a roster of its own, so an ID nothing registers costs the player nothing and a layer the
  * store never heard of still gets a tab.
  *
  * <p>And the guard that makes hiding survivable: a hand-edited store that hides everything leaves

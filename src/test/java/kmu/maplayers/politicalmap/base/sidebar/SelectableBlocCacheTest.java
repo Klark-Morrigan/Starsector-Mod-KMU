@@ -220,7 +220,7 @@ final class SelectableBlocCacheTest {
         @Test
         void readPresentSystemIdsAnswersEmptyForABlocTheViewNeverSurfaced() {
             // A hover can outlive the row it started on (a rebuild between the report and the read),
-            // so an unknown id has to answer an empty set rather than a null the render side would
+            // so an unknown ID has to answer an empty set rather than a null the render side would
             // fall over on.
             var sectorMock = mock(SectorAPI.class);
             var viewMock = stubViewAnswering(sectorMock, "factions");
@@ -257,7 +257,7 @@ final class SelectableBlocCacheTest {
         return new SelectableBlocCache(new SectorMapMachinery(sectorMock));
     }
 
-    // A view answering READ for the stated sector under a stated id, which every case needs standing
+    // A view answering READ for the stated sector under a stated ID, which every case needs standing
     // before it can ask the cache anything. Its content revision is left unstubbed and so holds
     // constant, which is what every case but the staleness one wants; that case states its own
     // moving pair.

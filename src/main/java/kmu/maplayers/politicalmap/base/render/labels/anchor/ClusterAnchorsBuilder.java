@@ -45,7 +45,7 @@ import java.util.Map;
  * <p>The collaborators split by responsibility so this one stays the thin, settings-fed seam:
  * {@link ClusterLabelStyling} resolves each label's colour and name (view off filter, filter
  * rules under one), {@link ClusterAnchorPlacement} runs the pure geometric search over the
- * plain functions of a bloc id those resolvers hand it, and {@link LabelAnchorSpecification}
+ * plain functions of a bloc ID those resolvers hand it, and {@link LabelAnchorSpecification}
  * carries the search's tuning. This is the whole of what the political map contributes to a
  * label: everything from the resolved colour and name onward is layer-agnostic framework.
  *
@@ -249,7 +249,7 @@ public final class ClusterAnchorsBuilder {
             ProfileScope fitScope) {
 
         // The agnostic clustering and border trace group the drawn cells, resolving each to
-        // the system it draws as and that system to its bloc id; the holder map is still
+        // the system it draws as and that system to its bloc ID; the holder map is still
         // carried for the per-holder colour. Under a filter that key is a synthetic spotlight
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.

@@ -36,7 +36,7 @@ The cells are a Voronoi partition of the drawn systems:
 each system holds the space closer to it than to any other.
 [`CellGeometryCache`](CellGeometryCache.java) builds and holds them,
 keyed by `SystemKey`:
-a system id is not unique,
+a system ID is not unique,
 and a partition keyed on one would cut a single cell for two systems sharing it.
 
 A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polygon,
@@ -57,7 +57,7 @@ so [`CellGrouping`](CellGrouping.java) makes "who owns this cell" two lookups:
 the cell resolves to the system it draws as,
 and that system resolves to an owner.
 Both lookups are keyed by `SystemKey`,
-so two systems sharing a vanilla id carry two cells and two owners rather than one of each.
+so two systems sharing a vanilla ID carry two cells and two owners rather than one of each.
 
 ## From edges to clusters
 

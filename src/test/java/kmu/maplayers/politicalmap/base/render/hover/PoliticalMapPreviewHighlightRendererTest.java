@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
  */
 final class PoliticalMapPreviewHighlightRendererTest {
 
-    // The view the frame painted, whose id is also the scope a hover is reported under.
+    // The view the frame painted, whose ID is also the scope a hover is reported under.
     private static final String VIEW_ID = "factions";
 
     // The bloc the pointer rests on, and the one system the walk found it in. The cell is drawn
@@ -127,7 +127,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
         @Test
         void resolvePreviewPaintLightsNothingForAHoverReportedUnderAnotherViewsScope() {
             // The hover is read under the view the frame painted, not under whichever scope last
-            // reported one. A bloc id means what the view that surfaced it says it means, and the
+            // reported one. A bloc ID means what the view that surfaced it says it means, and the
             // systems behind it are that view's answer - so a preview crossing a view switch would
             // light one view's set over another view's map.
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
@@ -145,7 +145,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
 
         @Test
         void resolvePreviewPaintLightsNothingForAHoverReportedByAnotherModsPicker() {
-            // The view id is opaque and shared by nobody's agreement, so a foreign layer whose own
+            // The view ID is opaque and shared by nobody's agreement, so a foreign layer whose own
             // picker lists a view under this one's name is a different list: its hovered row names a
             // bloc this view never surfaced, and lighting it would paint that mod's answer here.
             var view = stubViewFinding(buildIndexOf(BLOC_ID, PRESENT_SYSTEM_ID));
@@ -200,7 +200,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
         }
     }
 
-    // The scope the sidebar's picker reports a hovered row under: a view's id under this mod's own
+    // The scope the sidebar's picker reports a hovered row under: a view's ID under this mod's own
     // store namespace, which is what the binder composes from the slot the picker was built for.
     private static PickerScope createScopeOfView(String viewId) {
         return new PickerScope(KmuMod.MAP_STORE_NAMESPACE, viewId);
@@ -248,7 +248,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
             new double[] {0, 100});
     }
 
-    // A view whose walk found the stated presence, under the id the hover is scoped by. The picker
+    // A view whose walk found the stated presence, under the ID the hover is scoped by. The picker
     // half of its read is empty: the preview reads only where a bloc was found, never the rows.
     //
     // Stubbed through doReturn because the seam answers a wildcarded read, which a when() stub

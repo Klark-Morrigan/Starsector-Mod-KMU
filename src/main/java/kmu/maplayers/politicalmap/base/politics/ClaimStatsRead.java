@@ -15,7 +15,7 @@ import java.util.Map;
  * summed from wherever they are, so letting the habitation arm beside it contribute would name
  * systems this layer draws the bloc nothing in.
  *
- * @param statsByBlocId each claiming or living bloc's whole-sector totals, keyed by bloc id in walk
+ * @param statsByBlocId each claiming or living bloc's whole-sector totals, keyed by bloc ID in walk
  *                      order
  * @param presenceIndex the systems each bloc claims - never a wider key set than the stats beside
  *                      it, a bloc listed for its colonies alone claiming nowhere

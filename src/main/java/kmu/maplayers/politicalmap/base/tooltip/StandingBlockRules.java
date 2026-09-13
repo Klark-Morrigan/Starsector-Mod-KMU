@@ -19,7 +19,7 @@ import java.util.function.Predicate;
  * a mistake nobody would notice at the call site; passed as one value it cannot be written.
  *
  * <p>Plain data with no Starsector types, so a rule taking these is still exercised on hand-built
- * inputs: what bars a bloc and what a bloc is made of arrive as functions over ids, and where either
+ * inputs: what bars a bloc and what a bloc is made of arrive as functions over IDs, and where either
  * comes from is the caller's business.
  *
  * @param candidacy      which blocs take part in the contest at all; the rest are set aside before a
@@ -48,7 +48,7 @@ public record StandingBlockRules(
      * The factions one bloc is made of - its whole membership, and not who happens to stand in the
      * system being hovered.
      *
-     * @param blocId the bloc to read; a bloc with no id is made of nobody
+     * @param blocId the bloc to read; a bloc with no ID is made of nobody
      * @return its member factions
      */
     public Set<String> readMemberFactionIds(String blocId) {

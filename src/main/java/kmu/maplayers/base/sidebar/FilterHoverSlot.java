@@ -7,16 +7,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The single id a sidebar filter picker's pointer currently rests on, or none - held per
+ * The single ID a sidebar filter picker's pointer currently rests on, or none - held per
  * {@link PickerScope}, so each mod's every list keeps its own and one list's hover is never read
- * under another. A layer reading it previews what picking that id would spotlight, without picking
+ * under another. A layer reading it previews what picking that ID would spotlight, without picking
  * it.
  *
  * <p>Nothing is persisted and no refresh signal is raised, which is the whole of what separates it
  * from {@link FilterSelection}: a hover is where a pointer happens to be this frame, previewed over
  * paint that is already there, where a pick has the reading layer rebuild everything it draws.
  *
- * <p>One sector's, held by that sector's machinery rather than for the process. The id is one a
+ * <p>One sector's, held by that sector's machinery rather than for the process. The ID is one a
  * sector's own walk offered and is read back against what that sector holds, so a hover left
  * standing when the sector goes would light a set the next sector never produced. Held that way it
  * needs no discard of its own: a load disposes the machinery and the hover goes with it.
@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public final class FilterHoverSlot implements InstalledMachinery {
 
-    // One live id per picker, keyed by the scope value rather than by a composed string: nothing
+    // One live ID per picker, keyed by the scope value rather than by a composed string: nothing
     // here is serialised, so there is no key to spell and no chance of two holders spelling it
     // differently. A plain map because the value dies with the sector - an entry exists only while a
     // pointer rests on a row, and absence is the resting state every list starts and ends in.
@@ -74,7 +74,7 @@ public final class FilterHoverSlot implements InstalledMachinery {
 
     /**
      * @param pickerScope the list whose hover is read
-     * @return the id the pointer rests on in that list, or null when it rests on no row - which is
+     * @return the ID the pointer rests on in that list, or null when it rests on no row - which is
      *         also the answer for a list no hover was ever reported for
      */
     public String getHoveredIdOf(PickerScope pickerScope) {
@@ -82,11 +82,11 @@ public final class FilterHoverSlot implements InstalledMachinery {
     }
 
     /**
-     * Records the id the pointer now rests on in one picker's list, replacing whatever it rested on
+     * Records the ID the pointer now rests on in one picker's list, replacing whatever it rested on
      * before.
      *
      * @param pickerScope the list the hover belongs to
-     * @param hoveredId   the stable id under the pointer; null clears the list, so a hover channel
+     * @param hoveredId   the stable ID under the pointer; null clears the list, so a hover channel
      *                    reporting a leave needs no second call to make
      */
     public void recordHoveredId(PickerScope pickerScope, String hoveredId) {

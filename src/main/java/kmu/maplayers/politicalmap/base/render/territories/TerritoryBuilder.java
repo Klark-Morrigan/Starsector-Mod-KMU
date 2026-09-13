@@ -312,7 +312,7 @@ public final class TerritoryBuilder {
             ProfileScope shapeScope) {
 
         // Shape the raw cells into merged clusters once, holding-aware. The agnostic geometry
-        // clusters by holder, so hand it each system's faction id as the key. Cells consumed by
+        // clusters by holder, so hand it each system's faction ID as the key. Cells consumed by
         // the inset (fewer than three vertices left) drop out.
         var cellGrouping = resolveCellGrouping(territories, geometryCache);
         var shapedCells = shapeCells(profiler, geometryCache, cellGrouping);

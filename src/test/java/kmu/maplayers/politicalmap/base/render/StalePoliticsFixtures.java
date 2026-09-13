@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * brings those systems back into step with the sector, and the redraw that follows it.
  *
  * <p>One home for them because both pose their cases over the same arrangement - two adjacent
- * cells, one of which flips - and a square cell or a faction id that drifted between the suites
+ * cells, one of which flips - and a square cell or a faction ID that drifted between the suites
  * would let the redraw be pinned against geometry the re-derive never sees.
  */
 final class StalePoliticsFixtures {
@@ -37,7 +37,7 @@ final class StalePoliticsFixtures {
     static final String TRITACHYON = "tritachyon";
 
     // The flipping system and the neighbour whose shared edge flips with it. Both seed a cell, so
-    // both are redrawable; the third seeds none. Named by id, which is how the holding still
+    // both are redrawable; the third seeds none. Named by ID, which is how the holding still
     // addresses them; a case addressing a cell keys the name through the cell fixture.
     static final String FLIPPED_SYSTEM = "flipped";
     static final String NEIGHBOUR_SYSTEM = "neighbour";
@@ -51,7 +51,7 @@ final class StalePoliticsFixtures {
     private StalePoliticsFixtures() {
     }
 
-    // A holder of the given faction. Only the faction id is read by what these suites assert, so
+    // A holder of the given faction. Only the faction ID is read by what these suites assert, so
     // the shades are one shared placeholder pair - which is also what makes two holders of one
     // faction compare equal, as the re-derive's own no-change test needs them to.
     static DominantHolder buildHolderOf(String factionId) {
@@ -92,7 +92,7 @@ final class StalePoliticsFixtures {
         return sectorMock;
     }
 
-    // Matches the star system carrying the given id, so a stub names the system it answers for
+    // Matches the star system carrying the given ID, so a stub names the system it answers for
     // rather than the mock instance the fixture happened to build.
     static StarSystemAPI matchSystemArg(String systemId) {
         return argThat(system -> system != null && systemId.equals(system.getId()));

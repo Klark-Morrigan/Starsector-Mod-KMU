@@ -36,21 +36,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * only in a doc comment - so this reads the real data file rather than a fixture.
  *
  * <p>An option label is therefore a stored key wearing the costume of a caption, and is frozen for the
- * same reason a field id is: tidying the wording of one resets that setting for every player who had
+ * same reason a field ID is: tidying the wording of one resets that setting for every player who had
  * picked it. The label check is only as wide as the table below, so the coverage walk holds every Radio
  * row in the file against that table - a row added or reworded by a pass over the settings screen has to
  * be classified here before the suite goes green, rather than slipping past the guard unnoticed.
  *
- * <p>The field id one column left is stored the same way and drifts the same way, so the last two walks
- * hold the rows and the sources that name them against each other. They read the ids out of the source
+ * <p>The field ID one column left is stored the same way and drifts the same way, so the last two walks
+ * hold the rows and the sources that name them against each other. They read the IDs out of the source
  * text because they are private constants of whichever class reads the field, and they are not all in one
- * class: the two keybind ids sit with the tabs they bind.
+ * class: the two keybind IDs sit with the tabs they bind.
  *
  * <p>Both directions are walked because they fail differently. A row no source names is a row whose value
- * nothing can reach - a renamed row or a renamed constant, since either leaves the id unread. An id no row
+ * nothing can reach - a renamed row or a renamed constant, since either leaves the ID unread. An ID no row
  * declares is the opposite: a getter reading a key the shipped file never writes, which returns its
  * fallback forever and so looks exactly like a setting the player has not touched. The prefix alone does
- * not mark a string as a setting - unrelated ids such as the terrain plugin's share it - so that second
+ * not mark a string as a setting - unrelated IDs such as the terrain plugin's share it - so that second
  * walk names its exceptions rather than assuming there are none.
  *
  * <p>A Boolean row's default column is held the same way where the value is a decision rather than a
@@ -117,7 +117,7 @@ final class LunaSettingsCsvIntegrationTest {
     // and the political map's own pair - which are held to shipping on. The Java fallback beside each
     // getter only answers while LunaLib has no stored value, so it is this column a fresh player
     // actually gets; a row shipped off would read as a feature that is broken rather than one that is
-    // switched off, and the two ids a player may already have turned off are meant to keep switching
+    // switched off, and the two IDs a player may already have turned off are meant to keep switching
     // the same feedback off after being lifted a tier.
     private static final List<String> HOVER_TIER_FIELD_IDS = List.of(
         "kmu_map_visuals_hovering_isEnabled",
@@ -201,7 +201,7 @@ final class LunaSettingsCsvIntegrationTest {
 
     // The Radio fields whose stored label a LabeledChoice enum maps back to a choice, each with the
     // constant its getter names as a fallback. Listed here rather than read from the settings classes
-    // because the field ids and the constants are private there - a typo in this table fails loudly
+    // because the field IDs and the constants are private there - a typo in this table fails loudly
     // (no such row, or no such declaration) rather than quietly skipping a field.
     private static final List<ChoiceBackedRadio> CHOICE_BACKED_RADIOS = List.of(
         new ChoiceBackedRadio(
@@ -289,13 +289,13 @@ final class LunaSettingsCsvIntegrationTest {
     private static final Set<String> NUMERIC_FIELD_TYPES = Set.of("Double", "Int");
 
     // The three links a row's two defaults are followed along, each anchored on the name the
-    // previous one yielded: the field id to the constant declaring it, that constant to the
+    // previous one yielded: the field ID to the constant declaring it, that constant to the
     // fallback passed beside it at the read, and that fallback to the value it is declared as.
     // Following the shipped text rather than tabulating the pairs is what holds the convention the
     // getters are written to, since a getter written some other way fails the walk rather than
     // dropping out of it.
     //
-    // The first link is the same whatever the row holds - a field id is a field id - so it is
+    // The first link is the same whatever the row holds - a field ID is a field ID - so it is
     // shared, and only the two that read a value are spelt per type.
     private static final String FIELD_CONSTANT_PATTERN = "(\\w+)\\s*=\\s*\"%s\"";
 
@@ -316,21 +316,21 @@ final class LunaSettingsCsvIntegrationTest {
 
     private static final String BOOLEAN_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(true|false)\\s*;";
 
-    // The two row types that carry an id so LunaLib can place them but store nothing, so no source
+    // The two row types that carry an ID so LunaLib can place them but store nothing, so no source
     // reads either: a section caption, and a run of prose standing among the knobs. Every other row
     // holds a value. They are told apart below as well as together - a caption owns the rows under
     // it, while prose owns nothing and is free to stand ahead of every caption on its tab.
     private static final String HEADER_FIELD_TYPE = "Header";
     private static final String TEXT_FIELD_TYPE = "Text";
 
-    // KMU's field ids all carry the mod's prefix, which is also what tells a field row from the
+    // KMU's field IDs all carry the mod's prefix, which is also what tells a field row from the
     // file's own column-header line.
     private static final String FIELD_ID_PREFIX = "kmu_";
 
     // Strings that carry the mod prefix without being settings fields, and so are held against no row.
-    // Every one is registered with the game rather than with LunaLib - a render surface's terrain id,
+    // Every one is registered with the game rather than with LunaLib - a render surface's terrain ID,
     // or a tag another mod hangs on its own content - and they share the prefix because they are
-    // KMU's, not because they are settings. Listed one by one so a genuine field id cannot join them
+    // KMU's, not because they are settings. Listed one by one so a genuine field ID cannot join them
     // by accident.
     private static final Set<String> NON_SETTINGS_PREFIXED_IDS = Set.of(
             "kmu_sector_map_layer_terrain",
@@ -338,7 +338,7 @@ final class LunaSettingsCsvIntegrationTest {
             "kmu_sector_map_layer_above_starscape_nebulae_terrain",
             "kmu_openly_known_colony");
 
-    // A field id as the sources spell it: quoted, so a mention in prose or a comment does not count
+    // A field ID as the sources spell it: quoted, so a mention in prose or a comment does not count
     // as reading the field.
     private static final Pattern FIELD_ID_LITERAL = Pattern.compile("\"(kmu_[A-Za-z0-9_]+)\"");
     private static final Path MAIN_SOURCE_ROOT = Path.of("src", "main", "java");
@@ -359,7 +359,7 @@ final class LunaSettingsCsvIntegrationTest {
                 .isSubsetOf(expectedLabels);
         }
 
-        // Takes the id alone: the row's default is held against the row's own options, so the enum
+        // Takes the ID alone: the row's default is held against the row's own options, so the enum
         // the other check needs would only be an argument nothing reads.
         @ParameterizedTest(name = "{0}")
         @ArgumentsSource(ChoiceBackedRadioFieldIdsProvider.class)
@@ -713,8 +713,8 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
-    // The same table's field ids alone, read off the record rather than back out of the arguments
-    // the cases are handed, so the id stays a String the compiler knows about.
+    // The same table's field IDs alone, read off the record rather than back out of the arguments
+    // the cases are handed, so the ID stays a String the compiler knows about.
     private static List<String> listChoiceBackedRadioFieldIds() {
         return CHOICE_BACKED_RADIOS
             .stream()
@@ -789,7 +789,7 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     // Whether a row is one the screen stores a value for, as against the caption and prose rows that
-    // only draw. Both of those carry an id and neither belongs to any section, so the walks that ask
+    // only draw. Both of those carry an ID and neither belongs to any section, so the walks that ask
     // what a field is worth, and the one that asks which caption owns it, have to leave them out.
     private static boolean isStoredValueRow(List<String> row) {
 
@@ -827,7 +827,7 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     // Every row the file declares for a KMU field, section captions included, in file order. The
-    // spacing rows between sections and the file's own column-header line carry no prefixed id, so
+    // spacing rows between sections and the file's own column-header line carry no prefixed ID, so
     // the prefix is also what tells a row from the file's furniture.
     private static List<List<String>> readFieldRows() {
         return readSettingsRows()
@@ -846,7 +846,7 @@ final class LunaSettingsCsvIntegrationTest {
             .toList();
     }
 
-    // Every prefixed id the file declares a row for, section captions included: a caption stores nothing,
+    // Every prefixed ID the file declares a row for, section captions included: a caption stores nothing,
     // but it is still a row the file declares, so a source naming one is not naming a key that does not
     // exist.
     private static List<String> readDeclaredFieldIds() {
@@ -865,7 +865,7 @@ final class LunaSettingsCsvIntegrationTest {
             .toList();
     }
 
-    // Every field id the shipped sources name, wherever they hold it.
+    // Every field ID the shipped sources name, wherever they hold it.
     private static Set<String> readFieldIdLiteralsInMainSources() {
         try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
             return sources
@@ -925,7 +925,7 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     // The constant a row's getter passes as its fallback, found by following the two links the
-    // sources spell out: the field id to the constant holding it, then that constant to the read it
+    // sources spell out: the field ID to the constant holding it, then that constant to the read it
     // is passed to. Walked rather than tabulated so the pairing is the shipped one; a getter written
     // some other way is named by the failure rather than quietly skipped, which is what keeps the
     // convention itself held.
@@ -986,7 +986,7 @@ final class LunaSettingsCsvIntegrationTest {
         return matches.get(0);
     }
 
-    // Every shipped source as one text, so a walk that follows a link across classes - a field id
+    // Every shipped source as one text, so a walk that follows a link across classes - a field ID
     // declared in one and read in another - sees both ends of it.
     private static String readMainSourceText() {
         try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
@@ -1122,7 +1122,7 @@ final class LunaSettingsCsvIntegrationTest {
         }
     }
 
-    /** The same table's field ids alone, for the checks that hold a row against itself. */
+    /** The same table's field IDs alone, for the checks that hold a row against itself. */
     static final class ChoiceBackedRadioFieldIdsProvider implements ArgumentsProvider {
 
         @Override
@@ -1135,7 +1135,7 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     /**
-     * The same table's field ids paired with the constant naming each row's Java fallback, for the
+     * The same table's field IDs paired with the constant naming each row's Java fallback, for the
      * walk that holds the two defaults together.
      */
     static final class ChoiceBackedRadioDefaultsProvider implements ArgumentsProvider {
@@ -1228,7 +1228,7 @@ final class LunaSettingsCsvIntegrationTest {
      * have to be. Held together because every walk over these rows needs some pair of the three, and a
      * row described in two tables is a row that can be listed in one and forgotten in the other.
      *
-     * @param fieldId         the LunaLib field id the row is stored under
+     * @param fieldId         the LunaLib field ID the row is stored under
      * @param defaultConstant the name of the private constant the getter passes as its fallback
      * @param choices         the enum constants the row's options are the labels of
      */

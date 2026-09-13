@@ -82,8 +82,8 @@ public final class SectorPolitics {
      * <p>The core of the holder pipeline: it reads each bloc's footprint under the
      * pass's grouping (a no-op fold under the identity grouping, a member-summing merge
      * under an alliance grouping), ranks the blocs, then colours the winning bloc through
-     * the faction the grouping names for its palette. Under identity the bloc id is the
-     * faction id and its colour faction is itself, so the result is the plain faction holder.
+     * the faction the grouping names for its palette. Under identity the bloc ID is the
+     * faction ID and its colour faction is itself, so the result is the plain faction holder.
      *
      * @param system the system to resolve; null yields null
      * @param pass   the weighting rule, colony rule, grouping, and sector walk this pass resolves
@@ -113,12 +113,12 @@ public final class SectorPolitics {
     }
 
     /**
-     * Colours a bloc into a render-ready {@link DominantHolder}: the bloc's id paired with
+     * Colours a bloc into a render-ready {@link DominantHolder}: the bloc's ID paired with
      * the two shades it paints in.
      *
      * <p>The bloc paints in a real faction's palette - itself for a lone faction bloc, the
      * alliance's dominant member for an alliance bloc - so resolving the colour faction here
-     * keeps the bloc id, which for an alliance is not a faction id, out of the
+     * keeps the bloc ID, which for an alliance is not a faction ID, out of the
      * {@code FactionAPI} lookup. The two palette slots are that faction's own authored UI
      * shades: the bright colour as primary and the dark colour as secondary, each specified
      * directly in the {@code .faction} file, so a map element pointed at either stays true to
@@ -131,7 +131,7 @@ public final class SectorPolitics {
      *
      * @param sector   the sector whose {@code FactionAPI} palette is read
      * @param grouping the grouping that names the bloc's colour faction
-     * @param blocId   the bloc to colour, carried on the returned holder as its id
+     * @param blocId   the bloc to colour, carried on the returned holder as its ID
      * @return the render-ready holder, or null when the colour faction does not resolve
      */
     static DominantHolder resolveBlocHolder(

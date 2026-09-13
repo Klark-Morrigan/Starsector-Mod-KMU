@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins {@link SystemStandings}'s grouped ranking on hand-built inputs and a hand-built grouping,
- * free of any live economy: groups rank by summed score and members rank within, ties breaking by id
+ * free of any live economy: groups rank by summed score and members rank within, ties breaking by ID
  * at both tiers. The faction cases prove the identity grouping renders every faction its own
  * singleton group; the alliance cases prove members fold into one bloc whose summed score can outrank
  * a lone faction no single member would. Each input lists the higher-scoring or higher-id entry first
@@ -86,8 +86,8 @@ class SystemStandingsTest {
 
         @Test
         void breaksAGroupScoreTieByLowestBlocId() {
-            // Equal scores fall to the lowest bloc id, so the order is deterministic and independent
-            // of the walk order the higher id is listed in first.
+            // Equal scores fall to the lowest bloc ID, so the order is deterministic and independent
+            // of the walk order the higher ID is listed in first.
             var footprints = listOrderedFootprints(
                 "tritachyon",
                 buildWeightedFootprint(6, 6, 6),
@@ -130,8 +130,8 @@ class SystemStandingsTest {
 
         @Test
         void breaksAMemberScoreTieByLowestFactionId() {
-            // Both allied members score the same within their bloc, so the lower faction id ranks
-            // first - the id tie-break applies at the member tier as well as the group tier.
+            // Both allied members score the same within their bloc, so the lower faction ID ranks
+            // first - the ID tie-break applies at the member tier as well as the group tier.
             var footprints = listOrderedFootprints(
                 "hegemony",
                 buildWeightedFootprint(5, 5, 0),
@@ -216,7 +216,7 @@ class SystemStandingsTest {
         @Test
         void ranksANoughtBelowEveryWeighedFactionAndBehindThemById() {
             // Presence takes no weight, so it settles at the foot on the ordinary score rule -
-            // below the weighed faction here though its own id sorts first.
+            // below the weighed faction here though its own ID sorts first.
             var footprints = listOrderedFootprints(
                 "hegemony",
                 buildWeightedFootprint(4, 4, 0));

@@ -42,7 +42,7 @@ final class SystemOccupancyTest {
     private static final DominantHolder TRITACHYON =
         new DominantHolder("tritachyon", Color.GRAY, Color.GRAY);
 
-    // Two systems the sector answers to one id for - vanilla's own unnamed deep space - which only
+    // Two systems the sector answers to one ID for - vanilla's own unnamed deep space - which only
     // their anchors tell apart. The pair every fact here has to be able to hold two answers for.
     private static final SystemKey FIRST_TWIN = new SystemKey("deep space", "", "8b3");
     private static final SystemKey SECOND_TWIN = new SystemKey("deep space", "", "38d53");
@@ -216,7 +216,7 @@ final class SystemOccupancyTest {
         @Test
         void recordHolderOfHoldsTwoSystemsSharingAnIdUnderDifferentBlocs() {
             // The collision the holding is keyed by SystemKey to survive: each of the pair keeps
-            // its own holder, where a map keyed by id held one entry and drew the second system in
+            // its own holder, where a map keyed by ID held one entry and drew the second system in
             // the first's colours.
             var occupancy = SystemOccupancy.createEmpty();
 
@@ -324,7 +324,7 @@ final class SystemOccupancyTest {
         @Test
         void foldSpotlitPresenceOfMovesOnlyTheSystemOfAPairSharingAnId() {
             // The pair the address exists to tell apart, asked of the fold: the pick arriving in
-            // one of them leaves the other where it was, where a set keyed by id would have
+            // one of them leaves the other where it was, where a set keyed by ID would have
             // spared both cells the recede at once.
             var occupancy = SystemOccupancy.createEmpty();
 

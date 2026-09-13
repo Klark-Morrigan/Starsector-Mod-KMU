@@ -50,7 +50,7 @@ Key reusable surface on `EconomyFleetRouteManager`:
 
 ## Spawn Seam for Virtual Edges
 
-The vanilla design supports parallel route sources by id,
+The vanilla design supports parallel route sources by ID,
 so the clean integration is a separate `BaseRouteFleetManager` subclass registered as `"kmu_trade"`.
 No subclassing of `EconomyFleetRouteManager` and no monkey-patching.
 
@@ -126,7 +126,7 @@ public static boolean isActive(SectorEntityToken gate) {
 ```
 
 No memory-key reading required.
-Gates are enumerated by entity id `Entities.GATE` (active) and `Entities.INACTIVE_GATE` (inactive),
+Gates are enumerated by entity ID `Entities.GATE` (active) and `Entities.INACTIVE_GATE` (inactive),
 or by tag `Tags.GATE`.
 
 Related public surface that we will use:
@@ -160,7 +160,7 @@ The `MutableStat` accessibility-injection concern from the problem doc is unrela
 Nexerelin patches several accessibility hooks.
 Mitigation is the same as already noted -
 distinct,
-prefixed modifier ids and read-only access to vanilla stats.
+prefixed modifier IDs and read-only access to vanilla stats.
 
 ## Economy Tick Seam
 
@@ -209,7 +209,7 @@ remove,
 or inspect modifiers via `modifyFlat(id, amount, desc)`,
 `modifyMult(id, amount, desc)`,
 and `unmodify(id)` / `unmodifyFlat(id)`.
-Globally unique feature-prefixed ids are therefore mandatory.
+Globally unique feature-prefixed IDs are therefore mandatory.
 
 **Vanilla contributors** are config-driven,
 not graph-driven.
@@ -252,12 +252,12 @@ GMDA,
 CTB Stellar Convenience Store,
 Armada Armatura.
 All follow the same pattern -
-flat modifier with a feature-specific id prefix -
+flat modifier with a feature-specific ID prefix -
 and none compete on the in-system-neighbour signal.
 
 **Implications:**
 
-- The `kmu_trade_` id prefix avoids all known collisions.
+- The `kmu_trade_` ID prefix avoids all known collisions.
 - The feature's planned **in-system neighbour effects**
   (graduated bonus for non-hostile in-system markets, graduated malus for hostile in-system markets) are greenfield.
   They are not duplicated by vanilla or any surveyed mod.
@@ -429,7 +429,7 @@ vanilla has no equivalent or vanilla's equivalent is the gap being filled:**
   not `EveryFrameScript`,
   not `reportEconomyTick`.
   See [Economy Tick Seam](#economy-tick-seam).
-- All feature contributions are flat `MutableStat` modifiers on `MarketAPI.getAccessibilityMod()` with `kmu_trade_`-prefixed ids;
+- All feature contributions are flat `MutableStat` modifiers on `MarketAPI.getAccessibilityMod()` with `kmu_trade_`-prefixed IDs;
   vanilla and surveyed mod contributors do not collide
   and the in-system-neighbour signal is greenfield.
   See [Accessibility Composition: Vanilla and Mods](#accessibility-composition-vanilla-and-mods).

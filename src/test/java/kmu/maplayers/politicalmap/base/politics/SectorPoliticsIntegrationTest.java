@@ -69,7 +69,7 @@ class SectorPoliticsIntegrationTest {
 
             var holders = SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector));
 
-            // The holder carries the id the renderer styles by, the bright UI colour
+            // The holder carries the ID the renderer styles by, the bright UI colour
             // the cell is filled and outlined in, and the dark UI colour its
             // interior seams are stroked in.
             assertThat(holders)
@@ -87,7 +87,7 @@ class SectorPoliticsIntegrationTest {
                 List.of(independent),
                 buildVisibleMarket(independent, 4));
 
-            // An independent-held system resolves to the "independent" id, the one
+            // An independent-held system resolves to the "independent" ID, the one
             // the renderer's fill-alpha rule dims on.
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
@@ -386,7 +386,7 @@ class SectorPoliticsIntegrationTest {
         void resolveDominantHolderSumsAlliedColoniesPastLargerLoneRivalUnderAllianceGrouping() {
             // Two small allied colonies (weight 2 each) sum to 4 under the alliance
             // grouping, outweighing a lone rival's larger single colony (weight 3)
-            // that beats either ally alone. The cell carries the alliance bloc id and
+            // that beats either ally alone. The cell carries the alliance bloc ID and
             // paints in the alliance's dominant member's (hegemony's) palette.
             var hegemony = buildFaction("hegemony", HEGEMONY_BRIGHT);
             var tritachyon = buildFaction("tritachyon", TRITACHYON_BRIGHT);

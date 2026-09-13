@@ -10,7 +10,7 @@ import java.util.Map;
  * three maps and every reader of one asks it which bloc a faction is in, so a hand-built one poses a
  * case exactly and reaches no live alliance set to do it.
  *
- * <p>Shared because the shape is the thing that repeats and the factions are not - a bloc id, its
+ * <p>Shared because the shape is the thing that repeats and the factions are not - a bloc ID, its
  * colour faction, and its display name have to line up across all three maps or the grouping answers
  * one question consistently and the next one not at all. Stated once here, a suite names only the
  * factions its own case is about.
@@ -18,9 +18,9 @@ import java.util.Map;
 public final class HolderGroupingFixture {
 
     /**
-     * The bloc the factions below fold into, and the id a suite names that bloc by - the painter of
+     * The bloc the factions below fold into, and the ID a suite names that bloc by - the painter of
      * a cell, the key of a count, the bloc a palette answers for. Exported because a suite reading
-     * a fold back has to name what it produced, and one spelling the id for itself would pose a
+     * a fold back has to name what it produced, and one spelling the ID for itself would pose a
      * bloc this fixture never built.
      */
     public static final String ALLIANCE_BLOC_ID = "alliance-1";

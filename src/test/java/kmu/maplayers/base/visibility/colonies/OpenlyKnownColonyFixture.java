@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
  * every suite that runs after it, so the pairing of a seeding and a clearing is the thing worth
  * having in one place rather than restated wherever a landmark is posed.
  *
- * <p>The id is vanilla's own and is written here a second time on purpose. A case asserting the
+ * <p>The ID is vanilla's own and is written here a second time on purpose. A case asserting the
  * composition root seeded the Academy has to name the Academy independently, or it would be holding
  * the root against itself.
  */
@@ -47,7 +47,7 @@ public final class OpenlyKnownColonyFixture {
      * The entity a concealed colony stands on, named as the game names one. The tag answers false
      * unstubbed, which is what an entity nobody marked carries.
      *
-     * @param entityId the entity's id; null poses the entity the game never named
+     * @param entityId the entity's ID; null poses the entity the game never named
      * @return the entity mock
      */
     public static SectorEntityToken buildEntity(String entityId) {
@@ -65,7 +65,7 @@ public final class OpenlyKnownColonyFixture {
      * landmark from an identical concealed market.
      *
      * @param colony   the colony's market, built by whichever fixture poses its shape
-     * @param entityId the id to give the entity it already stands on
+     * @param entityId the ID to give the entity it already stands on
      * @return the same market, for a caller composing this into one expression
      */
     public static MarketAPI standOnEntity(MarketAPI colony, String entityId) {

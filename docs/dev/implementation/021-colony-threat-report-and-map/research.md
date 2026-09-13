@@ -412,7 +412,7 @@ Aligned with the project's existing posture
   it ignores `(1 - numOngoing/MAX_ONGOING)`.
   KMU should replicate that scaling for ETA.
 - **`hostile_activity` stat-plugin is in `starfarer_obf.jar`** ([research-vanilla.md#71][rv-gap-cond]) -
-  only the constant id is in the API zip.
+  only the constant ID is in the API zip.
   Read the magnitude indirectly via `MarketAPI.getStability().getFlatMods()` keyed by condition id.
 - **Vengeance fleets** chase the player fleet,
   not a colony.
@@ -429,7 +429,7 @@ Aligned with the project's existing posture
   ([research-nexerelin.md#36][rn-blockade]).
   Wrap `getCurrentStage()` / `getETA()` calls in try/catch when iterating Nex offensives.
 - **Save compat**:
-  `kmu_threat_marker` entity type id and intel class name become save-stable surfaces -
+  `kmu_threat_marker` entity type ID and intel class name become save-stable surfaces -
   pick once.
 
 ## Open questions

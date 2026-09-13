@@ -34,7 +34,7 @@ public sealed interface EdgeTarget {
      * target that names anything a consumer can look an owner up by.
      *
      * <p>The neighbour is named by {@link SystemKey} because that is how a cell is keyed: an
-     * edge naming its neighbour by id could not be resolved to a cell at all wherever two
+     * edge naming its neighbour by ID could not be resolved to a cell at all wherever two
      * systems share one, and would fuse this cell to whichever of them was reached first.
      *
      * @param systemKey the system whose cell meets this one along the edge

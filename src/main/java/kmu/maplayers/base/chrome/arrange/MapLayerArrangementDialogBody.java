@@ -63,7 +63,7 @@ final class MapLayerArrangementDialogBody {
      *
      * @param dialogPanel   the screen-sized panel the dialog stands in
      * @param editor        the rows to draw and what each of them may do
-     * @param onRowAction   where a press on a row's controls goes, as the row's layer id and what was
+     * @param onRowAction   where a press on a row's controls goes, as the row's layer ID and what was
      *                      pressed
      * @param onClosePressed what a press on the way out does
      */

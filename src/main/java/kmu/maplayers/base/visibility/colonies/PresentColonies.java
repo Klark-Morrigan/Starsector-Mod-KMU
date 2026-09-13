@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Every colony the sector still holds, by id - what a reconciliation asks before it sheds what a
+ * Every colony the sector still holds, by ID - what a reconciliation asks before it sheds what a
  * sighting was about.
  *
  * <p>Read off the raw market listings rather than off a resolved colony set. This asks what the
  * sector holds at all, not what may be shown of it: a colony set settles which of the markets on a
  * place is the colony and drops the rest, and a market superseded today can win its place tomorrow.
- * An id present under any market anywhere is an id a sighting may still be about.
+ * An ID present under any market anywhere is an ID a sighting may still be about.
  *
  * <p>Both listings and hyperspace together, the same two ways a sighting is recorded, so a
  * reconciliation cannot drop a colony merely for having been found by a listing this walk forgot
@@ -38,10 +38,10 @@ final class PresentColonies {
     }
 
     /**
-     * Every colony id the sector still holds, hyperspace included.
+     * Every colony ID the sector still holds, hyperspace included.
      *
      * @param sector the sector to walk; null yields nothing, there being no listing to read
-     * @return the ids, wherever each colony stands; never null
+     * @return the IDs, wherever each colony stands; never null
      */
     static Set<String> readColonyIds(SectorAPI sector) {
 
@@ -72,7 +72,7 @@ final class PresentColonies {
             var colonyId = market.getId();
 
             // A colony the game names with nothing can hold no sighting of its own, a sighting
-            // being filed under the very id this walk is compared against.
+            // being filed under the very ID this walk is compared against.
             if (colonyId != null) {
                 colonyIds.add(colonyId);
             }

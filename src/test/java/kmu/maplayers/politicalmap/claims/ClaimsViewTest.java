@@ -250,7 +250,7 @@ final class ClaimsViewTest {
 
         @Test
         void resolveNameReadsTheClaimingFactionsOwnName() {
-            // A claim bloc id is a plain faction id, so the label is that faction's display name in
+            // A claim bloc ID is a plain faction ID, so the label is that faction's display name in
             // the player's chosen form - resolved through the faction view.
             var sectorMock = mock(SectorAPI.class);
             var factionMock = mock(FactionAPI.class);

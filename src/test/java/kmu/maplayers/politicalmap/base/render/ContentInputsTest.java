@@ -47,7 +47,7 @@ final class ContentInputsTest {
     // since a sampling is the same reading whichever panel the frame is being painted for.
     private static final ScreenMemoryScope SCREEN_SCOPE = ScreenMemoryScopes.createStandInScreen();
 
-    // The view whose picker the spotlight is read under. Its id is what scopes the pick, so a
+    // The view whose picker the spotlight is read under. Its ID is what scopes the pick, so a
     // second view would read a slot of its own - which is FilterSelection's own suite to pin.
     private static final String VIEW_ID = "factions";
     private static final String SPOTLIT_BLOC_ID = "hegemony";

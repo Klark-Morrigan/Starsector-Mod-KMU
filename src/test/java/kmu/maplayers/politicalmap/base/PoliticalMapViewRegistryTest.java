@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the political-map view registry's contract with fake views and a fake host tab: the view
  * order it hands back, the pick an untouched save resolves to, the off sentinel that turns the map
- * dark, the id it stores on a pick, and the active-view read the terrain plugin gates on - which
+ * dark, the ID it stores on a pick, and the active-view read the terrain plugin gates on - which
  * additionally requires the host tab to be the active pick. The concrete view set is the composition
  * root's concern; this names none.
  *
@@ -349,7 +349,7 @@ final class PoliticalMapViewRegistryTest {
 
                 linkSectorMemoryTo(globalMock, memoryMock);
 
-                // The first view is the default selection, so re-picking it must rewrite the same id
+                // The first view is the default selection, so re-picking it must rewrite the same ID
                 // rather than fall to the off sentinel - the view axis is never left empty.
                 when(memoryMock.contains(ACTIVE_VIEW_KEY))
                     .thenReturn(false);
@@ -398,7 +398,7 @@ final class PoliticalMapViewRegistryTest {
             .thenReturn(sectorMock);
     }
 
-    // Puts one stored id in one slot, the two stubs a present key needs. Named as the pair they are so
+    // Puts one stored ID in one slot, the two stubs a present key needs. Named as the pair they are so
     // a case posing two screens' slots reads as two picks rather than as four stubs.
     private static void storeViewIdAt(MemoryAPI memoryMock, String memoryKey, String storedId) {
 

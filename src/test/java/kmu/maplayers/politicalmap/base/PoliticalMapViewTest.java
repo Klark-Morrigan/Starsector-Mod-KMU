@@ -54,7 +54,7 @@ final class PoliticalMapViewTest {
     private static final Color RED = new Color(200, 50, 50);
 
     // An alliance of two, which is the smallest grouping in which a bloc's membership is anything
-    // other than the bloc's own id - so a standing read against it can only come from the grouping
+    // other than the bloc's own ID - so a standing read against it can only come from the grouping
     // the read was handed.
     private static final HolderGrouping PACT_GROUPING = new HolderGrouping(
         Map.of("hegemony", "pact", "tritachyon", "pact"),
@@ -164,7 +164,7 @@ final class PoliticalMapViewTest {
 
         @Test
         void buildBlocPickerReadKeepsABlocWhoseCrestDoesNotResolve() {
-            // A bloc with no authored crest (or no faction behind its colour id) still paints
+            // A bloc with no authored crest (or no faction behind its colour ID) still paints
             // territory, so it stays on offer and the row simply draws its name alone.
             var sectorMock = mock(SectorAPI.class);
             var viewFake = new PoliticalMapViewFake(Map.of("ghost", "Ghost"));
@@ -240,7 +240,7 @@ final class PoliticalMapViewTest {
             // The appended mode is only right if it reads the very sector and grouping this read was
             // folded under - bound to anything else it would rank a bloc by a membership the map
             // never painted. An alliance whose two members disagree is what shows the binding: the
-            // ends come back in their own members' shades, which a mode reading the bloc id against
+            // ends come back in their own members' shades, which a mode reading the bloc ID against
             // some other fold could not produce.
             // Both factions are built before either is handed over: stubbing a fresh mock inside an
             // open when(...) leaves Mockito holding an unfinished stubbing.

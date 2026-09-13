@@ -20,7 +20,7 @@ import java.util.Map;
  *
  * <p>A layer's built state satisfies this directly wherever its draw lists already are these two
  * maps. How they were shaped, cached, styled, or keyed is not asked and cannot be read here: the
- * ids are opaque, and what an owner means stays with the layer that resolved it.
+ * IDs are opaque, and what an owner means stays with the layer that resolved it.
  */
 public interface ClusterDrawLists {
 
@@ -43,7 +43,7 @@ public interface ClusterDrawLists {
     Map<SystemKey, StyledCell> getStyledCellByCellKey();
 
     /**
-     * @return each owner's clusters and the paint they share, keyed by the opaque owner id its
+     * @return each owner's clusters and the paint they share, keyed by the opaque owner ID its
      *         cells fused under - one entry however many disjoint bodies that owner holds
      */
     Map<String, StyledClusterGroup> getStyledClusterGroupByOwnerId();

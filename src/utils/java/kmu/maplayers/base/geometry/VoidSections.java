@@ -47,7 +47,7 @@ public final class VoidSections {
      *
      * @param laid           the coast with its walls down, which carries the sites and the
      *                       knobs everything here is measured against
-     * @param systemIdBySite each site's system id, index-aligned with the coast's own sites
+     * @param systemIdBySite each site's system ID, index-aligned with the coast's own sites
      * @return every section, in the order the boundary walk found them
      */
     public static List<NamedSection> collectNamedSections(

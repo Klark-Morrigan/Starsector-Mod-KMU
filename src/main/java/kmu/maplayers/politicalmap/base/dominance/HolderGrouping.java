@@ -10,9 +10,9 @@ import java.util.Set;
 import java.util.function.BinaryOperator;
 
 /**
- * The rule that collapses faction ids into "bloc" ids for one holder pass, so
+ * The rule that collapses faction IDs into "bloc" IDs for one holder pass, so
  * the dominance pipeline resolves a bloc as a single unit while the geometry,
- * clustering, and labels all key off one id per system unchanged.
+ * clustering, and labels all key off one ID per system unchanged.
  *
  * <p>A bloc is whatever a political-map view groups holders by: in the faction
  * view a bloc is a single faction (the identity grouping); in the alliances view a
@@ -28,12 +28,12 @@ import java.util.function.BinaryOperator;
  * identity grouping is three empty maps and every lookup falls through to the
  * faction being its own bloc.
  *
- * @param blocIdByFactionId       an allied faction id to its alliance's bloc id; a
+ * @param blocIdByFactionId       an allied faction ID to its alliance's bloc ID; a
  *                                faction absent from the map is its own bloc
- * @param colourFactionIdByBlocId an alliance bloc id to the member faction whose
+ * @param colourFactionIdByBlocId an alliance bloc ID to the member faction whose
  *                                palette the bloc paints in; a faction bloc is absent,
  *                                its colour faction being itself
- * @param allianceNameByBlocId    an alliance bloc id to the alliance's display name; a
+ * @param allianceNameByBlocId    an alliance bloc ID to the alliance's display name; a
  *                                faction bloc is absent, so a present entry is also the
  *                                test of whether a bloc is an alliance
  */
@@ -72,15 +72,15 @@ public record HolderGrouping(
     }
 
     /**
-     * The bloc a faction belongs to: its alliance's bloc id when allied, otherwise
+     * The bloc a faction belongs to: its alliance's bloc ID when allied, otherwise
      * the faction itself. The one lookup the regroup step folds each faction's
      * footprint through, so allied factions share a key and everyone else stays
      * separate.
      *
-     * @param factionId the faction to place; a faction with no id belongs to no bloc, since a bloc
+     * @param factionId the faction to place; a faction with no ID belongs to no bloc, since a bloc
      *                  is named and there is nothing here to name one after
-     * @return the faction's bloc id, the faction id itself when it is in no bloc, or null when the
-     *         faction carries no id
+     * @return the faction's bloc ID, the faction ID itself when it is in no bloc, or null when the
+     *         faction carries no ID
      */
     public String resolveBlocId(String factionId) {
         return findGroupedId(blocIdByFactionId, factionId, factionId);
@@ -97,13 +97,13 @@ public record HolderGrouping(
      * fuller footprint-plus-market-size regroup share one fold rather than two copies of the idiom.
      * First-seen bloc order is preserved, so the economy-walk ordering flows straight through.
      *
-     * @param valueByFactionId each faction's value to fold, in walk order; a faction with no id
+     * @param valueByFactionId each faction's value to fold, in walk order; a faction with no ID
      *                         belongs to no bloc, so its value is left out rather than folded under
      *                         a bloc the map cannot name
      * @param identity         the merge identity a bloc's first value combines with
      * @param merge            combines two same-bloc values into one
      * @param <T>              the folded value type
-     * @return each bloc's merged value, keyed by bloc id in first-seen order
+     * @return each bloc's merged value, keyed by bloc ID in first-seen order
      */
     public <T> Map<String, T> regroupByBloc(
             Map<String, T> valueByFactionId,
@@ -171,10 +171,10 @@ public record HolderGrouping(
      * in one place narrows this itself, which keeps "who is in this bloc" and "who is present" two
      * questions rather than one answer serving badly as both.
      *
-     * @param blocId the bloc to read; a bloc with no id is made of nobody, there being nothing to
+     * @param blocId the bloc to read; a bloc with no ID is made of nobody, there being nothing to
      *               have named it
      * @return the bloc's member factions, immutable and in no meaningful order; empty for a bloc
-     *         with no id
+     *         with no ID
      */
     public Set<String> resolveMemberFactionIds(String blocId) {
 
@@ -191,8 +191,8 @@ public record HolderGrouping(
         }
 
         // Nothing folds into a bloc that is a lone faction - the sparse map holds an entry only
-        // where a faction is grouped away from itself - and there the bloc id is that faction's own
-        // id, which is the membership of one every identity-grouping read comes back with.
+        // where a faction is grouped away from itself - and there the bloc ID is that faction's own
+        // ID, which is the membership of one every identity-grouping read comes back with.
         //
         // Copied rather than handed out as it stands, so both answers are immutable: a caller that
         // may add to a membership scanned out of the fold and not to one of a single faction would
@@ -205,11 +205,11 @@ public record HolderGrouping(
     /**
      * The faction whose authored palette a bloc paints in: an alliance's dominant
      * member, or - for a faction bloc - the faction itself. Lets the render layer
-     * colour an alliance cluster in a real faction's shades without the bloc id
+     * colour an alliance cluster in a real faction's shades without the bloc ID
      * needing to be a faction id.
      *
-     * @param blocId the bloc to colour; a bloc with no id has no palette to name
-     * @return the faction id supplying the bloc's palette, or null for a bloc with no id
+     * @param blocId the bloc to colour; a bloc with no ID has no palette to name
+     * @return the faction ID supplying the bloc's palette, or null for a bloc with no ID
      */
     public String resolveColourFactionId(String blocId) {
         return findGroupedId(colourFactionIdByBlocId, blocId, blocId);
@@ -220,7 +220,7 @@ public record HolderGrouping(
      * rather than an alliance. Null both supplies the alliance label and, via
      * {@link #isAlliance}, tells a lone-faction bloc from an alliance one.
      *
-     * @param blocId the bloc to name; a bloc with no id is no alliance, there being nothing to have
+     * @param blocId the bloc to name; a bloc with no ID is no alliance, there being nothing to have
      *               named it one
      * @return the alliance's name, or null when the bloc is not an alliance
      */
@@ -251,16 +251,16 @@ public record HolderGrouping(
         return !allianceNameByBlocId.isEmpty();
     }
 
-    // One of this grouping's lookups, answered for an id the sector never named rather than faulting
+    // One of this grouping's lookups, answered for an ID the sector never named rather than faulting
     // on it.
     //
     // The guard is what the immutable maps oblige: an immutable map asked for a null key throws
     // instead of reporting the key absent, even when the map is empty - which the identity
-    // grouping's three are. So a colony whose owning faction carries no id (a mod's, the game
+    // grouping's three are. So a colony whose owning faction carries no ID (a mod's, the game
     // itself always naming its factions) would take down whatever walk reached it: the ribbon
     // count, the dominance regroup, or a render rule asking whether its bloc is an alliance.
     //
-    // Answered as "no bloc" rather than as some stand-in id, because a nameless bloc pooled under
+    // Answered as "no bloc" rather than as some stand-in ID, because a nameless bloc pooled under
     // one is worse than one left out: two such owners would merge into a single run, a single
     // fill, and a single row naming neither of them.
     private static String findGroupedId(

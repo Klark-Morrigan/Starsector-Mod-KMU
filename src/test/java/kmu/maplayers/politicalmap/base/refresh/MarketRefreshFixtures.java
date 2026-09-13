@@ -27,10 +27,10 @@ public final class MarketRefreshFixtures {
 
     /**
      * An entity carrying a market seated in the named star system - what a discovery announces,
-     * since that event names the entity rather than the market hanging on it. The entity's own id
+     * since that event names the entity rather than the market hanging on it. The entity's own ID
      * is fixed, since it reaches only the log line.
      *
-     * @param systemId the seated system's id, which is what a mark names
+     * @param systemId the seated system's ID, which is what a mark names
      * @return an entity mock holding a market with that seat
      */
     public static SectorEntityToken mockEntityWithMarketInSystem(String systemId) {
@@ -50,10 +50,10 @@ public final class MarketRefreshFixtures {
     }
 
     /**
-     * A market seated in the named star system. The market's own id is fixed, since it reaches
+     * A market seated in the named star system. The market's own ID is fixed, since it reaches
      * only the log line: what the refresh acts on is the seat.
      *
-     * @param systemId the seated system's id, which is what a mark names
+     * @param systemId the seated system's ID, which is what a mark names
      * @return a market mock reporting that seat
      */
     public static MarketAPI mockMarketInSystem(String systemId) {

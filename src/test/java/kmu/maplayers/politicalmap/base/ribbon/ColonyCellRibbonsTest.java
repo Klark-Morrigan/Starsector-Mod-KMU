@@ -257,7 +257,7 @@ final class ColonyCellRibbonsTest {
 
         @Test
         void leavesOutAColonyWhoseOwnerCarriesNoId() {
-            // A faction with no id belongs to no bloc the map can name. Left out rather than pooled
+            // A faction with no ID belongs to no bloc the map can name. Left out rather than pooled
             // under a nameless bloc, which would draw one run for several such owners' colonies at
             // once - so the band is the painter's own colony and nothing beside it.
             var sector = buildSectorWith(
@@ -302,7 +302,7 @@ final class ColonyCellRibbonsTest {
         void countsTheColoniesOfACellNoFillCovers() {
             // A system two blocs are settled in that no layer paints for anybody. The counting is
             // the same as ever - the painter is the contest's question, not the count's - and neither
-            // bloc is ranked, so both come out in id order.
+            // bloc is ranked, so both come out in ID order.
             var sector = buildSectorHolding(SYSTEM_ID, TRITACHYON, HEGEMONY);
 
             var plan = planThrough(

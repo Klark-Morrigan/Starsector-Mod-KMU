@@ -68,7 +68,7 @@ public final class SectorSvgWriter {
     private static final double CELL_STROKE = 30.0;
     private static final double SITE_RADIUS = 120.0;
 
-    // Spreads owner colours around the hue circle by id hash, so neighbouring owners are
+    // Spreads owner colours around the hue circle by ID hash, so neighbouring owners are
     // very unlikely to share one and the eye can separate clusters at a glance.
     private static final int HUE_RANGE = 360;
 

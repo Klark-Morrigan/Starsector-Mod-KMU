@@ -195,7 +195,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
     // its fills by.
     //
     // The bar and the membership both come off that painting grouping: the ranking names its groups
-    // by its bloc ids, so a membership read off any other fold would answer about blocs the box never
+    // by its bloc IDs, so a membership read off any other fold would answer about blocs the box never
     // listed. How a group stands with the holder is the one rule that does not - both halves are
     // sampled live off the shape every political box shares, being the axis the bands judge their
     // contest by, and the faction and claims layers deliberately paint under a grouping that is not
