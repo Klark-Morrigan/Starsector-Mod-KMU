@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -37,60 +39,60 @@ public final class SystemClusters {
      * label names; a cell held without a star of its own adds no member of its own but
      * still connects the cells on either side of it.
      *
-     * @param edgesByCellId each cell's raw edges, tagged with what lies across them - the
-     *                      adjacency graph
-     * @param grouping      which system each cell draws as and each system's owner;
-     *                      an unowned or cell-less system is excluded, as it carries no
-     *                      label
+     * @param edgesByCellKey each cell's raw edges, tagged with what lies across them - the
+     *                       adjacency graph
+     * @param grouping       which system each cell draws as and each system's owner;
+     *                       an unowned or cell-less system is excluded, as it carries no
+     *                       label
      * @return one member list per contiguous cluster, in first-seen order (members
      *         likewise); empty when nothing is grouped
      */
-    public static List<List<String>> findClusters(
-            Map<String, List<CellEdge>> edgesByCellId,
+    public static List<List<SystemKey>> findClusters(
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping) {
 
-        // Union-find keyed by cell id: seed every owned cell as its own singleton, then
+        // Union-find keyed by cell key: seed every owned cell as its own singleton, then
         // fuse across each interior seam. An unowned cell seeds nothing, so an edge into
         // it never fuses.
-        var parentByCellId = new LinkedHashMap<String, String>();
-        for (var cellId : edgesByCellId.keySet()) {
-            if (grouping.resolveOwnerOf(cellId) != null) {
-                parentByCellId.put(cellId, cellId);
+        var parentByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+        for (var cellKey : edgesByCellKey.keySet()) {
+            if (grouping.resolveOwnerOf(cellKey) != null) {
+                parentByCellKey.put(cellKey, cellKey);
             }
         }
-        for (var entry : edgesByCellId.entrySet()) {
-            var cellId = entry.getKey();
-            if (!parentByCellId.containsKey(cellId)) {
+        for (var entry : edgesByCellKey.entrySet()) {
+            var cellKey = entry.getKey();
+            if (!parentByCellKey.containsKey(cellKey)) {
                 continue;
             }
-            var cellOwner = grouping.resolveOwnerOf(cellId);
+            var cellOwner = grouping.resolveOwnerOf(cellKey);
             for (var edge : entry.getValue()) {
-                fuseAcrossSeam(parentByCellId, grouping, cellId, cellOwner, edge);
+                fuseAcrossSeam(parentByCellKey, grouping, cellKey, cellOwner, edge);
             }
         }
-        return collectComponentsInFirstSeenOrder(parentByCellId, grouping);
+        return collectComponentsInFirstSeenOrder(parentByCellKey, grouping);
     }
 
     // Fuses this cell with the one across an edge when that edge is an interior seam -
     // both cells present and sharing an owner. An edge with no cell across it, or
     // one into an unowned or differently-owned cell, leaves them apart.
     private static void fuseAcrossSeam(
-            Map<String, String> parentByCellId,
+            Map<SystemKey, SystemKey> parentByCellKey,
             CellGrouping grouping,
-            String cellId,
+            SystemKey cellKey,
             String cellOwner,
             CellEdge edge) {
 
-        // A system's own cell is keyed by that system's id, so the system an edge names
+        // A system's own cell is keyed by that system's key, so the system an edge names
         // across it is also the cell across it. A same-cell cut needs no fusing - it is
         // the one cell either side, already the same component.
         if (!(edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem)
-                || !parentByCellId.containsKey(acrossSystem.systemId())) {
+                || !parentByCellKey.containsKey(acrossSystem.systemKey())) {
             return;
         }
         if (EdgeClassifier.classifyAcross(edge, cellOwner, grouping.ownerBySystemId())
                 == EdgeClass.INTERIOR_SEAM) {
-            union(parentByCellId, cellId, acrossSystem.systemId());
+            union(parentByCellKey, cellKey, acrossSystem.systemKey());
         }
     }
 
@@ -98,21 +100,21 @@ public final class SystemClusters {
     // draw as, preserving the order roots are first reached so the clusters (and their
     // members) come back deterministically. A cell with no system of its own contributes no
     // member, and two cells drawing as one system contribute it once.
-    private static List<List<String>> collectComponentsInFirstSeenOrder(
-            Map<String, String> parentByCellId,
+    private static List<List<SystemKey>> collectComponentsInFirstSeenOrder(
+            Map<SystemKey, SystemKey> parentByCellKey,
             CellGrouping grouping) {
 
-        var membersByRoot = new LinkedHashMap<String, Set<String>>();
-        for (var cellId : parentByCellId.keySet()) {
-            var systemId = grouping.resolveDrawnSystemIdOf(cellId);
-            if (systemId == null) {
+        var membersByRoot = new LinkedHashMap<SystemKey, Set<SystemKey>>();
+        for (var cellKey : parentByCellKey.keySet()) {
+            var systemKey = grouping.resolveDrawnSystemKeyOf(cellKey);
+            if (systemKey == null) {
                 continue;
             }
             membersByRoot
-                .computeIfAbsent(find(parentByCellId, cellId), root -> new LinkedHashSet<>())
-                .add(systemId);
+                .computeIfAbsent(find(parentByCellKey, cellKey), root -> new LinkedHashSet<>())
+                .add(systemKey);
         }
-        var clusters = new ArrayList<List<String>>(membersByRoot.size());
+        var clusters = new ArrayList<List<SystemKey>>(membersByRoot.size());
         for (var members : membersByRoot.values()) {
             clusters.add(new ArrayList<>(members));
         }
@@ -121,21 +123,21 @@ public final class SystemClusters {
 
     // The representative of a cell's component, compressing the path to the root as it
     // climbs so repeat lookups on a long chain stay near-flat.
-    private static String find(Map<String, String> parentByCellId, String cellId) {
-        var root = cellId;
-        while (!root.equals(parentByCellId.get(root))) {
-            root = parentByCellId.get(root);
+    private static SystemKey find(Map<SystemKey, SystemKey> parentByCellKey, SystemKey cellKey) {
+        var root = cellKey;
+        while (!root.equals(parentByCellKey.get(root))) {
+            root = parentByCellKey.get(root);
         }
-        for (var walk = cellId; !walk.equals(root);) {
-            var next = parentByCellId.get(walk);
-            parentByCellId.put(walk, root);
+        for (var walk = cellKey; !walk.equals(root);) {
+            var next = parentByCellKey.get(walk);
+            parentByCellKey.put(walk, root);
             walk = next;
         }
         return root;
     }
 
     // Merges the two cells' components by pointing one root at the other.
-    private static void union(Map<String, String> parentByCellId, String a, String b) {
-        parentByCellId.put(find(parentByCellId, a), find(parentByCellId, b));
+    private static void union(Map<SystemKey, SystemKey> parentByCellKey, SystemKey a, SystemKey b) {
+        parentByCellKey.put(find(parentByCellKey, a), find(parentByCellKey, b));
     }
 }

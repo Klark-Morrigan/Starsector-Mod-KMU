@@ -1,11 +1,18 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -35,7 +42,7 @@ final class SystemClusterBordersTest {
     private static final BorderTraceTolerances TOLERANCES =
         new BorderTraceTolerances(BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
-    private static final Set<String> NO_COINCIDENT_NEIGHBOURS = Set.of();
+    private static final Set<SystemKey> NO_COINCIDENT_NEIGHBOURS = Set.of();
 
     // One CCW square cell edge, facing the neighbour system across it, or the reach bound
     // when that is null.
@@ -43,18 +50,35 @@ final class SystemClusterBordersTest {
         return new CellEdge(x1, y1, x2, y2,
                 neighbour == null
                         ? EdgeTarget.REACH_BOUND
-                        : new EdgeTarget.AcrossSystem(neighbour));
+                        : new EdgeTarget.AcrossSystem(buildCellKey(neighbour)));
     }
 
     // The grouping to trace under: each cell drawing as its own star (identity draws-as over
     // the cell set), keyed by the given owners.
     private static CellGrouping buildGrouping(
             Map<String, List<CellEdge>> edges, Map<String, String> owners) {
-        var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
         for (var cellId : edges.keySet()) {
-            systemIdByCellId.put(cellId, cellId);
+            systemKeyByCellKey.put(buildCellKey(cellId), buildCellKey(cellId));
         }
-        return new CellGrouping(systemIdByCellId, owners);
+        return new CellGrouping(systemKeyByCellKey, owners);
+    }
+
+    // The trace as every case here asks it: cells and edges named as the case states them, keyed
+    // on the way in so the case reads as it did before the cells were keyed.
+    private static List<List<double[]>> traceBorderRings(
+            List<String> groupCellIds,
+            Map<String, List<CellEdge>> edges,
+            CellGrouping grouping,
+            Set<SystemKey> coincidentNeighbourSystemKeys,
+            BorderTraceTolerances tolerances) {
+
+        return SystemClusterBorders.traceBorderRings(
+            buildCellKeys(groupCellIds.toArray(String[]::new)),
+            buildKeyedValues(edges),
+            grouping,
+            coincidentNeighbourSystemKeys,
+            tolerances);
     }
 
     @Nested
@@ -73,7 +97,7 @@ final class SystemClusterBordersTest {
                             buildEdge(20, 10, 10, 10, null), buildEdge(10, 10, 10, 0, "A")));
             var owners = Map.of("A", "F", "B", "F");
 
-            var rings = SystemClusterBorders.traceBorderRings(
+            var rings = traceBorderRings(
                     List.of("A", "B"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     TOLERANCES);
 
@@ -92,7 +116,7 @@ final class SystemClusterBordersTest {
                             buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F", "B", "G");
 
-            var rings = SystemClusterBorders.traceBorderRings(
+            var rings = traceBorderRings(
                     List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     TOLERANCES);
 
@@ -112,7 +136,7 @@ final class SystemClusterBordersTest {
                             buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F");
 
-            var rings = SystemClusterBorders.traceBorderRings(
+            var rings = traceBorderRings(
                     List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     TOLERANCES);
 
@@ -121,7 +145,7 @@ final class SystemClusterBordersTest {
 
         @Test
         void aGroupWithNoGeometryYieldsNoRings() {
-            var rings = SystemClusterBorders.traceBorderRings(
+            var rings = traceBorderRings(
                     List.of("missing"), Map.of(), buildGrouping(Map.of(), Map.of()),
                     NO_COINCIDENT_NEIGHBOURS,
                     TOLERANCES);
@@ -139,7 +163,7 @@ final class SystemClusterBordersTest {
                             buildEdge(10, 10, 0, 10, null), buildEdge(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F");
 
-            var rings = SystemClusterBorders.traceBorderRings(
+            var rings = traceBorderRings(
                     List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     new BorderTraceTolerances(20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT));
 
@@ -153,7 +177,9 @@ final class SystemClusterBordersTest {
             // leaves that shared edge un-inset from both sides: A's border reaches x = 10 and B's
             // starts at x = 10, so the two fills abut on the raw cell edge with no wedge between
             // them. Their outward edges still take the plain channel.
-            var rings = traceCarvedNeighbours(Set.of("B"), Set.of("A"));
+            var rings = traceCarvedNeighbours(
+                Set.of(buildCellKey("B")),
+                Set.of(buildCellKey("A")));
 
             assertThat(computeMaxXOf(rings.first())).isCloseTo(10.0, within(1e-6));
             assertThat(computeMinXOf(rings.second())).isCloseTo(10.0, within(1e-6));
@@ -173,7 +199,7 @@ final class SystemClusterBordersTest {
         // Traces the two differently-keyed neighbours A and B, each naming the given coincident
         // set, so a test varies only what each opts out of the channel.
         private static TracedPair traceCarvedNeighbours(
-                Set<String> aCoincidentNeighbours, Set<String> bCoincidentNeighbours) {
+                Set<SystemKey> aCoincidentNeighbours, Set<SystemKey> bCoincidentNeighbours) {
             var edges = Map.of(
                     "A", List.of(
                             buildEdge(0, 0, 10, 0, null), buildEdge(10, 0, 10, 10, "B"),
@@ -183,10 +209,12 @@ final class SystemClusterBordersTest {
                             buildEdge(20, 10, 10, 10, null), buildEdge(10, 10, 10, 0, "A")));
             var owners = Map.of("A", "F#solid", "B", "F#hatched");
             return new TracedPair(
-                    SystemClusterBorders.traceBorderRings(List.of("A"), edges, buildGrouping(edges, owners),
+                    traceBorderRings(
+                            List.of("A"), edges, buildGrouping(edges, owners),
                             aCoincidentNeighbours,
                             TOLERANCES).get(0),
-                    SystemClusterBorders.traceBorderRings(List.of("B"), edges, buildGrouping(edges, owners),
+                    traceBorderRings(
+                            List.of("B"), edges, buildGrouping(edges, owners),
                             bCoincidentNeighbours,
                             TOLERANCES).get(0));
         }
@@ -203,7 +231,7 @@ final class SystemClusterBordersTest {
                             buildEdge(100, 100, 0, 100, null), buildEdge(0, 100, 0, 0, null)));
             var owners = Map.of("A", "F");
 
-            var rings = SystemClusterBorders.traceBorderRings(
+            var rings = traceBorderRings(
                     List.of("A"), edges, buildGrouping(edges, owners), NO_COINCIDENT_NEIGHBOURS,
                     TOLERANCES);
 

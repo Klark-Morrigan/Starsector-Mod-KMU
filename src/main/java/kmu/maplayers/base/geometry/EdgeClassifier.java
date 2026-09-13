@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.Map;
 
 /**
@@ -63,6 +65,10 @@ public final class EdgeClassifier {
      * no star across it there is nothing to reach toward; and more of the same cell is an
      * interior seam outright - the far side is this same cell, so no owner can differ.
      *
+     * <p>The neighbour is named by {@link SystemKey} and its owner is keyed by id, so the lookup
+     * narrows one to the other and answers for the first system carrying that id - which is what
+     * every id-keyed read of the sector answers with.
+     *
      * @param edge            the cell edge, tagged with what lies across it
      * @param cellOwner       the owner of the cell this edge belongs to, or null if
      *                        that cell is unowned
@@ -79,7 +85,7 @@ public final class EdgeClassifier {
 
         var target = edge.target();
         if (target instanceof EdgeTarget.AcrossSystem acrossSystem) {
-            return classify(cellOwner, ownerBySystemId.get(acrossSystem.systemId()));
+            return classify(cellOwner, ownerBySystemId.get(acrossSystem.systemKey().systemId()));
         }
         // The same cell on both sides, so the edge fuses whatever that cell's owner is - an
         // unowned cell's own cut included, which "the same owner both sides" could not express

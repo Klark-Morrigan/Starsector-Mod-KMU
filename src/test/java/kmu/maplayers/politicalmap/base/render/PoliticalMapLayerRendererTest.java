@@ -43,6 +43,8 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,7 +101,9 @@ final class PoliticalMapLayerRendererTest {
 
     // A hover left standing from an earlier frame, so a parked read is told apart from one that
     // never had anything to drop.
-    private static final MapHover HOVERED_CELL = new MapHover("system_id", List.of("system_id"));
+    private static final MapHover HOVERED_CELL = new MapHover(
+        buildCellKey("system_id"),
+        List.of(buildCellKey("system_id")));
 
     // The cursor read, which needs the running game's GL matrices and so cannot be built here. What
     // it resolves is MapHoverPublisherTest's; what this test asks of it is which call reaches it.

@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.widgets.lists.RevisionMemo;
 
 import kmu.maplayers.base.machinery.InstalledMachinery;
@@ -87,10 +88,10 @@ public final class SelectableBlocCache implements InstalledMachinery {
      *
      * @param view   the selected political-map view the bloc was surfaced by
      * @param blocId the bloc to look up; an id this view never surfaced answers empty
-     * @return that bloc's system ids in walk order, never null
+     * @return that bloc's systems in walk order, never null
      */
-    public Set<String> readPresentSystemIds(PoliticalMapView view, String blocId) {
-        return resolveBlocPickerRead(view).presenceIndex().readPresentSystemIds(blocId);
+    public Set<SystemKey> readPresentSystemKeys(PoliticalMapView view, String blocId) {
+        return resolveBlocPickerRead(view).presenceIndex().readPresentSystemKeys(blocId);
     }
 
     /**

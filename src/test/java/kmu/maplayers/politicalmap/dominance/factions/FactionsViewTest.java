@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
@@ -444,8 +445,8 @@ final class FactionsViewTest {
 
                 assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
                         .presenceIndex()
-                        .readPresentSystemIds("hegemony"))
-                    .containsExactly("corvus", "askonia");
+                        .readPresentSystemKeys("hegemony"))
+                    .containsExactlyElementsOf(buildCellKeys("corvus", "askonia"));
             }
         }
     }

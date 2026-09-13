@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.theme.ElementPaintSelection;
 
 import java.awt.Color;
@@ -30,21 +32,21 @@ public interface HoverHighlightSource extends PaintedCellShapes {
      * the highlight is here to answer, and an implementation deciding it first would be a second
      * rule for the same answer.
      *
-     * @param cellId the hovered cell
+     * @param cellKey the hovered cell
      * @return the candidate loops as {@code [x, y, x, y, ...]} runs, empty when the cell
      *         fuses into no cluster or the group it fuses into traced no border
      */
-    List<float[]> resolveCandidateFrontierLoopsOf(String cellId);
+    List<float[]> resolveCandidateFrontierLoopsOf(SystemKey cellKey);
 
     /**
      * The shade the highlight burns in - the colour of the cell under the cursor, so the
      * halo and the wash say whose space this is.
      *
-     * @param cellId         the hovered cell
+     * @param cellKey        the hovered cell
      * @param paintSelection which of the owner's palette shades the theme points the
      *                       highlight at
      * @return that shade, or null when the selection paints nothing, so the caller skips the
      *         whole pass
      */
-    Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection);
+    Color resolveHighlightColourOf(SystemKey cellKey, ElementPaintSelection paintSelection);
 }

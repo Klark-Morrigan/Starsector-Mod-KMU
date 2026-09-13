@@ -28,10 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * looking, and it is asked of a flood that shares no code with the trace, so void the trace
  * never considered still counts against it. Which fill owes which water follows the
  * constructions' own split: water a laid wall shuts in belongs to the coast's pockets and is
- * held strictly to them, since on the composed map the bridge fill lies over the coast's
- * gaps - which is exactly how a missing coast pocket stays invisible. Water ringed by cells
- * alone takes either construction's fill. The comparison between two settings of the
- * frontage floor
+ * held strictly to them, since the map's other layers lie over much of the same void - which is
+ * exactly how a missing coast pocket stays invisible. Water ringed by cells alone is either
+ * construction's, so it takes any layer the map paints. The comparison between two settings of
+ * the frontage floor
  * catches what the absolute rule cannot: a pocket that stands at one floor and not at the
  * next is a fill the map had and then lost, which is worth naming separately from void that
  * was never filled at any setting.
@@ -203,7 +203,7 @@ class CoastPocketsIntegrationTest {
                 traced, CoastPockets.buildCoastWalls(traced), PARAMETERS.borderInset()));
 
         var coastFill = collectFill(findPocketsAt(sector, SHIPPED_FRONTAGE_FLOOR, shaping));
-        var bridgeFill = collectBridgeFill(fixture, shaping);
+        var otherFill = collectOtherFill(sector, shaping);
         var coast = measureBounds(Coastlines.collectCoastOutlines(traced));
 
         var unfilled = new ArrayList<String>();
@@ -216,30 +216,31 @@ class CoastPocketsIntegrationTest {
 
             var isWalledIn = !water.walledBy().isEmpty();
 
-            // Water a wall shuts in is held strictly to the coast's fill: the bridge fill
-            // lies over much of the same void, and accepting it there is exactly how a
-            // missing coast pocket stays invisible on the composed map. Water the flood
-            // found ringed by cells alone takes either fill - the flood cannot tell a true
-            // cell ring from a corridor whose walled mouth is narrower than its own stride,
-            // and a reach running along a cell ring's edge makes such void legitimately the
-            // coast's - so only the strict direction guards against masking.
-            //
-            // TODO: the fill excusing cell-ringed water here is the cell-pair search's captured
-            // pockets, which the map no longer paints anywhere. Measured against what the map
-            // does paint, four pieces of open water - three on the 491 fixture, one on the 366 -
-            // are covered by nothing. See the geometry TODO tracker.
+            // Water a wall shuts in is held strictly to the coast's fill: the map's other
+            // layers lie over much of the same void, and accepting one of them there is
+            // exactly how a missing coast pocket stays invisible on the composed map. Water
+            // the flood found ringed by cells alone takes any layer - the flood cannot tell a
+            // true cell ring from a corridor whose walled mouth is narrower than its own
+            // stride, and a reach running along a cell ring's edge makes such void
+            // legitimately the coast's - so only the strict direction guards against masking.
             var owingFill = isWalledIn
                 ? coastFill
-                : concatenate(bridgeFill, coastFill);
+                : concatenate(otherFill, coastFill);
 
             if (isAnyPointCovered(water.points(), owingFill)) {
                 continue;
             }
 
+            // Where to look comes first: a failure naming only the cells around a piece leaves
+            // whoever reads it to find the place on the map before they can judge it.
+            var middle = Points.computeMean(water.points());
+
             unfilled.add(String.format(
-                "%.0f units of %s ringed by %s",
+                "%.0f units of %s at %.0f,%.0f ringed by %s",
                 water.measureArea(),
                 isWalledIn ? "coast-walled water" : "inland water",
+                middle[0],
+                middle[1],
                 water.nameRingingCells(union, fixture.getSystemIds())));
         }
         return unfilled;
@@ -265,21 +266,37 @@ class CoastPocketsIntegrationTest {
         return fill;
     }
 
-    // The pockets the cell-pair bridge search captures - what the map used to paint as its inland
-    // fill, and what this check has always excused cell-ringed water with.
-    private static List<BoundedOutline> collectBridgeFill(
-            SectorFixture fixture,
+    // Everything the map paints over the void apart from the coast's own pockets: the bays the
+    // spans hold, the lakes and the puddles, the sea the links shut in, and the band each lake
+    // concedes between its drawn shore and the cells. What cell-ringed water is allowed to be
+    // covered by, since such water is either construction's to fill.
+    //
+    // Taken from the same inventory the window draws from, so a piece excused here is a piece a
+    // reader can see coloured in.
+    //
+    // The margins have to be in it, and as BANDS. Where the smoothing pulls a lake's shore
+    // right in, the band is most of that lake's water and the ring inside it a sliver - so a
+    // list without the margins calls such a lake unfilled while the window plainly paints it.
+    // Taken as whole rings instead, they would cover the middle a lake leaves bare, which is
+    // the one thing this check is here to notice.
+    private static List<BoundedOutline> collectOtherFill(
+            String sector,
             VoidPockets.PocketShaping shaping) {
-        var captured = VoidBridgePockets.findCapturedPockets(
-            fixture.getSites(),
-            VoidBridges.findVoidBridges(
-                fixture.getSites(),
-                PARAMETERS.cellRadius(),
-                PARAMETERS.cellRadius() * Coastlines.DEFAULT_RULES.bridgeReachMultiple()),
-            PARAMETERS,
-            shaping);
+        var water = SectorPipeline.fillWater(sector, shaping);
+        var rings = new ArrayList<List<double[]>>();
 
-        return measureBounds(captured);
+        rings.addAll(water.collectInletWater());
+        rings.addAll(water.collectLakeWater());
+        rings.addAll(water.collectPuddleWater());
+        rings.addAll(water.collectLinkWater());
+        rings.addAll(water.collectLinkedSectorWater());
+
+        var fill = measureBounds(rings);
+
+        for (var margin : water.collectLakeMargins()) {
+            fill.add(BoundedOutline.measureBand(margin.waterEdge(), margin.drawnShore()));
+        }
+        return fill;
     }
 
     private static List<BoundedOutline> concatenate(
@@ -368,11 +385,18 @@ class CoastPocketsIntegrationTest {
     // bounds inside that loop is no cheaper than the test it was meant to avoid.
     private record BoundedOutline(
         List<double[]> outline,
+        List<double[]> hole,
         double leastX,
         double leastY,
         double mostX,
         double mostY) {
         static BoundedOutline measure(List<double[]> outline) {
+            return measureBand(outline, List.of());
+        }
+
+        // A fill that covers the water between two rings and none of the water inside the
+        // inner one, which is how a lake's margin enters the question.
+        static BoundedOutline measureBand(List<double[]> outline, List<double[]> hole) {
             var leastX = Double.MAX_VALUE;
             var leastY = Double.MAX_VALUE;
             var mostX = -Double.MAX_VALUE;
@@ -384,13 +408,15 @@ class CoastPocketsIntegrationTest {
                 mostX = Math.max(mostX, corner[0]);
                 mostY = Math.max(mostY, corner[1]);
             }
-            return new BoundedOutline(outline, leastX, leastY, mostX, mostY);
+            return new BoundedOutline(outline, hole, leastX, leastY, mostX, mostY);
         }
 
         boolean holds(double[] point) {
             return point[0] >= leastX && point[0] <= mostX
                 && point[1] >= leastY && point[1] <= mostY
-                && PolygonRegions.isPointInsideRing(outline, point[0], point[1]);
+                && PolygonRegions.isPointInsideRing(outline, point[0], point[1])
+                && (hole.isEmpty()
+                    || !PolygonRegions.isPointInsideRing(hole, point[0], point[1]));
         }
     }
 

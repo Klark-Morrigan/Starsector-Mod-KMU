@@ -145,9 +145,9 @@ class DrawnSystemPositionsTest {
         @Test
         void opensNoTraversalOfTheSystemListItsPassHasNotAlreadyMade() {
             // What holds a rebuild inside the one traversal the frame allows it. The band bake
-            // resolves its systems off the same pass by id while this addresses them by key, so a
-            // traversal opened here would be the second in a rebuild whichever of the two ran
-            // first - and the bound is per call, so it would break on every full rebuild rather
+            // resolves its systems off the same pass's index while this reads the positions off
+            // it, so a traversal opened here would be the second in a rebuild whichever of the two
+            // ran first - and the bound is per call, so it would break on every full rebuild rather
             // than on an unlucky one.
             var pass = MapVisibilityPass.over(
                 buildUnroutedSectorOf(buildSystemAt("a", 3f, 4f)),
@@ -165,36 +165,6 @@ class DrawnSystemPositionsTest {
         }
     }
 
-    @Nested
-    class CollectLivePositionsById {
-
-        @Test
-        void keysEachDrawnSystemsLivePositionById() {
-
-            var positions = collectPositionsByIdUnder(buildUnroutedSectorOf(
-                buildSystemAt("a", 3f, 4f),
-                buildSystemAt("b", -5f, 6f)));
-
-            assertThat(positions)
-                .containsOnlyKeys("a", "b");
-            assertThat(positions.get("a"))
-                .containsExactly(3.0, 4.0);
-        }
-
-        @Test
-        void holdsTheFirstPositionOfTwoSystemsSharingAnId() {
-            // What an id address costs, stated where a structure keyed that way takes it: the two
-            // systems are one entry, holding the one every other id-keyed read of the sector
-            // answers with.
-            var positions = collectPositionsByIdUnder(buildUnroutedSectorOfTwoSystemsSharingAnId());
-
-            assertThat(positions)
-                .containsOnlyKeys("deep space");
-            assertThat(positions.get("deep space"))
-                .containsExactly(3.0, 4.0);
-        }
-    }
-
     // One walk over a pass opened the way a rebuild opens one: built per call and discarded
     // with it, which is what the production caller does - a kept pass would answer a second
     // walk off the sector the first one saw.
@@ -204,13 +174,6 @@ class DrawnSystemPositionsTest {
 
         return DrawnSystemPositions.collectLivePositions(
             MapVisibilityPass.over(sector, visibilityRules));
-    }
-
-    // The same walk taken at the id address. Every case of that read is about the address rather
-    // than the rule, so the force override is fixed here and none of them states it.
-    private static Map<String, double[]> collectPositionsByIdUnder(SectorAPI sector) {
-        return DrawnSystemPositions.collectLivePositionsById(
-            MapVisibilityPass.over(sector, FORCED_ONTO_MAP));
     }
 
     // Two systems the sector lists under one id, apart in hyperspace and told apart by their

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -197,8 +198,8 @@ final class SelectableBlocCacheTest {
             var sectorMock = mock(SectorAPI.class);
             var viewMock = stubViewAnswering(sectorMock, "factions");
 
-            assertThat(buildCacheOver(sectorMock).readPresentSystemIds(viewMock, "hegemony"))
-                .containsExactly("corvus", "askonia");
+            assertThat(buildCacheOver(sectorMock).readPresentSystemKeys(viewMock, "hegemony"))
+                .containsExactlyElementsOf(buildCellKeys("corvus", "askonia"));
         }
 
         @Test
@@ -210,7 +211,7 @@ final class SelectableBlocCacheTest {
             var cache = buildCacheOver(sectorMock);
 
             cache.resolveBlocPickerRead(viewMock);
-            cache.readPresentSystemIds(viewMock, "hegemony");
+            cache.readPresentSystemKeys(viewMock, "hegemony");
 
             verify(viewMock, times(1))
                 .resolveBlocPickerRead(sectorMock);
@@ -224,7 +225,7 @@ final class SelectableBlocCacheTest {
             var sectorMock = mock(SectorAPI.class);
             var viewMock = stubViewAnswering(sectorMock, "factions");
 
-            assertThat(buildCacheOver(sectorMock).readPresentSystemIds(viewMock, "vanished"))
+            assertThat(buildCacheOver(sectorMock).readPresentSystemKeys(viewMock, "vanished"))
                 .isEmpty();
         }
     }

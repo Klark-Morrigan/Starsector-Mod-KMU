@@ -68,10 +68,10 @@ sector no longer lists, and a cell whose plan came back empty. Each is a cost ga
 answer - the claim mechanic's count walks a system's whole market list, and the empty plan is what
 spares the single-holder cell a ring walk.
 
-The second of those refusals is answered against the pass's own systems-by-id index rather than one
-this bake traverses the sector for. The cells were cut from that same index, so indexing here would
-be the rebuild's second traversal of the sector - which is exactly what the frame's bound on a
-refresh refuses.
+The second of those refusals is answered against the pass's own systems-by-key index rather than one this bake traverses the sector for.
+The cells were cut from that same index,
+so indexing here would be the rebuild's second traversal of the sector -
+which is exactly what the frame's bound on a refresh refuses.
 
 The gate is the pass's **inhabitation scan**, not its holding, and that is what puts a band on the
 systems no layer paints. A settled system can resolve no claimant for

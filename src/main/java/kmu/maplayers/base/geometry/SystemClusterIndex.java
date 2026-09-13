@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,16 +22,16 @@ import java.util.Map;
  * cluster that carries one name. Disjoint pockets of one owner stay distinct, since they
  * are distinct components.
  *
- * <p>Pure lookup over plain ids - no geometry, no GL, no Starsector types.
+ * <p>Pure lookup over plain keys - no geometry, no GL, no Starsector types.
  */
 public final class SystemClusterIndex {
 
     // Each member system's whole cluster, shared per component - every member of one cluster
     // maps to the same list instance, so the index costs one entry per system, not per pair.
-    private final Map<String, List<String>> clusterMembersBySystemId;
+    private final Map<SystemKey, List<SystemKey>> clusterMembersBySystemKey;
 
-    private SystemClusterIndex(Map<String, List<String>> clusterMembersBySystemId) {
-        this.clusterMembersBySystemId = clusterMembersBySystemId;
+    private SystemClusterIndex(Map<SystemKey, List<SystemKey>> clusterMembersBySystemKey) {
+        this.clusterMembersBySystemKey = clusterMembersBySystemKey;
     }
 
     /**
@@ -45,17 +47,17 @@ public final class SystemClusterIndex {
      * @return an index over those clusters; lookups on it never see the caller's later edits,
      *         and the member lists it hands back cannot be modified
      */
-    public static SystemClusterIndex indexClusters(List<List<String>> clusters) {
-        var clusterMembersBySystemId = new LinkedHashMap<String, List<String>>();
+    public static SystemClusterIndex indexClusters(List<List<SystemKey>> clusters) {
+        var clusterMembersBySystemKey = new LinkedHashMap<SystemKey, List<SystemKey>>();
         for (var cluster : clusters) {
             // Copied so the index (and every member list it hands out) stays fixed even if the
             // caller reuses or mutates the lists the search returned.
             var members = List.copyOf(cluster);
-            for (var systemId : members) {
-                clusterMembersBySystemId.put(systemId, members);
+            for (var systemKey : members) {
+                clusterMembersBySystemKey.put(systemKey, members);
             }
         }
-        return new SystemClusterIndex(clusterMembersBySystemId);
+        return new SystemClusterIndex(clusterMembersBySystemKey);
     }
 
     /**
@@ -64,11 +66,11 @@ public final class SystemClusterIndex {
      * <p>Includes the system itself, so a lone system in its own cluster comes back as a
      * single-member list rather than an empty one - the caller need not add it back.
      *
-     * @param systemId the system to resolve; null (nothing hovered) resolves to no cluster
-     * @return the member ids of its cluster, or an empty list when the system carries no
+     * @param systemKey the system to resolve; null (nothing hovered) resolves to no cluster
+     * @return the members of its cluster, or an empty list when the system carries no
      *         cluster - it is unowned, cell-less, or unknown to this index
      */
-    public List<String> findClusterMembersOf(String systemId) {
-        return clusterMembersBySystemId.getOrDefault(systemId, List.of());
+    public List<SystemKey> findClusterMembersOf(SystemKey systemKey) {
+        return clusterMembersBySystemKey.getOrDefault(systemKey, List.of());
     }
 }

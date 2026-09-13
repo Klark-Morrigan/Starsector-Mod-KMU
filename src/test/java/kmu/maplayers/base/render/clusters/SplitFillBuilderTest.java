@@ -1,6 +1,7 @@
 package kmu.maplayers.base.render.clusters;
 
 import kmlib.math.geometry.RingRegion;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -15,6 +16,8 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -38,15 +41,17 @@ import static org.assertj.core.api.Assertions.within;
 final class SplitFillBuilderTest {
 
     private static final String REGION_KEY = "cluster";
-    private static final String HELD_SYSTEM = "A";
-    private static final String HATCHED_SYSTEM = "B";
+    private static final String HELD_SYSTEM_ID = "A";
+    private static final String HATCHED_SYSTEM_ID = "B";
+    private static final SystemKey HELD_SYSTEM = buildCellKey(HELD_SYSTEM_ID);
+    private static final SystemKey HATCHED_SYSTEM = buildCellKey(HATCHED_SYSTEM_ID);
     private static final HatchStyle HATCH = ThemeFixtures.createHatchStyle(200, Math.PI / 4, 1);
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
 
     // Two cells of the one cluster, meeting along x = 2000: A spans [0, 2000], B spans [2000, 4000],
     // both 2000 tall. Their shared edge is a same-owner seam; every other edge is a border.
-    private static final Map<String, List<CellEdge>> EDGES = Map.of(
+    private static final Map<SystemKey, List<CellEdge>> EDGES = Map.of(
         HELD_SYSTEM, List.of(
             buildEdge(0, 0, 2000, 0, null),
             buildEdge(2000, 0, 2000, 2000, HATCHED_SYSTEM),
@@ -60,7 +65,7 @@ final class SplitFillBuilderTest {
 
     private static final CellGrouping GROUPING = new CellGrouping(
         Map.of(HELD_SYSTEM, HELD_SYSTEM, HATCHED_SYSTEM, HATCHED_SYSTEM),
-        Map.of(HELD_SYSTEM, REGION_KEY, HATCHED_SYSTEM, REGION_KEY));
+        Map.of(HELD_SYSTEM_ID, REGION_KEY, HATCHED_SYSTEM_ID, REGION_KEY));
 
     // The body the fill is clipped to: the square [0, 1000] x [0, 1000], area 1e6, overlapping
     // the members' own cells.
@@ -210,12 +215,18 @@ final class SplitFillBuilderTest {
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
-            Set.of(HATCHED_SYSTEM),
+            Set.of(HATCHED_SYSTEM_ID),
             Set.of());
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge buildEdge(double x1, double y1, double x2, double y2, String neighbour) {
+    private static CellEdge buildEdge(
+            double x1,
+            double y1,
+            double x2,
+            double y2,
+            SystemKey neighbour) {
+
         return new CellEdge(x1, y1, x2, y2,
             neighbour == null
                 ? EdgeTarget.REACH_BOUND

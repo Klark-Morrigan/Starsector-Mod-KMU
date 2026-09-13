@@ -41,7 +41,7 @@ public final class HoverHighlightColour {
             return null;
         }
         return source.resolveHighlightColourOf(
-            hover.hoveredSystemId(),
+            hover.hoveredSystemKey(),
             style.colour());
     }
 }

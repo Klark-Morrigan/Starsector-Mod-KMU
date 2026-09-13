@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -30,7 +32,7 @@ final class MapHoverExpirerTest {
             // between them is a hover nobody is resolving any more.
             var state = new MapHoverState();
 
-            state.publishHover(new MapHover("system", List.of("system")));
+            state.publishHover(new MapHover(buildCellKey("system"), List.of(buildCellKey("system"))));
 
             var expirer = new MapHoverExpirer(state);
 
@@ -45,7 +47,7 @@ final class MapHoverExpirerTest {
         void advanceKeepsAHoverThePassesGoOnPublishing() {
             // A map still drawing publishes every frame, so this never takes a live hover away.
             var state = new MapHoverState();
-            var hover = new MapHover("system", List.of("system"));
+            var hover = new MapHover(buildCellKey("system"), List.of(buildCellKey("system")));
             var expirer = new MapHoverExpirer(state);
 
             for (var frame = 0; frame < 3; frame++) {

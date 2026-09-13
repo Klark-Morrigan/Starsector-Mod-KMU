@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.theme.ElementPaintSelection;
 
 import java.awt.Color;
@@ -16,21 +18,21 @@ import java.util.Map;
  * <p>The highlight colour is a constant: no geometry reads it.
  */
 record HoverHighlightSourceFake(
-    Map<String, List<double[]>> fillPolygonByCellId,
-    Map<String, List<float[]>> frontierLoopsByCellId) implements HoverHighlightSource {
+    Map<SystemKey, List<double[]>> fillPolygonByCellKey,
+    Map<SystemKey, List<float[]>> frontierLoopsByCellKey) implements HoverHighlightSource {
 
     @Override
-    public Map<String, List<double[]>> getFillPolygonByCellId() {
-        return fillPolygonByCellId;
+    public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
+        return fillPolygonByCellKey;
     }
 
     @Override
-    public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
-        return frontierLoopsByCellId.getOrDefault(cellId, List.of());
+    public List<float[]> resolveCandidateFrontierLoopsOf(SystemKey cellKey) {
+        return frontierLoopsByCellKey.getOrDefault(cellKey, List.of());
     }
 
     @Override
-    public Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection) {
+    public Color resolveHighlightColourOf(SystemKey cellKey, ElementPaintSelection paintSelection) {
         return Color.RED;
     }
 }

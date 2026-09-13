@@ -7,6 +7,7 @@ import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
 import kmlib.profiling.Profiler;
 import kmlib.starsector.factions.StarsectorFactionColours;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -323,7 +324,7 @@ public final class TerritoryBuilder {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 territories,
-                cellGrouping.resolveDrawnSystemIdOf(entry.getKey()),
+                cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
                 entry.getValue());
 
             if (styled == null) {
@@ -338,8 +339,8 @@ public final class TerritoryBuilder {
         // here off the same keys the shaping just fused the cells by, so a highlighted territory
         // is exactly the one the map merged into a single cluster.
         territories.reindexClusters(
-            geometryCache.getCellEdgesByCellId(),
-            geometryCache.getSystemIdByCellId());
+            geometryCache.getCellEdgesByCellKey(),
+            geometryCache.getSystemKeyByCellKey());
 
         // Each owned faction's territory: one cluster per cluster (traced across all its cells so
         // a multi-system cluster reads as one frontier), tessellated for the fill and flattened
@@ -355,20 +356,20 @@ public final class TerritoryBuilder {
         // strokes it cut reach the row from where they were cut rather than being summed back out
         // of what was built.
         shapeScope.addCount(MapBuildCounters.CELLS, shapedCells.size());
-        shapeScope.tagCall("styled=" + territories.getStyledCellByCellId().size()
+        shapeScope.tagCall("styled=" + territories.getStyledCellByCellKey().size()
             + " blocs=" + territories.getStyledClusterGroupByOwnerId().size());
     }
 
     // The cell shaping as a row of its own: fusing same-owner cells and insetting each is comparable
     // in cost to tracing the territories after it, and a reader wants the two apart.
-    private static Map<String, ShapedCell> shapeCells(
+    private static Map<SystemKey, ShapedCell> shapeCells(
             Profiler profiler,
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping) {
 
         try (var shapeScope = profiler.open(SHAPE_CELLS_SECTION)) {
             return CellShaper.shapeCells(
-                geometryCache.getCellEdgesByCellId(),
+                geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 CellShaper.BORDER_INSET_DISTANCE);
         }
@@ -401,7 +402,7 @@ public final class TerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
         return DominantHolder.mapCellGrouping(
-            geometryCache.getSystemIdByCellId(),
+            geometryCache.getSystemKeyByCellKey(),
             territories.getHolderBySystemId());
     }
 }

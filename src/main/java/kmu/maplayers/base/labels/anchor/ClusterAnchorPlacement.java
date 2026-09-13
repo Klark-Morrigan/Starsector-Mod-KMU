@@ -7,6 +7,7 @@ import kmlib.math.geometry.PrincipalAxis;
 import kmlib.math.geometry.RegionChord;
 import kmlib.math.geometry.Segment;
 import kmlib.math.solving.Picks;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.label.LabelBoxFitter;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
 
@@ -116,22 +117,28 @@ public final class ClusterAnchorPlacement {
             ClusterLabelResolvers labelResolvers,
             Map<ClusterIdentity, ClusterAnchor> reusableAnchors) {
 
-        var clusters = partition.clusterMemberSystemIds();
+        var clusters = partition.clusterMemberSystemKeys();
         var anchors = new ArrayList<ClusterAnchor>(clusters.size());
         var candidateCount = 0;
         var bandFitCount = 0;
 
-        for (var memberSystemIds : clusters) {
-            var sites = collectClusterSites(memberSystemIds, partition.siteBySystemId());
+        for (var memberSystemKeys : clusters) {
+            var sites = collectClusterSites(memberSystemKeys, partition.siteBySystemKey());
             if (sites.isEmpty()) {
                 continue;
             }
-            var owner = partition.grouping().ownerBySystemId().get(memberSystemIds.get(0));
+            // The owner map is keyed by id, so the first member's key narrows to reach it - which
+            // answers for the first system carrying that id, as every id-keyed read does.
+            var owner = partition
+                .grouping()
+                .ownerBySystemId()
+                .get(memberSystemKeys.get(0).systemId());
+
             var subject = labelResolvers.resolveLabelSubjectFor(
                 // Set.copyOf here is where the member list stops being ordered: the sweep
                 // walks the members in whatever order the grouping gave them, and that
                 // order is not part of which cluster this is.
-                new ClusterIdentity(owner, Set.copyOf(memberSystemIds)));
+                new ClusterIdentity(owner, Set.copyOf(memberSystemKeys)));
 
             var carried = carryOverAnchor(reusableAnchors.get(subject.identity()), subject);
             if (carried != null) {
@@ -140,16 +147,16 @@ public final class ClusterAnchorPlacement {
                 anchors.add(carried);
                 continue;
             }
-            var axis = resolveClusterAxis(memberSystemIds, partition.edgesByCellId(), sites);
+            var axis = resolveClusterAxis(memberSystemKeys, partition.edgesByCellKey(), sites);
             var rings = spec.search().borderTrace().traceRings(
-                memberSystemIds,
-                partition.edgesByCellId(),
+                memberSystemKeys,
+                partition.edgesByCellKey(),
                 partition.grouping());
 
             var search = searchClusterAnchor(
                 subject,
                 rings,
-                partition.siteBySystemId(),
+                partition.siteBySystemKey(),
                 axis,
                 spec);
 
@@ -221,7 +228,7 @@ public final class ClusterAnchorPlacement {
     private static ClusterSearch searchClusterAnchor(
             ClusterLabelSubject subject,
             List<List<double[]>> rings,
-            Map<String, double[]> siteBySystemId,
+            Map<SystemKey, double[]> siteBySystemKey,
             PrincipalAxis axis,
             LabelAnchorSpecification spec) {
 
@@ -238,7 +245,7 @@ public final class ClusterAnchorPlacement {
                 0);
         }
         var fitter = newBoxFitter(spec, subject.nameEstimator());
-        var sweep = sweepCandidateLines(rings, siteBySystemId.values(), axis, spec, fitter);
+        var sweep = sweepCandidateLines(rings, siteBySystemKey.values(), axis, spec, fitter);
 
         if (sweep.bestAccepted() == null) {
             // Collapse: no box fit anywhere, so the dot marks the site centroid; the best
@@ -505,15 +512,15 @@ public final class ClusterAnchorPlacement {
     // the sweep's origin regardless of which cloud supplied the direction, so the anchor
     // still falls back to the system's own position, not the cell's vertex-cloud mean.
     private static PrincipalAxis resolveClusterAxis(
-            List<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesByCellId,
+            List<SystemKey> memberSystemKeys,
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             List<double[]> sites) {
 
         var siteAxis = PrincipalAxis.fitTo(sites);
         if (siteAxis.length() >= Limits.MIN_EDGE_LENGTH) {
             return siteAxis;
         }
-        var cellVertices = collectClusterCellVertices(memberSystemIds, edgesByCellId);
+        var cellVertices = collectClusterCellVertices(memberSystemKeys, edgesByCellKey);
         if (cellVertices.size() < 2) {
             return siteAxis;
         }
@@ -537,12 +544,12 @@ public final class ClusterAnchorPlacement {
     // cluster's own footprint, fitted for a direction when its systems' site positions
     // alone have no spread to fit one to.
     private static List<double[]> collectClusterCellVertices(
-            List<String> memberSystemIds,
-            Map<String, List<CellEdge>> edgesByCellId) {
+            List<SystemKey> memberSystemKeys,
+            Map<SystemKey, List<CellEdge>> edgesByCellKey) {
 
         var vertices = new ArrayList<double[]>();
-        for (var systemId : memberSystemIds) {
-            var edges = edgesByCellId.get(systemId);
+        for (var systemKey : memberSystemKeys) {
+            var edges = edgesByCellKey.get(systemKey);
             if (edges == null) {
                 continue;
             }
@@ -584,12 +591,12 @@ public final class ClusterAnchorPlacement {
     // Gathers the {x, y} sites of a cluster's members, skipping any whose site is missing
     // - the point cloud the anchor's axis is fitted to.
     private static List<double[]> collectClusterSites(
-            List<String> memberSystemIds,
-            Map<String, double[]> siteBySystemId) {
+            List<SystemKey> memberSystemKeys,
+            Map<SystemKey, double[]> siteBySystemKey) {
 
-        var sites = new ArrayList<double[]>(memberSystemIds.size());
-        for (var systemId : memberSystemIds) {
-            var site = siteBySystemId.get(systemId);
+        var sites = new ArrayList<double[]>(memberSystemKeys.size());
+        for (var systemKey : memberSystemKeys) {
+            var site = siteBySystemKey.get(systemKey);
             if (site != null) {
                 sites.add(site);
             }

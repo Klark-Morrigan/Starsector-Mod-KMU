@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.NameFitSpecification;
 import kmlib.testfixtures.profiling.RecordedCapture;
@@ -51,6 +52,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -182,11 +186,11 @@ final class ClusterAnchorsBuilderTest {
     private static final AnchorFitFingerprint FITTED_UNDER_MOVED_RULES =
         new AnchorFitFingerprint(ANCHOR_SPECIFICATION, MOVED_GEOMETRY_REVISION);
 
-    private static final Map<String, List<CellEdge>> EDGES = listOrderedEdges();
-    private static final Map<String, double[]> SITES = Map.of(
+    private static final Map<SystemKey, List<CellEdge>> EDGES = buildKeyedValues(listOrderedEdges());
+    private static final Map<SystemKey, double[]> SITES = buildKeyedValues(Map.of(
         HELD_SYSTEM, new double[] {1000, 1000},
         NEIGHBOUR_SYSTEM, new double[] {3000, 1000},
-        RIVAL_SYSTEM, new double[] {21000, 1000});
+        RIVAL_SYSTEM, new double[] {21000, 1000}));
 
     // The sector is never walked: the one question the rebuild asks of it - who holds what - is
     // stubbed at the resolver, so this stands for the argument those stubs match on. The
@@ -267,11 +271,11 @@ final class ClusterAnchorsBuilderTest {
         when(viewMock.resolveBlocStyleAdjustment(any(), any(), any()))
             .thenReturn(ElementStyleAdjustment.NONE);
 
-        when(geometryCacheMock.getCellEdgesByCellId())
+        when(geometryCacheMock.getCellEdgesByCellKey())
             .thenReturn(EDGES);
-        when(geometryCacheMock.getSiteBySystemId())
+        when(geometryCacheMock.getSiteBySystemKey())
             .thenReturn(SITES);
-        when(geometryCacheMock.getSystemIdByCellId())
+        when(geometryCacheMock.getSystemKeyByCellKey())
             .thenReturn(listIdentityCellsFor(EDGES.keySet()));
     }
 
@@ -796,7 +800,7 @@ final class ClusterAnchorsBuilderTest {
     // is cleared. Only its presence is read, so every field is inert.
     private static ClusterAnchor buildStaleAnchor() {
         return new ClusterAnchor(
-            new ClusterIdentity("stale", Set.of("stale")),
+            new ClusterIdentity("stale", Set.of(buildCellKey("stale"))),
             0f,
             0f,
             Color.WHITE,
@@ -814,7 +818,7 @@ final class ClusterAnchorsBuilderTest {
     // so it takes up nothing and its going disturbs nobody.
     private static ClusterAnchor buildStandingAnchorOccupyingRoom() {
         return new ClusterAnchor(
-            new ClusterIdentity("stale", Set.of("stale")),
+            new ClusterIdentity("stale", Set.of(buildCellKey("stale"))),
             0f,
             0f,
             Color.WHITE,
@@ -855,12 +859,12 @@ final class ClusterAnchorsBuilderTest {
 
     // Every cell drawing as its own star - the partition the cluster walk runs over when no system
     // holds cells beyond its own.
-    private static Map<String, String> listIdentityCellsFor(Iterable<String> cellIds) {
-        var systemIdByCellId = new LinkedHashMap<String, String>();
-        for (var cellId : cellIds) {
-            systemIdByCellId.put(cellId, cellId);
+    private static Map<SystemKey, SystemKey> listIdentityCellsFor(Iterable<SystemKey> cellKeys) {
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+        for (var cellKey : cellKeys) {
+            systemKeyByCellKey.put(cellKey, cellKey);
         }
-        return systemIdByCellId;
+        return systemKeyByCellKey;
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
@@ -877,6 +881,6 @@ final class ClusterAnchorsBuilderTest {
             y2,
             neighbourSystemId == null
                 ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(neighbourSystemId));
+                : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
     }
 }

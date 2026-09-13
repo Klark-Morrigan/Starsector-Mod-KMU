@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.PolygonOffsets;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -46,21 +47,21 @@ public final class CellShaper {
     /**
      * Shapes every cell into its merged-cluster polygon.
      *
-     * @param edgesByCellId each cell's raw edges, in winding order, tagged with what lies
-     *                      across them
-     * @param grouping      which system each cell draws as and each system's owner -
-     *                      a cell with no system, or whose system is unowned, shapes as
-     *                      unowned
-     * @param borderInset   inward inset applied to every border edge
-     * @return one shaped cell per input cell, keyed by cell id, in iteration order
+     * @param edgesByCellKey each cell's raw edges, in winding order, tagged with what lies
+     *                       across them
+     * @param grouping       which system each cell draws as and each system's owner -
+     *                       a cell with no system, or whose system is unowned, shapes as
+     *                       unowned
+     * @param borderInset    inward inset applied to every border edge
+     * @return one shaped cell per input cell, keyed by cell key, in iteration order
      */
-    public static Map<String, ShapedCell> shapeCells(
-            Map<String, List<CellEdge>> edgesByCellId,
+    public static Map<SystemKey, ShapedCell> shapeCells(
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
             double borderInset) {
 
-        var shaped = new LinkedHashMap<String, ShapedCell>();
-        for (var entry : edgesByCellId.entrySet()) {
+        var shaped = new LinkedHashMap<SystemKey, ShapedCell>();
+        for (var entry : edgesByCellKey.entrySet()) {
             shaped.put(
                 entry.getKey(),
                 shapeCell(

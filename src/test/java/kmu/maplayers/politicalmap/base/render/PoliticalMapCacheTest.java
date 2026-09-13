@@ -53,7 +53,7 @@ final class PoliticalMapCacheTest {
 
             assertThat(cache.getTerritories())
                 .isNotNull();
-            assertThat(cache.getTerritories().getStyledCellByCellId())
+            assertThat(cache.getTerritories().getStyledCellByCellKey())
                 .isEmpty();
         }
     }

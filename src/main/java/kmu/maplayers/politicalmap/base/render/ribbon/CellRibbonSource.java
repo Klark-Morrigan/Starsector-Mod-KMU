@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.BlocAffiliation;
@@ -88,18 +89,18 @@ public final class CellRibbonSource {
     private final SystemRibbonPlanner planner;
     private final RibbonStyle style;
     private final RibbonBakeSurface surface;
-    private final Map<String, StarSystemAPI> systemById;
+    private final Map<SystemKey, StarSystemAPI> systemByKey;
 
     private CellRibbonSource(
             SystemRibbonPlanner planner,
             RibbonStyle style,
             RibbonBakeSurface surface,
-            Map<String, StarSystemAPI> systemById) {
+            Map<SystemKey, StarSystemAPI> systemByKey) {
 
         this.planner = planner;
         this.style = style;
         this.surface = surface;
-        this.systemById = systemById;
+        this.systemByKey = systemByKey;
     }
 
     /**
@@ -132,22 +133,22 @@ public final class CellRibbonSource {
     /**
      * Bakes the band of one cell.
      *
-     * @param cellId        the cell being baked, the key its traced ring is kept under
-     * @param drawnSystemId the system the cell draws as, or null for a cell with no star of its
-     *                      own - which nothing paints, so it carries no band
-     * @param fillPolygon   the cell's painted outline, the ring the band runs inside
-     * @param bakeScope     the pass's open scope, whose turn is this cell and whose phases this
-     *                      cell's count and the geometry that follows it are marked on
+     * @param cellKey         the cell being baked, the key its traced ring is kept under
+     * @param drawnSystemKey  the system the cell draws as, or null for a cell with no star of its
+     *                        own - which nothing paints, so it carries no band
+     * @param fillPolygon     the cell's painted outline, the ring the band runs inside
+     * @param bakeScope       the pass's open scope, whose turn is this cell and whose phases this
+     *                        cell's count and the geometry that follows it are marked on
      * @return the cell's baked band, or {@link CellRibbon#NONE} where it draws none
      */
     public CellRibbon buildCellRibbon(
-            String cellId,
-            String drawnSystemId,
+            SystemKey cellKey,
+            SystemKey drawnSystemKey,
             List<double[]> fillPolygon,
             IterationScope bakeScope) {
 
-        var site = resolveBandLayoutSite(drawnSystemId);
-        var system = site == null ? null : systemById.get(drawnSystemId);
+        var site = resolveBandLayoutSite(drawnSystemKey);
+        var system = site == null ? null : systemByKey.get(drawnSystemKey);
 
         // A system the sector no longer lists leaves the band with nothing to count, which is the
         // same answer as an unpainted cell: no band, rather than one counted off a stand-in.
@@ -168,7 +169,7 @@ public final class CellRibbonSource {
         if (plan.sumLengthUnits() <= 0) {
             return CellRibbon.NONE;
         }
-        var ringPath = findOrTraceRingPath(cellId, fillPolygon, site);
+        var ringPath = findOrTraceRingPath(cellKey, fillPolygon, site);
 
         bakeScope.markPhase(RibbonBakePhases.TRACE_PHASE);
 
@@ -190,14 +191,16 @@ public final class CellRibbonSource {
      * above is everything downstream of the ring - a cell whose plan came back empty, and one
      * refused the room to draw what it planned, both still show the path they would have used.
      *
-     * @param drawnSystemId the system the cell draws as, or null for a cell with no star of its
-     *                      own - which nothing paints, so no band is ever laid on it
-     * @param fillPolygon   the cell's painted outline, the ring the path runs inside
+     * @param drawnSystemKey the system the cell draws as, or null for a cell with no star of its
+     *                       own - which nothing paints, so no band is ever laid on it
+     * @param fillPolygon    the cell's painted outline, the ring the path runs inside
      * @return the cell's traced path, or {@link CellRibbonPath#NONE} where none was traced
      */
-    public CellRibbonPath traceCellRibbonPath(String drawnSystemId, List<double[]> fillPolygon) {
+    public CellRibbonPath traceCellRibbonPath(
+            SystemKey drawnSystemKey,
+            List<double[]> fillPolygon) {
 
-        var site = resolveBandLayoutSite(drawnSystemId);
+        var site = resolveBandLayoutSite(drawnSystemKey);
 
         return site == null
             ? CellRibbonPath.NONE
@@ -238,7 +241,7 @@ public final class CellRibbonSource {
             view.resolveRibbonPlanner(inputs),
             style,
             surface,
-            pass.sectorIndex().readSystemsById());
+            pass.sectorIndex().readSystemsByKey());
     }
 
     // The ring this cell's band runs along: the one already traced inside the shape the cell holds
@@ -255,16 +258,19 @@ public final class CellRibbonSource {
     // whose rings already stood reports the near-nothing a cache read costs - which is the
     // difference the cache is there to make and the one worth being able to read, and which is now
     // the phase's own number rather than a gap in somebody else's.
-    private RingPath findOrTraceRingPath(String cellId, List<double[]> fillPolygon, double[] site) {
+    private RingPath findOrTraceRingPath(
+            SystemKey cellKey,
+            List<double[]> fillPolygon,
+            double[] site) {
 
-        var standingPath = surface.ringPathCache().findRingPathOf(cellId);
+        var standingPath = surface.ringPathCache().findRingPathOf(cellKey);
 
         if (standingPath != null) {
             return standingPath;
         }
         var tracedPath = RibbonPathTracer.traceLaidRibbonPath(fillPolygon, site, style);
 
-        surface.ringPathCache().putRingPath(cellId, tracedPath);
+        surface.ringPathCache().putRingPath(cellKey, tracedPath);
 
         return tracedPath;
     }
@@ -279,12 +285,15 @@ public final class CellRibbonSource {
     // Shared by the two calls above so the overlay covers exactly the cells the band pass
     // considered: a diagnostic answering for a wider set than the pass it reports on would show
     // paths where no band was ever going to be laid.
-    private double[] resolveBandLayoutSite(String drawnSystemId) {
+    private double[] resolveBandLayoutSite(SystemKey drawnSystemKey) {
 
-        if (drawnSystemId == null || !surface.inhabitedSystemIds().contains(drawnSystemId)) {
+        // The inhabitation gate is keyed by id, the layer's holding being keyed that way, so the
+        // system's key narrows to ask it; the site is the cut's own and is asked by key.
+        if (drawnSystemKey == null
+                || !surface.inhabitedSystemIds().contains(drawnSystemKey.systemId())) {
             return null;
         }
-        return surface.siteBySystemId().get(drawnSystemId);
+        return surface.siteBySystemKey().get(drawnSystemKey);
     }
 
     // A pass with the bands switched off, which the empty inhabited set states outright: that set

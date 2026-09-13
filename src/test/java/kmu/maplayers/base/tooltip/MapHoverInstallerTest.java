@@ -18,6 +18,8 @@ import java.util.List;
 
 import static kmlib.testfixtures.starsector.listeners.SectorListenerFixtures.buildSector;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -153,7 +155,9 @@ class MapHoverInstallerTest {
             verify(sectorMock)
                 .addTransientScript(scriptCaptor.capture());
 
-            hoverState.publishHover(new MapHover(HOVERED_SYSTEM_ID, List.of(HOVERED_SYSTEM_ID)));
+            hoverState.publishHover(new MapHover(
+                buildCellKey(HOVERED_SYSTEM_ID),
+                List.of(buildCellKey(HOVERED_SYSTEM_ID))));
 
             // Two ticks: the first closes the window the publish opened, the second finds no pass
             // republished and lets the hover go.

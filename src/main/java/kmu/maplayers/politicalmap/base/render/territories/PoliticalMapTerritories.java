@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SystemClusterIndex;
@@ -83,14 +84,14 @@ public final class PoliticalMapTerritories implements
     // fresh build fills them and no caller ever supplies them pre-populated. A bloc's bodies are
     // keyed by its holder - a faction id under the factions view, or one of the filter's
     // synthetic spotlight keys - which the emission never interprets.
-    private final Map<String, StyledCell> styledCellByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, StyledCell> styledCellByCellKey = new LinkedHashMap<>();
     private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
         new LinkedHashMap<>();
 
     // Each drawn cell's shaped fill polygon, the shape the cursor is tested against. Written only
     // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
     // hover is exactly what the frame painted.
-    private final Map<String, List<double[]>> fillPolygonByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, List<double[]>> fillPolygonByCellKey = new LinkedHashMap<>();
 
     // Each drawn cell's presence band, baked against the very shape above by its own pass once
     // the names have been placed. Emptied for a cell whenever that shape is replaced, so a band
@@ -98,14 +99,14 @@ public final class PoliticalMapTerritories implements
     // the cells it re-bakes. Most cells have none - a band reports what is held in a system, and
     // most of the sector is cells nobody lives in - so the map is sparse against the two above
     // rather than parallel to them.
-    private final Map<String, CellRibbon> ribbonByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, CellRibbon> ribbonByCellKey = new LinkedHashMap<>();
 
     // Each drawn cell's band path, held only while the player has the diagnostic overlay on and
     // emptied by the same writes as the band above, for the same reason: a path traced inside one
     // shape says nothing about the next. Kept beside the band rather than with the other overlays
     // because its lifetime is a cell's shape, which is what this holds and what the map's other
     // diagnostics are built without.
-    private final Map<String, CellRibbonPath> ribbonPathByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, CellRibbonPath> ribbonPathByCellKey = new LinkedHashMap<>();
 
     // The ring each cell's band is laid along, traced inside the very shape above and kept here so
     // a re-bake walks a ring only where a cell was actually re-shaped. Dropped by the same writes
@@ -189,8 +190,8 @@ public final class PoliticalMapTerritories implements
     }
 
     @Override
-    public Map<String, StyledCell> getStyledCellByCellId() {
-        return styledCellByCellId;
+    public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
+        return styledCellByCellKey;
     }
 
     /**
@@ -208,21 +209,21 @@ public final class PoliticalMapTerritories implements
      * cell; dropping both here means a cell only ever carries a band the band pass laid in the
      * shape it holds now, traced inside that same shape.
      *
-     * @param cellId      the cell this record is for
+     * @param cellKey     the cell this record is for
      * @param styledCell  its draw record
      * @param fillPolygon the shaped fill it was built from - the cell's painted extent, with the
      *                    border inset, frontier setback, and keep-out clipping already applied
      */
     public void putStyledCell(
-            String cellId,
+            SystemKey cellKey,
             StyledCell styledCell,
             List<double[]> fillPolygon) {
 
-        styledCellByCellId.put(cellId, styledCell);
-        fillPolygonByCellId.put(cellId, fillPolygon);
-        ribbonByCellId.remove(cellId);
-        ribbonPathByCellId.remove(cellId);
-        ringPathCache.dropRingPathOf(cellId);
+        styledCellByCellKey.put(cellKey, styledCell);
+        fillPolygonByCellKey.put(cellKey, fillPolygon);
+        ribbonByCellKey.remove(cellKey);
+        ribbonPathByCellKey.remove(cellKey);
+        ringPathCache.dropRingPathOf(cellKey);
     }
 
     /**
@@ -235,17 +236,17 @@ public final class PoliticalMapTerritories implements
      * one - which is what keeps the two describing the same ring without either caller having to
      * remember the other.
      *
-     * @param cellId the cell this band is for
-     * @param ribbon the baked band, or {@link CellRibbon#NONE} where the cell draws none
+     * @param cellKey the cell this band is for
+     * @param ribbon  the baked band, or {@link CellRibbon#NONE} where the cell draws none
      */
-    public void putCellRibbon(String cellId, CellRibbon ribbon) {
+    public void putCellRibbon(SystemKey cellKey, CellRibbon ribbon) {
 
         // A bandless cell is left out of the map rather than holding an empty value, so the render
         // pass walks only the cells that draw one - which is a small share of them.
         if (ribbon.isEmpty()) {
-            ribbonByCellId.remove(cellId);
+            ribbonByCellKey.remove(cellKey);
         } else {
-            ribbonByCellId.put(cellId, ribbon);
+            ribbonByCellKey.put(cellKey, ribbon);
         }
     }
 
@@ -257,18 +258,18 @@ public final class PoliticalMapTerritories implements
      * it carries was not laid on. A pass with the overlay switched off hands over nothing for
      * every cell, which is what clears the paths a pass taken while it was on left behind.
      *
-     * @param cellId     the cell this path is for
+     * @param cellKey    the cell this path is for
      * @param ribbonPath the traced path, or {@link CellRibbonPath#NONE} where none was traced
      */
-    public void putCellRibbonPath(String cellId, CellRibbonPath ribbonPath) {
+    public void putCellRibbonPath(SystemKey cellKey, CellRibbonPath ribbonPath) {
 
         // Left out of the map rather than held as an empty value, exactly as a bandless cell is:
         // the overlay walks only the cells with a path to draw, which is none of them while the
         // player has it off.
         if (ribbonPath.isEmpty()) {
-            ribbonPathByCellId.remove(cellId);
+            ribbonPathByCellKey.remove(cellKey);
         } else {
-            ribbonPathByCellId.put(cellId, ribbonPath);
+            ribbonPathByCellKey.put(cellKey, ribbonPath);
         }
     }
 
@@ -276,30 +277,30 @@ public final class PoliticalMapTerritories implements
      * Drops one cell entirely - it draws nothing, so it can be hovered over no more than
      * it can be seen.
      *
-     * @param cellId the cell that no longer draws
+     * @param cellKey the cell that no longer draws
      */
-    public void removeStyledCell(String cellId) {
-        styledCellByCellId.remove(cellId);
-        fillPolygonByCellId.remove(cellId);
-        ribbonByCellId.remove(cellId);
-        ribbonPathByCellId.remove(cellId);
-        ringPathCache.dropRingPathOf(cellId);
+    public void removeStyledCell(SystemKey cellKey) {
+        styledCellByCellKey.remove(cellKey);
+        fillPolygonByCellKey.remove(cellKey);
+        ribbonByCellKey.remove(cellKey);
+        ribbonPathByCellKey.remove(cellKey);
+        ringPathCache.dropRingPathOf(cellKey);
     }
 
     /**
-     * @return each cell that draws a presence band, keyed by cell id; a cell drawing none is
+     * @return each cell that draws a presence band, keyed by cell key; a cell drawing none is
      *         absent rather than present with an empty band
      */
-    public Map<String, CellRibbon> getRibbonByCellId() {
-        return ribbonByCellId;
+    public Map<SystemKey, CellRibbon> getRibbonByCellKey() {
+        return ribbonByCellKey;
     }
 
     /**
-     * @return each cell the diagnostic overlay has a band path for, keyed by cell id; empty while
+     * @return each cell the diagnostic overlay has a band path for, keyed by cell key; empty while
      *         the player has the overlay off
      */
-    public Map<String, CellRibbonPath> getRibbonPathByCellId() {
-        return ribbonPathByCellId;
+    public Map<SystemKey, CellRibbonPath> getRibbonPathByCellKey() {
+        return ribbonPathByCellKey;
     }
 
     /**
@@ -316,8 +317,8 @@ public final class PoliticalMapTerritories implements
      *         geometry a cursor position is resolved against
      */
     @Override
-    public Map<String, List<double[]>> getFillPolygonByCellId() {
-        return fillPolygonByCellId;
+    public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
+        return fillPolygonByCellKey;
     }
 
     /**
@@ -336,17 +337,17 @@ public final class PoliticalMapTerritories implements
      * a single system flipping can sever one territory in two or bridge two into one, which no
      * amount of patching the old index would catch.
      *
-     * @param cellEdgesByCellId the adjacency the clusters are walked over
-     * @param systemIdByCellId  the system each cell draws as, since a cluster is walked over
-     *                          cells but indexed by the systems in it
+     * @param cellEdgesByCellKey the adjacency the clusters are walked over
+     * @param systemKeyByCellKey  the system each cell draws as, since a cluster is walked over
+     *                           cells but indexed by the systems in it
      */
     public void reindexClusters(
-            Map<String, List<CellEdge>> cellEdgesByCellId,
-            Map<String, String> systemIdByCellId) {
+            Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
+            Map<SystemKey, SystemKey> systemKeyByCellKey) {
         clusterIndex = SystemClusterIndex.indexClusters(SystemClusters.findClusters(
-            cellEdgesByCellId,
+            cellEdgesByCellKey,
             DominantHolder.mapCellGrouping(
-                systemIdByCellId,
+                systemKeyByCellKey,
                 occupancy.getHolderBySystemId())));
     }
 
@@ -537,6 +538,6 @@ public final class PoliticalMapTerritories implements
     // entirely.
     @Override
     public boolean isEmpty() {
-        return styledCellByCellId.isEmpty() && styledClusterGroupByOwnerId.isEmpty();
+        return styledCellByCellKey.isEmpty() && styledClusterGroupByOwnerId.isEmpty();
     }
 }

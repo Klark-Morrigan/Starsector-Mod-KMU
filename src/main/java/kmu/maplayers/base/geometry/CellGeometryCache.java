@@ -5,6 +5,7 @@ import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileScope;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
@@ -12,6 +13,7 @@ import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -21,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Holds a map layer's cell outlines, keyed by system id, and updates them
+ * Holds a map layer's cell outlines, keyed by {@link SystemKey}, and updates them
  * incrementally as systems gain or lose access.
  *
  * <p>The cells are a Voronoi partition of the on-map systems. Recomputing the
@@ -37,8 +39,8 @@ import java.util.Set;
  *
  * <p>Moving systems are excluded from the partition. A system that rewrites its own
  * hyperspace position (a mobile colony) has no stable cell to draw, and letting it
- * clip its neighbours would drag their borders around with it, so the moving-system
- * ids passed in are dropped from the site set: a mover seeds no cell and clips no
+ * clip its neighbours would drag their borders around with it, so the moving systems
+ * passed in are dropped from the site set: a mover seeds no cell and clips no
  * neighbour, and the surrounding cells fill the space as if it were absent. Because a
  * mover is simply out of the site set, its entering or leaving that set reads as an
  * ordinary remove or add in the diff - it comes to rest and rejoins with no special
@@ -48,7 +50,7 @@ import java.util.Set;
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
  * across it, which the render layer classifies into interior seams and cluster
  * boundaries once it knows each cell's owner, then shapes into merged cell clusters.
- * The cells are keyed by cell id and paired with the system each draws as: here every
+ * The cells are keyed by cell key and paired with the system each draws as: here every
  * cell is one star's own, so the two coincide, but the cells are a partition of
  * space rather than a list of stars and a consumer must not assume a cell's key names a
  * system. The cache holds the
@@ -56,6 +58,10 @@ import java.util.Set;
  * border channel is ownership-dependent - two same-owner cells fuse along their
  * shared edge - so it belongs to the render pass, not to this ownership-agnostic
  * geometry that rebuilds only on an access change.
+ *
+ * <p>Every address here is a {@link SystemKey} rather than a system id, because an id is not
+ * unique: a sector holding several systems under one would cut a single cell for them, leaving
+ * every system after the first with no cell on a map that cells its neighbours.
  *
  * <p>Geometry only, no GL: the partition can be reasoned about from the sector
  * alone, independent of how the cells are drawn.
@@ -74,16 +80,16 @@ public final class CellGeometryCache {
     private static final String UNCHANGED_CALL = "unchanged";
     private static final String REBUILT_CALL = "rebuilt";
 
-    private final Map<String, double[]> siteBySystemId = new LinkedHashMap<>();
+    private final Map<SystemKey, double[]> siteBySystemKey = new LinkedHashMap<>();
 
-    // Each raw cell as adjacency edges, keyed by cell id: an affected cell's edges are
+    // Each raw cell as adjacency edges, keyed by cell key: an affected cell's edges are
     // recomputed on an access change while distant cells keep their existing lists
     // (and their adjacency), so untouched cells stay the very same object.
-    private final Map<String, List<CellEdge>> cellEdgesByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, List<CellEdge>> cellEdgesByCellKey = new LinkedHashMap<>();
 
     // The system each cell draws as. Written in lockstep with the cells above, since a cell
     // and what it draws as are produced together and a reader of one always needs the other.
-    private final Map<String, String> systemIdByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, SystemKey> systemKeyByCellKey = new LinkedHashMap<>();
 
     // The seed inputs the cached cells were built at. Both invalidate every built cell when
     // they move, not just the ones an access change touched, so updateFromSector compares
@@ -96,7 +102,7 @@ public final class CellGeometryCache {
      * builds every cell from scratch instead of diffing against what is held.
      *
      * <p>Wanted when the cells belong to a sector that is no longer the live one. The incremental
-     * path cannot get there on its own: it reconciles by comparing system <em>ids</em>, so a system
+     * path cannot get there on its own: it reconciles by comparing system <em>keys</em>, so a system
      * that appears in both sectors at a different position is not seen as a change and would keep the
      * cell built around its old position.
      */
@@ -120,51 +126,51 @@ public final class CellGeometryCache {
      * @param pass            the rebuild's reading of the sector, whose walk of each system this
      *                        update shares and whose rules the drawn set is taken under; a pass
      *                        over no sector seeds nothing
-     * @param movingSystemIds the systems currently moving, left out of the partition -
-     *                        each seeds no cell and clips no neighbour, so the cells
-     *                        around it fill the space as if it were absent
+     * @param movingSystemKeys the systems currently moving, left out of the partition -
+     *                         each seeds no cell and clips no neighbour, so the cells
+     *                         around it fill the space as if it were absent
      * @param seedInputs      what to seed each cell with - its frontier resolution and its
      *                        reach; a change from the last update reseeds every cell, and
      *                        the reach also sets how far the diff scans
      */
     public void updateFromSector(
             MapVisibilityPass pass,
-            Set<String> movingSystemIds,
+            Collection<SystemKey> movingSystemKeys,
             CellSeedInputs seedInputs) {
 
         // The whole update under one scope: what the diff cost and what a rebuild it triggered
         // cost are one duration, and the counts it is read against are added to the same scope
         // rather than printed beside a clock read of this method's own.
         try (var updateScope = ActiveProfiler.resolveProfiler().open(UPDATE_SECTION)) {
-            updateCellsInScope(pass, movingSystemIds, seedInputs, updateScope);
+            updateCellsInScope(pass, movingSystemKeys, seedInputs, updateScope);
         }
     }
 
     /**
-     * @return the cell-adjacency graph keyed by cell id; each value is that cell's raw
+     * @return the cell-adjacency graph keyed by cell key; each value is that cell's raw
      *         edges, every edge tagged with what lies across it. An unmodifiable live view.
      */
-    public Map<String, List<CellEdge>> getCellEdgesByCellId() {
-        return Collections.unmodifiableMap(cellEdgesByCellId);
+    public Map<SystemKey, List<CellEdge>> getCellEdgesByCellKey() {
+        return Collections.unmodifiableMap(cellEdgesByCellKey);
     }
 
     /**
-     * @return the system each cell draws as, keyed by cell id - the map a consumer resolves a
+     * @return the system each cell draws as, keyed by cell key - the map a consumer resolves a
      *         cell's owner, palette, and name through. Every cell here is one star's own
      *         cell, so each maps to the star it was seeded from. An unmodifiable live view.
      */
-    public Map<String, String> getSystemIdByCellId() {
-        return Collections.unmodifiableMap(systemIdByCellId);
+    public Map<SystemKey, SystemKey> getSystemKeyByCellKey() {
+        return Collections.unmodifiableMap(systemKeyByCellKey);
     }
 
     /**
      * @return each on-map system's Voronoi site - its {@code {x, y}} hyperspace
-     *         position and the natural centre of its cell - keyed by system id. The
+     *         position and the natural centre of its cell - keyed by system key. The
      *         point cloud a cluster's label anchor is fitted to. An unmodifiable live
      *         view.
      */
-    public Map<String, double[]> getSiteBySystemId() {
-        return Collections.unmodifiableMap(siteBySystemId);
+    public Map<SystemKey, double[]> getSiteBySystemKey() {
+        return Collections.unmodifiableMap(siteBySystemKey);
     }
 
     // The update itself, reporting what it did onto the scope the entry point opened: the cells
@@ -173,11 +179,11 @@ public final class CellGeometryCache {
     // rather than through a line of this class's own.
     private void updateCellsInScope(
             MapVisibilityPass pass,
-            Set<String> movingSystemIds,
+            Collection<SystemKey> movingSystemKeys,
             CellSeedInputs seedInputs,
             ProfileScope updateScope) {
 
-        var newSites = collectAccessibleSites(pass, movingSystemIds);
+        var newSites = collectAccessibleSites(pass, movingSystemKeys);
 
         reseedIfSeedInputsMoved(seedInputs);
 
@@ -208,7 +214,7 @@ public final class CellGeometryCache {
             + " added=" + diff.added().size()
             + " removed=" + diff.removed().size()
             + " cellEdges=" + recomputedCellEdges
-            + " sites=" + siteBySystemId.size());
+            + " sites=" + siteBySystemKey.size());
     }
 
     // The seed inputs are what every cell is cut from, so a change to either of them invalidates
@@ -226,19 +232,19 @@ public final class CellGeometryCache {
     // The three structures a cell lives in, emptied together. They are written in lockstep, so a
     // caller clearing two of them would leave the partition describing cells it no longer holds.
     private void dropEveryCachedCell() {
-        siteBySystemId.clear();
-        cellEdgesByCellId.clear();
-        systemIdByCellId.clear();
+        siteBySystemKey.clear();
+        cellEdgesByCellKey.clear();
+        systemKeyByCellKey.clear();
     }
 
     // Which systems entered and which left the partition since the cells were last cut. A system
     // that started or stopped moving is an add or a remove here like any other.
-    private SiteDiff diffSitesAgainstCache(Map<String, double[]> newSites) {
+    private SiteDiff diffSitesAgainstCache(Map<SystemKey, double[]> newSites) {
 
-        var added = new LinkedHashSet<String>(newSites.keySet());
-        added.removeAll(siteBySystemId.keySet());
+        var added = new LinkedHashSet<SystemKey>(newSites.keySet());
+        added.removeAll(siteBySystemKey.keySet());
 
-        var removed = new LinkedHashSet<String>(siteBySystemId.keySet());
+        var removed = new LinkedHashSet<SystemKey>(siteBySystemKey.keySet());
         removed.removeAll(newSites.keySet());
 
         return new SiteDiff(added, removed);
@@ -249,62 +255,63 @@ public final class CellGeometryCache {
     // before it is replaced. A change at one site can only alter cells whose site is within twice
     // the cell radius (the bisector with the changed site reaches no farther), so that is the
     // diff's reach.
-    private Set<String> findAffectedCells(
-            Map<String, double[]> newSites,
+    private Set<SystemKey> findAffectedCells(
+            Map<SystemKey, double[]> newSites,
             SiteDiff diff,
             double cellRadius) {
 
         var neighbourhoodRadius = 2.0 * cellRadius;
-        var affected = new LinkedHashSet<String>(diff.added());
+        var affected = new LinkedHashSet<SystemKey>(diff.added());
 
-        for (var id : diff.added()) {
-            affected.addAll(findSystemsNear(newSites, newSites.get(id), neighbourhoodRadius));
+        for (var key : diff.added()) {
+            affected.addAll(findSystemsNear(newSites, newSites.get(key), neighbourhoodRadius));
         }
-        for (var id : diff.removed()) {
-            affected.addAll(findSystemsNear(newSites, siteBySystemId.get(id), neighbourhoodRadius));
+        for (var key : diff.removed()) {
+            affected.addAll(
+                findSystemsNear(newSites, siteBySystemKey.get(key), neighbourhoodRadius));
         }
         return affected;
     }
 
     // Takes the new site set as the partition's, dropping the cells of the systems that left it.
-    private void replaceSites(Map<String, double[]> newSites, Set<String> removed) {
+    private void replaceSites(Map<SystemKey, double[]> newSites, Set<SystemKey> removed) {
 
-        siteBySystemId.clear();
-        siteBySystemId.putAll(newSites);
-        for (var id : removed) {
-            cellEdgesByCellId.remove(id);
-            systemIdByCellId.remove(id);
+        siteBySystemKey.clear();
+        siteBySystemKey.putAll(newSites);
+        for (var key : removed) {
+            cellEdgesByCellKey.remove(key);
+            systemKeyByCellKey.remove(key);
         }
     }
 
     // Recuts every affected cell against the current sites, answering how many edges that came to.
-    // Ordered site list plus its parallel id list: the labelled cell builder works in site
-    // indices, and the adjacency graph translates each edge's neighbour index back to a system id
+    // Ordered site list plus its parallel key list: the labelled cell builder works in site
+    // indices, and the adjacency graph translates each edge's neighbour index back to a system key
     // through this list. The two stay aligned because a LinkedHashMap iterates keys and values in
     // lockstep.
-    private int recomputeCells(Set<String> affected, CellSeedInputs seedInputs) {
+    private int recomputeCells(Set<SystemKey> affected, CellSeedInputs seedInputs) {
 
-        var allSiteIds = new ArrayList<String>(siteBySystemId.keySet());
-        var allSites = new ArrayList<double[]>(siteBySystemId.values());
-        var indexBySystemId = new HashMap<String, Integer>();
+        var allSiteKeys = new ArrayList<SystemKey>(siteBySystemKey.keySet());
+        var allSites = new ArrayList<double[]>(siteBySystemKey.values());
+        var indexBySystemKey = new HashMap<SystemKey, Integer>();
 
-        for (var i = 0; i < allSiteIds.size(); i++) {
-            indexBySystemId.put(allSiteIds.get(i), i);
+        for (var i = 0; i < allSiteKeys.size(); i++) {
+            indexBySystemKey.put(allSiteKeys.get(i), i);
         }
 
         var recomputedCellEdges = 0;
-        for (var id : affected) {
+        for (var key : affected) {
             var cell = VoronoiCellBuilder.buildLabelledCell(
-                indexBySystemId.get(id),
+                indexBySystemKey.get(key),
                 allSites,
                 seedInputs.cellRadius(),
                 seedInputs.boundSegments());
-            var edges = buildCellEdges(cell, allSiteIds);
-            cellEdgesByCellId.put(id, edges);
+            var edges = buildCellEdges(cell, allSiteKeys);
+            cellEdgesByCellKey.put(key, edges);
 
             // Every cell here is one star's own, so it is keyed by that star and
             // draws as it.
-            systemIdByCellId.put(id, id);
+            systemKeyByCellKey.put(key, key);
             recomputedCellEdges += edges.size();
         }
         return recomputedCellEdges;
@@ -319,25 +326,26 @@ public final class CellGeometryCache {
     // The pass is the rebuild's rather than one opened here, so this walk of the sector is
     // the same walk the stages after it make. A geometry update handed a sector could open a
     // reading of its own, which is what put three readings in one rebuild.
-    private static Map<String, double[]> collectAccessibleSites(
+    private static Map<SystemKey, double[]> collectAccessibleSites(
             MapVisibilityPass pass,
-            Set<String> movingSystemIds) {
+            Collection<SystemKey> movingSystemKeys) {
 
-        // Addressed by id because a cell is keyed by the system it is cut for and a cell id is a
-        // system id, which is the address the movers are named by as well.
-        var sites = DrawnSystemPositions.collectLivePositionsById(pass);
-        sites.keySet().removeAll(movingSystemIds);
+        // Addressed by key because a cell is keyed by the system it is cut for, which is the
+        // address the movers are named by as well - and the address two systems sharing an id are
+        // told apart by, each of them seeding a cell of its own.
+        var sites = DrawnSystemPositions.collectLivePositions(pass);
+        sites.keySet().removeAll(movingSystemKeys);
         return sites;
     }
 
-    // System ids whose site is within the neighbourhood radius of origin - the
+    // The systems whose site is within the neighbourhood radius of origin - the
     // cells a change at origin can reach.
-    private static Set<String> findSystemsNear(
-            Map<String, double[]> sites,
+    private static Set<SystemKey> findSystemsNear(
+            Map<SystemKey, double[]> sites,
             double[] origin,
             double neighbourhoodRadius) {
 
-        var near = new LinkedHashSet<String>();
+        var near = new LinkedHashSet<SystemKey>();
         var maxDistanceSquared = neighbourhoodRadius * neighbourhoodRadius;
         for (var entry : sites.entrySet()) {
             if (Points.computeDistanceSquared(origin, entry.getValue()) <= maxDistanceSquared) {
@@ -350,10 +358,10 @@ public final class CellGeometryCache {
     // Turns one labelled cell into its adjacency edges: each edge as a world-space
     // segment tagged with what lies across it - the neighbouring system, or the cell's
     // own outer reach bound. The builder reports each edge's neighbour as a site index,
-    // resolved to a system id here through the parallel id list.
+    // resolved to a system key here through the parallel key list.
     private static List<CellEdge> buildCellEdges(
             VoronoiCellBuilder.LabelledCell cell,
-            List<String> allSiteIds) {
+            List<SystemKey> allSiteKeys) {
 
         var vertices = cell.vertices();
         var neighbourIndices = cell.edgeNeighbourSiteIndices();
@@ -366,7 +374,7 @@ public final class CellGeometryCache {
             var neighbourIndex = neighbourIndices[i];
             var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
                 ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(allSiteIds.get(neighbourIndex));
+                : new EdgeTarget.AcrossSystem(allSiteKeys.get(neighbourIndex));
             edges.add(new CellEdge(start[0], start[1], end[0], end[1], target));
         }
         return edges;
@@ -378,7 +386,7 @@ public final class CellGeometryCache {
      * @param added   the systems now on the map that seeded no cell before
      * @param removed the systems that seeded a cell before and are off the map now
      */
-    private record SiteDiff(Set<String> added, Set<String> removed) {
+    private record SiteDiff(Set<SystemKey> added, Set<SystemKey> removed) {
 
         boolean isEmpty() {
             return added.isEmpty() && removed.isEmpty();

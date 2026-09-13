@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.List;
 
 /**
@@ -14,26 +16,26 @@ import java.util.List;
  * <p>"Nothing hovered" is {@link #NONE} rather than a null hover, so a reader tests a flag instead
  * of guarding a dereference.
  *
- * @param hoveredSystemId        the system under the cursor, or null when it is over no cell -
- *                               the channel between cells, or empty space beyond the map
- * @param clusterMemberSystemIds every system in that cell's contiguous cluster, the hovered
- *                               cell included; empty when nothing is hovered
+ * @param hoveredSystemKey        the system under the cursor, or null when it is over no cell -
+ *                                the channel between cells, or empty space beyond the map
+ * @param clusterMemberSystemKeys every system in that cell's contiguous cluster, the hovered
+ *                                cell included; empty when nothing is hovered
  */
 public record MapHover(
-    String hoveredSystemId,
-    List<String> clusterMemberSystemIds) {
+    SystemKey hoveredSystemKey,
+    List<SystemKey> clusterMemberSystemKeys) {
 
     /** The cursor is over no cell, so nothing highlights and nothing is broken down. */
     public static final MapHover NONE = new MapHover(null, List.of());
 
     public MapHover {
-        clusterMemberSystemIds = List.copyOf(clusterMemberSystemIds);
+        clusterMemberSystemKeys = List.copyOf(clusterMemberSystemKeys);
     }
 
     /**
      * @return whether the cursor is over a cell at all, the one test a reader gates its draw on
      */
     public boolean isHovering() {
-        return hoveredSystemId != null;
+        return hoveredSystemKey != null;
     }
 }

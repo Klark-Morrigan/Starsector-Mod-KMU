@@ -1,9 +1,12 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.math.geometry.RingPath;
+import kmlib.starsector.systems.SystemKey;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class CellRingPathCacheTest {
 
-    private static final String CELL = "cell";
-    private static final String OTHER_CELL = "other";
+    private static final SystemKey CELL = buildCellKey("cell");
+    private static final SystemKey OTHER_CELL = buildCellKey("other");
 
     @Nested
     class FindRingPathOf {

@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import kmlib.math.geometry.CornerRounding;
 import kmlib.math.geometry.RingPath;
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -42,6 +43,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -61,6 +67,11 @@ import static org.mockito.Mockito.mock;
  */
 final class PoliticalMapTerritoriesTest {
 
+    // The cells the stores are exercised over, each keyed as the cut keys a cell.
+    private static final SystemKey SYSTEM_CELL = buildCellKey("system");
+    private static final SystemKey KEPT_CELL = buildCellKey("kept");
+    private static final SystemKey DROPPED_CELL = buildCellKey("dropped");
+
     @Nested
     class CreateEmpty {
 
@@ -78,7 +89,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.isEmpty())
                 .isTrue();
 
-            assertThat(territories.getStyledCellByCellId())
+            assertThat(territories.getStyledCellByCellKey())
                 .isEmpty();
             assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
@@ -131,7 +142,7 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void isEmptyIsFalseWhenAStyledCellIsPresent() {
 
-            var territories = buildDrawablesWith(Map.of("system", buildAnyStyledCell()), Map.of());
+            var territories = buildDrawablesWith(Map.of(SYSTEM_CELL, buildAnyStyledCell()), Map.of());
 
             assertThat(territories.isEmpty())
                 .isFalse();
@@ -173,7 +184,7 @@ final class PoliticalMapTerritoriesTest {
                 ContentInputs.createEmpty(),
                 Set.of());
 
-            territories.getStyledCellByCellId().put("system", styledCell);
+            territories.getStyledCellByCellKey().put(SYSTEM_CELL, styledCell);
             territories.getStyledClusterGroupByOwnerId().put("faction", styledClusterGroup);
 
             // Read through the seam rather than off the class, which is what the framework
@@ -184,8 +195,8 @@ final class PoliticalMapTerritoriesTest {
 
             assertThat(drawLists.isEmpty())
                 .isFalse();
-            assertThat(drawLists.getStyledCellByCellId())
-                .containsExactlyEntriesOf(Map.of("system", styledCell));
+            assertThat(drawLists.getStyledCellByCellKey())
+                .containsExactlyEntriesOf(Map.of(SYSTEM_CELL, styledCell));
             assertThat(drawLists.getStyledClusterGroupByOwnerId())
                 .containsExactlyEntriesOf(Map.of("faction", styledClusterGroup));
             assertThat(drawLists.getGlobalStyle())
@@ -346,7 +357,7 @@ final class PoliticalMapTerritoriesTest {
 
             // The two draw lists are created internally, not passed, so the build can fill them;
             // they start empty and stay mutable for the incremental refresh to edit in place.
-            assertThat(territories.getStyledCellByCellId())
+            assertThat(territories.getStyledCellByCellKey())
                 .isEmpty();
             assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
@@ -411,17 +422,17 @@ final class PoliticalMapTerritoriesTest {
             var styledCell = buildAnyStyledCell();
             var fillPolygon = buildSquarePolygon();
 
-            territories.putStyledCell("system", styledCell, fillPolygon);
+            territories.putStyledCell(SYSTEM_CELL, styledCell, fillPolygon);
 
-            assertThat(territories.getStyledCellByCellId())
-                .containsOnlyKeys("system");
-            assertThat(territories.getStyledCellByCellId()
-                .get("system")).isSameAs(styledCell);
+            assertThat(territories.getStyledCellByCellKey())
+                .containsOnlyKeys(SYSTEM_CELL);
+            assertThat(territories.getStyledCellByCellKey()
+                .get(SYSTEM_CELL)).isSameAs(styledCell);
 
-            assertThat(territories.getFillPolygonByCellId())
-                .containsOnlyKeys("system");
-            assertThat(territories.getFillPolygonByCellId()
-                .get("system")).isSameAs(fillPolygon);
+            assertThat(territories.getFillPolygonByCellKey())
+                .containsOnlyKeys(SYSTEM_CELL);
+            assertThat(territories.getFillPolygonByCellKey()
+                .get(SYSTEM_CELL)).isSameAs(fillPolygon);
         }
 
         @Test
@@ -429,16 +440,16 @@ final class PoliticalMapTerritoriesTest {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
             var territories = buildDrawablesWith(Map.of(), Map.of());
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
 
             var reshapedCell = buildAnyStyledCell();
             var reshapedPolygon = buildTrianglePolygon();
 
-            territories.putStyledCell("system", reshapedCell, reshapedPolygon);
+            territories.putStyledCell(SYSTEM_CELL, reshapedCell, reshapedPolygon);
 
-            assertThat(territories.getStyledCellByCellId().get("system"))
+            assertThat(territories.getStyledCellByCellKey().get(SYSTEM_CELL))
                 .isSameAs(reshapedCell);
-            assertThat(territories.getFillPolygonByCellId().get("system"))
+            assertThat(territories.getFillPolygonByCellKey().get(SYSTEM_CELL))
                 .isSameAs(reshapedPolygon);
         }
 
@@ -449,12 +460,12 @@ final class PoliticalMapTerritoriesTest {
             // lays a fresh one afterwards; what must not survive is the old one.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.putCellRibbon("system", buildAnyRibbon());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildTrianglePolygon());
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -465,12 +476,12 @@ final class PoliticalMapTerritoriesTest {
             // the cell's geometry, which is the one thing a diagnostic must not do.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.putCellRibbonPath("system", buildAnyRibbonPath());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildTrianglePolygon());
 
-            assertThat(territories.getRibbonPathByCellId())
+            assertThat(territories.getRibbonPathByCellKey())
                 .isEmpty();
         }
 
@@ -482,12 +493,12 @@ final class PoliticalMapTerritoriesTest {
             // out, by construction rather than by the band pass remembering to ask.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.getRingPathCache().putRingPath("system", RingPath.nothingLeftToTrace());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildTrianglePolygon());
 
-            assertThat(territories.getRingPathCache().findRingPathOf("system"))
+            assertThat(territories.getRingPathCache().findRingPathOf(SYSTEM_CELL))
                 .isNull();
         }
     }
@@ -501,12 +512,12 @@ final class PoliticalMapTerritoriesTest {
             // shape must go with the draw record rather than linger as a phantom hit cluster.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.removeStyledCell("system");
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.removeStyledCell(SYSTEM_CELL);
 
-            assertThat(territories.getStyledCellByCellId())
+            assertThat(territories.getStyledCellByCellKey())
                 .isEmpty();
-            assertThat(territories.getFillPolygonByCellId())
+            assertThat(territories.getFillPolygonByCellKey())
                 .isEmpty();
         }
 
@@ -515,14 +526,14 @@ final class PoliticalMapTerritoriesTest {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("dropped", buildAnyStyledCell(), buildSquarePolygon());
-            territories.putStyledCell("kept", buildAnyStyledCell(), buildTrianglePolygon());
-            territories.removeStyledCell("dropped");
+            territories.putStyledCell(DROPPED_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putStyledCell(KEPT_CELL, buildAnyStyledCell(), buildTrianglePolygon());
+            territories.removeStyledCell(DROPPED_CELL);
 
-            assertThat(territories.getStyledCellByCellId())
-                .containsOnlyKeys("kept");
-            assertThat(territories.getFillPolygonByCellId())
-                .containsOnlyKeys("kept");
+            assertThat(territories.getStyledCellByCellKey())
+                .containsOnlyKeys(KEPT_CELL);
+            assertThat(territories.getFillPolygonByCellKey())
+                .containsOnlyKeys(KEPT_CELL);
         }
 
         @Test
@@ -531,11 +542,11 @@ final class PoliticalMapTerritoriesTest {
             // otherwise a dropped cell keeps painting a floating stripe of triangles.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.putCellRibbon("system", buildAnyRibbon());
-            territories.removeStyledCell("system");
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
+            territories.removeStyledCell(SYSTEM_CELL);
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -545,11 +556,11 @@ final class PoliticalMapTerritoriesTest {
             // marking out a shape nothing paints any more.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.putCellRibbonPath("system", buildAnyRibbonPath());
-            territories.removeStyledCell("system");
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
+            territories.removeStyledCell(SYSTEM_CELL);
 
-            assertThat(territories.getRibbonPathByCellId())
+            assertThat(territories.getRibbonPathByCellKey())
                 .isEmpty();
         }
 
@@ -559,11 +570,11 @@ final class PoliticalMapTerritoriesTest {
             // ring goes with it - a cell drawn again later is cut afresh and is owed a fresh walk.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell("system", buildAnyStyledCell(), buildSquarePolygon());
-            territories.getRingPathCache().putRingPath("system", RingPath.nothingLeftToTrace());
-            territories.removeStyledCell("system");
+            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
+            territories.removeStyledCell(SYSTEM_CELL);
 
-            assertThat(territories.getRingPathCache().findRingPathOf("system"))
+            assertThat(territories.getRingPathCache().findRingPathOf(SYSTEM_CELL))
                 .isNull();
         }
     }
@@ -577,11 +588,11 @@ final class PoliticalMapTerritoriesTest {
             var territories = buildDrawablesWith(Map.of(), Map.of());
             var ribbon = buildAnyRibbon();
 
-            territories.putCellRibbon("system", ribbon);
+            territories.putCellRibbon(SYSTEM_CELL, ribbon);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys("system");
-            assertThat(territories.getRibbonByCellId().get("system"))
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(SYSTEM_CELL);
+            assertThat(territories.getRibbonByCellKey().get(SYSTEM_CELL))
                 .isSameAs(ribbon);
         }
 
@@ -591,9 +602,9 @@ final class PoliticalMapTerritoriesTest {
             // the cells: the render pass walks the cells that draw one and no others.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putCellRibbon("system", CellRibbon.NONE);
+            territories.putCellRibbon(SYSTEM_CELL, CellRibbon.NONE);
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -603,10 +614,10 @@ final class PoliticalMapTerritoriesTest {
             // has gone. Without the clear, the cell would keep drawing the band it no longer earns.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putCellRibbon("system", buildAnyRibbon());
-            territories.putCellRibbon("system", CellRibbon.NONE);
+            territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
+            territories.putCellRibbon(SYSTEM_CELL, CellRibbon.NONE);
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
     }
@@ -620,11 +631,11 @@ final class PoliticalMapTerritoriesTest {
             var territories = buildDrawablesWith(Map.of(), Map.of());
             var ribbonPath = buildAnyRibbonPath();
 
-            territories.putCellRibbonPath("system", ribbonPath);
+            territories.putCellRibbonPath(SYSTEM_CELL, ribbonPath);
 
-            assertThat(territories.getRibbonPathByCellId())
-                .containsOnlyKeys("system");
-            assertThat(territories.getRibbonPathByCellId().get("system"))
+            assertThat(territories.getRibbonPathByCellKey())
+                .containsOnlyKeys(SYSTEM_CELL);
+            assertThat(territories.getRibbonPathByCellKey().get(SYSTEM_CELL))
                 .isSameAs(ribbonPath);
         }
 
@@ -636,10 +647,10 @@ final class PoliticalMapTerritoriesTest {
             // has turned off.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putCellRibbonPath("system", buildAnyRibbonPath());
-            territories.putCellRibbonPath("system", CellRibbonPath.NONE);
+            territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
+            territories.putCellRibbonPath(SYSTEM_CELL, CellRibbonPath.NONE);
 
-            assertThat(territories.getRibbonPathByCellId())
+            assertThat(territories.getRibbonPathByCellKey())
                 .isEmpty();
         }
     }
@@ -656,8 +667,8 @@ final class PoliticalMapTerritoriesTest {
                 "A", List.of(buildEdgeTo("B")),
                 "B", List.of(buildEdgeTo("A"))));
 
-            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
-                .containsExactlyInAnyOrder("A", "B");
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
+                .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B"));
         }
 
         @Test
@@ -669,8 +680,8 @@ final class PoliticalMapTerritoriesTest {
                 "A", List.of(buildEdgeTo("B")),
                 "B", List.of(buildEdgeTo("A"))));
 
-            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
-                .containsExactly("A");
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
+                .containsExactly(buildCellKey("A"));
         }
 
         @Test
@@ -686,16 +697,16 @@ final class PoliticalMapTerritoriesTest {
             var territories = buildOwnedBy(Map.of("A", "F", "B", "F", "C", "F"));
             reindex(territories, edges);
 
-            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
-                .containsExactlyInAnyOrder("A", "B", "C");
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
+                .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B", "C"));
 
             territories.getOccupancy().recordHolderOf("B", readOwnerOf("RIVAL"));
             reindex(territories, edges);
 
-            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
-                .containsExactly("A");
-            assertThat(territories.getClusterIndex().findClusterMembersOf("C"))
-                .containsExactly("C");
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
+                .containsExactly(buildCellKey("A"));
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("C")))
+                .containsExactly(buildCellKey("C"));
         }
 
         @Test
@@ -711,8 +722,8 @@ final class PoliticalMapTerritoriesTest {
             territories.getOccupancy().recordHolderOf("B", readOwnerOf("F"));
             reindex(territories, edges);
 
-            assertThat(territories.getClusterIndex().findClusterMembersOf("A"))
-                .containsExactlyInAnyOrder("A", "B", "C");
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
+                .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B", "C"));
         }
 
         @Test
@@ -724,7 +735,7 @@ final class PoliticalMapTerritoriesTest {
                 "A", List.of(buildEdgeTo("UNOWNED")),
                 "UNOWNED", List.of(buildEdgeTo("A"))));
 
-            assertThat(territories.getClusterIndex().findClusterMembersOf("UNOWNED"))
+            assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("UNOWNED")))
                 .isEmpty();
         }
     }
@@ -749,7 +760,9 @@ final class PoliticalMapTerritoriesTest {
     // One cell edge facing the given neighbour system. Clustering reads only the adjacency tag,
     // so the segment is left at the origin.
     private static CellEdge buildEdgeTo(String neighbourSystemId) {
-        return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(neighbourSystemId));
+        return new CellEdge(
+            0, 0, 0, 0,
+            new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
     }
 
     // Reindexes the clusters over the given adjacency, each cell drawing as its own star
@@ -762,7 +775,7 @@ final class PoliticalMapTerritoriesTest {
         for (var cellId : edges.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        territories.reindexClusters(edges, systemIdByCellId);
+        territories.reindexClusters(buildKeyedValues(edges), buildDrawnSystemKeys(systemIdByCellId));
     }
 
     // Two distinct fill shapes, so a test that swaps one for the other is caught by identity.
@@ -802,14 +815,14 @@ final class PoliticalMapTerritoriesTest {
     // A territories whose only varying inputs are the two draw lists; the retained inputs are the
     // shared fixture's inert placeholders, since isEmpty reads only the draw lists.
     private static PoliticalMapTerritories buildDrawablesWith(
-            Map<String, StyledCell> styledCells,
+            Map<SystemKey, StyledCell> styledCells,
             Map<String, StyledClusterGroup> territories) {
 
         var drawables = PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(Map.of());
 
         // The draw lists are not constructor inputs; fill the internally-created maps so
         // this fixture's only varying state is what isEmpty reads.
-        drawables.getStyledCellByCellId().putAll(styledCells);
+        drawables.getStyledCellByCellKey().putAll(styledCells);
         drawables.getStyledClusterGroupByOwnerId().putAll(territories);
 
         return drawables;

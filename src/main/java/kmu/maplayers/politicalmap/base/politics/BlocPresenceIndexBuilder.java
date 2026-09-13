@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -24,7 +26,7 @@ import java.util.Set;
  */
 final class BlocPresenceIndexBuilder {
 
-    private final Map<String, Set<String>> systemIdsByBlocId = new LinkedHashMap<>();
+    private final Map<String, Set<SystemKey>> systemKeysByBlocId = new LinkedHashMap<>();
 
     /**
      * Records that a bloc was found present in a system, in the same step the walk counts it - which
@@ -33,14 +35,14 @@ final class BlocPresenceIndexBuilder {
      * <p>Recording the same pair twice leaves one entry, so an arm that meets a bloc more than once
      * in a system needs no guard of its own.
      *
-     * @param blocId   the bloc the walk just counted, already folded through the pass's grouping so
-     *                 an alliance's members index under the alliance
-     * @param systemId the system it was counted in
+     * @param blocId    the bloc the walk just counted, already folded through the pass's grouping
+     *                  so an alliance's members index under the alliance
+     * @param systemKey the system it was counted in
      */
-    void recordPresence(String blocId, String systemId) {
-        systemIdsByBlocId
+    void recordPresence(String blocId, SystemKey systemKey) {
+        systemKeysByBlocId
             .computeIfAbsent(blocId, presentBlocId -> new LinkedHashSet<>())
-            .add(systemId);
+            .add(systemKey);
     }
 
     /**
@@ -49,6 +51,6 @@ final class BlocPresenceIndexBuilder {
      * @return a sealed index in walk order; empty when the walk found no bloc present anywhere
      */
     BlocPresenceIndex buildIndex() {
-        return new BlocPresenceIndex(systemIdsByBlocId);
+        return new BlocPresenceIndex(systemKeysByBlocId);
     }
 }

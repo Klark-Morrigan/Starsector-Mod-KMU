@@ -1,9 +1,15 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,24 +24,53 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class CellGroupingTest {
 
     @Nested
+    class ResolveDrawnSystemKeyOf {
+
+        @Test
+        void resolveDrawnSystemKeyOfReturnsTheStarACellDrawsAs() {
+            // An absorbed wedge draws as system A's star, not as its own cell - which is exactly
+            // what the two-map indirection exists to express.
+            var grouping = new CellGrouping(
+                buildDrawnSystemKeys(Map.of("wedge", "A")),
+                Map.of("A", "F"));
+
+            assertThat(grouping.resolveDrawnSystemKeyOf(buildCellKey("wedge")))
+                .isEqualTo(buildCellKey("A"));
+        }
+
+        @Test
+        void resolveDrawnSystemKeyOfReturnsNullForACellWithNoSystem() {
+            // A shard of a dead star's leftover space is absent from the draws-as map, so it
+            // has no star of its own.
+            var grouping = new CellGrouping(
+                buildDrawnSystemKeys(Map.of("A", "A")),
+                Map.of("A", "F"));
+
+            assertThat(grouping.resolveDrawnSystemKeyOf(buildCellKey("shard"))).isNull();
+        }
+    }
+
+    @Nested
     class ResolveDrawnSystemIdOf {
 
         @Test
-        void resolveDrawnSystemIdOfReturnsTheStarACellDrawsAs() {
-            // An absorbed wedge draws as system A's star, not as its own id - which is exactly
-            // what the two-map indirection exists to express.
-            var grouping = new CellGrouping(Map.of("wedge", "A"), Map.of("A", "F"));
+        void resolveDrawnSystemIdOfNarrowsTheDrawnSystemToTheAddressTheHoldingUses() {
+            // The join with the holding, which is still keyed by id: the cell is addressed by key
+            // and the owner map by id, so the drawn system narrows to reach it.
+            var grouping = new CellGrouping(
+                buildDrawnSystemKeys(Map.of("wedge", "A")),
+                Map.of("A", "F"));
 
-            assertThat(grouping.resolveDrawnSystemIdOf("wedge")).isEqualTo("A");
+            assertThat(grouping.resolveDrawnSystemIdOf(buildCellKey("wedge"))).isEqualTo("A");
         }
 
         @Test
         void resolveDrawnSystemIdOfReturnsNullForACellWithNoSystem() {
-            // A shard of a dead star's leftover space is absent from the draws-as map, so it
-            // has no star of its own.
-            var grouping = new CellGrouping(Map.of("A", "A"), Map.of("A", "F"));
+            var grouping = new CellGrouping(
+                buildDrawnSystemKeys(Map.of("A", "A")),
+                Map.of("A", "F"));
 
-            assertThat(grouping.resolveDrawnSystemIdOf("shard")).isNull();
+            assertThat(grouping.resolveDrawnSystemIdOf(buildCellKey("shard"))).isNull();
         }
     }
 
@@ -46,64 +81,90 @@ final class CellGroupingTest {
         void resolveGroupKeyOfReturnsTheKeyOfTheStarACellDrawsAs() {
             // The wedge takes A's key through the two lookups, so it paints as A's
             // rather than as unowned.
-            var grouping = new CellGrouping(Map.of("wedge", "A"), Map.of("A", "F"));
+            var grouping = new CellGrouping(
+                buildDrawnSystemKeys(Map.of("wedge", "A")),
+                Map.of("A", "F"));
 
-            assertThat(grouping.resolveOwnerOf("wedge")).isEqualTo("F");
+            assertThat(grouping.resolveOwnerOf(buildCellKey("wedge"))).isEqualTo("F");
         }
 
         @Test
         void resolveGroupKeyOfReturnsNullWhenTheCellHasNoSystem() {
             // No star to look a key up through, so a shard is unowned whatever the key map says.
-            var grouping = new CellGrouping(Map.of("A", "A"), Map.of("A", "F"));
+            var grouping = new CellGrouping(
+                buildDrawnSystemKeys(Map.of("A", "A")),
+                Map.of("A", "F"));
 
-            assertThat(grouping.resolveOwnerOf("shard")).isNull();
+            assertThat(grouping.resolveOwnerOf(buildCellKey("shard"))).isNull();
         }
 
         @Test
         void resolveGroupKeyOfReturnsNullWhenTheDrawnSystemIsUnowned() {
             // The cell draws as a real star, but that star holds no market, so it is unowned.
-            var grouping = new CellGrouping(Map.of("A", "A"), Map.of());
+            var grouping = new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A")), Map.of());
 
-            assertThat(grouping.resolveOwnerOf("A")).isNull();
+            assertThat(grouping.resolveOwnerOf(buildCellKey("A"))).isNull();
         }
     }
 
     @Nested
-    class GroupCellIdsByKey {
+    class GroupCellKeysByOwner {
 
         @Test
-        void groupCellIdsByKeyBucketsEachCellUnderTheKeyOfTheStarItDrawsAs() {
+        void groupCellKeysByOwnerBucketsEachCellUnderTheKeyOfTheStarItDrawsAs() {
             // Two cells drawing as the same system - a star and its absorbed wedge - both land
             // under that key, as two distinct cells a border is later traced from.
             var grouping = new CellGrouping(
-                    Map.of("A", "A", "wedge", "A", "B", "B"),
+                    buildDrawnSystemKeys(Map.of("A", "A", "wedge", "A", "B", "B")),
                     Map.of("A", "F", "B", "G"));
 
-            var cellsByKey = grouping.groupCellIdsByOwner();
+            var cellsByKey = grouping.groupCellKeysByOwner();
 
-            assertThat(cellsByKey.get("F")).containsExactlyInAnyOrder("A", "wedge");
-            assertThat(cellsByKey.get("G")).containsExactly("B");
+            assertThat(cellsByKey.get("F"))
+                .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "wedge"));
+            assertThat(cellsByKey.get("G")).containsExactly(buildCellKey("B"));
         }
 
         @Test
-        void groupCellIdsByKeyOmitsCellsWithNoResolvedKey() {
+        void groupCellKeysByOwnerOmitsCellsWithNoResolvedKey() {
             // A shard (no star) and a cell drawing as an unowned star both resolve no key, so
             // neither joins any bucket - they stay unowned, grouped under nobody.
             var grouping = new CellGrouping(
-                    Map.of("A", "A", "unowned", "U"),
+                    buildDrawnSystemKeys(Map.of("A", "A", "unowned", "U")),
                     Map.of("A", "F"));
 
-            var cellsByKey = grouping.groupCellIdsByOwner();
+            var cellsByKey = grouping.groupCellKeysByOwner();
 
             assertThat(cellsByKey).containsOnlyKeys("F");
-            assertThat(cellsByKey.get("F")).containsExactly("A");
+            assertThat(cellsByKey.get("F")).containsExactly(buildCellKey("A"));
         }
 
         @Test
-        void groupCellIdsByKeyIsEmptyWhenNothingIsGrouped() {
-            var grouping = new CellGrouping(Map.of("A", "A"), Map.of());
+        void groupCellKeysByOwnerIsEmptyWhenNothingIsGrouped() {
+            var grouping = new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A")), Map.of());
 
-            assertThat(grouping.groupCellIdsByOwner()).isEmpty();
+            assertThat(grouping.groupCellKeysByOwner()).isEmpty();
+        }
+    }
+
+    @Nested
+    class TwoSystemsSharingAnId {
+
+        @Test
+        void twoCellsWhoseSystemsShareAnIdResolveTheSameOwnerAndStayTwoCells() {
+            // The collision the key is here to survive: the two cells stay apart, and each
+            // resolves the owner the id names - the join with the holding being by id until it
+            // moves to the key as well.
+            var first = new SystemKey("deep space", "", "8b3");
+            var second = new SystemKey("deep space", "", "38d53");
+            var grouping = new CellGrouping(
+                    Map.of(first, first, second, second),
+                    Map.of("deep space", "F"));
+
+            var cellsByKey = grouping.groupCellKeysByOwner();
+
+            assertThat(cellsByKey.get("F")).containsExactlyInAnyOrder(first, second);
+            assertThat(grouping.resolveOwnerOf(second)).isEqualTo("F");
         }
     }
 }

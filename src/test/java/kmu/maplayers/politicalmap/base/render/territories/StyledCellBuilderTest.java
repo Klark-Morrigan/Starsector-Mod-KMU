@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -122,7 +124,7 @@ final class StyledCellBuilderTest {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
-                SYSTEM_ID,
+                buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
@@ -136,7 +138,7 @@ final class StyledCellBuilderTest {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
-                SYSTEM_ID,
+                buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
@@ -150,7 +152,7 @@ final class StyledCellBuilderTest {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
-                SYSTEM_ID,
+                buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
@@ -164,7 +166,7 @@ final class StyledCellBuilderTest {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
-                SYSTEM_ID,
+                buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
@@ -181,7 +183,7 @@ final class StyledCellBuilderTest {
             // spot - and the seams it does draw are all it carries.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
-                SYSTEM_ID,
+                buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(styled)
@@ -198,7 +200,7 @@ final class StyledCellBuilderTest {
             // not the view, styled the cell.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFilteringDrawablesWith(new ElementStyleAdjustment(0.5, true)),
-                SYSTEM_ID,
+                buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireFusedCell(styled).seamPaint().colour())
@@ -232,7 +234,7 @@ final class StyledCellBuilderTest {
             // paint and the baked triangles have to come back off the cell itself.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
@@ -252,7 +254,7 @@ final class StyledCellBuilderTest {
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
@@ -277,7 +279,7 @@ final class StyledCellBuilderTest {
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
                     Set.of(UNHELD_INHABITED_SYSTEM_ID)),
-                UNHELD_INHABITED_SYSTEM_ID,
+                buildCellKey(UNHELD_INHABITED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
@@ -300,7 +302,7 @@ final class StyledCellBuilderTest {
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
                     Set.of(UNHELD_INHABITED_SYSTEM_ID)),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
@@ -318,7 +320,7 @@ final class StyledCellBuilderTest {
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, false)),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
@@ -336,7 +338,7 @@ final class StyledCellBuilderTest {
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
-                "never-settled-system",
+                buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).outlinePaint().colour())
@@ -357,7 +359,7 @@ final class StyledCellBuilderTest {
             // The two bundles are told apart by the fill: only the settled one carries one here.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
-                UNHELD_INHABITED_SYSTEM_ID,
+                buildCellKey(UNHELD_INHABITED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillTriangles())
@@ -373,7 +375,7 @@ final class StyledCellBuilderTest {
             // factionless cell happening to carry a fill.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
-                "never-settled-system",
+                buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillTriangles())
@@ -386,7 +388,7 @@ final class StyledCellBuilderTest {
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(requireLoneCell(styled).fillPaint().colour())
@@ -401,7 +403,7 @@ final class StyledCellBuilderTest {
             // with it: the cell is kept for whichever of the two still puts ink on the map.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFillOnlyStyle(), buildDrawnOutlineStyle()),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(styled)
@@ -418,7 +420,7 @@ final class StyledCellBuilderTest {
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
-                "never-settled-system",
+                buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
             assertThat(styled)
@@ -432,7 +434,7 @@ final class StyledCellBuilderTest {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             // The cell's own sharp corner is gone: rounding steps back from it along both edges,
@@ -454,7 +456,7 @@ final class StyledCellBuilderTest {
             // at the origin included.
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(hasPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
@@ -466,7 +468,7 @@ final class StyledCellBuilderTest {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
                 buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
-                DECIVILISED_SYSTEM_ID,
+                buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             assertThat(styled)

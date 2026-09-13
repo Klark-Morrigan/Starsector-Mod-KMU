@@ -1,5 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 
@@ -24,15 +26,15 @@ import java.util.Map;
  * <p>Opaque owners throughout, like the geometry it is cut from, so any layer can partition on
  * whatever it groups by.
  *
- * @param clusterMemberSystemIds each contiguous cluster's member system ids
- * @param edgesByCellId          each cell's raw edges - the geometry lines are clipped against
- * @param siteBySystemId         each system's world position, for the axis fit and the icon
- *                               keep-outs
- * @param grouping               which system each cell draws as, and each system's owner
+ * @param clusterMemberSystemKeys each contiguous cluster's member systems
+ * @param edgesByCellKey          each cell's raw edges - the geometry lines are clipped against
+ * @param siteBySystemKey         each system's world position, for the axis fit and the icon
+ *                                keep-outs
+ * @param grouping                which system each cell draws as, and each system's owner
  */
 public record ClusterPartition(
-    List<List<String>> clusterMemberSystemIds,
-    Map<String, List<CellEdge>> edgesByCellId,
-    Map<String, double[]> siteBySystemId,
+    List<List<SystemKey>> clusterMemberSystemKeys,
+    Map<SystemKey, List<CellEdge>> edgesByCellKey,
+    Map<SystemKey, double[]> siteBySystemKey,
     CellGrouping grouping) {
 }

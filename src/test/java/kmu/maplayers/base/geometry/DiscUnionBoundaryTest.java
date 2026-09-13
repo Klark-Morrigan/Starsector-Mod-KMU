@@ -77,7 +77,8 @@ class DiscUnionBoundaryTest {
                 .extracting(DiscUnionBoundary.CoastMark::circle)
                 .containsExactlyInAnyOrder(0, 1, 2);
 
-            assertThat(hole.ringing()).containsExactlyInAnyOrder(0, 1, 2);
+            assertThat(hole.ringing())
+                .containsExactlyInAnyOrder(0, 1, 2);
         }
 
         @Test

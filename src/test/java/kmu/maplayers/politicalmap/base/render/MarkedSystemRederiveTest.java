@@ -20,6 +20,8 @@ import org.mockito.MockedStatic;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.DISTANT_SYSTEM;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.FLIPPED_SYSTEM;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.HEGEMONY;
@@ -133,8 +135,8 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getCellIdsToRedraw())
-                .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
+            assertThat(disturbance.getCellKeysToRedraw())
+                .containsExactly(buildCellKey(FLIPPED_SYSTEM), buildCellKey(NEIGHBOUR_SYSTEM));
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
         }
@@ -165,7 +167,7 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getCellIdsToRedraw())
+            assertThat(disturbance.getCellKeysToRedraw())
                 .isEmpty();
             assertThat(disturbance.hasFlips())
                 .isFalse();
@@ -187,8 +189,8 @@ final class MarkedSystemRederiveTest {
 
             assertThat(territories.getInhabitedSystemIds())
                 .containsExactly(FLIPPED_SYSTEM);
-            assertThat(disturbance.getCellIdsToRedraw())
-                .containsExactly(FLIPPED_SYSTEM);
+            assertThat(disturbance.getCellKeysToRedraw())
+                .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
 
         @Test
@@ -205,8 +207,8 @@ final class MarkedSystemRederiveTest {
 
             assertThat(territories.getInhabitedSystemIds())
                 .isEmpty();
-            assertThat(disturbance.getCellIdsToRedraw())
-                .containsExactly(FLIPPED_SYSTEM);
+            assertThat(disturbance.getCellKeysToRedraw())
+                .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
 
         @Test
@@ -225,8 +227,8 @@ final class MarkedSystemRederiveTest {
 
             assertThat(disturbance.getAffectedFactionIds())
                 .isEmpty();
-            assertThat(disturbance.getCellIdsToRedraw())
-                .doesNotContain(NEIGHBOUR_SYSTEM);
+            assertThat(disturbance.getCellKeysToRedraw())
+                .doesNotContain(buildCellKey(NEIGHBOUR_SYSTEM));
         }
 
         @Test
@@ -247,8 +249,8 @@ final class MarkedSystemRederiveTest {
 
             assertThat(territories.getSpotlitPresenceSystemIds())
                 .containsExactly(FLIPPED_SYSTEM);
-            assertThat(disturbance.getCellIdsToRedraw())
-                .containsExactly(FLIPPED_SYSTEM);
+            assertThat(disturbance.getCellKeysToRedraw())
+                .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
 
         @Test
@@ -288,7 +290,7 @@ final class MarkedSystemRederiveTest {
                 territories,
                 cellGeometry,
                 pass,
-                Set.of(markedSystemIds));
+                Set.copyOf(buildCellKeys(markedSystemIds)));
         }
 
         // A territories holding the given systems and counting each of them settled, which is the

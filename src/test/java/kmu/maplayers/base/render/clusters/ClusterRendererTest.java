@@ -1,5 +1,6 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.theme.GlobalStyle;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -118,10 +121,10 @@ final class ClusterRendererTest {
         }
 
         @Override
-        public Map<String, StyledCell> getStyledCellByCellId() {
+        public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
             hasReadDrawLists = true;
             return Map.of(
-                "cell",
+                buildCellKey("cell"),
                 new StyledCell.FusedCell(new float[0], HIDDEN_PAINT, 0f));
         }
 

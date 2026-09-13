@@ -273,12 +273,15 @@ frame's painted shapes it hands the framework unchanged. `PoliticalMapHoverGates
 layer answers the cursor at all, its own two switches ANDed with the framework's, plus whether
 either kind of feedback still needs the cursor read.
 
-`PoliticalMapPreviewHighlightRenderer` is the other highlight, and it answers a pointer on the
-sidebar rather than one on the map: hovering a row of the spotlight picker lights every system that
-bloc is present in. It reads a set the picker's own walk already resolved
-(`SelectableBlocCache.readPresentSystemIds`) and traces it over the frame's own draw lists through
-the framework's `PreviewHighlightGeometry`, so no paint state moves for it; `PreviewHighlightPaint`
-is the decision the frame acts on, the shapes lit paired with the one shade they burn in.
+`PoliticalMapPreviewHighlightRenderer` is the other highlight,
+and it answers a pointer on the
+sidebar rather than one on the map:
+hovering a row of the spotlight picker lights every system that bloc is present in.
+It reads a set the picker's own walk already resolved (`SelectableBlocCache.readPresentSystemKeys`)
+and traces it over the frame's own draw lists through the framework's `PreviewHighlightGeometry`,
+so no paint state moves for it;
+`PreviewHighlightPaint` is the decision the frame acts on,
+the shapes lit paired with the one shade they burn in.
 
 Two things about it are not the cursor highlight's, and both follow from its subject being a bloc
 rather than a cell. Its shade comes from

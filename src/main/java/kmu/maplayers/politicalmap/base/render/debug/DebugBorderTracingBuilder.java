@@ -74,7 +74,7 @@ public final class DebugBorderTracingBuilder {
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
         var cellGrouping = DominantHolder.mapCellGrouping(
-            geometryCache.getSystemIdByCellId(),
+            geometryCache.getSystemKeyByCellKey(),
             ownerBySystemId);
 
         // The same inhabitation read the production build classifies its factionless cells by,
@@ -97,13 +97,13 @@ public final class DebugBorderTracingBuilder {
         var borderSmoothing = renderStyle.global().borderSmoothing();
         var stageCollector = new ClusterBorderStageCollector();
 
-        for (var memberCellIds : cellGrouping.groupCellIdsByOwner().values()) {
+        for (var memberCellKeys : cellGrouping.groupCellKeysByOwner().values()) {
 
             // Whole clusters, so no neighbour is coincident: every boundary edge takes the
             // uniform channel, exactly as the drawn national border does.
             var insetRings = borderTrace.traceRings(
-                memberCellIds,
-                geometryCache.getCellEdgesByCellId(),
+                memberCellKeys,
+                geometryCache.getCellEdgesByCellKey(),
                 cellGrouping);
 
             if (insetRings.isEmpty()) {
@@ -163,12 +163,13 @@ public final class DebugBorderTracingBuilder {
         // show.
         var cornerRounding = renderStyle.global().borderSmoothing().cornerRounding();
 
-        for (var entry : geometryCache.getCellEdgesByCellId().entrySet()) {
+        for (var entry : geometryCache.getCellEdgesByCellKey().entrySet()) {
             if (cellGrouping.resolveOwnerOf(entry.getKey()) != null) {
                 continue;
             }
             // A factionless cell resolves its settled/uninhabited style through the system it
-            // draws as; a cell with no system of its own is uninhabited.
+            // draws as, narrowed to the id the inhabitation scan is keyed by; a cell with no
+            // system of its own is uninhabited.
             var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
             var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
                 inhabitedSystemIds,

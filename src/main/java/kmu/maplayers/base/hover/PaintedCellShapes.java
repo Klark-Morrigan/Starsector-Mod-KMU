@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.List;
 import java.util.Map;
 
@@ -25,9 +27,9 @@ public interface PaintedCellShapes {
 
     /**
      * @return each drawn cell's painted extent as {x, y} vertex pairs in world coordinates,
-     *         keyed by cell id; a cell that draws nothing is absent and can never be hit
+     *         keyed by cell key; a cell that draws nothing is absent and can never be hit
      */
-    Map<String, List<double[]>> getFillPolygonByCellId();
+    Map<SystemKey, List<double[]>> getFillPolygonByCellKey();
 
     /**
      * The extent painted for one cell - the shape a cursor lands on and a wash lifts.
@@ -35,11 +37,11 @@ public interface PaintedCellShapes {
      * <p>Absent and empty mean the same thing to a caller (a cell that puts no ink on the map),
      * so this folds the two together and every reader is spared deciding which it got.
      *
-     * @param cellId the cell asked about
+     * @param cellKey the cell asked about
      * @return its painted extent, or an empty list when the cell draws nothing at all
      */
-    default List<double[]> resolvePaintedExtentOf(String cellId) {
-        var paintedExtent = getFillPolygonByCellId().get(cellId);
+    default List<double[]> resolvePaintedExtentOf(SystemKey cellKey) {
+        var paintedExtent = getFillPolygonByCellKey().get(cellKey);
         return paintedExtent == null ? List.of() : paintedExtent;
     }
 }

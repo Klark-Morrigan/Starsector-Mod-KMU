@@ -1,5 +1,7 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
@@ -35,27 +37,27 @@ public final class SplitFillBuilder {
     private static final String HATCHED_SUB_CLUSTER_SUFFIX = "#hatched";
     private static final String UNFILLED_SUB_CLUSTER_SUFFIX = "#unfilled";
 
-    private final Map<String, List<CellEdge>> cellEdgesByCellId;
+    private final Map<SystemKey, List<CellEdge>> cellEdgesByCellKey;
     private final CellGrouping cellGrouping;
     private final ClusterBorderTrace borderTrace;
     private final HatchStyle hatch;
 
     /**
-     * @param cellEdgesByCellId the raw cell adjacency the sub-cluster rings are traced from -
-     *                          the same map the trace itself takes, rather than whatever cache
-     *                          the caller happens to hold it in
-     * @param cellGrouping      which system each cell draws as, paired with each system's
-     *                          owner - the keys the sub-clusters are derived from
-     * @param borderTrace       the trace parameters the whole fill shares with its border
-     * @param hatch             the sector-wide hatch geometry the hatched sub-cluster is cut with
+     * @param cellEdgesByCellKey the raw cell adjacency the sub-cluster rings are traced from -
+     *                           the same map the trace itself takes, rather than whatever cache
+     *                           the caller happens to hold it in
+     * @param cellGrouping       which system each cell draws as, paired with each system's
+     *                           owner - the keys the sub-clusters are derived from
+     * @param borderTrace        the trace parameters the whole fill shares with its border
+     * @param hatch              the sector-wide hatch geometry the hatched sub-cluster is cut with
      */
     public SplitFillBuilder(
-            Map<String, List<CellEdge>> cellEdgesByCellId,
+            Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
             CellGrouping cellGrouping,
             ClusterBorderTrace borderTrace,
             HatchStyle hatch) {
 
-        this.cellEdgesByCellId = cellEdgesByCellId;
+        this.cellEdgesByCellKey = cellEdgesByCellKey;
         this.cellGrouping = cellGrouping;
         this.borderTrace = borderTrace;
         this.hatch = hatch;
@@ -112,6 +114,9 @@ public final class SplitFillBuilder {
     // when the whole footprint is traced, and the sub-clusters' outer edge therefore lands where the
     // frontier draws it. Suffixing the footprint's own key leaves the derived keys as
     // collision-free as it already is.
+    //
+    // Written under each member's id, the owner map being keyed that way: two members sharing one
+    // take the same sub-cluster key, which is the state the id can hold them both in.
     private Map<String, String> mapSubClusterOwnerBySystemId(FillSplit split, String owner) {
 
         var keys = new HashMap<>(cellGrouping.ownerBySystemId());
@@ -129,8 +134,8 @@ public final class SplitFillBuilder {
             FillState state,
             String subClusterOwner) {
 
-        for (var systemId : split.resolveMembersOf(state).systemIds()) {
-            keys.put(systemId, subClusterOwner);
+        for (var systemKey : split.resolveMembersOf(state).systemKeys()) {
+            keys.put(systemKey.systemId(), subClusterOwner);
         }
     }
 
@@ -146,14 +151,14 @@ public final class SplitFillBuilder {
             Map<String, String> subClusterOwnerBySystemId) {
 
         var members = split.resolveMembersOf(state);
-        if (members.cellIds().isEmpty()) {
+        if (members.cellKeys().isEmpty()) {
             return List.of();
         }
         return borderTrace.traceRings(
-            members.cellIds(),
-            cellEdgesByCellId,
-            new CellGrouping(cellGrouping.systemIdByCellId(), subClusterOwnerBySystemId),
-            split.resolveCoincidentSystemIdsOf(state));
+            members.cellKeys(),
+            cellEdgesByCellKey,
+            new CellGrouping(cellGrouping.systemKeyByCellKey(), subClusterOwnerBySystemId),
+            split.resolveCoincidentSystemKeysOf(state));
     }
 
     /**

@@ -1,10 +1,14 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class PaintedCellShapesTest {
 
-    private static final String DRAWN_CELL_ID = "corvus";
-    private static final String DROPPED_CELL_ID = "yma";
+    private static final SystemKey DRAWN_CELL_KEY = buildCellKey("corvus");
+    private static final SystemKey DROPPED_CELL_KEY = buildCellKey("yma");
 
     // A cell shape the seam hands back untouched, so only its identity matters here.
     private static final List<double[]> CELL_POLYGON = List.of(
@@ -34,9 +38,9 @@ final class PaintedCellShapesTest {
 
         @Test
         void resolvePaintedExtentOfReturnsTheFramesOwnShapeForADrawnCell() {
-            var shapesFake = new PaintedCellShapesFake(Map.of(DRAWN_CELL_ID, CELL_POLYGON));
+            var shapesFake = new PaintedCellShapesFake(Map.of(DRAWN_CELL_KEY, CELL_POLYGON));
 
-            assertThat(shapesFake.resolvePaintedExtentOf(DRAWN_CELL_ID))
+            assertThat(shapesFake.resolvePaintedExtentOf(DRAWN_CELL_KEY))
                 .isSameAs(CELL_POLYGON);
         }
 
@@ -44,20 +48,20 @@ final class PaintedCellShapesTest {
         void resolvePaintedExtentOfReturnsNothingForACellTheBuildDropped() {
             // A cell that puts no ink on the map is absent from the shapes rather than present
             // with an empty one; folding the two here is what spares every reader the distinction.
-            var shapesFake = new PaintedCellShapesFake(Map.of(DRAWN_CELL_ID, CELL_POLYGON));
+            var shapesFake = new PaintedCellShapesFake(Map.of(DRAWN_CELL_KEY, CELL_POLYGON));
 
-            assertThat(shapesFake.resolvePaintedExtentOf(DROPPED_CELL_ID))
+            assertThat(shapesFake.resolvePaintedExtentOf(DROPPED_CELL_KEY))
                 .isEmpty();
         }
     }
 
     // The seam over a plain map, so what is exercised is the inherited read and nothing else.
     private record PaintedCellShapesFake(
-        Map<String, List<double[]>> fillPolygonByCellId) implements PaintedCellShapes {
+        Map<SystemKey, List<double[]>> fillPolygonByCellKey) implements PaintedCellShapes {
 
         @Override
-        public Map<String, List<double[]>> getFillPolygonByCellId() {
-            return fillPolygonByCellId;
+        public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
+            return fillPolygonByCellKey;
         }
     }
 }

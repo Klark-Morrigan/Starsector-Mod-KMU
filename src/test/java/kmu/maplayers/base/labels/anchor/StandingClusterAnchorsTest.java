@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -129,7 +131,7 @@ final class StandingClusterAnchorsTest {
     // fitted component is inert and only the identity distinguishes one from another.
     private static ClusterAnchor buildAnchorFor(String ownerKey) {
         return new ClusterAnchor(
-            new ClusterIdentity(ownerKey, Set.of(ownerKey)),
+            new ClusterIdentity(ownerKey, Set.of(buildCellKey(ownerKey))),
             0f,
             0f,
             Color.WHITE,

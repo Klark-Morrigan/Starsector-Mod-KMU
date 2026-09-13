@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,8 +30,13 @@ final class ClusterIdentityTest {
         void constructorIgnoresTheOrderTheMembersArrivedIn() {
             // Which order a cluster's members were walked in is an accident of the
             // traversal, so an identity built from either order names the same cluster.
-            var walkedOneWay = new ClusterIdentity(OWNER, Set.copyOf(List.of("alpha", "beta")));
-            var walkedTheOther = new ClusterIdentity(OWNER, Set.copyOf(List.of("beta", "alpha")));
+            var walkedOneWay = new ClusterIdentity(
+                OWNER,
+                Set.copyOf(buildCellKeys("alpha", "beta")));
+
+            var walkedTheOther = new ClusterIdentity(
+                OWNER,
+                Set.copyOf(buildCellKeys("beta", "alpha")));
 
             assertThat(walkedOneWay)
                 .isEqualTo(walkedTheOther);
@@ -42,13 +49,13 @@ final class ClusterIdentityTest {
             // An identity is used as a map key: a member set that shifted underneath would
             // quietly lose whatever was filed under it rather than fail, so the members are
             // copied out of the caller's collection.
-            var members = new HashSet<>(Set.of("alpha", "beta"));
+            var members = new HashSet<>(buildCellKeys("alpha", "beta"));
             var identity = new ClusterIdentity(OWNER, members);
 
-            members.add("gamma");
+            members.add(buildCellKey("gamma"));
 
-            assertThat(identity.memberSystemIds())
-                .containsExactlyInAnyOrder("alpha", "beta");
+            assertThat(identity.memberSystemKeys())
+                .containsExactlyInAnyOrderElementsOf(buildCellKeys("alpha", "beta"));
         }
     }
 
@@ -59,8 +66,10 @@ final class ClusterIdentityTest {
         void equalitySeparatesAClusterFromOneItSplitInto() {
             // A split leaves member sets that match nothing, which is what makes the two
             // halves re-fit without anyone having to spot the split.
-            var whole = new ClusterIdentity(OWNER, Set.of("alpha", "beta"));
-            var half = new ClusterIdentity(OWNER, Set.of("alpha"));
+            var whole = new ClusterIdentity(
+                OWNER,
+                Set.of(buildCellKey("alpha"), buildCellKey("beta")));
+            var half = new ClusterIdentity(OWNER, Set.of(buildCellKey("alpha")));
 
             assertThat(whole)
                 .isNotEqualTo(half);
@@ -70,8 +79,13 @@ final class ClusterIdentityTest {
         void equalitySeparatesAClusterFromOneItMergedInto() {
             // The mirror case: a merged cluster has gained a member, so it matches neither
             // of the clusters it swallowed.
-            var beforeMerge = new ClusterIdentity(OWNER, Set.of("alpha", "beta"));
-            var afterMerge = new ClusterIdentity(OWNER, Set.of("alpha", "beta", "gamma"));
+            var beforeMerge = new ClusterIdentity(
+                OWNER,
+                Set.of(buildCellKey("alpha"), buildCellKey("beta")));
+
+            var afterMerge = new ClusterIdentity(
+                OWNER,
+                Set.of(buildCellKey("alpha"), buildCellKey("beta"), buildCellKey("gamma")));
 
             assertThat(beforeMerge)
                 .isNotEqualTo(afterMerge);
@@ -81,8 +95,13 @@ final class ClusterIdentityTest {
         void equalitySeparatesTheSameSystemsUnderDifferentOwners() {
             // The same systems held by someone else is a different cluster - the name and
             // the shade a placement was fitted for both come off the owner.
-            var heldByOne = new ClusterIdentity(OWNER, Set.of("alpha", "beta"));
-            var heldByAnother = new ClusterIdentity("hegemony", Set.of("alpha", "beta"));
+            var heldByOne = new ClusterIdentity(
+                OWNER,
+                Set.of(buildCellKey("alpha"), buildCellKey("beta")));
+
+            var heldByAnother = new ClusterIdentity(
+                "hegemony",
+                Set.of(buildCellKey("alpha"), buildCellKey("beta")));
 
             assertThat(heldByOne)
                 .isNotEqualTo(heldByAnother);

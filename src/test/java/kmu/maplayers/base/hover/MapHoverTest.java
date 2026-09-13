@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.List;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,37 +25,42 @@ final class MapHoverTest {
         @Test
         void isHoveringIsFalseForNone() {
             assertThat(MapHover.NONE.isHovering()).isFalse();
-            assertThat(MapHover.NONE.clusterMemberSystemIds()).isEmpty();
+            assertThat(MapHover.NONE.clusterMemberSystemKeys()).isEmpty();
         }
 
         @Test
         void isHoveringIsTrueWhenACellResolved() {
-            var hover = new MapHover("system", List.of("system", "neighbour"));
+            var hover = new MapHover(
+                buildCellKey("system"),
+                buildCellKeys("system", "neighbour"));
 
             assertThat(hover.isHovering()).isTrue();
-            assertThat(hover.hoveredSystemId()).isEqualTo("system");
-            assertThat(hover.clusterMemberSystemIds()).containsExactly("system", "neighbour");
+            assertThat(hover.hoveredSystemKey()).isEqualTo(buildCellKey("system"));
+            assertThat(hover.clusterMemberSystemKeys())
+                .containsExactlyElementsOf(buildCellKeys("system", "neighbour"));
         }
     }
 
     @Nested
-    class ClusterMemberSystemIds {
+    class ClusterMemberSystemKeys {
 
         @Test
-        void clusterMemberSystemIdsIgnoreLaterEditsToTheCallersList() {
-            var callersMembers = new ArrayList<>(List.of("system"));
-            var hover = new MapHover("system", callersMembers);
+        void clusterMemberSystemKeysIgnoreLaterEditsToTheCallersList() {
+            var callersMembers = new ArrayList<>(buildCellKeys("system"));
+            var hover = new MapHover(buildCellKey("system"), callersMembers);
 
-            callersMembers.add("added-after-publishing");
+            callersMembers.add(buildCellKey("added-after-publishing"));
 
-            assertThat(hover.clusterMemberSystemIds()).containsExactly("system");
+            assertThat(hover.clusterMemberSystemKeys())
+                .containsExactly(buildCellKey("system"));
         }
 
         @Test
-        void clusterMemberSystemIdsCannotBeModified() {
-            var hover = new MapHover("system", List.of("system"));
+        void clusterMemberSystemKeysCannotBeModified() {
+            var hover = new MapHover(buildCellKey("system"), buildCellKeys("system"));
 
-            assertThatThrownBy(() -> hover.clusterMemberSystemIds().add("intruder"))
+            assertThatThrownBy(() ->
+                    hover.clusterMemberSystemKeys().add(buildCellKey("intruder")))
                     .isInstanceOf(UnsupportedOperationException.class);
         }
     }

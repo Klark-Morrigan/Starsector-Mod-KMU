@@ -4,6 +4,7 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -54,11 +55,11 @@ public final class FactionTerritoryBuilder {
     /**
      * Builds one bloc's territory from its member cells.
      *
-     * @param territories   this pass's retained holding, theme, and filter state
-     * @param geometryCache the raw cells the border is traced from
-     * @param blocId        the bloc's holder - a faction id under the faction view, or
-     *                      one of the filter's synthetic spotlight keys
-     * @param memberCellIds the cells this bloc draws
+     * @param territories    this pass's retained holding, theme, and filter state
+     * @param geometryCache  the raw cells the border is traced from
+     * @param blocId         the bloc's holder - a faction id under the faction view, or
+     *                       one of the filter's synthetic spotlight keys
+     * @param memberCellKeys the cells this bloc draws
      * @return the bloc's bodies with the paints they share, or null when it paints neither fill
      *         nor border, or when its cells yield no borderable geometry
      */
@@ -66,7 +67,7 @@ public final class FactionTerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             String blocId,
-            List<String> memberCellIds) {
+            List<SystemKey> memberCellKeys) {
 
         var cellGrouping = resolveCellGroupingOf(territories, geometryCache);
 
@@ -76,10 +77,11 @@ public final class FactionTerritoryBuilder {
         var style = styling.style();
         var adjustment = styling.adjustment();
 
-        // Every system of a bloc shares its palette, so any member resolves the same colours.
+        // Every system of a bloc shares its palette, so any member resolves the same colours. The
+        // member's key narrows to reach the holding, which is keyed by id.
         var holder = territories
             .getHolderBySystemId()
-            .get(cellGrouping.resolveDrawnSystemIdOf(memberCellIds.get(0)));
+            .get(cellGrouping.resolveDrawnSystemIdOf(memberCellKeys.get(0)));
 
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
@@ -103,8 +105,8 @@ public final class FactionTerritoryBuilder {
         // offset under identical parameters and cannot drift apart.
         var borderTrace = ClusterBorderTrace.readFromLunaSettings();
         var insetRings = borderTrace.traceRings(
-            memberCellIds,
-            geometryCache.getCellEdgesByCellId(),
+            memberCellKeys,
+            geometryCache.getCellEdgesByCellKey(),
             cellGrouping);
 
         if (insetRings.isEmpty()) {
@@ -126,7 +128,7 @@ public final class FactionTerritoryBuilder {
         // one key, so it clusters under one bloc and then splits its fill inside each of its
         // bodies. Whether that split happens is the fill builder's own call.
         var tracedFill = new SplitFillBuilder(
-                geometryCache.getCellEdgesByCellId(),
+                geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 borderTrace,
                 territories.getGlobalStyle().hatch())
@@ -134,7 +136,7 @@ public final class FactionTerritoryBuilder {
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
-                    memberCellIds,
+                    memberCellKeys,
                     territories.getContestedSystemIds(),
                     territories.getUnfilledSystemIds()),
                 blocId,
@@ -163,7 +165,7 @@ public final class FactionTerritoryBuilder {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache) {
 
-        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellIdsByOwner();
+        var grouped = resolveCellGroupingOf(territories, geometryCache).groupCellKeysByOwner();
         for (var bloc : grouped.entrySet()) {
 
             var territory = buildFactionTerritory(
@@ -239,7 +241,7 @@ public final class FactionTerritoryBuilder {
             CellGeometryCache geometryCache) {
 
         return DominantHolder.mapCellGrouping(
-            geometryCache.getSystemIdByCellId(),
+            geometryCache.getSystemKeyByCellKey(),
             territories.getHolderBySystemId());
     }
 }

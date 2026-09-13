@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,7 +54,7 @@ final class LabelsBuilderTest {
     // Which cluster a fixture placement was fitted to. The planner reads text, colour and
     // geometry only, so one identity serves every fixture.
     private static final ClusterIdentity CLUSTER_IDENTITY =
-        new ClusterIdentity("owner", Set.of("system"));
+        new ClusterIdentity("owner", Set.of(buildCellKey("system")));
 
     // The stack geometry the multi-line tests compute by hand.
     private static final float FONT_HEIGHT = 100f;

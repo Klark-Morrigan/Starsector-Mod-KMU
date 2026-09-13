@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,16 +33,16 @@ import java.util.TreeMap;
  * further downstream against live settings and the sector, so nothing here says how the map
  * LOOKS - only what shape it is.
  *
- * @param cellEdgesByCellId  each cell, as its adjacency-tagged edges
- * @param ownerByCellId      the owner per cell; a cell absent from the map is
- *                           unowned, which is what makes it a neutral cell
- * @param shapedCellByCellId each cell after the border channel is cut inward
- * @param ringsByOwner       each owner's traced cluster rings
+ * @param cellEdgesByCellKey  each cell, as its adjacency-tagged edges
+ * @param ownerByCellKey      the owner per cell; a cell absent from the map is
+ *                            unowned, which is what makes it a neutral cell
+ * @param shapedCellByCellKey each cell after the border channel is cut inward
+ * @param ringsByOwner        each owner's traced cluster rings
  */
 public record SectorGeometry(
-        Map<String, List<CellEdge>> cellEdgesByCellId,
-        Map<String, String> ownerByCellId,
-        Map<String, ShapedCell> shapedCellByCellId,
+        Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
+        Map<SystemKey, String> ownerByCellKey,
+        Map<SystemKey, ShapedCell> shapedCellByCellKey,
         Map<String, List<List<double[]>>> ringsByOwner) {
 
     /**
@@ -54,7 +56,7 @@ public record SectorGeometry(
             SectorFixture fixture,
             SectorGeometryParameters parameters) {
 
-        var cellEdges = fixture.buildCellEdgesBySystemId(
+        var cellEdges = fixture.buildCellEdgesBySystemKey(
             parameters.cellRadius(),
             parameters.boundSegments());
 
@@ -67,11 +69,14 @@ public record SectorGeometry(
             identityOver(cellEdges.keySet()),
             fixture.getOwnerBySystemId());
 
-        var owners = fixture.getOwnerBySystemId();
+        // The owners re-addressed by cell, so a consumer asking which owner a cell it holds falls
+        // under asks under the key it holds that cell by - the fixture's own map is keyed by id,
+        // which is the address the grouping resolves through rather than the one the cells carry.
+        var owners = mapOwnerByCellKey(cellEdges.keySet(), grouping);
         var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 
-        for (var group : groupCellIdsByOwner(owners).entrySet()) {
+        for (var group : groupCellKeysByOwner(owners).entrySet()) {
             rings.put(
                 group.getKey(),
                 SystemClusterBorders.traceBorderRings(
@@ -91,14 +96,15 @@ public record SectorGeometry(
      * The cells each owner holds, sorted so a failure names the same key run to run and a
      * drawing's layer order does not shift under a map iteration change.
      *
-     * @param ownerByCellId the owner per cell
-     * @return member cell ids per owner
+     * @param ownerByCellKey the owner per cell
+     * @return member cells per owner
      */
-    static Map<String, List<String>> groupCellIdsByOwner(Map<String, String> ownerByCellId) {
+    static Map<String, List<SystemKey>> groupCellKeysByOwner(
+            Map<SystemKey, String> ownerByCellKey) {
 
-        var members = new TreeMap<String, List<String>>();
+        var members = new TreeMap<String, List<SystemKey>>();
 
-        for (var entry : ownerByCellId.entrySet()) {
+        for (var entry : ownerByCellKey.entrySet()) {
 
             members
                 .computeIfAbsent(entry.getValue(), key -> new ArrayList<>())
@@ -107,15 +113,33 @@ public record SectorGeometry(
         return members;
     }
 
-    // A map of each id to itself, so a cell set with one cell per system draws each cell as its
+    // A map of each cell to itself, so a cell set with one cell per system draws each cell as its
     // own star - the draws-as identity the redistribution pass later replaces with real cells.
-    private static Map<String, String> identityOver(Set<String> ids) {
+    private static Map<SystemKey, SystemKey> identityOver(Set<SystemKey> cellKeys) {
 
-        var identity = new LinkedHashMap<String, String>();
+        var identity = new LinkedHashMap<SystemKey, SystemKey>();
 
-        for (var id : ids) {
-            identity.put(id, id);
+        for (var cellKey : cellKeys) {
+            identity.put(cellKey, cellKey);
         }
         return identity;
+    }
+
+    // Each owned cell's owner, under the key the cells are held by. An unowned cell is left out
+    // rather than held under a null, so a consumer reads absence as unowned exactly as it does of
+    // the fixture's own map.
+    private static Map<SystemKey, String> mapOwnerByCellKey(
+            Set<SystemKey> cellKeys,
+            CellGrouping grouping) {
+
+        var ownerByCellKey = new LinkedHashMap<SystemKey, String>();
+
+        for (var cellKey : cellKeys) {
+            var owner = grouping.resolveOwnerOf(cellKey);
+            if (owner != null) {
+                ownerByCellKey.put(cellKey, owner);
+            }
+        }
+        return ownerByCellKey;
     }
 }

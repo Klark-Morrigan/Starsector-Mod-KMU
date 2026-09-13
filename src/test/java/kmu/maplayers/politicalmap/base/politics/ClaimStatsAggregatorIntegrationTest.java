@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
@@ -277,8 +278,8 @@ final class ClaimStatsAggregatorIntegrationTest {
                         buildHolderPassOver(sectorMock),
                         claimReaderFake)
                     .presenceIndex()
-                    .readPresentSystemIds("hegemony"))
-                .containsExactly("claimed-a", "claimed-b");
+                    .readPresentSystemKeys("hegemony"))
+                .containsExactlyElementsOf(buildCellKeys("claimed-a", "claimed-b"));
         }
 
         @Test
@@ -310,11 +311,11 @@ final class ClaimStatsAggregatorIntegrationTest {
                     entry("hegemony", new ClaimStats(2, 0)),
                     entry("tritachyon", new ClaimStats(1, 0)));
 
-            assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
-                .containsExactly("system-a", "system-c");
+            assertThat(read.presenceIndex().readPresentSystemKeys("hegemony"))
+                .containsExactlyElementsOf(buildCellKeys("system-a", "system-c"));
 
-            assertThat(read.presenceIndex().readPresentSystemIds("tritachyon"))
-                .containsExactly("system-b");
+            assertThat(read.presenceIndex().readPresentSystemKeys("tritachyon"))
+                .containsExactlyElementsOf(buildCellKeys("system-b"));
         }
 
         @Test
@@ -331,8 +332,8 @@ final class ClaimStatsAggregatorIntegrationTest {
                         buildHolderPassOver(sectorMock),
                         claimReaderFake)
                     .presenceIndex()
-                    .readPresentSystemIds("hegemony"))
-                .containsExactly("claimed-system");
+                    .readPresentSystemKeys("hegemony"))
+                .containsExactlyElementsOf(buildCellKeys("claimed-system"));
         }
 
         @Test
@@ -360,8 +361,8 @@ final class ClaimStatsAggregatorIntegrationTest {
                         HolderPass.over(sectorMock, BASE_FOG, grouping),
                         claimReaderFake)
                     .presenceIndex()
-                    .readPresentSystemIds("alliance-1"))
-                .containsExactly("hegemony-claim", "tritachyon-claim");
+                    .readPresentSystemKeys("alliance-1"))
+                .containsExactlyElementsOf(buildCellKeys("hegemony-claim", "tritachyon-claim"));
         }
 
         @Test
@@ -378,7 +379,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                         buildHolderPassOver(sectorMock),
                         new ClaimReaderFake())
                     .presenceIndex()
-                    .readPresentSystemIds("hegemony"))
+                    .readPresentSystemKeys("hegemony"))
                 .isEmpty();
         }
     }

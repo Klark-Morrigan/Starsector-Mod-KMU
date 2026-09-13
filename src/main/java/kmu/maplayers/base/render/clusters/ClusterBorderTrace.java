@@ -1,5 +1,7 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.geometry.BorderTraceTolerances;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -38,11 +40,11 @@ public record ClusterBorderTrace(
     // Traces one cluster's inset border rings with these parameters and the fixed
     // border channel every trace shares, insetting every boundary edge by that channel.
     public List<List<double[]>> traceRings(
-            Collection<String> memberCellIds,
-            Map<String, List<CellEdge>> edgesByCellId,
+            Collection<SystemKey> memberCellKeys,
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping) {
 
-        return traceRings(memberCellIds, edgesByCellId, grouping, Set.of());
+        return traceRings(memberCellKeys, edgesByCellKey, grouping, Set.of());
     }
 
     // Traces one cluster's rings while opting a set of neighbours out of the border channel:
@@ -51,16 +53,16 @@ public record ClusterBorderTrace(
     // one same-owner body is carved into clusters that meet without a channel opening between
     // them; the channel still applies to every other boundary edge.
     public List<List<double[]>> traceRings(
-            Collection<String> memberCellIds,
-            Map<String, List<CellEdge>> edgesByCellId,
+            Collection<SystemKey> memberCellKeys,
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
-            Set<String> coincidentNeighbourSystemIds) {
+            Set<SystemKey> coincidentNeighbourSystemKeys) {
 
         return SystemClusterBorders.traceBorderRings(
-            memberCellIds,
-            edgesByCellId,
+            memberCellKeys,
+            edgesByCellKey,
             grouping,
-            coincidentNeighbourSystemIds,
+            coincidentNeighbourSystemKeys,
             new BorderTraceTolerances(
                 CellShaper.BORDER_INSET_DISTANCE,
                 weldTolerance,

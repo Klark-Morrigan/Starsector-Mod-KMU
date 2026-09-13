@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,17 +89,19 @@ class SectorMapMachineryTest {
 
         @Test
         void yieldsAHolderOfItsOwnSoOneSectorsHoverIsNotAnothers() {
-            // A hover names its system by bare id, so a shared holder would have a cursor read over
-            // one sector's map light the cell of whatever holds that id on the other's - and name
-            // that system in the other's box.
+            // Nothing forbids two sectors from minting a system that reads as one key, so a shared
+            // holder would have a cursor read over one sector's map light the cell of whatever
+            // carries that key on the other's - and name that system in the other's box.
             machinery
                 .resolveHoverState()
-                .publishHover(new MapHover(SHARED_SYSTEM_ID, List.of(SHARED_SYSTEM_ID)));
+                .publishHover(new MapHover(
+                    buildCellKey(SHARED_SYSTEM_ID),
+                    List.of(buildCellKey(SHARED_SYSTEM_ID))));
 
             assertThat(otherMachinery.resolveHoverState().getHover())
                 .isSameAs(MapHover.NONE);
-            assertThat(machinery.resolveHoverState().getHover().hoveredSystemId())
-                .isEqualTo(SHARED_SYSTEM_ID);
+            assertThat(machinery.resolveHoverState().getHover().hoveredSystemKey())
+                .isEqualTo(buildCellKey(SHARED_SYSTEM_ID));
         }
     }
 

@@ -2,6 +2,7 @@ package kmu.maplayers.base.hover;
 
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +49,7 @@ public final class PreviewHighlightGeometry {
      * @param previewKey what names the set being lit; it is the memo's cheap first test, failing
      *                   the moment the pointer moves to another set, so two different sets must
      *                   never share one. Null - nothing previewed - lights nothing up
-     * @param cellIds    the cells to light, in the order they should assemble; ones the layer
+     * @param cellKeys   the cells to light, in the order they should assemble; ones the layer
      *                   painted nothing for are skipped
      * @return the loops and runs to draw, or {@link HoverHighlight#NONE} when nothing is previewed
      *         or none of the previewed cells has a drawable shape
@@ -56,14 +57,14 @@ public final class PreviewHighlightGeometry {
     public HoverHighlight resolveHighlightFor(
             HoverHighlightSource source,
             String previewKey,
-            Collection<String> cellIds) {
+            Collection<SystemKey> cellKeys) {
 
         if (previewKey == null) {
             return HoverHighlight.NONE;
         }
         // Gathered before the memo is tested rather than after, because the gathering is what the
         // memo compares: map lookups per cell are cheap, and re-tessellating the set is not.
-        var drawnCells = gatherDrawnCells(source, cellIds);
+        var drawnCells = gatherDrawnCells(source, cellKeys);
 
         if (previewKey.equals(resolvedPreviewKey)
                 && hasSameGeometry(drawnCells, resolvedDrawnCells)) {
@@ -123,18 +124,18 @@ public final class PreviewHighlightGeometry {
     // empty shape to light.
     private static List<DrawnCell> gatherDrawnCells(
             HoverHighlightSource source,
-            Collection<String> cellIds) {
+            Collection<SystemKey> cellKeys) {
 
-        var drawnCells = new ArrayList<DrawnCell>(cellIds.size());
+        var drawnCells = new ArrayList<DrawnCell>(cellKeys.size());
 
-        for (var cellId : cellIds) {
+        for (var cellKey : cellKeys) {
 
-            var paintedExtent = source.resolvePaintedExtentOf(cellId);
+            var paintedExtent = source.resolvePaintedExtentOf(cellKey);
             if (paintedExtent.isEmpty()) {
                 continue;
             }
             drawnCells.add(
-                new DrawnCell(paintedExtent, source.resolveCandidateFrontierLoopsOf(cellId)));
+                new DrawnCell(paintedExtent, source.resolveCandidateFrontierLoopsOf(cellKey)));
         }
         return drawnCells;
     }

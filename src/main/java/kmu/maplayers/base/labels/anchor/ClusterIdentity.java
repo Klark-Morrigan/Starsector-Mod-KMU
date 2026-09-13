@@ -1,5 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.Set;
 
 /**
@@ -15,12 +17,12 @@ import java.util.Set;
  * carries a member set matching nothing it came from - the two cases that would otherwise
  * need spotting by hand fall out of equality instead.
  *
- * @param ownerKey        the key every member of the cluster shares, opaque here
- * @param memberSystemIds the cluster's member systems, order-free
+ * @param ownerKey         the key every member of the cluster shares, opaque here
+ * @param memberSystemKeys the cluster's member systems, order-free
  */
 public record ClusterIdentity(
     String ownerKey,
-    Set<String> memberSystemIds) {
+    Set<SystemKey> memberSystemKeys) {
 
     /**
      * Takes an unmodifiable copy of the members, so an identity cannot be altered through
@@ -28,6 +30,6 @@ public record ClusterIdentity(
      * underneath would lose the placement filed under it rather than fail loudly.
      */
     public ClusterIdentity {
-        memberSystemIds = Set.copyOf(memberSystemIds);
+        memberSystemKeys = Set.copyOf(memberSystemKeys);
     }
 }

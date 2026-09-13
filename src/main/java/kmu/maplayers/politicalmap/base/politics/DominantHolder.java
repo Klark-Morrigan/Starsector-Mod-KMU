@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics;
 
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGrouping;
 
@@ -60,14 +61,14 @@ public record DominantHolder(
      * factions: this is the faction layer supplying "who owns this cell", exactly as
      * {@link #mapFactionIdBySystemId} does for the key half.
      *
-     * @param systemIdByCellId the system each cell draws as, from the geometry cache
-     * @param ownerBySystemId  the dominant holder per owned system
+     * @param systemKeyByCellKey the system each cell draws as, from the geometry cache
+     * @param ownerBySystemId    the dominant holder per owned system
      * @return the cells grouped by the faction id of the system each draws as
      */
     public static CellGrouping mapCellGrouping(
-            Map<String, String> systemIdByCellId,
+            Map<SystemKey, SystemKey> systemKeyByCellKey,
             Map<String, DominantHolder> ownerBySystemId) {
-        return new CellGrouping(systemIdByCellId, mapFactionIdBySystemId(ownerBySystemId));
+        return new CellGrouping(systemKeyByCellKey, mapFactionIdBySystemId(ownerBySystemId));
     }
 
     /**

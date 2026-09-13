@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.PolygonRegions;
+import kmlib.starsector.systems.SystemKey;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.SectorPipeline.loadFixture;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +46,7 @@ class SectorGeometryIntegrationTest {
     private static final Map<String, SectorGeometry> GEOMETRIES = new ConcurrentHashMap<>();
 
     @Nested
-    class BuildCellEdgesByCellId {
+    class BuildCellEdgesByCellKey {
 
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
@@ -54,7 +56,7 @@ class SectorGeometryIntegrationTest {
             // pair of cells for intersection, and it is what redistribution will have to
             // consciously break when a grouping absorbs a dead star's space.
             var fixture = loadFixture(sector);
-            var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
+            var cellEdges = readGeometryOf(sector).cellEdgesByCellKey();
             var sites = fixture.getSites();
             var systemIds = fixture.getSystemIds();
             var offenders = new ArrayList<String>();
@@ -62,7 +64,7 @@ class SectorGeometryIntegrationTest {
             for (var index = 0; index < systemIds.size(); index++) {
                 var own = sites.get(index);
 
-                for (var edge : cellEdges.get(systemIds.get(index))) {
+                for (var edge : cellEdges.get(buildCellKey(systemIds.get(index)))) {
                     var vertex = new double[] {edge.x1(), edge.y1()};
                     var ownDistance = computeDistanceBetween(vertex, own);
 
@@ -82,7 +84,7 @@ class SectorGeometryIntegrationTest {
         @ParameterizedTest(name = "{0}")
         @MethodSource(SECTORS)
         void everySystemGetsACellThatEnclosesArea(String sector) {
-            var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
+            var cellEdges = readGeometryOf(sector).cellEdgesByCellKey();
 
             assertThat(cellEdges)
                 .hasSize(loadFixture(sector).getSystemIds().size());
@@ -99,7 +101,7 @@ class SectorGeometryIntegrationTest {
             // Two systems are neighbours only if each names the other, which is what lets a
             // consumer read one cell's edge and trust the far side agrees. A one-sided tag
             // would leave a cluster ring unable to close.
-            var cellEdges = readGeometryOf(sector).cellEdgesByCellId();
+            var cellEdges = readGeometryOf(sector).cellEdgesByCellKey();
 
             for (var cell : cellEdges.entrySet()) {
                 for (var edge : cell.getValue()) {
@@ -107,12 +109,12 @@ class SectorGeometryIntegrationTest {
                         continue;
                     }
                     assertThat(hasNeighbourNamed(
-                            cellEdges.get(acrossSystem.systemId()),
+                            cellEdges.get(acrossSystem.systemKey()),
                             cell.getKey()))
                         .as(
                             "%s names %s, so the reverse must hold",
                             cell.getKey(),
-                            acrossSystem.systemId())
+                            acrossSystem.systemKey())
                         .isTrue();
                 }
             }
@@ -130,13 +132,13 @@ class SectorGeometryIntegrationTest {
             // frontier's first attempt shipped.
             var geometry = readGeometryOf(sector);
 
-            for (var entry : geometry.shapedCellByCellId().entrySet()) {
+            for (var entry : geometry.shapedCellByCellKey().entrySet()) {
                 var shaped = entry.getValue();
                 if (shaped.fillPolygon().isEmpty()) {
                     continue;
                 }
                 var rawArea = computeRingArea(convertToRing(
-                    geometry.cellEdgesByCellId().get(entry.getKey())));
+                    geometry.cellEdgesByCellKey().get(entry.getKey())));
 
                 assertThat(computeRingArea(shaped.fillPolygon()))
                     .as("shaped cell %s must not outgrow its raw cell", entry.getKey())
@@ -154,8 +156,8 @@ class SectorGeometryIntegrationTest {
             var geometry = readGeometryOf(sector);
             var pinned = 0;
 
-            for (var entry : geometry.shapedCellByCellId().entrySet()) {
-                if (geometry.ownerByCellId().containsKey(entry.getKey())
+            for (var entry : geometry.shapedCellByCellKey().entrySet()) {
+                if (geometry.ownerByCellKey().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().isEmpty()) {
                     continue;
                 }
@@ -180,7 +182,7 @@ class SectorGeometryIntegrationTest {
             var ownersWithoutRings = new ArrayList<String>();
 
             for (var owner : SectorGeometry
-                    .groupCellIdsByOwner(geometry.ownerByCellId())
+                    .groupCellKeysByOwner(geometry.ownerByCellKey())
                     .entrySet()) {
                 if (geometry.ringsByOwner().get(owner.getKey()).isEmpty()) {
                     ownersWithoutRings.add(owner.getKey());
@@ -214,10 +216,10 @@ class SectorGeometryIntegrationTest {
             SectorGeometryParameters.createDefaults()));
     }
 
-    private static boolean hasNeighbourNamed(List<CellEdge> edges, String systemId) {
+    private static boolean hasNeighbourNamed(List<CellEdge> edges, SystemKey systemKey) {
         for (var edge : edges) {
             if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
-                    && systemId.equals(acrossSystem.systemId())) {
+                    && systemKey.equals(acrossSystem.systemKey())) {
                 return true;
             }
         }

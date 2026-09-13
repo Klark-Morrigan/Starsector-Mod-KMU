@@ -2,6 +2,7 @@ package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.input.KeyedHoverArrival;
 import kmlib.starsector.ui.map.transform.MapCursor;
 import kmlib.starsector.ui.map.transform.MapCursorRead;
@@ -48,7 +49,7 @@ public final class MapHoverPublisher {
     // cluster around it, so the tick answers the same change the hover box does - a sweep across one
     // cluster still changes which system is being named - and the shared latch is what makes
     // "reached" mean the same thing here as it does on a panel's controls.
-    private final KeyedHoverArrival<String> cellArrival = new KeyedHoverArrival<>();
+    private final KeyedHoverArrival<SystemKey> cellArrival = new KeyedHoverArrival<>();
 
     // What an arrival is answered with. A role rather than a sound and a level held here, both being
     // the host's look to state; asked at the moment rather than held, so the answer is composed
@@ -132,7 +133,7 @@ public final class MapHoverPublisher {
             cellArrival.resetArrival();
             return;
         }
-        if (!cellArrival.detectArrivalAt(settledCellReading.hover().hoveredSystemId())) {
+        if (!cellArrival.detectArrivalAt(settledCellReading.hover().hoveredSystemKey())) {
             return;
         }
         cellArrivalAnnouncer.announceCellArrival();
@@ -184,18 +185,18 @@ public final class MapHoverPublisher {
             parkHoverWithoutASighting();
             return;
         }
-        var hoveredSystemId = CellHitTest.resolveSystemIdAt(
+        var hoveredSystemKey = CellHitTest.resolveSystemKeyAt(
             cursorRead.worldPoint().x,
             cursorRead.worldPoint().y,
-            targets.getFillPolygonByCellId());
+            targets.getFillPolygonByCellKey());
 
         // A hit test that found nothing publishes the parked hover rather than a cell, and is kept
         // as the frame's sighting all the same: the cursor being over no cell is an answer.
-        var hover = hoveredSystemId == null
+        var hover = hoveredSystemKey == null
             ? MapHover.NONE
             : new MapHover(
-                hoveredSystemId,
-                targets.getClusterIndex().findClusterMembersOf(hoveredSystemId));
+                hoveredSystemKey,
+                targets.getClusterIndex().findClusterMembersOf(hoveredSystemKey));
 
         settledCellReading = new SettledCellReading(hover, cursorRead);
         hoverState.publishHover(hover);
@@ -240,9 +241,9 @@ public final class MapHoverPublisher {
             return;
         }
         LOG.debug("Map hover resolved; system="
-            + settledReading.hover().hoveredSystemId()
+            + settledReading.hover().hoveredSystemKey()
             + " clusterMembers="
-            + settledReading.hover().clusterMemberSystemIds()
+            + settledReading.hover().clusterMemberSystemKeys()
             + "; read: "
             + settledReading.cursorRead().describeRead());
     }

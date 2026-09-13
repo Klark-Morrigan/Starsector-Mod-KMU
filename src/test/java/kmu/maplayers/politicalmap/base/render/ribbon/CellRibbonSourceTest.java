@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.math.geometry.RingPath;
 import kmlib.profiling.IterationScope;
 import kmlib.profiling.SilentProfiler;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -35,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,11 +96,11 @@ final class CellRibbonSourceTest {
     // The cell a case bakes, which is the key its traced ring is kept under. One cell is enough
     // for every case here: what is pinned is whether a given cell is walked at all, never how two
     // of them are told apart.
-    private static final String CELL = "cell";
+    private static final SystemKey CELL = buildCellKey("cell");
 
     // A second cell, for the one case that is about the ring being kept per cell rather than per
     // pass: a path standing for one cell is no answer for another's.
-    private static final String OTHER_CELL = "other";
+    private static final SystemKey OTHER_CELL = buildCellKey("other");
 
     // Two factions a case stands together, for the alliance-set cases. Named rather than any pair
     // because the fixture's fold has to be asked back about the same ids it was built from.
@@ -168,7 +171,7 @@ final class CellRibbonSourceTest {
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, passScope);
+                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, passScope);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -183,7 +186,7 @@ final class CellRibbonSourceTest {
             var bakeScopeMock = mock(IterationScope.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, bakeScopeMock);
+                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock);
 
             verify(bakeScopeMock).markPhase(RibbonBakePhases.PLAN_PHASE);
         }
@@ -195,7 +198,7 @@ final class CellRibbonSourceTest {
             var bakeScopeMock = mock(IterationScope.class);
 
             buildWith(system -> ANY_PLAN)
-                .buildCellRibbon(CELL, EMPTY_SYSTEM, SQUARE_CELL, bakeScopeMock);
+                .buildCellRibbon(CELL, buildCellKey(EMPTY_SYSTEM), SQUARE_CELL, bakeScopeMock);
 
             verifyNoInteractions(bakeScopeMock);
         }
@@ -235,7 +238,7 @@ final class CellRibbonSourceTest {
             var plannerMock = mock(SystemRibbonPlanner.class);
 
             buildWith(plannerMock)
-                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
+                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
 
             verify(plannerMock, never())
                 .planSystemRibbon(any());
@@ -246,7 +249,7 @@ final class CellRibbonSourceTest {
             // The single-holder cell: the bloc that painted it is the only one present, so there
             // is nothing a band could report that the fill beneath it has not said already.
             assertThat(buildWith(system -> RibbonPlan.NONE)
-                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope))
+                    .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope))
                 .isEqualTo(CellRibbon.NONE);
         }
 
@@ -260,7 +263,7 @@ final class CellRibbonSourceTest {
             var bakeScopeMock = mock(IterationScope.class);
 
             buildCachingInto(system -> RibbonPlan.NONE, ringPathCache)
-                .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, bakeScopeMock);
+                .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, bakeScopeMock);
 
             verify(bakeScopeMock, never())
                 .markPhase(RibbonBakePhases.TRACE_PHASE);
@@ -276,11 +279,11 @@ final class CellRibbonSourceTest {
             var ringPathCache = new CellRingPathCache();
             var ribbonSource = buildCachingInto(system -> ANY_PLAN, ringPathCache);
 
-            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
 
             var pathAfterFirstBake = ringPathCache.findRingPathOf(CELL);
 
-            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
 
             // The kept path itself, since a walk that happened again would leave a second one
             // behind: the phase's own duration is what a bake spent either way.
@@ -298,7 +301,7 @@ final class CellRibbonSourceTest {
             ringPathCache.putRingPath(OTHER_CELL, RingPath.nothingLeftToTrace());
 
             assertThat(buildCachingInto(system -> ANY_PLAN, ringPathCache)
-                    .buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope)
+                    .buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope)
                     .bands())
                 .isNotEmpty();
         }
@@ -420,8 +423,8 @@ final class CellRibbonSourceTest {
 
             var ribbonSource = buildJudgingAgainst(allianceSourceMock);
 
-            ribbonSource.buildCellRibbon(CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
-            ribbonSource.buildCellRibbon(OTHER_CELL, INHABITED_SYSTEM, SQUARE_CELL, passScope);
+            ribbonSource.buildCellRibbon(CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
+            ribbonSource.buildCellRibbon(OTHER_CELL, buildCellKey(INHABITED_SYSTEM), SQUARE_CELL, passScope);
 
             verify(allianceSourceMock, times(1))
                 .resolveGrouping();
@@ -444,11 +447,12 @@ final class CellRibbonSourceTest {
 
     private CellRibbon buildFor(String drawnSystemId) {
         return buildWith(system -> ANY_PLAN)
-            .buildCellRibbon(CELL, drawnSystemId, SQUARE_CELL, passScope);
+            .buildCellRibbon(CELL, buildCellKey(drawnSystemId), SQUARE_CELL, passScope);
     }
 
     private CellRibbonPath traceFor(String drawnSystemId) {
-        return buildWith(system -> ANY_PLAN).traceCellRibbonPath(drawnSystemId, SQUARE_CELL);
+        return buildWith(system -> ANY_PLAN)
+            .traceCellRibbonPath(buildCellKey(drawnSystemId), SQUARE_CELL);
     }
 
     private void switchBandsOff() {
@@ -563,7 +567,7 @@ final class CellRibbonSourceTest {
             Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
             // Only the placed system has a site; the other settled one is what a band with nowhere
             // to start is posed on.
-            Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0}),
+            buildKeyedValues(Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0})),
             // No names anywhere near these cells: where a name falls is pinned by the builder that
             // lays a band inside one cell, not by which cells are offered a band at all.
             List.of(),

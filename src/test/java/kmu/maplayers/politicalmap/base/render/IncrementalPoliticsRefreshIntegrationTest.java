@@ -7,6 +7,7 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import com.fs.starfarer.api.campaign.econ.EconomyAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.geometry.CellEdge;
@@ -59,6 +60,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -536,9 +539,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         Map<String, DominantHolder> holderBySystemId,
         Set<String> inhabitedSystemIds,
         Set<String> spotlitPresenceSystemIds,
-        Map<String, StyledCell> styledCellByCellId,
+        Map<SystemKey, StyledCell> styledCellByCellKey,
         Map<String, StyledClusterGroup> styledClusterGroupByOwnerId,
-        Map<String, CellRibbon> ribbonByCellId) {
+        Map<SystemKey, CellRibbon> ribbonByCellKey) {
     }
 
     private static DrawnMap readDrawnMap(PoliticalMapTerritories territories) {
@@ -546,9 +549,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             new LinkedHashMap<>(territories.getHolderBySystemId()),
             new LinkedHashSet<>(territories.getInhabitedSystemIds()),
             new LinkedHashSet<>(territories.getSpotlitPresenceSystemIds()),
-            new LinkedHashMap<>(territories.getStyledCellByCellId()),
+            new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
-            new LinkedHashMap<>(territories.getRibbonByCellId()));
+            new LinkedHashMap<>(territories.getRibbonByCellKey()));
     }
 
     // The systems the fixture sector lists, keyed by id and in row order.
@@ -623,35 +626,35 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     // well as on the two paths under comparison.
     private static CellGeometryCache buildRowOfAbuttingCells() {
 
-        var cellEdgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
-        var systemIdByCellId = new LinkedHashMap<String, String>();
-        var siteBySystemId = new LinkedHashMap<String, double[]>();
+        var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+        var siteBySystemKey = new LinkedHashMap<SystemKey, double[]>();
 
         for (var index = 0; index < DRAWN_SYSTEM_IDS.size(); index++) {
 
             var systemId = DRAWN_SYSTEM_IDS.get(index);
             var leftEdgeX = index * CELL_SIDE;
 
-            cellEdgesByCellId.put(systemId, buildSquareCellBetween(
+            cellEdgesByCellKey.put(buildCellKey(systemId), buildSquareCellBetween(
                 leftEdgeX,
                 index == 0 ? null : DRAWN_SYSTEM_IDS.get(index - 1),
                 index == DRAWN_SYSTEM_IDS.size() - 1
                     ? null
                     : DRAWN_SYSTEM_IDS.get(index + 1)));
 
-            systemIdByCellId.put(systemId, systemId);
-            siteBySystemId.put(
-                systemId,
+            systemKeyByCellKey.put(buildCellKey(systemId), buildCellKey(systemId));
+            siteBySystemKey.put(
+                buildCellKey(systemId),
                 new double[] {leftEdgeX + CELL_SIDE / 2, CELL_SIDE / 2});
         }
         var geometryCacheMock = mock(CellGeometryCache.class);
 
-        when(geometryCacheMock.getCellEdgesByCellId())
-            .thenReturn(cellEdgesByCellId);
-        when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(systemIdByCellId);
-        when(geometryCacheMock.getSiteBySystemId())
-            .thenReturn(siteBySystemId);
+        when(geometryCacheMock.getCellEdgesByCellKey())
+            .thenReturn(cellEdgesByCellKey);
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(systemKeyByCellKey);
+        when(geometryCacheMock.getSiteBySystemKey())
+            .thenReturn(siteBySystemKey);
 
         return geometryCacheMock;
     }
@@ -679,6 +682,6 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     private static EdgeTarget resolveEdgeTarget(String neighbourSystemId) {
         return neighbourSystemId == null
             ? EdgeTarget.REACH_BOUND
-            : new EdgeTarget.AcrossSystem(neighbourSystemId);
+            : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId));
     }
 }

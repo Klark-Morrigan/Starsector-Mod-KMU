@@ -241,7 +241,7 @@ public final class ClusterRenderer {
             Class<T> form,
             Consumer<T> drawCell) {
 
-        for (var cell : frame.drawLists().getStyledCellByCellId().values()) {
+        for (var cell : frame.drawLists().getStyledCellByCellKey().values()) {
             if (form.isInstance(cell)) {
                 drawCell.accept(form.cast(cell));
             }

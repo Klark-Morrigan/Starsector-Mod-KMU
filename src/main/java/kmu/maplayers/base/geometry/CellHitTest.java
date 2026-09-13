@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.PolygonRegions;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.List;
 import java.util.Map;
@@ -36,19 +37,19 @@ public final class CellHitTest {
      * decides, which keeps the verdict stable frame to frame rather than flickering
      * between the two.
      *
-     * @param worldX                the point's x coordinate in world (hyperspace) space
-     * @param worldY                the point's y coordinate in world (hyperspace) space
-     * @param fillPolygonBySystemId each system's shaped fill polygon as {x, y} vertex
-     *                              pairs in winding order; a system with no drawable cell
-     *                              is absent or empty and can never be hit
-     * @return the containing system's id, or null when no cell contains the point
+     * @param worldX                 the point's x coordinate in world (hyperspace) space
+     * @param worldY                 the point's y coordinate in world (hyperspace) space
+     * @param fillPolygonBySystemKey each system's shaped fill polygon as {x, y} vertex
+     *                               pairs in winding order; a system with no drawable cell
+     *                               is absent or empty and can never be hit
+     * @return the containing system's key, or null when no cell contains the point
      */
-    public static String resolveSystemIdAt(
+    public static SystemKey resolveSystemKeyAt(
             double worldX,
             double worldY,
-            Map<String, List<double[]>> fillPolygonBySystemId) {
+            Map<SystemKey, List<double[]>> fillPolygonBySystemKey) {
 
-        for (var entry : fillPolygonBySystemId.entrySet()) {
+        for (var entry : fillPolygonBySystemKey.entrySet()) {
             if (PolygonRegions.isPointInsideRing(entry.getValue(), worldX, worldY)) {
                 return entry.getKey();
             }

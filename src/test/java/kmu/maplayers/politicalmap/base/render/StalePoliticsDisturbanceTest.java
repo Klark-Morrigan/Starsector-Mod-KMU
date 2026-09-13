@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import org.junit.jupiter.api.Nested;
@@ -8,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.List;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,9 +35,9 @@ final class StalePoliticsDisturbanceTest {
     private static final String HEGEMONY = "hegemony";
     private static final String TRITACHYON = "tritachyon";
 
-    private static final String FLIPPED_SYSTEM = "flipped";
-    private static final String NEIGHBOUR_SYSTEM = "neighbour";
-    private static final String RESTYLED_SYSTEM = "restyled";
+    private static final SystemKey FLIPPED_SYSTEM = buildCellKey("flipped");
+    private static final SystemKey NEIGHBOUR_SYSTEM = buildCellKey("neighbour");
+    private static final SystemKey RESTYLED_SYSTEM = buildCellKey("restyled");
 
     @Nested
     class HasFlips {
@@ -100,7 +104,7 @@ final class StalePoliticsDisturbanceTest {
                 buildHolderOf(HEGEMONY),
                 buildHolderOf(TRITACHYON));
 
-            assertThat(disturbance.getCellIdsToRedraw())
+            assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
         }
 
@@ -162,7 +166,7 @@ final class StalePoliticsDisturbanceTest {
                 buildHolderOf(HEGEMONY),
                 buildHolderOf(TRITACHYON));
 
-            assertThat(disturbance.getCellIdsToRedraw())
+            assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(FLIPPED_SYSTEM, NEIGHBOUR_SYSTEM);
             assertThat(disturbance.getAffectedFactionIds())
                 .containsExactly(HEGEMONY, TRITACHYON);
@@ -181,7 +185,7 @@ final class StalePoliticsDisturbanceTest {
 
             disturbance.recordRestyle(RESTYLED_SYSTEM);
 
-            assertThat(disturbance.getCellIdsToRedraw())
+            assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(RESTYLED_SYSTEM);
         }
 
@@ -207,7 +211,7 @@ final class StalePoliticsDisturbanceTest {
             disturbance.recordFlip(FLIPPED_SYSTEM, Set.of(), null, buildHolderOf(HEGEMONY));
             disturbance.recordRestyle(FLIPPED_SYSTEM);
 
-            assertThat(disturbance.getCellIdsToRedraw())
+            assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(FLIPPED_SYSTEM);
         }
     }

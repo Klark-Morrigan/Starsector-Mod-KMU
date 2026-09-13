@@ -2,6 +2,7 @@ package kmu.maplayers.base.hover;
 
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ public final class HoverHighlightGeometry {
     // editing either in place, so a reference that still matches is the same geometry. Keyed on
     // what the source handed back rather than on whatever it derived that from, so no layer's
     // own model has to be named here for the memo to be exact.
-    private String resolvedCellId;
+    private SystemKey resolvedCellKey;
     private List<float[]> resolvedFrontierLoops;
     private List<double[]> resolvedPaintedExtent;
     private HoverHighlight resolvedHighlight = HoverHighlight.NONE;
@@ -43,20 +44,20 @@ public final class HoverHighlightGeometry {
         if (!hover.isHovering()) {
             return HoverHighlight.NONE;
         }
-        var cellId = hover.hoveredSystemId();
-        var paintedExtent = source.resolvePaintedExtentOf(cellId);
+        var cellKey = hover.hoveredSystemKey();
+        var paintedExtent = source.resolvePaintedExtentOf(cellKey);
         if (paintedExtent.isEmpty()) {
             return HoverHighlight.NONE;
         }
         // A cell that fuses into no cluster - or one whose group traced no border at all - has no
         // candidates, so nothing encloses it and it washes without a halo.
-        var frontierLoops = source.resolveCandidateFrontierLoopsOf(cellId);
-        if (cellId.equals(resolvedCellId)
+        var frontierLoops = source.resolveCandidateFrontierLoopsOf(cellKey);
+        if (cellKey.equals(resolvedCellKey)
                 && frontierLoops == resolvedFrontierLoops
                 && paintedExtent == resolvedPaintedExtent) {
             return resolvedHighlight;
         }
-        resolvedCellId = cellId;
+        resolvedCellKey = cellKey;
         resolvedFrontierLoops = frontierLoops;
         resolvedPaintedExtent = paintedExtent;
         resolvedHighlight = buildHighlight(frontierLoops, paintedExtent);

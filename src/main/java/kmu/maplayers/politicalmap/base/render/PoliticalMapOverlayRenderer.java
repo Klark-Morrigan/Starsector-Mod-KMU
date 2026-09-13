@@ -193,12 +193,12 @@ final class PoliticalMapOverlayRenderer {
             float alphaMult) {
 
         CellPresenceRibbonRenderer.renderOnMap(
-            cache.getTerritories().getRibbonByCellId().values(),
+            cache.getTerritories().getRibbonByCellKey().values(),
             factor,
             alphaMult);
 
         CellRibbonPathRenderer.renderOnMap(
-            cache.getTerritories().getRibbonPathByCellId().values(),
+            cache.getTerritories().getRibbonPathByCellKey().values(),
             factor,
             alphaMult);
     }
@@ -215,7 +215,7 @@ final class PoliticalMapOverlayRenderer {
         // replaced them (territories is null in debug mode).
         var builtCounts = cache.isDebug()
             ? "debugBaseLoops=" + cache.getBorderStageOverlay().baseLoops().size()
-            : "styledCells=" + cache.getTerritories().getStyledCellByCellId().size();
+            : "styledCells=" + cache.getTerritories().getStyledCellByCellKey().size();
 
         LOG.debug("Political map render renderOnMap fired: "
             + builtCounts

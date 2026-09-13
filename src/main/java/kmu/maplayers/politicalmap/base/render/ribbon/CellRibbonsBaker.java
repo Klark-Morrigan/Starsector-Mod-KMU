@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.IterationScope;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
@@ -55,18 +56,18 @@ import java.util.Map;
 public final class CellRibbonsBaker {
 
     private final PoliticalMapTerritories territories;
-    private final Map<String, String> systemIdByCellId;
+    private final Map<SystemKey, SystemKey> systemKeyByCellKey;
     private final CellRibbonSource ribbonSource;
     private final boolean isRibbonPathShown;
 
     private CellRibbonsBaker(
             PoliticalMapTerritories territories,
-            Map<String, String> systemIdByCellId,
+            Map<SystemKey, SystemKey> systemKeyByCellKey,
             CellRibbonSource ribbonSource,
             boolean isRibbonPathShown) {
 
         this.territories = territories;
-        this.systemIdByCellId = systemIdByCellId;
+        this.systemKeyByCellKey = systemKeyByCellKey;
         this.ribbonSource = ribbonSource;
         this.isRibbonPathShown = isRibbonPathShown;
     }
@@ -95,7 +96,7 @@ public final class CellRibbonsBaker {
         // lets this state the one map it reads instead of holding the cache it lives in.
         return new CellRibbonsBaker(
             territories,
-            geometryCache.getSystemIdByCellId(),
+            geometryCache.getSystemKeyByCellKey(),
             CellRibbonSource.createForPass(
                 pass,
                 territories.getViewGrouping().view(),
@@ -105,7 +106,7 @@ public final class CellRibbonsBaker {
 
     /** Bakes the band of every drawn cell, replacing whatever each was carrying. */
     public void bakeAllCellRibbons() {
-        bakeCellRibbonsOf(territories.getFillPolygonByCellId().keySet());
+        bakeCellRibbonsOf(territories.getFillPolygonByCellKey().keySet());
     }
 
     /**
@@ -116,9 +117,9 @@ public final class CellRibbonsBaker {
      * something happened to, and one of them losing its last colony is one of the things that
      * can have happened.
      *
-     * @param cellIds the cells to re-bake
+     * @param cellKeys the cells to re-bake
      */
-    public void bakeCellRibbonsOf(Collection<String> cellIds) {
+    public void bakeCellRibbonsOf(Collection<SystemKey> cellKeys) {
 
         // A band's count walks a system's colonies once per bake, and on the claims layer settles a
         // contest over them - so this is the one part of a rebuild that could rival the known
@@ -129,11 +130,11 @@ public final class CellRibbonsBaker {
                 .resolveProfiler()
                 .openIterations(RibbonBakePhases.BAKE_SECTION)) {
 
-            var bakedCells = bakeCellRibbons(cellIds, bakeScope);
+            var bakedCells = bakeCellRibbons(cellKeys, bakeScope);
 
             // The cells asked for are what the bake is paid per; how many of them came back with
             // anything to draw is a fact about this one call rather than a volume of work.
-            bakeScope.addCount(MapBuildCounters.CELLS, cellIds.size());
+            bakeScope.addCount(MapBuildCounters.CELLS, cellKeys.size());
             bakeScope.tagCall("banded=" + bakedCells);
         }
     }
@@ -141,28 +142,28 @@ public final class CellRibbonsBaker {
     // Bakes each named cell's band inside the shape that cell already records, reporting how many
     // of them came back with anything to draw and charging what each cell cost to the pass's own
     // scope, a turn per cell.
-    private int bakeCellRibbons(Collection<String> cellIds, IterationScope bakeScope) {
+    private int bakeCellRibbons(Collection<SystemKey> cellKeys, IterationScope bakeScope) {
 
         var bakedCells = 0;
 
-        for (var cellId : cellIds) {
+        for (var cellKey : cellKeys) {
 
-            var fillPolygon = territories.getFillPolygonByCellId().get(cellId);
+            var fillPolygon = territories.getFillPolygonByCellKey().get(cellKey);
             if (fillPolygon == null) {
                 continue;
             }
             // Named by the cell, so the slowest turn of the pass says which cell it was over -
             // which is the one fact a mean over the whole sector cannot carry.
-            bakeScope.beginIteration(cellId);
+            bakeScope.beginIteration(cellKey.systemId());
 
             var ribbon = ribbonSource.buildCellRibbon(
-                cellId,
-                systemIdByCellId.get(cellId),
+                cellKey,
+                systemKeyByCellKey.get(cellKey),
                 fillPolygon,
                 bakeScope);
 
-            territories.putCellRibbon(cellId, ribbon);
-            territories.putCellRibbonPath(cellId, traceCellRibbonPath(cellId, fillPolygon));
+            territories.putCellRibbon(cellKey, ribbon);
+            territories.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
             bakedCells += ribbon.isEmpty() ? 0 : 1;
 
             // Closed after the overlay's own trace, so a turn covers everything a cell costs the
@@ -181,10 +182,10 @@ public final class CellRibbonsBaker {
     // the overlay is asked about is the cells whose bands were never laid, so there is no result
     // to read on exactly the cells it exists for. The cost is a dev toggle's, paid only while it
     // is on, and it buys a production return type that carries nothing diagnostic.
-    private CellRibbonPath traceCellRibbonPath(String cellId, List<double[]> fillPolygon) {
+    private CellRibbonPath traceCellRibbonPath(SystemKey cellKey, List<double[]> fillPolygon) {
 
         return isRibbonPathShown
-            ? ribbonSource.traceCellRibbonPath(systemIdByCellId.get(cellId), fillPolygon)
+            ? ribbonSource.traceCellRibbonPath(systemKeyByCellKey.get(cellKey), fillPolygon)
             : CellRibbonPath.NONE;
     }
 }

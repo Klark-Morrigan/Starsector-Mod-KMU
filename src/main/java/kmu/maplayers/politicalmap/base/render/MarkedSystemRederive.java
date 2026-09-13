@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
@@ -10,6 +12,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
+import kmu.maplayers.politicalmap.base.render.territories.SystemOccupancy;
 
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -52,34 +55,35 @@ final class MarkedSystemRederive {
      * <p>Every marked system is re-derived before the caller redraws anything, so the redraw reads
      * a fully updated holder map even when two adjacent systems flipped in one batch.
      *
-     * @param territories     the built map whose occupancy is folded
-     * @param geometryCache   the cells, read for a flipped system's neighbours
-     * @param pass            the batch's one reading of the sector, shared by all three reads
-     * @param markedSystemIds the systems to re-derive, each of which draws a cell
+     * @param territories      the built map whose occupancy is folded
+     * @param geometryCache    the cells, read for a flipped system's neighbours
+     * @param pass             the batch's one reading of the sector, shared by all three reads
+     * @param markedSystemKeys the systems to re-derive, each of which draws a cell
      * @return what the batch disturbed: the cells to redraw, and the factions to rebuild
      */
     static StalePoliticsDisturbance rederiveMarkedSystems(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             DominancePass pass,
-            Set<String> markedSystemIds) {
+            Set<SystemKey> markedSystemKeys) {
 
         // Off the batch's own reading rather than a traversal opened here: every other read below
-        // goes through that pass, and a second traversal for the ids alone is what the bound on a
-        // batch counts against it.
-        var systemById = pass.holding().sectorIndex().readSystemsById();
+        // goes through that pass, and a second traversal for the systems alone is what the bound on
+        // a batch counts against it. By key rather than by id, so a marked system that shares an id
+        // with another is re-derived as itself rather than as whichever of them comes first.
+        var systemByKey = pass.holding().sectorIndex().readSystemsByKey();
         var disturbance = new StalePoliticsDisturbance();
 
-        for (var systemId : markedSystemIds) {
+        for (var systemKey : markedSystemKeys) {
 
             // Null for a system the sector no longer lists, which each read below answers for
-            // itself - the id stays the key whether or not a system still stands behind it.
-            var markedSystem = new MarkedSystem(systemId, systemById.get(systemId));
+            // itself - the key stays the address whether or not a system still stands behind it.
+            var markedSystem = new MarkedSystem(systemKey, systemByKey.get(systemKey));
 
             rederiveSystemHolder(territories, geometryCache, pass, markedSystem, disturbance);
             rederiveSystemInhabitation(territories, pass.holding(), markedSystem, disturbance);
         }
-        rederiveSpotlitPresence(territories, pass, markedSystemIds, disturbance);
+        rederiveSpotlitPresence(territories, pass, markedSystemKeys, disturbance);
 
         return disturbance;
     }
@@ -99,17 +103,17 @@ final class MarkedSystemRederive {
         // resolved this system's holder with, so a single-system refresh lands the same winning
         // bloc the bulk pass would.
         var newHolder = SectorPolitics.resolveDominantHolder(marked.system(), pass);
-        var oldHolder = territories.getHolderBySystemId().get(marked.systemId());
+        var oldHolder = territories.getHolderBySystemId().get(marked.readSystemId());
 
         // DominantHolder is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
         if (Objects.equals(oldHolder, newHolder)) {
             return;
         }
-        territories.getOccupancy().recordHolderOf(marked.systemId(), newHolder);
+        territories.getOccupancy().recordHolderOf(marked.readSystemId(), newHolder);
         disturbance.recordFlip(
-            marked.systemId(),
-            neighbourSystemIdsOf(geometryCache, marked.systemId()),
+            marked.systemKey(),
+            neighbourSystemKeysOf(geometryCache, marked.systemKey()),
             oldHolder,
             newHolder);
     }
@@ -133,8 +137,8 @@ final class MarkedSystemRederive {
 
         var isInhabited = PoliticalMapInhabitation.isSystemInhabited(holding, marked.system());
 
-        if (territories.getOccupancy().foldInhabitationOf(marked.systemId(), isInhabited)) {
-            disturbance.recordRestyle(marked.systemId());
+        if (territories.getOccupancy().foldInhabitationOf(marked.readSystemId(), isInhabited)) {
+            disturbance.recordRestyle(marked.systemKey());
         }
     }
 
@@ -155,38 +159,53 @@ final class MarkedSystemRederive {
     private static void rederiveSpotlitPresence(
             PoliticalMapTerritories territories,
             DominancePass pass,
-            Set<String> markedSystemIds,
+            Set<SystemKey> markedSystemKeys,
             StalePoliticsDisturbance disturbance) {
 
         var occupancy = territories.getOccupancy();
         var presentSystemIds = FilteredPolitics.findPresentSystemIds(
             pass.holding(),
             territories.getSelectedBlocId(),
-            occupancy.selectUnheldSystemIdsAmong(markedSystemIds));
+            narrowToSystemIds(markedSystemKeys, occupancy));
 
-        for (var systemId : markedSystemIds) {
+        for (var systemKey : markedSystemKeys) {
 
-            var isPresent = presentSystemIds.contains(systemId);
+            var isPresent = presentSystemIds.contains(systemKey.systemId());
 
-            if (occupancy.foldSpotlitPresenceOf(systemId, isPresent)) {
-                disturbance.recordRestyle(systemId);
+            if (occupancy.foldSpotlitPresenceOf(systemKey.systemId(), isPresent)) {
+                disturbance.recordRestyle(systemKey);
             }
         }
+    }
+
+    // The marked systems the updated holders left unheld, as the ids the presence read is asked in.
+    // The holding is keyed by id, so the keys narrow here rather than at each of the three reads
+    // above it.
+    private static Set<String> narrowToSystemIds(
+            Set<SystemKey> markedSystemKeys,
+            SystemOccupancy occupancy) {
+
+        var markedSystemIds = new LinkedHashSet<String>();
+
+        for (var systemKey : markedSystemKeys) {
+            markedSystemIds.add(systemKey.systemId());
+        }
+        return occupancy.selectUnheldSystemIdsAmong(markedSystemIds);
     }
 
     // The systems whose cell borders this one, read from the adjacency graph. When this
     // system's holder flips, each neighbour's shared edge flips between a same-faction
     // seam and a national border, so every neighbour re-shapes too.
-    private static Set<String> neighbourSystemIdsOf(
+    private static Set<SystemKey> neighbourSystemKeysOf(
             CellGeometryCache geometryCache,
-            String systemId) {
+            SystemKey systemKey) {
 
-        var neighbours = new LinkedHashSet<String>();
-        var edges = geometryCache.getCellEdgesByCellId().get(systemId);
+        var neighbours = new LinkedHashSet<SystemKey>();
+        var edges = geometryCache.getCellEdgesByCellKey().get(systemKey);
         if (edges != null) {
             for (var edge : edges) {
                 if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem) {
-                    neighbours.add(acrossSystem.systemId());
+                    neighbours.add(acrossSystem.systemKey());
                 }
             }
         }
@@ -194,20 +213,27 @@ final class MarkedSystemRederive {
     }
 
     /**
-     * One system a batch was told to re-derive: the id it was marked under, and the system that id
-     * still resolves to.
+     * One system a batch was told to re-derive: the key it was marked under, and the system that
+     * key still resolves to.
      *
      * <p>The two travel together because each read below needs both and neither can be derived from
-     * the other here. The id is the key every set on the drawn map is written under, and it stays
-     * the key whether or not a system still stands behind it; the system is null exactly when the
-     * sector no longer lists one, which each read answers for itself rather than by skipping the
-     * mark - a system that has gone is a change the map has to record.
+     * the other here. The key is the address every cell on the drawn map is written under, and it
+     * stays the address whether or not a system still stands behind it; the system is null exactly
+     * when the sector no longer lists one, which each read answers for itself rather than by
+     * skipping the mark - a system that has gone is a change the map has to record.
      *
-     * @param systemId the id the system was marked stale under
-     * @param system   the system that id resolves to, or null where the sector no longer lists one
+     * @param systemKey the key the system was marked stale under
+     * @param system    the system that key resolves to, or null where the sector no longer lists
+     *                  one
      */
     private record MarkedSystem(
-        String systemId,
+        SystemKey systemKey,
         StarSystemAPI system) {
+
+        // The marked system as the holding addresses it, that half of the map still being keyed by
+        // id. One read rather than a narrowing at each of the holder and inhabitation folds.
+        private String readSystemId() {
+            return systemKey.systemId();
+        }
     }
 }

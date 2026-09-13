@@ -25,6 +25,8 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
@@ -60,7 +62,9 @@ final class PoliticalMapOverlayRendererTest {
 
     // What the cursor was resolved to on this sector's map, for the case about which holder the
     // highlight traces.
-    private static final MapHover HOVERED_CELL = new MapHover("system_id", List.of("system_id"));
+    private static final MapHover HOVERED_CELL = new MapHover(
+        buildCellKey("system_id"),
+        List.of(buildCellKey("system_id")));
 
     // The hover holder of the sector this compositor's draw lists belong to. Made per case, since a
     // compositor is built with the holder of its own installed machinery.
@@ -709,7 +713,7 @@ final class PoliticalMapOverlayRendererTest {
 
         var territoriesMock = mock(PoliticalMapTerritories.class);
 
-        when(territoriesMock.getStyledCellByCellId())
+        when(territoriesMock.getStyledCellByCellKey())
             .thenReturn(Map.of());
 
         // Stated rather than left to the default a mock would answer with, since the upper band is
@@ -718,9 +722,9 @@ final class PoliticalMapOverlayRendererTest {
         // them are stated for the same reason: the overlay is gated by its own emptiness rather
         // than by a settings read, so this read is the only thing standing between an off toggle
         // and a pass over the map.
-        when(territoriesMock.getRibbonByCellId())
+        when(territoriesMock.getRibbonByCellKey())
             .thenReturn(Map.of());
-        when(territoriesMock.getRibbonPathByCellId())
+        when(territoriesMock.getRibbonPathByCellKey())
             .thenReturn(Map.of());
 
         // Read while assembling the hover highlight's arguments, so it has to resolve even though

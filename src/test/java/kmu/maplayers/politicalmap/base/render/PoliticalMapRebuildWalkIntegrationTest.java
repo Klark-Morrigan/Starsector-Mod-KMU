@@ -11,6 +11,7 @@ import kmlib.profiling.snapshot.BudgetBreach;
 import kmlib.profiling.snapshot.ProfileNode;
 import kmlib.starsector.SectorWalkCounters;
 import kmlib.starsector.markets.DecivilisedMarkets;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.ProfileCounts;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,15 +87,24 @@ final class PoliticalMapRebuildWalkIntegrationTest {
     private static final String ALPHA_ID = "alpha";
     private static final String BETA_ID = "beta";
 
+    // The cells those systems seed, as the cut keys them: a system posed with no centre and no
+    // anchor reads as its id alone. The co-located pair below is the exception, each of its two
+    // carrying the anchor that tells them apart.
+    private static final SystemKey ALPHA_CELL = buildCellKey(ALPHA_ID);
+    private static final SystemKey BETA_CELL = buildCellKey(BETA_ID);
+
     // The only system of the sector staged as the one the game is running. Named apart from the two
     // above so a cell cut from the running sector rather than the installed one is visible as a key
     // that has no business being there, rather than as a count.
     private static final String GAMMA_ID = "gamma";
+    private static final SystemKey GAMMA_CELL = buildCellKey(GAMMA_ID);
 
     // The anchors that tell the contested system's twin from it: the sector lists both under
     // ALPHA_ID at one site, so the anchor is the one arm their keys differ by.
     private static final String ALPHA_ANCHOR_ID = "8b3";
     private static final String TWIN_ANCHOR_ID = "38d53";
+    private static final SystemKey ANCHORED_ALPHA_CELL = new SystemKey(ALPHA_ID, null, ALPHA_ANCHOR_ID);
+    private static final SystemKey TWIN_CELL = new SystemKey(ALPHA_ID, null, TWIN_ANCHOR_ID);
 
     private static final String HEGEMONY_ID = "hegemony";
     private static final String TRITACHYON_ID = "tritachyon";
@@ -279,13 +290,13 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             var territories = cache.getTerritories();
 
             // The cut: the revealed system is drawn, so it has a cell to paint at all.
-            assertThat(territories.getStyledCellByCellId())
-                .containsKey(ALPHA_ID);
+            assertThat(territories.getStyledCellByCellKey())
+                .containsKey(ALPHA_CELL);
             // The fills: the same system reads as settled rather than as empty backdrop.
             assertThat(territories.getInhabitedSystemIds())
                 .containsExactly(ALPHA_ID);
             // The bands: its two revealed blocs split the system, so its cell carries runs.
-            assertThat(territories.getRibbonByCellId().get(ALPHA_ID).isEmpty())
+            assertThat(territories.getRibbonByCellKey().get(ALPHA_CELL).isEmpty())
                 .isFalse();
         }
 
@@ -304,18 +315,17 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getTerritories().getStyledCellByCellId())
-                .containsKey(BETA_ID)
-                .doesNotContainKey(ALPHA_ID);
+            assertThat(cache.getTerritories().getStyledCellByCellKey())
+                .containsKey(BETA_CELL)
+                .doesNotContainKey(ALPHA_CELL);
         }
 
         @Test
-        void refreshLeavesOutTheCellOfAPairSharingAnIdWhileTheTwinMoves() {
-            // The tracker tells the pair apart by key while the cut still addresses its sites by
-            // id, so a mover's key narrows to the id both share and the cell under that id leaves
-            // the partition whichever of the two moved. Posed with the twin moving - the one an
-            // observation by id would have folded into the first - so it is the narrowing, and not
-            // the first system's own drift, that takes the cell out.
+        void refreshLeavesOutTheTwinAloneWhenOneOfAPairSharingAnIdMoves() {
+            // The tracker and the cut address a system the same way now, so a mover leaves the
+            // partition as itself and its twin under the shared id stays cut. Posed with the twin
+            // moving - the one an address by id would have folded into the first - so it is the
+            // twin's own cell, and not the first system's, that goes.
             var sector = buildContestedSectorWithACoLocatedTwin();
 
             observeSystemMovingInto(machinery.resolveMovingSystems(), findTheTwinIn(sector));
@@ -323,9 +333,9 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getTerritories().getStyledCellByCellId())
-                .containsKey(BETA_ID)
-                .doesNotContainKey(ALPHA_ID);
+            assertThat(cache.getTerritories().getStyledCellByCellKey())
+                .containsKeys(ANCHORED_ALPHA_CELL, BETA_CELL)
+                .doesNotContainKey(TWIN_CELL);
         }
 
         @Test
@@ -343,8 +353,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getTerritories().getStyledCellByCellId())
-                .containsKeys(ALPHA_ID, BETA_ID);
+            assertThat(cache.getTerritories().getStyledCellByCellKey())
+                .containsKeys(ALPHA_CELL, BETA_CELL);
         }
 
         @Test
@@ -381,9 +391,9 @@ final class PoliticalMapRebuildWalkIntegrationTest {
 
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getTerritories().getStyledCellByCellId())
-                .containsKeys(ALPHA_ID, BETA_ID)
-                .doesNotContainKey(GAMMA_ID);
+            assertThat(cache.getTerritories().getStyledCellByCellKey())
+                .containsKeys(ALPHA_CELL, BETA_CELL)
+                .doesNotContainKey(GAMMA_CELL);
         }
     }
 

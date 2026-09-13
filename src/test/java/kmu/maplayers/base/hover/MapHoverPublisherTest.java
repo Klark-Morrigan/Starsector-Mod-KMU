@@ -2,6 +2,7 @@ package kmu.maplayers.base.hover;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.map.transform.CampaignMapTransform;
 import kmlib.starsector.ui.map.transform.MapCursor;
 import kmlib.starsector.ui.map.transform.MapCursorRead;
@@ -26,6 +27,8 @@ import org.mockito.MockedStatic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -72,8 +75,8 @@ final class MapHoverPublisherTest {
     private static final int CURSOR_PIXEL_X = 410;
     private static final int CURSOR_PIXEL_Y = 320;
 
-    private static final String HOVERED_SYSTEM_ID = "corvus";
-    private static final String NEIGHBOUR_SYSTEM_ID = "yma";
+    private static final SystemKey HOVERED_SYSTEM_KEY = buildCellKey("corvus");
+    private static final SystemKey NEIGHBOUR_SYSTEM_KEY = buildCellKey("yma");
 
     // The hovered system's painted cell: a square spanning 100..300 by 50..250 in world
     // coordinates, wide enough that the point below lands well inside it rather than on an edge,
@@ -126,26 +129,27 @@ final class MapHoverPublisherTest {
     // The frame's targets with one drawn cell, clustered with a neighbour so a published hover
     // proves it carries the whole cluster and not just the cell it resolved.
     private static MapHoverTargets buildTargetsWithOneCell() {
-        return buildTargetsWithCells(Map.of(HOVERED_SYSTEM_ID, CELL_POLYGON));
+        return buildTargetsWithCells(Map.of(HOVERED_SYSTEM_KEY, CELL_POLYGON));
     }
 
     // Both cells of the cluster drawn, for the cases about the cursor crossing between them.
     private static MapHoverTargets buildTargetsWithTwoCells() {
         return buildTargetsWithCells(Map.of(
-            HOVERED_SYSTEM_ID, CELL_POLYGON,
-            NEIGHBOUR_SYSTEM_ID, NEIGHBOUR_CELL_POLYGON));
+            HOVERED_SYSTEM_KEY, CELL_POLYGON,
+            NEIGHBOUR_SYSTEM_KEY, NEIGHBOUR_CELL_POLYGON));
     }
 
-    private static MapHoverTargets buildTargetsWithCells(Map<String, List<double[]>> fillPolygons) {
+    private static MapHoverTargets buildTargetsWithCells(
+            Map<SystemKey, List<double[]>> fillPolygons) {
 
         var targetsMock = mock(MapHoverTargets.class);
 
-        when(targetsMock.getFillPolygonByCellId())
+        when(targetsMock.getFillPolygonByCellKey())
             .thenReturn(fillPolygons);
 
         when(targetsMock.getClusterIndex())
             .thenReturn(SystemClusterIndex.indexClusters(
-                List.of(List.of(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID))));
+                List.of(List.of(HOVERED_SYSTEM_KEY, NEIGHBOUR_SYSTEM_KEY))));
 
         return targetsMock;
     }
@@ -179,7 +183,7 @@ final class MapHoverPublisherTest {
         // It starts carrying a standing hover from an earlier frame, so a parking assertion
         // distinguishes "parked" from "left alone": both publish nothing new, only the first clears.
         hoverState = new MapHoverState();
-        hoverState.publishHover(new MapHover("stale", List.of("stale")));
+        hoverState.publishHover(new MapHover(buildCellKey("stale"), List.of(buildCellKey("stale"))));
     }
 
     @AfterEach
@@ -205,10 +209,10 @@ final class MapHoverPublisherTest {
 
             // The cell resolves only if the world point reached the hit test, and the neighbour
             // rides along only if the cluster was looked up off the cell that resolved.
-            assertThat(hoverState.getHover().hoveredSystemId())
-                .isEqualTo(HOVERED_SYSTEM_ID);
-            assertThat(hoverState.getHover().clusterMemberSystemIds())
-                .containsExactly(HOVERED_SYSTEM_ID, NEIGHBOUR_SYSTEM_ID);
+            assertThat(hoverState.getHover().hoveredSystemKey())
+                .isEqualTo(HOVERED_SYSTEM_KEY);
+            assertThat(hoverState.getHover().clusterMemberSystemKeys())
+                .containsExactly(HOVERED_SYSTEM_KEY, NEIGHBOUR_SYSTEM_KEY);
         }
 
         @Test
@@ -228,10 +232,10 @@ final class MapHoverPublisherTest {
             buildPublisher()
                 .publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
 
-            assertThat(otherSectorHoverState.getHover().hoveredSystemId())
-                .isEqualTo(HOVERED_SYSTEM_ID);
-            assertThat(hoverState.getHover().hoveredSystemId())
-                .isEqualTo(NEIGHBOUR_SYSTEM_ID);
+            assertThat(otherSectorHoverState.getHover().hoveredSystemKey())
+                .isEqualTo(HOVERED_SYSTEM_KEY);
+            assertThat(hoverState.getHover().hoveredSystemKey())
+                .isEqualTo(NEIGHBOUR_SYSTEM_KEY);
         }
 
         @Test
@@ -257,8 +261,8 @@ final class MapHoverPublisherTest {
             stubCursorAt(POINT_ON_NEIGHBOUR_CELL);
             publisher.publishHoverFrom(buildTargetsWithTwoCells(), MAP_ZOOM);
 
-            assertThat(hoverState.getHover().hoveredSystemId())
-                .isEqualTo(NEIGHBOUR_SYSTEM_ID);
+            assertThat(hoverState.getHover().hoveredSystemKey())
+                .isEqualTo(NEIGHBOUR_SYSTEM_KEY);
         }
 
         @Test
@@ -568,8 +572,8 @@ final class MapHoverPublisherTest {
 
                 assertThat(appenderFake.getMessages()).hasSize(1);
                 assertThat(appenderFake.getMessages().get(0))
-                    .contains("system=" + HOVERED_SYSTEM_ID)
-                    .contains("clusterMembers=[" + HOVERED_SYSTEM_ID + ", " + NEIGHBOUR_SYSTEM_ID
+                    .contains("system=" + HOVERED_SYSTEM_KEY)
+                    .contains("clusterMembers=[" + HOVERED_SYSTEM_KEY + ", " + NEIGHBOUR_SYSTEM_KEY
                         + "]")
                     .contains("cursorPixel=(" + CURSOR_PIXEL_X + "," + CURSOR_PIXEL_Y + ")")
                     .contains("printingPassScissor=");

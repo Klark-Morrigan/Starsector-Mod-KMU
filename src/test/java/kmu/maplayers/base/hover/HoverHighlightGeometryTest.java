@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquare;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquareRun;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.computeTotalTriangleArea;
@@ -217,7 +219,7 @@ final class HoverHighlightGeometryTest {
     }
 
     private static MapHover hoverOf(String cellId) {
-        return new MapHover(cellId, List.of(cellId));
+        return new MapHover(buildCellKey(cellId), List.of(buildCellKey(cellId)));
     }
 
     // A source answering for the one hovered cell every case here uses, handing back the very
@@ -228,8 +230,8 @@ final class HoverHighlightGeometryTest {
             List<float[]> frontierLoops) {
 
         return new HoverHighlightSourceFake(
-            Map.of(CELL_ID, paintedExtent),
-            Map.of(CELL_ID, frontierLoops));
+            buildKeyedValues(Map.of(CELL_ID, paintedExtent)),
+            buildKeyedValues(Map.of(CELL_ID, frontierLoops)));
     }
 
 }

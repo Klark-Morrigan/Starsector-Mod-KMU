@@ -13,6 +13,8 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 
@@ -151,7 +153,7 @@ final class LabelLineBoxesTest {
     private static ClusterAnchor buildAnchor(Segment acceptedAxis, List<String> nameLines) {
 
         return new ClusterAnchor(
-            new ClusterIdentity("hegemony", Set.of("hegemony")),
+            new ClusterIdentity("hegemony", Set.of(buildCellKey("hegemony"))),
             0f,
             10f,
             Color.WHITE,

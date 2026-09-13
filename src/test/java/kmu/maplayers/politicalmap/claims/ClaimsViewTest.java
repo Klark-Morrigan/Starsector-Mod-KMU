@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
@@ -602,8 +603,8 @@ final class ClaimsViewTest {
 
                 assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
                         .presenceIndex()
-                        .readPresentSystemIds("hegemony"))
-                    .containsExactly("corvus");
+                        .readPresentSystemKeys("hegemony"))
+                    .containsExactlyElementsOf(buildCellKeys("corvus"));
             }
         }
     }

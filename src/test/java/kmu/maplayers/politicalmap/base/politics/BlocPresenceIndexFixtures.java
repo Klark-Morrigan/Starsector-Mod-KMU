@@ -1,10 +1,14 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.systems.SystemKey;
+
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 
 /**
  * Poses a {@link BlocPresenceIndex} as a walk would have left it, for the suites that consume one
@@ -14,6 +18,9 @@ import java.util.Set;
  * back asserts that order. Posed with {@code Set.of} the order is randomised per JVM run, so such a
  * case passes or fails by which run it lands in - which is what these two builders take away by
  * being the only way a consuming suite poses one.
+ *
+ * <p>The systems are named by id and keyed on the way in, each key stating the id arm alone, so a
+ * consuming suite reads its systems back as {@code buildCellKey} spells them.
  */
 public final class BlocPresenceIndexFixtures {
 
@@ -38,11 +45,13 @@ public final class BlocPresenceIndexFixtures {
      * @return an index holding exactly those blocs
      */
     public static BlocPresenceIndex buildIndexOf(Map<String, List<String>> systemIdsByBlocId) {
-        var orderedSystemIdsByBlocId = new LinkedHashMap<String, Set<String>>();
+        var orderedSystemKeysByBlocId = new LinkedHashMap<String, Set<SystemKey>>();
 
         for (var entry : systemIdsByBlocId.entrySet()) {
-            orderedSystemIdsByBlocId.put(entry.getKey(), new LinkedHashSet<>(entry.getValue()));
+            orderedSystemKeysByBlocId.put(
+                entry.getKey(),
+                new LinkedHashSet<>(buildCellKeys(entry.getValue().toArray(String[]::new))));
         }
-        return new BlocPresenceIndex(orderedSystemIdsByBlocId);
+        return new BlocPresenceIndex(orderedSystemKeysByBlocId);
     }
 }

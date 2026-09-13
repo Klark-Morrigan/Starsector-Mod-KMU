@@ -29,6 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -151,7 +156,7 @@ final class FactionTerritoryBuilderTest {
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(HELD_SYSTEM, NEIGHBOUR_SYSTEM),
                 HEGEMONY,
-                List.of(HELD_SYSTEM, NEIGHBOUR_SYSTEM));
+                buildCellKeys(HELD_SYSTEM, NEIGHBOUR_SYSTEM));
 
             // The shared edge is a same-bloc seam, so it is never a border: the pair reads as one
             // body rather than two squares stroked along the line between them. Held as one
@@ -174,7 +179,7 @@ final class FactionTerritoryBuilderTest {
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM, EXCLAVE_SYSTEM),
                 HEGEMONY,
-                List.of(ISLAND_SYSTEM, EXCLAVE_SYSTEM));
+                buildCellKeys(ISLAND_SYSTEM, EXCLAVE_SYSTEM));
 
             // Rebuilding a bloc from its current members re-splits it: an exclave keeps its own
             // frontier instead of being welded to the homeland by the trace. Two clusters, each
@@ -196,7 +201,7 @@ final class FactionTerritoryBuilderTest {
                 buildTerritoriesStyledBy(buildDrawnStyle(), listGridHolders()),
                 listGridCells(),
                 HEGEMONY,
-                listGridRingCellIds());
+                buildCellKeys(listGridRingCellIds().toArray(String[]::new)));
 
             // A ring of cells is connected, so it is one body - and the rival it encloses is a
             // hole in that body rather than area outside it. The three ways this goes wrong all
@@ -220,7 +225,7 @@ final class FactionTerritoryBuilderTest {
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
-                List.of(ISLAND_SYSTEM));
+                buildCellKeys(ISLAND_SYSTEM));
 
             // Read off the group, since a bloc's paints are its own wherever its bodies sit.
             assertThat(clusterGroup.fill().colour())
@@ -242,7 +247,7 @@ final class FactionTerritoryBuilderTest {
                 buildTerritoriesStyledBy(buildFillOnlyStyle()),
                 listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
-                List.of(ISLAND_SYSTEM));
+                buildCellKeys(ISLAND_SYSTEM));
 
             // A border switched off bakes no runs at all rather than runs the draw pass skips -
             // while the fill, which is still on, comes back as the frontier's own tessellation.
@@ -264,7 +269,7 @@ final class FactionTerritoryBuilderTest {
                 buildTerritoriesStyledBy(buildNoColourStyle()),
                 listCellsFor(ISLAND_SYSTEM),
                 HEGEMONY,
-                List.of(ISLAND_SYSTEM));
+                buildCellKeys(ISLAND_SYSTEM));
 
             // Short-circuited before the trace: a bloc that paints nothing must not pay for the
             // ring walk that only its paints would have used.
@@ -277,19 +282,19 @@ final class FactionTerritoryBuilderTest {
 
             var geometryCacheMock = mock(CellGeometryCache.class);
 
-            when(geometryCacheMock.getCellEdgesByCellId())
+            when(geometryCacheMock.getCellEdgesByCellKey())
                 .thenReturn(Map.of());
 
-            when(geometryCacheMock.getSystemIdByCellId())
-                .thenReturn(Map.of(
+            when(geometryCacheMock.getSystemKeyByCellKey())
+                .thenReturn(buildDrawnSystemKeys(Map.of(
                     HELD_SYSTEM,
-                    HELD_SYSTEM));
+                    HELD_SYSTEM)));
 
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
                 buildTerritoriesStyledBy(buildDrawnStyle()),
                 geometryCacheMock,
                 HEGEMONY,
-                List.of(HELD_SYSTEM));
+                buildCellKeys(HELD_SYSTEM));
 
             // A member whose cell carries no edges traces no ring, and a bloc with no frontier
             // has nothing to clip its fill against, so the whole record is dropped.
@@ -337,15 +342,15 @@ final class FactionTerritoryBuilderTest {
             // The rival's cell is grouped but carries no edges, so its bloc bakes nothing.
             var geometryCacheMock = mock(CellGeometryCache.class);
 
-            when(geometryCacheMock.getCellEdgesByCellId())
-                .thenReturn(Map.of(HELD_SYSTEM, EDGES.get(HELD_SYSTEM)));
+            when(geometryCacheMock.getCellEdgesByCellKey())
+                .thenReturn(buildKeyedValues(Map.of(HELD_SYSTEM, EDGES.get(HELD_SYSTEM))));
 
-            when(geometryCacheMock.getSystemIdByCellId())
-                .thenReturn(Map.of(
+            when(geometryCacheMock.getSystemKeyByCellKey())
+                .thenReturn(buildDrawnSystemKeys(Map.of(
                     HELD_SYSTEM,
                     HELD_SYSTEM,
                     RIVAL_SYSTEM,
-                    RIVAL_SYSTEM));
+                    RIVAL_SYSTEM)));
 
             FactionTerritoryBuilder.buildAllFactionTerritories(territories, geometryCacheMock);
 
@@ -369,7 +374,7 @@ final class FactionTerritoryBuilderTest {
             y2,
             neighbourSystemId == null
                 ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(neighbourSystemId));
+                : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
     }
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
@@ -389,10 +394,10 @@ final class FactionTerritoryBuilderTest {
             }
         }
 
-        when(geometryCacheMock.getCellEdgesByCellId())
-            .thenReturn(edgesByCellId);
-        when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(systemIdByCellId);
+        when(geometryCacheMock.getCellEdgesByCellKey())
+            .thenReturn(buildKeyedValues(edgesByCellId));
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(buildDrawnSystemKeys(systemIdByCellId));
 
         return geometryCacheMock;
     }
@@ -472,10 +477,10 @@ final class FactionTerritoryBuilderTest {
             systemIdByCellId.put(systemId, systemId);
         }
 
-        when(geometryCacheMock.getCellEdgesByCellId())
-            .thenReturn(edgesByCellId);
-        when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(systemIdByCellId);
+        when(geometryCacheMock.getCellEdgesByCellKey())
+            .thenReturn(buildKeyedValues(edgesByCellId));
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(buildDrawnSystemKeys(systemIdByCellId));
 
         return geometryCacheMock;
     }

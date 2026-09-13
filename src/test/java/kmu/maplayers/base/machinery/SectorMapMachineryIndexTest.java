@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.refresh.MovableSystemSectorFake.FORCED_ONTO_MAP;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -255,7 +256,7 @@ class SectorMapMachineryIndexTest {
             SectorMapMachineryIndex
                 .installMachineryOn(sectorMock)
                 .resolveHoverState()
-                .publishHover(new MapHover(HOVERED_SYSTEM_ID, List.of(HOVERED_SYSTEM_ID)));
+                .publishHover(new MapHover(buildCellKey(HOVERED_SYSTEM_ID), List.of(buildCellKey(HOVERED_SYSTEM_ID))));
 
             SectorMapMachineryIndex.disposeAllMachinery();
 

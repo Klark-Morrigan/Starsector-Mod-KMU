@@ -4,7 +4,9 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.Segment;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
+import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.EdgeTarget;
@@ -53,6 +55,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.CELL_LESS_SYSTEM;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.DISTANT_SYSTEM;
 import static kmu.maplayers.politicalmap.base.render.StalePoliticsFixtures.FLIPPED_SYSTEM;
@@ -72,6 +77,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 /**
@@ -251,7 +257,7 @@ final class IncrementalPoliticsRefreshTest {
 
             politicsMock.verifyNoInteractions();
 
-            assertThat(territories.getStyledCellByCellId())
+            assertThat(territories.getStyledCellByCellKey())
                 .isEmpty();
         }
 
@@ -281,14 +287,14 @@ final class IncrementalPoliticsRefreshTest {
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             territories.putStyledCell(
-                FLIPPED_SYSTEM,
+                buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildBandSizedCell());
 
             // The band starts above the cell's own site, so the marked system needs one; the
             // shared geometry fixture records none, every other case being about shapes.
-            when(cellGeometry.cells().getSiteBySystemId())
-                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
@@ -298,8 +304,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(FLIPPED_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
             styledCellsMock.verifyNoInteractions();
@@ -320,12 +326,12 @@ final class IncrementalPoliticsRefreshTest {
                 FactionNameFormatChoice.SHORT);
 
             territories.putStyledCell(
-                FLIPPED_SYSTEM,
+                buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildBandSizedCell());
 
-            when(cellGeometry.cells().getSiteBySystemId())
-                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
@@ -337,7 +343,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -353,12 +359,12 @@ final class IncrementalPoliticsRefreshTest {
                 FactionNameFormatChoice.SHORT);
 
             territories.putStyledCell(
-                FLIPPED_SYSTEM,
+                buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildBandSizedCell());
 
-            when(cellGeometry.cells().getSiteBySystemId())
-                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
@@ -385,8 +391,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(FLIPPED_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             fittedBoxesMock.verifyNoInteractions();
         }
@@ -400,12 +406,12 @@ final class IncrementalPoliticsRefreshTest {
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
             territories.putStyledCell(
-                FLIPPED_SYSTEM,
+                buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildBandSizedCell());
 
-            when(cellGeometry.cells().getSiteBySystemId())
-                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
@@ -417,8 +423,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(FLIPPED_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
         @Test
@@ -433,12 +439,12 @@ final class IncrementalPoliticsRefreshTest {
                 FactionNameFormatChoice.SHORT);
 
             territories.putStyledCell(
-                FLIPPED_SYSTEM,
+                buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildBandSizedCell());
 
-            when(cellGeometry.cells().getSiteBySystemId())
-                .thenReturn(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0}));
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
@@ -454,8 +460,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(FLIPPED_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
         @Test
@@ -477,13 +483,13 @@ final class IncrementalPoliticsRefreshTest {
             styledCellsMock.verify(
                 () -> StyledCellBuilder.buildStyledCellForSystem(
                     any(),
-                    eq(FLIPPED_SYSTEM),
+                    eq(buildCellKey(FLIPPED_SYSTEM)),
                     any()));
 
             styledCellsMock.verify(
                 () -> StyledCellBuilder.buildStyledCellForSystem(
                     any(),
-                    eq(NEIGHBOUR_SYSTEM),
+                    eq(buildCellKey(NEIGHBOUR_SYSTEM)),
                     any()),
                 never());
 
@@ -507,8 +513,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(DISTANT_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(DISTANT_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
         @Test
@@ -621,6 +627,45 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
+        void applyStalePoliticsUpdatesFansOneStaleIdOutToEveryCellSharingIt() {
+            // The board still marks a system by bare id, and two systems the sector lists under
+            // one id each seed a cell of their own - so the one mark reaches both cells and both
+            // systems are re-derived, where resolving it to a single cell would leave the twin
+            // standing on a reading the sector has moved under. The holding itself is still keyed
+            // by id, so the flip lands on the first cell and the twin's own redraw follows once the
+            // holding is keyed the same way as the cells.
+            var firstCell = new SystemKey(FLIPPED_SYSTEM, null, "8b3");
+            var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
+            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
+
+            when(cellGeometry.cells().getCellEdgesByCellKey())
+                .thenReturn(Map.of(
+                    firstCell,
+                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
+                    twinCell,
+                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 100)));
+            when(cellGeometry.cells().getSystemKeyByCellKey())
+                .thenReturn(Map.of(firstCell, firstCell, twinCell, twinCell));
+
+            assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
+
+            markStale(FLIPPED_SYSTEM);
+            applyOverTheSector(
+                StarSystemFixture.buildSectorOf(
+                    StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "8b3"),
+                    StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "38d53")),
+                territories);
+
+            politicsMock.verify(
+                () -> SectorPolitics.resolveDominantHolder(
+                    matchSystemArg(FLIPPED_SYSTEM),
+                    any(DominancePass.class)),
+                times(2));
+            styledCellsMock.verify(
+                () -> StyledCellBuilder.buildStyledCellForSystem(any(), eq(firstCell), any()));
+        }
+
+        @Test
         void applyStalePoliticsUpdatesReshapesTheFlippedSystemAndItsNeighbour() {
             // The neighbour's own holder did not move, but the edge it shares with the
             // flipped system just turned from a same-faction seam into a national border,
@@ -639,13 +684,13 @@ final class IncrementalPoliticsRefreshTest {
             styledCellsMock.verify(
                 () -> StyledCellBuilder.buildStyledCellForSystem(
                     any(),
-                    eq(FLIPPED_SYSTEM),
+                    eq(buildCellKey(FLIPPED_SYSTEM)),
                     any()));
 
             styledCellsMock.verify(
                 () -> StyledCellBuilder.buildStyledCellForSystem(
                     any(),
-                    eq(NEIGHBOUR_SYSTEM),
+                    eq(buildCellKey(NEIGHBOUR_SYSTEM)),
                     any()));
         }
 
@@ -699,8 +744,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .doesNotContainKey(DISTANT_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .doesNotContainKey(buildCellKey(DISTANT_SYSTEM));
         }
 
         @Test
@@ -733,8 +778,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(DISTANT_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
         @Test
@@ -759,8 +804,8 @@ final class IncrementalPoliticsRefreshTest {
             markStale(DISTANT_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellId())
-                .containsOnlyKeys(DISTANT_SYSTEM);
+            assertThat(territories.getRibbonByCellKey())
+                .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
         // Seeds a drawn cell far from the flip, with the geometry a band needs to be laid in it:
@@ -772,7 +817,7 @@ final class IncrementalPoliticsRefreshTest {
             seedDistantCellGeometry(territories, buildIsolatedSquareCell(10000));
 
             territories.putStyledCell(
-                DISTANT_SYSTEM,
+                buildCellKey(DISTANT_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildDistantBandSizedCell());
         }
@@ -793,26 +838,26 @@ final class IncrementalPoliticsRefreshTest {
                 PoliticalMapTerritories territories,
                 List<CellEdge> distantCellEdges) {
 
-            when(cellGeometry.cells().getCellEdgesByCellId())
-                .thenReturn(Map.of(
+            when(cellGeometry.cells().getCellEdgesByCellKey())
+                .thenReturn(buildKeyedValues(Map.of(
                     FLIPPED_SYSTEM,
                     buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
                     NEIGHBOUR_SYSTEM,
                     buildSquareCellFacing(FLIPPED_SYSTEM, 100),
                     DISTANT_SYSTEM,
-                    distantCellEdges));
+                    distantCellEdges)));
 
-            when(cellGeometry.cells().getSystemIdByCellId())
-                .thenReturn(Map.of(
+            when(cellGeometry.cells().getSystemKeyByCellKey())
+                .thenReturn(buildDrawnSystemKeys(Map.of(
                     FLIPPED_SYSTEM,
                     FLIPPED_SYSTEM,
                     NEIGHBOUR_SYSTEM,
                     NEIGHBOUR_SYSTEM,
                     DISTANT_SYSTEM,
-                    DISTANT_SYSTEM));
+                    DISTANT_SYSTEM)));
 
-            when(cellGeometry.cells().getSiteBySystemId())
-                .thenReturn(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0}));
+            when(cellGeometry.cells().getSiteBySystemKey())
+                .thenReturn(buildKeyedValues(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0})));
 
             when(territories.getView().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
@@ -942,7 +987,7 @@ final class IncrementalPoliticsRefreshTest {
     // uncovered. Only the accepted line and the girth are read off a placement here.
     private static ClusterAnchor buildNameAcrossTheCell() {
         return new ClusterAnchor(
-            new ClusterIdentity(HEGEMONY, Set.of(FLIPPED_SYSTEM)),
+            new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(FLIPPED_SYSTEM))),
             0f,
             0f,
             Color.WHITE,
@@ -970,7 +1015,7 @@ final class IncrementalPoliticsRefreshTest {
     // that moved a name onto an untouched cell leaves behind.
     private static ClusterAnchor buildNameOverTheDistantCell() {
         return new ClusterAnchor(
-            new ClusterIdentity(HEGEMONY, Set.of(DISTANT_SYSTEM)),
+            new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(DISTANT_SYSTEM))),
             0f,
             0f,
             Color.WHITE,

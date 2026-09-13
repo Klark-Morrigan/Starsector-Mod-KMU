@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
 
@@ -304,16 +305,16 @@ final class PoliticalMapViewTest {
                 new BlocStatsReadFake<>(
                     Map.of("kept", ANY_STATS, "dropped", OTHER_STATS),
                     new BlocPresenceIndex(Map.of(
-                        "kept", Set.of("corvus"),
-                        "dropped", Set.of("askonia")))),
+                        "kept", Set.of(buildCellKey("corvus")),
+                        "dropped", Set.of(buildCellKey("askonia"))))),
                 ANY_MODES);
 
             assertThat(read.picker().items())
                 .extracting(RankedBloc::itemId)
                 .containsExactly("kept");
 
-            assertThat(read.presenceIndex().readPresentSystemIds("dropped"))
-                .containsExactly("askonia");
+            assertThat(read.presenceIndex().readPresentSystemKeys("dropped"))
+                .containsExactly(buildCellKey("askonia"));
         }
 
         @Test
@@ -364,7 +365,7 @@ final class PoliticalMapViewTest {
 
             assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), BASE_FOG)
                     .presenceIndex()
-                    .readPresentSystemIds("hegemony"))
+                    .readPresentSystemKeys("hegemony"))
                 .isEmpty();
         }
     }

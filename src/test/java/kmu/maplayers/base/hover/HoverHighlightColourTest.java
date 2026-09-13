@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.base.theme.HoverHighlightStyle;
 
@@ -9,9 +11,10 @@ import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,11 +28,11 @@ import static org.mockito.Mockito.when;
 final class HoverHighlightColourTest {
 
     // The cell the cursor rests on, which is the only one the layer is ever asked about.
-    private static final String HOVERED_CELL_ID = "system_a";
+    private static final SystemKey HOVERED_CELL_KEY = buildCellKey("system_a");
 
     // A cell in the hovered cluster but not under the cursor, so a resolve reading the cluster
     // rather than the cell would be visible.
-    private static final String CLUSTER_MEMBER_CELL_ID = "system_b";
+    private static final SystemKey CLUSTER_MEMBER_CELL_KEY = buildCellKey("system_b");
 
     @Nested
     class ResolveColourFor {
@@ -40,12 +43,12 @@ final class HoverHighlightColourTest {
             var sourceMock = mock(HoverHighlightSource.class);
             var selectionMock = mock(ElementPaintSelection.class);
 
-            when(sourceMock.resolveHighlightColourOf(HOVERED_CELL_ID, selectionMock))
+            when(sourceMock.resolveHighlightColourOf(HOVERED_CELL_KEY, selectionMock))
                 .thenReturn(Color.RED);
 
             var colour = HoverHighlightColour.resolveColourFor(
                 sourceMock,
-                new MapHover(HOVERED_CELL_ID, List.of(HOVERED_CELL_ID, CLUSTER_MEMBER_CELL_ID)),
+                new MapHover(HOVERED_CELL_KEY, List.of(HOVERED_CELL_KEY, CLUSTER_MEMBER_CELL_KEY)),
                 buildStyleSelecting(selectionMock));
 
             assertThat(colour)
@@ -66,7 +69,7 @@ final class HoverHighlightColourTest {
             assertThat(colour)
                 .isNull();
             verify(sourceMock, never())
-                .resolveHighlightColourOf(anyString(), any());
+                .resolveHighlightColourOf(any(), any());
         }
 
         @Test
@@ -74,12 +77,12 @@ final class HoverHighlightColourTest {
             // The layer answers nothing for a selection that paints nothing, and that answer is
             // carried through rather than substituted for, so the pass skips on it too.
             var sourceMock = mock(HoverHighlightSource.class);
-            when(sourceMock.resolveHighlightColourOf(anyString(), any()))
+            when(sourceMock.resolveHighlightColourOf(any(), any()))
                 .thenReturn(null);
 
             var colour = HoverHighlightColour.resolveColourFor(
                 sourceMock,
-                new MapHover(HOVERED_CELL_ID, List.of(HOVERED_CELL_ID)),
+                new MapHover(HOVERED_CELL_KEY, List.of(HOVERED_CELL_KEY)),
                 buildStyleSelecting(null));
 
             assertThat(colour)

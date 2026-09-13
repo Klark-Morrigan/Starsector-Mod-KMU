@@ -1,5 +1,7 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.geometry.CellGrouping;
 
 import java.util.LinkedHashSet;
@@ -15,8 +17,8 @@ import java.util.Set;
  * differ wherever the footprint holds a cell with no star of its own: such a cell joins a
  * cluster's outline but names no system to key or to mark coincident.
  *
- * <p>Pure partition, free of geometry: which state a system draws in is decided from plain id
- * sets here, and turning that partition into triangles is {@link SplitFillBuilder}'s job.
+ * <p>Pure partition, free of geometry: which state a system draws in is decided from plain sets
+ * here, and turning that partition into triangles is {@link SplitFillBuilder}'s job.
  */
 public record FillSplit(
         FillMembers solid,
@@ -27,29 +29,33 @@ public record FillSplit(
      * Splits a footprint's member cells into the three states, resolving each cell to the
      * system it draws as and classifying that system.
      *
-     * @param cellGrouping       resolves which system each member cell draws as
-     * @param memberCellIds      the footprint's cells
-     * @param hatchedSystemIds   the cluster's systems that draw hatched rather than solid
-     * @param unfilledSystemIds  the cluster's systems that draw no fill at all
+     * <p>The cells are addressed by key and the two exception sets by id, the layer's holding
+     * being keyed that way, so the classification narrows one to the other: two systems sharing
+     * an id draw in one state, which is what the id-keyed sets can say about them.
+     *
+     * @param cellGrouping      resolves which system each member cell draws as
+     * @param memberCellKeys    the footprint's cells
+     * @param hatchedSystemIds  the cluster's systems that draw hatched rather than solid
+     * @param unfilledSystemIds the cluster's systems that draw no fill at all
      * @return the three states, each holding its own cells and systems
      */
     public static FillSplit splitMembersByFillState(
             CellGrouping cellGrouping,
-            List<String> memberCellIds,
+            List<SystemKey> memberCellKeys,
             Set<String> hatchedSystemIds,
             Set<String> unfilledSystemIds) {
 
         var split = createEmpty();
-        for (var cellId : memberCellIds) {
-            var systemId = cellGrouping.resolveDrawnSystemIdOf(cellId);
+        for (var cellKey : memberCellKeys) {
+            var systemKey = cellGrouping.resolveDrawnSystemKeyOf(cellKey);
             var members = split.resolveMembersOf(classifyFillState(
-                systemId,
+                systemKey,
                 hatchedSystemIds,
                 unfilledSystemIds));
 
-            members.cellIds().add(cellId);
-            if (systemId != null) {
-                members.systemIds().add(systemId);
+            members.cellKeys().add(cellKey);
+            if (systemKey != null) {
+                members.systemKeys().add(systemKey);
             }
         }
         return split;
@@ -64,17 +70,17 @@ public record FillSplit(
      * with a null key.
      */
     public static FillState classifyFillState(
-            String systemId,
+            SystemKey systemKey,
             Set<String> hatchedSystemIds,
             Set<String> unfilledSystemIds) {
 
-        if (systemId == null) {
+        if (systemKey == null) {
             return FillState.SOLID;
         }
-        if (unfilledSystemIds.contains(systemId)) {
+        if (unfilledSystemIds.contains(systemKey.systemId())) {
             return FillState.UNFILLED;
         }
-        if (hatchedSystemIds.contains(systemId)) {
+        if (hatchedSystemIds.contains(systemKey.systemId())) {
             return FillState.HATCHED;
         }
         return FillState.SOLID;
@@ -86,8 +92,8 @@ public record FillSplit(
      *         members
      */
     public boolean hasNonSolidMembers() {
-        return !hatched.systemIds().isEmpty()
-            || !unfilled.systemIds().isEmpty();
+        return !hatched.systemKeys().isEmpty()
+            || !unfilled.systemKeys().isEmpty();
     }
 
     /**
@@ -113,11 +119,11 @@ public record FillSplit(
      * @param state the state whose neighbours are wanted
      * @return the systems the other two states hold, as a membership test
      */
-    public Set<String> resolveCoincidentSystemIdsOf(FillState state) {
-        var coincident = new LinkedHashSet<String>();
+    public Set<SystemKey> resolveCoincidentSystemKeysOf(FillState state) {
+        var coincident = new LinkedHashSet<SystemKey>();
         for (var other : FillState.values()) {
             if (other != state) {
-                coincident.addAll(resolveMembersOf(other).systemIds());
+                coincident.addAll(resolveMembersOf(other).systemKeys());
             }
         }
         return coincident;
@@ -154,7 +160,7 @@ public record FillSplit(
      * <p>Both sets are insertion-ordered and mutable: the split fills them cell by cell as it
      * walks the footprint, and insertion order keeps a rebuild's traced rings reproducible.
      */
-    public record FillMembers(Set<String> cellIds, Set<String> systemIds) {
+    public record FillMembers(Set<SystemKey> cellKeys, Set<SystemKey> systemKeys) {
 
         private static FillMembers createEmpty() {
             return new FillMembers(

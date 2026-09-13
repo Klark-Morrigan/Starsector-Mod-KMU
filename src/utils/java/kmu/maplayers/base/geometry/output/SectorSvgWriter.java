@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry.output;
 
 import kmlib.math.geometry.Bounds;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellEdge;
@@ -102,7 +103,7 @@ public final class SectorSvgWriter {
         // The raw partition, drawn faintly underneath: it is the reference the shaped cells and
         // traced borders above are read against, so a channel or a fused seam can be seen against
         // the cell edge it came from.
-        drawRawCells(drawing, drawn.geometry().cellEdgesByCellId());
+        drawRawCells(drawing, drawn.geometry().cellEdgesByCellKey());
         drawNeutralCells(drawing, drawn.geometry());
         drawOwnerRings(drawing, drawn.smoothedRingsByOwner());
         drawCoastlines(drawing, fixture.getSites(), drawn);
@@ -131,7 +132,7 @@ public final class SectorSvgWriter {
 
     private static void drawRawCells(
             SvgDrawing drawing,
-            Map<String, List<CellEdge>> cellEdges) {
+            Map<SystemKey, List<CellEdge>> cellEdges) {
 
         for (var edges : cellEdges.values()) {
 
@@ -148,9 +149,9 @@ public final class SectorSvgWriter {
     // build left it, not as the sector was handed in.
     private static void drawNeutralCells(SvgDrawing drawing, SectorGeometry geometry) {
 
-        for (var entry : geometry.shapedCellByCellId().entrySet()) {
+        for (var entry : geometry.shapedCellByCellKey().entrySet()) {
 
-            if (geometry.ownerByCellId().containsKey(entry.getKey())) {
+            if (geometry.ownerByCellKey().containsKey(entry.getKey())) {
                 continue;
             }
 

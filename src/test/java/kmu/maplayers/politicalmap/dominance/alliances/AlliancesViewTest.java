@@ -39,6 +39,7 @@ import org.mockito.MockedStatic;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
@@ -476,8 +477,8 @@ final class AlliancesViewTest {
                     .extracting(RankedBloc::itemId)
                     .containsExactly("rebel_pact");
 
-                assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
-                    .containsExactly("askonia");
+                assertThat(read.presenceIndex().readPresentSystemKeys("hegemony"))
+                    .containsExactlyElementsOf(buildCellKeys("askonia"));
             }
         }
     }

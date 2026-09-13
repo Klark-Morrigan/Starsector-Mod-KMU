@@ -16,6 +16,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,7 +38,8 @@ final class StalePoliticsFixtures {
     static final String TRITACHYON = "tritachyon";
 
     // The flipping system and the neighbour whose shared edge flips with it. Both seed a cell, so
-    // both are redrawable; the third seeds none.
+    // both are redrawable; the third seeds none. Named by id, which is how the holding still
+    // addresses them; a case addressing a cell keys the name through the cell fixture.
     static final String FLIPPED_SYSTEM = "flipped";
     static final String NEIGHBOUR_SYSTEM = "neighbour";
     static final String CELL_LESS_SYSTEM = "cellless";
@@ -102,19 +107,19 @@ final class StalePoliticsFixtures {
 
         var geometryCacheMock = mock(CellGeometryCache.class);
 
-        when(geometryCacheMock.getCellEdgesByCellId())
-            .thenReturn(Map.of(
+        when(geometryCacheMock.getCellEdgesByCellKey())
+            .thenReturn(buildKeyedValues(Map.of(
                 FLIPPED_SYSTEM,
                 buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
                 NEIGHBOUR_SYSTEM,
-                buildSquareCellFacing(FLIPPED_SYSTEM, 100)));
+                buildSquareCellFacing(FLIPPED_SYSTEM, 100))));
 
-        when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(Map.of(
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(buildDrawnSystemKeys(Map.of(
                 FLIPPED_SYSTEM,
                 FLIPPED_SYSTEM,
                 NEIGHBOUR_SYSTEM,
-                NEIGHBOUR_SYSTEM));
+                NEIGHBOUR_SYSTEM)));
 
         return geometryCacheMock;
     }
@@ -129,7 +134,7 @@ final class StalePoliticsFixtures {
                 0,
                 offsetX + 50,
                 0,
-                new EdgeTarget.AcrossSystem(neighbourSystemId)),
+                new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId))),
             new CellEdge(offsetX + 50, 0, offsetX + 50, 50, EdgeTarget.REACH_BOUND),
             new CellEdge(offsetX + 50, 50, offsetX, 50, EdgeTarget.REACH_BOUND),
             new CellEdge(offsetX, 50, offsetX, 0, EdgeTarget.REACH_BOUND));

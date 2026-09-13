@@ -54,7 +54,7 @@ final class PoliticalMapDrawablesTest {
 
             assertThat(drawables.getTerritories())
                 .isNotNull();
-            assertThat(drawables.getTerritories().getStyledCellByCellId())
+            assertThat(drawables.getTerritories().getStyledCellByCellKey())
                 .isEmpty();
         }
 

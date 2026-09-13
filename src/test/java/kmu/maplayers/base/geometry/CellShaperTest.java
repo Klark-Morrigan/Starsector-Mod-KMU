@@ -1,11 +1,17 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -127,9 +133,25 @@ final class CellShaperTest {
 
     // Shapes the cells under the identity draws-as grouping, so a test names its edges and
     // keys exactly as before while the shaper reads a cell's key through its own star.
+    //
+    // The cells go in under the key the cut addresses them by and the shapes come back under the
+    // names the case gave them, which is what leaves a case about shaping reading as it did before
+    // the cells were keyed.
     private static Map<String, ShapedCell> buildShape(
             Map<String, List<CellEdge>> edges, Map<String, String> owners, double inset) {
-        return CellShaper.shapeCells(edges, buildGrouping(edges, owners), inset);
+
+        var cellEdgesByCellKey = buildKeyedValues(edges);
+        var shapedByCellKey = CellShaper.shapeCells(
+            cellEdgesByCellKey,
+            buildGrouping(cellEdgesByCellKey, owners),
+            inset);
+
+        var shapedBySystemId = new LinkedHashMap<String, ShapedCell>();
+
+        for (var shaped : shapedByCellKey.entrySet()) {
+            shapedBySystemId.put(shaped.getKey().systemId(), shaped.getValue());
+        }
+        return shapedBySystemId;
     }
 
     // One cell edge facing the given neighbour system, or the reach bound when it is null.
@@ -137,18 +159,18 @@ final class CellShaperTest {
         return new CellEdge(x1, y1, x2, y2,
                 neighbour == null
                         ? EdgeTarget.REACH_BOUND
-                        : new EdgeTarget.AcrossSystem(neighbour));
+                        : new EdgeTarget.AcrossSystem(buildCellKey(neighbour)));
     }
 
     // The grouping to shape under: each cell drawing as its own star (identity draws-as over
     // the cell set), keyed by the given owners.
     private static CellGrouping buildGrouping(
-            Map<String, List<CellEdge>> edges, Map<String, String> owners) {
-        var systemIdByCellId = new java.util.LinkedHashMap<String, String>();
-        for (var cellId : edges.keySet()) {
-            systemIdByCellId.put(cellId, cellId);
+            Map<SystemKey, List<CellEdge>> edges, Map<String, String> owners) {
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+        for (var cellKey : edges.keySet()) {
+            systemKeyByCellKey.put(cellKey, cellKey);
         }
-        return new CellGrouping(systemIdByCellId, owners);
+        return new CellGrouping(systemKeyByCellKey, owners);
     }
 
     // The unit square (0,0)..(10,10) CCW, its right edge (x = 10) tagged with the

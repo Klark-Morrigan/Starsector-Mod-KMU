@@ -254,10 +254,10 @@ public final class ClusterAnchorsBuilder {
         // key, so the solid and contested clusters trace as their own territories exactly as
         // the fills do.
         var cells = cellGeometry.cells();
-        var edgesByCellId = cells.getCellEdgesByCellId();
+        var edgesByCellKey = cells.getCellEdgesByCellKey();
         var ownerBySystemId = styling.holderBySystemId();
         var cellGrouping = DominantHolder.mapCellGrouping(
-            cells.getSystemIdByCellId(),
+            cells.getSystemKeyByCellKey(),
             ownerBySystemId);
 
         // The clusters and the cells they were cut from travel on as one value: the sweep reads
@@ -266,9 +266,9 @@ public final class ClusterAnchorsBuilder {
         // are read once for both halves, so the clustering and the geometry the fit clips
         // against cannot be two readings of the cache.
         var partition = new ClusterPartition(
-            SystemClusters.findClusters(edgesByCellId, cellGrouping),
-            edgesByCellId,
-            cells.getSiteBySystemId(),
+            SystemClusters.findClusters(edgesByCellKey, cellGrouping),
+            edgesByCellKey,
+            cells.getSiteBySystemKey(),
             cellGrouping);
 
         // The desaturation palette is handed in already resolved - off the production build's
@@ -315,14 +315,14 @@ public final class ClusterAnchorsBuilder {
         // tracks. Measured rather than recomputed from the knobs here, so a sweep that bailed out
         // early reads as cheap.
         fitScope.addCount(MapBuildCounters.LABELS, fit.anchors().size());
-        fitScope.tagCall("clusters=" + partition.clusterMemberSystemIds().size()
+        fitScope.tagCall("clusters=" + partition.clusterMemberSystemKeys().size()
             + " directions="
             + ClusterAnchorPlacement.countCandidateDirections(spec.search().directionCount())
             + "/" + spec.search().directionCount()
             + " offsets=" + spec.search().offsetCount()
             + " candidates=" + fit.candidateCount()
             + " bandFits=" + fit.bandFitCount()
-            + " keepOuts=" + partition.siteBySystemId().size());
+            + " keepOuts=" + partition.siteBySystemKey().size());
 
         return fit.anchors();
     }

@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -230,7 +231,7 @@ final class PoliticalMapPreviewHighlightRendererTest {
 
         for (var cellId : drawnCellIds) {
             territories.putStyledCell(
-                cellId,
+                buildCellKey(cellId),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 buildSquare());
         }

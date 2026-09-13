@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.hover.HoverHighlightSource;
 import kmu.maplayers.base.theme.ElementPaintSelection;
 import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
@@ -34,19 +36,20 @@ public record PoliticalMapHoverHighlightSource(
     PoliticalMapTerritories territories) implements HoverHighlightSource {
 
     @Override
-    public Map<String, List<double[]>> getFillPolygonByCellId() {
+    public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
         // Handed over as the build holds them, not copied: the highlight memoises on these
         // instances, and they are the same ones the cursor was hit-tested against.
-        return territories.getFillPolygonByCellId();
+        return territories.getFillPolygonByCellKey();
     }
 
     @Override
-    public List<float[]> resolveCandidateFrontierLoopsOf(String cellId) {
+    public List<float[]> resolveCandidateFrontierLoopsOf(SystemKey cellKey) {
 
         // A factionless cell (decivilised, or uninhabited while its outline is drawn) fuses into
         // no territory, so it has no frontier at all and offers no candidates - its cell still
-        // washes, just without a halo.
-        var holder = territories.getHolderBySystemId().get(cellId);
+        // washes, just without a halo. The holding is keyed by id, so the cell's key narrows to
+        // ask it.
+        var holder = territories.getHolderBySystemId().get(cellKey.systemId());
         if (holder == null) {
             return List.of();
         }
@@ -58,10 +61,10 @@ public record PoliticalMapHoverHighlightSource(
     }
 
     @Override
-    public Color resolveHighlightColourOf(String cellId, ElementPaintSelection paintSelection) {
+    public Color resolveHighlightColourOf(SystemKey cellKey, ElementPaintSelection paintSelection) {
         return MapPalettes.pickHolderPaletteColour(
             paintSelection,
-            territories.getHolderBySystemId().get(cellId),
+            territories.getHolderBySystemId().get(cellKey.systemId()),
             territories.getNeutralColour());
     }
 }

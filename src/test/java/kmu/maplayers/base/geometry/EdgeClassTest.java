@@ -17,19 +17,23 @@ final class EdgeClassTest {
 
         @Test
         void isBoundaryIsFalseForAnInteriorSeam() {
-            assertThat(EdgeClass.INTERIOR_SEAM.isBoundary()).isFalse();
+
+            assertThat(EdgeClass.INTERIOR_SEAM.isBoundary())
+                .isFalse();
         }
 
         @Test
         void isBoundaryIsTrueForAPlainBoundary() {
-            assertThat(EdgeClass.BOUNDARY.isBoundary()).isTrue();
+            assertThat(EdgeClass.BOUNDARY.isBoundary())
+                .isTrue();
         }
 
         @Test
         void isBoundaryIsTrueForAnOpenFrontier() {
             // An open frontier still draws as a border, so a seam-or-border consumer
             // folds it in with BOUNDARY.
-            assertThat(EdgeClass.OPEN_FRONTIER.isBoundary()).isTrue();
+            assertThat(EdgeClass.OPEN_FRONTIER.isBoundary())
+                .isTrue();
         }
     }
 }

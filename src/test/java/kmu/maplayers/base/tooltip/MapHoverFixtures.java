@@ -8,6 +8,8 @@ import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 /**
  * The surroundings a hover box needs before it will draw at all: a system under the cursor, published
  * on the machinery of the sector whose map it is.
@@ -56,8 +58,12 @@ public final class MapHoverFixtures {
      */
     public static void hoverASystemIn(SectorMapMachinery machinery, String systemId) {
 
+        // Keyed by the id alone, which is the key a system posed with no centre and no anchor is
+        // read off - so the box resolves the posed system back out of the sector.
+        var systemKey = buildCellKey(systemId);
+
         machinery
             .resolveHoverState()
-            .publishHover(new MapHover(systemId, List.of(systemId)));
+            .publishHover(new MapHover(systemKey, List.of(systemKey)));
     }
 }

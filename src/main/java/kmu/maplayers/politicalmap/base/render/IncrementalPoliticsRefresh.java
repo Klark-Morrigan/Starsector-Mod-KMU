@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellShaper;
@@ -95,7 +96,7 @@ final class IncrementalPoliticsRefresh {
 
         // A system with no cell seeds no drawing, so it is left out of the whole batch: a
         // resize changes what is in systems already on the map, never map membership.
-        var markedSystemIds = selectDrawnSystemIds(
+        var markedSystemKeys = selectDrawnSystemKeys(
             standingMap.cellGeometry().cells(),
             staleSystemIds);
 
@@ -103,24 +104,30 @@ final class IncrementalPoliticsRefresh {
             standingMap.territories(),
             standingMap.cellGeometry().cells(),
             pass,
-            markedSystemIds);
+            markedSystemKeys);
 
-        redrawDisturbedCells(standingMap, pass, markedSystemIds, disturbance);
+        redrawDisturbedCells(standingMap, pass, markedSystemKeys, disturbance);
     }
 
-    // The marked systems that draw a cell, in the order they were marked.
-    private static Set<String> selectDrawnSystemIds(
+    // The drawn cells the marked systems name, in the order the cells were cut.
+    //
+    // The board still marks a system by bare id, and an id names every system carrying it, so a
+    // mark fans out to each drawn cell whose key states that id rather than resolving to one. The
+    // fan-out runs over the cut's own cells rather than over a reading of the sector, which is what
+    // keeps a system the sector has since dropped in the batch: its cell stands until the next cut,
+    // and a mark on it is exactly the change the redraw has to show.
+    private static Set<SystemKey> selectDrawnSystemKeys(
             CellGeometryCache geometryCache,
             Set<String> staleSystemIds) {
 
-        var drawnSystemIds = new LinkedHashSet<String>();
+        var drawnSystemKeys = new LinkedHashSet<SystemKey>();
 
-        for (var systemId : staleSystemIds) {
-            if (geometryCache.getCellEdgesByCellId().containsKey(systemId)) {
-                drawnSystemIds.add(systemId);
+        for (var cellKey : geometryCache.getCellEdgesByCellKey().keySet()) {
+            if (staleSystemIds.contains(cellKey.systemId())) {
+                drawnSystemKeys.add(cellKey);
             }
         }
-        return drawnSystemIds;
+        return drawnSystemKeys;
     }
 
     // Redraws what the batch disturbed: every cell it named re-shaped against the updated holders,
@@ -140,14 +147,14 @@ final class IncrementalPoliticsRefresh {
     private static void redrawDisturbedCells(
             StandingPoliticalMap standingMap,
             DominancePass pass,
-            Set<String> markedSystemIds,
+            Set<SystemKey> markedSystemKeys,
             StalePoliticsDisturbance disturbance) {
 
         var territories = standingMap.territories();
         var geometryCache = standingMap.cellGeometry().cells();
 
-        for (var cellId : disturbance.getCellIdsToRedraw()) {
-            reshapeCellInPlace(territories, geometryCache, cellId);
+        for (var cellKey : disturbance.getCellKeysToRedraw()) {
+            reshapeCellInPlace(territories, geometryCache, cellKey);
         }
         var nameDisturbance = disturbance.hasFlips()
             ? rebuildFlippedHolding(standingMap, pass.sector(), disturbance)
@@ -156,19 +163,19 @@ final class IncrementalPoliticsRefresh {
         // A marked system's band counts what is in it, and the events that mark a system are
         // exactly the ones that add or remove a colony - so its band is re-baked whether or not
         // anything about its cell moved.
-        var cellIdsToBake = collectCellIdsToBake(
-            territories.getFillPolygonByCellId(),
-            markedSystemIds,
+        var cellKeysToBake = collectCellKeysToBake(
+            territories.getFillPolygonByCellKey(),
+            markedSystemKeys,
             disturbance,
             nameDisturbance);
 
-        bakeBandsOf(standingMap, pass.holding(), cellIdsToBake);
+        bakeBandsOf(standingMap, pass.holding(), cellKeysToBake);
 
         LOG.debug("Political map politics updated incrementally; marked="
-            + markedSystemIds.size()
-            + " redrawnCells=" + disturbance.getCellIdsToRedraw().size()
+            + markedSystemKeys.size()
+            + " redrawnCells=" + disturbance.getCellKeysToRedraw().size()
             + " rebuiltFactions=" + disturbance.getAffectedFactionIds().size()
-            + " rebakedBands=" + cellIdsToBake.size());
+            + " rebakedBands=" + cellKeysToBake.size());
     }
 
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'
@@ -186,8 +193,8 @@ final class IncrementalPoliticsRefresh {
         // bridge two into one - so the cursor read's cluster index is re-derived off the
         // updated holders here, in step with the cells that just re-shaped.
         territories.reindexClusters(
-            geometryCache.getCellEdgesByCellId(),
-            geometryCache.getSystemIdByCellId());
+            geometryCache.getCellEdgesByCellKey(),
+            geometryCache.getSystemKeyByCellKey());
 
         rebuildAffectedFactionTerritories(territories, geometryCache, disturbance);
 
@@ -228,9 +235,9 @@ final class IncrementalPoliticsRefresh {
             StalePoliticsDisturbance disturbance) {
 
         var cellsByFaction = DominantHolder.mapCellGrouping(
-                geometryCache.getSystemIdByCellId(),
+                geometryCache.getSystemKeyByCellKey(),
                 territories.getHolderBySystemId())
-            .groupCellIdsByOwner();
+            .groupCellKeysByOwner();
 
         for (var factionId : disturbance.getAffectedFactionIds()) {
             rebuildFactionTerritoryInPlace(
@@ -252,7 +259,7 @@ final class IncrementalPoliticsRefresh {
     private static void bakeBandsOf(
             StandingPoliticalMap standingMap,
             HolderPass pass,
-            Collection<String> cellIds) {
+            Collection<SystemKey> cellKeys) {
 
         CellRibbonsBaker
             .createForPass(
@@ -260,7 +267,7 @@ final class IncrementalPoliticsRefresh {
                 standingMap.cellGeometry().cells(),
                 pass,
                 standingMap.standingAnchors().getAnchors())
-            .bakeCellRibbonsOf(cellIds);
+            .bakeCellRibbonsOf(cellKeys);
     }
 
     // Which cells owe a fresh band, from the three separate reasons one can.
@@ -276,18 +283,18 @@ final class IncrementalPoliticsRefresh {
     // wherever its new cluster is roomiest, which can be a cell this batch never went near - so
     // the alternative to naming those cells is re-baking the whole sector, which is what this did
     // before the fit reported what it moved.
-    private static Set<String> collectCellIdsToBake(
-            Map<String, List<double[]>> fillPolygonByCellId,
-            Set<String> markedSystemIds,
+    private static Set<SystemKey> collectCellKeysToBake(
+            Map<SystemKey, List<double[]>> fillPolygonByCellKey,
+            Set<SystemKey> markedSystemKeys,
             StalePoliticsDisturbance disturbance,
             ClusterNameDisturbance nameDisturbance) {
 
-        var cellIdsToBake = new LinkedHashSet<>(markedSystemIds);
+        var cellKeysToBake = new LinkedHashSet<>(markedSystemKeys);
 
-        cellIdsToBake.addAll(disturbance.getCellIdsToRedraw());
-        cellIdsToBake.addAll(nameDisturbance.selectDisturbedCellIds(fillPolygonByCellId));
+        cellKeysToBake.addAll(disturbance.getCellKeysToRedraw());
+        cellKeysToBake.addAll(nameDisturbance.selectDisturbedCellKeys(fillPolygonByCellKey));
 
-        return cellIdsToBake;
+        return cellKeysToBake;
     }
 
     // Re-shapes one cell against the now-updated holders and replaces its draw record, or
@@ -303,18 +310,21 @@ final class IncrementalPoliticsRefresh {
     private static void reshapeCellInPlace(
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
-            String cellId) {
+            SystemKey cellKey) {
 
-        var edges = geometryCache.getCellEdgesByCellId().get(cellId);
+        var edges = geometryCache.getCellEdgesByCellKey().get(cellKey);
         if (edges == null) {
-            territories.removeStyledCell(cellId);
+            territories.removeStyledCell(cellKey);
             return;
         }
         // The system the cell draws as, whose holder colours and keys it. Every cell here is a
         // star's own, so it resolves to that star, but the resolve is explicit so an
         // absorbed cell would key by its holder rather than its own missing star.
-        var drawnSystemId = geometryCache.getSystemIdByCellId().get(cellId);
-        var holder = territories.getHolderBySystemId().get(drawnSystemId);
+        var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
+        var holder = drawnSystemKey == null
+            ? null
+            : territories.getHolderBySystemId().get(drawnSystemKey.systemId());
+
         var ownerFactionId = holder == null ? null : holder.factionId();
         var shaped = CellShaper.shapeCell(
             edges,
@@ -322,11 +332,11 @@ final class IncrementalPoliticsRefresh {
             DominantHolder.mapFactionIdBySystemId(territories.getHolderBySystemId()),
             CellShaper.BORDER_INSET_DISTANCE);
 
-        var styled = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemId, shaped);
+        var styled = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemKey, shaped);
         if (styled == null) {
-            territories.removeStyledCell(cellId);
+            territories.removeStyledCell(cellKey);
         } else {
-            territories.putStyledCell(cellId, styled, shaped.fillPolygon());
+            territories.putStyledCell(cellKey, styled, shaped.fillPolygon());
         }
     }
 
@@ -337,15 +347,15 @@ final class IncrementalPoliticsRefresh {
             PoliticalMapTerritories territories,
             CellGeometryCache geometryCache,
             String factionId,
-            List<String> memberCellIds) {
+            List<SystemKey> memberCellKeys) {
 
-        var territory = memberCellIds == null || memberCellIds.isEmpty()
+        var territory = memberCellKeys == null || memberCellKeys.isEmpty()
             ? null
             : FactionTerritoryBuilder.buildFactionTerritory(
                 territories,
                 geometryCache,
                 factionId,
-                memberCellIds);
+                memberCellKeys);
 
         if (territory == null) {
             territories.getStyledClusterGroupByOwnerId().remove(factionId);

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -7,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquare;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.buildSquareRun;
 import static kmu.maplayers.base.hover.HighlightShapeFixtures.computeTotalTriangleArea;
@@ -23,9 +26,9 @@ import static org.assertj.core.api.Assertions.within;
  */
 final class PreviewHighlightGeometryTest {
 
-    private static final String CELL_A_ID = "system-a";
+    private static final SystemKey CELL_A_KEY = buildCellKey("system-a");
 
-    private static final String CELL_B_ID = "system-b";
+    private static final SystemKey CELL_B_KEY = buildCellKey("system-b");
 
     private static final String PREVIEW_KEY = "previewed-set";
 
@@ -45,10 +48,10 @@ final class PreviewHighlightGeometryTest {
 
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
                 readSourceOf(Map.of(
-                    CELL_A_ID, List.of(sharedFrontier),
-                    CELL_B_ID, List.of(sharedFrontier))),
+                    CELL_A_KEY, List.of(sharedFrontier),
+                    CELL_B_KEY, List.of(sharedFrontier))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID, CELL_B_ID));
+                List.of(CELL_A_KEY, CELL_B_KEY));
 
             assertThat(highlight.washOutline())
                 .hasSize(1);
@@ -63,10 +66,10 @@ final class PreviewHighlightGeometryTest {
             // the wash must not paint over it.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
                 readSourceOf(Map.of(
-                    CELL_A_ID, List.of(buildSquareRun(0, 0, 60)),
-                    CELL_B_ID, List.of(buildSquareRun(40, 0, 100)))),
+                    CELL_A_KEY, List.of(buildSquareRun(0, 0, 60)),
+                    CELL_B_KEY, List.of(buildSquareRun(40, 0, 100)))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID, CELL_B_ID));
+                List.of(CELL_A_KEY, CELL_B_KEY));
 
             assertThat(highlight.washOutline())
                 .hasSize(2);
@@ -80,10 +83,10 @@ final class PreviewHighlightGeometryTest {
             // share, so it stays its own region even against a cell it abuts.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
                 readSourceOf(Map.of(
-                    CELL_A_ID, List.of(buildSquareRun(0, 0, 200)),
-                    CELL_B_ID, List.of())),
+                    CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)),
+                    CELL_B_KEY, List.of())),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID, CELL_B_ID));
+                List.of(CELL_A_KEY, CELL_B_KEY));
 
             assertThat(highlight.washOutline())
                 .hasSize(2);
@@ -95,20 +98,20 @@ final class PreviewHighlightGeometryTest {
             // single region with a hole in it, so the halo traces the ring's outer edge and the
             // edge of the hole - and nothing of the seams between the eight. Filling the hole would
             // claim a cell the set never reached.
-            var extentsByCellId = Map.of(
-                "system-sw", buildSquare(10, 10, 40),
-                "system-s", buildSquare(50, 10, 40),
-                "system-se", buildSquare(90, 10, 40),
-                "system-w", buildSquare(10, 50, 40),
-                "system-e", buildSquare(90, 50, 40),
-                "system-nw", buildSquare(10, 90, 40),
-                "system-n", buildSquare(50, 90, 40),
-                "system-ne", buildSquare(90, 90, 40));
+            var extentsByCellKey = Map.of(
+                buildCellKey("system-sw"), buildSquare(10, 10, 40),
+                buildCellKey("system-s"), buildSquare(50, 10, 40),
+                buildCellKey("system-se"), buildSquare(90, 10, 40),
+                buildCellKey("system-w"), buildSquare(10, 50, 40),
+                buildCellKey("system-e"), buildSquare(90, 50, 40),
+                buildCellKey("system-nw"), buildSquare(10, 90, 40),
+                buildCellKey("system-n"), buildSquare(50, 90, 40),
+                buildCellKey("system-ne"), buildSquare(90, 90, 40));
 
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
-                readSourceSharingOneFrontier(extentsByCellId, buildSquareRun(0, 0, 200)),
+                readSourceSharingOneFrontier(extentsByCellKey, buildSquareRun(0, 0, 200)),
                 PREVIEW_KEY,
-                extentsByCellId.keySet());
+                extentsByCellKey.keySet());
 
             assertThat(highlight.washOutline())
                 .hasSize(2);
@@ -125,9 +128,9 @@ final class PreviewHighlightGeometryTest {
             var frontier = buildSquareRun(0, 0, 200);
 
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
-                readSourceOf(Map.of(CELL_A_ID, List.of(frontier))),
+                readSourceOf(Map.of(CELL_A_KEY, List.of(frontier))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             assertThat(highlight.glowLoops())
                 .isEqualTo(highlight.washOutline());
@@ -141,10 +144,10 @@ final class PreviewHighlightGeometryTest {
             // read against - and that is a cell to pass over, not an empty shape to light.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
                 new HoverHighlightSourceFake(
-                    Map.of(CELL_A_ID, buildSquare(10, 10, 40)),
-                    Map.of(CELL_A_ID, List.of(buildSquareRun(0, 0, 200)))),
+                    Map.of(CELL_A_KEY, buildSquare(10, 10, 40)),
+                    Map.of(CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID, "system-the-map-never-drew"));
+                List.of(CELL_A_KEY, buildCellKey("system-the-map-never-drew")));
 
             assertThat(highlight.washOutline())
                 .hasSize(1);
@@ -156,7 +159,7 @@ final class PreviewHighlightGeometryTest {
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
                 new HoverHighlightSourceFake(Map.of(), Map.of()),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             assertThat(highlight.isEmpty())
                 .isTrue();
@@ -167,9 +170,9 @@ final class PreviewHighlightGeometryTest {
             // The pointer on no row at all reaches this as a null key, which answers nothing rather
             // than throwing at the top of a render pass.
             var highlight = new PreviewHighlightGeometry().resolveHighlightFor(
-                readSourceOf(Map.of(CELL_A_ID, List.of(buildSquareRun(0, 0, 200)))),
+                readSourceOf(Map.of(CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)))),
                 null,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             assertThat(highlight.isEmpty())
                 .isTrue();
@@ -181,12 +184,12 @@ final class PreviewHighlightGeometryTest {
             // re-tessellating a set of cells sixty times a second for an answer that cannot have
             // changed is what would make the preview stick.
             var sourceFake = readSourceOf(Map.of(
-                CELL_A_ID, List.of(buildSquareRun(0, 0, 200))));
+                CELL_A_KEY, List.of(buildSquareRun(0, 0, 200))));
 
             var geometry = new PreviewHighlightGeometry();
 
-            var first = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_ID));
-            var second = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_ID));
+            var first = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_KEY));
+            var second = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_KEY));
 
             assertThat(second)
                 .isSameAs(first);
@@ -199,16 +202,16 @@ final class PreviewHighlightGeometryTest {
             var geometry = new PreviewHighlightGeometry();
 
             var first = geometry.resolveHighlightFor(
-                readSourceOf(Map.of(CELL_A_ID, List.of(buildSquareRun(0, 0, 200)))),
+                readSourceOf(Map.of(CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             var second = geometry.resolveHighlightFor(
                 new HoverHighlightSourceFake(
-                    Map.of(CELL_A_ID, buildSquare(5, 5, 20)),
-                    Map.of(CELL_A_ID, List.of(buildSquareRun(0, 0, 200)))),
+                    Map.of(CELL_A_KEY, buildSquare(5, 5, 20)),
+                    Map.of(CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             assertThat(second)
                 .isNotSameAs(first);
@@ -226,17 +229,17 @@ final class PreviewHighlightGeometryTest {
 
             var first = geometry.resolveHighlightFor(
                 new HoverHighlightSourceFake(
-                    Map.of(CELL_A_ID, paintedExtent),
-                    Map.of(CELL_A_ID, List.of(buildSquareRun(0, 0, 200)))),
+                    Map.of(CELL_A_KEY, paintedExtent),
+                    Map.of(CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             var second = geometry.resolveHighlightFor(
                 new HoverHighlightSourceFake(
-                    Map.of(CELL_A_ID, paintedExtent),
-                    Map.of(CELL_A_ID, List.of(buildSquareRun(0, 0, 200)))),
+                    Map.of(CELL_A_KEY, paintedExtent),
+                    Map.of(CELL_A_KEY, List.of(buildSquareRun(0, 0, 200)))),
                 PREVIEW_KEY,
-                List.of(CELL_A_ID));
+                List.of(CELL_A_KEY));
 
             assertThat(second)
                 .isNotSameAs(first);
@@ -248,16 +251,16 @@ final class PreviewHighlightGeometryTest {
             // or a cell the map had nothing to paint for. The retained answer lights fewer cells
             // than the set now reaches, so it cannot stand.
             var sourceFake = readSourceOf(Map.of(
-                CELL_A_ID, List.of(buildSquareRun(0, 0, 200))));
+                CELL_A_KEY, List.of(buildSquareRun(0, 0, 200))));
 
             var geometry = new PreviewHighlightGeometry();
 
-            var first = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_ID));
+            var first = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_KEY));
 
             var second = geometry.resolveHighlightFor(
                 sourceFake,
                 PREVIEW_KEY,
-                List.of(CELL_A_ID, CELL_B_ID));
+                List.of(CELL_A_KEY, CELL_B_KEY));
 
             assertThat(second)
                 .isNotSameAs(first);
@@ -270,12 +273,12 @@ final class PreviewHighlightGeometryTest {
             // The key is the memo's first test, so the pointer crossing to another row resolves
             // afresh even where the two sets happen to be drawn from the same geometry.
             var sourceFake = readSourceOf(Map.of(
-                CELL_A_ID, List.of(buildSquareRun(0, 0, 200))));
+                CELL_A_KEY, List.of(buildSquareRun(0, 0, 200))));
 
             var geometry = new PreviewHighlightGeometry();
 
-            var first = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_ID));
-            var second = geometry.resolveHighlightFor(sourceFake, "another-set", List.of(CELL_A_ID));
+            var first = geometry.resolveHighlightFor(sourceFake, PREVIEW_KEY, List.of(CELL_A_KEY));
+            var second = geometry.resolveHighlightFor(sourceFake, "another-set", List.of(CELL_A_KEY));
 
             assertThat(second)
                 .isNotSameAs(first);
@@ -285,26 +288,26 @@ final class PreviewHighlightGeometryTest {
     // A source drawing the two abutting cells every join case uses, answering the given candidate
     // loops for each.
     private static HoverHighlightSourceFake readSourceOf(
-            Map<String, List<float[]>> frontierLoopsByCellId) {
+            Map<SystemKey, List<float[]>> frontierLoopsByCellKey) {
 
         return new HoverHighlightSourceFake(
             Map.of(
-                CELL_A_ID, buildSquare(10, 10, 40),
-                CELL_B_ID, buildSquare(50, 10, 40)),
-            frontierLoopsByCellId);
+                CELL_A_KEY, buildSquare(10, 10, 40),
+                CELL_B_KEY, buildSquare(50, 10, 40)),
+            frontierLoopsByCellKey);
     }
 
     // A source drawing the given cells, every one of them enclosed by the same loop instance - the
     // shape of a cluster whose cells the set reaches several of.
     private static HoverHighlightSourceFake readSourceSharingOneFrontier(
-            Map<String, List<double[]>> paintedExtentByCellId,
+            Map<SystemKey, List<double[]>> paintedExtentByCellKey,
             float[] frontier) {
 
-        var frontierLoopsByCellId = new LinkedHashMap<String, List<float[]>>();
+        var frontierLoopsByCellKey = new LinkedHashMap<SystemKey, List<float[]>>();
 
-        for (var cellId : paintedExtentByCellId.keySet()) {
-            frontierLoopsByCellId.put(cellId, List.of(frontier));
+        for (var cellKey : paintedExtentByCellKey.keySet()) {
+            frontierLoopsByCellKey.put(cellKey, List.of(frontier));
         }
-        return new HoverHighlightSourceFake(paintedExtentByCellId, frontierLoopsByCellId);
+        return new HoverHighlightSourceFake(paintedExtentByCellKey, frontierLoopsByCellKey);
     }
 }

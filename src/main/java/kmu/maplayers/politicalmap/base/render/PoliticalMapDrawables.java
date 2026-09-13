@@ -118,7 +118,7 @@ final class PoliticalMapDrawables {
     public String describeBuiltCounts() {
         return borderStageOverlay != null
             ? "debugBaseLoops=" + borderStageOverlay.baseLoops().size()
-            : "styledCells=" + territories.getStyledCellByCellId().size();
+            : "styledCells=" + territories.getStyledCellByCellKey().size();
     }
 
     /**

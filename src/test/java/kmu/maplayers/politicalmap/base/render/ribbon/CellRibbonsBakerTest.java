@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.ribbon;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.RecordedCapture;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
@@ -72,17 +74,20 @@ import static org.mockito.Mockito.when;
  */
 final class CellRibbonsBakerTest {
 
-    private static final String BANDED_CELL = "corvus";
-    private static final String OTHER_BANDED_CELL = "askonia";
+    private static final String BANDED_SYSTEM_ID = "corvus";
+    private static final String OTHER_BANDED_SYSTEM_ID = "askonia";
+    private static final SystemKey BANDED_CELL = buildCellKey(BANDED_SYSTEM_ID);
+    private static final SystemKey OTHER_BANDED_CELL = buildCellKey(OTHER_BANDED_SYSTEM_ID);
 
     // A settled system this layer's holding gives to nobody - the unclaimed pirate haven, on the
     // claims layer. Held apart from the two above because it is the one cell whose band depends on
     // which of the pass's two sets the bake gates on.
-    private static final String UNHELD_SETTLED_CELL = "hybrasil";
+    private static final String UNHELD_SETTLED_SYSTEM_ID = "hybrasil";
+    private static final SystemKey UNHELD_SETTLED_CELL = buildCellKey(UNHELD_SETTLED_SYSTEM_ID);
 
     // A cell the territories were never told about, which is what an incremental re-bake names
     // when a colony change takes the last thing standing in a system.
-    private static final String UNDRAWN_CELL = "vanished";
+    private static final SystemKey UNDRAWN_CELL = buildCellKey("vanished");
 
     private static final Color BAND_COLOUR = new Color(140, 160, 220);
 
@@ -133,7 +138,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL, OTHER_BANDED_CELL);
         }
 
@@ -148,7 +153,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL, UNHELD_SETTLED_CELL);
         }
 
@@ -267,7 +272,7 @@ final class CellRibbonsBakerTest {
 
             bakeThrough(territories).bakeCellRibbonsOf(List.of(BANDED_CELL));
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL);
         }
 
@@ -281,7 +286,7 @@ final class CellRibbonsBakerTest {
             assertThatCode(() -> bakeThrough(territories).bakeCellRibbonsOf(List.of(UNDRAWN_CELL)))
                 .doesNotThrowAnyException();
 
-            assertThat(territories.getRibbonByCellId())
+            assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
     }
@@ -293,8 +298,8 @@ final class CellRibbonsBakerTest {
 
         return drawCells(
             PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(Map.of(
-                BANDED_CELL, buildHolder(),
-                OTHER_BANDED_CELL, buildHolder())),
+                BANDED_SYSTEM_ID, buildHolder(),
+                OTHER_BANDED_SYSTEM_ID, buildHolder())),
             BANDED_CELL,
             OTHER_BANDED_CELL);
     }
@@ -306,8 +311,8 @@ final class CellRibbonsBakerTest {
 
         return drawCells(
             PoliticalMapTerritoryFixtures.createTerritoriesSettledIn(
-                Map.of(BANDED_CELL, buildHolder()),
-                Set.of(BANDED_CELL, UNHELD_SETTLED_CELL)),
+                Map.of(BANDED_SYSTEM_ID, buildHolder()),
+                Set.of(BANDED_SYSTEM_ID, UNHELD_SETTLED_SYSTEM_ID)),
             BANDED_CELL,
             UNHELD_SETTLED_CELL);
     }
@@ -316,11 +321,11 @@ final class CellRibbonsBakerTest {
     // the view with the planner every case counts through.
     private static PoliticalMapTerritories drawCells(
             PoliticalMapTerritories territories,
-            String... cellIds) {
+            SystemKey... cellKeys) {
 
-        for (var cellId : cellIds) {
+        for (var cellKey : cellKeys) {
             territories.putStyledCell(
-                cellId,
+                cellKey,
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 SQUARE_CELL);
         }
@@ -346,13 +351,13 @@ final class CellRibbonsBakerTest {
     // to keep in step - which is what let the settled-but-unheld case below be posed at all.
     private static CellRibbonsBaker bakeThrough(PoliticalMapTerritories territories) {
 
-        var drawnCellIds = territories.getFillPolygonByCellId().keySet();
+        var drawnCellKeys = territories.getFillPolygonByCellKey().keySet();
 
         return CellRibbonsBaker.createForPass(
             territories,
-            buildGeometryPlacing(drawnCellIds),
+            buildGeometryPlacing(drawnCellKeys),
             HolderPass.over(
-                buildSectorOf(drawnCellIds),
+                buildSectorOf(drawnCellKeys),
                 ColonyVisibility.BASE_FOG,
                 HolderGrouping.identity()),
             // No names placed, since where a name falls is pinned by the builder that lays a band
@@ -361,34 +366,36 @@ final class CellRibbonsBakerTest {
     }
 
     // Each cell drawing as the system of its own name, each system placed at the same site: the
-    // cells are told apart by their ids here, never by where they sit.
-    private static CellGeometryCache buildGeometryPlacing(Set<String> cellIds) {
+    // cells are told apart by their keys here, never by where they sit.
+    private static CellGeometryCache buildGeometryPlacing(Set<SystemKey> cellKeys) {
 
-        var systemIdByCellId = new LinkedHashMap<String, String>();
-        var siteBySystemId = new LinkedHashMap<String, double[]>();
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+        var siteBySystemKey = new LinkedHashMap<SystemKey, double[]>();
 
-        for (var cellId : cellIds) {
-            systemIdByCellId.put(cellId, cellId);
-            siteBySystemId.put(cellId, SQUARE_CELL_SITE);
+        for (var cellKey : cellKeys) {
+            systemKeyByCellKey.put(cellKey, cellKey);
+            siteBySystemKey.put(cellKey, SQUARE_CELL_SITE);
         }
         var geometryCacheMock = mock(CellGeometryCache.class);
 
-        when(geometryCacheMock.getSystemIdByCellId())
-            .thenReturn(systemIdByCellId);
-        when(geometryCacheMock.getSiteBySystemId())
-            .thenReturn(siteBySystemId);
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(systemKeyByCellKey);
+        when(geometryCacheMock.getSiteBySystemKey())
+            .thenReturn(siteBySystemKey);
 
         return geometryCacheMock;
     }
 
-    private static SectorAPI buildSectorOf(Set<String> systemIds) {
+    // A sector listing the system each cell draws as, posed by the id its key states - which is
+    // the key the pass reads back off it, the systems carrying no centre and no anchor.
+    private static SectorAPI buildSectorOf(Set<SystemKey> systemKeys) {
 
         // The systems are built before the stubbing rather than inside it: each is itself a mock,
         // and building one while another stubbing is open reads to Mockito as an unfinished stub.
-        var systems = new ArrayList<StarSystemAPI>(systemIds.size());
+        var systems = new ArrayList<StarSystemAPI>(systemKeys.size());
 
-        for (var systemId : systemIds) {
-            systems.add(buildSystem(systemId));
+        for (var systemKey : systemKeys) {
+            systems.add(buildSystem(systemKey.systemId()));
         }
         var sectorMock = mock(SectorAPI.class);
 

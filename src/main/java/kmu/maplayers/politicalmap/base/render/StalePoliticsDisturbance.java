@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import java.util.Collection;
@@ -32,7 +34,7 @@ final class StalePoliticsDisturbance {
     // The cells this batch obliges to redraw: each flipped system and every neighbour whose
     // shared edge flipped between a same-faction seam and a national border, plus each system
     // whose cell draws in a different style than it did.
-    private final Set<String> cellIdsToRedraw = new LinkedHashSet<>();
+    private final Set<SystemKey> cellKeysToRedraw = new LinkedHashSet<>();
 
     /** @return the factions whose territory outlines moved, in first-recorded order */
     Set<String> getAffectedFactionIds() {
@@ -40,8 +42,8 @@ final class StalePoliticsDisturbance {
     }
 
     /** @return the cells that must redraw against the updated holders, in first-recorded order */
-    Set<String> getCellIdsToRedraw() {
-        return Collections.unmodifiableSet(cellIdsToRedraw);
+    Set<SystemKey> getCellKeysToRedraw() {
+        return Collections.unmodifiableSet(cellKeysToRedraw);
     }
 
     /**
@@ -62,14 +64,14 @@ final class StalePoliticsDisturbance {
      * first colony has no old one, a decivilised one has no new one - and only the sides that
      * exist have a territory to rebuild.
      *
-     * @param systemId            the system that changed hands, whose own cell redraws
-     * @param neighbourSystemIds  the systems whose cells share an edge with it
+     * @param systemKey           the system that changed hands, whose own cell redraws
+     * @param neighbourSystemKeys the systems whose cells share an edge with it
      * @param oldHolder           who held it before, or null if nobody did
      * @param newHolder           who holds it now, or null if nobody does
      */
     void recordFlip(
-            String systemId,
-            Collection<String> neighbourSystemIds,
+            SystemKey systemKey,
+            Collection<SystemKey> neighbourSystemKeys,
             DominantHolder oldHolder,
             DominantHolder newHolder) {
 
@@ -79,8 +81,8 @@ final class StalePoliticsDisturbance {
         if (newHolder != null) {
             affectedFactionIds.add(newHolder.factionId());
         }
-        cellIdsToRedraw.add(systemId);
-        cellIdsToRedraw.addAll(neighbourSystemIds);
+        cellKeysToRedraw.add(systemKey);
+        cellKeysToRedraw.addAll(neighbourSystemKeys);
     }
 
     /**
@@ -91,9 +93,9 @@ final class StalePoliticsDisturbance {
      * same-owner seams and neither of those facts moves one, so no neighbour changes shape, no
      * bloc's outline moves, and the batch owes no rebuild on this system's account.
      *
-     * @param systemId the system whose cell must redraw
+     * @param systemKey the system whose cell must redraw
      */
-    void recordRestyle(String systemId) {
-        cellIdsToRedraw.add(systemId);
+    void recordRestyle(SystemKey systemKey) {
+        cellKeysToRedraw.add(systemKey);
     }
 }

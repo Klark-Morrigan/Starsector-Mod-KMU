@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.PolygonRegions;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,12 +109,32 @@ public final class FilledWater {
     /**
      * The water the lake spans hold: a crossed lake cut into the finer pockets its spans make.
      *
-     * @return one ring per pocket
+     * <p><b>A lake the spans cut nothing from is filled to its drawn shore instead.</b> A lake
+     * concedes its middle to the pockets its own spans make of it, and one with no such pocket
+     * has nothing to concede it to - so the middle is left to the backdrop, which is the reading
+     * a puddle is drawn whole expressly to avoid: water that shows as open void inside a
+     * shoreline a reader can plainly see.
+     *
+     * <p>To the drawn shore rather than to the water's edge, so that it meets the margin exactly
+     * and paints nothing the margin already covers. Between them the two then tile the lake:
+     * the band out to the cells, and everything within the line.
+     *
+     * @return one ring per pocket, plus one per lake no pocket falls inside
      */
     public List<List<double[]>> collectLakeWater() {
 
         if (lakeWater == null) {
-            lakeWater = fillBehindSpans(laid.layLakeSpans());
+
+            var cut = fillBehindSpans(laid.layLakeSpans());
+            var filled = new ArrayList<>(cut);
+
+            for (var shore : laid.roundCoasts().lakes()) {
+
+                if (!isCutInto(shore, cut)) {
+                    filled.add(shore);
+                }
+            }
+            lakeWater = List.copyOf(filled);
         }
         return lakeWater;
     }
@@ -224,6 +246,29 @@ public final class FilledWater {
         rings.addAll(collectLinkWater());
 
         return rings;
+    }
+
+    // Whether any pocket the spans cut lies within this lake's drawn shore, which is what
+    // decides if its middle has anything to be conceded to.
+    //
+    // Asked of the POCKETS rather than of the spans: two cells can both ring a lake and still
+    // have their span stand somewhere else entirely, over other water they also touch, so a
+    // span counted by its cells reports a lake as cut up when nothing was cut from it.
+    //
+    // And against the shore rather than the water's edge, because the middle is the region in
+    // question. A pocket landing in the margin band alone leaves the middle exactly as bare as
+    // no pocket at all.
+    private boolean isCutInto(List<double[]> shore, List<List<double[]>> cut) {
+
+        for (var pocket : cut) {
+            for (var point : pocket) {
+
+                if (PolygonRegions.isPointInsideRing(shore, point[0], point[1])) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // What one set of spans shut in, with those spans as the only walls. Only what a span

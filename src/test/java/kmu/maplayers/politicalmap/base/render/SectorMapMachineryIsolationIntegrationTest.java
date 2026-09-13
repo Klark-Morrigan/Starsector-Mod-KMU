@@ -27,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.listSystemMarkets;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 
@@ -113,7 +114,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
     // A cursor resting on the cell both sectors have an id for - the one hover that could be
     // mistaken for the other sector's.
     private static final MapHover HOVERED_SHARED_CELL =
-        new MapHover(SHARED_SYSTEM_ID, List.of(SHARED_SYSTEM_ID));
+        new MapHover(buildCellKey(SHARED_SYSTEM_ID), List.of(buildCellKey(SHARED_SYSTEM_ID)));
 
     private PoliticalMapRebuildSeams seams;
 
@@ -183,12 +184,12 @@ final class SectorMapMachineryIsolationIntegrationTest {
             var firstTerritories = new PoliticalMapCacheDriver(firstSector).rebuild();
             var secondTerritories = new PoliticalMapCacheDriver(secondSector).rebuild();
 
-            assertThat(firstTerritories.getStyledCellByCellId())
-                .containsKeys(SHARED_SYSTEM_ID, FIRST_SECTOR_SYSTEM_ID)
-                .doesNotContainKey(SECOND_SECTOR_SYSTEM_ID);
-            assertThat(secondTerritories.getStyledCellByCellId())
-                .containsKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID)
-                .doesNotContainKey(FIRST_SECTOR_SYSTEM_ID);
+            assertThat(firstTerritories.getStyledCellByCellKey())
+                .containsKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(FIRST_SECTOR_SYSTEM_ID))
+                .doesNotContainKey(buildCellKey(SECOND_SECTOR_SYSTEM_ID));
+            assertThat(secondTerritories.getStyledCellByCellKey())
+                .containsKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID))
+                .doesNotContainKey(buildCellKey(FIRST_SECTOR_SYSTEM_ID));
 
             // The shared id is held by a different faction in each, so the cell they both have an id
             // for still paints each sector's own holder.
@@ -228,8 +229,8 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             assertThat(untouchedTerritories.getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
                 .isEqualTo(TRITACHYON_ID);
-            assertThat(untouchedTerritories.getStyledCellByCellId())
-                .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            assertThat(untouchedTerritories.getStyledCellByCellKey())
+                .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
         }
 
         @Test
@@ -291,8 +292,8 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             SectorMapMachineryIndex.uninstallMachineryFrom(firstSector);
 
-            assertThat(new PoliticalMapCacheDriver(secondSector).rebuild().getStyledCellByCellId())
-                .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            assertThat(new PoliticalMapCacheDriver(secondSector).rebuild().getStyledCellByCellKey())
+                .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
 
             assertThat(removedMachinery.isDisposed())
                 .isTrue();
@@ -323,8 +324,8 @@ final class SectorMapMachineryIsolationIntegrationTest {
             var loadedSector = installMachineryOnASecondSector();
             var loadedMachinery = resolveMachineryOf(loadedSector);
 
-            assertThat(new PoliticalMapCacheDriver(loadedSector).rebuild().getStyledCellByCellId())
-                .containsOnlyKeys(SHARED_SYSTEM_ID, SECOND_SECTOR_SYSTEM_ID);
+            assertThat(new PoliticalMapCacheDriver(loadedSector).rebuild().getStyledCellByCellKey())
+                .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
 
             assertThat(loadedMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
                 .isEmpty();

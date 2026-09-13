@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
@@ -168,8 +169,8 @@ class DominanceStatsAggregatorIntegrationTest {
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector))
                     .presenceIndex()
-                    .readPresentSystemIds("hegemony"))
-                .containsExactly("system-a", "system-b", "system-c");
+                    .readPresentSystemKeys("hegemony"))
+                .containsExactlyElementsOf(buildCellKeys("system-a", "system-b", "system-c"));
         }
 
         @Test
@@ -192,8 +193,8 @@ class DominanceStatsAggregatorIntegrationTest {
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(buildPassOver(sector))
                     .presenceIndex()
-                    .readPresentSystemIds("tritachyon"))
-                .containsExactly("system-a", "system-b");
+                    .readPresentSystemKeys("tritachyon"))
+                .containsExactlyElementsOf(buildCellKeys("system-a", "system-b"));
         }
 
         @Test
@@ -223,11 +224,11 @@ class DominanceStatsAggregatorIntegrationTest {
                     entry("hegemony", new DominanceStats(1, 3, 10000, 10)),
                     entry("tritachyon", new DominanceStats(2, 2, 8000, 8)));
 
-            assertThat(read.presenceIndex().readPresentSystemIds("hegemony"))
-                .containsExactly("system-a", "system-b", "system-c");
+            assertThat(read.presenceIndex().readPresentSystemKeys("hegemony"))
+                .containsExactlyElementsOf(buildCellKeys("system-a", "system-b", "system-c"));
 
-            assertThat(read.presenceIndex().readPresentSystemIds("tritachyon"))
-                .containsExactly("system-b", "system-c");
+            assertThat(read.presenceIndex().readPresentSystemKeys("tritachyon"))
+                .containsExactlyElementsOf(buildCellKeys("system-b", "system-c"));
         }
 
         @Test

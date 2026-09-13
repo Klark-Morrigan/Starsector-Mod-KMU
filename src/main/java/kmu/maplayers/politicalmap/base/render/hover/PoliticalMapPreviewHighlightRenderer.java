@@ -111,15 +111,15 @@ public final class PoliticalMapPreviewHighlightRenderer {
         // Read under the view the frame painted, which is also the view the sidebar's rows were
         // listed under: the presence rides the same memo those rows came from, so asking under any
         // other view would both evict that memo and answer about a list the pointer is not on.
-        var presentSystemIds = SelectableBlocCache
+        var presentSystemKeys = SelectableBlocCache
             .resolveBlocCacheIn(machinery)
-            .readPresentSystemIds(view, previewedBlocId);
+            .readPresentSystemKeys(view, previewedBlocId);
 
         return new PreviewHighlightPaint(
             geometry.resolveHighlightFor(
                 new PoliticalMapHoverHighlightSource(territories),
                 previewedBlocId,
-                presentSystemIds),
+                presentSystemKeys),
             colour);
     }
 

@@ -168,9 +168,9 @@ public final class VoidRegionsDump {
         var reachFacing = new ArrayList<Double>();
         var cellFacing = new ArrayList<Double>();
 
-        for (var entry : geometry.shapedCellByCellId().entrySet()) {
+        for (var entry : geometry.shapedCellByCellKey().entrySet()) {
 
-            var edges = geometry.cellEdgesByCellId().get(entry.getKey());
+            var edges = geometry.cellEdgesByCellKey().get(entry.getKey());
             var fill = entry.getValue().fillPolygon();
 
             if (edges == null || fill.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {

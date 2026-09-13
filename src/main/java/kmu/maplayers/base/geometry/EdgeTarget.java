@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 /**
  * What lies across one edge of a cell - the three things a cell can face, named.
  *
@@ -31,10 +33,14 @@ public sealed interface EdgeTarget {
      * Another system's cell across the edge - the ordinary adjacency, and the only
      * target that names anything a consumer can look an owner up by.
      *
-     * @param systemId the system whose cell meets this one along the edge
+     * <p>The neighbour is named by {@link SystemKey} because that is how a cell is keyed: an
+     * edge naming its neighbour by id could not be resolved to a cell at all wherever two
+     * systems share one, and would fuse this cell to whichever of them was reached first.
+     *
+     * @param systemKey the system whose cell meets this one along the edge
      */
     record AcrossSystem(
-        String systemId) implements EdgeTarget {
+        SystemKey systemKey) implements EdgeTarget {
     }
 
     /**

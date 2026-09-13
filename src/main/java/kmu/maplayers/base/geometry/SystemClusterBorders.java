@@ -5,6 +5,7 @@ import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonOffsets;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segment;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,34 +60,35 @@ public final class SystemClusterBorders {
      * only then rounds it - rounding before that resolve would see the arc clipped
      * off at the crossing and left a sharp corner.
      *
-     * @param groupCellIds                 the cells sharing one owner whose fused
-     *                                     cluster(s) to outline; cells absent from
-     *                                     {@code edgesByCellId} are skipped
-     * @param edgesByCellId                each cell's raw edges, tagged with what lies across
-     *                                     them - the adjacency graph
-     * @param grouping                     which system each cell draws as and each system's owner,
-     *                                     owner, to tell a border edge (a different or absent owner across it)
-     *                                     from a fused seam
-     * @param coincidentNeighbourSystemIds the neighbours whose shared boundary edge insets
-     *                                     by nothing and so stays on the raw cell border, letting two
-     *                                     clusters traced against each other meet exactly; empty for a
-     *                                     trace that gives every boundary edge the uniform channel
-     * @param tolerances                   the three distances the trace is tuned by
+     * @param groupCellKeys                 the cells sharing one owner whose fused
+     *                                      cluster(s) to outline; cells absent from
+     *                                      {@code edgesByCellKey} are skipped
+     * @param edgesByCellKey                each cell's raw edges, tagged with what lies across
+     *                                      them - the adjacency graph
+     * @param grouping                      which system each cell draws as and each system's
+     *                                      owner, to tell a border edge (a different or absent
+     *                                      owner across it) from a fused seam
+     * @param coincidentNeighbourSystemKeys the neighbours whose shared boundary edge insets
+     *                                      by nothing and so stays on the raw cell border, letting
+     *                                      two clusters traced against each other meet exactly;
+     *                                      empty for a trace that gives every boundary edge the
+     *                                      uniform channel
+     * @param tolerances                    the three distances the trace is tuned by
      * @return one inset (un-rounded) ring per cluster and per enclave, in world
      *         coordinates; empty when the group holds no borderable geometry
      */
     public static List<List<double[]>> traceBorderRings(
-            Collection<String> groupCellIds,
-            Map<String, List<CellEdge>> edgesByCellId,
+            Collection<SystemKey> groupCellKeys,
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
-            Set<String> coincidentNeighbourSystemIds,
+            Set<SystemKey> coincidentNeighbourSystemKeys,
             BorderTraceTolerances tolerances) {
 
         var boundary = collectBoundarySegments(
-            groupCellIds,
-            edgesByCellId,
+            groupCellKeys,
+            edgesByCellKey,
             grouping,
-            coincidentNeighbourSystemIds,
+            coincidentNeighbourSystemKeys,
             tolerances.borderInset());
 
         var rings = new ArrayList<List<double[]>>();
@@ -117,21 +119,21 @@ public final class SystemClusterBorders {
     // seams are dropped, so the surviving segments trace only the cluster's outer
     // boundary and its enclaves.
     private static BoundarySegments collectBoundarySegments(
-            Collection<String> groupCellIds,
-            Map<String, List<CellEdge>> edgesByCellId,
+            Collection<SystemKey> groupCellKeys,
+            Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
-            Set<String> coincidentNeighbourSystemIds,
+            Set<SystemKey> coincidentNeighbourSystemKeys,
             double borderInset) {
 
         var segments = new ArrayList<Segment>();
         var distances = new ArrayList<Double>();
 
-        for (var cellId : groupCellIds) {
-            var edges = edgesByCellId.get(cellId);
+        for (var cellKey : groupCellKeys) {
+            var edges = edgesByCellKey.get(cellKey);
             if (edges == null) {
                 continue;
             }
-            var cellOwner = grouping.resolveOwnerOf(cellId);
+            var cellOwner = grouping.resolveOwnerOf(cellKey);
             for (var edge : edges) {
 
                 var edgeClass = EdgeClassifier.classifyAcross(
@@ -144,7 +146,7 @@ public final class SystemClusterBorders {
                 }
 
                 segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
-                distances.add(computeEdgeInset(edge, coincidentNeighbourSystemIds, borderInset));
+                distances.add(computeEdgeInset(edge, coincidentNeighbourSystemKeys, borderInset));
             }
         }
         return new BoundarySegments(segments, toDoubleArray(distances));
@@ -155,7 +157,7 @@ public final class SystemClusterBorders {
     // boundary, unowned space, or the map bound alike.
     private static double computeEdgeInset(
             CellEdge edge,
-            Set<String> coincidentNeighbourSystemIds,
+            Set<SystemKey> coincidentNeighbourSystemKeys,
             double borderInset) {
 
         // A coincident neighbour's edge stays on the raw cell border, so the cluster traced
@@ -164,7 +166,7 @@ public final class SystemClusterBorders {
         // no neighbour to be carved away from, and a same-cell cut is no boundary at
         // all.
         if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
-                && coincidentNeighbourSystemIds.contains(acrossSystem.systemId())) {
+                && coincidentNeighbourSystemKeys.contains(acrossSystem.systemKey())) {
             return 0;
         }
         return borderInset;

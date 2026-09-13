@@ -71,10 +71,11 @@ record HoveredBox(
         if (tooltip.isEmpty()) {
             return Optional.empty();
         }
-        // The hover carries a system id; resolve it to the live system, tolerating an id that no longer
-        // resolves (a system dropped between the publish and this frame). Matched by getId - vanilla's
-        // getStarSystem keys on the optional unique id first and would miss a base-name-keyed system.
-        var system = SectorStarSystems.findSystemById(sector, hover.hoveredSystemId());
+        // The hover carries a system key; resolve it to the live system, tolerating a key that no
+        // longer resolves (a system dropped between the publish and this frame). By key rather than
+        // by id, so a hovered cell whose system shares its id with another names the system whose
+        // cell the cursor is actually on.
+        var system = SectorStarSystems.findSystemByKey(sector, hover.hoveredSystemKey());
         if (system == null) {
             return Optional.empty();
         }

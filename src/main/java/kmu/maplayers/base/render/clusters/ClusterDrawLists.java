@@ -1,5 +1,7 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.theme.GlobalStyle;
 
 import java.util.Map;
@@ -35,10 +37,10 @@ public interface ClusterDrawLists {
     GlobalStyle getGlobalStyle();
 
     /**
-     * @return each drawn cell's own draw record, keyed by cell id: the seam a fused cell
+     * @return each drawn cell's own draw record, keyed by cell key: the seam a fused cell
      *         contributes, or a lone cell's fill and outline
      */
-    Map<String, StyledCell> getStyledCellByCellId();
+    Map<SystemKey, StyledCell> getStyledCellByCellKey();
 
     /**
      * @return each owner's clusters and the paint they share, keyed by the opaque owner id its

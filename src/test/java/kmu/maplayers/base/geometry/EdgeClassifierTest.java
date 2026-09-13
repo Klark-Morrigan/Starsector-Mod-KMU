@@ -21,11 +21,18 @@ final class EdgeClassifierTest {
     // One cell edge facing another system's cell; geometry is irrelevant to
     // classification, so the segment is left at the origin.
     private static CellEdge buildEdgeAcrossSystem(String systemId) {
-        return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(systemId));
+
+        return new CellEdge(
+            0,
+            0,
+            0,
+            0,
+            new EdgeTarget.AcrossSystem(CellKeyFixture.buildCellKey(systemId)));
     }
 
     // One cell edge facing the given systemless target - the reach bound or same-owner.
     private static CellEdge buildEdgeFacing(EdgeTarget target) {
+
         return new CellEdge(0, 0, 0, 0, target);
     }
 
@@ -34,14 +41,16 @@ final class EdgeClassifierTest {
 
         @Test
         void classifyReturnsInteriorSeamWhenBothSidesShareAKey() {
+
             assertThat(EdgeClassifier.classify("hegemony", "hegemony"))
-                    .isEqualTo(EdgeClass.INTERIOR_SEAM);
+                .isEqualTo(EdgeClass.INTERIOR_SEAM);
         }
 
         @Test
         void classifyReturnsBoundaryForDifferentKeys() {
+
             assertThat(EdgeClassifier.classify("hegemony", "tritachyon"))
-                    .isEqualTo(EdgeClass.BOUNDARY);
+                .isEqualTo(EdgeClass.BOUNDARY);
         }
 
         @Test
@@ -49,7 +58,7 @@ final class EdgeClassifierTest {
             // A owned cell facing unowned space is the
             // open frontier the owned cell can reach toward, not a plain boundary.
             assertThat(EdgeClassifier.classify("hegemony", null))
-                    .isEqualTo(EdgeClass.OPEN_FRONTIER);
+                .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
         @Test
@@ -57,14 +66,15 @@ final class EdgeClassifierTest {
             // Symmetric: the unowned cell facing a grouped neighbour sees the same
             // frontier from its side, so it too can pull its edge toward the star.
             assertThat(EdgeClassifier.classify(null, "hegemony"))
-                    .isEqualTo(EdgeClass.OPEN_FRONTIER);
+                .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
         @Test
         void classifyReturnsBoundaryWhenBothSidesAreUnowned() {
             // Two unowned cells do not fuse into a fused interior; an
             // unowned-to-unowned edge stays a boundary.
-            assertThat(EdgeClassifier.classify(null, null)).isEqualTo(EdgeClass.BOUNDARY);
+            assertThat(EdgeClassifier.classify(null, null))
+                .isEqualTo(EdgeClass.BOUNDARY);
         }
     }
 
@@ -73,18 +83,20 @@ final class EdgeClassifierTest {
 
         @Test
         void classifyAcrossReturnsInteriorSeamWhenTheNeighbourSharesTheKey() {
+
             var edge = buildEdgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
-                    .isEqualTo(EdgeClass.INTERIOR_SEAM);
+                .isEqualTo(EdgeClass.INTERIOR_SEAM);
         }
 
         @Test
         void classifyAcrossReturnsBoundaryWhenTheNeighbourHasADifferentKey() {
+
             var edge = buildEdgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "G")))
-                    .isEqualTo(EdgeClass.BOUNDARY);
+                .isEqualTo(EdgeClass.BOUNDARY);
         }
 
         @Test
@@ -94,7 +106,7 @@ final class EdgeClassifierTest {
             var edge = buildEdgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of()))
-                    .isEqualTo(EdgeClass.OPEN_FRONTIER);
+                .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
         @Test
@@ -105,7 +117,7 @@ final class EdgeClassifierTest {
             var edge = buildEdgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, null, Map.of()))
-                    .isEqualTo(EdgeClass.BOUNDARY);
+                .isEqualTo(EdgeClass.BOUNDARY);
         }
 
         @Test
@@ -116,7 +128,7 @@ final class EdgeClassifierTest {
             var edge = buildEdgeAcrossSystem("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))
-                    .isEqualTo(EdgeClass.OPEN_FRONTIER);
+                .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
         @Test
@@ -127,9 +139,9 @@ final class EdgeClassifierTest {
             var boundEdge = buildEdgeFacing(EdgeTarget.REACH_BOUND);
 
             assertThatCode(() -> assertThat(
-                    EdgeClassifier.classifyAcross(boundEdge, "F", Map.of("B", "F")))
+                        EdgeClassifier.classifyAcross(boundEdge, "F", Map.of("B", "F")))
                     .isEqualTo(EdgeClass.BOUNDARY))
-                    .doesNotThrowAnyException();
+                .doesNotThrowAnyException();
         }
 
         @Test
@@ -139,7 +151,7 @@ final class EdgeClassifierTest {
             var edge = buildEdgeFacing(EdgeTarget.SAME_OWNER);
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
-                    .isEqualTo(EdgeClass.INTERIOR_SEAM);
+                .isEqualTo(EdgeClass.INTERIOR_SEAM);
         }
 
         @Test
@@ -150,9 +162,9 @@ final class EdgeClassifierTest {
             var edge = buildEdgeFacing(EdgeTarget.SAME_OWNER);
 
             assertThatCode(() -> assertThat(
-                    EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))
+                        EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))
                     .isEqualTo(EdgeClass.INTERIOR_SEAM))
-                    .doesNotThrowAnyException();
+                .doesNotThrowAnyException();
         }
     }
 }

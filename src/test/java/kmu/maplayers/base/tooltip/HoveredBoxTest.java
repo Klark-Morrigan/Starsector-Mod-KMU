@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.FACTIONS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.PATROL_DETAILS;
 import static kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel.SYSTEM_COMPOSITION;
@@ -417,7 +418,7 @@ final class HoveredBoxTest {
         @Test
         void shouldDrawTooltipForIsTrueForAHoveredCell() {
 
-            var hover = new MapHover(SYSTEM_ID, List.of(SYSTEM_ID));
+            var hover = new MapHover(buildCellKey(SYSTEM_ID), List.of(buildCellKey(SYSTEM_ID)));
 
             assertThat(HoveredBox.shouldDrawTooltipFor(hover))
                 .isTrue();

@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -55,7 +57,7 @@ final class ClusterAnchorTest {
     private static ClusterAnchor buildAnchorOf(String ownerKey) {
 
         return new ClusterAnchor(
-            new ClusterIdentity(ownerKey, Set.of(ownerKey)),
+            new ClusterIdentity(ownerKey, Set.of(buildCellKey(ownerKey))),
             0f,
             0f,
             Color.WHITE,

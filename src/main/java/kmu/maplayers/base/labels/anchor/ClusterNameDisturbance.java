@@ -1,6 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
 import kmlib.math.geometry.Bounds;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,25 +92,25 @@ public final class ClusterNameDisturbance {
      * two errors are not worth trading evenly, since a cell wrongly skipped keeps whatever it was
      * carrying until something unrelated rebuilds the map.
      *
-     * @param ringByCellId each cell's outline, keyed by the cell it belongs to
-     * @return the ids of the cells any disturbed name reaches, in the order they were offered
+     * @param ringByCellKey each cell's outline, keyed by the cell it belongs to
+     * @return the cells any disturbed name reaches, in the order they were offered
      */
-    public List<String> selectDisturbedCellIds(Map<String, List<double[]>> ringByCellId) {
+    public List<SystemKey> selectDisturbedCellKeys(Map<SystemKey, List<double[]>> ringByCellKey) {
 
         if (disturbedBounds.isEmpty()) {
             return List.of();
         }
-        var disturbedCellIds = new ArrayList<String>();
+        var disturbedCellKeys = new ArrayList<SystemKey>();
 
-        for (var cell : ringByCellId.entrySet()) {
+        for (var cell : ringByCellKey.entrySet()) {
 
             // A cell with no outline encloses nothing, so no name can reach into it.
             if (!cell.getValue().isEmpty()
                     && isDisturbing(Bounds.computeEnclosingBounds(cell.getValue()))) {
-                disturbedCellIds.add(cell.getKey());
+                disturbedCellKeys.add(cell.getKey());
             }
         }
-        return disturbedCellIds;
+        return disturbedCellKeys;
     }
 
     // Whether any of the moved names reaches the given extent.

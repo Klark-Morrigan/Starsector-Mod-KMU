@@ -1,5 +1,6 @@
 package kmu.maplayers.base.labels.anchor;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.BandFitSpecification;
 import kmlib.starsector.ui.label.LabelLengthEstimator;
@@ -24,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -64,7 +70,7 @@ final class ClusterAnchorPlacementTest {
         for (var cellId : ownerBySystemId.keySet()) {
             systemIdByCellId.put(cellId, cellId);
         }
-        return new CellGrouping(systemIdByCellId, ownerBySystemId);
+        return new CellGrouping(buildDrawnSystemKeys(systemIdByCellId), ownerBySystemId);
     }
 
     // The anchors alone, for the geometry tests: they assert on where a label landed, not
@@ -115,11 +121,11 @@ final class ClusterAnchorPlacementTest {
         // the border rings inset to x 150..1850, y 150..850 and a horizontal line is the
         // longest interior chord by far (the cluster is wide and short, so every slanted
         // line is height-limited and much shorter).
-        private static final Map<String, List<CellEdge>> HORIZONTAL_PAIR_EDGES = Map.of(
+        private static final Map<SystemKey, List<CellEdge>> HORIZONTAL_PAIR_EDGES = buildKeyedValues(Map.of(
             "A", listSquareCellEdges(0, 0, null, "B", null, null),
-            "B", listSquareCellEdges(CELL_SIDE, 0, null, null, null, "A"));
-        private static final Map<String, double[]> HORIZONTAL_PAIR_SITES = Map.of(
-            "A", new double[] {500, 500}, "B", new double[] {1500, 500});
+            "B", listSquareCellEdges(CELL_SIDE, 0, null, null, null, "A")));
+        private static final Map<SystemKey, double[]> HORIZONTAL_PAIR_SITES = buildKeyedValues(Map.of(
+            "A", new double[] {500, 500}, "B", new double[] {1500, 500}));
         private static final CellGrouping HORIZONTAL_PAIR_GROUPING = buildGrouping(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY));
 
@@ -127,7 +133,7 @@ final class ClusterAnchorPlacementTest {
         // key and members rather than read back off the grouping the search was handed, so a
         // search that named the wrong cluster fails instead of agreeing with itself.
         private static final ClusterIdentity HORIZONTAL_PAIR_IDENTITY =
-            new ClusterIdentity("F", Set.of("A", "B"));
+            new ClusterIdentity("F", Set.of(buildCellKey("A"), buildCellKey("B")));
 
         // A second owner, for the case that sweeps two clusters at once.
         private static final String RIVAL_GROUP_KEY = "G";
@@ -135,53 +141,53 @@ final class ClusterAnchorPlacementTest {
         // Two 500-wide, 1000-tall cells stacked: the cluster is genuinely tall and thin
         // (inset x 150..350, y 150..1850), so a slanted line is width-limited to a short
         // chord and only the vertical line runs the cluster's full length.
-        private static final Map<String, List<CellEdge>> THIN_COLUMN_EDGES = Map.of(
+        private static final Map<SystemKey, List<CellEdge>> THIN_COLUMN_EDGES = buildKeyedValues(Map.of(
             "A", listRectangleCellEdges(0, 0, 500, CELL_SIDE, null, null, "B", null),
-            "B", listRectangleCellEdges(0, CELL_SIDE, 500, CELL_SIDE, "A", null, null, null));
-        private static final Map<String, double[]> THIN_COLUMN_SITES = Map.of(
-            "A", new double[] {250, 500}, "B", new double[] {250, 1500});
+            "B", listRectangleCellEdges(0, CELL_SIDE, 500, CELL_SIDE, "A", null, null, null)));
+        private static final Map<SystemKey, double[]> THIN_COLUMN_SITES = buildKeyedValues(Map.of(
+            "A", new double[] {250, 500}, "B", new double[] {250, 1500}));
         private static final CellGrouping THIN_COLUMN_GROUPING = buildGrouping(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY));
 
         // A 2x2 block of 1000-unit cells: a square cluster (inset x 150..1850,
         // y 150..1850) where horizontal, vertical, and diagonal chords are all comparably
         // long, so the vertical penalty - not raw length - decides the winner.
-        private static final Map<String, List<CellEdge>> SQUARE_GRID_EDGES = Map.of(
+        private static final Map<SystemKey, List<CellEdge>> SQUARE_GRID_EDGES = buildKeyedValues(Map.of(
             "A", listSquareCellEdges(0, 0, null, "B", "C", null),
             "B", listSquareCellEdges(CELL_SIDE, 0, null, null, "D", "A"),
             "C", listSquareCellEdges(0, CELL_SIDE, "A", "D", null, null),
-            "D", listSquareCellEdges(CELL_SIDE, CELL_SIDE, "B", null, null, "C"));
+            "D", listSquareCellEdges(CELL_SIDE, CELL_SIDE, "B", null, null, "C")));
         private static final CellGrouping SQUARE_GRID_GROUPING = buildGrouping(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY, "C", GROUP_KEY, "D", GROUP_KEY));
 
         // Sites strung vertically down the square's centre: the cluster's principal axis
         // reads vertical though the cluster is square, the setup that makes the penalty
         // flip the accepted line horizontal.
-        private static final Map<String, double[]> SQUARE_GRID_VERTICAL_SITES = Map.of(
+        private static final Map<SystemKey, double[]> SQUARE_GRID_VERTICAL_SITES = buildKeyedValues(Map.of(
             "A", new double[] {1000, 200}, "B", new double[] {1000, 700},
-            "C", new double[] {1000, 1300}, "D", new double[] {1000, 1800});
+            "C", new double[] {1000, 1300}, "D", new double[] {1000, 1800}));
 
         // Sites at the cell centres: a square point cloud with no preferred axis, used
         // where the winner should be decided purely by length.
-        private static final Map<String, double[]> SQUARE_GRID_CENTRED_SITES = Map.of(
+        private static final Map<SystemKey, double[]> SQUARE_GRID_CENTRED_SITES = buildKeyedValues(Map.of(
             "A", new double[] {500, 500}, "B", new double[] {1500, 500},
-            "C", new double[] {500, 1500}, "D", new double[] {1500, 1500});
+            "C", new double[] {500, 1500}, "D", new double[] {1500, 1500}));
 
         // A boot-shaped cluster: a bottom arm (x 0..3000) and a left arm (x 0..1000,
         // y 0..3000) meeting at the origin, with the top-right a deep concave notch. The
         // sites' mean lands in that notch - outside the cluster's border - so any line
         // through the centroid finds only the short left-arm chord, while the arms
         // themselves carry a chord nearly three cells long.
-        private static final Map<String, List<CellEdge>> BOOT_EDGES = Map.of(
+        private static final Map<SystemKey, List<CellEdge>> BOOT_EDGES = buildKeyedValues(Map.of(
             "A", listSquareCellEdges(0, 0, null, "B", "D", null),
             "B", listSquareCellEdges(CELL_SIDE, 0, null, "C", null, "A"),
             "C", listSquareCellEdges(2 * CELL_SIDE, 0, null, null, null, "B"),
             "D", listSquareCellEdges(0, CELL_SIDE, "A", null, "E", null),
-            "E", listSquareCellEdges(0, 2 * CELL_SIDE, "D", null, null, null));
-        private static final Map<String, double[]> BOOT_SITES = Map.of(
+            "E", listSquareCellEdges(0, 2 * CELL_SIDE, "D", null, null, null)));
+        private static final Map<SystemKey, double[]> BOOT_SITES = buildKeyedValues(Map.of(
             "A", new double[] {500, 500}, "B", new double[] {1500, 500},
             "C", new double[] {2500, 500}, "D", new double[] {500, 1500},
-            "E", new double[] {500, 2500});
+            "E", new double[] {500, 2500}));
         private static final CellGrouping BOOT_GROUPING = buildGrouping(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY, "C", GROUP_KEY, "D", GROUP_KEY,
             "E", GROUP_KEY));
@@ -198,7 +204,7 @@ final class ClusterAnchorPlacementTest {
 
         // The pair fused under one owner: the wide, short cluster most line-fit cases sweep.
         private static final ClusterPartition FUSED_PAIR_PARTITION = new ClusterPartition(
-            List.of(List.of("A", "B")),
+            List.of(buildCellKeys("A", "B")),
             HORIZONTAL_PAIR_EDGES,
             HORIZONTAL_PAIR_SITES,
             HORIZONTAL_PAIR_GROUPING);
@@ -207,7 +213,7 @@ final class ClusterAnchorPlacementTest {
         // against the fused pair above it is also the same layout before and after a split or a
         // merge, which is what the carry-over cases turn on.
         private static final ClusterPartition SPLIT_PAIR_PARTITION = new ClusterPartition(
-            List.of(List.of("A"), List.of("B")),
+            List.of(buildCellKeys("A"), buildCellKeys("B")),
             HORIZONTAL_PAIR_EDGES,
             HORIZONTAL_PAIR_SITES,
             buildGrouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)));
@@ -215,33 +221,33 @@ final class ClusterAnchorPlacementTest {
         // The fused pair with no cell edges: nothing traces a border ring, so no candidate can
         // be proven interior and only the dot can show.
         private static final ClusterPartition UNTRACEABLE_PAIR_PARTITION = new ClusterPartition(
-            List.of(List.of("A", "B")),
+            List.of(buildCellKeys("A", "B")),
             Map.of(),
             HORIZONTAL_PAIR_SITES,
             HORIZONTAL_PAIR_GROUPING);
 
         private static final ClusterPartition THIN_COLUMN_PARTITION = new ClusterPartition(
-            List.of(List.of("A", "B")),
+            List.of(buildCellKeys("A", "B")),
             THIN_COLUMN_EDGES,
             THIN_COLUMN_SITES,
             THIN_COLUMN_GROUPING);
 
         private static final ClusterPartition SQUARE_GRID_VERTICAL_PARTITION =
             new ClusterPartition(
-                List.of(List.of("A", "B", "C", "D")),
+                List.of(buildCellKeys("A", "B", "C", "D")),
                 SQUARE_GRID_EDGES,
                 SQUARE_GRID_VERTICAL_SITES,
                 SQUARE_GRID_GROUPING);
 
         private static final ClusterPartition SQUARE_GRID_CENTRED_PARTITION =
             new ClusterPartition(
-                List.of(List.of("A", "B", "C", "D")),
+                List.of(buildCellKeys("A", "B", "C", "D")),
                 SQUARE_GRID_EDGES,
                 SQUARE_GRID_CENTRED_SITES,
                 SQUARE_GRID_GROUPING);
 
         private static final ClusterPartition BOOT_PARTITION = new ClusterPartition(
-            List.of(List.of("A", "B", "C", "D", "E")),
+            List.of(buildCellKeys("A", "B", "C", "D", "E")),
             BOOT_EDGES,
             BOOT_SITES,
             BOOT_GROUPING);
@@ -249,16 +255,16 @@ final class ClusterAnchorPlacementTest {
         // One system whose own 2000x1000 cell shape is the only thing carrying a direction to
         // fit, its site cloud having none.
         private static final ClusterPartition SINGLE_WIDE_CELL_PARTITION = new ClusterPartition(
-            List.of(List.of("A")),
-            Map.of(
+            List.of(buildCellKeys("A")),
+            buildKeyedValues(Map.of(
                 "A",
-                listRectangleCellEdges(0, 0, 2 * CELL_SIDE, CELL_SIDE, null, null, null, null)),
-            Map.of("A", new double[] {1000, 500}),
+                listRectangleCellEdges(0, 0, 2 * CELL_SIDE, CELL_SIDE, null, null, null, null))),
+            buildKeyedValues(Map.of("A", new double[] {1000, 500})),
             SINGLE_SYSTEM_GROUPING);
 
         // A cluster whose members carry no site at all, so there is no point cloud to fit.
         private static final ClusterPartition SITELESS_PARTITION = new ClusterPartition(
-            List.of(List.of("A")),
+            List.of(buildCellKeys("A")),
             Map.of(),
             Map.of(),
             SINGLE_SYSTEM_GROUPING);
@@ -700,8 +706,8 @@ final class ClusterAnchorPlacementTest {
             assertThat(anchors)
                 .extracting(ClusterAnchor::identity)
                 .containsExactly(
-                    new ClusterIdentity("F", Set.of("A")),
-                    new ClusterIdentity("G", Set.of("B")));
+                    new ClusterIdentity("F", Set.of(buildCellKey("A"))),
+                    new ClusterIdentity("G", Set.of(buildCellKey("B"))));
         }
 
         @Test
@@ -832,8 +838,8 @@ final class ClusterAnchorPlacementTest {
             assertThat(fit.anchors())
                 .extracting(ClusterAnchor::identity)
                 .containsExactly(
-                    new ClusterIdentity("F", Set.of("A")),
-                    new ClusterIdentity("G", Set.of("B")));
+                    new ClusterIdentity("F", Set.of(buildCellKey("A"))),
+                    new ClusterIdentity("G", Set.of(buildCellKey("B"))));
         }
 
         @Test
@@ -1439,7 +1445,7 @@ final class ClusterAnchorPlacementTest {
                 y2,
                 neighbour == null
                     ? EdgeTarget.REACH_BOUND
-                    : new EdgeTarget.AcrossSystem(neighbour));
+                    : new EdgeTarget.AcrossSystem(buildCellKey(neighbour)));
         }
     }
 

@@ -315,9 +315,12 @@ public final class Coastlines {
     /**
      * One puddle: a hole the floor judged too small to be a lake.
      *
-     * <p>No shore. What makes a puddle a puddle is exactly that a smoothed shoreline is more
-     * drawing than its water deserves, so it carries only what filling it up needs: the water
-     * itself, and the cells that ring it - which is what a bridge across it is laid between.
+     * <p>No shore, for either of the two reasons water can end up without one: too little of it
+     * to deserve a drawn line, or too little room to place one through. Both leave water that
+     * still has to be filled, so both arrive here rather than being dropped.
+     *
+     * <p>It carries only what filling it up needs: the water itself, and the cells that ring it -
+     * which is what a bridge across it is laid between.
      *
      * @param waterEdge the water, as the cells' own arcs around the hole, sampled
      * @param ringCells the cells whose borders make that edge. A set, because the only thing
@@ -761,14 +764,28 @@ public final class Coastlines {
 
             var one = CoastPlacement.buildOneBorder(run, union, bridged, borderRules);
 
+            // A shore the placement could not draw leaves the same water the floor above
+            // refuses: a hole with no line to put round it. So it becomes a puddle for the
+            // same reason - the water still wants filling, and a puddle is what water with no
+            // shore is called here. Dropped instead, it is a piece of map that no lake, no
+            // puddle and no fill has any record of, which is a patch nothing can even report
+            // as missing.
+            //
+            // Its left-out stretches are not recorded either. A dropped stretch is drawn where
+            // the coast WOULD have run, to be read against the line that replaced it, and a
+            // run that produced no line has nothing to read them against.
+            if (one.outline().isEmpty()) {
+
+                puddles.add(new Puddle(waterEdge, collectRingCells(run)));
+                continue;
+            }
+
             dropped.addAll(one.dropped());
 
-            if (!one.outline().isEmpty()) {
-                lakes.add(new Lake(
-                    new Coast(one.outline()),
-                    waterEdge,
-                    collectRingCells(run)));
-            }
+            lakes.add(new Lake(
+                new Coast(one.outline()),
+                waterEdge,
+                collectRingCells(run)));
         }
         return new TracedLakes(
             List.copyOf(lakes), List.copyOf(puddles), List.copyOf(dropped));

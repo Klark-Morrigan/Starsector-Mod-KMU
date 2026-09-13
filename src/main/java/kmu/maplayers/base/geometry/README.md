@@ -26,8 +26,10 @@ Part of [the map-layer framework](../../README.md); see the
 
 The cells are a Voronoi partition of the drawn systems: each system holds the
 space closer to it than to any other.
-[`CellGeometryCache`](CellGeometryCache.java) builds and holds
-them, keyed by system id.
+[`CellGeometryCache`](CellGeometryCache.java) builds and holds them,
+keyed by `SystemKey`:
+a system id is not unique,
+and a partition keyed on one would cut a single cell for two systems sharing it.
 
 A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polygon,
 because the edge list is also the adjacency graph. Each edge is tagged with an

@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.MarketFootprint;
 import kmu.maplayers.politicalmap.base.dominance.SystemDominance;
@@ -109,7 +111,7 @@ public final class DominanceStatsAggregator {
                         footprint.totalWeight(),
                         entry.getValue()));
 
-            inhabitedSystems.recordPresence(blocId, system.getId());
+            inhabitedSystems.recordPresence(blocId, SystemKey.readKeyOf(system));
         }
     }
 }

@@ -1,6 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.VoronoiCellBuilder;
+import kmlib.starsector.systems.SystemKey;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -193,13 +194,17 @@ public final class SectorFixture {
      * the cache's, not produced by it: this exercises the geometry below the cache, and
      * pins nothing about the cache's own diffing.
      *
+     * <p>Keyed by {@link SystemKey} as the live cut keys its own cells. The fixture's rows carry
+     * an id and nothing else, so each key states that arm alone - which is enough to key a cell,
+     * a fixture being free of the colliding ids a live sector holds.
+     *
      * @param cellRadius    how far a cell may reach from its site
      * @param boundSegments sides of the polygon approximating each cell's radius bound
      * @return each system's cell edges, tagged with the neighbour across them
      */
-    Map<String, List<CellEdge>> buildCellEdgesBySystemId(double cellRadius, int boundSegments) {
+    Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(double cellRadius, int boundSegments) {
 
-        var edgesBySystemId = new LinkedHashMap<String, List<CellEdge>>();
+        var edgesBySystemKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
         for (var index = 0; index < systemIds.size(); index++) {
 
@@ -209,9 +214,9 @@ public final class SectorFixture {
                 cellRadius,
                 boundSegments);
 
-            edgesBySystemId.put(systemIds.get(index), buildCellEdges(cell));
+            edgesBySystemKey.put(readSystemKeyAt(index), buildCellEdges(cell));
         }
-        return edgesBySystemId;
+        return edgesBySystemKey;
     }
 
     // Walks a labelled cell into edges, resolving each edge's neighbour site index back to
@@ -228,11 +233,17 @@ public final class SectorFixture {
             var neighbourIndex = cell.edgeNeighbourSiteIndices()[i];
             var target = neighbourIndex == VoronoiCellBuilder.BOUND_EDGE
                 ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(systemIds.get(neighbourIndex));
+                : new EdgeTarget.AcrossSystem(readSystemKeyAt(neighbourIndex));
 
             edges.add(new CellEdge(from[0], from[1], to[0], to[1], target));
         }
         return edges;
+    }
+
+    // One row's system as the cells address it: the id the fixture states, with neither entity
+    // arm, since the rows carry no entities to state.
+    private SystemKey readSystemKeyAt(int index) {
+        return new SystemKey(systemIds.get(index), null, null);
     }
 
     private void addSystem(String line) {

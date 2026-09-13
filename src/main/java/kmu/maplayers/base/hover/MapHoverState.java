@@ -17,9 +17,9 @@ package kmu.maplayers.base.hover;
  * <p>A published hover lasts exactly as long as the passes keep publishing it, and no longer - see
  * {@link #expireHoverIfNoPassPublished()}, which is what a reader outside those passes relies on.
  *
- * <p>One per sector, held by that sector's installed map machinery, because a hover names a system
- * by bare id and nothing forbids two sectors from generating a system under the same one: a cursor
- * read on one map would light a cell on the other and name it in the other's box. The hover goes
+ * <p>One per sector, held by that sector's installed map machinery, because nothing forbids two
+ * sectors from generating a system that reads as the same key: a cursor read on one map would
+ * light a cell on the other and name it in the other's box. The hover goes
  * with the machinery when it is released, so a sector begins with nothing hovered rather than
  * with the cell the sector before it was left resting on.
  */

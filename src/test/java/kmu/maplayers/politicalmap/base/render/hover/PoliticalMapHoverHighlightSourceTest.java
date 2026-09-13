@@ -13,6 +13,8 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -47,7 +49,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildTerritoryWithLoops(loops)));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf("A"))
+            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
                 .containsExactlyElementsOf(loops);
         }
 
@@ -60,7 +62,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 null));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf("A"))
+            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
                 .isEmpty();
         }
 
@@ -73,7 +75,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildTerritoryWithLoops(List.of())));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf("A"))
+            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
                 .isEmpty();
         }
 
@@ -86,8 +88,8 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildTerritoryWithLoops(List.of(buildSquareRun(0, 0, 100)))));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf("A"))
-                .isSameAs(source.resolveCandidateFrontierLoopsOf("A"));
+            assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
+                .isSameAs(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")));
         }
     }
 
@@ -101,7 +103,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildTerritoryWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteSlot.SECONDARY))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), FactionPaletteSlot.SECONDARY))
                 .isEqualTo(SECONDARY);
         }
 
@@ -114,7 +116,7 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 null));
 
-            assertThat(source.resolveHighlightColourOf("A", FactionPaletteSlot.PRIMARY))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), FactionPaletteSlot.PRIMARY))
                 .isEqualTo(PoliticalMapTerritoryFixtures.NEUTRAL_COLOUR);
         }
 
@@ -127,16 +129,16 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildTerritoryWithLoops(List.of())));
 
-            assertThat(source.resolveHighlightColourOf("A", null))
+            assertThat(source.resolveHighlightColourOf(buildCellKey("A"), null))
                 .isNull();
         }
     }
 
     @Nested
-    class GetFillPolygonByCellId {
+    class GetFillPolygonByCellKey {
 
         @Test
-        void getFillPolygonByCellIdHandsOverTheFramesOwnShapes() {
+        void getFillPolygonByCellKeyHandsOverTheFramesOwnShapes() {
             // Passed through rather than rebuilt, which is what makes the halo trace the shape
             // the cursor was hit-tested against - the cursor read takes these same shapes off
             // the same territories. Reading one cell out of them is the framework's own,
@@ -147,8 +149,8 @@ final class PoliticalMapHoverHighlightSourceTest {
                 Map.of("A", paintedExtent),
                 buildTerritoryWithLoops(List.of()));
 
-            assertThat(readSourceOf(territories).getFillPolygonByCellId())
-                .isSameAs(territories.getFillPolygonByCellId());
+            assertThat(readSourceOf(territories).getFillPolygonByCellKey())
+                .isSameAs(territories.getFillPolygonByCellKey());
         }
     }
 
@@ -170,7 +172,7 @@ final class PoliticalMapHoverHighlightSourceTest {
 
         for (var cell : fillPolygonBySystemId.entrySet()) {
             territories.putStyledCell(
-                cell.getKey(),
+                buildCellKey(cell.getKey()),
                 PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
                 cell.getValue());
         }

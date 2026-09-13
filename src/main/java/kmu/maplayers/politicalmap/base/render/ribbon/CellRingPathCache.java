@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.ribbon;
 
 import kmlib.math.geometry.RingPath;
+import kmlib.starsector.systems.SystemKey;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -29,36 +30,36 @@ import java.util.Map;
  */
 public final class CellRingPathCache {
 
-    private final Map<String, RingPath> ringPathByCellId = new LinkedHashMap<>();
+    private final Map<SystemKey, RingPath> ringPathByCellKey = new LinkedHashMap<>();
 
     /**
      * The path standing for one cell, traced inside the shape that cell holds now.
      *
-     * @param cellId the cell to answer for
+     * @param cellKey the cell to answer for
      * @return its traced path, or null where none has been traced inside its current shape - which
      *         is a cell whose ring is yet to be walked, not a cell that has no path
      */
-    public RingPath findRingPathOf(String cellId) {
-        return ringPathByCellId.get(cellId);
+    public RingPath findRingPathOf(SystemKey cellKey) {
+        return ringPathByCellKey.get(cellKey);
     }
 
     /**
      * Keeps the path just traced inside one cell's current shape.
      *
-     * @param cellId   the cell it was traced for
+     * @param cellKey  the cell it was traced for
      * @param ringPath the traced path, holding no stretch where the cell had no room for a band
      */
-    public void putRingPath(String cellId, RingPath ringPath) {
-        ringPathByCellId.put(cellId, ringPath);
+    public void putRingPath(SystemKey cellKey, RingPath ringPath) {
+        ringPathByCellKey.put(cellKey, ringPath);
     }
 
     /**
      * Drops one cell's path, because the shape it was traced inside is no longer the shape that
      * cell holds.
      *
-     * @param cellId the cell that was re-shaped or stopped drawing
+     * @param cellKey the cell that was re-shaped or stopped drawing
      */
-    public void dropRingPathOf(String cellId) {
-        ringPathByCellId.remove(cellId);
+    public void dropRingPathOf(SystemKey cellKey) {
+        ringPathByCellKey.remove(cellKey);
     }
 }

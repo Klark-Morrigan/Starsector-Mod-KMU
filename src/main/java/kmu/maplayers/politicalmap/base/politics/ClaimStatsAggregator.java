@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -108,7 +109,7 @@ public final class ClaimStatsAggregator {
             blocId,
             statsByBlocId.getOrDefault(blocId, ClaimStats.EMPTY).addClaim());
 
-        claimedSystems.recordPresence(blocId, system.getId());
+        claimedSystems.recordPresence(blocId, SystemKey.readKeyOf(system));
     }
 
     // Folds one system's habitation into the running per-bloc stats: the same read the dominance

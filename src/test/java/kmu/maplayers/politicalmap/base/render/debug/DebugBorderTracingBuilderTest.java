@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.debug;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.math.geometry.CornerRounding;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -39,6 +40,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -109,7 +114,7 @@ final class DebugBorderTracingBuilderTest {
             FactionPaletteSlot.PRIMARY,
             1.0);
 
-    private static final Map<String, List<CellEdge>> EDGES = Map.of(
+    private static final Map<String, List<CellEdge>> EDGES_BY_SYSTEM_ID = Map.of(
         HELD_SYSTEM, List.of(
             buildEdgeFacing(0, 0, 2000, 0, null),
             buildEdgeFacing(2000, 0, 2000, 2000, NEIGHBOUR_SYSTEM),
@@ -279,10 +284,10 @@ final class DebugBorderTracingBuilderTest {
             stubHolders(Map.of(HELD_SYSTEM, HEGEMONY_OWNER));
             var geometryCacheMock = mock(CellGeometryCache.class);
 
-            when(geometryCacheMock.getCellEdgesByCellId())
-                .thenReturn(Map.of(HELD_SYSTEM, List.of()));
-            when(geometryCacheMock.getSystemIdByCellId())
-                .thenReturn(Map.of(HELD_SYSTEM, HELD_SYSTEM));
+            when(geometryCacheMock.getCellEdgesByCellKey())
+                .thenReturn(buildKeyedValues(Map.of(HELD_SYSTEM, List.of())));
+            when(geometryCacheMock.getSystemKeyByCellKey())
+                .thenReturn(buildDrawnSystemKeys(Map.of(HELD_SYSTEM, HELD_SYSTEM)));
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                     geometryCacheMock, sectorMock, OUTLINE_DRAWN);
@@ -353,21 +358,21 @@ final class DebugBorderTracingBuilderTest {
             y2,
             neighbourSystemId == null
                 ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(neighbourSystemId));
+                : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
     }
 
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
     // partition both the cluster trace and the factionless outline pass walk.
     private static CellGeometryCache listCellsFor(String... systemIds) {
         var geometryCacheMock = mock(CellGeometryCache.class);
-        var edgesByCellId = new LinkedHashMap<String, List<CellEdge>>();
-        var systemIdByCellId = new LinkedHashMap<String, String>();
+        var edgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
         for (var systemId : systemIds) {
-            edgesByCellId.put(systemId, EDGES.get(systemId));
-            systemIdByCellId.put(systemId, systemId);
+            edgesByCellKey.put(buildCellKey(systemId), EDGES_BY_SYSTEM_ID.get(systemId));
+            systemKeyByCellKey.put(buildCellKey(systemId), buildCellKey(systemId));
         }
-        when(geometryCacheMock.getCellEdgesByCellId()).thenReturn(edgesByCellId);
-        when(geometryCacheMock.getSystemIdByCellId()).thenReturn(systemIdByCellId);
+        when(geometryCacheMock.getCellEdgesByCellKey()).thenReturn(edgesByCellKey);
+        when(geometryCacheMock.getSystemKeyByCellKey()).thenReturn(systemKeyByCellKey);
         return geometryCacheMock;
     }
 

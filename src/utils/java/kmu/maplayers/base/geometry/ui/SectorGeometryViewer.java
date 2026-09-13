@@ -80,7 +80,7 @@ import javax.swing.SwingUtilities;
  *
  * <ul>
  *   <li>{@code VoronoiCellBuilder.buildLabelledCell} - per system, via
- *       {@link SectorFixture#buildCellEdgesBySystemId}</li>
+ *       {@link SectorFixture#buildCellEdgesBySystemKey}</li>
  *   <li>{@link CellShaper#shapeCells} - and through it {@link EdgeClassifier} and the kmlib
  *       per-edge inset</li>
  *   <li>{@link SystemClusterBorders#traceBorderRings} - and through it the kmlib chainer and
@@ -481,16 +481,18 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // has already given up - so a pointer in the channel would be told it is nowhere.
     private List<NamedRegion> buildCellNames() {
 
-        var named = new ArrayList<NamedRegion>(geometry.cellEdgesByCellId().size());
+        var named = new ArrayList<NamedRegion>(geometry.cellEdgesByCellKey().size());
 
-        for (var entry : geometry.cellEdgesByCellId().entrySet()) {
+        for (var entry : geometry.cellEdgesByCellKey().entrySet()) {
 
             var ring = CellEdges.convertEdgesToRing(entry.getValue());
 
             if (ring.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                 continue;
             }
-            named.add(NamedRegion.nameRegion(entry.getKey(), ring));
+            // Named by the cell's own id: the region's name is read by a person off the status
+            // line, and the id is the arm of a key a person calls a system by.
+            named.add(NamedRegion.nameRegion(entry.getKey().systemId(), ring));
         }
         return List.copyOf(named);
     }
@@ -764,7 +766,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             g2.setColor(MapPainting.applyAlpha(
                 settings.channelColour, settings.channelOpacity));
 
-            for (var cell : geometry.cellEdgesByCellId().values()) {
+            for (var cell : geometry.cellEdgesByCellKey().values()) {
                 g2.fill(MapPainting.buildPath(CellEdges.convertEdgesToRing(cell)));
             }
         }
@@ -773,9 +775,9 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // unowned must be drawn as the build left it.
         private void paintUnownedCells(Graphics2D g2) {
 
-            for (var entry : geometry.shapedCellByCellId().entrySet()) {
+            for (var entry : geometry.shapedCellByCellKey().entrySet()) {
 
-                if (geometry.ownerByCellId().containsKey(entry.getKey())
+                if (geometry.ownerByCellKey().containsKey(entry.getKey())
                         || entry.getValue().fillPolygon().size()
                             < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     continue;
@@ -837,17 +839,17 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // it came from, and that edge is tagged with what lies across it.
         private void paintFillContours(Graphics2D g2) {
 
-            for (var entry : geometry.shapedCellByCellId().entrySet()) {
+            for (var entry : geometry.shapedCellByCellKey().entrySet()) {
 
                 var shaped = entry.getValue();
-                var trueEdges = geometry.cellEdgesByCellId().get(entry.getKey());
+                var trueEdges = geometry.cellEdgesByCellKey().get(entry.getKey());
 
                 if (trueEdges == null
                         || shaped.fillPolygon().size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
                     continue;
                 }
 
-                var cellEdge = geometry.ownerByCellId().containsKey(entry.getKey())
+                var cellEdge = geometry.ownerByCellKey().containsKey(entry.getKey())
                     ? settings.ownedCellEdge
                     : settings.unownedCellEdge;
 
@@ -885,7 +887,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
             g2.setColor(MapPainting.applyAlpha(settings.centrelineColour, OPAQUE_ALPHA));
 
-            for (var edges : geometry.cellEdgesByCellId().values()) {
+            for (var edges : geometry.cellEdgesByCellKey().values()) {
                 for (var edge : edges) {
 
                     if (!(edge.target() instanceof EdgeTarget.AcrossSystem)) {

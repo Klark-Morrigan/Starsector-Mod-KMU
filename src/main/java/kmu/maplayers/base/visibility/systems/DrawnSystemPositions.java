@@ -57,27 +57,4 @@ public final class DrawnSystemPositions {
         return positions;
     }
 
-    /**
-     * The same drawn positions addressed by system id, for a structure keyed that way.
-     *
-     * <p>An id is not unique, so this is the lossy address: several systems sharing one leave a
-     * single entry, holding the position of the first of them the sector lists - the same system
-     * every other id-keyed read of the sector answers with.
-     *
-     * @param pass the pass whose reading of the sector supplies the systems and decides
-     *             membership; a pass over no sector yields an empty map
-     * @return each drawn system's live hyperspace position keyed by id, in the sector's
-     *         star-system order
-     */
-    public static Map<String, double[]> collectLivePositionsById(MapVisibilityPass pass) {
-
-        var positionById = new LinkedHashMap<String, double[]>();
-
-        // Re-addressed rather than gathered afresh, so which systems are drawn and where they sit
-        // is decided once above and this differs from it in the address alone.
-        for (var placed : collectLivePositions(pass).entrySet()) {
-            positionById.putIfAbsent(placed.getKey().systemId(), placed.getValue());
-        }
-        return positionById;
-    }
 }

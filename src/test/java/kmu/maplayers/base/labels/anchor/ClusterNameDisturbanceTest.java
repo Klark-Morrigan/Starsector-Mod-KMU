@@ -1,6 +1,7 @@
 package kmu.maplayers.base.labels.anchor;
 
 import kmlib.math.geometry.Segment;
+import kmlib.starsector.systems.SystemKey;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,8 @@ import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,10 +39,10 @@ final class ClusterNameDisturbanceTest {
     private static final float NAME_THICKNESS = 4f;
 
     // A cell under each of those two names, keyed so a case reads back which one was disturbed.
-    private static final String CELL_AT_THE_ORIGIN = "origin";
-    private static final String CELL_ACROSS_THE_SECTOR = "far";
+    private static final SystemKey CELL_AT_THE_ORIGIN = buildCellKey("origin");
+    private static final SystemKey CELL_ACROSS_THE_SECTOR = buildCellKey("far");
 
-    private static final Map<String, List<double[]>> CELLS_UNDER_BOTH_NAMES = Map.of(
+    private static final Map<SystemKey, List<double[]>> CELLS_UNDER_BOTH_NAMES = Map.of(
         CELL_AT_THE_ORIGIN,
         buildSquare(-10, -10, 40),
         CELL_ACROSS_THE_SECTOR,
@@ -68,7 +71,7 @@ final class ClusterNameDisturbanceTest {
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                 List.of(buildNameOf(HEGEMONY, NAME_ACROSS_THE_SECTOR)));
 
-            assertThat(disturbance.selectDisturbedCellIds(CELLS_UNDER_BOTH_NAMES))
+            assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .containsExactlyInAnyOrder(CELL_AT_THE_ORIGIN, CELL_ACROSS_THE_SECTOR);
         }
 
@@ -80,7 +83,7 @@ final class ClusterNameDisturbanceTest {
                 List.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_ACROSS_THE_SECTOR)));
 
-            assertThat(disturbance.selectDisturbedCellIds(CELLS_UNDER_BOTH_NAMES))
+            assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .containsExactly(CELL_ACROSS_THE_SECTOR);
         }
 
@@ -92,7 +95,7 @@ final class ClusterNameDisturbanceTest {
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                 List.of());
 
-            assertThat(disturbance.selectDisturbedCellIds(CELLS_UNDER_BOTH_NAMES))
+            assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .containsExactly(CELL_AT_THE_ORIGIN);
         }
 
@@ -104,7 +107,7 @@ final class ClusterNameDisturbanceTest {
             var disturbance = ClusterNameDisturbance.compareFittedNames(
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)),
                 List.of(new ClusterAnchor(
-                    new ClusterIdentity(HEGEMONY, Set.of(HEGEMONY, TRITACHYON)),
+                    new ClusterIdentity(HEGEMONY, Set.of(buildCellKey(HEGEMONY), buildCellKey(TRITACHYON))),
                     0f,
                     0f,
                     Color.WHITE,
@@ -116,7 +119,7 @@ final class ClusterNameDisturbanceTest {
                     NAME_THICKNESS,
                     1)));
 
-            assertThat(disturbance.selectDisturbedCellIds(CELLS_UNDER_BOTH_NAMES))
+            assertThat(disturbance.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .containsExactlyInAnyOrder(CELL_AT_THE_ORIGIN, CELL_ACROSS_THE_SECTOR);
         }
 
@@ -148,21 +151,21 @@ final class ClusterNameDisturbanceTest {
     }
 
     @Nested
-    class SelectDisturbedCellIds {
+    class SelectDisturbedCellKeys {
 
         @Test
-        void selectDisturbedCellIdsLeavesOutACellNoMovedNameReaches() {
+        void selectDisturbedCellKeysLeavesOutACellNoMovedNameReaches() {
             var disturbance = ClusterNameDisturbance.compareFittedNames(
                 List.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)));
 
-            assertThat(disturbance.selectDisturbedCellIds(
+            assertThat(disturbance.selectDisturbedCellKeys(
                     Map.of(CELL_ACROSS_THE_SECTOR, buildSquare(990, 990, 40))))
                 .isEmpty();
         }
 
         @Test
-        void selectDisturbedCellIdsReportsACellItsOwnOutlineDoesNotReach() {
+        void selectDisturbedCellKeysReportsACellItsOwnOutlineDoesNotReach() {
             // The name sits in the corner of the cell's bounding box that the cell itself does not
             // fill. Named outright because it is the deliberate error: cheap to make, and it costs
             // only work, where the opposite error costs a wrong map.
@@ -170,7 +173,7 @@ final class ClusterNameDisturbanceTest {
                 List.of(),
                 List.of(buildNameOf(HEGEMONY, new Segment(80, 90, 90, 90))));
 
-            assertThat(disturbance.selectDisturbedCellIds(Map.of(
+            assertThat(disturbance.selectDisturbedCellKeys(Map.of(
                     CELL_AT_THE_ORIGIN,
                     List.of(
                         new double[] {0, 0},
@@ -180,20 +183,20 @@ final class ClusterNameDisturbanceTest {
         }
 
         @Test
-        void selectDisturbedCellIdsLeavesOutACellWithNoOutline() {
+        void selectDisturbedCellKeysLeavesOutACellWithNoOutline() {
             // A cell recorded without a shape encloses nothing, so no name can reach into it -
             // and it has nothing laid on it to be disturbed anyway.
             var disturbance = ClusterNameDisturbance.compareFittedNames(
                 List.of(),
                 List.of(buildNameOf(HEGEMONY, NAME_AT_THE_ORIGIN)));
 
-            assertThat(disturbance.selectDisturbedCellIds(Map.of(CELL_AT_THE_ORIGIN, List.of())))
+            assertThat(disturbance.selectDisturbedCellKeys(Map.of(CELL_AT_THE_ORIGIN, List.of())))
                 .isEmpty();
         }
 
         @Test
-        void selectDisturbedCellIdsReportsNoCellWhenNothingWasDisturbed() {
-            assertThat(ClusterNameDisturbance.NONE.selectDisturbedCellIds(CELLS_UNDER_BOTH_NAMES))
+        void selectDisturbedCellKeysReportsNoCellWhenNothingWasDisturbed() {
+            assertThat(ClusterNameDisturbance.NONE.selectDisturbedCellKeys(CELLS_UNDER_BOTH_NAMES))
                 .isEmpty();
         }
     }
@@ -203,7 +206,7 @@ final class ClusterNameDisturbanceTest {
     private static ClusterAnchor buildNameOf(String ownerKey, Segment acceptedAxis) {
 
         return new ClusterAnchor(
-            new ClusterIdentity(ownerKey, Set.of(ownerKey)),
+            new ClusterIdentity(ownerKey, Set.of(buildCellKey(ownerKey))),
             0f,
             0f,
             Color.WHITE,

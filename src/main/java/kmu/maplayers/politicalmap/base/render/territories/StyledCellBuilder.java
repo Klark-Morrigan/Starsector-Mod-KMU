@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.ShapedCell;
@@ -51,8 +52,12 @@ public final class StyledCellBuilder {
      * here - the holder, the palette, whether the cell is decivilised - is known per system
      * and not per cell.
      *
+     * <p>Everything it reads about that system is keyed by id, so the key narrows at each of the
+     * three reads and a cell whose system shares an id with another draws as the first of them -
+     * which is the system every id-keyed read of the sector answers with.
+     *
      * @param territories this pass's retained holding, theme, and filter state
-     * @param systemId    the system the cell draws as, or null for a cell with no star of its
+     * @param systemKey   the system the cell draws as, or null for a cell with no star of its
      *                    own, which draws as plain uninhabited - it has no holder to
      *                    colour it and nothing standing in it
      * @param shaped      the cell's inset shape
@@ -60,7 +65,7 @@ public final class StyledCellBuilder {
      */
     public static StyledCell buildStyledCellForSystem(
             PoliticalMapTerritories territories,
-            String systemId,
+            SystemKey systemKey,
             ShapedCell shaped) {
 
         // A cell the border inset consumed or collapsed comes back with an empty fill
@@ -69,14 +74,14 @@ public final class StyledCellBuilder {
         if (shaped.fillPolygon().isEmpty()) {
             return null;
         }
-        // A cell with no star of its own has no holder to look up, so the null id skips the holder
-        // map rather than probing it for a key it does not hold - keeping the null-star path clear
-        // of whether the holder map happens to tolerate a null-key get.
-        var holder = systemId == null
+        // A cell with no star of its own has no holder to look up, so the absent system skips the
+        // holder map rather than probing it for a key it does not hold - keeping the null-star path
+        // clear of whether the holder map happens to tolerate a null-key get.
+        var holder = systemKey == null
             ? null
-            : territories.getHolderBySystemId().get(systemId);
+            : territories.getHolderBySystemId().get(systemKey.systemId());
         return holder == null
-            ? buildFactionlessCell(territories, systemId, shaped)
+            ? buildFactionlessCell(territories, systemKey, shaped)
             : buildOwnedCell(territories, holder, shaped);
     }
 
@@ -114,7 +119,7 @@ public final class StyledCellBuilder {
     // readily as for its outline.
     private static StyledCell buildFactionlessCell(
             PoliticalMapTerritories territories,
-            String systemId,
+            SystemKey systemKey,
             ShapedCell shaped) {
 
         // One classification drives both the bundle and the recede, so a cell cannot take the
@@ -124,7 +129,7 @@ public final class StyledCellBuilder {
         // backdrop, whatever the absent holder alone would suggest.
         var category = FactionlessStyleResolver.resolveCategoryOf(
             territories.getInhabitedSystemIds(),
-            systemId);
+            systemKey == null ? null : systemKey.systemId());
 
         var style = territories.getCategoryStyle(category);
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
@@ -138,9 +143,10 @@ public final class StyledCellBuilder {
         // sunk merely because this layer's holding could not attribute them to it. The cell keeps
         // its neutral factionless paint either way - full strength is the whole of what presence
         // buys it here. A cell drawn as no system names nowhere anyone could be living, so the
-        // null id skips the set rather than probing one that may be immutable and null-hostile.
-        var isSpotlitBlocPresent = systemId != null
-            && territories.getSpotlitPresenceSystemIds().contains(systemId);
+        // absent system skips the set rather than probing one that may be immutable and
+        // null-hostile.
+        var isSpotlitBlocPresent = systemKey != null
+            && territories.getSpotlitPresenceSystemIds().contains(systemKey.systemId());
 
         var adjustment = FactionlessStyleResolver.resolveRecedeOf(
             category,
