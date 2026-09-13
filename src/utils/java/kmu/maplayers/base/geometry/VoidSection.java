@@ -138,6 +138,7 @@ public record VoidSection(
             return SectionKind.COASTAL;
         }
         if (kinds.contains(DiscUnionBoundary.WallKind.LAKE_SPAN)
+                || kinds.contains(DiscUnionBoundary.WallKind.LAKE_SHORE)
                 || kinds.contains(DiscUnionBoundary.WallKind.BRIDGE)) {
             return SectionKind.LAKE_POCKET;
         }

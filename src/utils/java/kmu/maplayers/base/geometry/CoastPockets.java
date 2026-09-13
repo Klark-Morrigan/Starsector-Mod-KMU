@@ -213,9 +213,51 @@ public final class CoastPockets {
     static List<DiscUnionBoundary.Chord> buildCoastWalls(
             Coastlines.TracedCoasts traced) {
 
+        return buildReachWalls(
+            Coastlines.collectStraightReaches(traced),
+            DiscUnionBoundary.WallKind.COAST_REACH);
+    }
+
+    /**
+     * Every lake shore's straight reaches as the walls they are laid as.
+     *
+     * <p>The same line for the same reason as the outer coast's: a lake's pockets are the water
+     * inside its shore, and a fill inset from any other line can come to sit outside the border
+     * that defines it - or inside the band the border concedes to the cells, which is the same
+     * water painted twice.
+     *
+     * <p>At the channel the knobs state rather than one read off the trace, since a shore
+     * carries no walls of its own to read one from.
+     *
+     * @param traced  the coast, whose lakes carry the shores
+     * @param channel the width below which a step between two cells is a handover rather than
+     *                a reach
+     * @return one wall per reach over every lake, in walk order
+     */
+    static List<DiscUnionBoundary.Chord> buildLakeShoreWalls(
+            Coastlines.TracedCoasts traced,
+            double channel) {
+
+        var shores = new ArrayList<Coastlines.Coast>(traced.lakes().size());
+
+        for (var lake : traced.lakes()) {
+            shores.add(lake.shore());
+        }
+        return buildReachWalls(
+            Coastlines.collectStraightReaches(shores, channel),
+            DiscUnionBoundary.WallKind.LAKE_SHORE);
+    }
+
+    // One wall per reach, on the reach's own line. Shared by both kinds of shore because a
+    // reach is placed the same way whichever side the water is on; what the kind carries is
+    // which side that is.
+    private static List<DiscUnionBoundary.Chord> buildReachWalls(
+            List<Coastlines.CoastReach> reaches,
+            DiscUnionBoundary.WallKind kind) {
+
         var walls = new ArrayList<DiscUnionBoundary.Chord>();
 
-        for (var reach : Coastlines.collectStraightReaches(traced)) {
+        for (var reach : reaches) {
 
             var from = reach.from();
             var to = reach.to();
@@ -239,7 +281,7 @@ public final class CoastPockets {
                 from.circle(),
                 to.circle(),
                 new DirectedLine(from.point()[0], from.point()[1], alongX, alongY),
-                DiscUnionBoundary.WallKind.COAST_REACH));
+                kind));
         }
         return walls;
     }

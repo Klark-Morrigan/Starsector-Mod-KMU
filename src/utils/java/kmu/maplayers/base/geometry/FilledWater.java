@@ -1,7 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import kmlib.math.geometry.PolygonRegions;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,11 +33,10 @@ public final class FilledWater {
     // on every frame that mentions it.
     private List<List<double[]>> shoreWater;
     private List<List<double[]>> inletWater;
-    private List<List<double[]>> lakeWater;
+    private LakePockets.LakeWater lakeWater;
     private List<List<double[]>> puddleWater;
     private List<List<double[]>> linkWater;
     private List<List<double[]>> linkedSectorWater;
-    private List<LakeMargin> lakeMargins;
 
     FilledWater(
             BridgedContinents laid,
@@ -49,25 +46,6 @@ public final class FilledWater {
         this.laid = laid;
         this.ownerBySite = ownerBySite;
         this.shaping = shaping;
-    }
-
-    /**
-     * One lake's margin: the water between the shore the map draws and the cells' own edge.
-     *
-     * <p>Two rings rather than one because the middle is deliberately not filled. What the
-     * margin shows is what the drawn line conceded against the true edge; the open water inside
-     * the shore is left to whatever else fills it, or to the backdrop where nothing does.
-     *
-     * <p>Against the ROUNDED shore, which is the one place water is measured from a rounded line
-     * rather than from a border: the margin exists to meet the stroke on screen, so a band ending
-     * at the border would leave a sliver bare wherever the rounding stepped inside it.
-     *
-     * @param waterEdge the cells' own arcs around the lake, which the margin runs out to
-     * @param drawnShore the shore as the map strokes it, which the margin stops at
-     */
-    public record LakeMargin(
-        List<double[]> waterEdge,
-        List<double[]> drawnShore) {
     }
 
     /**
@@ -107,36 +85,15 @@ public final class FilledWater {
     }
 
     /**
-     * The water the lake spans hold: a crossed lake cut into the finer pockets its spans make.
+     * The water inside every lake's shore, cut into the pockets its spans make of it.
      *
-     * <p><b>A lake the spans cut nothing from is filled to its drawn shore instead.</b> A lake
-     * concedes its middle to the pockets its own spans make of it, and one with no such pocket
-     * has nothing to concede it to - so the middle is left to the backdrop, which is the reading
-     * a puddle is drawn whole expressly to avoid: water that shows as open void inside a
-     * shoreline a reader can plainly see.
+     * <p>Walked with the shore laid as well as the spans, so a pocket stops a channel inside the
+     * shore and the band beyond it is the margin's. A lake no span crosses is one pocket.
      *
-     * <p>To the drawn shore rather than to the water's edge, so that it meets the margin exactly
-     * and paints nothing the margin already covers. Between them the two then tile the lake:
-     * the band out to the cells, and everything within the line.
-     *
-     * @return one ring per pocket, plus one per lake no pocket falls inside
+     * @return one ring per pocket, over every lake
      */
     public List<List<double[]>> collectLakeWater() {
-
-        if (lakeWater == null) {
-
-            var cut = fillBehindSpans(laid.layLakeSpans());
-            var filled = new ArrayList<>(cut);
-
-            for (var shore : laid.roundCoasts().lakes()) {
-
-                if (!isCutInto(shore, cut)) {
-                    filled.add(shore);
-                }
-            }
-            lakeWater = List.copyOf(filled);
-        }
-        return lakeWater;
+        return findLakeWater().pockets();
     }
 
     /**
@@ -204,24 +161,16 @@ public final class FilledWater {
     }
 
     /**
-     * Each lake's margin, paired with the shore the map draws for it.
+     * Each lake's margin: the water its shore conceded to the cells, outside the line.
      *
-     * @return one margin per lake, in the order the lakes were traced
+     * <p>Out of the same walk as the pockets, so the two share no point: a margin is the hole
+     * behind a reach of shore, on the cells' side of it, and stops a channel short of the cells
+     * like every other fill.
+     *
+     * @return one ring per bay a shore cut across, over every lake
      */
-    public List<LakeMargin> collectLakeMargins() {
-
-        if (lakeMargins == null) {
-
-            var lakes = laid.traceCoasts().lakes();
-            var shores = laid.roundCoasts().lakes();
-            var margins = new ArrayList<LakeMargin>(lakes.size());
-
-            for (var index = 0; index < lakes.size(); index++) {
-                margins.add(new LakeMargin(lakes.get(index).waterEdge(), shores.get(index)));
-            }
-            lakeMargins = List.copyOf(margins);
-        }
-        return lakeMargins;
+    public List<List<double[]>> collectLakeMargins() {
+        return findLakeWater().bands();
     }
 
     /**
@@ -233,8 +182,7 @@ public final class FilledWater {
         return shaping;
     }
 
-    // What the layers above already cover. The lake margins are left out: a margin is a band with
-    // its middle deliberately bare, and counted here it would refuse every pocket that fills one.
+    // What the layers above already cover, every one of them.
     private List<List<double[]>> gatherPaintedWater() {
 
         var rings = new ArrayList<List<double[]>>();
@@ -242,33 +190,24 @@ public final class FilledWater {
         rings.addAll(collectShoreWater());
         rings.addAll(collectInletWater());
         rings.addAll(collectLakeWater());
+        rings.addAll(collectLakeMargins());
         rings.addAll(collectPuddleWater());
         rings.addAll(collectLinkWater());
 
         return rings;
     }
 
-    // Whether any pocket the spans cut lies within this lake's drawn shore, which is what
-    // decides if its middle has anything to be conceded to.
-    //
-    // Asked of the POCKETS rather than of the spans: two cells can both ring a lake and still
-    // have their span stand somewhere else entirely, over other water they also touch, so a
-    // span counted by its cells reports a lake as cut up when nothing was cut from it.
-    //
-    // And against the shore rather than the water's edge, because the middle is the region in
-    // question. A pocket landing in the margin band alone leaves the middle exactly as bare as
-    // no pocket at all.
-    private boolean isCutInto(List<double[]> shore, List<List<double[]>> cut) {
+    // The lakes' water, walked once for both of the layers it divides into.
+    private LakePockets.LakeWater findLakeWater() {
 
-        for (var pocket : cut) {
-            for (var point : pocket) {
+        if (lakeWater == null) {
 
-                if (PolygonRegions.isPointInsideRing(shore, point[0], point[1])) {
-                    return true;
-                }
-            }
+            lakeWater = LakePockets.findLakeWater(
+                laid.traceCoasts(),
+                laid.layLakeSpans(),
+                new VoidPockets.PocketRules(laid.parameters(), shaping));
         }
-        return false;
+        return lakeWater;
     }
 
     // What one set of spans shut in, with those spans as the only walls. Only what a span

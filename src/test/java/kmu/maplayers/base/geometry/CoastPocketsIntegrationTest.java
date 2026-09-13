@@ -267,18 +267,12 @@ class CoastPocketsIntegrationTest {
     }
 
     // Everything the map paints over the void apart from the coast's own pockets: the bays the
-    // spans hold, the lakes and the puddles, the sea the links shut in, and the band each lake
-    // concedes between its drawn shore and the cells. What cell-ringed water is allowed to be
-    // covered by, since such water is either construction's to fill.
+    // spans hold, the lakes with the bands their shores concede, the puddles, and the sea the
+    // links shut in. What cell-ringed water is allowed to be covered by, since such water is
+    // either construction's to fill.
     //
     // Taken from the same inventory the window draws from, so a piece excused here is a piece a
     // reader can see coloured in.
-    //
-    // The margins have to be in it, and as BANDS. Where the smoothing pulls a lake's shore
-    // right in, the band is most of that lake's water and the ring inside it a sliver - so a
-    // list without the margins calls such a lake unfilled while the window plainly paints it.
-    // Taken as whole rings instead, they would cover the middle a lake leaves bare, which is
-    // the one thing this check is here to notice.
     private static List<BoundedOutline> collectOtherFill(
             String sector,
             VoidPockets.PocketShaping shaping) {
@@ -287,16 +281,12 @@ class CoastPocketsIntegrationTest {
 
         rings.addAll(water.collectInletWater());
         rings.addAll(water.collectLakeWater());
+        rings.addAll(water.collectLakeMargins());
         rings.addAll(water.collectPuddleWater());
         rings.addAll(water.collectLinkWater());
         rings.addAll(water.collectLinkedSectorWater());
 
-        var fill = measureBounds(rings);
-
-        for (var margin : water.collectLakeMargins()) {
-            fill.add(BoundedOutline.measureBand(margin.waterEdge(), margin.drawnShore()));
-        }
-        return fill;
+        return measureBounds(rings);
     }
 
     private static List<BoundedOutline> concatenate(
@@ -385,18 +375,11 @@ class CoastPocketsIntegrationTest {
     // bounds inside that loop is no cheaper than the test it was meant to avoid.
     private record BoundedOutline(
         List<double[]> outline,
-        List<double[]> hole,
         double leastX,
         double leastY,
         double mostX,
         double mostY) {
         static BoundedOutline measure(List<double[]> outline) {
-            return measureBand(outline, List.of());
-        }
-
-        // A fill that covers the water between two rings and none of the water inside the
-        // inner one, which is how a lake's margin enters the question.
-        static BoundedOutline measureBand(List<double[]> outline, List<double[]> hole) {
             var leastX = Double.MAX_VALUE;
             var leastY = Double.MAX_VALUE;
             var mostX = -Double.MAX_VALUE;
@@ -408,15 +391,13 @@ class CoastPocketsIntegrationTest {
                 mostX = Math.max(mostX, corner[0]);
                 mostY = Math.max(mostY, corner[1]);
             }
-            return new BoundedOutline(outline, hole, leastX, leastY, mostX, mostY);
+            return new BoundedOutline(outline, leastX, leastY, mostX, mostY);
         }
 
         boolean holds(double[] point) {
             return point[0] >= leastX && point[0] <= mostX
                 && point[1] >= leastY && point[1] <= mostY
-                && PolygonRegions.isPointInsideRing(outline, point[0], point[1])
-                && (hole.isEmpty()
-                    || !PolygonRegions.isPointInsideRing(hole, point[0], point[1]));
+                && PolygonRegions.isPointInsideRing(outline, point[0], point[1]);
         }
     }
 

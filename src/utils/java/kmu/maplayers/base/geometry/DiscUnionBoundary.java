@@ -173,7 +173,33 @@ public final class DiscUnionBoundary {
          * mouth lies inside the neighbouring disc whatever the reach did - its own end is the
          * only thing that says whether it is on the boundary.
          */
-        COAST_REACH
+        COAST_REACH,
+
+        /**
+         * The same run, drawn on a lake's shore instead of an outer coast's.
+         *
+         * <p>Told apart from {@link #COAST_REACH} by what lies either side, not by how it is
+         * built. An outer coast has water on one side and cells on the other; a lake shore has
+         * water on BOTH - the pockets within the line, and the margin the line conceded to the
+         * cells - so a hole closing on one is lake water either way, and which side it fell is
+         * a question of where it sits rather than of what walled it.
+         */
+        LAKE_SHORE;
+
+        /**
+         * Whether this is a run of a drawn shoreline rather than a span across void.
+         *
+         * <p>The two are placed differently and so are judged differently: a shore's run leaves
+         * its cell along a tangent and may end exactly on a crossing, where a span crosses its
+         * circles squarely between the two sites. Asked as one question rather than compared
+         * against each kind in turn, so a shore added later cannot be judged as a span by a
+         * test that was never told about it.
+         *
+         * @return whether a run of drawn shoreline
+         */
+        public boolean isShoreReach() {
+            return this == COAST_REACH || this == LAKE_SHORE;
+        }
     }
 
     /**
@@ -239,6 +265,13 @@ public final class DiscUnionBoundary {
      * <p>Per cell rather than per wall end, since the fact is about the cell: every wall on a
      * pinched cell lands on the same point, and one of them kept wide while the rest closed
      * would hold the coast a channel off all of them.
+     *
+     * <p><b>The channel cannot be given up wall by wall.</b> A mouth is how a cycle is routed
+     * onto a wall, so a wall with none does not divide the void - it is touched and walked
+     * past. Measured: with the lake shores laid at no width, the pockets inside them ran up to
+     * 1291 units out past the shore and the water one fixture's lakes had painted fell by half.
+     * A pinched CELL is the exception that proves it: there only one end of a wall closes, and
+     * the wall still has a mouth at the other to be routed by.
      *
      * @param chords       the walls, as pairs of circles
      * @param channel      how far each side of a wall holds back from it
@@ -1517,7 +1550,7 @@ public final class DiscUnionBoundary {
             int circle,
             double[] mouth) {
 
-        if (chord.kind() == WallKind.COAST_REACH) {
+        if (chord.kind().isShoreReach()) {
             return List.of(chord.findEndOn(circle));
         }
 
@@ -1545,7 +1578,7 @@ public final class DiscUnionBoundary {
             int circle,
             double[] point) {
 
-        return chord.kind() == WallKind.COAST_REACH
+        return chord.kind().isShoreReach()
             ? Points.computeDistance(point, union.sites().get(circle))
             : union.reach();
     }
@@ -1628,7 +1661,7 @@ public final class DiscUnionBoundary {
 
         var chord = mouthed.chord();
 
-        return chord.kind() != WallKind.COAST_REACH
+        return !chord.kind().isShoreReach()
             && (isMouthTaken(takenByCircle, chord.fromCircle(), mouthed.fromMouth())
                 || isMouthTaken(takenByCircle, chord.toCircle(), mouthed.toMouth()));
     }

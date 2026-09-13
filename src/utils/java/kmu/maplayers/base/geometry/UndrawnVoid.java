@@ -129,11 +129,6 @@ public final class UndrawnVoid {
     // Everything the map fills void with, every layer of it, each with the box it lies in. What
     // a sample asks is whether ANY fill covers it, and which one did is the layers' own
     // business; the box is what keeps that question cheap enough to ask of a whole sector.
-    //
-    // A lake's margin goes in as the band it is rather than as its outer ring. The open water
-    // inside a drawn shore is left bare on purpose unless some other layer covers it, and that
-    // other layer is in this list on its own account - so a margin that claimed the whole lake
-    // would hide exactly the patch this exists to find.
     private static List<BoxedFill> collectDrawnFills(FilledWater water) {
 
         var fills = new ArrayList<BoxedFill>();
@@ -156,8 +151,8 @@ public final class UndrawnVoid {
         for (var outline : water.collectLinkedSectorWater()) {
             fills.add(BoxedFill.boxFill(outline));
         }
-        for (var margin : water.collectLakeMargins()) {
-            fills.add(BoxedFill.boxMargin(margin.waterEdge(), margin.drawnShore()));
+        for (var outline : water.collectLakeMargins()) {
+            fills.add(BoxedFill.boxFill(outline));
         }
         return fills;
     }
@@ -345,31 +340,21 @@ public final class UndrawnVoid {
     }
 
     /**
-     * One drawn fill with the box it lies in, and the hole it leaves where it is a margin.
+     * One drawn fill with the box it lies in.
      *
      * <p>The box is what makes sweeping a whole sector affordable: a ring walk per fill per
      * sample is hundreds of millions of steps, where a box rejects all but the handful of
      * fills a sample could possibly be in.
      *
      * @param outline the fill's own ring
-     * @param hole    the ring inside it that the fill stops at, empty where the fill is whole
      * @param box     the box the outline lies within
      */
     private record BoxedFill(
         List<double[]> outline,
-        List<double[]> hole,
         Bounds box) {
 
-        // One whole fill with its box worked out, which is how every solid layer enters the
-        // sweep.
         static BoxedFill boxFill(List<double[]> outline) {
-            return new BoxedFill(outline, List.of(), Bounds.computeEnclosingBounds(outline));
-        }
-
-        // One band between two rings, which is how a lake's margin enters it: covering the
-        // water between the shore and the cells' edge, and none of the water inside the shore.
-        static BoxedFill boxMargin(List<double[]> outer, List<double[]> inner) {
-            return new BoxedFill(outer, inner, Bounds.computeEnclosingBounds(outer));
+            return new BoxedFill(outline, Bounds.computeEnclosingBounds(outline));
         }
 
         // Whether this fill covers a point - the box first, since almost every fill on the
@@ -380,8 +365,7 @@ public final class UndrawnVoid {
                 && at[0] <= box.maxX()
                 && at[1] >= box.minY()
                 && at[1] <= box.maxY()
-                && PolygonRegions.isPointInsideRing(outline, at[0], at[1])
-                && (hole.isEmpty() || !PolygonRegions.isPointInsideRing(hole, at[0], at[1]));
+                && PolygonRegions.isPointInsideRing(outline, at[0], at[1]);
         }
     }
 }

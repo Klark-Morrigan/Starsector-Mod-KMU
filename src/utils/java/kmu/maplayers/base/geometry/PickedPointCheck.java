@@ -510,9 +510,7 @@ public final class PickedPointCheck {
     }
 
     // Which layer of the map's water holds a point, and which of its rings - or none. Every
-    // layer in the order the sheet fills them, with a margin counting only where it is a band:
-    // the water inside a drawn shore is bare unless another layer covers it, and that layer
-    // answers for itself here.
+    // layer in the order the sheet fills them.
     private static String describeLayerHolding(FilledWater water, double[] pick) {
 
         var byLayer = List.of(
@@ -523,7 +521,7 @@ public final class PickedPointCheck {
             new String[] {"link", describeHit(water.collectLinkWater(), pick)},
             new String[] {
                 "linked shore", describeHit(water.collectLinkedSectorWater(), pick)},
-            new String[] {"margin", describeMarginHolding(water.collectLakeMargins(), pick)});
+            new String[] {"margin", describeHit(water.collectLakeMargins(), pick)});
 
         var holding = new ArrayList<String>();
 
@@ -534,25 +532,6 @@ public final class PickedPointCheck {
             }
         }
         return holding.isEmpty() ? "none" : String.join(", ", holding);
-    }
-
-    // Which lake's margin holds a point: inside the water's edge and outside the drawn shore.
-    private static String describeMarginHolding(
-            List<FilledWater.LakeMargin> margins,
-            double[] pick) {
-
-        for (var index = 0; index < margins.size(); index++) {
-
-            var margin = margins.get(index);
-
-            if (PolygonRegions.isPointInsideRing(margin.waterEdge(), pick[0], pick[1])
-                    && !PolygonRegions.isPointInsideRing(
-                        margin.drawnShore(), pick[0], pick[1])) {
-
-                return "#" + index;
-            }
-        }
-        return NO_HIT;
     }
 
     // Which hole of the union holds a point, if any. "None" is the answer that matters most:

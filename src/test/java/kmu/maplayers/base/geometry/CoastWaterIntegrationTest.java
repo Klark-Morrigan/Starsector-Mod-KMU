@@ -84,6 +84,33 @@ class CoastWaterIntegrationTest {
     }
 
     @Nested
+    class FindLakeWater {
+
+        @ParameterizedTest(name = "{0}")
+        @MethodSource(SECTORS)
+        void noWaterIsBothPocketAndMargin(String sector) {
+            // The rule that keeps the two lake layers apart: the pockets take the water inside
+            // the shore, the margin takes the band outside it, and no point is both. Pinned by
+            // sampling rather than trusted to the walk that promises it, since a map is going
+            // to be cut into pieces along exactly these lines.
+            //
+            // Asked of points sampled INSIDE each ring rather than of its corners, since a
+            // corner on the water's edge is exactly on the line being asked about.
+            var shared = new ArrayList<String>();
+
+            for (var shaping : VoidPockets.PocketShaping.values()) {
+                for (var piece : findWaterPaintedByBothLayers(sector, shaping)) {
+                    shared.add(shaping + ": " + piece);
+                }
+            }
+
+            assertThat(shared)
+                .as("%s: lake water painted by both the pockets and the margin", sector)
+                .isEmpty();
+        }
+    }
+
+    @Nested
     class CollectLakeWater {
 
         @ParameterizedTest(name = "{0}")
@@ -110,23 +137,30 @@ class CoastWaterIntegrationTest {
         }
     }
 
-    // Every lake whose drawn shore holds no painted water at all, named by where it sits.
+    // Every lake whose shore holds void and no painted water, named by where it sits.
     //
-    // The lake margins are not among the layers asked, and cannot be: a margin is the band
-    // between the drawn shore and the cells' edge, so it lies entirely OUTSIDE the ring being
-    // sampled and would answer about water that is not the middle.
+    // Only void is sampled: a shore can enclose nothing but cells at the reach being asked
+    // about - a sliver the smoothing drew across a lake, closed over by the channel - and such
+    // a lake has no middle to paint. The lake margins are not among the layers asked, and
+    // cannot be: a margin is the band between the shore and the cells' edge, so it lies
+    // entirely OUTSIDE the ring being sampled and would answer about water that is not the
+    // middle.
     private static List<String> findLakesWithNothingInside(
             String sector,
             VoidPockets.PocketShaping shaping) {
-        var laying = SectorPipeline.layContinentsIn(sector);
+        var traced = traceContinentCoast(sector);
+        var cells = VoidPockets.buildUnionFor(traced.union().sites(), PARAMETERS, shaping);
         var painted = collectPaintedWater(SectorPipeline.fillWater(sector, shaping));
         var empty = new ArrayList<String>();
 
-        for (var shore : laying.roundCoasts().lakes()) {
+        for (var shore : Coastlines.collectLakeOutlines(traced)) {
             var inside = 0;
             var covered = 0;
 
             for (var at : sampleInside(shore)) {
+                if (cells.isPointInside(at)) {
+                    continue;
+                }
                 inside++;
 
                 if (isInsideAny(painted, at)) {
@@ -145,6 +179,51 @@ class CoastWaterIntegrationTest {
             }
         }
         return empty;
+    }
+
+    // Every ring of either lake layer with a sampled point inside a ring of the other, named by
+    // where it sits and by how many of its samples the other layer also paints.
+    private static List<String> findWaterPaintedByBothLayers(
+            String sector,
+            VoidPockets.PocketShaping shaping) {
+        var water = SectorPipeline.fillWater(sector, shaping);
+        var shared = new ArrayList<String>();
+
+        collectSharedWater("pocket", water.collectLakeWater(), water.collectLakeMargins(), shared);
+        collectSharedWater("margin", water.collectLakeMargins(), water.collectLakeWater(), shared);
+
+        return shared;
+    }
+
+    private static void collectSharedWater(
+            String what,
+            List<List<double[]>> rings,
+            List<List<double[]>> others,
+            List<String> shared) {
+        for (var ring : rings) {
+            var sampled = 0;
+            var doubled = 0;
+
+            for (var at : sampleInside(ring)) {
+                sampled++;
+
+                if (isInsideAny(others, at)) {
+                    doubled++;
+                }
+            }
+
+            if (doubled > 0) {
+                var middle = Points.computeMean(ring);
+
+                shared.add(String.format(
+                    "%s at %.0f,%.0f, %d of %d samples under the other layer",
+                    what,
+                    middle[0],
+                    middle[1],
+                    doubled,
+                    sampled));
+            }
+        }
     }
 
     private static List<List<double[]>> collectPaintedWater(FilledWater water) {

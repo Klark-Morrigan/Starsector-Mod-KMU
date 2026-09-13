@@ -311,14 +311,10 @@ public final class ContinentCoastOverlay {
             sheet.addRings(water.collectLinkedSectorWater());
         }
 
-        // Last, and the one layer that takes water back OUT of the sheet: a lake's open middle
-        // stays bare unless the spans' pockets fill it, which is what the two layers each mean
-        // with the other switched off.
+        // The band each lake shore concedes to the cells, from the same walk as the pockets
+        // inside it - so with either switch off the other's water is exactly what is missing.
         if (settings.showContinentLakeFill) {
-
-            for (var margin : water.collectLakeMargins()) {
-                sheet.addMargin(margin.waterEdge(), margin.drawnShore());
-            }
+            sheet.addRings(water.collectLakeMargins());
         }
 
         return sheet;

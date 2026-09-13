@@ -40,16 +40,6 @@ class FillSheetTest {
     private static final int[] IN_UPPER_ONLY = {450, 450};
     private static final int[] IN_BOTH = {300, 300};
 
-    // A margin and a body that covers the space it leaves out: one square well inside another,
-    // and a third inside the gap between them. The sample points sit in the band and in the
-    // middle, both far enough in that neither reads an edge.
-    private static final List<double[]> MARGIN_OUTER = buildSquare(50, 50, 550, 550);
-    private static final List<double[]> MARGIN_INNER = buildSquare(200, 200, 400, 400);
-    private static final List<double[]> COVERING_SQUARE = buildSquare(250, 250, 350, 350);
-
-    private static final int[] IN_BAND = {120, 120};
-    private static final int[] IN_MIDDLE = {300, 300};
-
     @Nested
     class AddRings {
 
@@ -93,40 +83,6 @@ class FillSheetTest {
             assertThat(readPixel(canvas, IN_LOWER_ONLY))
                 .as("a filled ring is still the backdrop colour")
                 .isNotEqualTo(Color.WHITE.getRGB());
-        }
-    }
-
-    @Nested
-    class AddMargin {
-
-        @Test
-        void theSpaceInsideTheInnerRingIsLeftBare() {
-
-            var canvas = paintSheet(sheet -> sheet.addMargin(MARGIN_OUTER, MARGIN_INNER));
-
-            assertThat(readPixel(canvas, IN_MIDDLE))
-                .as("the space the margin gives up was filled anyway")
-                .isEqualTo(Color.WHITE.getRGB());
-            assertThat(readPixel(canvas, IN_BAND))
-                .as("the band between the two rings was not filled")
-                .isNotEqualTo(Color.WHITE.getRGB());
-        }
-
-        @Test
-        void aBodyCoveringThatSpaceFillsItAtTheShadeOfTheBand() {
-
-            // What a margin is in a sheet FOR. The layer that concedes the middle and the
-            // layer that fills it are one body, so the band does not come out darker than the
-            // water either side of it.
-            var canvas = paintSheet(sheet -> {
-
-                sheet.addMargin(MARGIN_OUTER, MARGIN_INNER);
-                sheet.addRing(COVERING_SQUARE);
-            });
-
-            assertThat(readPixel(canvas, IN_MIDDLE))
-                .as("the covered space is not the shade of the band around it")
-                .isEqualTo(readPixel(canvas, IN_BAND));
         }
     }
 

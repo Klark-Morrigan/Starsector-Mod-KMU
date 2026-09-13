@@ -236,26 +236,20 @@ public final class SectorSvgWriter {
             CoastPockets.markEverySiteUnowned(sites), drawn.shaping());
 
         var bodies = new ArrayList<List<double[]>>();
-        var holes = new ArrayList<List<double[]>>();
 
         bodies.addAll(water.collectShoreWater());
         bodies.addAll(water.collectInletWater());
         bodies.addAll(water.collectLakeWater());
+        bodies.addAll(water.collectLakeMargins());
         bodies.addAll(water.collectPuddleWater());
         bodies.addAll(water.collectLinkWater());
         bodies.addAll(water.collectLinkedSectorWater());
-
-        for (var margin : water.collectLakeMargins()) {
-
-            bodies.add(margin.waterEdge());
-            holes.add(margin.drawnShore());
-        }
 
         var colour = SvgDrawing.formatColour(MapLook.CONTINENT_COASTAL_VOID);
 
         drawing.drawBodiesWithHoles(
             bodies,
-            holes,
+            List.of(),
             SvgPaint.filledOutline(
                 colour, FILL_OPACITY, colour, MapLook.RING_STROKE / TRAPPED_EDGE_STROKES));
     }

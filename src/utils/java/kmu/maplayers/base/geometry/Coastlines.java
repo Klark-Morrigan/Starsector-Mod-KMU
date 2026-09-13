@@ -905,10 +905,27 @@ public final class Coastlines {
      * @return one entry per reach, in walk order
      */
     static List<CoastReach> collectStraightReaches(TracedCoasts traced) {
+        return collectStraightReaches(traced.coasts(), traced.walls().channel());
+    }
+
+    /**
+     * The straight reaches of any set of coasts, at a stated channel.
+     *
+     * <p>A lake shore is the outer shore looked at from the water's side, and its reaches wall
+     * water off exactly as an outer coast's do - so whatever lays one kind has to be able to lay
+     * the other from the same rule. The channel is handed in because it is what tells a reach
+     * from a handover, and a shore does not carry one of its own.
+     *
+     * @param coasts  the coasts to read, of either kind
+     * @param channel the width below which a step is a handover between touching cells rather
+     *                than a reach across void
+     * @return one entry per reach, in walk order
+     */
+    static List<CoastReach> collectStraightReaches(List<Coast> coasts, double channel) {
 
         var reaches = new ArrayList<CoastReach>();
 
-        for (var coast : traced.coasts()) {
+        for (var coast : coasts) {
 
             var vertices = coast.vertices();
 
@@ -918,8 +935,7 @@ public final class Coastlines {
                 var to = vertices.get((index + 1) % vertices.size());
 
                 if (from.circle() != to.circle()
-                        && Points.computeDistance(from.point(), to.point())
-                            >= traced.walls().channel()) {
+                        && Points.computeDistance(from.point(), to.point()) >= channel) {
 
                     reaches.add(new CoastReach(from, to));
                 }
