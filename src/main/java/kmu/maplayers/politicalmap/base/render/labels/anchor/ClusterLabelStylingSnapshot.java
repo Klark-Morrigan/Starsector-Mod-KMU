@@ -47,10 +47,15 @@ public record ClusterLabelStylingSnapshot(
      * @return the styling snapshot those territories were built under
      */
     public static ClusterLabelStylingSnapshot resolveFrom(PoliticalMapTerritories territories) {
+
+        // The holders off the live occupancy, which the refresh folds, and the other three off
+        // the inputs the build was baked under, which stand until the next rebuild.
+        var buildInputs = territories.getBuildInputs();
+
         return new ClusterLabelStylingSnapshot(
-            territories.getHolderBySystemKey(),
-            territories.getDesaturationPalette(),
-            territories.getViewGrouping(),
-            territories.getContentInputs());
+            territories.getOccupancy().getHolderBySystemKey(),
+            buildInputs.styling().desaturationPalette(),
+            buildInputs.viewGrouping(),
+            buildInputs.contentInputs());
     }
 }

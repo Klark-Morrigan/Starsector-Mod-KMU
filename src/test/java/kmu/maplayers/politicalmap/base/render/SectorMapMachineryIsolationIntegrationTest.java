@@ -150,11 +150,12 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
         @Test
         void marksOnlyTheChangedSectorsSystemStaleWhenAColonyResizesThere() {
-            // The mark is a bare system ID on a board, so this is where two sectors collide most
-            // quietly: a shared board would have one sector's resize reshape the other's cell, with
-            // nothing on either map to say where the mark came from. Driven through the listener the
-            // installer actually registered, which is also what says that listener was built against
-            // the sector it was installed on.
+            // The mark is a system key on a board, and both sectors mint the same one for this
+            // system, so this is where two sectors collide most quietly: a shared board would have
+            // one sector's resize reshape the other's cell, with nothing on either map to say
+            // where the mark came from. Driven through the listener the installer actually
+            // registered, which is also what says that listener was built against the sector it
+            // was installed on.
             var firstSector = installMachineryOnAFirstSector();
             var secondSector = installMachineryOnASecondSector();
 
@@ -165,11 +166,11 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             assertThat(resolveMachineryOf(firstSector)
                     .resolveRefreshBoard()
-                    .drainStaleGroupingSystemIds())
-                .containsExactly(SHARED_SYSTEM_ID);
+                    .drainStaleGroupingSystemKeys())
+                .containsExactly(SHARED_SYSTEM_KEY);
             assertThat(resolveMachineryOf(secondSector)
                     .resolveRefreshBoard()
-                    .drainStaleGroupingSystemIds())
+                    .drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -193,9 +194,9 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             // The shared ID is held by a different faction in each, so the cell they both have an ID
             // for still paints each sector's own holder.
-            assertThat(firstTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
+            assertThat(firstTerritories.getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(HEGEMONY_ID);
-            assertThat(secondTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
+            assertThat(secondTerritories.getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(TRITACHYON_ID);
         }
 
@@ -222,12 +223,12 @@ final class SectorMapMachineryIsolationIntegrationTest {
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(firstMap.rebuild().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
+            assertThat(firstMap.rebuild().getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(PERSEAN_ID);
 
             var untouchedTerritories = secondMap.readTerritories();
 
-            assertThat(untouchedTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
+            assertThat(untouchedTerritories.getOccupancy().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(TRITACHYON_ID);
             assertThat(untouchedTerritories.getStyledCellByCellKey())
                 .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
@@ -287,7 +288,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             var removedMachinery = resolveMachineryOf(firstSector);
 
-            removedMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
+            removedMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_KEY);
             removedMachinery.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
 
             SectorMapMachineryIndex.uninstallMachineryFrom(firstSector);
@@ -315,7 +316,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
             var previousSector = installMachineryOnAFirstSector();
             var previousMachinery = resolveMachineryOf(previousSector);
 
-            previousMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_ID);
+            previousMachinery.resolveRefreshBoard().markSystemGroupingStale(SHARED_SYSTEM_KEY);
             previousMachinery.resolveHoverState().publishHover(HOVERED_SHARED_CELL);
             driftTheSharedSystemPastTwoPollsOf(previousSector);
 
@@ -327,7 +328,7 @@ final class SectorMapMachineryIsolationIntegrationTest {
             assertThat(new PoliticalMapCacheDriver(loadedSector).rebuild().getStyledCellByCellKey())
                 .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));
 
-            assertThat(loadedMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(loadedMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
             assertThat(loadedMachinery.resolveMovingSystems().getMovingSystemKeys())
                 .isEmpty();

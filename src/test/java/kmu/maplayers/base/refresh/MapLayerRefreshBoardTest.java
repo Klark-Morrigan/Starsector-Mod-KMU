@@ -1,17 +1,21 @@
 package kmu.maplayers.base.refresh;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Pins the board's own contract, rather than reaching it through a layer that raises signals on
  * it: a request advances the counter of the signal it names and no other, a signal never raised
- * still reads as a number, and the stale-system set is a set that drains once.
+ * still reads as a number, and the stale-system set is a set of keys that drains once.
  *
  * <p>The signals it raises are declared here rather than taken from the framework's or the
  * political map's sets, since the board's promise is that it holds a counter for whatever a layer
@@ -28,6 +32,16 @@ class MapLayerRefreshBoardTest {
     // its removal many times over, rather than by luck once. A drop is silent, so a case that only
     // sometimes opens the window would report the defect only sometimes too.
     private static final int MARKED_SYSTEM_COUNT = 20_000;
+
+    // The systems the marking cases name, keyed as a producer holding the system keys them.
+    private static final SystemKey SYSTEM = buildCellKey("sys");
+    private static final SystemKey FIRST_SYSTEM = buildCellKey("first");
+    private static final SystemKey SECOND_SYSTEM = buildCellKey("second");
+
+    // Two systems answering to one vanilla ID, told apart by their anchors alone - the pair the
+    // key exists for, and the one a mark by ID could not have named apart.
+    private static final SystemKey ANCHORED_TWIN = new SystemKey("deep space", null, "8b3");
+    private static final SystemKey OTHER_TWIN = new SystemKey("deep space", null, "38d53");
 
     private final MapLayerRefreshBoard board = new MapLayerRefreshBoard();
 
@@ -84,83 +98,96 @@ class MapLayerRefreshBoardTest {
         @Test
         void markSystemGroupingStaleQueuesTheSystemForTheNextDrain() {
 
-            board.markSystemGroupingStale("sys");
+            board.markSystemGroupingStale(SYSTEM);
 
-            assertThat(board.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(board.drainStaleGroupingSystemKeys())
+                .containsExactly(SYSTEM);
         }
 
         @Test
         void markSystemGroupingStaleQueuesOneSystemOnceHoweverOftenItIsMarked() {
 
-            board.markSystemGroupingStale("sys");
-            board.markSystemGroupingStale("sys");
+            board.markSystemGroupingStale(SYSTEM);
+            board.markSystemGroupingStale(SYSTEM);
 
             // A system is stale or it is not, so a colony resized twice in one tick costs one
             // reshape rather than two.
-            assertThat(board.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(board.drainStaleGroupingSystemKeys())
+                .containsExactly(SYSTEM);
         }
 
         @Test
-        void markSystemGroupingStaleIgnoresANullSystemId() {
+        void markSystemGroupingStaleQueuesEachOfTwoSystemsSharingAnIdApart() {
+            // The reason the set holds keys: a producer marking one of a pair the sector lists
+            // under one ID names that system alone, so the drain hands the consumer that one
+            // system to re-derive - where a set of IDs would have held one entry for both, and
+            // the consumer would have had to widen it back into every system sharing the ID.
+            board.markSystemGroupingStale(ANCHORED_TWIN);
+
+            assertThat(board.drainStaleGroupingSystemKeys())
+                .containsExactly(ANCHORED_TWIN)
+                .doesNotContain(OTHER_TWIN);
+        }
+
+        @Test
+        void markSystemGroupingStaleIgnoresANullSystemKey() {
 
             board.markSystemGroupingStale(null);
 
             // A producer with nothing to name must not put a null in the set for the drain to
             // hand a consumer that would then look it up.
-            assertThat(board.drainStaleGroupingSystemIds())
+            assertThat(board.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }
 
     @Nested
-    class DrainStaleGroupingSystemIds {
+    class DrainStaleGroupingSystemKeys {
 
         @Test
-        void drainStaleGroupingSystemIdsReturnsEveryQueuedSystem() {
+        void drainStaleGroupingSystemKeysReturnsEveryQueuedSystem() {
 
-            board.markSystemGroupingStale("first");
-            board.markSystemGroupingStale("second");
+            board.markSystemGroupingStale(FIRST_SYSTEM);
+            board.markSystemGroupingStale(SECOND_SYSTEM);
 
-            assertThat(board.drainStaleGroupingSystemIds())
-                .containsExactlyInAnyOrder("first", "second");
+            assertThat(board.drainStaleGroupingSystemKeys())
+                .containsExactlyInAnyOrder(FIRST_SYSTEM, SECOND_SYSTEM);
         }
 
         @Test
-        void drainStaleGroupingSystemIdsEmptiesTheSetSoOneStalenessIsProcessedOnce() {
+        void drainStaleGroupingSystemKeysEmptiesTheSetSoOneStalenessIsProcessedOnce() {
 
-            board.markSystemGroupingStale("sys");
-            board.drainStaleGroupingSystemIds();
+            board.markSystemGroupingStale(SYSTEM);
+            board.drainStaleGroupingSystemKeys();
 
-            assertThat(board.drainStaleGroupingSystemIds())
+            assertThat(board.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
         @Test
-        void drainStaleGroupingSystemIdsReturnsEmptyWhenNothingIsQueued() {
+        void drainStaleGroupingSystemKeysReturnsEmptyWhenNothingIsQueued() {
 
-            assertThat(board.drainStaleGroupingSystemIds())
+            assertThat(board.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
         @Test
-        void drainStaleGroupingSystemIdsLosesNoSystemMarkedWhileItIsDraining()
+        void drainStaleGroupingSystemKeysLosesNoSystemMarkedWhileItIsDraining()
                 throws InterruptedException {
 
             // The reason the drain snapshots and then removes exactly what it snapshotted, rather
             // than clearing: the marks arrive on the campaign thread while the drain runs on the
-            // render thread, so a clear would drop every ID marked between the copy and the clear.
+            // render thread, so a clear would drop every key marked between the copy and the clear.
             // Those are silent losses - the system stays stale, and nothing rebuilds it until some
             // unrelated change forces a full rebuild.
             //
-            // Every ID is marked exactly once, so the drains between them must hand back exactly
-            // MARKED_SYSTEM_COUNT IDs: fewer means one was dropped, more means one was handed over
+            // Every key is marked exactly once, so the drains between them must hand back exactly
+            // MARKED_SYSTEM_COUNT keys: fewer means one was dropped, more means one was handed over
             // twice and would be re-shaped twice.
-            var drained = new ArrayList<String>();
+            var drained = new ArrayList<SystemKey>();
             var marking = new Thread(() -> {
                 for (var index = 0; index < MARKED_SYSTEM_COUNT; index++) {
-                    board.markSystemGroupingStale("system_" + index);
+                    board.markSystemGroupingStale(buildCellKey("system_" + index));
                 }
             });
 
@@ -169,7 +196,7 @@ class MapLayerRefreshBoardTest {
             marking.join();
 
             // A last drain after the marking thread is done, for whatever it left behind.
-            drained.addAll(board.drainStaleGroupingSystemIds());
+            drained.addAll(board.drainStaleGroupingSystemKeys());
 
             assertThat(drained)
                 .hasSize(MARKED_SYSTEM_COUNT)
@@ -180,10 +207,10 @@ class MapLayerRefreshBoardTest {
     // Drains repeatedly while the marks are still arriving, which is what puts a drain inside the
     // window a mark can land in. Stops with the marking thread rather than at a count, so the case
     // it poses is drains racing marks rather than drains waiting for them.
-    private void drainUntilMarkingStops(Thread marking, List<String> drained) {
+    private void drainUntilMarkingStops(Thread marking, List<SystemKey> drained) {
 
         while (marking.isAlive()) {
-            drained.addAll(board.drainStaleGroupingSystemIds());
+            drained.addAll(board.drainStaleGroupingSystemKeys());
         }
     }
 

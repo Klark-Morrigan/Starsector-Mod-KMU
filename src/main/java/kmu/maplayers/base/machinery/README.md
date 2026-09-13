@@ -33,7 +33,7 @@ Two sectors sharing one holder is not merely unsupported,
 it is wrong and quiet.
 
 Everything under the drawing is keyed by **one sector's naming of its systems**.
-The stale set names systems by bare ID,
+The stale set names systems by `SystemKey`,
 the motion tracker keys observations by `SystemKey`,
 and [the geometry cache](../geometry/README.md) reconciles cells by `SystemKey`.
 Nothing forbids two sectors from generating a system under the same ID,

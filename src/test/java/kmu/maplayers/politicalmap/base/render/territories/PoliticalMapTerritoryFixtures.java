@@ -26,7 +26,6 @@ import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,10 +41,10 @@ import static org.mockito.Mockito.mock;
  * not what is under test, and the two placeholder draw records that stand in wherever a cell or
  * a territory only has to exist rather than draw.
  *
- * <p>One home for these because a built territories takes five constructor arguments of which
- * most tests vary one, so each suite that hand-rolled its own was repeating the same four
- * inert placeholders - and a placeholder that drifts between suites is the kind of difference
- * that makes two tests of the same behaviour quietly disagree.
+ * <p>One home for these because a built territories is baked under five inputs of which most
+ * tests vary one, so each suite that hand-rolled its own was repeating the same four inert
+ * placeholders - and a placeholder that drifts between suites is the kind of difference that
+ * makes two tests of the same behaviour quietly disagree.
  *
  * <p>Everything comes back live and mutable, so a suite with a specialised need writes its own
  * state on top through the model's own accessors and keeps that variant local to itself.
@@ -203,17 +202,18 @@ public final class PoliticalMapTerritoryFixtures {
                 ownerBySystemKey,
                 inhabitedSystemKeys,
                 spotlitPresenceSystemKeys),
-            new LinkedHashSet<>(),
-            new MapStyling(
-                null, // No render style.
-                NEUTRAL_PALETTE, // Neutral palette.
-                NEUTRAL_PALETTE, // Desaturation palette.
-                NEUTRAL_PALETTE), // Presence palette.
-            new ViewGrouping(
-                mock(PoliticalMapView.class),
-                HolderGrouping.identity()),
-            contentInputs,
-            new LinkedHashSet<>()); // No contested system IDs.
+            new TerritoryBuildInputs(
+                new MapStyling(
+                    null, // No render style.
+                    NEUTRAL_PALETTE, // Neutral palette.
+                    NEUTRAL_PALETTE, // Desaturation palette.
+                    NEUTRAL_PALETTE), // Presence palette.
+                new ViewGrouping(
+                    mock(PoliticalMapView.class),
+                    HolderGrouping.identity()),
+                contentInputs,
+                Set.of(), // No unfilled systems.
+                Set.of())); // No contested systems.
     }
 
     /**
@@ -235,15 +235,16 @@ public final class PoliticalMapTerritoryFixtures {
 
         return new PoliticalMapTerritories(
             SystemOccupancy.createEmpty(),
-            new LinkedHashSet<>(),
-            new MapStyling(
-                renderStyle,
-                NEUTRAL_PALETTE, // Neutral palette.
-                NEUTRAL_PALETTE, // Desaturation palette.
-                NEUTRAL_PALETTE), // Presence palette.
-            new ViewGrouping(view, HolderGrouping.identity()),
-            ContentInputs.createEmpty(),
-            Set.of());
+            new TerritoryBuildInputs(
+                new MapStyling(
+                    renderStyle,
+                    NEUTRAL_PALETTE, // Neutral palette.
+                    NEUTRAL_PALETTE, // Desaturation palette.
+                    NEUTRAL_PALETTE), // Presence palette.
+                new ViewGrouping(view, HolderGrouping.identity()),
+                ContentInputs.createEmpty(),
+                Set.of(),
+                Set.of()));
     }
 
     /**

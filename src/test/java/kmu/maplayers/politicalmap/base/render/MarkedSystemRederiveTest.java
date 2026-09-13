@@ -120,7 +120,7 @@ final class MarkedSystemRederiveTest {
 
             rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getHolderBySystemKey())
+            assertThat(territories.getOccupancy().getHolderBySystemKey())
                 .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildHolderOf(TRITACHYON)));
         }
 
@@ -152,7 +152,7 @@ final class MarkedSystemRederiveTest {
 
             rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getHolderBySystemKey())
+            assertThat(territories.getOccupancy().getHolderBySystemKey())
                 .isEmpty();
         }
 
@@ -187,7 +187,7 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getInhabitedSystemKeys())
+            assertThat(territories.getOccupancy().getInhabitedSystemKeys())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
@@ -205,7 +205,7 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getInhabitedSystemKeys())
+            assertThat(territories.getOccupancy().getInhabitedSystemKeys())
                 .isEmpty();
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
@@ -247,7 +247,7 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getSpotlitPresenceSystemKeys())
+            assertThat(territories.getOccupancy().getSpotlitPresenceSystemKeys())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
@@ -269,7 +269,7 @@ final class MarkedSystemRederiveTest {
 
             rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getSpotlitPresenceSystemKeys())
+            assertThat(territories.getOccupancy().getSpotlitPresenceSystemKeys())
                 .isEmpty();
 
             // Asked of nothing at all, since the one marked system is now held: the read walks the

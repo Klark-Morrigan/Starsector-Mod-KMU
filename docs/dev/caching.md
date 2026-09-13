@@ -233,7 +233,7 @@ a layer declares its own beside itself
 One board per sector,
 held by that sector's [`SectorMapMachinery`](../../src/main/java/kmu/maplayers/base/machinery/SectorMapMachinery.java):
 every signal on it is a fact about one sector,
-and the stale set names that sector's systems by bare id.
+and the stale set names that sector's systems by `SystemKey`.
 Why that has to be a sector's rather than the process's,
 and how the machinery holding it is made and released,
 are [the installed machinery](../../src/main/java/kmu/maplayers/base/machinery/README.md).
@@ -251,7 +251,7 @@ a producer reaching one it was not handed is a producer that can raise on a map 
 | Signal | Home | Raised by | Read by |
 | --- | --- | --- | --- |
 | `MapLayerCommonRefreshSignal.GEOMETRY` | `MapLayerCommonRefreshSignal` | the drawn-system set or moving-system set changing | the geometry cache |
-| `groupingStaleSystemIds` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental politics refresh |
+| `groupingStaleSystemKeys` | `MapLayerRefreshBoard` | colony events + the watcher's owner diff | the incremental politics refresh |
 | `PoliticalMapRefreshSignal.ALLIANCES` | `PoliticalMapRefreshSignal` | the alliance-set fingerprint moving | the alliances view only |
 | `MapLayerCommonRefreshSignal.RECEDE_STYLE` | `MapLayerCommonRefreshSignal` | the Mute / Desaturate sidebar toggles | **nothing** - see below |
 | `MapLayerCommonRefreshSignal.FILTER` | `MapLayerCommonRefreshSignal` | picking or clearing the spotlight bloc | **nothing** - see below |
@@ -321,8 +321,22 @@ the political map's painter holds one -
 one per sector,
 the painter itself belonging to that sector's installed machinery -
 and asks it to `refresh` each frame the map is open.
-It holds both halves (geometry and built draw lists) plus what each half was built against,
+It holds both halves
+(geometry and built draw lists)
 and rebuilds only the stale half.
+What a frame owes is
+[`PoliticalMapRebuildDecider`](../../src/main/java/kmu/maplayers/politicalmap/base/render/PoliticalMapRebuildDecider.java)'s
+answer,
+asked first and acted on:
+the decider holds what each half was built against and compares this frame's revisions and settings to it,
+which is a handful of int compares and opens no reading of the sector,
+so nearly every frame stops at it.
+The two are apart because they run at different cadences -
+the question every frame,
+the rebuild rarely -
+and a class holding both put the cheap question and the expensive answer behind one door.
+The baselines advance only as the cache reports each stage complete,
+so a rebuild that threw part way is asked again next frame rather than taken as done.
 The geometry's revision is not a field beside the cells but rides with them,
 for the same reason the placements ride with their fingerprint below:
 a revision naming cells other than the ones in hand reads as permission to reuse work fitted inside a partition that has since been recut.

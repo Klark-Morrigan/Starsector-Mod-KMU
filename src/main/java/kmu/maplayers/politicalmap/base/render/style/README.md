@@ -196,8 +196,8 @@ and every rule here stays exercisable on hand-built shades.
 The decision and the mapping are deliberately two steps.
 `BlocStyleResolver` stays theme-free so the label path and the fill path resolve the same answer;
 `BlocStyling` is where a theme is finally required.
-Callers ask for the pair through `PoliticalMapTerritories.resolveBlocStyling`,
-which composes both off one retained snapshot.
+Callers ask for the pair through `TerritoryBuildInputs.resolveBlocStyling`,
+which composes both off the one reading a build was baked under.
 
 ## What is not here
 

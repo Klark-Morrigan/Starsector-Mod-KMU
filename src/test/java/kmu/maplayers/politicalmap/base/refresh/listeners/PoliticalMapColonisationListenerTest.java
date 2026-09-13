@@ -9,6 +9,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
@@ -55,8 +56,8 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerColonizedPlanet(planetMock);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -71,7 +72,7 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerColonizedPlanet(planetMock);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -80,7 +81,7 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerColonizedPlanet(null);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }
@@ -93,8 +94,8 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerAbandonedColony(mockMarketInSystem("sys"));
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -102,7 +103,7 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerAbandonedColony(mockUnseatedMarket());
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -111,7 +112,7 @@ final class PoliticalMapColonisationListenerTest {
 
             listener.reportPlayerAbandonedColony(null);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }

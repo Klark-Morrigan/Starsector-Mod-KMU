@@ -1,38 +1,25 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
-import kmlib.math.geometry.CornerRounding;
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
-import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
-import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.MapStyleCategory;
-import kmu.maplayers.base.theme.RenderStyle;
-import kmu.maplayers.base.theme.SpikeSandingStyle;
-import kmu.maplayers.base.theme.ThemeFixtures;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
-import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
-import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,22 +37,20 @@ import static org.mockito.Mockito.mock;
  * Pins the built map state the renderer paints and the incremental refresh edits:
  * that the empty fallback is a harmless no-op the render path can lean on after a failed
  * first build, that {@link PoliticalMapTerritories#isEmpty} tracks either draw list, and
- * that the constructor threads its inputs into the matching accessors (the {@link RenderStyle}
- * theme, whose global tier and four same-typed category bundles a swap would not otherwise catch,
- * the view and grouping the incremental re-shape classifies against, and the filter snapshot it
- * recedes by).
+ * that the two snapshots handed in - the live occupancy and the inputs the build was baked
+ * under - are the two handed back, with the global tier the emission reads coming off the
+ * retained theme.
  *
  * <p>Also pins the invariant the cursor read leans on that this model owns: that the cluster index
  * tracks holding through the splits and merges a single flip can cause, a break in which is
  * invisible until a hover resolves the wrong territory. What one cell carries, and what is dropped
- * when its ring is replaced, is {@link PaintedCellStoreTest}'s.
+ * when its ring is replaced, is {@link PaintedCellStoreTest}'s; what the retained inputs answer
+ * for themselves is {@link TerritoryBuildInputsTest}'s.
  */
 final class PoliticalMapTerritoriesTest {
 
-    // The cells the stores are exercised over, each keyed as the cut keys a cell.
+    // The cell the draw lists are exercised over, keyed as the cut keys a cell.
     private static final SystemKey SYSTEM_CELL = buildCellKey("system");
-    private static final SystemKey KEPT_CELL = buildCellKey("kept");
-    private static final SystemKey DROPPED_CELL = buildCellKey("dropped");
 
     @Nested
     class CreateEmpty {
@@ -88,37 +73,18 @@ final class PoliticalMapTerritoriesTest {
                 .isEmpty();
             assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
-            assertThat(territories.getHolderBySystemKey())
+            assertThat(territories.getOccupancy().getHolderBySystemKey())
                 .isEmpty();
-            assertThat(territories.getInhabitedSystemKeys())
+            assertThat(territories.getOccupancy().getInhabitedSystemKeys())
                 .isEmpty();
-            assertThat(territories.getUnfilledSystemKeys())
+            assertThat(territories.getOccupancy().getSpotlitPresenceSystemKeys())
                 .isEmpty();
 
-            // The placeholder's own shades are MapStyling's to pin; read back here only to prove
-            // the fallback threads them through rather than leaving a slot null for the render
-            // path to trip over.
-            assertThat(territories.getNeutralColour())
-                .isNotNull();
-            assertThat(territories.getNeutralPalette())
-                .isNotNull();
-            assertThat(territories.getDesaturationPalette())
-                .isNotNull();
-            assertThat(territories.getPresencePalette())
-                .isNotNull();
-
-            // The empty fallback is never a filtered build, so it selects no bloc and recedes
-            // nothing.
-            assertThat(territories.getSelectedBlocId())
-                .isNull();
-            assertThat(territories.isFiltering())
-                .isFalse();
-            assertThat(territories.getRecedeAdjustment())
-                .isEqualTo(ElementStyleAdjustment.NONE);
-            assertThat(territories.getContestedSystemKeys())
-                .isEmpty();
-            assertThat(territories.getSpotlitPresenceSystemKeys())
-                .isEmpty();
+            // The placeholder inputs' own stand-ins are TerritoryBuildInputs' to pin; read back
+            // here only to prove the fallback carries the view it was built for, which is the one
+            // thing about them a later frame reads.
+            assertThat(territories.getBuildInputs().viewGrouping().view())
+                .isSameAs(viewMock);
         }
     }
 
@@ -169,15 +135,16 @@ final class PoliticalMapTerritoriesTest {
 
             var territories = new PoliticalMapTerritories(
                 SystemOccupancy.createEmpty(),
-                new LinkedHashSet<>(),
-                new MapStyling(
-                    renderStyle,
-                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
-                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
-                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
-                new ViewGrouping(mock(PoliticalMapView.class), HolderGrouping.identity()),
-                ContentInputs.createEmpty(),
-                Set.of());
+                new TerritoryBuildInputs(
+                    new MapStyling(
+                        renderStyle,
+                        PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                        PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                        PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
+                    new ViewGrouping(mock(PoliticalMapView.class), HolderGrouping.identity()),
+                    ContentInputs.createEmpty(),
+                    Set.of(),
+                    Set.of()));
 
             territories.getStyledCellByCellKey().put(SYSTEM_CELL, styledCell);
             territories.getStyledClusterGroupByOwnerId().put("faction", styledClusterGroup);
@@ -272,83 +239,12 @@ final class PoliticalMapTerritoriesTest {
     class Getters {
 
         @Test
-        void gettersReturnEachConstructorInputInItsMatchingSlot() {
+        void gettersHandBackTheTwoSnapshotsHandedIn() {
 
-            var holders = new LinkedHashMap<SystemKey, DominantHolder>();
-            var inhabited = new LinkedHashSet<>(Set.of(buildCellKey("inhabited-system")));
+            var occupancy = SystemOccupancy.createEmpty();
+            var buildInputs = TerritoryBuildInputs.createEmpty(mock(PoliticalMapView.class));
 
-            // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
-            // inhabited set it sits beside.
-            var unfilled = new LinkedHashSet<>(Set.of(buildCellKey("unfilled-system")));
-            // The neutral in both slots, as a factionless cell's pair always is, so the colour read
-            // off it can only be the shade put in.
-            var neutralColour = Color.CYAN;
-            var neutralPalette = new FactionPalette(neutralColour, neutralColour);
-            var desaturationPalette = new FactionPalette(Color.MAGENTA, Color.ORANGE);
-
-            // All three palettes hold distinct shades: they are the same type in adjacent slots, so
-            // only differing contents catch a swap between them.
-            var presencePalette = new FactionPalette(Color.PINK, Color.WHITE);
-
-            // Four distinct category instances plus a distinct global tier, all wrapped in one
-            // theme, so a swapped style slot is caught by identity, not just by the shared
-            // CategoryStyle type the compiler would accept either way.
-            var factionStyle = buildStyleMarked(1);
-            var independentStyle = buildStyleMarked(2);
-            var decivilisedStyle = buildStyleMarked(3);
-            var uninhabitedStyle = buildStyleMarked(4);
-
-            var categories = new LinkedHashMap<MapStyleCategory, CategoryStyle>();
-
-            categories.put(PoliticalMapCategory.FACTION, factionStyle);
-            categories.put(PoliticalMapCategory.INDEPENDENT, independentStyle);
-            categories.put(PoliticalMapCategory.DECIVILISED, decivilisedStyle);
-            categories.put(PoliticalMapCategory.UNINHABITED, uninhabitedStyle);
-
-            // Every sector-wide value non-zero, so a getter reading the wrong tier is caught by
-            // value rather than by both tiers happening to hold the same inert numbers.
-            var globalStyle = new GlobalStyle(ThemeFixtures.createHatchStyle(5, 5, 5),
-                new BorderSmoothingStyle(
-                    new SpikeSandingStyle(true, 5, 5),
-                    new CornerRoundingStyle(true, 5, 5, 5, CornerRounding.ROUND_EVERY_CORNER)),
-                ThemeFixtures.NO_HIGHLIGHT,
-                ThemeFixtures.NO_HIGHLIGHT,
-                0.3,
-                0.2);
-
-            var renderStyle = new RenderStyle(globalStyle, categories);
-            var viewMock = mock(PoliticalMapView.class);
-            var grouping = HolderGrouping.identity();
-
-            // A distinct, non-identity adjustment so a swapped recede field is caught by value.
-            var recedeAdjustment = new ElementStyleAdjustment(0.25, true);
-
-            // A non-null selected bloc so the filter snapshot is caught by value and isFiltering()
-            // reads true off it.
-            var selectedBlocId = "selected-bloc";
-
-            // A distinct contested set so a swapped filter-snapshot field is caught by identity.
-            var contested = new LinkedHashSet<>(Set.of(buildCellKey("contested-system")));
-
-            // Likewise distinct, and held apart from the contested set it stands beside: both name
-            // systems the spotlit bloc is in, so only differing contents catch a swap between them.
-            var spotlitPresence = new LinkedHashSet<>(Set.of(buildCellKey("present-unheld-system")));
-
-            var occupancy = SystemOccupancy.createCopyOf(holders, inhabited, spotlitPresence);
-
-            var territories = new PoliticalMapTerritories(
-                occupancy,
-                unfilled,
-                new MapStyling(
-                    renderStyle,
-                    neutralPalette,
-                    desaturationPalette,
-                    presencePalette),
-                new ViewGrouping(viewMock, grouping),
-                ContentInputsFixtures.createInputsRecedingBehind(
-                    selectedBlocId,
-                    recedeAdjustment),
-                contested);
+            var territories = new PoliticalMapTerritories(occupancy, buildInputs);
 
             // The two draw lists are created internally, not passed, so the build can fill them;
             // they start empty and stay mutable for the incremental refresh to edit in place.
@@ -357,57 +253,16 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
 
-            // The occupancy is handed over whole, and its own three reads are unwrapped through
-            // the flat getters below - which is what lets every reader keep the accessor it had
-            // when the three facts moved behind one type.
+            // Both snapshots are handed over whole and handed back the same, by identity: the
+            // occupancy because the refresh folds into the very instance the build resolved, and
+            // the inputs because a reader takes the record and names the snapshot it reads off it.
             assertThat(territories.getOccupancy())
                 .isSameAs(occupancy);
-            assertThat(territories.getHolderBySystemKey())
-                .isSameAs(occupancy.getHolderBySystemKey());
-            assertThat(territories.getInhabitedSystemKeys())
-                .isSameAs(occupancy.getInhabitedSystemKeys());
-            assertThat(territories.getUnfilledSystemKeys())
-                .isSameAs(unfilled);
-            assertThat(territories.getNeutralPalette())
-                .isSameAs(neutralPalette);
-            assertThat(territories.getNeutralColour())
-                .isSameAs(neutralColour);
-            assertThat(territories.getDesaturationPalette())
-                .isSameAs(desaturationPalette);
-            assertThat(territories.getPresencePalette())
-                .isSameAs(presencePalette);
-            // The theme is read back through the two accessors production reads it through rather
-            // than whole: its global tier and its four category bundles are the whole of what it
-            // carries, so asserting both covers the threading without a getter existing only to be
-            // asserted.
-            assertThat(territories.getGlobalStyle())
-                .isSameAs(globalStyle);
-
-            assertThat(territories.getCategoryStyle(PoliticalMapCategory.FACTION))
-                .isSameAs(factionStyle);
-            assertThat(territories.getCategoryStyle(PoliticalMapCategory.INDEPENDENT))
-                .isSameAs(independentStyle);
-            assertThat(territories.getCategoryStyle(PoliticalMapCategory.DECIVILISED))
-                .isSameAs(decivilisedStyle);
-            assertThat(territories.getCategoryStyle(PoliticalMapCategory.UNINHABITED))
-                .isSameAs(uninhabitedStyle);
-
-            assertThat(territories.getView())
-                .isSameAs(viewMock);
-            assertThat(territories.getGrouping())
-                .isSameAs(grouping);
-            assertThat(territories.getSelectedBlocId())
-                .isEqualTo(selectedBlocId);
-            assertThat(territories.isFiltering())
-                .isTrue();
-            assertThat(territories.getRecedeAdjustment())
-                .isSameAs(recedeAdjustment);
-            assertThat(territories.getContestedSystemKeys())
-                .isSameAs(contested);
-            assertThat(territories.getSpotlitPresenceSystemKeys())
-                .isSameAs(occupancy.getSpotlitPresenceSystemKeys());
+            assertThat(territories.getBuildInputs())
+                .isSameAs(buildInputs);
         }
     }
+
     @Nested
     class ReindexClusters {
 
@@ -547,8 +402,8 @@ final class PoliticalMapTerritoriesTest {
         return PoliticalMapTerritoryFixtures.createTerritoryWithLoops(List.of());
     }
 
-    // A CategoryStyle whose opacities and widths carry one marker value, so four otherwise
-    // interchangeable style bundles are distinct instances.
+    // A CategoryStyle whose opacities and widths carry one marker value, so a style bundle is a
+    // distinct instance the seam can be checked against.
     private static CategoryStyle buildStyleMarked(double marker) {
 
         var element = new ElementStyle(FactionPaletteSlot.PRIMARY, marker);

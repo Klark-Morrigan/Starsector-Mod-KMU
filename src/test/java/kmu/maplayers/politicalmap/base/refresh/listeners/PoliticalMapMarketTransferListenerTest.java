@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
@@ -57,8 +58,8 @@ final class PoliticalMapMarketTransferListenerTest {
                 List.of(),
                 1.0f);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -73,7 +74,7 @@ final class PoliticalMapMarketTransferListenerTest {
                 List.of(),
                 1.0f);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -89,7 +90,7 @@ final class PoliticalMapMarketTransferListenerTest {
                 List.of(),
                 1.0f);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }
@@ -108,7 +109,7 @@ final class PoliticalMapMarketTransferListenerTest {
                 3.0f,
                 true);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }

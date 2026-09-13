@@ -54,7 +54,9 @@ public final class FactionTerritoryBuilder {
     /**
      * Builds one bloc's territory from its member cells.
      *
-     * @param territories    this pass's retained holding, theme, and filter state
+     * @param territories    the build the bloc belongs to, read for who holds its members and for
+     *                       the inputs the build was baked under - the theme, the filter state,
+     *                       and the two sets its fill splits by
      * @param geometryCache  the raw cells the border is traced from
      * @param cellGrouping   how the drawn cells group under this pass's holding, resolved once by
      *                       the caller: it spans every cell on the map rather than this bloc's, so
@@ -73,21 +75,27 @@ public final class FactionTerritoryBuilder {
             String blocId,
             List<SystemKey> memberCellKeys) {
 
+        // What the build was baked under, named apart from the live occupancy read below: the
+        // paints and the fill sets are this build's own and move only with the next rebuild.
+        var buildInputs = territories.getBuildInputs();
+        var globalStyle = buildInputs.styling().renderStyle().global();
+
         // A desaturated bloc's fill and border swap to the pass's shared desaturation palette
         // instead of its own two shades, exactly as its cells' seams do - both read this one call.
-        var styling = territories.resolveBlocStyling(blocId);
+        var styling = buildInputs.resolveBlocStyling(blocId);
         var style = styling.style();
         var adjustment = styling.adjustment();
 
         // Every system of a bloc shares its palette, so any member resolves the same colours.
         var holder = territories
+            .getOccupancy()
             .getHolderBySystemKey()
             .get(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0)));
 
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
             holder,
-            territories.getDesaturationPalette());
+            buildInputs.styling().desaturationPalette());
 
         var fillColour = MapPalettes.pickPaletteColour(
             style.fill().colour(),
@@ -115,7 +123,7 @@ public final class FactionTerritoryBuilder {
         }
         var borderLoops = resolveSmoothedBorderLoops(
             insetRings,
-            territories.getGlobalStyle().borderSmoothing());
+            globalStyle.borderSmoothing());
 
         // The bloc's loops sorted back into the bodies they bound: a bloc holding cells in two
         // places traces two outer rings plus whatever enclaves each encloses, and which enclave
@@ -132,14 +140,14 @@ public final class FactionTerritoryBuilder {
                 geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 borderTrace,
-                territories.getGlobalStyle().hatch())
+                globalStyle.hatch())
             .traceFill(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
                     memberCellKeys,
-                    territories.getContestedSystemKeys(),
-                    territories.getUnfilledSystemKeys()),
+                    buildInputs.contestedSystemKeys(),
+                    buildInputs.unfilledSystemKeys()),
                 blocId,
                 fillColour);
 

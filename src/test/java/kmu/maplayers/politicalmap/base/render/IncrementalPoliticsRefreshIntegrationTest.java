@@ -62,6 +62,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -165,7 +166,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
         // What the caller drained off its own machinery's board this frame, in the order it was
         // marked - the refresh is handed the batch rather than draining one of its own.
-        private final Set<String> staleSystemIds = new LinkedHashSet<>();
+        private final Set<SystemKey> staleSystemKeys = new LinkedHashSet<>();
 
         private FactionAPI hegemonyMock;
         private FactionAPI tritachyonMock;
@@ -437,12 +438,12 @@ final class IncrementalPoliticsRefreshIntegrationTest {
                 StandingPoliticalMap standingMap,
                 String... markedSystemIds) {
 
-            staleSystemIds.addAll(List.of(markedSystemIds));
+            staleSystemKeys.addAll(buildCellKeys(markedSystemIds));
 
             IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
                 sectorMock,
                 standingMap,
-                staleSystemIds);
+                staleSystemKeys);
 
             // Compared structurally rather than by equality: a cell's draw record, a bloc's traced
             // territory and a band's runs are baked geometry, held as float arrays, which compare
@@ -545,10 +546,13 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     }
 
     private static DrawnMap readDrawnMap(PoliticalMapTerritories territories) {
+
+        var occupancy = territories.getOccupancy();
+
         return new DrawnMap(
-            new LinkedHashMap<>(territories.getHolderBySystemKey()),
-            new LinkedHashSet<>(territories.getInhabitedSystemKeys()),
-            new LinkedHashSet<>(territories.getSpotlitPresenceSystemKeys()),
+            new LinkedHashMap<>(occupancy.getHolderBySystemKey()),
+            new LinkedHashSet<>(occupancy.getInhabitedSystemKeys()),
+            new LinkedHashSet<>(occupancy.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
             new LinkedHashMap<>(territories.getPaintedCells().getRibbonByCellKey()));

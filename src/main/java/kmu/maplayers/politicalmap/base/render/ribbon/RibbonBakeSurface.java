@@ -68,7 +68,7 @@ public record RibbonBakeSurface(
             // gives to nobody - an unclaimed pirate haven on the claims layer - is still offered a
             // band. It is the same set the factionless cell beneath it is classified from, so a
             // cell drawn as settled and a cell offered a band are one set.
-            territories.getInhabitedSystemKeys(),
+            territories.getOccupancy().getInhabitedSystemKeys(),
             // Taken here, once, rather than per cell inside a loop: the read hands back a fresh
             // unmodifiable view over the live cells, so asking per cell would mint a wrapper per
             // cell to answer one lookup.
@@ -76,7 +76,9 @@ public record RibbonBakeSurface(
             // The name format off the build's own sampling rather than off the stored preference:
             // the boxes a band keeps clear of are the boxes those very names were fitted into, so
             // a second reading could carve the bands around names the map is not drawing.
-            resolveNameBoxes(clusterAnchors, territories.getContentInputs().nameFormat()),
+            resolveNameBoxes(
+                clusterAnchors,
+                territories.getBuildInputs().contentInputs().nameFormat()),
             territories.getPaintedCells().getRingPathCache());
     }
 

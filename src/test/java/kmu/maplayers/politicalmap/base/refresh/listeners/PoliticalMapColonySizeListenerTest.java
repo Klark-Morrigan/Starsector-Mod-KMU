@@ -8,6 +8,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
@@ -42,8 +43,8 @@ final class PoliticalMapColonySizeListenerTest {
 
             listener.reportColonySizeChanged(mockMarketInSystem("sys"), 3);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -51,7 +52,7 @@ final class PoliticalMapColonySizeListenerTest {
 
             listener.reportColonySizeChanged(mockUnseatedMarket(), 3);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -60,7 +61,7 @@ final class PoliticalMapColonySizeListenerTest {
 
             listener.reportColonySizeChanged(null, 3);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }

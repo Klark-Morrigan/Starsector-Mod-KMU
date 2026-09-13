@@ -141,9 +141,9 @@ final class IncrementalPoliticsRefreshTest {
             new RevisedCellGeometry(buildTwoAdjacentCells(), GEOMETRY_REVISION);
 
         // What the caller drained off its own machinery's board this frame, in the order it was
-        // marked. Held per case rather than raised on a shared board: the fold is handed the IDs
+        // marked. Held per case rather than raised on a shared board: the fold is handed the keys
         // rather than draining any board of its own, so a case states the batch directly.
-        private final Set<String> staleSystemIds = new LinkedHashSet<>();
+        private final Set<SystemKey> staleSystemKeys = new LinkedHashSet<>();
 
         private MockedStatic<Global> globalMock;
         private MockedStatic<SectorPolitics> politicsMock;
@@ -304,7 +304,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(territories.getView().resolveRibbonPlanner(any()))
+            when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(HEGEMONY));
@@ -340,7 +340,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(territories.getView().resolveRibbonPlanner(any()))
+            when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -372,7 +372,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(territories.getView().resolveRibbonPlanner(any()))
+            when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             settingsMock
@@ -418,7 +418,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(territories.getView().resolveRibbonPlanner(any()))
+            when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             standingAnchors.replaceAnchors(List.of(buildNameAcrossTheCell()), STANDING_FIT);
@@ -450,7 +450,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
 
-            when(territories.getView().resolveRibbonPlanner(any()))
+            when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
 
             settingsMock
@@ -631,20 +631,22 @@ final class IncrementalPoliticsRefreshTest {
         }
 
         @Test
-        void applyStalePoliticsUpdatesFansOneStaleIdOutToEveryCellSharingIt() {
-            // The board still marks a system by bare ID, and two systems the sector lists under
-            // one ID each seed a cell of their own - so the one mark reaches both cells and both
-            // systems are re-derived, where resolving it to a single cell would leave the twin
-            // standing on a reading the sector has moved under. The holding itself is still keyed
-            // by ID, so the flip lands on the first cell and the twin's own redraw follows once the
-            // holding is keyed the same way as the cells.
+        void applyStalePoliticsUpdatesRedrawsOnlyTheMarkedOneOfTwoSystemsSharingAnId() {
+            // The board marks a system by key, and two systems the sector lists under one ID each
+            // seed a cell of their own - so a mark on the twin re-derives the twin and redraws its
+            // cell alone, leaving the other standing on the reading it already has. A mark by ID
+            // could only have fanned out to both, re-deriving a system nothing happened in.
             var firstCell = new SystemKey(FLIPPED_SYSTEM, null, "8b3");
             var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
-            var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            // Cut order is stated rather than left to a hash, because the fan-out walks the cut
-            // and the holding is keyed by ID: the first cell walked is the one whose flip is
-            // recorded, and the ID cannot tell a later walk that the holder has already moved.
+            var holderBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
+
+            holderBySystemKey.put(firstCell, buildHolderOf(HEGEMONY));
+            holderBySystemKey.put(twinCell, buildHolderOf(HEGEMONY));
+
+            var territories = PoliticalMapTerritoryFixtures.createTerritoriesOwnedByKeys(
+                holderBySystemKey);
+
             var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
             cellEdgesByCellKey.put(firstCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0));
@@ -662,20 +664,25 @@ final class IncrementalPoliticsRefreshTest {
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
-            markStale(FLIPPED_SYSTEM);
+            markStaleKey(twinCell);
             applyOverTheSector(
                 StarSystemFixture.buildSectorOf(
                     StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "8b3"),
                     StarSystemFixture.buildKeyedSystem(FLIPPED_SYSTEM, null, "38d53")),
                 territories);
 
+            // Re-derived once - the twin - and its cell redrawn; the first system is neither
+            // asked about nor redrawn, since nothing marked it.
             politicsMock.verify(
                 () -> SectorPolitics.resolveDominantHolder(
                     matchSystemArg(FLIPPED_SYSTEM),
                     any(DominancePass.class)),
-                times(2));
+                times(1));
             paintedCellsMock.verify(
-                () -> PaintedCellBuilder.buildPaintedCellForSystem(any(), eq(firstCell), any()));
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(any(), eq(twinCell), any()));
+            paintedCellsMock.verify(
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(any(), eq(firstCell), any()),
+                never());
         }
 
         @Test
@@ -873,7 +880,7 @@ final class IncrementalPoliticsRefreshTest {
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(DISTANT_SYSTEM, new double[] {12000.0, 12000.0})));
 
-            when(territories.getView().resolveRibbonPlanner(any()))
+            when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
                 .thenReturn(system -> BAND_OF_ONE_RUN);
         }
 
@@ -969,9 +976,15 @@ final class IncrementalPoliticsRefreshTest {
                 .thenReturn(isInhabited);
         }
 
-        // Adds one system to the batch this case's caller drained.
+        // Adds one system to the batch this case's caller drained, keyed as a producer holding a
+        // system stating no centre and no anchor keys it.
         private void markStale(String systemId) {
-            staleSystemIds.add(systemId);
+            markStaleKey(buildCellKey(systemId));
+        }
+
+        // The same for a system a case has to key itself - one of a pair sharing an ID.
+        private void markStaleKey(SystemKey systemKey) {
+            staleSystemKeys.add(systemKey);
         }
 
         // Runs the refresh over the two-cell geometry every case shares, handing it the sector its
@@ -992,7 +1005,7 @@ final class IncrementalPoliticsRefreshTest {
                     standingAnchors,
                     new ArrayList<Label>(),
                     cellGeometry),
-                staleSystemIds);
+                staleSystemKeys);
         }
     }
 

@@ -10,19 +10,14 @@ import kmlib.starsector.map.VisibleStars;
 import kmlib.starsector.systems.SectorPassIndex;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.geometry.CellSeedInputs;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
-import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
-import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
-import kmu.maplayers.base.refresh.RefreshSignalRevisions;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -30,13 +25,10 @@ import kmu.maplayers.politicalmap.base.render.territories.ResolvedHolding;
 import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuilder;
 import kmu.settings.KmuLunaSettings;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
-import kmu.settings.KmuPoliticalMapGeometrySettings;
 
 import org.apache.log4j.Logger;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  * Keeps the political map's derived draw lists fresh with the least work per frame, and hands
@@ -56,6 +48,11 @@ import java.util.Set;
  * dragging an opacity slider or picking a spotlight takes effect live, and the per-frame path is
  * otherwise a couple of int compares, never a per-frame economy scan.
  *
+ * <p>Which of those a frame owes is {@link PoliticalMapRebuildDecider}'s answer, asked first and
+ * acted on here: the decision is answerable from revisions and settings alone and nearly every
+ * frame stops at it, while a rebuild opens a reading of the sector. This class is the rebuild
+ * paths and the standing map they edit.
+ *
  * <p>One cache serves both screens, and the frame says which it is drawing for. Since what the
  * revision folds is the sampled preference <em>values</em>, two screens set alike are one bake and a
  * switch between them rebuilds nothing; two set differently rebuild at the switch, which is the same
@@ -63,7 +60,7 @@ import java.util.Set;
  *
  * <p>Everything held here is derived from one sector, and nothing here enters a save: the holder
  * belongs to that sector's installed map machinery and goes with it, so no field needs transient
- * marking and nothing needs emptying when a sector changes. Every revision starts at its
+ * marking and nothing needs emptying when a sector changes. Every baseline starts at its
  * rebuild-forcing seed, so the first frame after a sector is installed on builds both halves from
  * scratch.
  *
@@ -82,21 +79,9 @@ final class PoliticalMapCache {
     private static final ProfileSection REBUILD_DRAWABLES_SECTION = ProfileSection.registerSection(
         "politicalMap.rebuildDrawables", RebuildStepTerms.LOGGED_EVERY_CALL);
 
-    // The content revision's seed, below any revision the settings fold can report on a built
-    // map, so this cache's first refresh finds the draw lists stale and builds them.
-    private static final int UNBUILT_REVISION = -1;
-
     // The cut number this cache's first cut takes. Counts up from here and never repeats within a
     // cache, so no two cuts of these cells can be mistaken for each other.
     private static final int FIRST_CUT_NUMBER = 0;
-
-    // The sidebar preferences whose raises are traced onto a rebuild's tag. These three and no
-    // others, because these are the ones nothing folds into staleness any more: a signal a
-    // consumer does read is already accounted for by the rebuild it caused.
-    private static final MapLayerRefreshSignal[] TRACED_PREFERENCE_SIGNALS = {
-        MapLayerCommonRefreshSignal.FILTER,
-        MapLayerCommonRefreshSignal.RECEDE_STYLE,
-        MapLayerCommonRefreshSignal.MAP_STYLE};
 
     // The machinery installed on the sector this cache draws. The sector a rebuild cuts cells from,
     // the movers that cut leaves out and the board it reads staleness off all come off this one
@@ -119,49 +104,28 @@ final class PoliticalMapCache {
     private RevisedCellGeometry cellGeometry =
         new RevisedCellGeometry(new CellGeometryCache(), FIRST_CUT_NUMBER);
 
-    // Everything built to draw, and how each part of it is rebuilt. Held apart from the
-    // revisions and the staleness decision here, which answer when a rebuild is owed and what
-    // it carries forward rather than what it produces.
+    // Everything built to draw, and how each part of it is rebuilt. Held apart from the decision
+    // below, which answers when a rebuild is owed and what it carries forward rather than what it
+    // produces.
     private final PoliticalMapDrawables drawables = new PoliticalMapDrawables();
 
-    // The revision the territories were built against. They rebuild on a content change
-    // (settings) or whenever the geometry itself was rebuilt. This starts at the unbuilt seed and
-    // the value fields at null, so the first refresh builds both halves.
-    private int lastContentRevision = UNBUILT_REVISION;
+    // What a frame owes, and the baselines that question is asked against. Advanced only as each
+    // stage below reports itself complete, so a thrown rebuild is asked again next frame.
+    private final PoliticalMapRebuildDecider decider;
 
-    // The holding the last rebuild resolved and the revision it resolved it under, kept so a
-    // rebuild that owes no new reading of the sector - a style pick moved and nothing else - can
-    // paint over what the last one read rather than walk the economy for the same answer. The
-    // revision is the content revision's holding half: the inputs that reach the resolve, and none
-    // of the picks that only reach the paint. Dropped, not just superseded, whenever the sector
+    // The holding the last rebuild resolved, kept so a rebuild that owes no new reading of the
+    // sector - a style pick moved and nothing else - can paint over what the last one read rather
+    // than walk the economy for the same answer. Dropped, not just superseded, whenever the sector
     // moves under it, which is what the marked-system drains below say.
-    private int lastHoldingRevision = UNBUILT_REVISION;
     private ResolvedHolding standingHolding;
-
-    // What the cells currently held were cut from. One value rather than a revision, the seed
-    // inputs and the dev toggles side by side, because each of the three recuts every cell and
-    // the question asked of them is the single one they answer together: would the cells be cut
-    // differently now. Null (not a zero reading) is the never-cut state, since every reading the
-    // record can hold is one the player can actually be under - and it is what makes this cache's
-    // first refresh cut, whatever the signal happens to say.
-    private CellCutInputs lastCellCut;
 
     // Said once per session: refresh runs every frame the map is open, so a recurring rebuild
     // failure would otherwise flood the log, and the second line says nothing the first did not.
     private final SessionWarning rebuildFaultWarning = new SessionWarning(LOG);
 
-    // Where the traced preference signals stood when this cache last rebuilt, so a rebuild can name
-    // which of them a player has touched since. Seeded at construction rather than left empty: the
-    // board outlives no cache but may already carry raises from a load, and reporting those against
-    // this cache's first rebuild would name flips that happened before it existed.
-    private RefreshSignalRevisions signalsAtLastRebuild;
-
     PoliticalMapCache(SectorMapMachinery machinery) {
-
         this.machinery = machinery;
-        this.signalsAtLastRebuild = RefreshSignalRevisions.readRevisionsOf(
-            machinery.resolveRefreshBoard(),
-            TRACED_PREFERENCE_SIGNALS);
+        this.decider = new PoliticalMapRebuildDecider(machinery);
     }
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
@@ -205,7 +169,7 @@ final class PoliticalMapCache {
     /**
      * Brings the cached draw lists in line with the active view, rebuilding only the stale half.
      * Guarded because it runs every frame the map is open: a rebuild fault is recorded once (not
-     * per frame), and the catch leaves the cached revisions un-advanced so the next frame retries
+     * per frame), and the catch leaves the baselines un-advanced so the next frame retries
      * rather than the overlay going permanently stale, plus installs an empty placeholder so the
      * renderer never dereferences a null draw list.
      *
@@ -232,7 +196,9 @@ final class PoliticalMapCache {
     // settings alone, so it runs first and most frames stop at it.
     private void rebuildStaleHalves(PoliticalMapView view, ScreenMemoryScope memoryScope) {
 
-        var staleHalves = decideWhatIsStale(view, memoryScope);
+        // Both views null means neither has been built for this sector, so the first frame forces
+        // the build even if the content revision happens to match its unbuilt seed.
+        var staleHalves = decider.decideWhatIsStale(view, memoryScope, drawables.hasNothingBuilt());
 
         if (!staleHalves.isContentStale()) {
             applyStandingMapUpdates();
@@ -241,59 +207,8 @@ final class PoliticalMapCache {
         rebuildWhatIsStale(staleHalves, view);
     }
 
-    // What this frame owes, decided off revisions and settings alone so it costs nothing on a frame
-    // that owes nothing - which is nearly all of them.
-    private StaleHalves decideWhatIsStale(PoliticalMapView view, ScreenMemoryScope memoryScope) {
-
-        // What the cells would be cut from right now. The reachable-set revision alone does not
-        // answer that: the frontier resolution, the cell reach and the two visibility overrides
-        // each reseed every cell without it moving, so all four are read into one value and the
-        // staleness question is asked of that value rather than of the signal.
-        //
-        // This is also the rebuild's one sampling of the visibility rules: the cut, the fills and
-        // the bands all resolve under what it holds, so a gate flipped mid-rebuild cannot leave
-        // cells cut under one rule and painted under another.
-        var cellCut = new CellCutInputs(
-            machinery.resolveRefreshBoard().getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
-            new CellSeedInputs(
-                KmuPoliticalMapGeometrySettings.getPoliticalMapCellBoundSegments(),
-                KmuPoliticalMapGeometrySettings.getPoliticalMapCellRadius()),
-            MapVisibilityRules.readFromLunaSettings());
-
-        var isCellCutStale = !cellCut.equals(lastCellCut);
-
-        // The rebuild's one sampling of the sidebar preferences, taken here beside the cut's for
-        // the same reason: every stage that bakes one reads this reading, and the staleness
-        // question below is asked of the values rather than of the counters their flips raise.
-        //
-        // Sampled under the screen the frame handed over, which is the screen it also took the view
-        // off, so the picks a rebuild bakes and the view it builds under name one panel.
-        var contentInputs = ContentInputs.sampleForView(view, memoryScope);
-
-        // TODO: when only geometry changed (isCellCutStale), reshape just the cells
-        // CellGeometryCache rebuilt - the system that gained or lost access and every cell
-        // it touches - rather than the full territories rebuild below. Have updateFromSector report
-        // its affected-cell set and drive a targeted reshape from it, the geometry-side analogue of
-        // applyStalePoliticsUpdates.
-
-        // Both views null means neither has been built for this sector, so the first frame forces
-        // the build even if the content revision happens to match its unbuilt seed.
-        var contentRevision = computeContentRevision(view, contentInputs);
-        var isContentStale = isCellCutStale
-            || drawables.hasNothingBuilt()
-            || contentRevision != lastContentRevision;
-
-        return new StaleHalves(
-            cellCut,
-            isCellCutStale,
-            contentInputs,
-            contentRevision,
-            computeHoldingRevision(view, contentInputs),
-            isContentStale);
-    }
-
-    // The rebuild itself, run only where the decision above found something stale. Advances each
-    // cached revision only after its rebuild completes, so a thrown rebuild is retried next frame.
+    // The rebuild itself, run only where the decision found something stale. Reports each stage
+    // complete to the decider only after it completes, so a thrown rebuild is retried next frame.
     // Builds under the active view's rules, so a view switch (folded into the content revision)
     // rebuilds the territories under the newly-selected view.
     //
@@ -315,7 +230,7 @@ final class PoliticalMapCache {
         var sectorIndex = new SectorPassIndex(sector);
 
         if (staleHalves.isCellCutStale()) {
-            rebuildGeometry(staleHalves.cellCut(), sector, sectorIndex);
+            rebuildGeometry(staleHalves, sector, sectorIndex);
         }
         // Everything derived from the cells under one scope, the cut having timed itself: what
         // the draw lists cost this rebuild is this span, and every stage it drives sits inside it.
@@ -339,25 +254,8 @@ final class PoliticalMapCache {
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + staleHalves.isCellCutStale()
                 + " holdingReused=" + wasHoldingReused
-                + " signalsRaised=" + describeSignalsRaisedSinceTheLastRebuild());
+                + " signalsRaised=" + decider.describeSignalsRaisedSinceTheLastRebuild());
         }
-    }
-
-    // Which of the traced signals moved since the rebuild before this one, and the reading advanced
-    // to this rebuild. Advanced here rather than where the reading is taken, so a rebuild that
-    // threw before reaching its tag leaves the raises for the retry to report rather than swallowing
-    // them.
-    private String describeSignalsRaisedSinceTheLastRebuild() {
-
-        var raisedNow = RefreshSignalRevisions.readRevisionsOf(
-            machinery.resolveRefreshBoard(),
-            TRACED_PREFERENCE_SIGNALS);
-
-        var raisedSince = raisedNow.describeSignalsRaisedSince(signalsAtLastRebuild);
-
-        signalsAtLastRebuild = raisedNow;
-
-        return raisedSince;
     }
 
     // The draw lists themselves: one view or the other, the names minted from the placements it
@@ -378,7 +276,7 @@ final class PoliticalMapCache {
         // it. A system marked after this drain sits on the board for the next frame's fold, which
         // is what the fold is for - where a drain after the build discarded it on the assumption
         // that the build had read everything, an assumption a reused holding does not meet.
-        var staleSystemIds = machinery.resolveRefreshBoard().drainStaleGroupingSystemIds();
+        var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
         var wasHoldingReused = false;
 
         // Build one view or the other, never both: the debug overlay replaces the normal
@@ -404,14 +302,17 @@ final class PoliticalMapCache {
                 staleHalves.cellCut().visibilityRules().colonyVisibility(),
                 sectorIndex);
 
-            wasHoldingReused = canReuseStandingHolding(staleHalves, staleSystemIds);
+            wasHoldingReused = decider.canReuseStandingHolding(
+                staleHalves,
+                standingHolding != null,
+                staleSystemKeys);
 
             if (!wasHoldingReused) {
                 standingHolding = TerritoryBuilder.resolveHolding(
                     pass,
                     view,
                     staleHalves.contentInputs());
-                lastHoldingRevision = staleHalves.holdingRevision();
+                decider.recordHoldingResolved(staleHalves);
             }
             drawables.rebuildTerritoriesAndBands(
                 cellGeometry,
@@ -425,21 +326,9 @@ final class PoliticalMapCache {
         // what is minted matches what was fitted.
         drawables.rebuildLabels(staleHalves.contentInputs().nameFormat().areNamesDrawn());
 
-        lastContentRevision = staleHalves.contentRevision();
+        decider.recordContentRebuilt(staleHalves);
 
         return wasHoldingReused;
-    }
-
-    // Whether the holding the last rebuild read still says who holds what. It does unless the
-    // sector moved under it - a marked system, or a recut, which admits or drops systems - or the
-    // rule reading it did, which the holding revision folds. Never on a cache's first rebuild,
-    // there being nothing standing to keep.
-    private boolean canReuseStandingHolding(StaleHalves staleHalves, Set<String> staleSystemIds) {
-
-        return standingHolding != null
-            && staleSystemIds.isEmpty()
-            && !staleHalves.isCellCutStale()
-            && staleHalves.holdingRevision() == lastHoldingRevision;
     }
 
     // Nothing stale enough to rebuild. In the normal view, fold in any per-system holder changes a
@@ -462,9 +351,9 @@ final class PoliticalMapCache {
     // frame: it returns before assembling the standing map for a fold that would find nothing in it.
     private void applyStandingMapUpdates() {
 
-        var staleSystemIds = machinery.resolveRefreshBoard().drainStaleGroupingSystemIds();
+        var staleSystemKeys = machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys();
 
-        if (staleSystemIds.isEmpty()) {
+        if (staleSystemKeys.isEmpty()) {
             return;
         }
         // A marked system is one the sector moved under, so the holding the last rebuild read no
@@ -483,67 +372,7 @@ final class PoliticalMapCache {
         IncrementalPoliticsRefresh.applyStalePoliticsUpdates(
             machinery.resolveSector(),
             drawables.toStandingMap(cellGeometry),
-            staleSystemIds);
-    }
-
-    // The territories-staleness token: a settings change restyles every cell over the fixed
-    // geometry, so a settings-revision bump forces a full territories rebuild. Holder changes no
-    // longer feed this - a resized colony, or a system the sector watcher's holder diff caught,
-    // marks just its system stale now. The active view is folded in so switching views (their
-    // grouping, styling, and labels differ) rebuilds the territories under the newly-selected view
-    // rather than reusing the previous view's. The view's content fingerprint is folded in too, so
-    // a change to any live input the active view samples - the alliance set every political view
-    // reads, whether to fuse blocs or only to judge a contest - rebuilds the territories even though
-    // no setting moved. The pipeline stays view-neutral by reading this off the view rather than
-    // naming the alliance signal itself, so a view that samples nothing simply contributes a
-    // constant and is never churned by a change it does not render.
-    //
-    // The sidebar preferences are folded in as the values this frame sampled, rather than as the
-    // filter, recede-style and map-style counters their flips raise. Those toggles are
-    // sector-memory state rather than LunaLib fields, so settingsRevision above does not cover
-    // them - but a counter only reports that somebody clicked something, not what the map is now
-    // under. Folding the values asks the only question worth asking: would this build come out the
-    // same. Two readings holding the same picks are one bake whatever has been clicked between
-    // them, and a pick that really moved rebuilds under whichever view is up with no view naming
-    // it.
-    //
-    // Which leaves those three counters deciding nothing, and they go on being raised anyway: a
-    // raise writes a line naming the signal as the board takes it, and the rebuild below reports
-    // which of them moved since the last one. So they are the record of what the player touched,
-    // read beside a rebuild rather than causing it - which is worth more than the flip they no
-    // longer trigger.
-    //
-    // Objects.hash is the JDK's standard 31-multiply fold, so the inputs separate without a bespoke
-    // combine here. The view is handed this cache's own board to fold its own live inputs from, so
-    // a signal raised in another sector cannot restyle these cells - and a signal raised in this
-    // one cannot fail to.
-    private int computeContentRevision(PoliticalMapView view, ContentInputs contentInputs) {
-
-        var board = machinery.resolveRefreshBoard();
-
-        return Objects.hash(
-            KmuLunaSettings.getSettingsRevision(),
-            view.getId(),
-            view.getContentRevision(board),
-            contentInputs);
-    }
-
-    // The content revision's holding half: the same fold over only what reaches the resolve. Of the
-    // sidebar picks that is the spotlight alone - the two recedes, the name format and the outline
-    // reach the paint and nothing before it. The settings revision stays in, since the rule a view
-    // resolves holding by can read LunaLib fields, and the view's own live inputs stay in since the
-    // alliance set is exactly what moves an alliances view's holding. A style pick moves the content
-    // revision and leaves this one where it was, which is what lets the rebuild it owes keep the
-    // holding.
-    private int computeHoldingRevision(PoliticalMapView view, ContentInputs contentInputs) {
-
-        var board = machinery.resolveRefreshBoard();
-
-        return Objects.hash(
-            KmuLunaSettings.getSettingsRevision(),
-            view.getId(),
-            view.getContentRevision(board),
-            contentInputs.selectedBlocId());
+            staleSystemKeys);
     }
 
     // Brings the geometry cache in line with the reachable systems, rebuilding only the cells
@@ -553,14 +382,16 @@ final class PoliticalMapCache {
     // and clip no neighbour), and the rebuild's reading of the sector, whose visibility rules put
     // a forced or undiscovered-colony system on the drawn set.
     private void rebuildGeometry(
-            CellCutInputs cellCut,
+            StaleHalves staleHalves,
             SectorAPI sector,
             SectorPassIndex sectorIndex) {
+
+        var cellCut = staleHalves.cellCut();
 
         // Transition trace: a stale cell or one left behind after an access change can be tied
         // to the revision step - or the seed inputs or toggle flip - that drove it.
         LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
-            + " from " + lastCellCut + " to " + cellCut);
+            + " from " + staleHalves.standingCellCut() + " to " + cellCut);
 
         var pass = new MapVisibilityPass(
             sectorIndex,
@@ -579,38 +410,6 @@ final class PoliticalMapCache {
         // this one. Counted rather than taken from the reachable-set revision, which stands
         // still through a seed-input or dev-toggle recut.
         cellGeometry = cellGeometry.copyWithRevision(cellGeometry.revision() + 1);
-        lastCellCut = cellCut;
-    }
-
-    /**
-     * What one frame's staleness question answered: which of the cache's two halves are stale, and
-     * the two values a rebuild would carry forward - the inputs its cells would be cut under, and
-     * the content revision it would advance to.
-     *
-     * <p>A value crossing between two steps rather than four more fields on the cache, because the
-     * question is asked before a reading of the sector is opened and answered after. Nearly every
-     * frame answers "nothing stale" and must open no reading at all, so the two cannot be one step -
-     * and what the decision found has to reach the rebuild without being re-derived, or the rebuild
-     * would sample the settings a second time and could cut under one reading while the decision
-     * was taken under another.
-     *
-     * @param cellCut         what the cells would be cut from now: the reachable-set revision, the
-     *                        seed knobs and the visibility rules, sampled once
-     * @param isCellCutStale  whether those differ from what the standing cells were cut from
-     * @param contentInputs   the sidebar preferences a rebuild would bake under, sampled once
-     * @param contentRevision the fold of every input the territories are styled under
-     * @param holdingRevision the fold of only those inputs that reach the resolve of who holds
-     *                        what, so a rebuild can tell a pick that moved the paint from one that
-     *                        moved the holding
-     * @param isContentStale  whether anything at all is owed, the cut included - false is the frame
-     *                        that stops at the decision
-     */
-    private record StaleHalves(
-        CellCutInputs cellCut,
-        boolean isCellCutStale,
-        ContentInputs contentInputs,
-        int contentRevision,
-        int holdingRevision,
-        boolean isContentStale) {
+        decider.recordCellsCut(staleHalves);
     }
 }

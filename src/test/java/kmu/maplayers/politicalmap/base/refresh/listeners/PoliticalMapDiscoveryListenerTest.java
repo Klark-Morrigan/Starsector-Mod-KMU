@@ -11,6 +11,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockEntityWithMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
@@ -47,8 +48,8 @@ final class PoliticalMapDiscoveryListenerTest {
 
             listener.reportEntityDiscovered(mockEntityWithMarketInSystem("sys"));
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -57,7 +58,7 @@ final class PoliticalMapDiscoveryListenerTest {
             // listener marks no system and requests no geometry rebuild.
             listener.reportEntityDiscovered(mock(JumpPointAPI.class));
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
             assertThat(refreshBoard.getRevision(MapLayerCommonRefreshSignal.GEOMETRY))
                 .isZero();
@@ -74,7 +75,7 @@ final class PoliticalMapDiscoveryListenerTest {
 
             listener.reportEntityDiscovered(entityMock);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }

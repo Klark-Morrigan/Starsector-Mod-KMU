@@ -45,15 +45,15 @@ import java.util.Map;
  * @param visibilityFingerprint what the drawn set hashes to, contributed per system under its
  *                              {@link SystemKey}, so two systems answering to one ID are two
  *                              contributions rather than one
- * @param ownerBySystemId       the dominant holder of each owned drawn system, by faction id.
- *                              Addressed by vanilla system ID rather than by key, because the
- *                              stale set this is diffed into still names systems by ID - so a
- *                              colliding pair is one entry here, holding whichever of them the
- *                              walk reached last
+ * @param ownerBySystemKey      the dominant holder of each owned drawn system, by faction ID.
+ *                              Addressed by key so that two systems answering to one ID are two
+ *                              entries, each diffed against its own last holder - keyed by ID,
+ *                              the pair was one entry holding whichever the walk reached last,
+ *                              and a flip in the other could never be noticed
  */
 public record PoliticalMapSectorSnapshot(
     int visibilityFingerprint,
-    Map<String, String> ownerBySystemId) {
+    Map<SystemKey, String> ownerBySystemKey) {
 
     /**
      * Walks the sector once over the poll's own reading of it, reading the
@@ -108,7 +108,7 @@ public record PoliticalMapSectorSnapshot(
             return new PoliticalMapSectorSnapshot(0, Map.of());
         }
         var visibility = 0;
-        var ownerBySystemId = new LinkedHashMap<String, String>();
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, String>();
 
         for (var system : sector.getStarSystems()) {
 
@@ -130,11 +130,14 @@ public record PoliticalMapSectorSnapshot(
             // contribution, so a live-to-dead flip moves the hash without the drawn set changing.
             var hasRevealedDecivilised = pass.isRevealedDecivilised(system);
 
-            // Contributed under the system's key, which this walk holds the system to read, so two
-            // systems answering to one ID contribute two values rather than one - keyed by ID, one
-            // of them entering the drawn set as the other left would not move the fingerprint.
+            // The system's key, which this walk holds the system to read, and which both outputs
+            // are addressed by: two systems answering to one ID contribute two values to the
+            // fingerprint rather than one - keyed by ID, one of them entering the drawn set as the
+            // other left would not move it - and hold two entries in the holder map.
+            var systemKey = SystemKey.readKeyOf(system);
+
             visibility += MapVisibilityFingerprint.computeSystemContribution(
-                SystemKey.readKeyOf(system),
+                systemKey,
                 hasRevealedDecivilised);
 
             // The pass's one colony read per system, which the drawn-set answer above is composed
@@ -161,9 +164,9 @@ public record PoliticalMapSectorSnapshot(
                 HolderRankingRules.createByLowestId(BlocCandidacy::isCandidateFaction));
 
             if (dominantFactionId != null) {
-                ownerBySystemId.put(system.getId(), dominantFactionId);
+                ownerBySystemKey.put(systemKey, dominantFactionId);
             }
         }
-        return new PoliticalMapSectorSnapshot(visibility, ownerBySystemId);
+        return new PoliticalMapSectorSnapshot(visibility, ownerBySystemKey);
     }
 }

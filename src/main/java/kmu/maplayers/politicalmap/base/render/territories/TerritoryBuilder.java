@@ -192,19 +192,21 @@ public final class TerritoryBuilder {
                     resolution.ownerBySystemKey(),
                     holding.inhabitedSystemKeys(),
                     holding.spotlitPresenceSystemKeys()),
-                // The owned systems this resolution paints no fill for - held by their bloc but
-                // drawn empty inside its one border. Empty for the faction/alliance and filter
-                // paths today; the split reads it so a source that populates it needs no wiring.
-                resolution.unfilledSystemKeys(),
-                styling,
-                // The grouping is the pass's rather than a second sampling of the view's (the
-                // alliances view reads Nexerelin), so the holding this build resolved and the
-                // grouping the retained copy names cannot be two readings of it.
-                new ViewGrouping(view, pass.grouping()),
-                contentInputs,
-                // The one thing this build derived about the spotlight: which of the spotlit bloc's
-                // systems it holds without dominating.
-                resolution.contestedSystemKeys());
+                new TerritoryBuildInputs(
+                    styling,
+                    // The grouping is the pass's rather than a second sampling of the view's (the
+                    // alliances view reads Nexerelin), so the holding this build resolved and the
+                    // grouping the retained copy names cannot be two readings of it.
+                    new ViewGrouping(view, pass.grouping()),
+                    contentInputs,
+                    // The owned systems this resolution paints no fill for - held by their bloc
+                    // but drawn empty inside its one border. Empty for the faction/alliance and
+                    // filter paths today; the split reads it so a source that populates it needs
+                    // no wiring.
+                    resolution.unfilledSystemKeys(),
+                    // The one thing this build derived about the spotlight: which of the spotlit
+                    // bloc's systems it holds without dominating.
+                    resolution.contestedSystemKeys()));
 
             shapeAndStyleCells(profiler, territories, geometryCache);
 

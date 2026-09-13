@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerStalenessSource;
@@ -68,7 +70,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     private boolean hasPolled;
     private int lastVisibilityFingerprint;
     private int lastAllianceFingerprint;
-    private Map<String, String> lastHolderBySystemId = Map.of();
+    private Map<SystemKey, String> lastHolderBySystemKey = Map.of();
 
     /**
      * @param machinery the machinery installed on the sector this polls
@@ -113,7 +115,7 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
         var isFirstPoll = !hasPolled;
 
         markGeometryChange(snapshot, hasMovingSetChanged, isFirstPoll);
-        markHolderChanges(snapshot.ownerBySystemId(), isFirstPoll);
+        markHolderChanges(snapshot.ownerBySystemKey(), isFirstPoll);
         markAllianceSetChange(isFirstPoll);
 
         hasPolled = true;
@@ -161,30 +163,33 @@ public class PoliticalMapStalenessSource implements MapLayerStalenessSource {
     }
 
     // Marks politics-stale every system whose holder differs from the last poll: a system
-    // that gained an holder or changed hands (present now with a new ID), and one that lost
+    // that gained an holder or changed hands (present now with a new holder), and one that lost
     // its holder (dropped since). Each mark funnels into the same set the listeners raise,
     // so an overlapping change reshapes once and is traced by markSystemGroupingStale's own
     // log line. The baseline advances even on the first poll, which has no prior to diff.
+    //
+    // Diffed and marked by key, which the snapshot's walk read off each system: two systems
+    // sharing an ID are two baselines, so a flip in either marks that system and not both.
     private void markHolderChanges(
-            Map<String, String> currentHolderBySystemId,
+            Map<SystemKey, String> currentHolderBySystemKey,
             boolean isFirstPoll) {
 
         if (!isFirstPoll) {
 
             var board = machinery.resolveRefreshBoard();
 
-            for (var entry : currentHolderBySystemId.entrySet()) {
-                if (!entry.getValue().equals(lastHolderBySystemId.get(entry.getKey()))) {
+            for (var entry : currentHolderBySystemKey.entrySet()) {
+                if (!entry.getValue().equals(lastHolderBySystemKey.get(entry.getKey()))) {
                     board.markSystemGroupingStale(entry.getKey());
                 }
             }
-            for (var systemId : lastHolderBySystemId.keySet()) {
-                if (!currentHolderBySystemId.containsKey(systemId)) {
-                    board.markSystemGroupingStale(systemId);
+            for (var systemKey : lastHolderBySystemKey.keySet()) {
+                if (!currentHolderBySystemKey.containsKey(systemKey)) {
+                    board.markSystemGroupingStale(systemKey);
                 }
             }
         }
-        lastHolderBySystemId = currentHolderBySystemId;
+        lastHolderBySystemKey = currentHolderBySystemKey;
     }
 
     // Fingerprints the live alliance set and bumps the shared alliance revision when it

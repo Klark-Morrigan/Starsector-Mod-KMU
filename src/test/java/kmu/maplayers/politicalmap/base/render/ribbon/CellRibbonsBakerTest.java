@@ -331,7 +331,7 @@ final class CellRibbonsBakerTest {
         // The mechanic the pass counts by, answered off the view the territories already carry -
         // which is where a bake reads it from, so a stub anywhere else would leave the pass
         // counting through whatever the fixture's mock returns by default.
-        when(territories.getView().resolveRibbonPlanner(any()))
+        when(territories.getBuildInputs().viewGrouping().view().resolveRibbonPlanner(any()))
             .thenReturn(system -> ANY_PLAN);
 
         return territories;

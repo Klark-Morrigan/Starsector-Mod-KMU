@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.machinery.SectorMapMachinery;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -33,8 +36,8 @@ import static org.mockito.Mockito.when;
 /**
  * Pins the political map's staleness routing: it reads the snapshot in one walk and sends
  * each axis to its own refresh - a visibility or moving-set move rebuilds geometry, an
- * holder-map diff marks exactly the changed systems politics-stale (the same set the event
- * listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
+ * holder-map diff marks exactly the changed systems politics-stale under their keys (the same
+ * set the event listeners feed), and an alliance-fingerprint move bumps the alliance revision - while the
  * first poll only establishes the baselines. Asserts on a real {@link MapLayerRefreshBoard}
  * rather than a mocked one (whose logger a static mock would null during class init), stubbing
  * the snapshot scan and the alliance fingerprint across polls. The board is the one its own
@@ -50,10 +53,18 @@ final class PoliticalMapStalenessSourceTest {
     // alliance axis stays quiet while they assert on geometry and holding.
     private static final int STEADY_ALLIANCE_FINGERPRINT = 7;
 
+    // The one system the snapshots name, keyed as the scan keys a system it holds.
+    private static final SystemKey SYSTEM_A = buildCellKey("a");
+
+    // Two systems answering to one ID, told apart by their anchors - the pair a diff by ID would
+    // have folded into one baseline.
+    private static final SystemKey ANCHORED_TWIN = new SystemKey("a", null, "8b3");
+    private static final SystemKey OTHER_TWIN = new SystemKey("a", null, "38d53");
+
     // One owned system, returned identically on both polls by the runs that mean to leave the
     // visibility and holding axes quiet.
     private static final PoliticalMapSectorSnapshot STEADY_SNAPSHOT =
-        new PoliticalMapSectorSnapshot(1, Map.of("a", "hegemony"));
+        new PoliticalMapSectorSnapshot(1, Map.of(SYSTEM_A, "hegemony"));
 
     @Nested
     class MarkChangesSinceLastPoll {
@@ -69,7 +80,7 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.geometryRevision())
                 .isZero();
-            assertThat(outcome.staleSystemIds())
+            assertThat(outcome.staleSystemKeys())
                 .isEmpty();
         }
 
@@ -85,7 +96,7 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.geometryRevision())
                 .isEqualTo(1);
-            assertThat(outcome.staleSystemIds())
+            assertThat(outcome.staleSystemKeys())
                 .isEmpty();
         }
 
@@ -101,8 +112,8 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.geometryRevision())
                 .isZero();
-            assertThat(outcome.staleSystemIds())
-                .containsExactly("a");
+            assertThat(outcome.staleSystemKeys())
+                .containsExactly(SYSTEM_A);
         }
 
         @Test
@@ -114,8 +125,8 @@ final class PoliticalMapStalenessSourceTest {
                     takeSnapshot(1, "a", "hegemony")),
                 2);
 
-            assertThat(outcome.staleSystemIds())
-                .containsExactly("a");
+            assertThat(outcome.staleSystemKeys())
+                .containsExactly(SYSTEM_A);
         }
 
         @Test
@@ -128,8 +139,25 @@ final class PoliticalMapStalenessSourceTest {
                     takeSnapshot(1, Map.of())),
                 2);
 
-            assertThat(outcome.staleSystemIds())
-                .containsExactly("a");
+            assertThat(outcome.staleSystemKeys())
+                .containsExactly(SYSTEM_A);
+        }
+
+        @Test
+        void ownerFlipInOneOfTwoSystemsSharingAnIdMarksThatSystemAlone() {
+            // The collision the key exists for, met at the diff: the sector holds two systems
+            // answering to one ID, and only the second changes hands. Diffed by key, the mark
+            // names the twin that flipped and nothing else - diffed by ID, the pair was one
+            // baseline holding whichever the walk reached last, and a flip in the other could
+            // never be noticed at all.
+            var outcome = pollThenReadRefreshOutcome(
+                PollInputs.buildForSnapshotChange(
+                    takeSnapshot(1, Map.of(ANCHORED_TWIN, "hegemony", OTHER_TWIN, "hegemony")),
+                    takeSnapshot(1, Map.of(ANCHORED_TWIN, "hegemony", OTHER_TWIN, "tritachyon"))),
+                2);
+
+            assertThat(outcome.staleSystemKeys())
+                .containsExactly(OTHER_TWIN);
         }
 
         @Test
@@ -143,8 +171,8 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.geometryRevision())
                 .isEqualTo(1);
-            assertThat(outcome.staleSystemIds())
-                .containsExactly("a");
+            assertThat(outcome.staleSystemKeys())
+                .containsExactly(SYSTEM_A);
         }
 
         @Test
@@ -158,7 +186,7 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.geometryRevision())
                 .isEqualTo(1);
-            assertThat(outcome.staleSystemIds())
+            assertThat(outcome.staleSystemKeys())
                 .isEmpty();
         }
 
@@ -172,7 +200,7 @@ final class PoliticalMapStalenessSourceTest {
 
             assertThat(outcome.geometryRevision())
                 .isZero();
-            assertThat(outcome.staleSystemIds())
+            assertThat(outcome.staleSystemKeys())
                 .isEmpty();
         }
 
@@ -188,7 +216,7 @@ final class PoliticalMapStalenessSourceTest {
                 .isEqualTo(1);
             assertThat(outcome.geometryRevision())
                 .isZero();
-            assertThat(outcome.staleSystemIds())
+            assertThat(outcome.staleSystemKeys())
                 .isEmpty();
         }
 
@@ -245,8 +273,8 @@ final class PoliticalMapStalenessSourceTest {
         void marksOnTheBoardOfTheMachineryItWasBuiltWith() {
             // The other half of the same claim, over the board rather than the sector. A holder
             // flip in one sector must reach only that sector's cache: marked on a board two
-            // sectors read, it would re-shape a cell in the other under an ID nothing forbids both
-            // from holding - and would do it invisibly, the re-shape being correct in every
+            // sectors read, it would re-shape a cell in the other under a key nothing forbids both
+            // from minting - and would do it invisibly, the re-shape being correct in every
             // respect but which map it happened on.
             var holderFlip = PollInputs.buildForSnapshotChange(
                 takeSnapshot(1, "a", "hegemony"),
@@ -259,9 +287,9 @@ final class PoliticalMapStalenessSourceTest {
                 2,
                 buildMachineryPolledUnder(holderFlip));
 
-            assertThat(outcome.staleSystemIds())
-                .containsExactly("a");
-            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(outcome.staleSystemKeys())
+                .containsExactly(SYSTEM_A);
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -322,19 +350,21 @@ final class PoliticalMapStalenessSourceTest {
         return sectorMock;
     }
 
+    // A snapshot naming one held system by ID, keyed as the scan keys a system stating no centre
+    // and no anchor.
     private static PoliticalMapSectorSnapshot takeSnapshot(
             int visibilityFingerprint,
             String systemId,
             String factionId) {
 
-        return takeSnapshot(visibilityFingerprint, Map.of(systemId, factionId));
+        return takeSnapshot(visibilityFingerprint, Map.of(buildCellKey(systemId), factionId));
     }
 
     private static PoliticalMapSectorSnapshot takeSnapshot(
             int visibilityFingerprint,
-            Map<String, String> ownerBySystemId) {
+            Map<SystemKey, String> ownerBySystemKey) {
 
-        return new PoliticalMapSectorSnapshot(visibilityFingerprint, ownerBySystemId);
+        return new PoliticalMapSectorSnapshot(visibilityFingerprint, ownerBySystemKey);
     }
 
     // The machinery one run polls through: a bare one-system sector - enough for the poll's
@@ -432,7 +462,7 @@ final class PoliticalMapStalenessSourceTest {
         return new RefreshOutcome(
             board.getRevision(MapLayerCommonRefreshSignal.GEOMETRY),
             board.getRevision(PoliticalMapRefreshSignal.ALLIANCES),
-            board.drainStaleGroupingSystemIds());
+            board.drainStaleGroupingSystemKeys());
     }
 
     // One run's stubbed reads: what the two snapshot scans return, what the two alliance
@@ -492,6 +522,6 @@ final class PoliticalMapStalenessSourceTest {
     private record RefreshOutcome(
         int geometryRevision,
         int allianceRevision,
-        Set<String> staleSystemIds) {
+        Set<SystemKey> staleSystemKeys) {
     }
 }

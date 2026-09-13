@@ -13,12 +13,12 @@ import kmu.maplayers.politicalmap.base.render.territories.MapStyling;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.SystemOccupancy;
+import kmu.maplayers.politicalmap.base.render.territories.TerritoryBuildInputs;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.awt.Color;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,7 +64,7 @@ final class ClusterLabelStylingSnapshotTest {
             // it: the holders are the occupancy's own, so identity here is what says the snapshot
             // reads them live rather than taking a copy that a later refresh would leave behind.
             assertThat(styling.holderBySystemKey())
-                .isSameAs(territories.getHolderBySystemKey());
+                .isSameAs(territories.getOccupancy().getHolderBySystemKey());
 
             assertThat(styling.desaturationPalette())
                 .isSameAs(desaturationPalette);
@@ -115,15 +115,16 @@ final class ClusterLabelStylingSnapshotTest {
 
         return new PoliticalMapTerritories(
             SystemOccupancy.createCopyOf(holderBySystemKey, Set.of(), Set.of()),
-            new LinkedHashSet<>(),
-            new MapStyling(
-                null,
-                PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
-                desaturationPalette,
-                PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
-            viewGrouping,
-            contentInputs,
-            Set.of());
+            new TerritoryBuildInputs(
+                new MapStyling(
+                    null,
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                    desaturationPalette,
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE),
+                viewGrouping,
+                contentInputs,
+                Set.of(),
+                Set.of()));
     }
 
     // The view is a seam the snapshot only carries, so a mock stands in for whichever concrete

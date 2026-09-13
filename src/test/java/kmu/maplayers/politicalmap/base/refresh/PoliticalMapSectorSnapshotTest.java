@@ -8,6 +8,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Conditions;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,7 +71,7 @@ class PoliticalMapSectorSnapshotTest {
 
             assertThat(snapshot.visibilityFingerprint())
                 .isZero();
-            assertThat(snapshot.ownerBySystemId())
+            assertThat(snapshot.ownerBySystemKey())
                 .isEmpty();
         }
 
@@ -80,8 +82,8 @@ class PoliticalMapSectorSnapshotTest {
                 buildSectorWith(buildSystem("a"),
                 buildOwnedMarket("hegemony", 5)));
 
-            assertThat(snapshot.ownerBySystemId())
-                .containsExactly(entry("a", "hegemony"));
+            assertThat(snapshot.ownerBySystemKey())
+                .containsExactly(entry(buildCellKey("a"), "hegemony"));
         }
 
         @Test
@@ -123,6 +125,24 @@ class PoliticalMapSectorSnapshotTest {
         }
 
         @Test
+        void ownerMapHoldsAnEntryForEachOfTwoSystemsSharingAnId() {
+            // The other output the collision reaches: two systems answering to one ID, each held,
+            // are two entries under their own keys - keyed by ID, the pair was one entry holding
+            // whichever the walk reached last, and the diff over it could notice a flip in only
+            // one of them.
+            var snapshot = scanUnderStabilityWeighting(buildSectorWith(
+                List.of(
+                    StarSystemFixture.anchorSystemTo(buildSystem("a"), "anchor-1"),
+                    StarSystemFixture.anchorSystemTo(buildSystem("a"), "anchor-2")),
+                buildOwnedMarket("hegemony", 5)));
+
+            assertThat(snapshot.ownerBySystemKey())
+                .containsOnlyKeys(
+                    new SystemKey("a", null, "anchor-1"),
+                    new SystemKey("a", null, "anchor-2"));
+        }
+
+        @Test
         void ownerMapChangesWhenAColonysHolderChangesButVisibilityHolds() {
             // The AI-captures-or-founds case: the same system stays on the map, but
             // its holder flips. The holder map must move while the visibility hash
@@ -135,8 +155,8 @@ class PoliticalMapSectorSnapshotTest {
                 buildSectorWith(buildSystem("a"),
                 buildOwnedMarket("tritachyon", 5)));
 
-            assertThat(after.ownerBySystemId())
-                .containsExactly(entry("a", "tritachyon"));
+            assertThat(after.ownerBySystemKey())
+                .containsExactly(entry(buildCellKey("a"), "tritachyon"));
             assertThat(after.visibilityFingerprint())
                 .isEqualTo(before.visibilityFingerprint());
         }
@@ -153,8 +173,8 @@ class PoliticalMapSectorSnapshotTest {
                 buildOwnedMarket(Factions.NEUTRAL, 6),
                 buildOwnedMarket("hegemony", 3)));
 
-            assertThat(snapshot.ownerBySystemId())
-                .containsExactly(entry("a", "hegemony"));
+            assertThat(snapshot.ownerBySystemKey())
+                .containsExactly(entry(buildCellKey("a"), "hegemony"));
         }
 
         @Test
@@ -186,7 +206,7 @@ class PoliticalMapSectorSnapshotTest {
                     buildSystem("a"),
                     buildOwnedMarket("independent", 3)));
 
-            assertThat(snapshot.ownerBySystemId())
+            assertThat(snapshot.ownerBySystemKey())
                 .isEmpty();
         }
 
@@ -206,7 +226,7 @@ class PoliticalMapSectorSnapshotTest {
 
             assertThat(snapshot.visibilityFingerprint())
                 .isZero();
-            assertThat(snapshot.ownerBySystemId())
+            assertThat(snapshot.ownerBySystemKey())
                 .isEmpty();
         }
 
@@ -218,7 +238,7 @@ class PoliticalMapSectorSnapshotTest {
 
             assertThat(snapshot.visibilityFingerprint())
                 .isNotZero();
-            assertThat(snapshot.ownerBySystemId())
+            assertThat(snapshot.ownerBySystemKey())
                 .isEmpty();
         }
     }
@@ -235,11 +255,18 @@ class PoliticalMapSectorSnapshotTest {
     // A single-system sector whose economy lists the given markets for that system. Unrouted, so
     // inhabitation is the only route onto the map here.
     private static SectorAPI buildSectorWith(StarSystemAPI system, MarketAPI... markets) {
+        return buildSectorWith(List.of(system), markets);
+    }
 
-        var sector = MapSectorFixture.buildUnroutedSectorOf(system);
+    // The same sector over several systems, each listing the same markets - the shape a case about
+    // two systems sharing an ID needs, where each of the pair has to be held to hold an entry.
+    private static SectorAPI buildSectorWith(List<StarSystemAPI> systems, MarketAPI... markets) {
 
-        MapSectorFixture.listMarketsIn(sector, system, markets);
+        var sector = MapSectorFixture.buildUnroutedSectorOf(systems.toArray(StarSystemAPI[]::new));
 
+        for (var system : systems) {
+            MapSectorFixture.listMarketsIn(sector, system, markets);
+        }
         return sector;
     }
 

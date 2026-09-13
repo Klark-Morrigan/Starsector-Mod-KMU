@@ -59,7 +59,9 @@ public final class PaintedCellBuilder {
      * here - the holder, the palette, whether the cell is decivilised - is known per system
      * and not per cell.
      *
-     * @param territories this pass's retained holding, theme, and filter state
+     * @param territories the build the cell belongs to, read for who is in its system and for the
+     *                    inputs the build was baked under - the theme, the filter state, and the
+     *                    view its holding was grouped by
      * @param systemKey   the system the cell draws as, or null for a cell with no star of its
      *                    own, which draws as plain uninhabited - it has no holder to
      *                    colour it and nothing standing in it
@@ -78,15 +80,20 @@ public final class PaintedCellBuilder {
         if (shaped.fillPolygon().isEmpty()) {
             return null;
         }
+        // The two snapshots a cell is drawn from, named apart: who is in the system is the live
+        // one the refresh folds, and what the build was baked under is fixed until the next one.
+        var occupancy = territories.getOccupancy();
+        var buildInputs = territories.getBuildInputs();
+
         // A cell with no star of its own has no holder to look up, so the absent system skips the
         // holder map rather than probing it for a key it does not hold - keeping the null-star path
         // clear of whether the holder map happens to tolerate a null-key get.
         var holder = systemKey == null
             ? null
-            : territories.getHolderBySystemKey().get(systemKey);
+            : occupancy.getHolderBySystemKey().get(systemKey);
         return holder == null
-            ? buildFactionlessCell(territories, systemKey, shaped)
-            : buildOwnedCell(territories, holder, shaped);
+            ? buildFactionlessCell(occupancy, buildInputs, systemKey, shaped)
+            : buildOwnedCell(buildInputs, holder, shaped);
     }
 
     // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
@@ -97,17 +104,17 @@ public final class PaintedCellBuilder {
     // the holder's own palette for the pass's shared desaturation palette, and the opacity
     // multiplier scales every alpha on top of the style's own opacities.
     private static PaintedCell buildOwnedCell(
-            PoliticalMapTerritories territories,
+            TerritoryBuildInputs buildInputs,
             DominantHolder holder,
             ShapedCell shaped) {
 
-        var styling = territories.resolveBlocStyling(holder.factionId());
+        var styling = buildInputs.resolveBlocStyling(holder.factionId());
         var style = styling.style();
         var adjustment = styling.adjustment();
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
             holder,
-            territories.getDesaturationPalette());
+            buildInputs.styling().desaturationPalette());
 
         return new PaintedCell(
             new StyledCell.FusedCell(
@@ -127,9 +134,13 @@ public final class PaintedCellBuilder {
     // rather than being recomputed anywhere downstream. Drops the cell when neither element puts
     // ink down - a cell is kept for its fill as readily as for its outline.
     private static PaintedCell buildFactionlessCell(
-            PoliticalMapTerritories territories,
+            SystemOccupancy occupancy,
+            TerritoryBuildInputs buildInputs,
             SystemKey systemKey,
             ShapedCell shaped) {
+
+        // The scheme every read below paints from, this build's own.
+        var mapStyling = buildInputs.styling();
 
         // One classification drives both the bundle and the recede, so a cell cannot take the
         // decivilised style yet miss the recede that style is meant to draw under. Classified
@@ -137,10 +148,10 @@ public final class PaintedCellBuilder {
         // here: an inhabited system this layer's holding does not account for is not the empty
         // backdrop, whatever the absent holder alone would suggest.
         var category = FactionlessStyleResolver.resolveCategoryOf(
-            territories.getInhabitedSystemKeys(),
+            occupancy.getInhabitedSystemKeys(),
             systemKey);
 
-        var style = territories.getCategoryStyle(category);
+        var style = mapStyling.renderStyle().categoryStyle(category);
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
             return null;
         }
@@ -155,11 +166,13 @@ public final class PaintedCellBuilder {
         // absent system skips the set rather than probing one that may be immutable and
         // null-hostile.
         var isSpotlitBlocPresent = systemKey != null
-            && territories.getSpotlitPresenceSystemKeys().contains(systemKey);
+            && occupancy.getSpotlitPresenceSystemKeys().contains(systemKey);
 
+        // Only the filter's recede reaches a factionless cell: the alliances view's non-allied
+        // recede describes factions, which such a cell is not.
         var adjustment = FactionlessStyleResolver.resolveRecedeOf(
             category,
-            territories.getRecedeAdjustment(),
+            buildInputs.contentInputs().filterRecedeAdjustment(),
             isSpotlitBlocPresent);
 
         // A spared cell paints the lifted neutral rather than the plain one: the recede it was
@@ -167,19 +180,19 @@ public final class PaintedCellBuilder {
         // background around it sank from - close enough to read as the same surface. The two
         // palettes are the pass's own, so the lift and the sink are one decision apart.
         var ownPalette = isSpotlitBlocPresent
-            ? territories.getPresencePalette()
-            : territories.getNeutralPalette();
+            ? mapStyling.presencePalette()
+            : mapStyling.neutralPalette();
 
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
             ownPalette,
-            territories.getDesaturationPalette());
+            mapStyling.desaturationPalette());
 
         // Only the rounding half of the profile: a lone cell has no spikes to sand, so the
         // sanding numbers are not this builder's to hold.
         var outline = resolveOutlineOf(
             shaped,
-            territories.getGlobalStyle().borderSmoothing().cornerRounding());
+            mapStyling.renderStyle().global().borderSmoothing().cornerRounding());
 
         // Tessellate the fill only when it will actually be painted: an uninhabited cell is
         // outline-only and covers most of the sector, so triangulating every one of its cells

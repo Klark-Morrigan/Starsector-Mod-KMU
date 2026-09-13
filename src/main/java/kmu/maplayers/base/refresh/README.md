@@ -22,7 +22,13 @@ A signal is a `MapLayerRefreshSignal`,
 declared by the framework (`MapLayerCommonRefreshSignal`) or by the layer that alone means anything by it.
 `MapLayerRefreshBoard` is what a signal is raised on,
 one per sector held by [that sector's machinery](../machinery/README.md),
-since the stale set names systems by bare id.
+since the stale set names systems by `SystemKey`,
+whose engine-minted arms each sector mints without regard to another's.
+Every producer marking a system stale holds the system when it does so -
+the market listeners have it from the event,
+the staleness poll walks the sector -
+so each states the key rather than the vanilla ID,
+and nothing downstream has to widen an ID back into the systems sharing it.
 Every producer is handed the board it means,
 and this package is gated from importing the machinery one so none can resolve a board of its own.
 `RefreshSignalRevisions` is a reading of where the traced signals stood,

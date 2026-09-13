@@ -259,7 +259,7 @@ final class TerritoryBuilderTest {
                 .isEmpty();
             assertThat(inhabitationScanPasses)
                 .isEmpty();
-            assertThat(territories.getHolderBySystemKey())
+            assertThat(territories.getOccupancy().getHolderBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, HELD_BY));
         }
 
@@ -326,7 +326,7 @@ final class TerritoryBuilderTest {
                 UNFILTERED_INPUTS,
                 TerritoryBuilder.resolveHolding(pass, viewFake, UNFILTERED_INPUTS));
 
-            assertThat(territories.getViewGrouping().grouping())
+            assertThat(territories.getBuildInputs().viewGrouping().grouping())
                 .isSameAs(grouping);
         }
     }

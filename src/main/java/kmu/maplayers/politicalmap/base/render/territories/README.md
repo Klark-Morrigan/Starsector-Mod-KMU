@@ -21,6 +21,7 @@ see the [mod README](../../../../../../../../../README.md) for project context.
 - [Borders against empty space](#borders-against-empty-space)
 - [The draw packets](#the-draw-packets)
   - [`PaintedCellStore`: what one cell carries](#paintedcellstore-what-one-cell-carries)
+  - [`TerritoryBuildInputs`: what the build was baked under](#territorybuildinputs-what-the-build-was-baked-under)
 - [The split fill: solid, hatched, unfilled](#the-split-fill-solid-hatched-unfilled)
 - [Rendering](#rendering)
 - [What is not here](#what-is-not-here)
@@ -82,7 +83,7 @@ and `StyledCell`,
 Element colours,
 opacities,
 and widths come from cascading the `base.theme` records with each bloc's recede adjustment,
-asked for through `PoliticalMapTerritories.resolveBlocStyling` so every part of a bloc resolves from one read.
+asked for through `TerritoryBuildInputs.resolveBlocStyling` so every part of a bloc resolves from one read.
 
 ## What recedes
 
@@ -230,9 +231,11 @@ so changing them does not move a border.
 `PoliticalMapTerritories` is the built state a rebuild produces
 and an incremental refresh edits in place:
 the two draw lists
-(`StyledClusterGroup` per bloc, `StyledCell` per cell) plus the occupancy,
-theme,
-and filter inputs a re-shape needs.
+(`StyledClusterGroup` per bloc, `StyledCell` per cell),
+the cluster index and the occupancy -
+all live -
+beside the `TerritoryBuildInputs` the build was baked under,
+which a re-shape reads and never moves.
 Both packets are the framework's,
 described in [`base.render.clusters`](../../../../base/render/clusters/README.md) -
 a bloc's bodies with the paints they share,
@@ -310,6 +313,29 @@ so without it a cell re-baked because a re-fitted name landed on it would re-wal
 Being dropped with its cell is the whole of why it needs no key:
 a cache whose lifetime is the object holding it is correct by construction,
 where a keyed one is a rule somebody has to keep true.
+
+### `TerritoryBuildInputs`: what the build was baked under
+
+Everything a rebuild retained to build under lives in its own record,
+reached through `getBuildInputs`:
+the `MapStyling` (the theme and the three factionless palettes),
+the `ViewGrouping` (the view and the grouping snapshot its holding was resolved under),
+the `ContentInputs` it sampled,
+and the two sets the holding resolve derived about the fill -
+the unfilled systems and the contested ones.
+
+They are one record because they are fixed together:
+set once when the build ends and read until the next one,
+where the occupancy beside them is folded per marked system.
+A reader takes the record and names which snapshot it reads -
+`styling()`,
+`viewGrouping()`,
+`contentInputs()` -
+rather than reaching one field of it through a flat getter on the built map,
+which is what let a pass compose a cell out of one snapshot's theme and another's grouping without the type saying so.
+`resolveBlocStyling` sits on the record for the same reason:
+it cascades all three,
+so it belongs to the type that holds all three.
 
 ## The split fill: solid, hatched, unfilled
 

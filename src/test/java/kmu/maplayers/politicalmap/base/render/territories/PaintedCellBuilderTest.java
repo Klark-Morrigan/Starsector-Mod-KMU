@@ -645,17 +645,18 @@ final class PaintedCellBuilderTest {
 
             return new PoliticalMapTerritories(
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
-                Set.of(),
-                new MapStyling(
-                    buildFactionlessTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
-                    new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                new ViewGrouping(viewMock, HolderGrouping.identity()),
-                ContentInputsFixtures.createInputsRecedingBehind(
-                    null, // No bloc spotlighted.
-                    ElementStyleAdjustment.NONE),
-                Set.of());
+                new TerritoryBuildInputs(
+                    new MapStyling(
+                        buildFactionlessTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
+                        new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
+                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewGrouping(viewMock, HolderGrouping.identity()),
+                    ContentInputsFixtures.createInputsRecedingBehind(
+                        null, // No bloc spotlighted.
+                        ElementStyleAdjustment.NONE),
+                    Set.of(),
+                    Set.of()));
         }
 
         // The sector-wide tier the rounding cases share: every corner arced, at a radius the shared
@@ -716,17 +717,18 @@ final class PaintedCellBuilderTest {
                     Map.of(),
                     Set.of(buildCellKey(DECIVILISED_SYSTEM_ID), buildCellKey(UNHELD_INHABITED_SYSTEM_ID)),
                     spotlitPresenceSystemKeys),
-                Set.of(),
-                new MapStyling(
-                    theme,
-                    new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                new ViewGrouping(
-                    buildViewMockAdjusting(ElementStyleAdjustment.NONE),
-                    HolderGrouping.identity()),
-                ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
-                Set.of());
+                new TerritoryBuildInputs(
+                    new MapStyling(
+                        theme,
+                        new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
+                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewGrouping(
+                        buildViewMockAdjusting(ElementStyleAdjustment.NONE),
+                        HolderGrouping.identity()),
+                    ContentInputsFixtures.createInputsRecedingBehind(selectedBlocId, recede),
+                    Set.of(),
+                    Set.of()));
         }
 
         // A category whose outer outline is drawn (a real palette slot, resolved to the neutral
@@ -805,19 +807,20 @@ final class PaintedCellBuilderTest {
 
             return new PoliticalMapTerritories(
                 SystemOccupancy.createCopyOf(holders, Set.of(), Set.of()),
-                Set.of(),
-                new MapStyling(
-                    PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
-                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                new ViewGrouping(
-                    buildViewMockAdjusting(ElementStyleAdjustment.NONE),
-                    HolderGrouping.identity()),
-                ContentInputsFixtures.createInputsRecedingBehind(
-                    null, // No bloc spotlighted.
-                    ElementStyleAdjustment.NONE),
-                Set.of());
+                new TerritoryBuildInputs(
+                    new MapStyling(
+                        PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
+                        PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewGrouping(
+                        buildViewMockAdjusting(ElementStyleAdjustment.NONE),
+                        HolderGrouping.identity()),
+                    ContentInputsFixtures.createInputsRecedingBehind(
+                        null, // No bloc spotlighted.
+                        ElementStyleAdjustment.NONE),
+                    Set.of(),
+                    Set.of()));
         }
 
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
@@ -831,17 +834,18 @@ final class PaintedCellBuilderTest {
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the ID is null.
             return new PoliticalMapTerritories(
                 SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
-                Set.of(),
-                new MapStyling(
-                    PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
-                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
-                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
-                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
-                new ViewGrouping(viewMock, HolderGrouping.identity()),
-                ContentInputsFixtures.createInputsRecedingBehind(
-                    isFiltering ? "selected-bloc" : null,
-                    recede),
-                Set.of());
+                new TerritoryBuildInputs(
+                    new MapStyling(
+                        PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
+                        PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                        new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                        new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                    new ViewGrouping(viewMock, HolderGrouping.identity()),
+                    ContentInputsFixtures.createInputsRecedingBehind(
+                        isFiltering ? "selected-bloc" : null,
+                        recede),
+                    Set.of(),
+                    Set.of()));
         }
 
         // A small, non-empty square cell so the fill-polygon-empty short-circuit never

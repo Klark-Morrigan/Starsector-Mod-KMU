@@ -267,7 +267,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             requestTheNextRebuild();
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getTerritories().getInhabitedSystemKeys())
+            assertThat(cache.getTerritories().getOccupancy().getInhabitedSystemKeys())
                 .containsExactlyInAnyOrder(buildCellKey(ALPHA_ID), buildCellKey(BETA_ID));
         }
 
@@ -293,7 +293,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             assertThat(territories.getStyledCellByCellKey())
                 .containsKey(ALPHA_CELL);
             // The fills: the same system reads as settled rather than as empty backdrop.
-            assertThat(territories.getInhabitedSystemKeys())
+            assertThat(territories.getOccupancy().getInhabitedSystemKeys())
                 .containsExactly(buildCellKey(ALPHA_ID));
             // The bands: its two revealed blocs split the system, so its cell carries runs.
             assertThat(territories.getPaintedCells().getRibbonByCellKey().get(ALPHA_CELL).isEmpty())
@@ -360,21 +360,21 @@ final class PoliticalMapRebuildWalkIntegrationTest {
         @Test
         void refreshDrainsItsOwnMachineryStaleSystemsAndLeavesAnothersStanding() {
             // The board's half of the same claim. A full rebuild re-derives every system, so it
-            // drains the marks it has just accounted for - and the marks are bare system IDs, so a
-            // rebuild draining a shared board would swallow another sector's pending re-shape and
-            // leave that sector drawing a holder that has already moved, with nothing on either map
-            // to say a mark went missing.
+            // drains the marks it has just accounted for - and nothing forbids two sectors from
+            // minting a system under one key, so a rebuild draining a shared board would swallow
+            // another sector's pending re-shape and leave that sector drawing a holder that has
+            // already moved, with nothing on either map to say a mark went missing.
             buildContestedSectorWithASettledNeighbour();
 
-            machinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
-            otherMachinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_ID);
+            machinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_CELL);
+            otherMachinery.resolveRefreshBoard().markSystemGroupingStale(ALPHA_CELL);
 
             new PoliticalMapCache(machinery).refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
-            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly(ALPHA_ID);
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(ALPHA_CELL);
         }
 
         @Test

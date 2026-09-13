@@ -78,10 +78,10 @@ final class IncrementalPoliticsRefresh {
     static void applyStalePoliticsUpdates(
             SectorAPI sector,
             StandingPoliticalMap standingMap,
-            Set<String> staleSystemIds) {
+            Set<SystemKey> staleSystemKeys) {
 
         try (var refreshScope = ActiveProfiler.resolveProfiler().open(APPLY_UPDATES_SECTION)) {
-            applyMarkedPoliticsUpdates(sector, standingMap, staleSystemIds);
+            applyMarkedPoliticsUpdates(sector, standingMap, staleSystemKeys);
         }
     }
 
@@ -89,17 +89,17 @@ final class IncrementalPoliticsRefresh {
     private static void applyMarkedPoliticsUpdates(
             SectorAPI sector,
             StandingPoliticalMap standingMap,
-            Set<String> staleSystemIds) {
+            Set<SystemKey> staleSystemKeys) {
 
         var pass = DominancePass.readFromLunaSettings(
             sector,
-            standingMap.territories().getGrouping());
+            standingMap.territories().getBuildInputs().viewGrouping().grouping());
 
         // A system with no cell seeds no drawing, so it is left out of the whole batch: a
         // resize changes what is in systems already on the map, never map membership.
         var markedSystemKeys = selectDrawnSystemKeys(
             standingMap.cellGeometry().cells(),
-            staleSystemIds);
+            staleSystemKeys);
 
         var disturbance = MarkedSystemRederive.rederiveMarkedSystems(
             standingMap.territories(),
@@ -110,22 +110,24 @@ final class IncrementalPoliticsRefresh {
         redrawDisturbedCells(standingMap, pass, markedSystemKeys, disturbance);
     }
 
-    // The drawn cells the marked systems name, in the order the cells were cut.
+    // The marked systems that draw a cell, in the order they were marked.
     //
-    // The board still marks a system by bare ID, and an ID names every system carrying it, so a
-    // mark fans out to each drawn cell whose key states that ID rather than resolving to one. The
-    // fan-out runs over the cut's own cells rather than over a reading of the sector, which is what
-    // keeps a system the sector has since dropped in the batch: its cell stands until the next cut,
-    // and a mark on it is exactly the change the redraw has to show.
+    // The board marks a system by the key its cell is cut under, so a mark names one cell and
+    // nothing has to widen it: a system sharing its ID with another is redrawn as itself, and the
+    // twin is left standing on the reading it already has. Asked of the cut's own cells rather than
+    // of a reading of the sector, which is what keeps a system the sector has since dropped in the
+    // batch: its cell stands until the next cut, and a mark on it is exactly the change the redraw
+    // has to show.
     private static Set<SystemKey> selectDrawnSystemKeys(
             CellGeometryCache geometryCache,
-            Set<String> staleSystemIds) {
+            Set<SystemKey> staleSystemKeys) {
 
         var drawnSystemKeys = new LinkedHashSet<SystemKey>();
+        var cellEdgesByCellKey = geometryCache.getCellEdgesByCellKey();
 
-        for (var cellKey : geometryCache.getCellEdgesByCellKey().keySet()) {
-            if (staleSystemIds.contains(cellKey.systemId())) {
-                drawnSystemKeys.add(cellKey);
+        for (var systemKey : staleSystemKeys) {
+            if (cellEdgesByCellKey.containsKey(systemKey)) {
+                drawnSystemKeys.add(systemKey);
             }
         }
         return drawnSystemKeys;
@@ -221,7 +223,7 @@ final class IncrementalPoliticsRefresh {
         LabelsBuilder.rebuildLabels(
             standingMap.factionLabels(),
             standingMap.standingAnchors().getAnchors(),
-            territories.getContentInputs().nameFormat().areNamesDrawn());
+            territories.getBuildInputs().contentInputs().nameFormat().areNamesDrawn());
 
         return nameDisturbance;
     }
@@ -323,15 +325,16 @@ final class IncrementalPoliticsRefresh {
         // star's own, so it resolves to that star, but the resolve is explicit so an
         // absorbed cell would key by its holder rather than its own missing star.
         var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
+        var holderBySystemKey = territories.getOccupancy().getHolderBySystemKey();
         var holder = drawnSystemKey == null
             ? null
-            : territories.getHolderBySystemKey().get(drawnSystemKey);
+            : holderBySystemKey.get(drawnSystemKey);
 
         var ownerFactionId = holder == null ? null : holder.factionId();
         var shaped = CellShaper.shapeCell(
             edges,
             ownerFactionId,
-            DominantHolder.mapFactionIdBySystemKey(territories.getHolderBySystemKey()),
+            DominantHolder.mapFactionIdBySystemKey(holderBySystemKey),
             CellShaper.BORDER_INSET_DISTANCE);
 
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(territories, drawnSystemKey, shaped);

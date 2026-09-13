@@ -2,6 +2,8 @@ package kmu.maplayers.base.refresh;
 
 import com.fs.starfarer.api.Global;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.apache.log4j.Logger;
 
 import java.util.LinkedHashSet;
@@ -16,10 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * <p>One board per sector, however many layers raise signals on it. Every signal here is a fact
  * about one sector - a counter says that sector's alliances moved, and the stale set names that
- * sector's systems by ID - so two sectors sharing a board would have one sector's colony change mark
- * the other's system stale, under an ID nothing forbids both from holding. A layer still declares
- * its own signals and raises them on whichever sector's board it was handed, so a second layer's
- * arrival does not split the mechanism in two.
+ * sector's systems by {@link SystemKey} - so two sectors sharing a board would have one sector's
+ * colony change mark the other's system stale, under a key whose engine-minted arms each sector
+ * mints without regard to the other. A layer still declares its own signals and raises them on
+ * whichever sector's board it was handed, so a second layer's arrival does not split the mechanism
+ * in two.
  *
  * <p>A coarse change is one counter, held under the {@link MapLayerRefreshSignal} its producer and
  * its consumer both name: the producer raises the signal, and the consumer folds the current count
@@ -38,8 +41,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * several systems can go stale in one tick, and identity is all that matters (a system is stale or
  * not, once per refresh). Several producers can feed the same set - a per-event signal and a
  * periodic diff, say - so a system one already marked and another re-discovers collapses to a single
- * reshape. The whole-map restyle a settings change needs is a separate signal the plugin reads
- * straight from {@code KmuLunaSettings.getSettingsRevision}, not this class.
+ * reshape. Named by key rather than by the vanilla ID because every producer holds the system when
+ * it marks it, and an ID names every system sharing it: a mark by ID would either fan out to systems
+ * nothing happened in or resolve to whichever of them a lookup answers first. The whole-map restyle
+ * a settings change needs is a separate signal the plugin reads straight from
+ * {@code KmuLunaSettings.getSettingsRevision}, not this class.
  *
  * <p>Counters and a set rather than direct calls because the producers (a listener, a watcher) and
  * the consumer (the engine-instantiated terrain plugin) never hold one another: each is built by a
@@ -51,7 +57,7 @@ public final class MapLayerRefreshBoard {
 
     private static final Logger LOG = Global.getLogger(MapLayerRefreshBoard.class);
 
-    private final Set<String> groupingStaleSystemIds = ConcurrentHashMap.newKeySet();
+    private final Set<SystemKey> groupingStaleSystemKeys = ConcurrentHashMap.newKeySet();
     private final Map<MapLayerRefreshSignal, AtomicInteger> revisionsBySignal =
         new ConcurrentHashMap<>();
 
@@ -88,17 +94,18 @@ public final class MapLayerRefreshBoard {
      * than rescanning every system - used when a producer can name the one system whose key may
      * have moved.
      *
-     * @param systemId the system whose owner may have changed; null is ignored
+     * @param systemKey the system whose owner may have changed; null is ignored
      */
-    public void markSystemGroupingStale(String systemId) {
+    public void markSystemGroupingStale(SystemKey systemKey) {
 
-        if (systemId == null) {
+        if (systemKey == null) {
             return;
         }
-        groupingStaleSystemIds.add(systemId);
+        groupingStaleSystemKeys.add(systemKey);
 
+        // Named by the vanilla ID, which is what a reader of the log calls the system.
         LOG.debug("Map layer system grouping marked stale; systemId="
-            + systemId);
+            + systemKey.systemId());
     }
 
     /**
@@ -106,19 +113,19 @@ public final class MapLayerRefreshBoard {
      * processes each staleness once. A full rebuild (a settings change or a geometry change) drains
      * and discards them, since it already re-derives every system.
      *
-     * @return the drained stale system IDs; empty when none are pending
+     * @return the drained stale system keys; empty when none are pending
      */
-    public Set<String> drainStaleGroupingSystemIds() {
+    public Set<SystemKey> drainStaleGroupingSystemKeys() {
 
-        if (groupingStaleSystemIds.isEmpty()) {
+        if (groupingStaleSystemKeys.isEmpty()) {
             return Set.of();
         }
-        // Snapshot then remove exactly what was snapshotted, so an ID added by the
+        // Snapshot then remove exactly what was snapshotted, so a key added by the
         // campaign thread between the copy and the removal survives to the next
         // drain rather than being silently dropped.
-        var drained = new LinkedHashSet<>(groupingStaleSystemIds);
+        var drained = new LinkedHashSet<>(groupingStaleSystemKeys);
 
-        groupingStaleSystemIds.removeAll(drained);
+        groupingStaleSystemKeys.removeAll(drained);
 
         return drained;
     }

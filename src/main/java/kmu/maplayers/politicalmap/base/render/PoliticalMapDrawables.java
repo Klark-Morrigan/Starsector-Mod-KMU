@@ -98,7 +98,8 @@ final class PoliticalMapDrawables {
      *         holders through the normal politics, which would overwrite the spotlit keys
      */
     public boolean canFoldHolderChanges() {
-        return territories != null && !territories.isFiltering();
+        return territories != null
+            && !territories.getBuildInputs().contentInputs().isFiltering();
     }
 
     /**

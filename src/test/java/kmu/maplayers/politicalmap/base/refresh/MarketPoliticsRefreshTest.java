@@ -12,6 +12,7 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Pins {@link MarketPoliticsRefresh}, the shared seat guard the politics
  * listeners funnel through: a market seated in a star system marks that system
- * stale, while a null market or one with no star system (a deep-hyperspace
+ * stale under its key, while a null market or one with no star system (a deep-hyperspace
  * station) marks nothing.
  *
  * <p>Both halves are read off the sector handed in - the board of that sector's machinery, and
@@ -55,8 +56,8 @@ final class MarketPoliticsRefreshTest {
                 "colony resize",
                 "prevSize=3");
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -68,8 +69,8 @@ final class MarketPoliticsRefreshTest {
                 "colony resize",
                 "");
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -81,7 +82,7 @@ final class MarketPoliticsRefreshTest {
                 "colony resize",
                 "prevSize=3");
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -94,7 +95,7 @@ final class MarketPoliticsRefreshTest {
                 "colony resize",
                 "prevSize=3");
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -112,7 +113,7 @@ final class MarketPoliticsRefreshTest {
                 "colony resize",
                 "");
 
-            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 

@@ -241,15 +241,15 @@ class SectorMapMachineryTest {
 
         @Test
         void yieldsABoardOfItsOwnSoOneSectorsStaleSystemsAreNotAnothers() {
-            // The stale set is bare system IDs, and nothing forbids two sectors from generating a
-            // system under the same one - so a shared board is where two sectors corrupt each
-            // other silently rather than merely draw each other's picture.
-            machinery.resolveRefreshBoard().markSystemGroupingStale("sys");
+            // The stale set is system keys, and nothing forbids two sectors from minting a system
+            // under the same one - so a shared board is where two sectors corrupt each other
+            // silently rather than merely draw each other's picture.
+            machinery.resolveRefreshBoard().markSystemGroupingStale(buildCellKey("sys"));
 
-            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
+            assertThat(otherMachinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
                 .isEmpty();
-            assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(machinery.resolveRefreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test

@@ -20,6 +20,7 @@ import java.util.List;
 
 import static kmlib.testfixtures.starsector.settings.StubbedModIds.NEXERELIN;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,8 +103,8 @@ final class NexerelinInvasionListenerInstallerTest {
                     List.of(),
                     1.0f);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test

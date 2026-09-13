@@ -19,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.function.Consumer;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures
     .mockEntityWithMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
@@ -112,8 +113,8 @@ class PoliticalMapInstallerTest {
 
             installed.listener().reportEntityDiscovered(mockEntityWithMarketInSystem("sys"));
 
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
     }
 
@@ -129,8 +130,8 @@ class PoliticalMapInstallerTest {
 
             installed.listener().reportColonySizeChanged(mockMarketInSystem("sys"), 3);
 
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
     }
 
@@ -146,8 +147,8 @@ class PoliticalMapInstallerTest {
 
             installed.listener().reportColonyDecivilized(mockMarketInSystem("sys"), false);
 
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
     }
 
@@ -166,8 +167,8 @@ class PoliticalMapInstallerTest {
             // provoked the mark is not what this case is about.
             installed.listener().reportPlayerAbandonedColony(mockMarketInSystem("sys"));
 
-            assertThat(installed.refreshBoard().drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(installed.refreshBoard().drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
     }
 

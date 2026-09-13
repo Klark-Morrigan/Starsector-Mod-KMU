@@ -87,7 +87,8 @@ public final class PoliticalMapPreviewHighlightRenderer {
     // being pure GL.
     PreviewHighlightPaint resolvePreviewPaint(PoliticalMapTerritories territories) {
 
-        var view = territories.getView();
+        // The view the frame painted, off the inputs the build was baked under.
+        var view = territories.getBuildInputs().viewGrouping().view();
 
         // The view's ID under this mod's own store namespace, which is how the picker reported the
         // hover: the ID is opaque, so a view named the same by another mod's picker is a different
@@ -137,7 +138,7 @@ public final class PoliticalMapPreviewHighlightRenderer {
 
         var palette = new SectorBlocPalettes(
                 machinery.resolveSector(),
-                territories.getGrouping())
+                territories.getBuildInputs().viewGrouping().grouping())
             .readBlocPalette(blocId);
 
         return palette == null

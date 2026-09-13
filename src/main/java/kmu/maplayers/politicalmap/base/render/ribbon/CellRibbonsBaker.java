@@ -103,7 +103,7 @@ public final class CellRibbonsBaker {
             geometryCache.getSystemKeyByCellKey(),
             CellRibbonSource.createForPass(
                 pass,
-                territories.getViewGrouping().view(),
+                territories.getBuildInputs().viewGrouping().view(),
                 RibbonBakeSurface.createForPass(territories, geometryCache, clusterAnchors)),
             KmuPoliticalMapDiagnosticsSettings.shouldShowPoliticalMapRibbonPaths());
     }

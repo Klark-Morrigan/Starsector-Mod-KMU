@@ -10,6 +10,7 @@ import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockMarketInSystem;
 import static kmu.maplayers.politicalmap.base.refresh.MarketRefreshFixtures.mockUnseatedMarket;
 
@@ -53,8 +54,8 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyDecivilized(mockMarketInSystem("sys"), false);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -62,8 +63,8 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyDecivilized(mockMarketInSystem("sys"), true);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
-                .containsExactly("sys");
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
+                .containsExactly(buildCellKey("sys"));
         }
 
         @Test
@@ -71,7 +72,7 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyDecivilized(mockUnseatedMarket(), false);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -80,7 +81,7 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyDecivilized(null, false);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }
@@ -93,7 +94,7 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyAboutToBeDecivilized(mockMarketInSystem("sys"), false);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -132,7 +133,7 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyAboutToBeDecivilized(mockUnseatedMarket(), false);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
 
@@ -141,7 +142,7 @@ final class PoliticalMapDecivListenerTest {
 
             listener.reportColonyAboutToBeDecivilized(null, false);
 
-            assertThat(refreshBoard.drainStaleGroupingSystemIds())
+            assertThat(refreshBoard.drainStaleGroupingSystemKeys())
                 .isEmpty();
         }
     }
