@@ -48,10 +48,11 @@ and land on a result identical to a full rebuild.
   only a settled cell takes the pass's recede -
   see [what recedes](#what-recedes) below.
   Either way it comes back as a `PaintedCell`,
-  reporting the ring its ink went on as well as the packet:
-  a lone cell rounds its own corners here,
-  so the ring it draws is not the raw cell it was shaped from,
-  and everything downstream that has to know where the cell put ink reads this one rather than re-deriving it.
+  reporting the ring its ink went on as well as the packet.
+  A fused cell reports its raw extent,
+  its cluster's border being what bounds the ink;
+  a lone cell rounds its own corners here and reports the rounded ring,
+  which is not the cell it was shaped from.
 - `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`:
   every body it holds,
   each with its national border traced across the systems in it,

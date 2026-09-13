@@ -14,7 +14,6 @@ import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.theme.GlobalStyle;
-import kmu.maplayers.base.theme.RenderStyle;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -321,10 +320,6 @@ public final class PoliticalMapTerritories implements
         return styling.presencePalette();
     }
 
-    public RenderStyle getRenderStyle() {
-        return styling.renderStyle();
-    }
-
     // The sector-wide tier (hatch, border smoothing, desaturation profile), read by the
     // renderer and the builders so a global knob resolves once off the theme.
     @Override
@@ -351,7 +346,7 @@ public final class PoliticalMapTerritories implements
      */
     public BlocStyling resolveBlocStyling(String blocId) {
         return BlocStyling.resolveFrom(
-            getRenderStyle(),
+            styling.renderStyle(),
             BlocStyleResolver.resolveBlocStyleDecision(
                 blocId,
                 getView(),

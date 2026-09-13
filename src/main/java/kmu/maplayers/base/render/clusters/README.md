@@ -114,9 +114,8 @@ which is how one same-owner body is carved into clusters that meet without a gap
   a `StyledCell` with the ring its ink was laid on.
   A draw packet is flattened geometry with no boundary left to read back,
   so the ring has to travel beside it for anything to resolve a cursor to the cell or light the cell up.
-  It is one value rather than two arguments because only the builder knows which ring that is:
-  a fused cell paints inside its cluster's shape and so reports its raw extent,
-  while a lone cell reports the rounded ring it actually strokes.
+  It is one value rather than two arguments because which ring that is depends on the form the cell took,
+  so only the builder that chose the form can answer it.
 - `StyledCluster` -
   its cluster-level sibling:
   everything drawn once for one connected body rather than per cell -

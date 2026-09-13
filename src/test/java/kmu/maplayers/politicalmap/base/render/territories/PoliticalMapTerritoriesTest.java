@@ -376,8 +376,10 @@ final class PoliticalMapTerritoriesTest {
                 .isSameAs(desaturationPalette);
             assertThat(territories.getPresencePalette())
                 .isSameAs(presencePalette);
-            assertThat(territories.getRenderStyle())
-                .isSameAs(renderStyle);
+            // The theme is read back through the two accessors production reads it through rather
+            // than whole: its global tier and its four category bundles are the whole of what it
+            // carries, so asserting both covers the threading without a getter existing only to be
+            // asserted.
             assertThat(territories.getGlobalStyle())
                 .isSameAs(globalStyle);
 

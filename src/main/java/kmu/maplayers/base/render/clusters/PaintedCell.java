@@ -13,10 +13,8 @@ import java.util.List;
  * shape from before the cell's own smoothing leaves those two reading corners the cell no longer
  * draws.
  *
- * <p>Which ring that is differs by the form the cell takes, which is why only the builder can
- * answer it: a cell fused into a cluster paints within the cluster's shape, so its ring is its
- * raw extent and the cluster's own border is what bounds it, while a lone cell strokes and fills
- * a ring of its own - the one left after the sector-wide corner rounding.
+ * <p>Which ring that is differs by the form the cell takes, so only the builder that chose the form
+ * can answer it; a layer's own builder states which it reports and why.
  *
  * @param styledCell    the cell's draw record
  * @param paintedExtent the ring that record was built from, as {x, y} vertex pairs in world
