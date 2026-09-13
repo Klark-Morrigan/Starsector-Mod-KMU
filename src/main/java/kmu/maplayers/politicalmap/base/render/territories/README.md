@@ -35,7 +35,7 @@ Its job is to sample every input exactly once so the whole pass keys off one sna
 which is what lets an incremental re-shape reuse those same builders on a handful of cells
 and land on a result identical to a full rebuild.
 
-- `StyledCellBuilder` bakes one cell,
+- `PaintedCellBuilder` bakes one cell,
   choosing which form of `StyledCell` it takes.
   An **owned** cell becomes a `FusedCell` and contributes only its interior seams,
   because its fill and national border belong to the cluster it fuses into -
@@ -132,7 +132,7 @@ Off filter the pass's recede is the identity,
 so an unfiltered map draws its unheld systems untouched.
 
 The rule itself is not here:
-`StyledCellBuilder` asks [`FactionlessStyleResolver`](../style/README.md),
+`PaintedCellBuilder` asks [`FactionlessStyleResolver`](../style/README.md),
 which also decides which of the two factionless categories a cell falls in.
 One classification drives both,
 so a cell cannot take the settled style yet miss the recede that style draws under.

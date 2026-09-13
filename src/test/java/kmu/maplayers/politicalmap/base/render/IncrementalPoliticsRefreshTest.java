@@ -32,7 +32,7 @@ import kmu.maplayers.politicalmap.base.render.ribbon.RibbonSettingsFixtures;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures;
-import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
+import kmu.maplayers.politicalmap.base.render.territories.PaintedCellBuilder;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonPlan;
 import kmu.maplayers.politicalmap.base.ribbon.RibbonSegment;
 import kmu.settings.KmuMapVisibilitySettings;
@@ -148,7 +148,7 @@ final class IncrementalPoliticsRefreshTest {
         private MockedStatic<Global> globalMock;
         private MockedStatic<SectorPolitics> politicsMock;
         private MockedStatic<PoliticalMapInhabitation> inhabitationMock;
-        private MockedStatic<StyledCellBuilder> styledCellsMock;
+        private MockedStatic<PaintedCellBuilder> paintedCellsMock;
         private MockedStatic<FactionTerritoryBuilder> territoriesMock;
         private MockedStatic<ClusterAnchorsBuilder> anchorsMock;
         private MockedStatic<KmuPoliticalMapRibbonSettings> settingsMock;
@@ -183,9 +183,9 @@ final class IncrementalPoliticsRefreshTest {
                 .when(() -> PoliticalMapInhabitation.isSystemInhabited(any(), any()))
                 .thenReturn(true);
 
-            styledCellsMock = seams.openSeam(StyledCellBuilder.class);
-            styledCellsMock
-                .when(() -> StyledCellBuilder.buildStyledCellForSystem(
+            paintedCellsMock = seams.openSeam(PaintedCellBuilder.class);
+            paintedCellsMock
+                .when(() -> PaintedCellBuilder.buildPaintedCellForSystem(
                     any(),
                     any(),
                     any()))
@@ -282,7 +282,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            styledCellsMock.verifyNoInteractions();
+            paintedCellsMock.verifyNoInteractions();
             territoriesMock.verifyNoInteractions();
         }
 
@@ -315,7 +315,7 @@ final class IncrementalPoliticsRefreshTest {
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
-            styledCellsMock.verifyNoInteractions();
+            paintedCellsMock.verifyNoInteractions();
             territoriesMock.verifyNoInteractions();
         }
 
@@ -483,14 +483,14 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            styledCellsMock.verify(
-                () -> StyledCellBuilder.buildStyledCellForSystem(
+            paintedCellsMock.verify(
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(
                     any(),
                     eq(buildCellKey(FLIPPED_SYSTEM)),
                     any()));
 
-            styledCellsMock.verify(
-                () -> StyledCellBuilder.buildStyledCellForSystem(
+            paintedCellsMock.verify(
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(
                     any(),
                     eq(buildCellKey(NEIGHBOUR_SYSTEM)),
                     any()),
@@ -673,8 +673,8 @@ final class IncrementalPoliticsRefreshTest {
                     matchSystemArg(FLIPPED_SYSTEM),
                     any(DominancePass.class)),
                 times(2));
-            styledCellsMock.verify(
-                () -> StyledCellBuilder.buildStyledCellForSystem(any(), eq(firstCell), any()));
+            paintedCellsMock.verify(
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(any(), eq(firstCell), any()));
         }
 
         @Test
@@ -693,14 +693,14 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            styledCellsMock.verify(
-                () -> StyledCellBuilder.buildStyledCellForSystem(
+            paintedCellsMock.verify(
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(
                     any(),
                     eq(buildCellKey(FLIPPED_SYSTEM)),
                     any()));
 
-            styledCellsMock.verify(
-                () -> StyledCellBuilder.buildStyledCellForSystem(
+            paintedCellsMock.verify(
+                () -> PaintedCellBuilder.buildPaintedCellForSystem(
                     any(),
                     eq(buildCellKey(NEIGHBOUR_SYSTEM)),
                     any()));

@@ -227,7 +227,7 @@ and one would state an ownership the layer sparing it is reporting it does not h
 The *policy* of which bloc recedes
 and by how much lives one package up in `politicalmap.base` (`RecedePreferences` and the views).
 *Baking* the resolved style into the draw packets is [`render.territories`](../territories/README.md) -
-its `StyledCellBuilder` and `FactionTerritoryBuilder`.
+its `PaintedCellBuilder` and `FactionTerritoryBuilder`.
 What makes the "once per map rebuild" above actually happen -
 which settings change is noticed,
 and how it reaches this layer -

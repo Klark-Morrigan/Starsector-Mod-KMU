@@ -46,12 +46,17 @@ import static org.mockito.Mockito.when;
  * a decivilised cell alone taking the pass's recede over that neutral, and an uninhabited cell
  * never doing so.
  *
+ * <p>And the ring each form reports beside that record, which is what everything downstream takes
+ * for where the cell put ink: the rounded one for a lone cell, since that is the ring it strokes,
+ * and the raw extent for a fused cell under the very same rounding gate, since a cluster's border
+ * is what bounds it.
+ *
  * <p>The style cascade these read through is pinned by
  * {@link kmu.maplayers.politicalmap.base.render.style.BlocStylingTest}, the palette rules by
  * {@link kmu.maplayers.politicalmap.base.render.style.MapPalettes}'s own suite, and the footprint
  * fill's partition by {@link kmu.maplayers.base.render.clusters.FillSplitTest}.
  */
-final class StyledCellBuilderTest {
+final class PaintedCellBuilderTest {
 
     // A view stub answering both per-bloc style seams with fixed values, so a test can prove
     // whether the style resolver consulted the view (off filter) or bypassed it (under filter).
@@ -70,7 +75,7 @@ final class StyledCellBuilderTest {
     }
 
     @Nested
-    class BuildStyledCellForSystem {
+    class BuildPaintedCellForSystem {
 
         private static final String SYSTEM_ID = "hegemony-system";
 
@@ -134,34 +139,34 @@ final class StyledCellBuilderTest {
                 1.0);
 
         @Test
-        void buildStyledCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
+        void buildPaintedCellForSystemAppliesTheOpacityMultiplierAndKeepsTheHolderPaletteWhenNotDesaturated() {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, false))),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().colour())
+            assertThat(requireFusedCell(painted).seamPaint().colour())
                 .isEqualTo(OWNER_SECONDARY);
-            assertThat(requireFusedCell(styled).seamPaint().alpha())
+            assertThat(requireFusedCell(painted).seamPaint().alpha())
                 .isEqualTo(0.5f);
         }
 
         @Test
-        void buildStyledCellForSystemDrawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
+        void buildPaintedCellForSystemDrawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
             // The collision the whole address exists for, at the cell that shows it: both systems
             // answer to one vanilla ID and are held by different blocs, so the two cells paint in
             // two shades - where a holding keyed by ID drew the second in the first's colours.
             var territories = buildDrawablesHeldByTwins();
 
-            assertThat(requireFusedCell(StyledCellBuilder.buildStyledCellForSystem(
+            assertThat(requireFusedCell(PaintedCellBuilder.buildPaintedCellForSystem(
                     territories,
                     FIRST_TWIN,
                     buildOwnedCell()))
                 .seamPaint().colour())
                 .isEqualTo(OWNER_SECONDARY);
 
-            assertThat(requireFusedCell(StyledCellBuilder.buildStyledCellForSystem(
+            assertThat(requireFusedCell(PaintedCellBuilder.buildPaintedCellForSystem(
                     territories,
                     SECOND_TWIN,
                     buildOwnedCell()))
@@ -170,147 +175,147 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
+        void buildPaintedCellForSystemDesaturatesToThePassPaletteAtFullOpacityWhenOnlyDesaturateIsSet() {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(1.0, true))),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().colour())
+            assertThat(requireFusedCell(painted).seamPaint().colour())
                 .isEqualTo(DESATURATED_SECONDARY);
-            assertThat(requireFusedCell(styled).seamPaint().alpha())
+            assertThat(requireFusedCell(painted).seamPaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void buildStyledCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
+        void buildPaintedCellForSystemMutesAndDesaturatesTogetherWhenBothAreSet() {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(new ElementStyleAdjustment(0.5, true))),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().colour())
+            assertThat(requireFusedCell(painted).seamPaint().colour())
                 .isEqualTo(DESATURATED_SECONDARY);
-            assertThat(requireFusedCell(styled).seamPaint().alpha())
+            assertThat(requireFusedCell(painted).seamPaint().alpha())
                 .isEqualTo(0.5f);
         }
 
         @Test
-        void buildStyledCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
+        void buildPaintedCellForSystemLeavesTheHolderPaletteAndOpacityUntouchedForTheNoneAdjustment() {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().colour())
+            assertThat(requireFusedCell(painted).seamPaint().colour())
                 .isEqualTo(OWNER_SECONDARY);
-            assertThat(requireFusedCell(styled).seamPaint().alpha())
+            assertThat(requireFusedCell(painted).seamPaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void buildStyledCellForSystemBuildsAnOwnedCellInTheFusedFormWithItsSeamsAlone() {
+        void buildPaintedCellForSystemBuildsAnOwnedCellInTheFusedFormWithItsSeamsAlone() {
             // An owned cell's fill and national border are the cluster's, drawn from the cluster's
             // own shape. It comes back in the fused form, which has no slot for either, so what it
             // does not draw is a fact about its type rather than a hidden paint a reader has to
             // spot - and the seams it does draw are all it carries.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(styled.styledCell())
+            assertThat(painted.styledCell())
                 .isInstanceOf(StyledCell.FusedCell.class);
-            assertThat(requireFusedCell(styled).seamEdges())
+            assertThat(requireFusedCell(painted).seamEdges())
                 .isNotNull();
         }
 
         @Test
-        void buildStyledCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
+        void buildPaintedCellForSystemRecedesANonSpotlightedBlocUnderFilterAndIgnoresTheView() {
             // Under an active filter the view's per-bloc seams are bypassed: a real (non-spotlit)
             // holder takes the pass's shared recede, not whatever the view would have said. The view
             // stub returns the identity adjustment, so seeing the recede applied proves the filter,
             // not the view, styled the cell.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringDrawablesWith(new ElementStyleAdjustment(0.5, true)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireFusedCell(styled).seamPaint().colour())
+            assertThat(requireFusedCell(painted).seamPaint().colour())
                 .isEqualTo(DESATURATED_SECONDARY);
-            assertThat(requireFusedCell(styled).seamPaint().alpha())
+            assertThat(requireFusedCell(painted).seamPaint().alpha())
                 .isEqualTo(0.5f);
         }
 
         @Test
-        void buildStyledCellForSystemDrawsACellWithNoStarAsUninhabited() {
+        void buildPaintedCellForSystemDrawsACellWithNoStarAsUninhabited() {
             // A cell that draws as no system - a shard of a dead star's leftover space the
             // redistribution pass leaves behind - has no holder and no market to have died, so it
             // paints as plain uninhabited. The null star must resolve through the draws-as
             // map without being taken for decivilised: the decivilised category is "No color"
             // here, so had the null ID been routed there the cell would have dropped to null.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 null,
                 buildOwnedCell());
 
-            assertThat(styled)
+            assertThat(painted)
                 .isNotNull();
-            assertThat(requireLoneCell(styled).outlinePaint().colour())
+            assertThat(requireLoneCell(painted).outlinePaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
         }
 
         @Test
-        void buildStyledCellForSystemFillsADecivilisedCellInTheNeutralColour() {
+        void buildPaintedCellForSystemFillsADecivilisedCellInTheNeutralColour() {
             // Dead colonies carry a fill of their own - a factionless cell fills on its own, since
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(requireLoneCell(styled).fillTriangles())
+            assertThat(requireLoneCell(painted).fillTriangles())
                 .isNotEmpty();
         }
 
         @Test
-        void buildStyledCellForSystemRecedesADecivilisedCellUnderTheFiltersRecede() {
+        void buildPaintedCellForSystemRecedesADecivilisedCellUnderTheFiltersRecede() {
             // A dead colony is part of the "rest of the sector" a spotlight recedes, so its own
             // fill dims and recolours to the pass's desaturation palette exactly as a non-spotlit
             // bloc's does - otherwise it out-reads the bloc the spotlight is meant to isolate. Its
             // outline recedes with it: the two are the whole of what the cell puts on the map, so
             // one receding without the other would leave a bright ring around a sunken fill.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(DESATURATED_PRIMARY);
-            assertThat(requireLoneCell(styled).fillPaint().alpha())
+            assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(0.5f);
-            assertThat(requireLoneCell(styled).outlinePaint().colour())
+            assertThat(requireLoneCell(painted).outlinePaint().colour())
                 .isEqualTo(DESATURATED_PRIMARY);
-            assertThat(requireLoneCell(styled).outlinePaint().alpha())
+            assertThat(requireLoneCell(painted).outlinePaint().alpha())
                 .isEqualTo(0.5f);
         }
 
         @Test
-        void buildStyledCellForSystemSparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
+        void buildPaintedCellForSystemSparesASettledCellTheSpotlitBlocLivesInTheFiltersRecede() {
             // The pick's own colony in a system this layer's holding could not attribute to it - an
             // unclaimed pirate haven under a pirate spotlight. Under the same receding pass that
             // sinks the case above, this cell keeps full opacity and paints the lifted neutral:
             // presence spares it the recede and lifts it clear of the greys that sank, without
             // ever handing it the bloc's own shades and the claim those would assert.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
@@ -318,22 +323,22 @@ final class StyledCellBuilderTest {
                 buildCellKey(UNHELD_INHABITED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(PRESENCE_LIFTED);
-            assertThat(requireLoneCell(styled).fillPaint().alpha())
+            assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(1.0f);
-            assertThat(requireLoneCell(styled).outlinePaint().colour())
+            assertThat(requireLoneCell(painted).outlinePaint().colour())
                 .isEqualTo(PRESENCE_LIFTED);
-            assertThat(requireLoneCell(styled).outlinePaint().alpha())
+            assertThat(requireLoneCell(painted).outlinePaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void buildStyledCellForSystemStillRecedesASettledCellTheSpotlitBlocIsAbsentFrom() {
+        void buildPaintedCellForSystemStillRecedesASettledCellTheSpotlitBlocIsAbsentFrom() {
             // The other half of the case above, under the identical pass: a settled system the pick
             // does not live in stays part of the receded background, so the exception turns on the
             // presence set rather than on the cell being settled at all.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
@@ -341,50 +346,50 @@ final class StyledCellBuilderTest {
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(DESATURATED_PRIMARY);
-            assertThat(requireLoneCell(styled).fillPaint().alpha())
+            assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(0.5f);
         }
 
         @Test
-        void buildStyledCellForSystemDimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
+        void buildPaintedCellForSystemDimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
             // Mute and Desaturate are independent toggles, and Mute alone is the commoner setting:
             // the dead colony sinks in weight while staying the neutral colour it reads as when
             // nothing is spotlighted.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, false)),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(requireLoneCell(styled).fillPaint().alpha())
+            assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(0.5f);
         }
 
         @Test
-        void buildStyledCellForSystemLeavesAnUninhabitedCellUntouchedByTheFiltersRecede() {
+        void buildPaintedCellForSystemLeavesAnUninhabitedCellUntouchedByTheFiltersRecede() {
             // An uninhabited cell is the backdrop the map is drawn over rather than something the
             // spotlight competes with, so the same receding pass leaves its outline at full
             // neutral strength - the sector keeps its shape.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true)),
                 buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).outlinePaint().colour())
+            assertThat(requireLoneCell(painted).outlinePaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(requireLoneCell(styled).outlinePaint().alpha())
+            assertThat(requireLoneCell(painted).outlinePaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void buildStyledCellForSystemDrawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
+        void buildPaintedCellForSystemDrawsAnInhabitedCellWithNoHolderAsSettledRatherThanBackdrop() {
             // The claims layer's case: vanilla's claim walk skips a hidden market, and
             // a pirate base is created hidden, so a system settled by pirates alone
             // resolves no claimant and arrives here holderless - exactly as an empty
@@ -393,119 +398,119 @@ final class StyledCellBuilderTest {
             // populated system erased by that checkbox is the map lying about what is there.
             //
             // The two bundles are told apart by the fill: only the settled one carries one here.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(UNHELD_INHABITED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillTriangles())
+            assertThat(requireLoneCell(painted).fillTriangles())
                 .isNotEmpty();
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
         }
 
         @Test
-        void buildStyledCellForSystemDrawsAnUninhabitedCellWithNoFill() {
+        void buildPaintedCellForSystemDrawsAnUninhabitedCellWithNoFill() {
             // The other half of the case above: a system nothing stands in takes the outline-only
             // bundle, so the assertion there is about the classification rather than about every
             // factionless cell happening to carry a fill.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillTriangles())
+            assertThat(requireLoneCell(painted).fillTriangles())
                 .isEmpty();
         }
 
         @Test
-        void buildStyledCellForSystemKeepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
+        void buildPaintedCellForSystemKeepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
             // Off filter the pass's recede is the identity, so a dead colony draws in the neutral
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(requireLoneCell(styled).fillPaint().colour())
+            assertThat(requireLoneCell(painted).fillPaint().colour())
                 .isEqualTo(FACTIONLESS_NEUTRAL);
-            assertThat(requireLoneCell(styled).fillPaint().alpha())
+            assertThat(requireLoneCell(painted).fillPaint().alpha())
                 .isEqualTo(1.0f);
         }
 
         @Test
-        void buildStyledCellForSystemKeepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
+        void buildPaintedCellForSystemKeepsAFactionlessCellDrawnByItsFillAloneWhenTheOutlineIsHidden() {
             // The outline's opacity is its only on/off, so zeroing it must not take the fill down
             // with it: the cell is kept for whichever of the two still puts ink on the map.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFillOnlyStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(styled)
+            assertThat(painted)
                 .isNotNull();
-            assertThat(requireLoneCell(styled).fillTriangles())
+            assertThat(requireLoneCell(painted).fillTriangles())
                 .isNotEmpty();
-            assertThat(requireLoneCell(styled).outlinePaint().isHidden())
+            assertThat(requireLoneCell(painted).outlinePaint().isHidden())
                 .isTrue();
         }
 
         @Test
-        void buildStyledCellForSystemBakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
+        void buildPaintedCellForSystemBakesNoFillTrianglesForAnOutlineOnlyFactionlessCell() {
             // Uninhabited cells cover everything nothing else holds, so triangulating a fill they
             // never paints would be the rebuild's largest wasted cost - the geometry stays unbuilt.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey("never-settled-system"),
                 buildOwnedCell());
 
-            assertThat(styled)
+            assertThat(painted)
                 .isNotNull();
-            assertThat(requireLoneCell(styled).fillTriangles())
+            assertThat(requireLoneCell(painted).fillTriangles())
                 .isEmpty();
         }
 
         @Test
-        void buildStyledCellForSystemRoundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
+        void buildPaintedCellForSystemRoundsALoneCellsOutlineWhenTheSectorWideGateIsOn() {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
             // The cell's own sharp corner is gone: rounding steps back from it along both edges,
             // so the vertex the raw Voronoi cell had at the origin is not in the stroked outline.
-            assertThat(hasPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
+            assertThat(hasPoint(requireLoneCell(painted).outlineEdges(), 0, 0))
                 .isFalse();
 
             // And the fill is triangulated from that same rounded ring rather than the raw one -
             // built at all is the observable half, since a fill cut from the sharp cell would
             // spill past the line the outline strokes.
-            assertThat(requireLoneCell(styled).fillTriangles())
+            assertThat(requireLoneCell(painted).fillTriangles())
                 .isNotEmpty();
         }
 
         @Test
-        void buildStyledCellForSystemLeavesALoneCellsOutlineSharpWhenTheGateIsOff() {
+        void buildPaintedCellForSystemLeavesALoneCellsOutlineSharpWhenTheGateIsOff() {
             // The other half of the gate, and the reason the case above is not just "the outline
             // has vertices": with rounding off the raw Voronoi cell is what the map draws, corner
             // at the origin included.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(hasPoint(requireLoneCell(styled).outlineEdges(), 0, 0))
+            assertThat(hasPoint(requireLoneCell(painted).outlineEdges(), 0, 0))
                 .isTrue();
         }
 
         @Test
-        void buildStyledCellForSystemReportsALoneCellsRoundedRingAsWhatItPainted() {
+        void buildPaintedCellForSystemReportsALoneCellsRoundedRingAsWhatItPainted() {
             // The ring the cell reports is the one it strokes, not the cell it was shaped from.
             // Everything that has to know where a cell put ink - the cursor read, the wash lit over
             // it - reads this and nothing else, so a raw ring reported here would have them both
             // working from corners the cell does not draw.
-            var painted = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
@@ -525,10 +530,10 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemReportsALoneCellsSharpRingWhenTheGateIsOff() {
+        void buildPaintedCellForSystemReportsALoneCellsSharpRingWhenTheGateIsOff() {
             // With rounding off the cell strokes the shape it was handed, so that is what it
             // reports - the four corners of the fixture's square, the origin included.
-            var painted = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
@@ -540,12 +545,12 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemReportsAnOwnedCellsRawRingEvenUnderTheRoundingGate() {
+        void buildPaintedCellForSystemReportsAnOwnedCellsRawRingEvenUnderTheRoundingGate() {
             // A fused cell is bounded by its cluster's border rather than by anything of its own,
             // and that border is rounded where the cluster is traced. So the cell reports its raw
             // extent under the same gate that rounds a lone cell's: rounding it here would pull the
             // cell in from a frontier the cluster draws for it.
-            var painted = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildRoundingDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
@@ -557,14 +562,14 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
+        void buildPaintedCellForSystemDropsAFactionlessCellThatDrawsNothing() {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildNoColourStyle(), buildDrawnOutlineStyle()),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(styled)
+            assertThat(painted)
                 .isNull();
         }
 

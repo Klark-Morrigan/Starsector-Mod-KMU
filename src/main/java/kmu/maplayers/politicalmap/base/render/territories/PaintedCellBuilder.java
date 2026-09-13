@@ -22,8 +22,9 @@ import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 import java.util.List;
 
 /**
- * Bakes one shaped cell into the {@link StyledCell} the renderer paints, in whichever of the
- * two forms the cell takes.
+ * Bakes one shaped cell into the {@link PaintedCell} the map keeps: the {@link StyledCell} the
+ * renderer paints, in whichever of the two forms the cell takes, and the ring that record's ink
+ * was laid on.
  *
  * <p>An <em>owned</em> cell contributes only its interior seams: its fill and national border
  * are per cluster, drawn from the tessellated cluster in {@link StyledCluster}, because a
@@ -36,23 +37,23 @@ import java.util.List;
  * either, so both its palette slots hold the shared neutral colour - until the pass recedes it,
  * which a settled factionless cell takes as readily as a bloc does.
  *
- * <p>Each cell comes back as a {@link PaintedCell}: the draw record together with the ring that
- * record's ink was laid on. The ring is reported rather than left for the caller to pass alongside
- * because the two forms lay their ink on different rings - a fused cell on its raw extent, a lone
- * cell on the rounded one resolved here - and only this builder knows which form a cell took.
+ * <p>The ring is reported rather than left for the caller to pass alongside because the two forms
+ * lay their ink on different rings - a fused cell on its raw extent, a lone cell on the rounded one
+ * resolved here - and only this builder knows which form a cell took.
  *
  * <p>Shared by the full rebuild and the incremental re-shape, so both classify and style a
  * cell identically.
  */
-public final class StyledCellBuilder {
+public final class PaintedCellBuilder {
 
     // Builds only; never instantiated.
-    private StyledCellBuilder() {
+    private PaintedCellBuilder() {
     }
 
     /**
-     * Builds one cell's draw record, or null when the cell draws nothing at all: an
-     * inset-collapsed cell, or a factionless cell with neither its fill nor its outline drawn.
+     * Builds one cell's draw record and the ring it was laid on, or null when the cell draws
+     * nothing at all: an inset-collapsed cell, or a factionless cell with neither its fill nor its
+     * outline drawn.
      *
      * <p>Takes the system the cell draws as rather than the cell itself, since everything read
      * here - the holder, the palette, whether the cell is decivilised - is known per system
@@ -66,7 +67,7 @@ public final class StyledCellBuilder {
      * @return the cell's draw record and the ring it was laid on, or null when it puts no ink on
      *         the map
      */
-    public static PaintedCell buildStyledCellForSystem(
+    public static PaintedCell buildPaintedCellForSystem(
             PoliticalMapTerritories territories,
             SystemKey systemKey,
             ShapedCell shaped) {
@@ -89,13 +90,12 @@ public final class StyledCellBuilder {
     }
 
     // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
-    // cluster's, drawn from the cluster's own shape, so this form has no slot for either - and its
-    // painted ring is the raw inset extent, since what bounds the ink is the cluster's own border
-    // rather than anything resolved per cell. The style
-    // and adjustment come from the pass's one styling read, so the seams paint exactly as the
-    // cluster paints its fill and border. Desaturating swaps the holder's own palette for the pass's
-    // shared desaturation palette, and the opacity multiplier scales every alpha on top of the
-    // style's own opacities.
+    // cluster's, drawn from the cluster's own shape, so this form has no slot for either, and its
+    // painted ring is the raw inset extent - what bounds the ink is the cluster's own border rather
+    // than anything resolved per cell. The style and adjustment come from the pass's one styling
+    // read, so the seams paint exactly as the cluster paints its fill and border. Desaturating swaps
+    // the holder's own palette for the pass's shared desaturation palette, and the opacity
+    // multiplier scales every alpha on top of the style's own opacities.
     private static PaintedCell buildOwnedCell(
             PoliticalMapTerritories territories,
             DominantHolder holder,

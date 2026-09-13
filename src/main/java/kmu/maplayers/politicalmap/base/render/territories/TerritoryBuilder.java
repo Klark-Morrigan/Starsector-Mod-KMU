@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  * <p>The orchestration only - each stage's actual work belongs to a collaborator, and this
  * class's job is to sample every input exactly once so the whole pass keys off one snapshot.
  * That is what lets an incremental re-shape reuse those same builders
- * ({@link StyledCellBuilder} and {@link FactionTerritoryBuilder}) on a handful of cells and
+ * ({@link PaintedCellBuilder} and {@link FactionTerritoryBuilder}) on a handful of cells and
  * get a result identical to a full rebuild.
  *
  * <p>Two entry points, because a rebuild has two halves that go stale for different reasons. The
@@ -322,7 +322,7 @@ public final class TerritoryBuilder {
         // are baked in their own pass afterwards, over the shapes recorded below.
         for (var entry : shapedCells.entrySet()) {
 
-            var painted = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 territories,
                 cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
                 entry.getValue());

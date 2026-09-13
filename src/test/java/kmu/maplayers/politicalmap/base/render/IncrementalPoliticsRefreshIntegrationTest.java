@@ -81,7 +81,7 @@ import static org.mockito.Mockito.when;
  * rather than in play.
  *
  * <p>An integration test because the comparison has to run the real builders. The unit suite
- * ({@link IncrementalPoliticsRefreshTest}) mocks {@code StyledCellBuilder} and
+ * ({@link IncrementalPoliticsRefreshTest}) mocks {@code PaintedCellBuilder} and
  * {@code FactionTerritoryBuilder} at their static seams - which is what lets it assert that a
  * neighbour was not re-shaped - and that leaves the produced cell unobservable, the seam it would
  * be observed through being the one that was neutralised. Here both legs shape, style, trace and

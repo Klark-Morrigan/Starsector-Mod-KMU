@@ -19,7 +19,7 @@ import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingS
 import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonsBaker;
 import kmu.maplayers.politicalmap.base.render.territories.FactionTerritoryBuilder;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.StyledCellBuilder;
+import kmu.maplayers.politicalmap.base.render.territories.PaintedCellBuilder;
 
 import org.apache.log4j.Logger;
 
@@ -38,7 +38,7 @@ import java.util.Set;
  * the system (each neighbour's shared edge flips between a same-faction seam and a national
  * border) and rebuilds the two factions' territories (the old holder's and the new one's); a
  * system that merely became settled, or that the spotlit bloc just colonised, redraws its own cell
- * and nothing else, neither fact moving a seam. Both go through the same {@link StyledCellBuilder}
+ * and nothing else, neither fact moving a seam. Both go through the same {@link PaintedCellBuilder}
  * and {@link FactionTerritoryBuilder} primitives a full rebuild uses, so the incremental result
  * matches a full rebuild.
  *
@@ -332,7 +332,7 @@ final class IncrementalPoliticsRefresh {
             DominantHolder.mapFactionIdBySystemKey(territories.getHolderBySystemKey()),
             CellShaper.BORDER_INSET_DISTANCE);
 
-        var painted = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemKey, shaped);
+        var painted = PaintedCellBuilder.buildPaintedCellForSystem(territories, drawnSystemKey, shaped);
         if (painted == null) {
             territories.removePaintedCell(cellKey);
         } else {
