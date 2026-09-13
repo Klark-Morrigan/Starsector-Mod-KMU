@@ -215,10 +215,9 @@ final class PoliticalMapHoverHighlightSourceTest {
             StyledClusterGroup clusterGroup) {
 
         for (var cell : fillPolygonBySystemId.entrySet()) {
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(cell.getKey()),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                cell.getValue());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(cell.getValue()));
         }
         if (clusterGroup != null) {
             territories.getStyledClusterGroupByOwnerId().put(FACTION_ID, clusterGroup);

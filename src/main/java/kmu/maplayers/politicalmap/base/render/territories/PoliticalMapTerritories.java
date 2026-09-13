@@ -8,6 +8,7 @@ import kmu.maplayers.base.geometry.SystemClusterIndex;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
+import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -88,9 +89,10 @@ public final class PoliticalMapTerritories implements
     private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
         new LinkedHashMap<>();
 
-    // Each drawn cell's shaped fill polygon, the shape the cursor is tested against. Written only
-    // through putStyledCell/removeStyledCell alongside the styled cell above, so what answers a
-    // hover is exactly what the frame painted.
+    // Each drawn cell's painted ring, the shape the cursor is tested against. Written only
+    // through putPaintedCell/removePaintedCell alongside the styled cell above, and only ever as
+    // the ring the builder laid that cell's ink on, so what answers a hover is exactly what the
+    // frame painted.
     private final Map<SystemKey, List<double[]>> fillPolygonByCellKey = new LinkedHashMap<>();
 
     // Each drawn cell's presence band, baked against the very shape above by its own pass once
@@ -195,13 +197,15 @@ public final class PoliticalMapTerritories implements
     }
 
     /**
-     * Records one cell's draw record together with the shape it was built from, the pair the
+     * Records one cell's draw record together with the ring it was painted on, the pair the
      * cursor read depends on staying aligned.
      *
      * <p>The write path for both maps, rather than each caller putting into them separately: a
      * cell that draws and a cell that answers a hover must be the same set, and pairing the two
      * writes here is what makes that true by construction instead of by two call sites
-     * remembering to agree.
+     * remembering to agree. The two arrive as one {@link PaintedCell} for the same reason one step
+     * earlier - a caller that could pass a ring of its own choosing could pass one the cell never
+     * painted, and a hover would then light a shape the map does not draw.
      *
      * <p>Any band the cell was carrying goes with the shape it was laid inside, and so does the
      * ring that band was laid along. A band is triangles fitted to one particular ring, so a cell
@@ -210,17 +214,16 @@ public final class PoliticalMapTerritories implements
      * shape it holds now, traced inside that same shape.
      *
      * @param cellKey     the cell this record is for
-     * @param styledCell  its draw record
-     * @param fillPolygon the shaped fill it was built from - the cell's painted extent, with the
-     *                    border inset, frontier setback, and keep-out clipping already applied
+     * @param paintedCell its draw record and the ring that record was built from - the cell's
+     *                    painted extent, with the border inset, frontier setback, keep-out
+     *                    clipping and its own corner rounding already applied
      */
-    public void putStyledCell(
+    public void putPaintedCell(
             SystemKey cellKey,
-            StyledCell styledCell,
-            List<double[]> fillPolygon) {
+            PaintedCell paintedCell) {
 
-        styledCellByCellKey.put(cellKey, styledCell);
-        fillPolygonByCellKey.put(cellKey, fillPolygon);
+        styledCellByCellKey.put(cellKey, paintedCell.styledCell());
+        fillPolygonByCellKey.put(cellKey, paintedCell.paintedExtent());
         ribbonByCellKey.remove(cellKey);
         ribbonPathByCellKey.remove(cellKey);
         ringPathCache.dropRingPathOf(cellKey);
@@ -279,7 +282,7 @@ public final class PoliticalMapTerritories implements
      *
      * @param cellKey the cell that no longer draws
      */
-    public void removeStyledCell(SystemKey cellKey) {
+    public void removePaintedCell(SystemKey cellKey) {
         styledCellByCellKey.remove(cellKey);
         fillPolygonByCellKey.remove(cellKey);
         ribbonByCellKey.remove(cellKey);

@@ -322,18 +322,15 @@ public final class TerritoryBuilder {
         // are baked in their own pass afterwards, over the shapes recorded below.
         for (var entry : shapedCells.entrySet()) {
 
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
+            var painted = StyledCellBuilder.buildStyledCellForSystem(
                 territories,
                 cellGrouping.resolveDrawnSystemKeyOf(entry.getKey()),
                 entry.getValue());
 
-            if (styled == null) {
+            if (painted == null) {
                 continue;
             }
-            territories.putStyledCell(
-                entry.getKey(),
-                styled,
-                entry.getValue().fillPolygon());
+            territories.putPaintedCell(entry.getKey(), painted);
         }
         // The clusters the cursor read resolves a hovered cell's whole territory through. Derived
         // here off the same keys the shaping just fused the cells by, so a highlighted territory

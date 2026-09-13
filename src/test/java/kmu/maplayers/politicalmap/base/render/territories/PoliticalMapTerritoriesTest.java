@@ -7,6 +7,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
+import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
@@ -413,16 +414,16 @@ final class PoliticalMapTerritoriesTest {
     }
 
     @Nested
-    class PutStyledCell {
+    class PutPaintedCell {
 
         @Test
-        void putStyledCellRecordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
+        void putPaintedCellRecordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
             var styledCell = buildAnyStyledCell();
             var fillPolygon = buildSquarePolygon();
 
-            territories.putStyledCell(SYSTEM_CELL, styledCell, fillPolygon);
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(styledCell, fillPolygon));
 
             assertThat(territories.getStyledCellByCellKey())
                 .containsOnlyKeys(SYSTEM_CELL);
@@ -436,16 +437,16 @@ final class PoliticalMapTerritoriesTest {
         }
 
         @Test
-        void putStyledCellReplacesBothHalvesWhenACellIsReshaped() {
+        void putPaintedCellReplacesBothHalvesWhenACellIsReshaped() {
             // The drift the paired write exists to prevent: a re-shaped cell must not keep
             // answering the cursor with the extent it had before it was re-shaped.
             var territories = buildDrawablesWith(Map.of(), Map.of());
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
 
             var reshapedCell = buildAnyStyledCell();
             var reshapedPolygon = buildTrianglePolygon();
 
-            territories.putStyledCell(SYSTEM_CELL, reshapedCell, reshapedPolygon);
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(reshapedCell, reshapedPolygon));
 
             assertThat(territories.getStyledCellByCellKey().get(SYSTEM_CELL))
                 .isSameAs(reshapedCell);
@@ -454,49 +455,49 @@ final class PoliticalMapTerritoriesTest {
         }
 
         @Test
-        void putStyledCellDropsTheBandLaidInsideTheShapeItReplaces() {
+        void putPaintedCellDropsTheBandLaidInsideTheShapeItReplaces() {
             // A band is triangles fitted to one particular ring, so a re-shaped cell keeping its
             // band would draw the last shape's stripe inside this shape's cell. The band pass
             // lays a fresh one afterwards; what must not survive is the old one.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
             territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
 
             assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
 
         @Test
-        void putStyledCellDropsTheBandPathTracedInsideTheShapeItReplaces() {
+        void putPaintedCellDropsTheBandPathTracedInsideTheShapeItReplaces() {
             // The diagnostic goes with the band for the same reason the band goes: a path traced
             // in the last shape drawn over this one would report the overlay's own staleness as
             // the cell's geometry, which is the one thing a diagnostic must not do.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
             territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
 
             assertThat(territories.getRibbonPathByCellKey())
                 .isEmpty();
         }
 
         @Test
-        void putStyledCellDropsTheRingTracedInsideTheShapeItReplaces() {
+        void putPaintedCellDropsTheRingTracedInsideTheShapeItReplaces() {
             // The whole of what makes the traced ring safe to keep. It is held under no key and no
             // revision, so a cell served a ring traced inside the shape it used to have would lay
             // its band round a cell that is no longer there - and this write is what rules that
             // out, by construction rather than by the band pass remembering to ask.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
             territories.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildTrianglePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
 
             assertThat(territories.getRingPathCache().findRingPathOf(SYSTEM_CELL))
                 .isNull();
@@ -504,16 +505,16 @@ final class PoliticalMapTerritoriesTest {
     }
 
     @Nested
-    class RemoveStyledCell {
+    class RemovePaintedCell {
 
         @Test
-        void removeStyledCellDropsTheDrawRecordAndItsShapeTogether() {
+        void removePaintedCellDropsTheDrawRecordAndItsShapeTogether() {
             // A cell that draws nothing can be hovered no more than it can be seen, so the
             // shape must go with the draw record rather than linger as a phantom hit cluster.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
-            territories.removeStyledCell(SYSTEM_CELL);
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
+            territories.removePaintedCell(SYSTEM_CELL);
 
             assertThat(territories.getStyledCellByCellKey())
                 .isEmpty();
@@ -522,13 +523,13 @@ final class PoliticalMapTerritoriesTest {
         }
 
         @Test
-        void removeStyledCellLeavesEveryOtherCellStanding() {
+        void removePaintedCellLeavesEveryOtherCellStanding() {
 
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(DROPPED_CELL, buildAnyStyledCell(), buildSquarePolygon());
-            territories.putStyledCell(KEPT_CELL, buildAnyStyledCell(), buildTrianglePolygon());
-            territories.removeStyledCell(DROPPED_CELL);
+            territories.putPaintedCell(DROPPED_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
+            territories.putPaintedCell(KEPT_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
+            territories.removePaintedCell(DROPPED_CELL);
 
             assertThat(territories.getStyledCellByCellKey())
                 .containsOnlyKeys(KEPT_CELL);
@@ -537,42 +538,42 @@ final class PoliticalMapTerritoriesTest {
         }
 
         @Test
-        void removeStyledCellDropsThePresenceBandWithTheCell() {
+        void removePaintedCellDropsThePresenceBandWithTheCell() {
             // A band is drawn inside a cell, so a cell that stops drawing takes its band with it -
             // otherwise a dropped cell keeps painting a floating stripe of triangles.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
             territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
-            territories.removeStyledCell(SYSTEM_CELL);
+            territories.removePaintedCell(SYSTEM_CELL);
 
             assertThat(territories.getRibbonByCellKey())
                 .isEmpty();
         }
 
         @Test
-        void removeStyledCellDropsTheBandPathWithTheCell() {
+        void removePaintedCellDropsTheBandPathWithTheCell() {
             // A path is a ring around a cell, so a cell that stops drawing leaves the overlay
             // marking out a shape nothing paints any more.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
             territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
-            territories.removeStyledCell(SYSTEM_CELL);
+            territories.removePaintedCell(SYSTEM_CELL);
 
             assertThat(territories.getRibbonPathByCellKey())
                 .isEmpty();
         }
 
         @Test
-        void removeStyledCellDropsTheTracedRingWithTheCell() {
+        void removePaintedCellDropsTheTracedRingWithTheCell() {
             // A cell that stops drawing has no shape for a ring to have been traced inside, so the
             // ring goes with it - a cell drawn again later is cut afresh and is owed a fresh walk.
             var territories = buildDrawablesWith(Map.of(), Map.of());
 
-            territories.putStyledCell(SYSTEM_CELL, buildAnyStyledCell(), buildSquarePolygon());
+            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
             territories.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
-            territories.removeStyledCell(SYSTEM_CELL);
+            territories.removePaintedCell(SYSTEM_CELL);
 
             assertThat(territories.getRingPathCache().findRingPathOf(SYSTEM_CELL))
                 .isNull();

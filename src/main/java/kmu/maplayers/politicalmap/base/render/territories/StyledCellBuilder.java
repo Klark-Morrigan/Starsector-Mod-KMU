@@ -8,6 +8,7 @@ import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
+import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.VertexRuns;
@@ -35,6 +36,11 @@ import java.util.List;
  * either, so both its palette slots hold the shared neutral colour - until the pass recedes it,
  * which a settled factionless cell takes as readily as a bloc does.
  *
+ * <p>Each cell comes back as a {@link PaintedCell}: the draw record together with the ring that
+ * record's ink was laid on. The ring is reported rather than left for the caller to pass alongside
+ * because the two forms lay their ink on different rings - a fused cell on its raw extent, a lone
+ * cell on the rounded one resolved here - and only this builder knows which form a cell took.
+ *
  * <p>Shared by the full rebuild and the incremental re-shape, so both classify and style a
  * cell identically.
  */
@@ -57,9 +63,10 @@ public final class StyledCellBuilder {
      *                    own, which draws as plain uninhabited - it has no holder to
      *                    colour it and nothing standing in it
      * @param shaped      the cell's inset shape
-     * @return the cell's draw record, or null when it puts no ink on the map
+     * @return the cell's draw record and the ring it was laid on, or null when it puts no ink on
+     *         the map
      */
-    public static StyledCell buildStyledCellForSystem(
+    public static PaintedCell buildStyledCellForSystem(
             PoliticalMapTerritories territories,
             SystemKey systemKey,
             ShapedCell shaped) {
@@ -82,12 +89,14 @@ public final class StyledCellBuilder {
     }
 
     // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
-    // cluster's, drawn from the cluster's own shape, so this form has no slot for either. The style
+    // cluster's, drawn from the cluster's own shape, so this form has no slot for either - and its
+    // painted ring is the raw inset extent, since what bounds the ink is the cluster's own border
+    // rather than anything resolved per cell. The style
     // and adjustment come from the pass's one styling read, so the seams paint exactly as the
     // cluster paints its fill and border. Desaturating swaps the holder's own palette for the pass's
     // shared desaturation palette, and the opacity multiplier scales every alpha on top of the
     // style's own opacities.
-    private static StyledCell buildOwnedCell(
+    private static PaintedCell buildOwnedCell(
             PoliticalMapTerritories territories,
             DominantHolder holder,
             ShapedCell shaped) {
@@ -100,10 +109,12 @@ public final class StyledCellBuilder {
             holder,
             territories.getDesaturationPalette());
 
-        return new StyledCell.FusedCell(
-            VertexRuns.flattenEdgesOfClass(shaped, false),
-            resolvePaintOf(style.inner(), palette, adjustment),
-            (float) style.innerWidth());
+        return new PaintedCell(
+            new StyledCell.FusedCell(
+                VertexRuns.flattenEdgesOfClass(shaped, false),
+                resolvePaintOf(style.inner(), palette, adjustment),
+                (float) style.innerWidth()),
+            shaped.fillPolygon());
     }
 
     // A lone cell: its own fill and outline, and no seam - a factionless cell fuses with nothing,
@@ -111,9 +122,11 @@ public final class StyledCellBuilder {
     // settings and gate the cluster borders use, so a lone unheld system reads as smoothly as a
     // cluster when rounding is on and stays a sharp Voronoi cell when it is off; the fill is
     // triangulated from that same rounded ring, so it cannot spill past the line its own outline
-    // strokes. Drops the cell when neither element puts ink down - a cell is kept for its fill as
-    // readily as for its outline.
-    private static StyledCell buildFactionlessCell(
+    // strokes. That rounded ring is the cell's painted extent too - it is the whole of where the
+    // cell puts ink, there being no cluster border to bound it - so it comes back as the ring
+    // rather than being recomputed anywhere downstream. Drops the cell when neither element puts
+    // ink down - a cell is kept for its fill as readily as for its outline.
+    private static PaintedCell buildFactionlessCell(
             PoliticalMapTerritories territories,
             SystemKey systemKey,
             ShapedCell shaped) {
@@ -171,14 +184,16 @@ public final class StyledCellBuilder {
         // Tessellate the fill only when it will actually be painted: an uninhabited cell is
         // outline-only and covers most of the sector, so triangulating every one of its cells
         // for a fill no pass emits would be the map's largest wasted rebuild cost.
-        return new StyledCell.LoneCell(
-            style.fill().isDrawn()
-                ? PolygonTessellator.tessellateToTriangles(List.of(outline))
-                : GlVertexRuns.NO_VERTICES,
-            GlVertexRuns.flattenClosedLoopAsSegments(outline),
-            resolvePaintOf(style.fill(), palette, adjustment),
-            resolvePaintOf(style.outer(), palette, adjustment),
-            (float) style.outerWidth());
+        return new PaintedCell(
+            new StyledCell.LoneCell(
+                style.fill().isDrawn()
+                    ? PolygonTessellator.tessellateToTriangles(List.of(outline))
+                    : GlVertexRuns.NO_VERTICES,
+                GlVertexRuns.flattenClosedLoopAsSegments(outline),
+                resolvePaintOf(style.fill(), palette, adjustment),
+                resolvePaintOf(style.outer(), palette, adjustment),
+                (float) style.outerWidth()),
+            outline);
     }
 
     // One element's paint as this cell resolves it: its colour picked from the cell's own two

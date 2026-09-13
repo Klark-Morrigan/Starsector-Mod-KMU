@@ -230,10 +230,9 @@ final class PoliticalMapPreviewHighlightRendererTest {
                 Map.of()));
 
         for (var cellId : drawnCellIds) {
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(cellId),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildSquare());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildSquare()));
         }
         return territories;
     }

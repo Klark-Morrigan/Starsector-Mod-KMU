@@ -5,6 +5,7 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.ShapedCell;
+import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
@@ -221,7 +222,7 @@ final class StyledCellBuilderTest {
                 buildCellKey(SYSTEM_ID),
                 buildOwnedCell());
 
-            assertThat(styled)
+            assertThat(styled.styledCell())
                 .isInstanceOf(StyledCell.FusedCell.class);
             assertThat(requireFusedCell(styled).seamEdges())
                 .isNotNull();
@@ -499,6 +500,63 @@ final class StyledCellBuilderTest {
         }
 
         @Test
+        void buildStyledCellForSystemReportsALoneCellsRoundedRingAsWhatItPainted() {
+            // The ring the cell reports is the one it strokes, not the cell it was shaped from.
+            // Everything that has to know where a cell put ink - the cursor read, the wash lit over
+            // it - reads this and nothing else, so a raw ring reported here would have them both
+            // working from corners the cell does not draw.
+            var painted = StyledCellBuilder.buildStyledCellForSystem(
+                buildRoundingFactionlessDrawablesWith(buildFilledOutlineStyle()),
+                buildCellKey(DECIVILISED_SYSTEM_ID),
+                buildOwnedCell());
+
+            assertThat(hasVertex(painted.paintedExtent(), 0, 0))
+                .isFalse();
+
+            // And it is the stroked ring itself rather than some other rounding of the cell: every
+            // vertex it reports is one the outline passes through.
+            for (var vertex : painted.paintedExtent()) {
+                assertThat(hasPoint(
+                        requireLoneCell(painted).outlineEdges(),
+                        (float) vertex[0],
+                        (float) vertex[1]))
+                    .isTrue();
+            }
+        }
+
+        @Test
+        void buildStyledCellForSystemReportsALoneCellsSharpRingWhenTheGateIsOff() {
+            // With rounding off the cell strokes the shape it was handed, so that is what it
+            // reports - the four corners of the fixture's square, the origin included.
+            var painted = StyledCellBuilder.buildStyledCellForSystem(
+                buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),
+                buildCellKey(DECIVILISED_SYSTEM_ID),
+                buildOwnedCell());
+
+            assertThat(painted.paintedExtent())
+                .hasSize(4);
+            assertThat(hasVertex(painted.paintedExtent(), 0, 0))
+                .isTrue();
+        }
+
+        @Test
+        void buildStyledCellForSystemReportsAnOwnedCellsRawRingEvenUnderTheRoundingGate() {
+            // A fused cell is bounded by its cluster's border rather than by anything of its own,
+            // and that border is rounded where the cluster is traced. So the cell reports its raw
+            // extent under the same gate that rounds a lone cell's: rounding it here would pull the
+            // cell in from a frontier the cluster draws for it.
+            var painted = StyledCellBuilder.buildStyledCellForSystem(
+                buildRoundingDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
+                buildCellKey(SYSTEM_ID),
+                buildOwnedCell());
+
+            assertThat(painted.paintedExtent())
+                .hasSize(4);
+            assertThat(hasVertex(painted.paintedExtent(), 0, 0))
+                .isTrue();
+        }
+
+        @Test
         void buildStyledCellForSystemDropsAFactionlessCellThatDrawsNothing() {
 
             var styled = StyledCellBuilder.buildStyledCellForSystem(
@@ -570,14 +628,42 @@ final class StyledCellBuilderTest {
                 buildFactionlessTheme(
                     factionlessStyle,
                     factionlessStyle,
-                    ThemeFixtures.createGlobalStyleRoundingBy(new CornerRoundingStyle(
-                        true,
-                        CORNER_RADIUS,
-                        CORNER_SEGMENTS,
-                        NO_CHAMFER,
-                        CornerRounding.ROUND_EVERY_CORNER))),
+                    buildRoundingGlobalStyle()),
                 null,
                 ElementStyleAdjustment.NONE);
+        }
+
+        // The owned backdrop under that same rounding tier, for the case about what a fused cell
+        // reports under the gate that reshapes a lone cell's ring - the one arrangement where the
+        // two forms have to answer differently about the shape they were built from.
+        private static PoliticalMapTerritories buildRoundingDrawablesWith(PoliticalMapView viewMock) {
+
+            return new PoliticalMapTerritories(
+                SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
+                Set.of(),
+                new MapStyling(
+                    buildFactionlessTheme(STYLE, STYLE, buildRoundingGlobalStyle()),
+                    new FactionPalette(FACTIONLESS_NEUTRAL, FACTIONLESS_NEUTRAL),
+                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                new ViewGrouping(viewMock, HolderGrouping.identity()),
+                ContentInputsFixtures.createInputsRecedingBehind(
+                    null, // No bloc spotlighted.
+                    ElementStyleAdjustment.NONE),
+                Set.of());
+        }
+
+        // The sector-wide tier the rounding cases share: every corner arced, at a radius the shared
+        // 10-unit cell does not clamp. Held in one place because a case reading a lone cell's ring
+        // and one reading a fused cell's have to be under the identical gate for the difference
+        // between their answers to be about the cells.
+        private static GlobalStyle buildRoundingGlobalStyle() {
+            return ThemeFixtures.createGlobalStyleRoundingBy(new CornerRoundingStyle(
+                true,
+                CORNER_RADIUS,
+                CORNER_SEGMENTS,
+                NO_CHAMFER,
+                CornerRounding.ROUND_EVERY_CORNER));
         }
 
         // The theme a factionless case reads: the two factionless bundles it is about over the
@@ -769,9 +855,20 @@ final class StyledCellBuilderTest {
     // Narrows a built cell to the fused form - a cell inside a cluster, carrying only its seams.
     // Failing here is itself the assertion for a case about an owned cell: the builder choosing the
     // other form would mean the cell claimed a fill and an outline of its own.
-    private static StyledCell.FusedCell requireFusedCell(StyledCell styled) {
-        assertThat(styled).isInstanceOf(StyledCell.FusedCell.class);
-        return (StyledCell.FusedCell) styled;
+    private static StyledCell.FusedCell requireFusedCell(PaintedCell painted) {
+        assertThat(painted.styledCell()).isInstanceOf(StyledCell.FusedCell.class);
+        return (StyledCell.FusedCell) painted.styledCell();
+    }
+
+    // Whether a ring of {x, y} pairs passes through the given point - the same question as below,
+    // asked of the unflattened form a painted extent is reported in.
+    private static boolean hasVertex(List<double[]> ring, double x, double y) {
+        for (var vertex : ring) {
+            if (vertex[0] == x && vertex[1] == y) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Whether a flattened GL_LINES run has an endpoint at the given point. The run is a flat
@@ -789,8 +886,8 @@ final class StyledCellBuilderTest {
     // Narrows a built cell to the lone form - a cell that is its own cluster, carrying its fill and
     // outline. As above, the narrowing doubles as the assertion that the builder read the cell as
     // a factionless cell rather than as part of a cluster.
-    private static StyledCell.LoneCell requireLoneCell(StyledCell styled) {
-        assertThat(styled).isInstanceOf(StyledCell.LoneCell.class);
-        return (StyledCell.LoneCell) styled;
+    private static StyledCell.LoneCell requireLoneCell(PaintedCell painted) {
+        assertThat(painted.styledCell()).isInstanceOf(StyledCell.LoneCell.class);
+        return (StyledCell.LoneCell) painted.styledCell();
     }
 }

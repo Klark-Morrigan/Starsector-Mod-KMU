@@ -46,6 +46,11 @@ and land on a result identical to a full rebuild.
   Of the two,
   only a settled cell takes the pass's recede -
   see [what recedes](#what-recedes) below.
+  Either way it comes back as a `PaintedCell`,
+  reporting the ring its ink went on as well as the packet:
+  a lone cell rounds its own corners here,
+  so the ring it draws is not the raw cell it was shaped from,
+  and everything downstream that has to know where the cell put ink reads this one rather than re-deriving it.
 - `FactionTerritoryBuilder` bakes one bloc into a `StyledClusterGroup`:
   every body it holds,
   each with its national border traced across the systems in it,
@@ -257,8 +262,8 @@ and a fresh list per frame would re-clip the wash sixty times a second.
 The retained answer is keyed on the bloc's cluster group by identity,
 so a refresh that replaces the group recomputes once and a refresh that does not costs nothing.
 
-It also records each drawn cell's shaped fill polygon alongside its `StyledCell`,
-written and dropped by the same two calls,
+It also records each drawn cell's painted ring alongside its `StyledCell`,
+the two arriving as one `PaintedCell` from the builder and written and dropped by the same two calls,
 and that pairing is what lets it answer `base.hover`'s `PaintedCellShapes` -
 and through it `MapHoverTargets` -
 directly:

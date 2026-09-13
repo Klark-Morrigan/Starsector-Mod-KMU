@@ -10,6 +10,7 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
+import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelLineBoxes;
 import kmu.maplayers.base.labels.LabelsBuilder;
@@ -188,7 +189,13 @@ final class IncrementalPoliticsRefreshTest {
                     any(),
                     any(),
                     any()))
-                .thenReturn(PoliticalMapTerritoryFixtures.createPlaceholderStyledCell());
+                // Echoes back the shape it was handed, as the real builder does for a cell inside a
+                // cluster. A fixed ring would have every re-shaped cell answer with the same shape
+                // whatever geometry it was built from, which is the one thing the band cases below
+                // read off a re-shaped cell.
+                .thenAnswer(invocation -> PoliticalMapTerritoryFixtures
+                    .createPlaceholderPaintedCellOn(
+                        invocation.<ShapedCell>getArgument(2).fillPolygon()));
 
             territoriesMock = seams.openSeam(FactionTerritoryBuilder.class);
             territoriesMock
@@ -287,10 +294,9 @@ final class IncrementalPoliticsRefreshTest {
             // a flip would leave the band reporting a colony that is no longer there.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildBandSizedCell());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
             // The band starts above the cell's own site, so the marked system needs one; the
             // shared geometry fixture records none, every other case being about shapes.
@@ -326,10 +332,9 @@ final class IncrementalPoliticsRefreshTest {
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 FactionNameFormatChoice.SHORT);
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildBandSizedCell());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -359,10 +364,9 @@ final class IncrementalPoliticsRefreshTest {
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 FactionNameFormatChoice.SHORT);
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildBandSizedCell());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -406,10 +410,9 @@ final class IncrementalPoliticsRefreshTest {
             // they would take is read off the name choice rather than off the list being empty.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildBandSizedCell());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -439,10 +442,9 @@ final class IncrementalPoliticsRefreshTest {
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 FactionNameFormatChoice.SHORT);
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildBandSizedCell());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
             when(cellGeometry.cells().getSiteBySystemKey())
                 .thenReturn(buildKeyedValues(Map.of(FLIPPED_SYSTEM, new double[] {2000.0, 2000.0})));
@@ -826,10 +828,9 @@ final class IncrementalPoliticsRefreshTest {
 
             seedDistantCellGeometry(territories, buildIsolatedSquareCell(10000));
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 buildCellKey(DISTANT_SYSTEM),
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                buildDistantBandSizedCell());
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildDistantBandSizedCell()));
         }
 
         // The same cell for a case whose cell is redrawn, band-sized in the geometry itself and

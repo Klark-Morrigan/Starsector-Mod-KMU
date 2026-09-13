@@ -5,6 +5,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellKeyFixture;
+import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
@@ -297,6 +298,20 @@ public final class PoliticalMapTerritoryFixtures {
 
         var element = new ElementStyle(FactionPaletteSlot.PRIMARY, 1.0);
         return new CategoryStyle(element, element, 1.0, element, 1.0);
+    }
+
+    /**
+     * That placeholder record against a stated ring, which is what the model is written through.
+     *
+     * <p>For the suites whose subject is the shape a cell answers with rather than the ink it puts
+     * down: the ring is the whole of what they assert on, and the record beside it only has to
+     * exist.
+     *
+     * @param paintedExtent the ring to record the cell as painted on, as {x, y} vertex pairs
+     * @return a placeholder painted cell carrying that ring
+     */
+    public static PaintedCell createPlaceholderPaintedCellOn(List<double[]> paintedExtent) {
+        return new PaintedCell(createPlaceholderStyledCell(), paintedExtent);
     }
 
     /**

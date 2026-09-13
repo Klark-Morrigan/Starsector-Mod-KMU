@@ -314,7 +314,7 @@ final class IncrementalPoliticsRefresh {
 
         var edges = geometryCache.getCellEdgesByCellKey().get(cellKey);
         if (edges == null) {
-            territories.removeStyledCell(cellKey);
+            territories.removePaintedCell(cellKey);
             return;
         }
         // The system the cell draws as, whose holder colours and keys it. Every cell here is a
@@ -332,11 +332,11 @@ final class IncrementalPoliticsRefresh {
             DominantHolder.mapFactionIdBySystemKey(territories.getHolderBySystemKey()),
             CellShaper.BORDER_INSET_DISTANCE);
 
-        var styled = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemKey, shaped);
-        if (styled == null) {
-            territories.removeStyledCell(cellKey);
+        var painted = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemKey, shaped);
+        if (painted == null) {
+            territories.removePaintedCell(cellKey);
         } else {
-            territories.putStyledCell(cellKey, styled, shaped.fillPolygon());
+            territories.putPaintedCell(cellKey, painted);
         }
     }
 

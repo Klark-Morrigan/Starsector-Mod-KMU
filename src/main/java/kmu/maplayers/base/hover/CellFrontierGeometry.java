@@ -43,6 +43,11 @@ public final class CellFrontierGeometry {
      * highlight over a whole cluster needs - one lit region, not a grid of seams - and a single
      * cell is the same call with a list of one.
      *
+     * <p>Cells no loop encloses need no clamping and get none: a cell that fuses into nothing
+     * strokes a ring of its own, so the extent it was painted from is already the line it draws
+     * and their combined boundary is the right answer as it stands. Nothing here rounds a corner
+     * of its own - the clip only ever borrows the rounding baked into the frontier.
+     *
      * @param paintedExtents the cells' painted extents, each as {x, y} vertex pairs
      * @param enclosingLoop  the frontier to clamp them to, or null for cells no loop encloses,
      *                       which resolve to their own combined boundary

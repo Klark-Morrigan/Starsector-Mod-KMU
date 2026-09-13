@@ -249,10 +249,9 @@ final class CellRibbonsBakerTest {
 
             var ringBeforeReshape = territories.getRingPathCache().findRingPathOf(BANDED_CELL);
 
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 BANDED_CELL,
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                SQUARE_CELL);
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             bakeEveryCellThrough(territories);
 
@@ -324,10 +323,9 @@ final class CellRibbonsBakerTest {
             SystemKey... cellKeys) {
 
         for (var cellKey : cellKeys) {
-            territories.putStyledCell(
+            territories.putPaintedCell(
                 cellKey,
-                PoliticalMapTerritoryFixtures.createPlaceholderStyledCell(),
-                SQUARE_CELL);
+                PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
         }
 
         // The mechanic the pass counts by, answered off the view the territories already carry -

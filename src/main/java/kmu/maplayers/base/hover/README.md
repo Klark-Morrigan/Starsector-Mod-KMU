@@ -132,6 +132,11 @@ the frame's cell shapes themselves,
 so the halo can only trace an outline the cursor was actually hit-tested against -
 one supplier,
 not two that must agree.
+Neither geometry smooths anything of its own:
+a shape arrives as the ring its cell put ink on
+(`base.render.clusters`'s `PaintedCell`, which is what a layer records),
+so a cell whose corners its layer rounded is already handed rounded,
+and the clip only borrows the rounding baked into the frontier it clamps to.
 
 ## The gates, and the per-mod mode
 
