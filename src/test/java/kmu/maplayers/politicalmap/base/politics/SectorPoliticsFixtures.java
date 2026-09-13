@@ -41,12 +41,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Shared Mockito wiring for the {@code base.politics} integration tests: the stubbed factions,
- * markets, and sectors the holder pipeline reads, and the pass it reads them through. One home
- * for these builders so the integration suites - {@link KnownMarketFootprintsIntegrationTest}
- * (the footprint read), {@link SectorPoliticsIntegrationTest} (the dominance-and-palette
- * resolve), {@link FilteredPoliticsIntegrationTest} (the presence-aware filter resolve), and the
- * two picker aggregations - wire an economy the same way rather than each carrying its own
+ * Shared Mockito wiring for the suites driving the holder pipeline: the stubbed factions,
+ * markets, and sectors it reads, and the pass it reads them through. One home for these builders
+ * so the footprint read, the dominance-and-palette resolve, the presence-aware filter resolve and
+ * the picker aggregations wire an economy the same way rather than each carrying its own
  * near-identical copy.
  *
  * <p>Every builder returns the live Mockito mock, so a suite with a specialised need (an attached
@@ -79,9 +77,8 @@ public final class SectorPoliticsFixtures {
     public static final Color PERSEAN_BRIGHT = new Color(160, 200, 240);
     public static final Color NEUTRAL_BASE = new Color(150, 150, 150);
 
-    // Runs across the whole test JVM rather than per sector, which is all it has to do: the ids it
-    // hands out only need to differ from one another within whatever sector a case builds.
     private SectorPoliticsFixtures() {
+        // fixture of static wiring, no instances.
     }
 
     /**
@@ -155,7 +152,7 @@ public final class SectorPoliticsFixtures {
 
     /**
      * A faction stub carrying its authored UI palette, for the resolves that colour a cell: the
-     * bright colour as the fill/border shade and {@link #dark} of it as the seam shade.
+     * bright colour as the fill/border shade and {@link #buildDarkTheme} of it as the seam shade.
      *
      * @param id     the faction id
      * @param bright the faction's bright fill colour
@@ -573,25 +570,7 @@ public final class SectorPoliticsFixtures {
      * @return the sector mock
      */
     public static SectorAPI buildSectorWith(String systemId, MarketAPI... markets) {
-
-        var systemMock = mock(StarSystemAPI.class);
-
-        when(systemMock.getId())
-            .thenReturn(systemId);
-
-        var economyMock = mock(EconomyAPI.class);
-
-        when(economyMock.getMarkets(systemMock))
-            .thenReturn(List.of(markets));
-
-        var sectorMock = mock(SectorAPI.class);
-
-        when(sectorMock.getStarSystems())
-            .thenReturn(List.of(systemMock));
-        when(sectorMock.getEconomy())
-            .thenReturn(economyMock);
-
-        return sectorMock;
+        return buildSectorWith(systemId, List.of(), markets);
     }
 
     /**
@@ -604,15 +583,7 @@ public final class SectorPoliticsFixtures {
      * @return the sector mock
      */
     public static SectorAPI buildSectorWith(String systemId, List<FactionAPI> factions, MarketAPI... markets) {
-
-        var sectorMock = buildSectorWith(systemId, markets);
-
-        for (var faction : factions) {
-
-            when(sectorMock.getFaction(faction.getId()))
-                .thenReturn(faction);
-        }
-        return sectorMock;
+        return buildSectorWithSystems(factions, listSystemMarkets(systemId, markets));
     }
 
     /**
@@ -745,11 +716,11 @@ public final class SectorPoliticsFixtures {
      */
     public static SectorAPI buildEconomylessSectorWithSystem(String systemId) {
 
-        var systemMock = mock(StarSystemAPI.class);
-        when(systemMock.getId())
-            .thenReturn(systemId);
-
+        // The system finishes its own wiring before the sector's opens, so Mockito sees no
+        // stubbing nested inside another.
+        var systemMock = StarSystemFixture.buildSystem(systemId);
         var sectorMock = mock(SectorAPI.class);
+
         when(sectorMock.getStarSystems())
             .thenReturn(List.of(systemMock));
 

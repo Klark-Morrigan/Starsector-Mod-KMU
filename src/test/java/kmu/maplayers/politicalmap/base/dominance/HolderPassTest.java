@@ -88,7 +88,7 @@ final class HolderPassTest {
         }
 
         @Test
-        void rejectsNullColonies() {
+        void rejectsNullSectorIndex() {
             // A pass with no walk behind it would fault on the first system it read rather than
             // here, and a pass over a sector that cannot be reached is a different thing entirely -
             // an index over a null sector, which answers an empty set and is perfectly legal.

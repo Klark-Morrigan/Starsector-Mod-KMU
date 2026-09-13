@@ -1,7 +1,5 @@
 # Klark Morrigan's Utilities
 
-This is a small Starsector utility and quality of life mod.
-
 ## Index
 
 - [Features](#features)
