@@ -17,11 +17,15 @@
 
 ### Map layers
 
-A control box over the campaign map picks one overlay at a time from a strip of
-tabs. It draws on both screens that show the sector map: the full map screen (M)
-and the map preview embedded in the intel screen, each keeping its own tab. See
-[the map layers guide](src/main/java/kmu/maplayers/README.md) for the layers on
-offer and what each screen remembers.
+**Sector Map Layers** is an overlay for the map screen **(Tab, Q)**, the intel screen **(E, 1)**, the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have **Random Assortment of Things** installed.
+
+Everything is calculated and drawn off of game data, and it gets updated as the state of the sector shanges. Map layers don't alter any of the data being used to draw it, making map layers **read-only** by design.
+
+The map layers feature **turned on by default**. After loading a save or starting a new game, when you open the map screen or the intel screen, you'll see a new `Map layers` button among map filter buttons. Clicking that button or pressing **(M)** enables the map layer overlay and its sidebar.
+
+The main control surface of map layers is the collapsible **sidebar** that lists all available layers and related knobs and toggles.
+
+See [more on map layers](src/main/java/kmu/maplayers/README.md).
 
 #### Political map
 
