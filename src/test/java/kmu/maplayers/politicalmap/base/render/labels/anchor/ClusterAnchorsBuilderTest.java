@@ -11,7 +11,6 @@ import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.LabelFonts;
 import kmu.maplayers.base.labels.anchor.AnchorFitFingerprint;
@@ -53,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
@@ -867,20 +867,4 @@ final class ClusterAnchorsBuilderTest {
         return systemKeyByCellKey;
     }
 
-    // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge buildEdgeFacing(
-            double x1,
-            double y1,
-            double x2,
-            double y2,
-            String neighbourSystemId) {
-        return new CellEdge(
-            x1,
-            y1,
-            x2,
-            y2,
-            neighbourSystemId == null
-                ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
-    }
 }

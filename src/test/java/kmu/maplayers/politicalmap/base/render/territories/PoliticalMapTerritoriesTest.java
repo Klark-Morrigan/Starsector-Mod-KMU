@@ -6,7 +6,6 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
@@ -43,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeTo;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
@@ -755,14 +755,6 @@ final class PoliticalMapTerritoriesTest {
     // Clustering keys off the faction id alone, so the palette shades are inert here.
     private static DominantHolder readOwnerOf(String factionId) {
         return new DominantHolder(factionId, Color.GRAY, Color.GRAY);
-    }
-
-    // One cell edge facing the given neighbour system. Clustering reads only the adjacency tag,
-    // so the segment is left at the origin.
-    private static CellEdge buildEdgeTo(String neighbourSystemId) {
-        return new CellEdge(
-            0, 0, 0, 0,
-            new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
     }
 
     // Reindexes the clusters over the given adjacency, each cell drawing as its own star

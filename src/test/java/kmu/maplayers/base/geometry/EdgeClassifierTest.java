@@ -1,9 +1,14 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.starsector.systems.SystemKey;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeTo;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeToCell;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -17,18 +22,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * same-owner an interior seam whatever the cell's own key.
  */
 final class EdgeClassifierTest {
-
-    // One cell edge facing another system's cell; geometry is irrelevant to
-    // classification, so the segment is left at the origin.
-    private static CellEdge buildEdgeAcrossSystem(String systemId) {
-
-        return new CellEdge(
-            0,
-            0,
-            0,
-            0,
-            new EdgeTarget.AcrossSystem(CellKeyFixture.buildCellKey(systemId)));
-    }
 
     // One cell edge facing the given systemless target - the reach bound or same-owner.
     private static CellEdge buildEdgeFacing(EdgeTarget target) {
@@ -84,7 +77,18 @@ final class EdgeClassifierTest {
         @Test
         void classifyAcrossReturnsInteriorSeamWhenTheNeighbourSharesTheKey() {
 
-            var edge = buildEdgeAcrossSystem("B");
+            var edge = buildEdgeTo("B");
+
+            assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
+                .isEqualTo(EdgeClass.INTERIOR_SEAM);
+        }
+
+        @Test
+        void classifyAcrossNarrowsTheNeighbourToTheIdItsOwnerIsKeyedBy() {
+            // The join with the holding: an edge names its neighbour by key and the owner map
+            // names a system by id, so a neighbour whose other arms are stated still finds its
+            // owner through the id arm.
+            var edge = buildEdgeToCell(new SystemKey("B", "", "8b3"));
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
                 .isEqualTo(EdgeClass.INTERIOR_SEAM);
@@ -93,7 +97,7 @@ final class EdgeClassifierTest {
         @Test
         void classifyAcrossReturnsBoundaryWhenTheNeighbourHasADifferentKey() {
 
-            var edge = buildEdgeAcrossSystem("B");
+            var edge = buildEdgeTo("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "G")))
                 .isEqualTo(EdgeClass.BOUNDARY);
@@ -103,7 +107,7 @@ final class EdgeClassifierTest {
         void classifyAcrossReturnsOpenFrontierWhenTheNeighbourHasACellButNoKey() {
             // B has a cell (a system across the edge) but no entry in the grouping-key map, so
             // the owned cell faces an unowned star it can reach toward - an open frontier.
-            var edge = buildEdgeAcrossSystem("B");
+            var edge = buildEdgeTo("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of()))
                 .isEqualTo(EdgeClass.OPEN_FRONTIER);
@@ -114,7 +118,7 @@ final class EdgeClassifierTest {
             // Two unowned cells (own null, neighbour has a cell but no key) do not form
             // a frontier - there is no key reaching toward the star - so the edge stays a
             // plain boundary and the shaper leaves it at the normal inset.
-            var edge = buildEdgeAcrossSystem("B");
+            var edge = buildEdgeTo("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, null, Map.of()))
                 .isEqualTo(EdgeClass.BOUNDARY);
@@ -125,7 +129,7 @@ final class EdgeClassifierTest {
             // The empty/deciv cell's own side: an unowned cell (cellOwner null) facing
             // a grouped neighbour sees the same frontier, so the shaper can pull its edge in
             // toward the star. Pins the null-own direction through classifyAcross itself.
-            var edge = buildEdgeAcrossSystem("B");
+            var edge = buildEdgeTo("B");
 
             assertThat(EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))
                 .isEqualTo(EdgeClass.OPEN_FRONTIER);

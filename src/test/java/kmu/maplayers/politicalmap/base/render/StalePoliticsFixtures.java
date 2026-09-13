@@ -7,7 +7,6 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import java.awt.Color;
@@ -16,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
@@ -129,14 +128,9 @@ final class StalePoliticsFixtures {
     // for real; only the adjacency tag is what the re-derive itself reads.
     static List<CellEdge> buildSquareCellFacing(String neighbourSystemId, double offsetX) {
         return List.of(
-            new CellEdge(
-                offsetX,
-                0,
-                offsetX + 50,
-                0,
-                new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId))),
-            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, EdgeTarget.REACH_BOUND),
-            new CellEdge(offsetX + 50, 50, offsetX, 50, EdgeTarget.REACH_BOUND),
-            new CellEdge(offsetX, 50, offsetX, 0, EdgeTarget.REACH_BOUND));
+            buildEdgeFacing(offsetX, 0, offsetX + 50, 0, neighbourSystemId),
+            buildEdgeFacing(offsetX + 50, 0, offsetX + 50, 50, null),
+            buildEdgeFacing(offsetX + 50, 50, offsetX, 50, null),
+            buildEdgeFacing(offsetX, 50, offsetX, 0, null));
     }
 }

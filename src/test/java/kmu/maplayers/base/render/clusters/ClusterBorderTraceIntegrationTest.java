@@ -6,7 +6,6 @@ import kmu.maplayers.base.geometry.BorderTraceTolerances;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
 
 import org.junit.jupiter.api.Nested;
@@ -16,10 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.RingExtentFixture.readMaxXOf;
+import static kmu.maplayers.base.geometry.RingExtentFixture.readMinXOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -45,15 +46,15 @@ class ClusterBorderTraceIntegrationTest {
     // left edge. B holds no market, so it is absent from the owner map (an unheld frontier star).
     private static final Map<SystemKey, List<CellEdge>> EDGES = buildKeyedValues(Map.of(
         "A", List.of(
-            buildEdge(0, 0, 2000, 0, null),
-            buildEdge(2000, 0, 2000, 2000, "B"),
-            buildEdge(2000, 2000, 0, 2000, null),
-            buildEdge(0, 2000, 0, 0, null)),
+            buildEdgeFacing(0, 0, 2000, 0, null),
+            buildEdgeFacing(2000, 0, 2000, 2000, "B"),
+            buildEdgeFacing(2000, 2000, 0, 2000, null),
+            buildEdgeFacing(0, 2000, 0, 0, null)),
         "C", List.of(
-            buildEdge(4000, 0, 6000, 0, null),
-            buildEdge(6000, 0, 6000, 2000, null),
-            buildEdge(6000, 2000, 4000, 2000, null),
-            buildEdge(4000, 2000, 4000, 0, "B"))));
+            buildEdgeFacing(4000, 0, 6000, 0, null),
+            buildEdgeFacing(6000, 0, 6000, 2000, null),
+            buildEdgeFacing(6000, 2000, 4000, 2000, null),
+            buildEdgeFacing(4000, 2000, 4000, 0, "B"))));
 
     private static final Map<String, String> OWNERS = Map.of("A", "F", "C", "G");
 
@@ -61,19 +62,6 @@ class ClusterBorderTraceIntegrationTest {
     // grouping every trace here runs under.
     private static final CellGrouping GROUPING =
         new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A", "C", "C")), OWNERS);
-
-    // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge buildEdge(double x1, double y1, double x2, double y2, String neighbour) {
-
-        return new CellEdge(
-            x1,
-            y1,
-            x2,
-            y2,
-            neighbour == null
-                ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(buildCellKey(neighbour)));
-    }
 
     @Nested
     class TraceRings {
@@ -93,7 +81,7 @@ class ClusterBorderTraceIntegrationTest {
 
             // The channel actually fired: F's right border sits 150 inside its raw x = 2000 edge
             // facing B, so the rings are the real inset geometry rather than the raw cells.
-            assertThat(computeMaxXOf(fullPassF.get(0)))
+            assertThat(readMaxXOf(fullPassF.get(0)))
                 .isCloseTo(1850.0, within(1e-6));
         }
 
@@ -129,9 +117,9 @@ class ClusterBorderTraceIntegrationTest {
             var fRings = trace.traceRings(buildCellKeys("A"), EDGES, GROUPING);
             var gRings = trace.traceRings(buildCellKeys("C"), EDGES, GROUPING);
 
-            assertThat(computeMaxXOf(fRings.get(0)))
+            assertThat(readMaxXOf(fRings.get(0)))
                 .isCloseTo(1850.0, within(1e-6));
-            assertThat(computeMinXOf(gRings.get(0)))
+            assertThat(readMinXOf(gRings.get(0)))
                 .isCloseTo(4150.0, within(1e-6));
         }
     }
@@ -159,20 +147,4 @@ class ClusterBorderTraceIntegrationTest {
         }
     }
 
-    private static double computeMaxXOf(List<double[]> ring) {
-
-        return ring
-            .stream()
-            .mapToDouble(vertex -> vertex[0])
-            .max()
-            .orElseThrow();
-    }
-
-    private static double computeMinXOf(List<double[]> ring) {
-
-        return ring.stream()
-            .mapToDouble(vertex -> vertex[0])
-            .min()
-            .orElseThrow();
-    }
 }

@@ -12,7 +12,6 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelsBuilder;
@@ -61,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -671,17 +671,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
         var rightEdgeX = leftEdgeX + CELL_SIDE;
 
         return List.of(
-            new CellEdge(leftEdgeX, 0, rightEdgeX, 0, EdgeTarget.REACH_BOUND),
-            new CellEdge(rightEdgeX, 0, rightEdgeX, CELL_SIDE, resolveEdgeTarget(rightSystemId)),
-            new CellEdge(rightEdgeX, CELL_SIDE, leftEdgeX, CELL_SIDE, EdgeTarget.REACH_BOUND),
-            new CellEdge(leftEdgeX, CELL_SIDE, leftEdgeX, 0, resolveEdgeTarget(leftSystemId)));
-    }
-
-    // What lies across one edge: the neighbouring system, or the cell's own outer reach at the
-    // ends of the row.
-    private static EdgeTarget resolveEdgeTarget(String neighbourSystemId) {
-        return neighbourSystemId == null
-            ? EdgeTarget.REACH_BOUND
-            : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId));
+            buildEdgeFacing(leftEdgeX, 0, rightEdgeX, 0, null),
+            buildEdgeFacing(rightEdgeX, 0, rightEdgeX, CELL_SIDE, rightSystemId),
+            buildEdgeFacing(rightEdgeX, CELL_SIDE, leftEdgeX, CELL_SIDE, null),
+            buildEdgeFacing(leftEdgeX, CELL_SIDE, leftEdgeX, 0, leftSystemId));
     }
 }

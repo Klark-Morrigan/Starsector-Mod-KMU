@@ -32,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.awt.Color;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,6 +94,14 @@ final class CellRibbonSourceTest {
     private static final String EMPTY_SYSTEM = "empty";
     private static final String SITELESS_SYSTEM = "unplaced";
 
+    // A settled system the sector states an anchor about, for the one case about the address the
+    // gate is asked in: its key carries an arm the inhabited set knows nothing of, so a gate read
+    // under the key alone would refuse it.
+    private static final String ANCHORED_SYSTEM_ID = "deep space";
+    private static final String ANCHORED_SYSTEM_ANCHOR_ID = "8b3";
+    private static final SystemKey ANCHORED_SYSTEM =
+        new SystemKey(ANCHORED_SYSTEM_ID, null, ANCHORED_SYSTEM_ANCHOR_ID);
+
     // The cell a case bakes, which is the key its traced ring is kept under. One cell is enough
     // for every case here: what is pinned is whether a given cell is walked at all, never how two
     // of them are told apart.
@@ -152,6 +161,18 @@ final class CellRibbonSourceTest {
             // inhabitation alone - which is what an unclaimed pirate haven has and this layer's
             // holding does not give it.
             assertThat(buildFor(INHABITED_SYSTEM).bands())
+                .extracting(RibbonBand::colour)
+                .containsExactly(BAND_COLOUR);
+        }
+
+        @Test
+        void narrowsTheDrawnSystemToTheIdTheInhabitedSetIsKeyedBy() {
+            // The join with the holding: the cell's system arrives keyed and the inhabited set
+            // names a system by id, so a system whose key states an anchor arm still passes the
+            // gate and is offered a band.
+            assertThat(buildWith(system -> ANY_PLAN)
+                    .buildCellRibbon(CELL, ANCHORED_SYSTEM, SQUARE_CELL, passScope)
+                    .bands())
                 .extracting(RibbonBand::colour)
                 .containsExactly(BAND_COLOUR);
         }
@@ -551,7 +572,11 @@ final class CellRibbonSourceTest {
         var systems = List.of(
             buildSystem(INHABITED_SYSTEM),
             buildSystem(EMPTY_SYSTEM),
-            buildSystem(SITELESS_SYSTEM));
+            buildSystem(SITELESS_SYSTEM),
+            StarSystemFixture.buildKeyedSystem(
+                ANCHORED_SYSTEM_ID,
+                null,
+                ANCHORED_SYSTEM_ANCHOR_ID));
 
         var sectorMock = mock(SectorAPI.class);
 
@@ -563,11 +588,18 @@ final class CellRibbonSourceTest {
 
     private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {
 
+        // The settled set is stated by id, as the layer's holding states it, while the sites are
+        // stated by key as the cut records them - which is the pair the gate narrows across.
+        var siteBySystemKey = new LinkedHashMap<SystemKey, double[]>(
+            buildKeyedValues(Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0})));
+
+        siteBySystemKey.put(ANCHORED_SYSTEM, new double[] {3000.0, 3000.0});
+
         return new RibbonBakeSurface(
-            Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM),
-            // Only the placed system has a site; the other settled one is what a band with nowhere
-            // to start is posed on.
-            buildKeyedValues(Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0})),
+            Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM, ANCHORED_SYSTEM_ID),
+            // Only the placed systems have a site; the settled one without is what a band with
+            // nowhere to start is posed on.
+            siteBySystemKey,
             // No names anywhere near these cells: where a name falls is pinned by the builder that
             // lays a band inside one cell, not by which cells are offered a band at all.
             List.of(),

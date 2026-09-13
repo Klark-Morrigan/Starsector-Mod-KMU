@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry;
 import kmlib.starsector.systems.SystemKey;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,43 @@ public final class CellKeyFixture {
             valuesByCellKey.put(buildCellKey(entry.getKey()), entry.getValue());
         }
         return valuesByCellKey;
+    }
+
+    /**
+     * A grouping in which every cell draws as its own star - the identity draws-as over the cells
+     * given, which is every cell of a partition that holds no cell without a star - paired with
+     * the owners a case states by name.
+     */
+    public static CellGrouping buildIdentityGrouping(
+            Collection<SystemKey> cellKeys,
+            Map<String, String> ownerBySystemId) {
+
+        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+
+        for (var cellKey : cellKeys) {
+            systemKeyByCellKey.put(cellKey, cellKey);
+        }
+        return new CellGrouping(systemKeyByCellKey, ownerBySystemId);
+    }
+
+    /**
+     * The identity grouping over cells a case names rather than keys.
+     */
+    public static CellGrouping buildIdentityGroupingByName(
+            Collection<String> systemIds,
+            Map<String, String> ownerBySystemId) {
+
+        return buildIdentityGrouping(
+            buildCellKeys(systemIds.toArray(String[]::new)),
+            ownerBySystemId);
+    }
+
+    /**
+     * The identity grouping over exactly the systems an owner map names - a partition in which
+     * every cell is owned.
+     */
+    public static CellGrouping buildIdentityGroupingOver(Map<String, String> ownerBySystemId) {
+        return buildIdentityGroupingByName(ownerBySystemId.keySet(), ownerBySystemId);
     }
 
     /**

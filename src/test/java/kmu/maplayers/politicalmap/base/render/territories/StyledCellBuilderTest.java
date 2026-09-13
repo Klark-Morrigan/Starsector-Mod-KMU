@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.math.geometry.CornerRounding;
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
@@ -131,6 +132,20 @@ final class StyledCellBuilderTest {
                 .isEqualTo(OWNER_SECONDARY);
             assertThat(requireFusedCell(styled).seamPaint().alpha())
                 .isEqualTo(0.5f);
+        }
+
+        @Test
+        void buildStyledCellForSystemNarrowsTheSystemToTheIdTheHoldingIsKeyedBy() {
+            // The join with the holding: the cell arrives keyed and the holder map names a system
+            // by id, so a cell whose system states an anchor arm still finds its holder and draws
+            // as owned rather than as the empty backdrop.
+            var styled = StyledCellBuilder.buildStyledCellForSystem(
+                buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
+                new SystemKey(SYSTEM_ID, "", "8b3"),
+                buildOwnedCell());
+
+            assertThat(requireFusedCell(styled).seamPaint().colour())
+                .isEqualTo(OWNER_SECONDARY);
         }
 
         @Test

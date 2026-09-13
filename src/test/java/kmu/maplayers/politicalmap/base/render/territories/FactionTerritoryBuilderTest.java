@@ -1,10 +1,10 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGeometryCache;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
@@ -148,6 +148,25 @@ final class FactionTerritoryBuilderTest {
 
     @Nested
     class BuildFactionTerritory {
+
+        @Test
+        void buildFactionTerritoryNarrowsItsFirstMemberToTheIdTheHoldingIsKeyedBy() {
+            // The join with the holding: a member arrives keyed and the holder map names a system
+            // by id, so the palette every body of the bloc paints in is found through the id arm
+            // even where the member's key states an anchor.
+            var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
+
+            var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
+                buildTerritoriesStyledBy(buildDrawnStyle()),
+                listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
+                HEGEMONY,
+                List.of(anchoredCell));
+
+            // The holder resolved, so the body paints; an unresolved one would leave the bloc
+            // with no palette to fill from and the whole record dropped.
+            assertThat(clusterGroup)
+                .isNotNull();
+        }
 
         @Test
         void buildFactionTerritoryTracesTwoTouchingSystemsAsOneFrontier() {
@@ -360,23 +379,6 @@ final class FactionTerritoryBuilderTest {
         }
     }
 
-    // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge buildEdgeFacing(
-            double x1,
-            double y1,
-            double x2,
-            double y2,
-            String neighbourSystemId) {
-        return new CellEdge(
-            x1,
-            y1,
-            x2,
-            y2,
-            neighbourSystemId == null
-                ? EdgeTarget.REACH_BOUND
-                : new EdgeTarget.AcrossSystem(buildCellKey(neighbourSystemId)));
-    }
-
     // A geometry cache holding just the named cells, each drawing as its own star - the raw
     // partition a bloc's border is traced from.
     // The 3x3 block as a geometry cache, every cell drawing as its own system.
@@ -464,6 +466,21 @@ final class FactionTerritoryBuilderTest {
 
     private static boolean isGridCentre(int column, int row) {
         return column == GRID_CENTRE && row == GRID_CENTRE;
+    }
+
+    // The same cut with one cell keyed as the sector states its system rather than by the id
+    // alone - the shape a system carrying an anchor cuts, and the one that reaches the holding
+    // only by narrowing.
+    private static CellGeometryCache listAnchoredCellFor(String systemId, SystemKey cellKey) {
+
+        var geometryCacheMock = mock(CellGeometryCache.class);
+
+        when(geometryCacheMock.getCellEdgesByCellKey())
+            .thenReturn(Map.of(cellKey, EDGES.get(systemId)));
+        when(geometryCacheMock.getSystemKeyByCellKey())
+            .thenReturn(Map.of(cellKey, cellKey));
+
+        return geometryCacheMock;
     }
 
     private static CellGeometryCache listCellsFor(String... systemIds) {

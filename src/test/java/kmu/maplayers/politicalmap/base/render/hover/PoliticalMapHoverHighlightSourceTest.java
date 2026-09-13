@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.hover;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
@@ -50,6 +52,21 @@ final class PoliticalMapHoverHighlightSourceTest {
                 buildTerritoryWithLoops(loops)));
 
             assertThat(source.resolveCandidateFrontierLoopsOf(buildCellKey("A")))
+                .containsExactlyElementsOf(loops);
+        }
+
+        @Test
+        void resolveCandidateFrontierLoopsOfNarrowsTheCellToTheIdTheHoldingIsKeyedBy() {
+            // The join with the holding: the hovered cell arrives keyed and the holder map names
+            // a system by id, so a cell whose system states an anchor arm still haloes its
+            // holder's frontier rather than reading as factionless.
+            var loops = List.of(buildSquareRun(0, 0, 100));
+            var source = readSourceOf(buildTerritoriesWith(
+                Map.of("A", OWNER),
+                Map.of("A", buildSquare(10, 10, 80)),
+                buildTerritoryWithLoops(loops)));
+
+            assertThat(source.resolveCandidateFrontierLoopsOf(new SystemKey("A", "", "8b3")))
                 .containsExactlyElementsOf(loops);
         }
 

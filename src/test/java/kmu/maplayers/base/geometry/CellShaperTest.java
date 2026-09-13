@@ -1,7 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import kmlib.starsector.systems.SystemKey;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGrouping;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,7 +142,7 @@ final class CellShaperTest {
         var cellEdgesByCellKey = buildKeyedValues(edges);
         var shapedByCellKey = CellShaper.shapeCells(
             cellEdgesByCellKey,
-            buildGrouping(cellEdgesByCellKey, owners),
+            buildIdentityGrouping(cellEdgesByCellKey.keySet(), owners),
             inset);
 
         var shapedBySystemId = new LinkedHashMap<String, ShapedCell>();
@@ -154,33 +153,14 @@ final class CellShaperTest {
         return shapedBySystemId;
     }
 
-    // One cell edge facing the given neighbour system, or the reach bound when it is null.
-    private static CellEdge buildEdge(double x1, double y1, double x2, double y2, String neighbour) {
-        return new CellEdge(x1, y1, x2, y2,
-                neighbour == null
-                        ? EdgeTarget.REACH_BOUND
-                        : new EdgeTarget.AcrossSystem(buildCellKey(neighbour)));
-    }
-
-    // The grouping to shape under: each cell drawing as its own star (identity draws-as over
-    // the cell set), keyed by the given owners.
-    private static CellGrouping buildGrouping(
-            Map<SystemKey, List<CellEdge>> edges, Map<String, String> owners) {
-        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
-        for (var cellKey : edges.keySet()) {
-            systemKeyByCellKey.put(cellKey, cellKey);
-        }
-        return new CellGrouping(systemKeyByCellKey, owners);
-    }
-
     // The unit square (0,0)..(10,10) CCW, its right edge (x = 10) tagged with the
     // given neighbour and the other three left as frontiers (null neighbour).
     private static List<CellEdge> buildSquareCellSharedOnRight(String rightNeighbour) {
         return List.of(
-                buildEdge(0, 0, 10, 0, null),
-                buildEdge(10, 0, 10, 10, rightNeighbour),
-                buildEdge(10, 10, 0, 10, null),
-                buildEdge(0, 10, 0, 0, null));
+                buildEdgeFacing(0, 0, 10, 0, null),
+                buildEdgeFacing(10, 0, 10, 10, rightNeighbour),
+                buildEdgeFacing(10, 10, 0, 10, null),
+                buildEdgeFacing(0, 10, 0, 0, null));
     }
 
     // The side-100 square (0,0)..(100,100) CCW, its right edge (x = 100) tagged with the
@@ -188,20 +168,20 @@ final class CellShaperTest {
     // channel-plus-setback frontier pull-in still leaves a drawable cell.
     private static List<CellEdge> buildBigSquareCellSharedOnRight(String rightNeighbour) {
         return List.of(
-                buildEdge(0, 0, 100, 0, null),
-                buildEdge(100, 0, 100, 100, rightNeighbour),
-                buildEdge(100, 100, 0, 100, null),
-                buildEdge(0, 100, 0, 0, null));
+                buildEdgeFacing(0, 0, 100, 0, null),
+                buildEdgeFacing(100, 0, 100, 100, rightNeighbour),
+                buildEdgeFacing(100, 100, 0, 100, null),
+                buildEdgeFacing(0, 100, 0, 0, null));
     }
 
     // The square (10,0)..(20,10) CCW, its left edge (x = 10) tagged with the given
     // neighbour - the mirror partner of a squareCellSharedOnRight cell.
     private static List<CellEdge> buildRightSquareCellSharedOnLeft(String leftNeighbour) {
         return List.of(
-                buildEdge(10, 0, 20, 0, null),
-                buildEdge(20, 0, 20, 10, null),
-                buildEdge(20, 10, 10, 10, null),
-                buildEdge(10, 10, 10, 0, leftNeighbour));
+                buildEdgeFacing(10, 0, 20, 0, null),
+                buildEdgeFacing(20, 0, 20, 10, null),
+                buildEdgeFacing(20, 10, 10, 10, null),
+                buildEdgeFacing(10, 10, 10, 0, leftNeighbour));
     }
 
     private static double computeMaxXOf(ShapedCell shaped) {

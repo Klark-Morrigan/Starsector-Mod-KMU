@@ -9,8 +9,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildBoundEdge;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeTo;
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeToCell;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGrouping;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,34 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 final class SystemClustersTest {
 
-    // One cell edge that faces the given system's cell. Geometry is irrelevant to clustering,
-    // so the segment is left at the origin.
-    private static CellEdge buildEdgeTo(String neighbourSystemId) {
-        return buildEdgeToCell(buildCellKey(neighbourSystemId));
-    }
-
-    // The same edge stated against a cell a case named itself, for a case posing two systems that
-    // share an id and so cannot be named by one.
-    private static CellEdge buildEdgeToCell(SystemKey neighbourSystemKey) {
-        return new CellEdge(0, 0, 0, 0, new EdgeTarget.AcrossSystem(neighbourSystemKey));
-    }
-
-    // One cell edge facing the reach bound - a frontier into empty space.
-    private static CellEdge buildBoundEdge() {
-        return new CellEdge(0, 0, 0, 0, EdgeTarget.REACH_BOUND);
-    }
-
-    // The grouping the clustering runs over: each cell drawing as its own star (identity
-    // draws-as over the cell set), keyed by the given owners.
-    private static CellGrouping buildGrouping(
-            Map<SystemKey, List<CellEdge>> edges, Map<String, String> owners) {
-        var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
-        for (var cellKey : edges.keySet()) {
-            systemKeyByCellKey.put(cellKey, cellKey);
-        }
-        return new CellGrouping(systemKeyByCellKey, owners);
-    }
-
     @Nested
     class FindClusters {
         @Test
@@ -69,7 +45,7 @@ final class SystemClustersTest {
                     "B", List.of(buildEdgeTo("A"))));
             var owners = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, buildIdentityGrouping(edges.keySet(), owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0))
@@ -86,7 +62,7 @@ final class SystemClustersTest {
                     "C", List.of(buildEdgeTo("B"))));
             var owners = Map.of("A", "F", "B", "F", "C", "F");
 
-            var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, buildIdentityGrouping(edges.keySet(), owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0))
@@ -102,7 +78,7 @@ final class SystemClustersTest {
                     "B", List.of(buildBoundEdge())));
             var owners = Map.of("A", "F", "B", "F");
 
-            var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, buildIdentityGrouping(edges.keySet(), owners));
 
             assertThat(clusters).hasSize(2);
         }
@@ -116,7 +92,7 @@ final class SystemClustersTest {
                     "B", List.of(buildEdgeTo("A"))));
             var owners = Map.of("A", "F", "B", "G");
 
-            var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, buildIdentityGrouping(edges.keySet(), owners));
 
             assertThat(clusters).hasSize(2);
             assertThat(clusters).allSatisfy(cluster -> assertThat(cluster).hasSize(1));
@@ -131,7 +107,7 @@ final class SystemClustersTest {
                     "B", List.of(buildEdgeTo("A"))));
             var owners = Map.of("A", "F");
 
-            var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, owners));
+            var clusters = SystemClusters.findClusters(edges, buildIdentityGrouping(edges.keySet(), owners));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactly(buildCellKey("A"));
@@ -141,7 +117,7 @@ final class SystemClustersTest {
         void nothingGroupedYieldsNoClusters() {
             var edges = buildKeyedValues(Map.of("A", List.of(buildBoundEdge())));
 
-            var clusters = SystemClusters.findClusters(edges, buildGrouping(edges, Map.of()));
+            var clusters = SystemClusters.findClusters(edges, buildIdentityGrouping(edges.keySet(), Map.of()));
 
             assertThat(clusters).isEmpty();
         }
@@ -177,7 +153,7 @@ final class SystemClustersTest {
 
             var clusters = SystemClusters.findClusters(
                     edges,
-                    buildGrouping(edges, Map.of("deep space", "F")));
+                    buildIdentityGrouping(edges.keySet(), Map.of("deep space", "F")));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder(first, second);

@@ -8,7 +8,6 @@ import kmlib.starsector.ui.label.NameFitSpecification;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorDiagnostics;
 import kmu.maplayers.base.labels.anchor.specifications.AnchorSearch;
 import kmu.maplayers.base.labels.anchor.specifications.LabelAnchorSpecification;
@@ -26,9 +25,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGroupingOver;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,17 +61,6 @@ final class ClusterAnchorPlacementTest {
     // The colour seam the geometry tests run under: one shade for every owner, since
     // none of them assert on colour.
     private static final Function<String, Color> FIXED_LABEL_COLOURS = owner -> LABEL_COLOUR;
-
-    // The grouping the anchor search traces under: each cell drawing as its own star (identity
-    // draws-as over the group-key map's cells, all grouped cluster members here), keyed by the
-    // given owners.
-    private static CellGrouping buildGrouping(Map<String, String> ownerBySystemId) {
-        var systemIdByCellId = new LinkedHashMap<String, String>();
-        for (var cellId : ownerBySystemId.keySet()) {
-            systemIdByCellId.put(cellId, cellId);
-        }
-        return new CellGrouping(buildDrawnSystemKeys(systemIdByCellId), ownerBySystemId);
-    }
 
     // The anchors alone, for the geometry tests: they assert on where a label landed, not
     // on what finding it cost, so they read past the sweep's counts here rather than each
@@ -126,7 +115,7 @@ final class ClusterAnchorPlacementTest {
             "B", listSquareCellEdges(CELL_SIDE, 0, null, null, null, "A")));
         private static final Map<SystemKey, double[]> HORIZONTAL_PAIR_SITES = buildKeyedValues(Map.of(
             "A", new double[] {500, 500}, "B", new double[] {1500, 500}));
-        private static final CellGrouping HORIZONTAL_PAIR_GROUPING = buildGrouping(Map.of(
+        private static final CellGrouping HORIZONTAL_PAIR_GROUPING = buildIdentityGroupingOver(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY));
 
         // The identity that pair's cluster must report, spelled out from the fixture's own
@@ -146,7 +135,7 @@ final class ClusterAnchorPlacementTest {
             "B", listRectangleCellEdges(0, CELL_SIDE, 500, CELL_SIDE, "A", null, null, null)));
         private static final Map<SystemKey, double[]> THIN_COLUMN_SITES = buildKeyedValues(Map.of(
             "A", new double[] {250, 500}, "B", new double[] {250, 1500}));
-        private static final CellGrouping THIN_COLUMN_GROUPING = buildGrouping(Map.of(
+        private static final CellGrouping THIN_COLUMN_GROUPING = buildIdentityGroupingOver(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY));
 
         // A 2x2 block of 1000-unit cells: a square cluster (inset x 150..1850,
@@ -157,7 +146,7 @@ final class ClusterAnchorPlacementTest {
             "B", listSquareCellEdges(CELL_SIDE, 0, null, null, "D", "A"),
             "C", listSquareCellEdges(0, CELL_SIDE, "A", "D", null, null),
             "D", listSquareCellEdges(CELL_SIDE, CELL_SIDE, "B", null, null, "C")));
-        private static final CellGrouping SQUARE_GRID_GROUPING = buildGrouping(Map.of(
+        private static final CellGrouping SQUARE_GRID_GROUPING = buildIdentityGroupingOver(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY, "C", GROUP_KEY, "D", GROUP_KEY));
 
         // Sites strung vertically down the square's centre: the cluster's principal axis
@@ -188,13 +177,13 @@ final class ClusterAnchorPlacementTest {
             "A", new double[] {500, 500}, "B", new double[] {1500, 500},
             "C", new double[] {2500, 500}, "D", new double[] {500, 1500},
             "E", new double[] {500, 2500}));
-        private static final CellGrouping BOOT_GROUPING = buildGrouping(Map.of(
+        private static final CellGrouping BOOT_GROUPING = buildIdentityGroupingOver(Map.of(
             "A", GROUP_KEY, "B", GROUP_KEY, "C", GROUP_KEY, "D", GROUP_KEY,
             "E", GROUP_KEY));
 
         // The lone-member grouping the single-system fits run under.
         private static final CellGrouping SINGLE_SYSTEM_GROUPING =
-            buildGrouping(Map.of("A", GROUP_KEY));
+            buildIdentityGroupingOver(Map.of("A", GROUP_KEY));
 
         // The partitions the sweeps run over, each composing one fixture's clusters with the
         // cells they were cut from. Named here rather than assembled at every case, so a case
@@ -216,7 +205,7 @@ final class ClusterAnchorPlacementTest {
             List.of(buildCellKeys("A"), buildCellKeys("B")),
             HORIZONTAL_PAIR_EDGES,
             HORIZONTAL_PAIR_SITES,
-            buildGrouping(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)));
+            buildIdentityGroupingOver(Map.of("A", GROUP_KEY, "B", RIVAL_GROUP_KEY)));
 
         // The fused pair with no cell edges: nothing traces a border ring, so no candidate can
         // be proven interior and only the dot can show.
@@ -689,6 +678,30 @@ final class ClusterAnchorPlacementTest {
 
             assertThat(anchors.get(0).identity())
                 .isEqualTo(HORIZONTAL_PAIR_IDENTITY);
+        }
+
+        @Test
+        void computeClusterAnchorsNarrowsItsFirstMemberToTheIdTheOwnersAreKeyedBy() {
+            // The join with the holding: a cluster's members arrive keyed and the owner map names
+            // a system by id, so the owner every member shares is found through the first
+            // member's id arm even where that key states an anchor as well.
+            var anchoredMember = new SystemKey("A", "", "8b3");
+
+            var anchors = computeAnchors(
+                new ClusterPartition(
+                    List.of(List.of(anchoredMember)),
+                    buildKeyedValues(Map.of(
+                        "A",
+                        listSquareCellEdges(0, 0, null, null, null, null))),
+                    Map.of(anchoredMember, new double[] {500, 500}),
+                    buildIdentityGroupingOver(Map.of("A", GROUP_KEY))),
+                buildSpec(0.0, 0.0, 3, 1, 0.0, 2.0),
+                createLabelResolvers(buildSlenderNameEstimators()));
+
+            // The owner reached the identity, which is what a name and a shade are resolved by;
+            // an unresolved one would leave every cluster of the sweep named after nobody.
+            assertThat(anchors.get(0).identity().ownerKey())
+                .isEqualTo(GROUP_KEY);
         }
 
         @Test
@@ -1425,28 +1438,12 @@ final class ClusterAnchorPlacementTest {
             var maxX = minX + width;
             var maxY = minY + height;
             return List.of(
-                buildEdge(minX, minY, maxX, minY, bottomNeighbour),
-                buildEdge(maxX, minY, maxX, maxY, rightNeighbour),
-                buildEdge(maxX, maxY, minX, maxY, topNeighbour),
-                buildEdge(minX, maxY, minX, minY, leftNeighbour));
+                buildEdgeFacing(minX, minY, maxX, minY, bottomNeighbour),
+                buildEdgeFacing(maxX, minY, maxX, maxY, rightNeighbour),
+                buildEdgeFacing(maxX, maxY, minX, maxY, topNeighbour),
+                buildEdgeFacing(minX, maxY, minX, minY, leftNeighbour));
         }
 
-        // One cell edge facing the given neighbour system, or the reach bound when it is null.
-        private static CellEdge buildEdge(
-                double x1,
-                double y1,
-                double x2,
-                double y2,
-                String neighbour) {
-            return new CellEdge(
-                x1,
-                y1,
-                x2,
-                y2,
-                neighbour == null
-                    ? EdgeTarget.REACH_BOUND
-                    : new EdgeTarget.AcrossSystem(buildCellKey(neighbour)));
-        }
     }
 
     @Nested

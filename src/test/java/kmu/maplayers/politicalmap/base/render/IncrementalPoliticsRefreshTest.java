@@ -9,7 +9,6 @@ import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellEdge;
-import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.RevisedCellGeometry;
 import kmu.maplayers.base.labels.Label;
 import kmu.maplayers.base.labels.LabelLineBoxes;
@@ -49,12 +48,14 @@ import org.mockito.MockedStatic;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
@@ -638,14 +639,23 @@ final class IncrementalPoliticsRefreshTest {
             var twinCell = new SystemKey(FLIPPED_SYSTEM, null, "38d53");
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
+            // Cut order is stated rather than left to a hash, because the fan-out walks the cut
+            // and the holding is keyed by id: the first cell walked is the one whose flip is
+            // recorded, and the id cannot tell a later walk that the holder has already moved.
+            var cellEdgesByCellKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
+
+            cellEdgesByCellKey.put(firstCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0));
+            cellEdgesByCellKey.put(twinCell, buildSquareCellFacing(NEIGHBOUR_SYSTEM, 100));
+
+            var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
+
+            systemKeyByCellKey.put(firstCell, firstCell);
+            systemKeyByCellKey.put(twinCell, twinCell);
+
             when(cellGeometry.cells().getCellEdgesByCellKey())
-                .thenReturn(Map.of(
-                    firstCell,
-                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 0),
-                    twinCell,
-                    buildSquareCellFacing(NEIGHBOUR_SYSTEM, 100)));
+                .thenReturn(cellEdgesByCellKey);
             when(cellGeometry.cells().getSystemKeyByCellKey())
-                .thenReturn(Map.of(firstCell, firstCell, twinCell, twinCell));
+                .thenReturn(systemKeyByCellKey);
 
             assertResolvesTo(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON));
 
@@ -1052,10 +1062,10 @@ final class IncrementalPoliticsRefreshTest {
     // geometry a case needs when the cell it is about is redrawn and so cut afresh from its edges.
     private static List<CellEdge> buildBandSizedIsolatedCell() {
         return List.of(
-            new CellEdge(10000, 10000, 14000, 10000, EdgeTarget.REACH_BOUND),
-            new CellEdge(14000, 10000, 14000, 14000, EdgeTarget.REACH_BOUND),
-            new CellEdge(14000, 14000, 10000, 14000, EdgeTarget.REACH_BOUND),
-            new CellEdge(10000, 14000, 10000, 10000, EdgeTarget.REACH_BOUND));
+            buildEdgeFacing(10000, 10000, 14000, 10000, null),
+            buildEdgeFacing(14000, 10000, 14000, 14000, null),
+            buildEdgeFacing(14000, 14000, 10000, 14000, null),
+            buildEdgeFacing(10000, 14000, 10000, 10000, null));
     }
 
     // A closed four-edge cell whose every edge faces its own outer reach, so no flip anywhere can
@@ -1063,10 +1073,10 @@ final class IncrementalPoliticsRefreshTest {
     // re-shape.
     private static List<CellEdge> buildIsolatedSquareCell(double offsetX) {
         return List.of(
-            new CellEdge(offsetX, 0, offsetX + 50, 0, EdgeTarget.REACH_BOUND),
-            new CellEdge(offsetX + 50, 0, offsetX + 50, 50, EdgeTarget.REACH_BOUND),
-            new CellEdge(offsetX + 50, 50, offsetX, 50, EdgeTarget.REACH_BOUND),
-            new CellEdge(offsetX, 50, offsetX, 0, EdgeTarget.REACH_BOUND));
+            buildEdgeFacing(offsetX, 0, offsetX + 50, 0, null),
+            buildEdgeFacing(offsetX + 50, 0, offsetX + 50, 50, null),
+            buildEdgeFacing(offsetX + 50, 50, offsetX, 50, null),
+            buildEdgeFacing(offsetX, 50, offsetX, 0, null));
     }
 
     // A territories holding the given systems, every one of which it also counts settled - the only
