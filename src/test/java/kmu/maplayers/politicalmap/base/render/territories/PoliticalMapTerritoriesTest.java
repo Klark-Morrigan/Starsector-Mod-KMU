@@ -93,11 +93,11 @@ final class PoliticalMapTerritoriesTest {
                 .isEmpty();
             assertThat(territories.getStyledClusterGroupByOwnerId())
                 .isEmpty();
-            assertThat(territories.getHolderBySystemId())
+            assertThat(territories.getHolderBySystemKey())
                 .isEmpty();
-            assertThat(territories.getInhabitedSystemIds())
+            assertThat(territories.getInhabitedSystemKeys())
                 .isEmpty();
-            assertThat(territories.getUnfilledSystemIds())
+            assertThat(territories.getUnfilledSystemKeys())
                 .isEmpty();
 
             // The placeholder's own shades are MapStyling's to pin; read back here only to prove
@@ -120,9 +120,9 @@ final class PoliticalMapTerritoriesTest {
                 .isFalse();
             assertThat(territories.getRecedeAdjustment())
                 .isEqualTo(ElementStyleAdjustment.NONE);
-            assertThat(territories.getContestedSystemIds())
+            assertThat(territories.getContestedSystemKeys())
                 .isEmpty();
-            assertThat(territories.getSpotlitPresenceSystemIds())
+            assertThat(territories.getSpotlitPresenceSystemKeys())
                 .isEmpty();
         }
     }
@@ -279,12 +279,12 @@ final class PoliticalMapTerritoriesTest {
         @Test
         void gettersReturnEachConstructorInputInItsMatchingSlot() {
 
-            var holders = new LinkedHashMap<String, DominantHolder>();
-            var inhabited = new LinkedHashSet<>(Set.of("inhabited-system"));
+            var holders = new LinkedHashMap<SystemKey, DominantHolder>();
+            var inhabited = new LinkedHashSet<>(Set.of(buildCellKey("inhabited-system")));
 
             // A distinct unfilled set so a swapped slot is caught by identity, held apart from the
             // inhabited set it sits beside.
-            var unfilled = new LinkedHashSet<>(Set.of("unfilled-system"));
+            var unfilled = new LinkedHashSet<>(Set.of(buildCellKey("unfilled-system")));
             // The neutral in both slots, as a factionless cell's pair always is, so the colour read
             // off it can only be the shade put in.
             var neutralColour = Color.CYAN;
@@ -333,11 +333,11 @@ final class PoliticalMapTerritoriesTest {
             var selectedBlocId = "selected-bloc";
 
             // A distinct contested set so a swapped filter-snapshot field is caught by identity.
-            var contested = new LinkedHashSet<>(Set.of("contested-system"));
+            var contested = new LinkedHashSet<>(Set.of(buildCellKey("contested-system")));
 
             // Likewise distinct, and held apart from the contested set it stands beside: both name
             // systems the spotlit bloc is in, so only differing contents catch a swap between them.
-            var spotlitPresence = new LinkedHashSet<>(Set.of("present-unheld-system"));
+            var spotlitPresence = new LinkedHashSet<>(Set.of(buildCellKey("present-unheld-system")));
 
             var occupancy = SystemOccupancy.createCopyOf(holders, inhabited, spotlitPresence);
 
@@ -367,11 +367,11 @@ final class PoliticalMapTerritoriesTest {
             // when the three facts moved behind one type.
             assertThat(territories.getOccupancy())
                 .isSameAs(occupancy);
-            assertThat(territories.getHolderBySystemId())
-                .isSameAs(occupancy.getHolderBySystemId());
-            assertThat(territories.getInhabitedSystemIds())
-                .isSameAs(occupancy.getInhabitedSystemIds());
-            assertThat(territories.getUnfilledSystemIds())
+            assertThat(territories.getHolderBySystemKey())
+                .isSameAs(occupancy.getHolderBySystemKey());
+            assertThat(territories.getInhabitedSystemKeys())
+                .isSameAs(occupancy.getInhabitedSystemKeys());
+            assertThat(territories.getUnfilledSystemKeys())
                 .isSameAs(unfilled);
             assertThat(territories.getNeutralPalette())
                 .isSameAs(neutralPalette);
@@ -405,10 +405,10 @@ final class PoliticalMapTerritoriesTest {
                 .isTrue();
             assertThat(territories.getRecedeAdjustment())
                 .isSameAs(recedeAdjustment);
-            assertThat(territories.getContestedSystemIds())
+            assertThat(territories.getContestedSystemKeys())
                 .isSameAs(contested);
-            assertThat(territories.getSpotlitPresenceSystemIds())
-                .isSameAs(occupancy.getSpotlitPresenceSystemIds());
+            assertThat(territories.getSpotlitPresenceSystemKeys())
+                .isSameAs(occupancy.getSpotlitPresenceSystemKeys());
         }
     }
 
@@ -700,7 +700,7 @@ final class PoliticalMapTerritoriesTest {
             assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
                 .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "B", "C"));
 
-            territories.getOccupancy().recordHolderOf("B", readOwnerOf("RIVAL"));
+            territories.getOccupancy().recordHolderOf(buildCellKey("B"), readOwnerOf("RIVAL"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))
@@ -719,7 +719,7 @@ final class PoliticalMapTerritoriesTest {
             var territories = buildOwnedBy(Map.of("A", "F", "B", "RIVAL", "C", "F"));
             reindex(territories, edges);
 
-            territories.getOccupancy().recordHolderOf("B", readOwnerOf("F"));
+            territories.getOccupancy().recordHolderOf(buildCellKey("B"), readOwnerOf("F"));
             reindex(territories, edges);
 
             assertThat(territories.getClusterIndex().findClusterMembersOf(buildCellKey("A")))

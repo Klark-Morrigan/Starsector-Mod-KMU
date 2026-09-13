@@ -56,6 +56,8 @@ or space no owner holds -
 so [`CellGrouping`](CellGrouping.java) makes "who owns this cell" two lookups:
 the cell resolves to the system it draws as,
 and that system resolves to an owner.
+Both lookups are keyed by `SystemKey`,
+so two systems sharing a vanilla id carry two cells and two owners rather than one of each.
 
 ## From edges to clusters
 

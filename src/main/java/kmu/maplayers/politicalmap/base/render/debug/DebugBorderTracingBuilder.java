@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.debug;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.opengl.PolygonTessellator;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -69,17 +70,17 @@ public final class DebugBorderTracingBuilder {
         // to inherit from. Held in a local because both reads below take it, which is what makes
         // the overlay's holding and its inhabitation answer off one walk of each system.
         var pass = HolderPass.readFromLunaSettings(sector, HolderGrouping.identity());
-        var ownerBySystemId = SectorPolitics.resolveDominantHolderBySystemId(pass);
+        var ownerBySystemKey = SectorPolitics.resolveDominantHolderBySystemKey(pass);
 
         // The agnostic geometry groups the drawn cells, resolving each to the system it draws
         // as and that system to its faction id.
         var cellGrouping = DominantHolder.mapCellGrouping(
             geometryCache.getSystemKeyByCellKey(),
-            ownerBySystemId);
+            ownerBySystemKey);
 
         // The same inhabitation read the production build classifies its factionless cells by,
         // through the same seam, so the overlay shows the cells the map would show.
-        var inhabitedSystemIds = PoliticalMapInhabitation.readInhabitedSystemIds(pass);
+        var inhabitedSystemKeys = PoliticalMapInhabitation.readInhabitedSystemKeys(pass);
 
         // The same trace and the same theme the production build reads, so a stage captured here is
         // the geometry the normal render would have drawn rather than one this builder assembled
@@ -137,7 +138,7 @@ public final class DebugBorderTracingBuilder {
         addFactionlessOutlines(
             geometryCache,
             cellGrouping,
-            inhabitedSystemIds,
+            inhabitedSystemKeys,
             renderStyle,
             stageCollector);
 
@@ -153,7 +154,7 @@ public final class DebugBorderTracingBuilder {
     private static void addFactionlessOutlines(
             CellGeometryCache geometryCache,
             CellGrouping cellGrouping,
-            Set<String> inhabitedSystemIds,
+            Set<SystemKey> inhabitedSystemKeys,
             RenderStyle renderStyle,
             ClusterBorderStageCollector stageCollector) {
 
@@ -168,12 +169,11 @@ public final class DebugBorderTracingBuilder {
                 continue;
             }
             // A factionless cell resolves its settled/uninhabited style through the system it
-            // draws as, narrowed to the id the inhabitation scan is keyed by; a cell with no
-            // system of its own is uninhabited.
-            var drawnSystemId = cellGrouping.resolveDrawnSystemIdOf(entry.getKey());
+            // draws as; a cell with no system of its own is uninhabited.
+            var drawnSystemKey = cellGrouping.resolveDrawnSystemKeyOf(entry.getKey());
             var style = renderStyle.categoryStyle(FactionlessStyleResolver.resolveCategoryOf(
-                inhabitedSystemIds,
-                drawnSystemId));
+                inhabitedSystemKeys,
+                drawnSystemKey));
 
             if (!style.outer().isDrawn()) {
                 continue;
@@ -181,7 +181,7 @@ public final class DebugBorderTracingBuilder {
             var shaped = CellShaper.shapeCell(
                 entry.getValue(),
                 null,
-                cellGrouping.ownerBySystemId(),
+                cellGrouping.ownerBySystemKey(),
                 CellShaper.BORDER_INSET_DISTANCE);
 
             if (shaped.fillPolygon().isEmpty()) {

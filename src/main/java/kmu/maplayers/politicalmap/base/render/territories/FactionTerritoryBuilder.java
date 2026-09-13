@@ -77,11 +77,10 @@ public final class FactionTerritoryBuilder {
         var style = styling.style();
         var adjustment = styling.adjustment();
 
-        // Every system of a bloc shares its palette, so any member resolves the same colours. The
-        // member's key narrows to reach the holding, which is keyed by id.
+        // Every system of a bloc shares its palette, so any member resolves the same colours.
         var holder = territories
-            .getHolderBySystemId()
-            .get(cellGrouping.resolveDrawnSystemIdOf(memberCellKeys.get(0)));
+            .getHolderBySystemKey()
+            .get(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0)));
 
         var palette = MapPalettes.resolveEffectivePalette(
             adjustment,
@@ -137,8 +136,8 @@ public final class FactionTerritoryBuilder {
                 FillSplit.splitMembersByFillState(
                     cellGrouping,
                     memberCellKeys,
-                    territories.getContestedSystemIds(),
-                    territories.getUnfilledSystemIds()),
+                    territories.getContestedSystemKeys(),
+                    territories.getUnfilledSystemKeys()),
                 blocId,
                 fillColour);
 
@@ -242,6 +241,6 @@ public final class FactionTerritoryBuilder {
 
         return DominantHolder.mapCellGrouping(
             geometryCache.getSystemKeyByCellKey(),
-            territories.getHolderBySystemId());
+            territories.getHolderBySystemKey());
     }
 }

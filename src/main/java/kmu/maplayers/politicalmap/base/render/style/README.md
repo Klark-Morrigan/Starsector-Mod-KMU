@@ -181,8 +181,8 @@ and every rule here stays exercisable on hand-built shades.
   and whether the pass's recede reaches it
   (a settled cell yes, an uninhabited one no, and a settled one the spotlit bloc lives in no either).
   Classifies off the pass's inhabited-system set
-  (`PoliticalMapInhabitation.readInhabitedSystemIds`) and its spotlit-presence set
-  (`FilteredPolitics.findPresentSystemIds`),
+  (`PoliticalMapInhabitation.readInhabitedSystemKeys`) and its spotlit-presence set
+  (`FilteredPolitics.findPresentSystemKeys`),
   never off the holder map that sent the cell here.
   Both sets come off one habitation value per system,
   so a cell drawn as uninhabited is never one the spotlight spared.

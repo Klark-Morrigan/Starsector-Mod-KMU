@@ -65,7 +65,7 @@ final class SplitFillBuilderTest {
 
     private static final CellGrouping GROUPING = new CellGrouping(
         Map.of(HELD_SYSTEM, HELD_SYSTEM, HATCHED_SYSTEM, HATCHED_SYSTEM),
-        Map.of(HELD_SYSTEM_ID, REGION_KEY, HATCHED_SYSTEM_ID, REGION_KEY));
+        Map.of(HELD_SYSTEM, REGION_KEY, HATCHED_SYSTEM, REGION_KEY));
 
     // The body the fill is clipped to: the square [0, 1000] x [0, 1000], area 1e6, overlapping
     // the members' own cells.
@@ -215,7 +215,7 @@ final class SplitFillBuilderTest {
         return FillSplit.splitMembersByFillState(
             GROUPING,
             List.of(HELD_SYSTEM, HATCHED_SYSTEM),
-            Set.of(HATCHED_SYSTEM_ID),
+            Set.of(HATCHED_SYSTEM),
             Set.of());
     }
 

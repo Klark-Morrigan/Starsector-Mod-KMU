@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
@@ -21,6 +22,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -40,8 +43,8 @@ final class ClusterLabelStylingSnapshotTest {
         @Test
         void resolveFromCarriesTheTerritoriesOwnHoldersAndDesaturationPalette() {
 
-            var holderBySystemId = Map.of(
-                "corvus",
+            var holderBySystemKey = Map.of(
+                buildCellKey("corvus"),
                 new DominantHolder(
                     SPOTLIT_BLOC_ID,
                     Color.BLUE,
@@ -50,7 +53,7 @@ final class ClusterLabelStylingSnapshotTest {
             var desaturationPalette = new FactionPalette(Color.LIGHT_GRAY, Color.GRAY);
 
             var territories = buildTerritories(
-                holderBySystemId,
+                holderBySystemKey,
                 desaturationPalette,
                 buildViewGrouping(),
                 buildSpotlightPicks());
@@ -60,8 +63,8 @@ final class ClusterLabelStylingSnapshotTest {
             // Against what the built map itself hands out rather than against what was handed to
             // it: the holders are the occupancy's own, so identity here is what says the snapshot
             // reads them live rather than taking a copy that a later refresh would leave behind.
-            assertThat(styling.holderBySystemId())
-                .isSameAs(territories.getHolderBySystemId());
+            assertThat(styling.holderBySystemKey())
+                .isSameAs(territories.getHolderBySystemKey());
 
             assertThat(styling.desaturationPalette())
                 .isSameAs(desaturationPalette);
@@ -105,13 +108,13 @@ final class ClusterLabelStylingSnapshotTest {
     }
 
     private static PoliticalMapTerritories buildTerritories(
-            Map<String, DominantHolder> holderBySystemId,
+            Map<SystemKey, DominantHolder> holderBySystemKey,
             FactionPalette desaturationPalette,
             ViewGrouping viewGrouping,
             ContentInputs contentInputs) {
 
         return new PoliticalMapTerritories(
-            SystemOccupancy.createCopyOf(holderBySystemId, Set.of(), Set.of()),
+            SystemOccupancy.createCopyOf(holderBySystemKey, Set.of(), Set.of()),
             new LinkedHashSet<>(),
             new MapStyling(
                 null,

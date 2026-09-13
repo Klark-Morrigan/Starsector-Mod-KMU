@@ -29,29 +29,29 @@ public record FillSplit(
      * Splits a footprint's member cells into the three states, resolving each cell to the
      * system it draws as and classifying that system.
      *
-     * <p>The cells are addressed by key and the two exception sets by id, the layer's holding
-     * being keyed that way, so the classification narrows one to the other: two systems sharing
-     * an id draw in one state, which is what the id-keyed sets can say about them.
+     * <p>The cells and the two exception sets share one address, so a system's state is read
+     * under the very key its cell resolved to and two systems sharing a vanilla id can draw in
+     * two different states.
      *
-     * @param cellGrouping      resolves which system each member cell draws as
-     * @param memberCellKeys    the footprint's cells
-     * @param hatchedSystemIds  the cluster's systems that draw hatched rather than solid
-     * @param unfilledSystemIds the cluster's systems that draw no fill at all
+     * @param cellGrouping       resolves which system each member cell draws as
+     * @param memberCellKeys     the footprint's cells
+     * @param hatchedSystemKeys  the cluster's systems that draw hatched rather than solid
+     * @param unfilledSystemKeys the cluster's systems that draw no fill at all
      * @return the three states, each holding its own cells and systems
      */
     public static FillSplit splitMembersByFillState(
             CellGrouping cellGrouping,
             List<SystemKey> memberCellKeys,
-            Set<String> hatchedSystemIds,
-            Set<String> unfilledSystemIds) {
+            Set<SystemKey> hatchedSystemKeys,
+            Set<SystemKey> unfilledSystemKeys) {
 
         var split = createEmpty();
         for (var cellKey : memberCellKeys) {
             var systemKey = cellGrouping.resolveDrawnSystemKeyOf(cellKey);
             var members = split.resolveMembersOf(classifyFillState(
                 systemKey,
-                hatchedSystemIds,
-                unfilledSystemIds));
+                hatchedSystemKeys,
+                unfilledSystemKeys));
 
             members.cellKeys().add(cellKey);
             if (systemKey != null) {
@@ -71,16 +71,16 @@ public record FillSplit(
      */
     public static FillState classifyFillState(
             SystemKey systemKey,
-            Set<String> hatchedSystemIds,
-            Set<String> unfilledSystemIds) {
+            Set<SystemKey> hatchedSystemKeys,
+            Set<SystemKey> unfilledSystemKeys) {
 
         if (systemKey == null) {
             return FillState.SOLID;
         }
-        if (unfilledSystemIds.contains(systemKey.systemId())) {
+        if (unfilledSystemKeys.contains(systemKey)) {
             return FillState.UNFILLED;
         }
-        if (hatchedSystemIds.contains(systemKey.systemId())) {
+        if (hatchedSystemKeys.contains(systemKey)) {
             return FillState.HATCHED;
         }
         return FillState.SOLID;

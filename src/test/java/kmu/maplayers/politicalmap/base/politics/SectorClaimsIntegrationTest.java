@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
@@ -32,30 +33,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class SectorClaimsIntegrationTest {
 
     @Nested
-    class ResolveClaimingHolderBySystemId {
+    class ResolveClaimingHolderBySystemKey {
 
         @Test
-        void resolveClaimingHolderBySystemIdReturnsEmptyWhenThePassHasNoSector() {
+        void resolveClaimingHolderBySystemKeyReturnsEmptyWhenThePassHasNoSector() {
             var claimReaderFake = new ClaimReaderFake();
 
-            assertThat(SectorClaims.resolveClaimingHolderBySystemId(
+            assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(null), claimReaderFake)).isEmpty();
         }
 
         @Test
-        void resolveClaimingHolderBySystemIdOmitsSystemsWithNoClaim() {
+        void resolveClaimingHolderBySystemKeyOmitsSystemsWithNoClaim() {
             // A system the port reports no claimant for is absent from the map, exactly as an
             // uninhabited system is absent from the held-dominance pass.
             var sectorMock = buildSectorWithSystems(
                     List.of(buildFaction("hegemony", HEGEMONY_BRIGHT)), listSystemMarkets("unclaimed"));
             var claimReaderFake = new ClaimReaderFake();
 
-            assertThat(SectorClaims.resolveClaimingHolderBySystemId(
+            assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake)).isEmpty();
         }
 
         @Test
-        void resolveClaimingHolderBySystemIdColoursAClaimedSystemInItsClaimantsPalette() {
+        void resolveClaimingHolderBySystemKeyColoursAClaimedSystemInItsClaimantsPalette() {
             // Under identity the claimant's bloc is itself, so the claimed system resolves to the
             // claiming faction's own key and authored shades - the same holder a held system of that
             // faction would carry, so the two fuse into one territory downstream.
@@ -64,14 +65,14 @@ final class SectorClaimsIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "hegemony");
 
-            assertThat(SectorClaims.resolveClaimingHolderBySystemId(
+            assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake))
-                    .containsExactly(Map.entry("claimed",
+                    .containsExactly(Map.entry(buildCellKey("claimed"),
                             new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
-        void resolveClaimingHolderBySystemIdRollsAnAlliedClaimantIntoItsAllianceBloc() {
+        void resolveClaimingHolderBySystemKeyRollsAnAlliedClaimantIntoItsAllianceBloc() {
             // The alliances grouping folds the claiming faction into its alliance bloc, and the
             // bloc paints in its colour faction's palette - so an allied claimant's claim lands
             // under the alliance key and colour with no claim-specific rollup of its own.
@@ -84,14 +85,14 @@ final class SectorClaimsIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "hegemony");
 
-            assertThat(SectorClaims.resolveClaimingHolderBySystemId(
+            assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     HolderPass.over(sectorMock, BASE_FOG, grouping), claimReaderFake))
-                    .containsExactly(Map.entry("claimed",
+                    .containsExactly(Map.entry(buildCellKey("claimed"),
                             new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }
 
         @Test
-        void resolveClaimingHolderBySystemIdDropsAClaimWhoseColourFactionDoesNotResolve() {
+        void resolveClaimingHolderBySystemKeyDropsAClaimWhoseColourFactionDoesNotResolve() {
             // A claimant the sector cannot resolve to a faction (its palette gone) yields a null
             // holder, which is dropped rather than painting a colourless cluster - mirroring how an
             // unresolved held holder drops its system.
@@ -99,7 +100,7 @@ final class SectorClaimsIntegrationTest {
             var claimReaderFake = new ClaimReaderFake();
             claimReaderFake.setClaim("claimed", "ghost-faction");
 
-            assertThat(SectorClaims.resolveClaimingHolderBySystemId(
+            assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
                     buildHolderPassOver(sectorMock), claimReaderFake)).isEmpty();
         }
     }

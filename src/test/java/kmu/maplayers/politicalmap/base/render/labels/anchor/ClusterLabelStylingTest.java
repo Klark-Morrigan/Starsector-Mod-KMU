@@ -17,6 +17,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -296,7 +298,7 @@ final class ClusterLabelStylingTest {
             // Every system of a bloc carries that bloc's own two shades, so the resolver must
             // key off the bloc id the search hands it rather than any one system.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
-                Map.of("alpha", FACTION_F, "beta", FACTION_G),
+                Map.of(buildCellKey("alpha"), FACTION_F, buildCellKey("beta"), FACTION_G),
                 nameStyles(FactionPaletteSlot.PRIMARY),
                 blocId -> new BlocStyleDecision(false, ElementStyleAdjustment.NONE),
                 UNUSED_PALETTE);
@@ -311,7 +313,7 @@ final class ClusterLabelStylingTest {
             // to follow and how the bloc recedes - so a bloc classified independent takes the
             // independent choice while its neighbour keeps the faction one.
             var resolver = ClusterLabelStyling.newLabelColourResolver(
-                Map.of("alpha", FACTION_F, "beta", FACTION_G),
+                Map.of(buildCellKey("alpha"), FACTION_F, buildCellKey("beta"), FACTION_G),
                 nameStyles(
                     FactionPaletteSlot.PRIMARY,
                     FactionPaletteSlot.SECONDARY,
@@ -330,7 +332,7 @@ final class ClusterLabelStylingTest {
             // the decision is made once and reused rather than re-resolved per cluster.
             var askedBlocIds = new ArrayList<String>();
             var resolver = ClusterLabelStyling.newLabelColourResolver(
-                Map.of("alpha", FACTION_F),
+                Map.of(buildCellKey("alpha"), FACTION_F),
                 nameStyles(FactionPaletteSlot.PRIMARY),
                 blocId -> {
                     askedBlocIds.add(blocId);

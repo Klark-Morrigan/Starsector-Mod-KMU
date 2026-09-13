@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import java.util.Map;
@@ -20,17 +22,17 @@ import java.util.Set;
  * through a second named source, because they are co-produced with the holder map in the one
  * pass that resolves it: a system's holder and how its fill is drawn are decided together.
  *
- * @param ownerBySystemId the bloc painting each owned system, keyed by system id; a system
- *                        with no holder is absent, so it draws as an uninhabited cell
- * @param contestedSystemIds the owned systems drawn hatched rather than solid - the spotlit
+ * @param ownerBySystemKey the bloc painting each owned system, keyed by {@link SystemKey}; a
+ *                        system with no holder is absent, so it draws as an uninhabited cell
+ * @param contestedSystemKeys the owned systems drawn hatched rather than solid - the spotlit
  *                        bloc's present-but-dominated systems under a filter; empty when the
  *                        whole resolution fills solid
- * @param unfilledSystemIds the owned systems drawn with no fill rather than solid - held by
+ * @param unfilledSystemKeys the owned systems drawn with no fill rather than solid - held by
  *                        their bloc for border and label, but painting nothing inside its one
  *                        frontier; empty when the whole resolution fills solid
  */
 public record HolderResolution(
-    Map<String, DominantHolder> ownerBySystemId,
-    Set<String> contestedSystemIds,
-    Set<String> unfilledSystemIds) {
+    Map<SystemKey, DominantHolder> ownerBySystemKey,
+    Set<SystemKey> contestedSystemKeys,
+    Set<SystemKey> unfilledSystemKeys) {
 }

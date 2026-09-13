@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -37,7 +38,7 @@ public final class FilteredClaims {
     /**
      * Builds the claiming holder per system with the selected bloc's claims put under its
      * spotlight - the entry the claim-reading providers call in place of
-     * {@link SectorClaims#resolveClaimingHolderBySystemId}.
+     * {@link SectorClaims#resolveClaimingHolderBySystemKey}.
      *
      * <p>Off filter, or with no sector to read a palette from, this is that plain claim resolve
      * unchanged. A claim of the selected bloc whose spotlight holder does not resolve is dropped,
@@ -49,20 +50,20 @@ public final class FilteredClaims {
      *                       over no sector yields an empty map
      * @param claimReader    the claim source, read once per system
      * @param selectedBlocId the spotlighted bloc's id, or null off filter
-     * @return the claiming holder keyed by system id, in star-system walk order
+     * @return the claiming holder keyed by {@link SystemKey}, in star-system walk order
      */
-    public static Map<String, DominantHolder> resolveFilteredClaims(
+    public static Map<SystemKey, DominantHolder> resolveFilteredClaims(
             HolderPass pass,
             ClaimReader claimReader,
             String selectedBlocId) {
 
-        var claimingHolderBySystemId = SectorClaims.resolveClaimingHolderBySystemId(
+        var claimingHolderBySystemKey = SectorClaims.resolveClaimingHolderBySystemKey(
             pass,
             claimReader);
         var sector = pass.sector();
 
         if (sector == null || selectedBlocId == null) {
-            return claimingHolderBySystemId;
+            return claimingHolderBySystemKey;
         }
 
         // Resolved once for the whole walk: every system the bloc claims joins the same spotlight
@@ -71,9 +72,9 @@ public final class FilteredClaims {
             sector,
             pass.grouping(),
             selectedBlocId);
-        var spotlitClaims = new LinkedHashMap<String, DominantHolder>();
+        var spotlitClaims = new LinkedHashMap<SystemKey, DominantHolder>();
 
-        for (var claim : claimingHolderBySystemId.entrySet()) {
+        for (var claim : claimingHolderBySystemKey.entrySet()) {
             var holder = selectedBlocId.equals(claim.getValue().factionId())
                 ? spotlitHolder
                 : claim.getValue();

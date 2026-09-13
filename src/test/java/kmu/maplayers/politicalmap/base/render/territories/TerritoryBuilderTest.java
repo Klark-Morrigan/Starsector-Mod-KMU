@@ -3,6 +3,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.starsector.factions.StarsectorFactionColours;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createInertCategoryStyle;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory;
 
@@ -68,7 +70,7 @@ final class TerritoryBuilderTest {
     private static final String SHAPE_AND_STYLE_SECTION = "politicalMap.shapeAndStyleCells";
 
     // One held system, for the cases about a holding handed in rather than read.
-    private static final String HELD_SYSTEM_ID = "corvus";
+    private static final SystemKey HELD_SYSTEM = buildCellKey("corvus");
     private static final DominantHolder HELD_BY = new DominantHolder("hegemony", NEUTRAL, NEUTRAL);
 
     // The picks a pass off filter was baked under. No case here spotlights a bloc, so the whole
@@ -102,10 +104,10 @@ final class TerritoryBuilderTest {
         // every system for its colonies, so which pass reached it decides whether the rebuild
         // read the sector once or twice.
         inhabitationMock
-            .when(() -> PoliticalMapInhabitation.readInhabitedSystemIds(any(HolderPass.class)))
+            .when(() -> PoliticalMapInhabitation.readInhabitedSystemKeys(any(HolderPass.class)))
             .thenAnswer(invocation -> {
                 inhabitationScanPasses.add(invocation.getArgument(0));
-                return Set.of("inhabited-system");
+                return Set.of(buildCellKey("inhabited-system"));
             });
         styleReaderMock
             .when(() -> RenderStyleReader.readRenderStyle(anyBoolean()))
@@ -117,7 +119,7 @@ final class TerritoryBuilderTest {
         // Each pass the presence scan is handed, kept rather than answered about: the case is
         // about which pass reached it, not what it reported.
         filteredPoliticsMock
-            .when(() -> FilteredPolitics.findPresentSystemIds(any(HolderPass.class), any(), any()))
+            .when(() -> FilteredPolitics.findPresentSystemKeys(any(HolderPass.class), any(), any()))
             .thenAnswer(invocation -> {
                 presenceScanPasses.add(invocation.getArgument(0));
                 return Set.of();
@@ -249,16 +251,16 @@ final class TerritoryBuilderTest {
                 UNFILTERED_INPUTS,
                 new ResolvedHolding(
                     new HolderResolution(
-                        Map.of(HELD_SYSTEM_ID, HELD_BY), Set.of(), Set.of()),
-                    Set.of(HELD_SYSTEM_ID),
+                        Map.of(HELD_SYSTEM, HELD_BY), Set.of(), Set.of()),
+                    Set.of(HELD_SYSTEM),
                     Set.of()));
 
             assertThat(holderPasses)
                 .isEmpty();
             assertThat(inhabitationScanPasses)
                 .isEmpty();
-            assertThat(territories.getHolderBySystemId())
-                .containsExactly(Map.entry(HELD_SYSTEM_ID, HELD_BY));
+            assertThat(territories.getHolderBySystemKey())
+                .containsExactly(Map.entry(HELD_SYSTEM, HELD_BY));
         }
 
         @Test
@@ -269,8 +271,8 @@ final class TerritoryBuilderTest {
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
             var holding = new ResolvedHolding(
-                new HolderResolution(Map.of(HELD_SYSTEM_ID, HELD_BY), Set.of(), Set.of()),
-                Set.of(HELD_SYSTEM_ID),
+                new HolderResolution(Map.of(HELD_SYSTEM, HELD_BY), Set.of(), Set.of()),
+                Set.of(HELD_SYSTEM),
                 Set.of());
 
             var territories = TerritoryBuilder.buildTerritories(
@@ -280,10 +282,10 @@ final class TerritoryBuilderTest {
                 UNFILTERED_INPUTS,
                 holding);
 
-            territories.getOccupancy().recordHolderOf(HELD_SYSTEM_ID, null);
+            territories.getOccupancy().recordHolderOf(HELD_SYSTEM, null);
 
-            assertThat(holding.resolution().ownerBySystemId())
-                .containsKey(HELD_SYSTEM_ID);
+            assertThat(holding.resolution().ownerBySystemKey())
+                .containsKey(HELD_SYSTEM);
         }
 
         @Test

@@ -267,8 +267,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             requestTheNextRebuild();
             cache.refresh(FactionsView.INSTANCE, SCREEN);
 
-            assertThat(cache.getTerritories().getInhabitedSystemIds())
-                .containsExactlyInAnyOrder(ALPHA_ID, BETA_ID);
+            assertThat(cache.getTerritories().getInhabitedSystemKeys())
+                .containsExactlyInAnyOrder(buildCellKey(ALPHA_ID), buildCellKey(BETA_ID));
         }
 
         @Test
@@ -293,8 +293,8 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             assertThat(territories.getStyledCellByCellKey())
                 .containsKey(ALPHA_CELL);
             // The fills: the same system reads as settled rather than as empty backdrop.
-            assertThat(territories.getInhabitedSystemIds())
-                .containsExactly(ALPHA_ID);
+            assertThat(territories.getInhabitedSystemKeys())
+                .containsExactly(buildCellKey(ALPHA_ID));
             // The bands: its two revealed blocs split the system, so its cell carries runs.
             assertThat(territories.getRibbonByCellKey().get(ALPHA_CELL).isEmpty())
                 .isFalse();

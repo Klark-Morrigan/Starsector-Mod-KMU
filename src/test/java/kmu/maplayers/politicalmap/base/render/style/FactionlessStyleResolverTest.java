@@ -1,11 +1,15 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,10 +21,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class FactionlessStyleResolverTest {
 
     // An immutable, null-hostile set: Set.of throws on a null probe, so a clean answer for a null
-    // system id proves the rule never reached the set with it. Both a dead colony and a living one
+    // system key proves the rule never reached the set with it. Both a dead colony and a living one
     // the pass found no holder for, since the rule must not tell the two apart.
-    private static final Set<String> INHABITED_SYSTEM_IDS =
-        Set.of("some-decivilised-system", "some-pirate-haven");
+    private static final Set<SystemKey> INHABITED_SYSTEM_KEYS = Set.of(
+        buildCellKey("some-decivilised-system"),
+        buildCellKey("some-pirate-haven"));
 
     @Nested
     class ResolveCategoryOf {
@@ -29,8 +34,8 @@ final class FactionlessStyleResolverTest {
         void resolveCategoryOfReturnsDecivilisedForASystemHoldingARevealedDeadColony() {
 
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
-                    INHABITED_SYSTEM_IDS,
-                    "some-decivilised-system"))
+                    INHABITED_SYSTEM_KEYS,
+                    buildCellKey("some-decivilised-system")))
                 .isEqualTo(PoliticalMapCategory.DECIVILISED);
         }
 
@@ -42,8 +47,8 @@ final class FactionlessStyleResolverTest {
             // It is still inhabited, so it must not fall to the backdrop category the
             // uninhabited-systems checkbox switches off.
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
-                    INHABITED_SYSTEM_IDS,
-                    "some-pirate-haven"))
+                    INHABITED_SYSTEM_KEYS,
+                    buildCellKey("some-pirate-haven")))
                 .isEqualTo(PoliticalMapCategory.DECIVILISED);
         }
 
@@ -51,8 +56,8 @@ final class FactionlessStyleResolverTest {
         void resolveCategoryOfReturnsUninhabitedForASystemOutsideTheInhabitedSet() {
 
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
-                    INHABITED_SYSTEM_IDS,
-                    "never-settled-system"))
+                    INHABITED_SYSTEM_KEYS,
+                    buildCellKey("never-settled-system")))
                 .isEqualTo(PoliticalMapCategory.UNINHABITED);
         }
 
@@ -60,7 +65,7 @@ final class FactionlessStyleResolverTest {
         void resolveCategoryOfReturnsUninhabitedForACellWithNoStarOfItsOwn() {
             // A cell drawn as no system names nothing to look up, so it is uninhabited without the
             // null id ever probing the set.
-            assertThat(FactionlessStyleResolver.resolveCategoryOf(INHABITED_SYSTEM_IDS, null))
+            assertThat(FactionlessStyleResolver.resolveCategoryOf(INHABITED_SYSTEM_KEYS, null))
                 .isEqualTo(PoliticalMapCategory.UNINHABITED);
         }
     }

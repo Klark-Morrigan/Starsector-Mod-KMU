@@ -122,7 +122,7 @@ public final class PoliticalMapTerritories implements
     // The owned systems drawn with no fill: held by their bloc for border and label but painting
     // nothing inside its one frontier, so a held/claimed boundary reads as a seam where the fill
     // stops. Set once at build alongside the occupancy, read by the per-faction fill split.
-    private final Set<String> unfilledSystemIds;
+    private final Set<SystemKey> unfilledSystemKeys;
 
     // The two cohesive input snapshots: the resolved paint scheme, and the view with its
     // once-sampled grouping. The flat getters below unwrap them so every reader keeps its original
@@ -139,7 +139,7 @@ public final class PoliticalMapTerritories implements
     // present in but does not dominate, so the faction builder hatches their cells inside the one
     // spotlit frontier while the dominated cells fill solid. Empty off filter, and fixed at build -
     // unlike the presence set beside the holder map, which moves as colonies come and go.
-    private final Set<String> contestedSystemIds;
+    private final Set<SystemKey> contestedSystemKeys;
 
     // Which contiguous territory each system sits in, re-derived by reindexClusters whenever the
     // holder map changes. Seeded empty so a build that never indexes (and the empty placeholder)
@@ -155,18 +155,18 @@ public final class PoliticalMapTerritories implements
 
     public PoliticalMapTerritories(
             SystemOccupancy occupancy,
-            Set<String> unfilledSystemIds,
+            Set<SystemKey> unfilledSystemKeys,
             MapStyling styling,
             ViewGrouping viewGrouping,
             ContentInputs contentInputs,
-            Set<String> contestedSystemIds) {
+            Set<SystemKey> contestedSystemKeys) {
 
         this.occupancy = occupancy;
-        this.unfilledSystemIds = unfilledSystemIds;
+        this.unfilledSystemKeys = unfilledSystemKeys;
         this.styling = styling;
         this.viewGrouping = viewGrouping;
         this.contentInputs = contentInputs;
-        this.contestedSystemIds = contestedSystemIds;
+        this.contestedSystemKeys = contestedSystemKeys;
     }
 
     // An empty placeholder for the render path to fall back on after a failed first
@@ -348,7 +348,7 @@ public final class PoliticalMapTerritories implements
             cellEdgesByCellKey,
             DominantHolder.mapCellGrouping(
                 systemKeyByCellKey,
-                occupancy.getHolderBySystemId())));
+                occupancy.getHolderBySystemKey())));
     }
 
     // Each bloc's bodies with the fill, hatch, and national border they share, keyed by its
@@ -402,21 +402,21 @@ public final class PoliticalMapTerritories implements
         return occupancy;
     }
 
-    public Map<String, DominantHolder> getHolderBySystemId() {
-        return occupancy.getHolderBySystemId();
+    public Map<SystemKey, DominantHolder> getHolderBySystemKey() {
+        return occupancy.getHolderBySystemKey();
     }
 
     // Every system something is standing in, whoever holds it and whether or not this layer's
     // holding accounts for them; what the factionless classifier reads to tell a settled cell from
     // the empty backdrop.
-    public Set<String> getInhabitedSystemIds() {
-        return occupancy.getInhabitedSystemIds();
+    public Set<SystemKey> getInhabitedSystemKeys() {
+        return occupancy.getInhabitedSystemKeys();
     }
 
     // The owned systems the per-faction fill split leaves empty, drawn inside their bloc's one
     // border but painting nothing; empty when every owned system fills solid.
-    public Set<String> getUnfilledSystemIds() {
-        return unfilledSystemIds;
+    public Set<SystemKey> getUnfilledSystemKeys() {
+        return unfilledSystemKeys;
     }
 
     public Color getNeutralColour() {
@@ -523,15 +523,15 @@ public final class PoliticalMapTerritories implements
     // The spotlit systems the bloc is present in but does not dominate, so the faction builder
     // hatches their cells inside the one spotlit frontier while the dominated cells fill solid.
     // Empty off filter.
-    public Set<String> getContestedSystemIds() {
-        return contestedSystemIds;
+    public Set<SystemKey> getContestedSystemKeys() {
+        return contestedSystemKeys;
     }
 
     // The settled systems the spotlit bloc lives in that no holder was resolved for, so the
     // factionless cell builder spares them the recede that sinks the rest of the sector. Empty off
     // filter, and empty on any view whose holding accounts for every inhabited system.
-    public Set<String> getSpotlitPresenceSystemIds() {
-        return occupancy.getSpotlitPresenceSystemIds();
+    public Set<SystemKey> getSpotlitPresenceSystemKeys() {
+        return occupancy.getSpotlitPresenceSystemKeys();
     }
 
     // True when there is nothing to paint, so the renderer can skip the GL state push

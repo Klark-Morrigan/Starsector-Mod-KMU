@@ -99,7 +99,7 @@ final class MarkedSystemRederiveTest {
             // gives; a spotlight case stubs where the pick lives.
             presenceMock = seams.openSeam(FilteredPolitics.class);
             presenceMock
-                .when(() -> FilteredPolitics.findPresentSystemIds(
+                .when(() -> FilteredPolitics.findPresentSystemKeys(
                     any(HolderPass.class),
                     any(),
                     any()))
@@ -120,8 +120,8 @@ final class MarkedSystemRederiveTest {
 
             rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getHolderBySystemId())
-                .containsExactly(Map.entry(FLIPPED_SYSTEM, buildHolderOf(TRITACHYON)));
+            assertThat(territories.getHolderBySystemKey())
+                .containsExactly(Map.entry(buildCellKey(FLIPPED_SYSTEM), buildHolderOf(TRITACHYON)));
         }
 
         @Test
@@ -152,7 +152,7 @@ final class MarkedSystemRederiveTest {
 
             rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getHolderBySystemId())
+            assertThat(territories.getHolderBySystemKey())
                 .isEmpty();
         }
 
@@ -187,8 +187,8 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getInhabitedSystemIds())
-                .containsExactly(FLIPPED_SYSTEM);
+            assertThat(territories.getInhabitedSystemKeys())
+                .containsExactly(buildCellKey(FLIPPED_SYSTEM));
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
@@ -205,7 +205,7 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getInhabitedSystemIds())
+            assertThat(territories.getInhabitedSystemKeys())
                 .isEmpty();
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
@@ -247,8 +247,8 @@ final class MarkedSystemRederiveTest {
 
             var disturbance = rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getSpotlitPresenceSystemIds())
-                .containsExactly(FLIPPED_SYSTEM);
+            assertThat(territories.getSpotlitPresenceSystemKeys())
+                .containsExactly(buildCellKey(FLIPPED_SYSTEM));
             assertThat(disturbance.getCellKeysToRedraw())
                 .containsExactly(buildCellKey(FLIPPED_SYSTEM));
         }
@@ -269,13 +269,13 @@ final class MarkedSystemRederiveTest {
 
             rederive(territories, FLIPPED_SYSTEM);
 
-            assertThat(territories.getSpotlitPresenceSystemIds())
+            assertThat(territories.getSpotlitPresenceSystemKeys())
                 .isEmpty();
 
             // Asked of nothing at all, since the one marked system is now held: the read walks the
             // sector to find its candidates, so handing it a system it cannot change anything for
             // is a walk paid for an answer that is discarded.
-            presenceMock.verify(() -> FilteredPolitics.findPresentSystemIds(
+            presenceMock.verify(() -> FilteredPolitics.findPresentSystemKeys(
                 any(HolderPass.class),
                 eq(SPOTLIT_BLOC),
                 eq(Set.of())));
@@ -326,11 +326,11 @@ final class MarkedSystemRederiveTest {
         // here states is the answer the batch folds.
         private void assertPickLivesIn(String systemId) {
             presenceMock
-                .when(() -> FilteredPolitics.findPresentSystemIds(
+                .when(() -> FilteredPolitics.findPresentSystemKeys(
                     any(HolderPass.class),
                     eq(SPOTLIT_BLOC),
                     any()))
-                .thenReturn(Set.of(systemId));
+                .thenReturn(Set.of(buildCellKey(systemId)));
         }
     }
 }

@@ -65,15 +65,15 @@ public final class EdgeClassifier {
      * no star across it there is nothing to reach toward; and more of the same cell is an
      * interior seam outright - the far side is this same cell, so no owner can differ.
      *
-     * <p>The neighbour is named by {@link SystemKey} and its owner is keyed by id, so the lookup
-     * narrows one to the other and answers for the first system carrying that id - which is what
-     * every id-keyed read of the sector answers with.
+     * <p>The neighbour and the owner map share one address, so the target's own
+     * {@link SystemKey} is the lookup: two systems sharing a vanilla id are two neighbours with
+     * two owners rather than one.
      *
-     * @param edge            the cell edge, tagged with what lies across it
-     * @param cellOwner       the owner of the cell this edge belongs to, or null if
-     *                        that cell is unowned
-     * @param ownerBySystemId the owner per system, to look up the owner of a system
-     *                        across the edge
+     * @param edge             the cell edge, tagged with what lies across it
+     * @param cellOwner        the owner of the cell this edge belongs to, or null if
+     *                         that cell is unowned
+     * @param ownerBySystemKey the owner per system, to look up the owner of a system
+     *                         across the edge
      * @return INTERIOR_SEAM for a shared non-null owner or for the same cell, OPEN_FRONTIER for
      *         a owned cell facing an unowned star, else BOUNDARY; the reach bound is always
      *         BOUNDARY
@@ -81,11 +81,11 @@ public final class EdgeClassifier {
     public static EdgeClass classifyAcross(
             CellEdge edge,
             String cellOwner,
-            Map<String, String> ownerBySystemId) {
+            Map<SystemKey, String> ownerBySystemKey) {
 
         var target = edge.target();
         if (target instanceof EdgeTarget.AcrossSystem acrossSystem) {
-            return classify(cellOwner, ownerBySystemId.get(acrossSystem.systemKey().systemId()));
+            return classify(cellOwner, ownerBySystemKey.get(acrossSystem.systemKey()));
         }
         // The same cell on both sides, so the edge fuses whatever that cell's owner is - an
         // unowned cell's own cut included, which "the same owner both sides" could not express

@@ -2,6 +2,8 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.visibility.systems.MapVisibility;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 
@@ -38,19 +40,19 @@ public final class PoliticalMapInhabitation {
      * nothing and reports nothing rather than guarding a sector it was never given.
      *
      * @param pass the rebuild's reading of the sector, whose walk of each system this scan shares
-     * @return the ids of every system holding a colony somebody lives on or a known collapsed one
+     * @return the keys of every system holding a colony somebody lives on or a known collapsed one
      */
-    public static Set<String> readInhabitedSystemIds(HolderPass pass) {
+    public static Set<SystemKey> readInhabitedSystemKeys(HolderPass pass) {
 
-        var systemIds = new HashSet<String>();
+        var systemKeys = new HashSet<SystemKey>();
 
         for (var system : pass.readSystems()) {
 
             if (isSystemInhabited(pass, system)) {
-                systemIds.add(system.getId());
+                systemKeys.add(SystemKey.readKeyOf(system));
             }
         }
-        return systemIds;
+        return systemKeys;
     }
 
     /**

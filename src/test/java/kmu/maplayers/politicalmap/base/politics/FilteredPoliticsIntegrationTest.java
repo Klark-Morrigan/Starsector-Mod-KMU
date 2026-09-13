@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
@@ -76,12 +77,12 @@ class FilteredPoliticsIntegrationTest {
                 buildVisibleMarket(tritachyon, 3));
 
             var filtered = resolveFor(sector, "hegemony");
-            var holder = filtered.ownerBySystemId().get("owned-system");
+            var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemIds())
-                .doesNotContain("owned-system");
+            assertThat(filtered.contestedSystemKeys())
+                .doesNotContain(buildCellKey("owned-system"));
             assertThat(holder.primaryColour())
                 .isEqualTo(HEGEMONY_BRIGHT);
             assertThat(holder.secondaryColour())
@@ -102,12 +103,12 @@ class FilteredPoliticsIntegrationTest {
                 buildVisibleMarket(tritachyon, 3));
 
             var filtered = resolveFor(sector, "tritachyon");
-            var holder = filtered.ownerBySystemId().get("owned-system");
+            var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemIds())
-                .contains("owned-system");
+            assertThat(filtered.contestedSystemKeys())
+                .contains(buildCellKey("owned-system"));
             assertThat(holder.primaryColour())
                 .isEqualTo(TRITACHYON_BRIGHT);
             assertThat(holder.secondaryColour())
@@ -127,14 +128,14 @@ class FilteredPoliticsIntegrationTest {
                 listSystemMarkets("tritachyon-system", buildVisibleMarket(tritachyon, 3)));
 
             var filtered = resolveFor(sector, "hegemony");
-            var holder = filtered.ownerBySystemId().get("tritachyon-system");
+            var holder = filtered.ownerBySystemKey().get(buildCellKey("tritachyon-system"));
 
             assertThat(holder.factionId())
                 .isEqualTo("tritachyon");
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
                 .isFalse();
-            assertThat(filtered.contestedSystemIds())
-                .doesNotContain("tritachyon-system");
+            assertThat(filtered.contestedSystemKeys())
+                .doesNotContain(buildCellKey("tritachyon-system"));
             assertThat(holder.primaryColour())
                 .isEqualTo(TRITACHYON_BRIGHT);
         }
@@ -156,10 +157,10 @@ class FilteredPoliticsIntegrationTest {
 
             var filtered = resolveFor(sector, "hegemony");
 
-            assertThat(filtered.ownerBySystemId().get("solid-system").factionId())
-                .isEqualTo(filtered.ownerBySystemId().get("contested-system").factionId());
-            assertThat(filtered.contestedSystemIds())
-                .contains("contested-system").doesNotContain("solid-system");
+            assertThat(filtered.ownerBySystemKey().get(buildCellKey("solid-system")).factionId())
+                .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("contested-system")).factionId());
+            assertThat(filtered.contestedSystemKeys())
+                .contains(buildCellKey("contested-system")).doesNotContain(buildCellKey("solid-system"));
         }
 
         @Test
@@ -175,9 +176,9 @@ class FilteredPoliticsIntegrationTest {
 
             var filtered = resolveFor(sector, "hegemony");
 
-            assertThat(filtered.ownerBySystemId().get("system-a").factionId())
-                .isEqualTo(filtered.ownerBySystemId().get("system-b").factionId());
-            assertThat(filtered.contestedSystemIds())
+            assertThat(filtered.ownerBySystemKey().get(buildCellKey("system-a")).factionId())
+                .isEqualTo(filtered.ownerBySystemKey().get(buildCellKey("system-b")).factionId());
+            assertThat(filtered.contestedSystemKeys())
                 .isEmpty();
         }
 
@@ -204,8 +205,8 @@ class FilteredPoliticsIntegrationTest {
             var holder = FilteredPolitics.resolveFilteredHolder(
                     DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping),
                     "alliance-1")
-                .ownerBySystemId()
-                .get("contested-system");
+                .ownerBySystemKey()
+                .get(buildCellKey("contested-system"));
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
                 .isTrue();
@@ -230,10 +231,10 @@ class FilteredPoliticsIntegrationTest {
             var filtered = resolveFor(sector, "hegemony");
 
             assertThat(FilteredPolitics.isSpotlitBloc(
-                    filtered.ownerBySystemId().get("salvage-system").factionId()))
+                    filtered.ownerBySystemKey().get(buildCellKey("salvage-system")).factionId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemIds())
-                .doesNotContain("salvage-system");
+            assertThat(filtered.contestedSystemKeys())
+                .doesNotContain(buildCellKey("salvage-system"));
         }
 
         @Test
@@ -246,12 +247,12 @@ class FilteredPoliticsIntegrationTest {
                 tritachyon -> buildVisibleMarket(tritachyon, 3));
 
             var filtered = resolveFor(sector, "tritachyon");
-            var holder = filtered.ownerBySystemId().get("owned-system");
+            var holder = filtered.ownerBySystemKey().get(buildCellKey("owned-system"));
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemIds())
-                .contains("owned-system");
+            assertThat(filtered.contestedSystemKeys())
+                .contains(buildCellKey("owned-system"));
             assertThat(holder.primaryColour())
                 .isEqualTo(TRITACHYON_BRIGHT);
         }
@@ -270,12 +271,12 @@ class FilteredPoliticsIntegrationTest {
                 buildVisibleMarket(pirates, 4));
 
             var filtered = resolveFor(sector, "pirates");
-            var holder = filtered.ownerBySystemId().get("haven");
+            var holder = filtered.ownerBySystemKey().get(buildCellKey("haven"));
 
             assertThat(FilteredPolitics.isSpotlitBloc(holder.factionId()))
                 .isTrue();
-            assertThat(filtered.contestedSystemIds())
-                .contains("haven");
+            assertThat(filtered.contestedSystemKeys())
+                .contains(buildCellKey("haven"));
         }
 
         @Test
@@ -289,8 +290,8 @@ class FilteredPoliticsIntegrationTest {
                 buildOnlySystem(sector),
                 buildAbandonedStationMarket(4));
 
-            assertThat(resolveFor(sector, Factions.NEUTRAL).ownerBySystemId())
-                .doesNotContainKey("haven");
+            assertThat(resolveFor(sector, Factions.NEUTRAL).ownerBySystemKey())
+                .doesNotContainKey(buildCellKey("haven"));
         }
 
         @Test
@@ -303,14 +304,14 @@ class FilteredPoliticsIntegrationTest {
 
             assertThat(FilteredPolitics.isSpotlitBloc(
                     resolveFor(sector, "tritachyon")
-                        .ownerBySystemId()
-                        .get("owned-system")
+                        .ownerBySystemKey()
+                        .get(buildCellKey("owned-system"))
                         .factionId()))
                 .isFalse();
             assertThat(FilteredPolitics.isSpotlitBloc(
                     resolveRevealedFor(sector, "tritachyon")
-                        .ownerBySystemId()
-                        .get("owned-system")
+                        .ownerBySystemKey()
+                        .get(buildCellKey("owned-system"))
                         .factionId()))
                 .isTrue();
         }
@@ -331,8 +332,8 @@ class FilteredPoliticsIntegrationTest {
                 sector.getStarSystems().get(1),
                 buildVisibleMarket(pirates, 4));
 
-            assertThat(resolveFor(sector, "hegemony").ownerBySystemId())
-                .doesNotContainKey("haven");
+            assertThat(resolveFor(sector, "hegemony").ownerBySystemKey())
+                .doesNotContainKey(buildCellKey("haven"));
         }
 
         @Test
@@ -343,9 +344,9 @@ class FilteredPoliticsIntegrationTest {
             var filtered =
                 FilteredPolitics.resolveFilteredHolder(buildPassOver(sector), null);
 
-            assertThat(filtered.ownerBySystemId())
+            assertThat(filtered.ownerBySystemKey())
                 .isEmpty();
-            assertThat(filtered.contestedSystemIds())
+            assertThat(filtered.contestedSystemKeys())
                 .isEmpty();
         }
 
@@ -354,15 +355,15 @@ class FilteredPoliticsIntegrationTest {
             var filtered =
                 FilteredPolitics.resolveFilteredHolder(buildPassOver(null), "hegemony");
 
-            assertThat(filtered.ownerBySystemId())
+            assertThat(filtered.ownerBySystemKey())
                 .isEmpty();
-            assertThat(filtered.contestedSystemIds())
+            assertThat(filtered.contestedSystemKeys())
                 .isEmpty();
         }
     }
 
     @Nested
-    class FindPresentSystemIds {
+    class FindPresentSystemKeys {
 
         @Test
         void reportsACandidateTheSelectedBlocOwnsAMarketIn() {
@@ -372,11 +373,11 @@ class FilteredPoliticsIntegrationTest {
             var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
-                    Set.of("haven")))
-                .containsExactly("haven");
+                    Set.of(buildCellKey("haven"))))
+                .containsExactly(buildCellKey("haven"));
         }
 
         @Test
@@ -391,11 +392,11 @@ class FilteredPoliticsIntegrationTest {
                 buildVisibleMarket(pirates, 2),
                 buildVisibleMarket(independent, 6));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
-                    Set.of("haven")))
-                .containsExactly("haven");
+                    Set.of(buildCellKey("haven"))))
+                .containsExactly(buildCellKey("haven"));
         }
 
         @Test
@@ -410,11 +411,11 @@ class FilteredPoliticsIntegrationTest {
                 buildOnlySystem(sector),
                 buildVisibleMarket(pirates, 4));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
-                    Set.of("haven")))
-                .containsExactly("haven");
+                    Set.of(buildCellKey("haven"))))
+                .containsExactly(buildCellKey("haven"));
         }
 
         @Test
@@ -429,10 +430,10 @@ class FilteredPoliticsIntegrationTest {
                 buildOnlySystem(sector),
                 buildAbandonedStationMarket(4));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     Factions.NEUTRAL,
-                    Set.of("haven")))
+                    Set.of(buildCellKey("haven"))))
                 .isEmpty();
         }
 
@@ -446,10 +447,10 @@ class FilteredPoliticsIntegrationTest {
                 List.of(pirates, independent),
                 buildVisibleMarket(independent, 6));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
-                    Set.of("haven")))
+                    Set.of(buildCellKey("haven"))))
                 .isEmpty();
         }
 
@@ -464,11 +465,11 @@ class FilteredPoliticsIntegrationTest {
                 listSystemMarkets("held", buildVisibleMarket(pirates, 5)),
                 listSystemMarkets("haven", buildVisibleMarket(pirates, 4)));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     "pirates",
-                    Set.of("haven")))
-                .containsExactly("haven");
+                    Set.of(buildCellKey("haven"))))
+                .containsExactly(buildCellKey("haven"));
         }
 
         @Test
@@ -477,19 +478,19 @@ class FilteredPoliticsIntegrationTest {
             var pirates = buildFaction("pirates", TRITACHYON_BRIGHT);
             var sector = buildSectorWith("haven", List.of(pirates), buildVisibleMarket(pirates, 4));
 
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(sector),
                     null,
-                    Set.of("haven")))
+                    Set.of(buildCellKey("haven"))))
                 .isEmpty();
         }
 
         @Test
         void isEmptyForNullSector() {
-            assertThat(FilteredPolitics.findPresentSystemIds(
+            assertThat(FilteredPolitics.findPresentSystemKeys(
                     buildHolderPassOver(null),
                     "pirates",
-                    Set.of("haven")))
+                    Set.of(buildCellKey("haven"))))
                 .isEmpty();
         }
     }

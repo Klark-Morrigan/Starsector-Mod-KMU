@@ -67,7 +67,7 @@ public final class CellShaper {
                 shapeCell(
                     entry.getValue(),
                     grouping.resolveOwnerOf(entry.getKey()),
-                    grouping.ownerBySystemId(),
+                    grouping.ownerBySystemKey(),
                     borderInset));
         }
         return shaped;
@@ -78,18 +78,18 @@ public final class CellShaper {
      * refresh path that re-shapes just the cells around an ownership change rather
      * than the whole map. Same rule as {@link #shapeCells}, applied to one cell.
      *
-     * @param edges           the cell's raw edges, in winding order, each tagged
-     *                        with what lies across it
-     * @param cellOwner       the owner of this cell, or null if unowned
-     * @param ownerBySystemId the owner per system, to classify each edge
-     *                        as a same-owner seam or a border
-     * @param borderInset     inward inset applied to every border edge
+     * @param edges            the cell's raw edges, in winding order, each tagged
+     *                         with what lies across it
+     * @param cellOwner        the owner of this cell, or null if unowned
+     * @param ownerBySystemKey the owner per system, to classify each edge
+     *                         as a same-owner seam or a border
+     * @param borderInset      inward inset applied to every border edge
      * @return the shaped cell: its inset fill polygon and per-edge boundary flags
      */
     public static ShapedCell shapeCell(
             List<CellEdge> edges,
             String cellOwner,
-            Map<String, String> ownerBySystemId,
+            Map<SystemKey, String> ownerBySystemKey,
             double borderInset) {
 
         var vertices = new ArrayList<double[]>(edges.size());
@@ -97,7 +97,7 @@ public final class CellShaper {
         for (var i = 0; i < edges.size(); i++) {
             var edge = edges.get(i);
             vertices.add(new double[] {edge.x1(), edge.y1()});
-            edgeInsets[i] = computeEdgeInset(edge, cellOwner, ownerBySystemId, borderInset);
+            edgeInsets[i] = computeEdgeInset(edge, cellOwner, ownerBySystemKey, borderInset);
         }
         var inset = PolygonOffsets.insetSelectedEdges(vertices, edgeInsets);
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());
@@ -110,10 +110,10 @@ public final class CellShaper {
     private static double computeEdgeInset(
             CellEdge edge,
             String cellOwner,
-            Map<String, String> ownerBySystemId,
+            Map<SystemKey, String> ownerBySystemKey,
             double borderInset) {
 
-        var edgeClass = EdgeClassifier.classifyAcross(edge, cellOwner, ownerBySystemId);
+        var edgeClass = EdgeClassifier.classifyAcross(edge, cellOwner, ownerBySystemKey);
         return edgeClass == EdgeClass.INTERIOR_SEAM ? 0.0 : borderInset;
     }
 }

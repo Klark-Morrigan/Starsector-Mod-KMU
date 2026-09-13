@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -31,7 +33,7 @@ import java.util.Set;
  * agnostic geometry ({@code CellShaper}, {@code SystemClusters}, and the border trace) fuses
  * the whole footprint into a single territory outlined by one frontier, with no awareness of
  * the filter. Which of those systems are contested is reported apart from the key, in
- * {@link FilteredHolder#contestedSystemIds()}, so the render layer can split the fill per
+ * {@link FilteredHolder#contestedSystemKeys()}, so the render layer can split the fill per
  * cell (solid where it dominates, hatched where contested) inside that one frontier rather than
  * fracturing the footprint into two separately-bordered clusters. The synthetic key stays
  * internal to this class: callers ask {@link #isSpotlitBloc} rather than matching the raw
@@ -54,18 +56,19 @@ public final class FilteredPolitics {
      * subset of the spotlighted bloc's systems it is present in but does not dominate.
      *
      * <p>The whole spotlit footprint keys to one synthetic {@code SPOTLIT_KEY} in
-     * {@code ownerBySystemId} so the geometry traces one frontier over it; {@code contestedSystemIds}
-     * is how the render layer then splits that footprint's fill per cell - solid where the bloc
-     * dominates, hatched where it is merely present - without the key having to fracture the
-     * cluster. A contested id is always a spotlit id; a dominant spotlit id is simply absent from
-     * the set. Off filter (no selection, or an empty sector) both are empty.
+     * {@code ownerBySystemKey} so the geometry traces one frontier over it;
+     * {@code contestedSystemKeys} is how the render layer then splits that footprint's fill per
+     * cell - solid where the bloc dominates, hatched where it is merely present - without the key
+     * having to fracture the cluster. A contested system is always a spotlit one; a dominant
+     * spotlit system is simply absent from the set. Off filter (no selection, or an empty sector)
+     * both are empty.
      *
-     * @param ownerBySystemId    the presence-aware holder per owned system
-     * @param contestedSystemIds the spotlit systems the bloc is present in but does not dominate
+     * @param ownerBySystemKey    the presence-aware holder per owned system
+     * @param contestedSystemKeys the spotlit systems the bloc is present in but does not dominate
      */
     public record FilteredHolder(
-        Map<String, DominantHolder> ownerBySystemId,
-        Set<String> contestedSystemIds) {
+        Map<SystemKey, DominantHolder> ownerBySystemKey,
+        Set<SystemKey> contestedSystemKeys) {
     }
 
     /**
@@ -132,7 +135,7 @@ public final class FilteredPolitics {
     }
 
     /**
-     * Which of {@code candidateSystemIds} the spotlighted bloc is present in - the presence read
+     * Which of {@code candidateSystemKeys} the spotlighted bloc is present in - the presence read
      * for systems this pass resolved <em>no</em> holder for.
      *
      * <p>The counterpart to {@link #resolveFilteredHolder} for cells the holder map never
@@ -169,34 +172,35 @@ public final class FilteredPolitics {
      *
      * @param pass              the rebuild's reading of the sector, whose walk of each system this
      *                          read shares; a pass over no sector yields an empty set
-     * @param selectedBlocId    the spotlighted bloc's id; null yields an empty set (no filter)
-     * @param candidateSystemIds the systems to test - those this pass resolved no holder for
+     * @param selectedBlocId      the spotlighted bloc's id; null yields an empty set (no filter)
+     * @param candidateSystemKeys the systems to test - those this pass resolved no holder for
      * @return the candidates the spotlighted bloc holds a colony somebody lives on in
      */
-    public static Set<String> findPresentSystemIds(
+    public static Set<SystemKey> findPresentSystemKeys(
             HolderPass pass,
             String selectedBlocId,
-            Set<String> candidateSystemIds) {
+            Set<SystemKey> candidateSystemKeys) {
 
-        var presentSystemIds = new LinkedHashSet<String>();
+        var presentSystemKeys = new LinkedHashSet<SystemKey>();
 
         // A read that can decide nothing returns before the walk: off filter there is no pick to
         // look for, and with no candidates every system the walk reached would be discarded.
-        if (!pass.canReadEconomy() || selectedBlocId == null || candidateSystemIds.isEmpty()) {
-            return presentSystemIds;
+        if (!pass.canReadEconomy() || selectedBlocId == null || candidateSystemKeys.isEmpty()) {
+            return presentSystemKeys;
         }
         for (var system : pass.readSystems()) {
 
             // Membership is tested before the colony read, so a system outside the candidate
             // set costs a set probe rather than a read of its colonies.
-            if (!candidateSystemIds.contains(system.getId())) {
+            var systemKey = SystemKey.readKeyOf(system);
+            if (!candidateSystemKeys.contains(systemKey)) {
                 continue;
             }
             if (pass.readHabitationIn(system).blocIds().contains(selectedBlocId)) {
-                presentSystemIds.add(system.getId());
+                presentSystemKeys.add(systemKey);
             }
         }
-        return presentSystemIds;
+        return presentSystemKeys;
     }
 
     /**
@@ -215,7 +219,7 @@ public final class FilteredPolitics {
     /**
      * Builds the presence-aware holders for every inhabited system over a rebuild's own reading
      * of the sector, reading the weighting rule live - the entry a holding provider calls in
-     * place of {@link SectorPolitics#resolveDominantHolderBySystemId} while a bloc is
+     * place of {@link SectorPolitics#resolveDominantHolderBySystemKey} while a bloc is
      * spotlighted, the rule being the one knob the pass it was handed does not carry.
      *
      * @param pass           the rebuild's reading of the sector, whose walk of each system this
@@ -235,7 +239,7 @@ public final class FilteredPolitics {
      * Builds the presence-aware holders under an explicit dominance pass, for a caller that has
      * already sampled the player's settings.
      *
-     * <p>Mirrors {@link SectorPolitics#resolveDominantHolderBySystemId} system for system: each
+     * <p>Mirrors {@link SectorPolitics#resolveDominantHolderBySystemKey} system for system: each
      * inhabited system resolves to one {@link DominantHolder} the geometry clusters by, but every
      * system the selected bloc is present in carries the one spotlit key (and the bloc's palette)
      * instead of the real winner, so the bloc survives where it loses and its whole footprint
@@ -252,19 +256,20 @@ public final class FilteredPolitics {
             DominancePass pass,
             String selectedBlocId) {
 
-        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
-        var contestedSystemIds = new LinkedHashSet<String>();
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
+        var contestedSystemKeys = new LinkedHashSet<SystemKey>();
 
         if (!pass.canReadEconomy() || selectedBlocId == null) {
-            return new FilteredHolder(ownerBySystemId, contestedSystemIds);
+            return new FilteredHolder(ownerBySystemKey, contestedSystemKeys);
         }
         for (var system : pass.readSystems()) {
-            var holder = resolveHolder(system, pass, selectedBlocId, contestedSystemIds);
+            var systemKey = SystemKey.readKeyOf(system);
+            var holder = resolveHolder(system, systemKey, pass, selectedBlocId, contestedSystemKeys);
             if (holder != null) {
-                ownerBySystemId.put(system.getId(), holder);
+                ownerBySystemKey.put(systemKey, holder);
             }
         }
-        return new FilteredHolder(ownerBySystemId, contestedSystemIds);
+        return new FilteredHolder(ownerBySystemKey, contestedSystemKeys);
     }
 
     /**
@@ -317,9 +322,10 @@ public final class FilteredPolitics {
     // called empty space.
     private static DominantHolder resolveHolder(
             StarSystemAPI system,
+            SystemKey systemKey,
             DominancePass pass,
             String selectedBlocId,
-            Set<String> contestedSystemIds) {
+            Set<SystemKey> contestedSystemKeys) {
 
         var footprintByBlocId = pass.readBlocFootprints(system);
         var presentBlocIds = pass.readHabitationIn(system).blocIds();
@@ -350,7 +356,7 @@ public final class FilteredPolitics {
             return resolveRealHolder(sector, grouping, footprintByBlocId, rankingRules);
         }
         if (presence == SelectedBlocPresence.PRESENT_BUT_DOMINATED) {
-            contestedSystemIds.add(system.getId());
+            contestedSystemKeys.add(systemKey);
         }
         return spotlit;
     }

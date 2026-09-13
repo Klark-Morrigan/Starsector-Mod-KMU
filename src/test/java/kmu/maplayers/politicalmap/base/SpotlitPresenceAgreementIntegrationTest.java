@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.SectorScenarioFixtures;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -14,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * backdrop is never a cell the filter's spotlight has kept a bloc's fill over.
  *
  * <p>The classification reads {@link PoliticalMapInhabitation}, the sparing reads
- * {@link FilteredPolitics#findPresentSystemIds}, and each has its own suite pinning its own answer.
+ * {@link FilteredPolitics#findPresentSystemKeys}, and each has its own suite pinning its own answer.
  * Nothing in that pair stops the two drifting onto different colony projections - and the pair that
  * drifted draws a bloc's colours across a system the same pass has just called empty space, which
  * neither suite alone can see.
@@ -58,8 +61,8 @@ final class SpotlitPresenceAgreementIntegrationTest {
 
             assertThat(isInhabited(sector))
                 .isTrue();
-            assertThat(findPresentSystemIds(sector, "pirates"))
-                .containsExactly(SYSTEM_ID);
+            assertThat(findPresentSystemKeys(sector, "pirates"))
+                .containsExactly(buildCellKey(SYSTEM_ID));
         }
 
         @Test
@@ -74,7 +77,7 @@ final class SpotlitPresenceAgreementIntegrationTest {
 
             assertThat(isInhabited(sector))
                 .isFalse();
-            assertThat(findPresentSystemIds(sector, Factions.NEUTRAL))
+            assertThat(findPresentSystemKeys(sector, Factions.NEUTRAL))
                 .isEmpty();
         }
 
@@ -89,7 +92,7 @@ final class SpotlitPresenceAgreementIntegrationTest {
 
             assertThat(isInhabited(sector))
                 .isFalse();
-            assertThat(findPresentSystemIds(sector, "pirates"))
+            assertThat(findPresentSystemKeys(sector, "pirates"))
                 .isEmpty();
         }
     }
@@ -106,12 +109,12 @@ final class SpotlitPresenceAgreementIntegrationTest {
     // Where the spotlit bloc is spared the recede, asked of the same system under the same rule -
     // the pairing being the whole point, a case reading the two through different passes would
     // prove nothing.
-    private static Set<String> findPresentSystemIds(SectorAPI sector, String selectedBlocId) {
+    private static Set<SystemKey> findPresentSystemKeys(SectorAPI sector, String selectedBlocId) {
 
-        return FilteredPolitics.findPresentSystemIds(
+        return FilteredPolitics.findPresentSystemKeys(
             buildPassOver(sector),
             selectedBlocId,
-            Set.of(SYSTEM_ID));
+            Set.of(buildCellKey(SYSTEM_ID)));
     }
 
     private static HolderPass buildPassOver(SectorAPI sector) {

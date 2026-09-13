@@ -236,7 +236,7 @@ final class IncrementalPoliticsRefresh {
 
         var cellsByFaction = DominantHolder.mapCellGrouping(
                 geometryCache.getSystemKeyByCellKey(),
-                territories.getHolderBySystemId())
+                territories.getHolderBySystemKey())
             .groupCellKeysByOwner();
 
         for (var factionId : disturbance.getAffectedFactionIds()) {
@@ -323,13 +323,13 @@ final class IncrementalPoliticsRefresh {
         var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
         var holder = drawnSystemKey == null
             ? null
-            : territories.getHolderBySystemId().get(drawnSystemKey.systemId());
+            : territories.getHolderBySystemKey().get(drawnSystemKey);
 
         var ownerFactionId = holder == null ? null : holder.factionId();
         var shaped = CellShaper.shapeCell(
             edges,
             ownerFactionId,
-            DominantHolder.mapFactionIdBySystemId(territories.getHolderBySystemId()),
+            DominantHolder.mapFactionIdBySystemKey(territories.getHolderBySystemKey()),
             CellShaper.BORDER_INSET_DISTANCE);
 
         var styled = StyledCellBuilder.buildStyledCellForSystem(territories, drawnSystemKey, shaped);

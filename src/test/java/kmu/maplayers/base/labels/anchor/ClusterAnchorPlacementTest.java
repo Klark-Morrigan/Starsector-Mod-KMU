@@ -29,6 +29,7 @@ import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGroupingOver;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGroupingUnder;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -681,11 +682,12 @@ final class ClusterAnchorPlacementTest {
         }
 
         @Test
-        void computeClusterAnchorsNarrowsItsFirstMemberToTheIdTheOwnersAreKeyedBy() {
-            // The join with the holding: a cluster's members arrive keyed and the owner map names
-            // a system by id, so the owner every member shares is found through the first
-            // member's id arm even where that key states an anchor as well.
+        void computeClusterAnchorsReadsTheOwnerOfAMemberUnderItsOwnKey() {
+            // The members and the owner map share one address, so a cluster whose member shares a
+            // vanilla id with another system takes its own owner - where a lookup by id alone
+            // could only have named whichever of the pair the map happened to hold.
             var anchoredMember = new SystemKey("A", "", "8b3");
+            var twin = new SystemKey("A", "", "38d53");
 
             var anchors = computeAnchors(
                 new ClusterPartition(
@@ -694,7 +696,9 @@ final class ClusterAnchorPlacementTest {
                         "A",
                         listSquareCellEdges(0, 0, null, null, null, null))),
                     Map.of(anchoredMember, new double[] {500, 500}),
-                    buildIdentityGroupingOver(Map.of("A", GROUP_KEY))),
+                    buildIdentityGroupingUnder(
+                        List.of(anchoredMember),
+                        Map.of(anchoredMember, GROUP_KEY, twin, RIVAL_GROUP_KEY))),
                 buildSpec(0.0, 0.0, 3, 1, 0.0, 2.0),
                 createLabelResolvers(buildSlenderNameEstimators()));
 

@@ -588,15 +588,15 @@ final class CellRibbonSourceTest {
 
     private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {
 
-        // The settled set is stated by id, as the layer's holding states it, while the sites are
-        // stated by key as the cut records them - which is the pair the gate narrows across.
+        // The settled set and the sites are stated the one way the build addresses a system, so
+        // the gate and the site read answer under the same key.
         var siteBySystemKey = new LinkedHashMap<SystemKey, double[]>(
             buildKeyedValues(Map.of(INHABITED_SYSTEM, new double[] {2000.0, 2000.0})));
 
         siteBySystemKey.put(ANCHORED_SYSTEM, new double[] {3000.0, 3000.0});
 
         return new RibbonBakeSurface(
-            Set.of(INHABITED_SYSTEM, SITELESS_SYSTEM, ANCHORED_SYSTEM_ID),
+            Set.of(buildCellKey(INHABITED_SYSTEM), buildCellKey(SITELESS_SYSTEM), ANCHORED_SYSTEM),
             // Only the placed systems have a site; the settled one without is what a band with
             // nowhere to start is posed on.
             siteBySystemKey,

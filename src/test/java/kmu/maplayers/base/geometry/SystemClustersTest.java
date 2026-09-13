@@ -15,6 +15,7 @@ import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeToCell;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGrouping;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGroupingUnder;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -132,7 +133,7 @@ final class SystemClustersTest {
                     "wedge", List.of(buildEdgeTo("A"))));
             var grouping = new CellGrouping(
                     CellKeyFixture.buildDrawnSystemKeys(Map.of("A", "A", "wedge", "A")),
-                    Map.of("A", "F"));
+                    CellKeyFixture.buildKeyedOwners(Map.of("A", "F")));
 
             var clusters = SystemClusters.findClusters(edges, grouping);
 
@@ -153,10 +154,29 @@ final class SystemClustersTest {
 
             var clusters = SystemClusters.findClusters(
                     edges,
-                    buildIdentityGrouping(edges.keySet(), Map.of("deep space", "F")));
+                    buildIdentityGroupingUnder(edges.keySet(), Map.of(first, "F", second, "F")));
 
             assertThat(clusters).hasSize(1);
             assertThat(clusters.get(0)).containsExactlyInAnyOrder(first, second);
+        }
+
+        @Test
+        void twoAdjacentSystemsSharingAnIdUnderDifferentOwnersDoNotFuse() {
+            // The owners are addressed the same way, so a colliding pair can be held apart: the
+            // shared seam is a boundary and each cell is its own cluster, where an owner map keyed
+            // by id could only ever have given them one owner between them.
+            var first = new SystemKey("deep space", "", "8b3");
+            var second = new SystemKey("deep space", "", "38d53");
+            var edges = new LinkedHashMap<SystemKey, List<CellEdge>>();
+            edges.put(first, List.of(buildEdgeToCell(second)));
+            edges.put(second, List.of(buildEdgeToCell(first)));
+
+            var clusters = SystemClusters.findClusters(
+                    edges,
+                    buildIdentityGroupingUnder(edges.keySet(), Map.of(first, "F", second, "G")));
+
+            assertThat(clusters).hasSize(2);
+            assertThat(clusters).allSatisfy(cluster -> assertThat(cluster).hasSize(1));
         }
     }
 }

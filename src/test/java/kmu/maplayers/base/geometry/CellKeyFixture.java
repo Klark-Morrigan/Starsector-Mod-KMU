@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Posing the cells of a map: a {@link SystemKey} per named system, and the keyed collections the
- * partition and everything cut from it are addressed by.
+ * Posing the systems of a map: a {@link SystemKey} per named system, and the keyed collections
+ * the partition, everything cut from it, and the holding over it are addressed by - all one
+ * address, so one fixture mints it.
  *
  * <p>Every key states the id arm alone, which is what lets a case go on naming its systems "A" and
  * "B" while the code under it addresses them the way a live cut does. A case about two systems
@@ -61,6 +62,20 @@ public final class CellKeyFixture {
     }
 
     /**
+     * The owners a case states by name, re-addressed by key - the half of a {@link CellGrouping}
+     * that says who holds each system, in the order it was stated in.
+     */
+    public static Map<SystemKey, String> buildKeyedOwners(Map<String, String> ownerBySystemId) {
+
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, String>();
+
+        for (var entry : ownerBySystemId.entrySet()) {
+            ownerBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
+        }
+        return ownerBySystemKey;
+    }
+
+    /**
      * A grouping in which every cell draws as its own star - the identity draws-as over the cells
      * given, which is every cell of a partition that holds no cell without a star - paired with
      * the owners a case states by name.
@@ -69,12 +84,23 @@ public final class CellKeyFixture {
             Collection<SystemKey> cellKeys,
             Map<String, String> ownerBySystemId) {
 
+        return buildIdentityGroupingUnder(cellKeys, buildKeyedOwners(ownerBySystemId));
+    }
+
+    /**
+     * The identity grouping with its owners stated by key, for the one case a name cannot pose:
+     * two systems sharing a vanilla id, held by two different owners.
+     */
+    public static CellGrouping buildIdentityGroupingUnder(
+            Collection<SystemKey> cellKeys,
+            Map<SystemKey, String> ownerBySystemKey) {
+
         var systemKeyByCellKey = new LinkedHashMap<SystemKey, SystemKey>();
 
         for (var cellKey : cellKeys) {
             systemKeyByCellKey.put(cellKey, cellKey);
         }
-        return new CellGrouping(systemKeyByCellKey, ownerBySystemId);
+        return new CellGrouping(systemKeyByCellKey, ownerBySystemKey);
     }
 
     /**

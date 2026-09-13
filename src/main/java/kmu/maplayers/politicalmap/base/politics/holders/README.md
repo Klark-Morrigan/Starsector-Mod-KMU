@@ -105,7 +105,7 @@ one default and two exceptions:
 - **Solid** -
   the default.
   Any owned system not listed as an exception fills solid.
-- **Hatched** (`contestedSystemIds`) -
+- **Hatched** (`contestedSystemKeys`) -
   a spotlit bloc's presence in a system it does not hold outright:
   "mine,
   but not only mine",
@@ -114,7 +114,7 @@ one default and two exceptions:
   so it reads the same whether a rival holds the system or nobody does -
   the alternative being a fourth state drawn for the handful of systems
   where a bloc's only colony is one no mechanic could weigh.
-- **Unfilled** (`unfilledSystemIds`) -
+- **Unfilled** (`unfilledSystemKeys`) -
   held for border and label,
   but painting nothing inside the border.
   This is how a claimed-but-unheld system looks on the faction and alliance layers.

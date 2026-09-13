@@ -100,7 +100,7 @@ public final class SplitFillBuilder {
         // Both drawn states traced as their own clusters across the whole holding. The unfilled
         // state is deliberately not traced - it holds its place for a boundary and a label and
         // paints nothing, so there is no geometry for it to carry.
-        var subClusterOwners = mapSubClusterOwnerBySystemId(split, owner);
+        var subClusterOwners = mapSubClusterOwnerBySystemKey(split, owner);
         return new TracedFill.PerFillState(
             traceSubClusterRings(FillState.SOLID, split, subClusterOwners),
             traceSubClusterRings(FillState.HATCHED, split, subClusterOwners),
@@ -115,11 +115,11 @@ public final class SplitFillBuilder {
     // frontier draws it. Suffixing the footprint's own key leaves the derived keys as
     // collision-free as it already is.
     //
-    // Written under each member's id, the owner map being keyed that way: two members sharing one
-    // take the same sub-cluster key, which is the state the id can hold them both in.
-    private Map<String, String> mapSubClusterOwnerBySystemId(FillSplit split, String owner) {
+    // Written under each member's own key, the address the owner map already carries, so two
+    // members sharing a vanilla id take the sub-cluster key of the state each is actually in.
+    private Map<SystemKey, String> mapSubClusterOwnerBySystemKey(FillSplit split, String owner) {
 
-        var keys = new HashMap<>(cellGrouping.ownerBySystemId());
+        var keys = new HashMap<>(cellGrouping.ownerBySystemKey());
 
         putSubClusterOwners(keys, split, FillState.SOLID, owner + SOLID_SUB_CLUSTER_SUFFIX);
         putSubClusterOwners(keys, split, FillState.HATCHED, owner + HATCHED_SUB_CLUSTER_SUFFIX);
@@ -129,13 +129,13 @@ public final class SplitFillBuilder {
     }
 
     private static void putSubClusterOwners(
-            Map<String, String> keys,
+            Map<SystemKey, String> keys,
             FillSplit split,
             FillState state,
             String subClusterOwner) {
 
         for (var systemKey : split.resolveMembersOf(state).systemKeys()) {
-            keys.put(systemKey.systemId(), subClusterOwner);
+            keys.put(systemKey, subClusterOwner);
         }
     }
 
@@ -148,7 +148,7 @@ public final class SplitFillBuilder {
     private List<List<double[]>> traceSubClusterRings(
             FillState state,
             FillSplit split,
-            Map<String, String> subClusterOwnerBySystemId) {
+            Map<SystemKey, String> subClusterOwnerBySystemKey) {
 
         var members = split.resolveMembersOf(state);
         if (members.cellKeys().isEmpty()) {
@@ -157,7 +157,7 @@ public final class SplitFillBuilder {
         return borderTrace.traceRings(
             members.cellKeys(),
             cellEdgesByCellKey,
-            new CellGrouping(cellGrouping.systemKeyByCellKey(), subClusterOwnerBySystemId),
+            new CellGrouping(cellGrouping.systemKeyByCellKey(), subClusterOwnerBySystemKey),
             split.resolveCoincidentSystemKeysOf(state));
     }
 

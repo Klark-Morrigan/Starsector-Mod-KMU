@@ -56,18 +56,22 @@ final class PoliticalMapHoverHighlightSourceTest {
         }
 
         @Test
-        void resolveCandidateFrontierLoopsOfNarrowsTheCellToTheIdTheHoldingIsKeyedBy() {
-            // The join with the holding: the hovered cell arrives keyed and the holder map names
-            // a system by id, so a cell whose system states an anchor arm still haloes its
-            // holder's frontier rather than reading as factionless.
+        void resolveCandidateFrontierLoopsOfAnswersTheHoveredSystemOfAPairSharingAnId() {
+            // The cursor and the holding share one address, so hovering one of two systems that
+            // answer to "A" haloes that system's own holder - where a lookup by id alone would
+            // have handed back the other's frontier.
+            var hovered = new SystemKey("A", "", "8b3");
             var loops = List.of(buildSquareRun(0, 0, 100));
-            var source = readSourceOf(buildTerritoriesWith(
-                Map.of("A", OWNER),
+            var source = readSourceOf(buildTerritoriesHeldByKey(
+                Map.of(hovered, OWNER),
                 Map.of("A", buildSquare(10, 10, 80)),
                 buildTerritoryWithLoops(loops)));
 
-            assertThat(source.resolveCandidateFrontierLoopsOf(new SystemKey("A", "", "8b3")))
+            assertThat(source.resolveCandidateFrontierLoopsOf(hovered))
                 .containsExactlyElementsOf(loops);
+
+            assertThat(source.resolveCandidateFrontierLoopsOf(new SystemKey("A", "", "38d53")))
+                .isEmpty();
         }
 
         @Test
@@ -184,8 +188,31 @@ final class PoliticalMapHoverHighlightSourceTest {
             Map<String, List<double[]>> fillPolygonBySystemId,
             StyledClusterGroup clusterGroup) {
 
-        var territories = PoliticalMapTerritoryFixtures
-            .createTerritoriesOwnedBy(ownerBySystemId);
+        return fillTerritories(
+            PoliticalMapTerritoryFixtures.createTerritoriesOwnedBy(ownerBySystemId),
+            fillPolygonBySystemId,
+            clusterGroup);
+    }
+
+    // The same territories with its holders stated by key, for the one case a name cannot pose:
+    // two systems sharing a vanilla id, only one of which the cursor is over.
+    private static PoliticalMapTerritories buildTerritoriesHeldByKey(
+            Map<SystemKey, DominantHolder> ownerBySystemKey,
+            Map<String, List<double[]>> fillPolygonBySystemId,
+            StyledClusterGroup clusterGroup) {
+
+        return fillTerritories(
+            PoliticalMapTerritoryFixtures.createTerritoriesOwnedByKeys(ownerBySystemKey),
+            fillPolygonBySystemId,
+            clusterGroup);
+    }
+
+    // Writes the cells and the holder's territory onto a built map, which is all the source reads
+    // beyond the holding the two builders above differ in how they state.
+    private static PoliticalMapTerritories fillTerritories(
+            PoliticalMapTerritories territories,
+            Map<String, List<double[]>> fillPolygonBySystemId,
+            StyledClusterGroup clusterGroup) {
 
         for (var cell : fillPolygonBySystemId.entrySet()) {
             territories.putStyledCell(

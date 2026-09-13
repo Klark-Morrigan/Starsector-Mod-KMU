@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import java.util.Collections;
@@ -36,33 +38,33 @@ public final class SystemOccupancy {
 
     // Who holds each system. A system with no entry is held by nobody - which is not the same as
     // nobody living there, and reading it as such is what the inhabited set below exists to stop.
-    private final Map<String, DominantHolder> holderBySystemId;
+    private final Map<SystemKey, DominantHolder> holderBySystemKey;
 
     // Every system something stands in, live colony or known ruin.
-    private final Set<String> inhabitedSystemIds;
+    private final Set<SystemKey> inhabitedSystemKeys;
 
     // The settled systems the spotlit bloc lives in that no holder was resolved for. Empty off
     // filter, and empty on any view whose holding accounts for every inhabited system.
-    private final Set<String> spotlitPresenceSystemIds;
+    private final Set<SystemKey> spotlitPresenceSystemKeys;
 
     // The views every reader is answered through, wrapped once here rather than per ask: a getter
     // minting a fresh wrapper would put an allocation inside the per-cell styling loop.
-    private final Map<String, DominantHolder> readableHolderBySystemId;
-    private final Set<String> readableInhabitedSystemIds;
-    private final Set<String> readableSpotlitPresenceSystemIds;
+    private final Map<SystemKey, DominantHolder> readableHolderBySystemKey;
+    private final Set<SystemKey> readableInhabitedSystemKeys;
+    private final Set<SystemKey> readableSpotlitPresenceSystemKeys;
 
     private SystemOccupancy(
-            Map<String, DominantHolder> holderBySystemId,
-            Set<String> inhabitedSystemIds,
-            Set<String> spotlitPresenceSystemIds) {
+            Map<SystemKey, DominantHolder> holderBySystemKey,
+            Set<SystemKey> inhabitedSystemKeys,
+            Set<SystemKey> spotlitPresenceSystemKeys) {
 
-        this.holderBySystemId = holderBySystemId;
-        this.inhabitedSystemIds = inhabitedSystemIds;
-        this.spotlitPresenceSystemIds = spotlitPresenceSystemIds;
+        this.holderBySystemKey = holderBySystemKey;
+        this.inhabitedSystemKeys = inhabitedSystemKeys;
+        this.spotlitPresenceSystemKeys = spotlitPresenceSystemKeys;
 
-        readableHolderBySystemId = Collections.unmodifiableMap(holderBySystemId);
-        readableInhabitedSystemIds = Collections.unmodifiableSet(inhabitedSystemIds);
-        readableSpotlitPresenceSystemIds = Collections.unmodifiableSet(spotlitPresenceSystemIds);
+        readableHolderBySystemKey = Collections.unmodifiableMap(holderBySystemKey);
+        readableInhabitedSystemKeys = Collections.unmodifiableSet(inhabitedSystemKeys);
+        readableSpotlitPresenceSystemKeys = Collections.unmodifiableSet(spotlitPresenceSystemKeys);
     }
 
     /**
@@ -75,21 +77,21 @@ public final class SystemOccupancy {
      * Insertion-ordered copies, so a walk of any of the three runs in the order the pass resolved
      * it rather than in a hash's.
      *
-     * @param holderBySystemId         who holds each system; a system nobody holds is absent
-     * @param inhabitedSystemIds       every system something stands in
-     * @param spotlitPresenceSystemIds the settled systems the spotlit bloc lives in that nobody
-     *                                 holds; empty off filter
+     * @param holderBySystemKey         who holds each system; a system nobody holds is absent
+     * @param inhabitedSystemKeys       every system something stands in
+     * @param spotlitPresenceSystemKeys the settled systems the spotlit bloc lives in that nobody
+     *                                  holds; empty off filter
      * @return the occupancy, ready to be read and folded
      */
     public static SystemOccupancy createCopyOf(
-            Map<String, DominantHolder> holderBySystemId,
-            Set<String> inhabitedSystemIds,
-            Set<String> spotlitPresenceSystemIds) {
+            Map<SystemKey, DominantHolder> holderBySystemKey,
+            Set<SystemKey> inhabitedSystemKeys,
+            Set<SystemKey> spotlitPresenceSystemKeys) {
 
         return new SystemOccupancy(
-            new LinkedHashMap<>(holderBySystemId),
-            new LinkedHashSet<>(inhabitedSystemIds),
-            new LinkedHashSet<>(spotlitPresenceSystemIds));
+            new LinkedHashMap<>(holderBySystemKey),
+            new LinkedHashSet<>(inhabitedSystemKeys),
+            new LinkedHashSet<>(spotlitPresenceSystemKeys));
     }
 
     /**
@@ -106,27 +108,27 @@ public final class SystemOccupancy {
     }
 
     /**
-     * @return who holds each system, keyed by system id; a system nobody holds is absent rather
-     *         than present under a null
+     * @return who holds each system, keyed by {@link SystemKey}; a system nobody holds is absent
+     *         rather than present under a null
      */
-    public Map<String, DominantHolder> getHolderBySystemId() {
-        return readableHolderBySystemId;
+    public Map<SystemKey, DominantHolder> getHolderBySystemKey() {
+        return readableHolderBySystemKey;
     }
 
     /**
      * @return every system something is standing in, whoever holds it and whether or not this
      *         layer's holding accounts for them
      */
-    public Set<String> getInhabitedSystemIds() {
-        return readableInhabitedSystemIds;
+    public Set<SystemKey> getInhabitedSystemKeys() {
+        return readableInhabitedSystemKeys;
     }
 
     /**
      * @return the settled systems the spotlit bloc lives in that no holder was resolved for; empty
      *         off filter
      */
-    public Set<String> getSpotlitPresenceSystemIds() {
-        return readableSpotlitPresenceSystemIds;
+    public Set<SystemKey> getSpotlitPresenceSystemKeys() {
+        return readableSpotlitPresenceSystemKeys;
     }
 
     /**
@@ -138,19 +140,19 @@ public final class SystemOccupancy {
      * candidates rather than over the whole map, since both callers already know the narrow set
      * they care about - every settled system for a full build, the marked ones for a refresh.
      *
-     * @param candidateSystemIds the systems to filter, in the order they are to be answered in
+     * @param candidateSystemKeys the systems to filter, in the order they are to be answered in
      * @return those of them no holder was resolved for
      */
-    public Set<String> selectUnheldSystemIdsAmong(Set<String> candidateSystemIds) {
+    public Set<SystemKey> selectUnheldSystemKeysAmong(Set<SystemKey> candidateSystemKeys) {
 
-        var unheldSystemIds = new LinkedHashSet<String>();
+        var unheldSystemKeys = new LinkedHashSet<SystemKey>();
 
-        for (var systemId : candidateSystemIds) {
-            if (!holderBySystemId.containsKey(systemId)) {
-                unheldSystemIds.add(systemId);
+        for (var systemKey : candidateSystemKeys) {
+            if (!holderBySystemKey.containsKey(systemKey)) {
+                unheldSystemKeys.add(systemKey);
             }
         }
-        return unheldSystemIds;
+        return unheldSystemKeys;
     }
 
     /**
@@ -165,50 +167,50 @@ public final class SystemOccupancy {
      * a yes-or-no: what the redraw needs is both sides of the transfer, so the caller reads the
      * standing holder before it writes and has the pair without being told.
      *
-     * @param systemId the system to record
-     * @param holder   who holds it now, or null when nobody does
+     * @param systemKey the system to record
+     * @param holder    who holds it now, or null when nobody does
      */
-    public void recordHolderOf(String systemId, DominantHolder holder) {
+    public void recordHolderOf(SystemKey systemKey, DominantHolder holder) {
 
         if (holder == null) {
-            holderBySystemId.remove(systemId);
+            holderBySystemKey.remove(systemKey);
         } else {
-            holderBySystemId.put(systemId, holder);
+            holderBySystemKey.put(systemKey, holder);
         }
     }
 
     /**
      * Records whether anything stands in one system.
      *
-     * @param systemId    the system to record
+     * @param systemKey   the system to record
      * @param isInhabited whether something stands in it now
      * @return whether that moved, which is what obliges the system's cell to be drawn again
      */
-    public boolean foldInhabitationOf(String systemId, boolean isInhabited) {
-        return foldMembershipOf(inhabitedSystemIds, systemId, isInhabited);
+    public boolean foldInhabitationOf(SystemKey systemKey, boolean isInhabited) {
+        return foldMembershipOf(inhabitedSystemKeys, systemKey, isInhabited);
     }
 
     /**
      * Records whether the spotlit bloc lives in one system no holder was resolved for.
      *
-     * @param systemId  the system to record
+     * @param systemKey the system to record
      * @param isPresent whether the pick owns a counted colony there now
      * @return whether that moved, which is what obliges the system's cell to be drawn again
      */
-    public boolean foldSpotlitPresenceOf(String systemId, boolean isPresent) {
-        return foldMembershipOf(spotlitPresenceSystemIds, systemId, isPresent);
+    public boolean foldSpotlitPresenceOf(SystemKey systemKey, boolean isPresent) {
+        return foldMembershipOf(spotlitPresenceSystemKeys, systemKey, isPresent);
     }
 
     // Folds one system's membership of one of the sets above, reporting whether that moved. Both
     // folds are written through here so neither can report a change by a different rule than the
     // other - a cell is redrawn on either, and the two answers have to mean the same thing.
     private static boolean foldMembershipOf(
-            Set<String> systemIds,
-            String systemId,
+            Set<SystemKey> systemKeys,
+            SystemKey systemKey,
             boolean isMember) {
 
         return isMember
-            ? systemIds.add(systemId)
-            : systemIds.remove(systemId);
+            ? systemKeys.add(systemKey)
+            : systemKeys.remove(systemKey);
     }
 }

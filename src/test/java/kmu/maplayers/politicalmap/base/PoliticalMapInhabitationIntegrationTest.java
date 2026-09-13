@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.DecivilisedPlanetFixtures;
 import kmu.maplayers.SectorScenarioFixtures;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
 
@@ -49,7 +52,7 @@ final class PoliticalMapInhabitationIntegrationTest {
     private static final String EMPTY_SYSTEM = "empty";
 
     @Nested
-    class ReadInhabitedSystemIds {
+    class ReadInhabitedSystemKeys {
 
         @Test
         void namesOnlyTheSystemsSomebodyLivesIn() {
@@ -61,8 +64,8 @@ final class PoliticalMapInhabitationIntegrationTest {
                 SectorPoliticsFixtures.listSystemMarkets(SETTLED_SYSTEM, buildColony()),
                 SectorPoliticsFixtures.listSystemMarkets(EMPTY_SYSTEM));
 
-            assertThat(readInhabitedSystemIds(sector, BASE_FOG))
-                .containsExactly(SETTLED_SYSTEM);
+            assertThat(readInhabitedSystemKeys(sector, BASE_FOG))
+                .containsExactly(buildCellKey(SETTLED_SYSTEM));
         }
 
         @Test
@@ -74,7 +77,7 @@ final class PoliticalMapInhabitationIntegrationTest {
 
             SectorScenarioFixtures.placeDerelictIn(SectorPoliticsFixtures.buildOnlySystem(sector));
 
-            assertThat(readInhabitedSystemIds(sector, BASE_FOG))
+            assertThat(readInhabitedSystemKeys(sector, BASE_FOG))
                 .isEmpty();
         }
 
@@ -87,8 +90,8 @@ final class PoliticalMapInhabitationIntegrationTest {
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(
                 SectorPoliticsFixtures.buildOnlySystem(sector));
 
-            assertThat(readInhabitedSystemIds(sector, BASE_FOG))
-                .containsExactly(EMPTY_SYSTEM);
+            assertThat(readInhabitedSystemKeys(sector, BASE_FOG))
+                .containsExactly(buildCellKey(EMPTY_SYSTEM));
         }
 
         @Test
@@ -102,17 +105,17 @@ final class PoliticalMapInhabitationIntegrationTest {
                     SectorPoliticsFixtures.buildFaction("hegemony"),
                     COLONY_SIZE));
 
-            assertThat(readInhabitedSystemIds(sector, BASE_FOG))
+            assertThat(readInhabitedSystemKeys(sector, BASE_FOG))
                 .isEmpty();
-            assertThat(readInhabitedSystemIds(sector, UNDER_THE_REVEAL))
-                .containsExactly(SETTLED_SYSTEM);
+            assertThat(readInhabitedSystemKeys(sector, UNDER_THE_REVEAL))
+                .containsExactly(buildCellKey(SETTLED_SYSTEM));
         }
 
         @Test
         void namesNobodyForAPassOverNoSector() {
             // The unreachable-sector case: the pass walks no systems, so the scan reports none
             // rather than guarding a sector it was never given.
-            assertThat(readInhabitedSystemIds(null, BASE_FOG))
+            assertThat(readInhabitedSystemKeys(null, BASE_FOG))
                 .isEmpty();
         }
     }
@@ -182,11 +185,11 @@ final class PoliticalMapInhabitationIntegrationTest {
     }
 
     // The scan under one rule, off a pass opened over the sector as a rebuild opens it.
-    private static Set<String> readInhabitedSystemIds(
+    private static Set<SystemKey> readInhabitedSystemKeys(
             SectorAPI sector,
             ColonyVisibility colonyVisibility) {
 
-        return PoliticalMapInhabitation.readInhabitedSystemIds(
+        return PoliticalMapInhabitation.readInhabitedSystemKeys(
             buildPassOver(sector, colonyVisibility));
     }
 

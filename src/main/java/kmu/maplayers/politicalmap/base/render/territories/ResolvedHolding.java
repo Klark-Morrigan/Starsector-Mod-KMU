@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.politics.holders.HolderResolution;
 
 import java.util.Set;
@@ -19,14 +21,14 @@ import java.util.Set;
  * <p>Immutable, its collections being the resolve's own answers, so a build that adopts it copies
  * what it needs and the value can be handed to the next one untouched.
  *
- * @param resolution               who paints each system and which owned systems draw as a fill
- *                                 exception
- * @param inhabitedSystemIds       every system something stands in, whoever holds it
- * @param spotlitPresenceSystemIds the settled systems the spotlit bloc lives in that no holder was
- *                                 resolved for; empty off filter
+ * @param resolution                who paints each system and which owned systems draw as a fill
+ *                                  exception
+ * @param inhabitedSystemKeys       every system something stands in, whoever holds it
+ * @param spotlitPresenceSystemKeys the settled systems the spotlit bloc lives in that no holder
+ *                                  was resolved for; empty off filter
  */
 public record ResolvedHolding(
     HolderResolution resolution,
-    Set<String> inhabitedSystemIds,
-    Set<String> spotlitPresenceSystemIds) {
+    Set<SystemKey> inhabitedSystemKeys,
+    Set<SystemKey> spotlitPresenceSystemKeys) {
 }

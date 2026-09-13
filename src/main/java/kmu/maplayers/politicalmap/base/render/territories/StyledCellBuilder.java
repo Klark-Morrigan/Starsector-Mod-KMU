@@ -52,10 +52,6 @@ public final class StyledCellBuilder {
      * here - the holder, the palette, whether the cell is decivilised - is known per system
      * and not per cell.
      *
-     * <p>Everything it reads about that system is keyed by id, so the key narrows at each of the
-     * three reads and a cell whose system shares an id with another draws as the first of them -
-     * which is the system every id-keyed read of the sector answers with.
-     *
      * @param territories this pass's retained holding, theme, and filter state
      * @param systemKey   the system the cell draws as, or null for a cell with no star of its
      *                    own, which draws as plain uninhabited - it has no holder to
@@ -79,7 +75,7 @@ public final class StyledCellBuilder {
         // clear of whether the holder map happens to tolerate a null-key get.
         var holder = systemKey == null
             ? null
-            : territories.getHolderBySystemId().get(systemKey.systemId());
+            : territories.getHolderBySystemKey().get(systemKey);
         return holder == null
             ? buildFactionlessCell(territories, systemKey, shaped)
             : buildOwnedCell(territories, holder, shaped);
@@ -128,8 +124,8 @@ public final class StyledCellBuilder {
         // here: an inhabited system this layer's holding does not account for is not the empty
         // backdrop, whatever the absent holder alone would suggest.
         var category = FactionlessStyleResolver.resolveCategoryOf(
-            territories.getInhabitedSystemIds(),
-            systemKey == null ? null : systemKey.systemId());
+            territories.getInhabitedSystemKeys(),
+            systemKey);
 
         var style = territories.getCategoryStyle(category);
         if (!style.outer().isDrawn() && !style.fill().isDrawn()) {
@@ -146,7 +142,7 @@ public final class StyledCellBuilder {
         // absent system skips the set rather than probing one that may be immutable and
         // null-hostile.
         var isSpotlitBlocPresent = systemKey != null
-            && territories.getSpotlitPresenceSystemIds().contains(systemKey.systemId());
+            && territories.getSpotlitPresenceSystemKeys().contains(systemKey);
 
         var adjustment = FactionlessStyleResolver.resolveRecedeOf(
             category,

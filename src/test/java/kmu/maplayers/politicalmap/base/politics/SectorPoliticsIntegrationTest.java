@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
@@ -53,7 +54,7 @@ class SectorPoliticsIntegrationTest {
     private static final DominanceRules STABILITY_WEIGHTED = buildStabilityWeightedRules();
 
     @Nested
-    class ResolveDominantHolderBySystemId {
+    class ResolveDominantHolderBySystemKey {
 
         @Test
         void resolveDominantHolderNamesHolderAndColourByDominantFaction() {
@@ -66,14 +67,14 @@ class SectorPoliticsIntegrationTest {
                 buildVisibleMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 3));
 
-            var holders = SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector));
+            var holders = SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector));
 
             // The holder carries the id the renderer styles by, the bright UI colour
             // the cell is filled and outlined in, and the dark UI colour its
             // interior seams are stroked in.
             assertThat(holders)
                 .containsEntry(
-                    "owned-system",
+                    buildCellKey("owned-system"),
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -88,9 +89,9 @@ class SectorPoliticsIntegrationTest {
 
             // An independent-held system resolves to the "independent" id, the one
             // the renderer's fill-alpha rule dims on.
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "frontier-system",
+                    buildCellKey("frontier-system"),
                     new DominantHolder("independent", NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE)));
         }
 
@@ -106,9 +107,9 @@ class SectorPoliticsIntegrationTest {
                 buildVisibleMarket(neutral, 6),
                 buildVisibleMarket(hegemony, 3));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "salvage-system",
+                    buildCellKey("salvage-system"),
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -122,9 +123,9 @@ class SectorPoliticsIntegrationTest {
                 List.of(neutral),
                 buildVisibleMarket(neutral, 4));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "derelict-system",
+                    buildCellKey("derelict-system"),
                     new DominantHolder(Factions.NEUTRAL, NEUTRAL_BASE, buildDarkTheme(NEUTRAL_BASE)));
         }
 
@@ -141,9 +142,9 @@ class SectorPoliticsIntegrationTest {
                 buildMarketAtStability(hegemony, 5, 4.0f),
                 buildVisibleMarket(tritachyon, 3));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "unrest-system",
+                    buildCellKey("unrest-system"),
                     new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
         }
 
@@ -157,8 +158,8 @@ class SectorPoliticsIntegrationTest {
                 List.of(hegemony),
                 buildConditionOnlyMarket(hegemony, 6));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
-                .doesNotContainKey("bare-system");
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
+                .doesNotContainKey(buildCellKey("bare-system"));
         }
 
         @Test
@@ -166,7 +167,7 @@ class SectorPoliticsIntegrationTest {
 
             var sector = buildSectorWith("empty-system", List.of());
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .isEmpty();
         }
 
@@ -180,9 +181,9 @@ class SectorPoliticsIntegrationTest {
                 List.of(hegemony),
                 buildHiddenMarket(hegemony, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "hidden-system",
+                    buildCellKey("hidden-system"),
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -199,9 +200,9 @@ class SectorPoliticsIntegrationTest {
                 buildHiddenMarket(hegemony, 5),
                 buildVisibleMarket(tritachyon, 2));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "mixed-system",
+                    buildCellKey("mixed-system"),
                     new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
         }
 
@@ -216,9 +217,9 @@ class SectorPoliticsIntegrationTest {
                 List.of(hiddenFaction),
                 buildVisibleMarket(hiddenFaction, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "hidden-faction-system",
+                    buildCellKey("hidden-faction-system"),
                     new DominantHolder("zea_dusk", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -233,8 +234,8 @@ class SectorPoliticsIntegrationTest {
                 List.of(knights),
                 buildUndiscoveredHiddenMarket(knights, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
-                .doesNotContainKey("undiscovered-system");
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
+                .doesNotContainKey(buildCellKey("undiscovered-system"));
         }
 
         @Test
@@ -254,8 +255,8 @@ class SectorPoliticsIntegrationTest {
                 List.of(fsf),
                 buildUndiscoveredColonyAwaitingApproach(fsf, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
-                .doesNotContainKey("revealed-system");
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
+                .doesNotContainKey(buildCellKey("revealed-system"));
         }
 
         @Test
@@ -270,9 +271,9 @@ class SectorPoliticsIntegrationTest {
                 List.of(hegemony, tritachyon),
                 buildVisibleMarket(hegemony, 5), buildPlanetMarket(tritachyon, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "tie-system",
+                    buildCellKey("tie-system"),
                     new DominantHolder("tritachyon", TRITACHYON_BRIGHT, buildDarkTheme(TRITACHYON_BRIGHT)));
         }
 
@@ -298,9 +299,9 @@ class SectorPoliticsIntegrationTest {
             placeMarketOnOrbit(hegemonyMarket, 100.0f, star);
             placeMarketOnOrbit(blackrockMarket, 200.0f, star);
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "rama",
+                    buildCellKey("rama"),
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -333,15 +334,15 @@ class SectorPoliticsIntegrationTest {
 
             // Faction view: hegemony wins. Alliance view: the hegemony-led alliance wins the
             // same system, painted in hegemony's palette under the alliance bloc id.
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "rama",
+                    buildCellKey("rama"),
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
                     DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping)))
                 .containsEntry(
-                    "rama",
+                    buildCellKey("rama"),
                     new DominantHolder(
                         "greater_hegemony",
                         HEGEMONY_BRIGHT,
@@ -358,9 +359,9 @@ class SectorPoliticsIntegrationTest {
                 List.of(knights),
                 buildVisibleMarket(knights, 5));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "discovered-system",
+                    buildCellKey("discovered-system"),
                     new DominantHolder("knights_of_selkie", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -375,9 +376,9 @@ class SectorPoliticsIntegrationTest {
                 List.of(hegemony, tritachyon),
                 buildVisibleMarket(hegemony, 5), buildVisibleMarket(tritachyon, 3));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(buildPassOver(sector)))
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(buildPassOver(sector)))
                 .containsEntry(
-                    "owned-system",
+                    buildCellKey("owned-system"),
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
 
@@ -401,10 +402,10 @@ class SectorPoliticsIntegrationTest {
                 Map.of("alliance-1", "hegemony"),
                 Map.of("alliance-1", "Allied Powers"));
 
-            assertThat(SectorPolitics.resolveDominantHolderBySystemId(
+            assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
                     DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping)))
                 .containsEntry(
-                    "contested-system",
+                    buildCellKey("contested-system"),
                     new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
         }
     }

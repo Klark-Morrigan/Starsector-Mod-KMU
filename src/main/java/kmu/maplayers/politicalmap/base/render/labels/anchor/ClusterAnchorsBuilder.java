@@ -214,7 +214,7 @@ public final class ClusterAnchorsBuilder {
             cellGeometry,
             sector,
             new ClusterLabelStylingSnapshot(
-                SectorPolitics.resolveDominantHolderBySystemId(
+                SectorPolitics.resolveDominantHolderBySystemKey(
                     HolderPass.readFromLunaSettings(sector, grouping)),
                 desaturationPalette,
                 new ViewGrouping(view, grouping),
@@ -255,10 +255,10 @@ public final class ClusterAnchorsBuilder {
         // the fills do.
         var cells = cellGeometry.cells();
         var edgesByCellKey = cells.getCellEdgesByCellKey();
-        var ownerBySystemId = styling.holderBySystemId();
+        var ownerBySystemKey = styling.holderBySystemKey();
         var cellGrouping = DominantHolder.mapCellGrouping(
             cells.getSystemKeyByCellKey(),
-            ownerBySystemId);
+            ownerBySystemKey);
 
         // The clusters and the cells they were cut from travel on as one value: the sweep reads
         // all of it against itself per cluster, so a partition assembled from two passes would
@@ -294,7 +294,7 @@ public final class ClusterAnchorsBuilder {
             spec,
             new ClusterLabelResolvers(
                 ClusterLabelStyling.newLabelColourResolver(
-                    ownerBySystemId,
+                    ownerBySystemKey,
                     BlocNameStyles.readFromLunaSettings(),
                     styleDecisionByBlocId,
                     styling.desaturationPalette()),

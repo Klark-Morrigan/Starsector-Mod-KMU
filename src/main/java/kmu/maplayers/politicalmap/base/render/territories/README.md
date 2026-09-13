@@ -134,7 +134,7 @@ so a cell cannot take the settled style yet miss the recede that style draws und
 
 That classification reads the pass's **inhabited-system set**,
 not the holder map.
-`TerritoryBuilder` scans it once per rebuild through `PoliticalMapInhabitation.readInhabitedSystemIds` -
+`TerritoryBuilder` scans it once per rebuild through `PoliticalMapInhabitation.readInhabitedSystemKeys` -
 the same rule that decided the system seeds a cell at all -
 and `PoliticalMapTerritories` retains it,
 so the incremental re-shape classifies against exactly what the full build used.
@@ -142,7 +142,7 @@ Deriving emptiness from the holder map instead would make every view
 whose holding rule admits only some factions report its unheld systems as empty space.
 
 The presence exception rides beside it as the **spotlit-presence set**,
-read through `FilteredPolitics.findPresentSystemIds` -
+read through `FilteredPolitics.findPresentSystemKeys` -
 the same presence rule `resolveFilteredHolder` keeps a spotlit bloc visible by,
 so "the pick lives here" means one thing across the map.
 Both read it off the colonies somebody lives on rather than off the dominance weights,

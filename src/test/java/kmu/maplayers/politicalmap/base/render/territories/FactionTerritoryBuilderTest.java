@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
@@ -150,14 +151,19 @@ final class FactionTerritoryBuilderTest {
     class BuildFactionTerritory {
 
         @Test
-        void buildFactionTerritoryNarrowsItsFirstMemberToTheIdTheHoldingIsKeyedBy() {
-            // The join with the holding: a member arrives keyed and the holder map names a system
-            // by id, so the palette every body of the bloc paints in is found through the id arm
-            // even where the member's key states an anchor.
+        void buildFactionTerritoryReadsItsFirstMembersPaletteUnderThatMembersOwnKey() {
+            // The members and the holding share one address, so a body whose member shares a
+            // vanilla id with another system paints from its own holder - where a lookup by id
+            // alone could only have named whichever of the pair the map happened to hold.
             var anchoredCell = new SystemKey(ISLAND_SYSTEM, null, "8b3");
+            var twin = new SystemKey(ISLAND_SYSTEM, null, "38d53");
+            var holders = new LinkedHashMap<SystemKey, DominantHolder>();
+
+            holders.put(anchoredCell, HEGEMONY_OWNER);
+            holders.put(twin, TRITACHYON_OWNER);
 
             var clusterGroup = FactionTerritoryBuilder.buildFactionTerritory(
-                buildTerritoriesStyledBy(buildDrawnStyle()),
+                buildTerritoriesHeldBy(buildDrawnStyle(), holders),
                 listAnchoredCellFor(ISLAND_SYSTEM, anchoredCell),
                 HEGEMONY,
                 List.of(anchoredCell));
@@ -518,12 +524,34 @@ final class FactionTerritoryBuilderTest {
             TRITACHYON_OWNER));
     }
 
+    // The holders a case states by name, re-addressed by the key the build holds them under, so a
+    // case goes on naming its systems while the model is addressed as a live build is.
+    private static Map<SystemKey, DominantHolder> buildKeyedHolders(
+            Map<String, DominantHolder> ownerBySystemId) {
+
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
+
+        for (var entry : ownerBySystemId.entrySet()) {
+            ownerBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
+        }
+        return ownerBySystemKey;
+    }
+
     private static PoliticalMapTerritories buildTerritoriesStyledBy(
             CategoryStyle style,
             Map<String, DominantHolder> ownerBySystemId) {
 
+        return buildTerritoriesHeldBy(style, buildKeyedHolders(ownerBySystemId));
+    }
+
+    // The same territories with its holders stated by key, for the one case a name cannot pose:
+    // two systems sharing a vanilla id, held by different blocs.
+    private static PoliticalMapTerritories buildTerritoriesHeldBy(
+            CategoryStyle style,
+            Map<SystemKey, DominantHolder> ownerBySystemKey) {
+
         return new PoliticalMapTerritories(
-            SystemOccupancy.createCopyOf(ownerBySystemId, Set.of(), Set.of()),
+            SystemOccupancy.createCopyOf(ownerBySystemKey, Set.of(), Set.of()),
             Set.of(),
             new MapStyling(
                 PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(style),

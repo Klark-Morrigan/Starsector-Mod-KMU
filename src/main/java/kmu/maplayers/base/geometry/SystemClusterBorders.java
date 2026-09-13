@@ -139,7 +139,7 @@ public final class SystemClusterBorders {
                 var edgeClass = EdgeClassifier.classifyAcross(
                     edge,
                     cellOwner,
-                    grouping.ownerBySystemId());
+                    grouping.ownerBySystemKey());
 
                 if (!edgeClass.isBoundary()) {
                     continue;

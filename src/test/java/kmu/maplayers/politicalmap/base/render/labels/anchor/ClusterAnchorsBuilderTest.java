@@ -373,7 +373,7 @@ final class ClusterAnchorsBuilderTest {
                 cellGeometry,
                 sectorMock,
                 new ClusterLabelStylingSnapshot(
-                    Map.of(RIVAL_SYSTEM, TRITACHYON_HOLDER),
+                    Map.of(buildCellKey(RIVAL_SYSTEM), TRITACHYON_HOLDER),
                     DESATURATION_PALETTE,
                     new ViewGrouping(viewMock, HolderGrouping.identity()),
                     buildSpotlitPicksDrawingNames(
@@ -752,7 +752,7 @@ final class ClusterAnchorsBuilderTest {
     private ClusterLabelStylingSnapshot buildUnfilteredStyling(
             Map<String, DominantHolder> holderBySystemId) {
         return new ClusterLabelStylingSnapshot(
-            holderBySystemId,
+            buildKeyedHolders(holderBySystemId),
             UNUSED_PALETTE,
             new ViewGrouping(viewMock, HolderGrouping.identity()),
             contentInputs);
@@ -791,9 +791,22 @@ final class ClusterAnchorsBuilderTest {
     // so a pass that classified under some other snapshot would find no stub.
     private void stubSectorHolders(Map<String, DominantHolder> holderBySystemId) {
         politicsMock
-            .when(() -> SectorPolitics.resolveDominantHolderBySystemId(
+            .when(() -> SectorPolitics.resolveDominantHolderBySystemKey(
                 argThat((HolderPass pass) -> HolderGrouping.identity().equals(pass.grouping()))))
-            .thenReturn(holderBySystemId);
+            .thenReturn(buildKeyedHolders(holderBySystemId));
+    }
+
+    // The holders a case states by name, re-addressed by the key the build holds them under - so a
+    // case goes on naming its systems while the snapshot is addressed as a live build is.
+    private static Map<SystemKey, DominantHolder> buildKeyedHolders(
+            Map<String, DominantHolder> holderBySystemId) {
+
+        var holderBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
+
+        for (var entry : holderBySystemId.entrySet()) {
+            holderBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
+        }
+        return holderBySystemKey;
     }
 
     // A placement left over from an earlier pass, for the cases that ask whether the standing list

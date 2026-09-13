@@ -35,17 +35,16 @@ import java.util.Set;
  * traced them - and holding the cells' store is what drops a stale path with the shape it was
  * traced inside rather than through anything a bake has to remember to do.
  *
- * @param inhabitedSystemIds every system something stands in this bake, the gate deciding which
- *                           cells are asked for a band at all - keyed by id, as the layer's
- *                           holding still is, so a cell's key narrows to ask it
- * @param siteBySystemKey    each system's own site, the point a band's start is found above
- * @param nameBoxes          the room the drawn cluster names take up, the whole map's, since a name
- *                           reaches into cells its own cluster does not hold
- * @param ringPathCache      the rings already traced inside the cells' current shapes, asked before
- *                           a cell's ring is walked and written back when one is
+ * @param inhabitedSystemKeys every system something stands in this bake, the gate deciding which
+ *                            cells are asked for a band at all
+ * @param siteBySystemKey     each system's own site, the point a band's start is found above
+ * @param nameBoxes           the room the drawn cluster names take up, the whole map's, since a
+ *                            name reaches into cells its own cluster does not hold
+ * @param ringPathCache       the rings already traced inside the cells' current shapes, asked
+ *                            before a cell's ring is walked and written back when one is
  */
 public record RibbonBakeSurface(
-    Set<String> inhabitedSystemIds,
+    Set<SystemKey> inhabitedSystemKeys,
     Map<SystemKey, double[]> siteBySystemKey,
     List<List<double[]>> nameBoxes,
     CellRingPathCache ringPathCache) {
@@ -69,7 +68,7 @@ public record RibbonBakeSurface(
             // gives to nobody - an unclaimed pirate haven on the claims layer - is still offered a
             // band. It is the same set the factionless cell beneath it is classified from, so a
             // cell drawn as settled and a cell offered a band are one set.
-            territories.getInhabitedSystemIds(),
+            territories.getInhabitedSystemKeys(),
             // Taken here, once, rather than per cell inside a loop: the read hands back a fresh
             // unmodifiable view over the live cells, so asking per cell would mint a wrapper per
             // cell to answer one lookup.

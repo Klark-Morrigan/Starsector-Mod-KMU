@@ -193,9 +193,9 @@ final class SectorMapMachineryIsolationIntegrationTest {
 
             // The shared id is held by a different faction in each, so the cell they both have an id
             // for still paints each sector's own holder.
-            assertThat(firstTerritories.getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
+            assertThat(firstTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(HEGEMONY_ID);
-            assertThat(secondTerritories.getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
+            assertThat(secondTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(TRITACHYON_ID);
         }
 
@@ -222,12 +222,12 @@ final class SectorMapMachineryIsolationIntegrationTest {
                     mockMarketInSystem(SHARED_SYSTEM_ID),
                     PREVIOUS_COLONY_SIZE);
 
-            assertThat(firstMap.rebuild().getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
+            assertThat(firstMap.rebuild().getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(PERSEAN_ID);
 
             var untouchedTerritories = secondMap.readTerritories();
 
-            assertThat(untouchedTerritories.getHolderBySystemId().get(SHARED_SYSTEM_ID).factionId())
+            assertThat(untouchedTerritories.getHolderBySystemKey().get(buildCellKey(SHARED_SYSTEM_ID)).factionId())
                 .isEqualTo(TRITACHYON_ID);
             assertThat(untouchedTerritories.getStyledCellByCellKey())
                 .containsOnlyKeys(buildCellKey(SHARED_SYSTEM_ID), buildCellKey(SECOND_SECTOR_SYSTEM_ID));

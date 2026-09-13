@@ -12,7 +12,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 import kmu.maplayers.politicalmap.base.politics.SectorPolitics;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
-import kmu.maplayers.politicalmap.base.render.territories.SystemOccupancy;
 
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -103,14 +102,14 @@ final class MarkedSystemRederive {
         // resolved this system's holder with, so a single-system refresh lands the same winning
         // bloc the bulk pass would.
         var newHolder = SectorPolitics.resolveDominantHolder(marked.system(), pass);
-        var oldHolder = territories.getHolderBySystemId().get(marked.readSystemId());
+        var oldHolder = territories.getHolderBySystemKey().get(marked.systemKey());
 
         // DominantHolder is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
         if (Objects.equals(oldHolder, newHolder)) {
             return;
         }
-        territories.getOccupancy().recordHolderOf(marked.readSystemId(), newHolder);
+        territories.getOccupancy().recordHolderOf(marked.systemKey(), newHolder);
         disturbance.recordFlip(
             marked.systemKey(),
             neighbourSystemKeysOf(geometryCache, marked.systemKey()),
@@ -137,7 +136,7 @@ final class MarkedSystemRederive {
 
         var isInhabited = PoliticalMapInhabitation.isSystemInhabited(holding, marked.system());
 
-        if (territories.getOccupancy().foldInhabitationOf(marked.readSystemId(), isInhabited)) {
+        if (territories.getOccupancy().foldInhabitationOf(marked.systemKey(), isInhabited)) {
             disturbance.recordRestyle(marked.systemKey());
         }
     }
@@ -163,34 +162,19 @@ final class MarkedSystemRederive {
             StalePoliticsDisturbance disturbance) {
 
         var occupancy = territories.getOccupancy();
-        var presentSystemIds = FilteredPolitics.findPresentSystemIds(
+        var presentSystemKeys = FilteredPolitics.findPresentSystemKeys(
             pass.holding(),
             territories.getSelectedBlocId(),
-            narrowToSystemIds(markedSystemKeys, occupancy));
+            occupancy.selectUnheldSystemKeysAmong(markedSystemKeys));
 
         for (var systemKey : markedSystemKeys) {
 
-            var isPresent = presentSystemIds.contains(systemKey.systemId());
+            var isPresent = presentSystemKeys.contains(systemKey);
 
-            if (occupancy.foldSpotlitPresenceOf(systemKey.systemId(), isPresent)) {
+            if (occupancy.foldSpotlitPresenceOf(systemKey, isPresent)) {
                 disturbance.recordRestyle(systemKey);
             }
         }
-    }
-
-    // The marked systems the updated holders left unheld, as the ids the presence read is asked in.
-    // The holding is keyed by id, so the keys narrow here rather than at each of the three reads
-    // above it.
-    private static Set<String> narrowToSystemIds(
-            Set<SystemKey> markedSystemKeys,
-            SystemOccupancy occupancy) {
-
-        var markedSystemIds = new LinkedHashSet<String>();
-
-        for (var systemKey : markedSystemKeys) {
-            markedSystemIds.add(systemKey.systemId());
-        }
-        return occupancy.selectUnheldSystemIdsAmong(markedSystemIds);
     }
 
     // The systems whose cell borders this one, read from the adjacency graph. When this
@@ -229,11 +213,5 @@ final class MarkedSystemRederive {
     private record MarkedSystem(
         SystemKey systemKey,
         StarSystemAPI system) {
-
-        // The marked system as the holding addresses it, that half of the map still being keyed by
-        // id. One read rather than a narrowing at each of the holder and inhabitation folds.
-        private String readSystemId() {
-            return systemKey.systemId();
-        }
     }
 }

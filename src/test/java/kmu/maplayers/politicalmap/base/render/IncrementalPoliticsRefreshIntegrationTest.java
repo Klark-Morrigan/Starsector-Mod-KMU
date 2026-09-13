@@ -456,7 +456,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             // different orders are two different bands.
             assertThat(readDrawnMap(standingMap.territories()))
                 .usingRecursiveComparison()
-                .ignoringCollectionOrderInFields("inhabitedSystemIds", "spotlitPresenceSystemIds")
+                .ignoringCollectionOrderInFields("inhabitedSystemKeys", "spotlitPresenceSystemKeys")
                 .isEqualTo(readDrawnMap(buildMapByFullRebuild().territories()));
         }
 
@@ -536,9 +536,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
     // it fused into. A batch that rebuilt the wrong bloc's territory, or that re-shaped every cell
     // correctly and never re-indexed the clusters, moves nothing a cell would report.
     private record DrawnMap(
-        Map<String, DominantHolder> holderBySystemId,
-        Set<String> inhabitedSystemIds,
-        Set<String> spotlitPresenceSystemIds,
+        Map<SystemKey, DominantHolder> holderBySystemKey,
+        Set<SystemKey> inhabitedSystemKeys,
+        Set<SystemKey> spotlitPresenceSystemKeys,
         Map<SystemKey, StyledCell> styledCellByCellKey,
         Map<String, StyledClusterGroup> styledClusterGroupByOwnerId,
         Map<SystemKey, CellRibbon> ribbonByCellKey) {
@@ -546,9 +546,9 @@ final class IncrementalPoliticsRefreshIntegrationTest {
 
     private static DrawnMap readDrawnMap(PoliticalMapTerritories territories) {
         return new DrawnMap(
-            new LinkedHashMap<>(territories.getHolderBySystemId()),
-            new LinkedHashSet<>(territories.getInhabitedSystemIds()),
-            new LinkedHashSet<>(territories.getSpotlitPresenceSystemIds()),
+            new LinkedHashMap<>(territories.getHolderBySystemKey()),
+            new LinkedHashSet<>(territories.getInhabitedSystemKeys()),
+            new LinkedHashSet<>(territories.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
             new LinkedHashMap<>(territories.getRibbonByCellKey()));

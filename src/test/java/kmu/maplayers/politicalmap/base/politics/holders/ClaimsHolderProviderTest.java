@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 import kmlib.starsector.systems.SectorPassIndex;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
@@ -25,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.as;
@@ -67,20 +69,20 @@ final class ClaimsHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
-                    .thenReturn(Map.of("claimed", claimHolder));
+                    .thenReturn(Map.of(buildCellKey("claimed"), claimHolder));
 
                 var resolution = provider.resolveHolder(pass, null);
 
                 // The claim resolve is the whole holder map, and nothing draws hatched or unfilled -
                 // every claim paints solid, so the fill split takes its whole-cluster-solid fast path.
-                assertThat(resolution.ownerBySystemId())
-                    .containsExactly(Map.entry("claimed", claimHolder));
-                assertThat(resolution.contestedSystemIds())
+                assertThat(resolution.ownerBySystemKey())
+                    .containsExactly(Map.entry(buildCellKey("claimed"), claimHolder));
+                assertThat(resolution.contestedSystemKeys())
                     .isEmpty();
-                assertThat(resolution.unfilledSystemIds())
+                assertThat(resolution.unfilledSystemKeys())
                     .isEmpty();
             }
         }
@@ -95,10 +97,10 @@ final class ClaimsHolderProviderTest {
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var ownClaimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var rivalClaimHolder = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
-            var claims = new LinkedHashMap<String, DominantHolder>();
+            var claims = new LinkedHashMap<SystemKey, DominantHolder>();
 
-            claims.put("own-claimed", ownClaimHolder);
-            claims.put("rival-claimed", rivalClaimHolder);
+            claims.put(buildCellKey("own-claimed"), ownClaimHolder);
+            claims.put(buildCellKey("rival-claimed"), rivalClaimHolder);
 
             var provider = new ClaimsHolderProvider((visibility, colonies) -> claimReaderMock);
 
@@ -106,7 +108,7 @@ final class ClaimsHolderProviderTest {
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
                     .thenReturn(claims);
@@ -121,16 +123,16 @@ final class ClaimsHolderProviderTest {
                 // The pick actually recedes the sector: the spotlit faction's claims carry the key
                 // that keeps them at full strength, while a rival's claim keeps its plain bloc key
                 // for the style layer to mute and desaturate.
-                assertThat(resolution.ownerBySystemId().get("own-claimed"))
+                assertThat(resolution.ownerBySystemKey().get(buildCellKey("own-claimed")))
                     .isSameAs(spotlightHolder);
-                assertThat(resolution.ownerBySystemId().get("rival-claimed"))
+                assertThat(resolution.ownerBySystemKey().get(buildCellKey("rival-claimed")))
                     .isSameAs(rivalClaimHolder);
 
                 // The spotlight changes only which key a claim carries: every claim still paints
                 // solid, so the fill split keeps its whole-cluster-solid fast path under a filter.
-                assertThat(resolution.contestedSystemIds())
+                assertThat(resolution.contestedSystemKeys())
                     .isEmpty();
-                assertThat(resolution.unfilledSystemIds())
+                assertThat(resolution.unfilledSystemKeys())
                     .isEmpty();
             }
         }
@@ -154,10 +156,10 @@ final class ClaimsHolderProviderTest {
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
-                    .thenReturn(Map.of("claimed", claimHolder));
+                    .thenReturn(Map.of(buildCellKey("claimed"), claimHolder));
 
                 // The spotlight holder resolves as it would for any pick; what makes the difference
                 // is that no claimed system carries this bloc, not that the holder is missing.
@@ -168,9 +170,9 @@ final class ClaimsHolderProviderTest {
 
                 var resolution = provider.resolveHolder(pass, "tritachyon");
 
-                assertThat(resolution.ownerBySystemId())
-                    .containsExactly(Map.entry("claimed", claimHolder));
-                assertThat(resolution.ownerBySystemId())
+                assertThat(resolution.ownerBySystemKey())
+                    .containsExactly(Map.entry(buildCellKey("claimed"), claimHolder));
+                assertThat(resolution.ownerBySystemKey())
                     .doesNotContainValue(spotlightHolder);
             }
         }
@@ -194,7 +196,7 @@ final class ClaimsHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(pass, claimReaderMock))
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
                     .thenReturn(Map.of());
 
                 provider.resolveHolder(pass, null);
@@ -222,7 +224,7 @@ final class ClaimsHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(pass, claimReaderMock))
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
                     .thenReturn(Map.of());
 
                 provider.resolveHolder(pass, null);

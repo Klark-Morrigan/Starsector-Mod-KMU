@@ -2,6 +2,7 @@ package kmu.maplayers.politicalmap.base.politics;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -14,6 +15,7 @@ import java.awt.Color;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,14 +34,17 @@ final class FilteredClaimsTest {
     private static final DominantHolder SPOTLIT_HOLDER =
         new DominantHolder("$spotlit", PRIMARY, SECONDARY);
 
+    private static final SystemKey HEGEMONY_CLAIMED = buildCellKey("hegemony-claimed");
+    private static final SystemKey RIVAL_CLAIMED = buildCellKey("rival-claimed");
+
     // Two claimed systems under different claimants, so every case can assert both what the
     // spotlight moves and what it leaves where it was.
-    private static Map<String, DominantHolder> buildTwoClaimantSector() {
+    private static Map<SystemKey, DominantHolder> buildTwoClaimantSector() {
 
-        var claims = new LinkedHashMap<String, DominantHolder>();
+        var claims = new LinkedHashMap<SystemKey, DominantHolder>();
 
-        claims.put("hegemony-claimed", new DominantHolder("hegemony", PRIMARY, SECONDARY));
-        claims.put("rival-claimed", new DominantHolder("tritachyon", PRIMARY, SECONDARY));
+        claims.put(HEGEMONY_CLAIMED, new DominantHolder("hegemony", PRIMARY, SECONDARY));
+        claims.put(RIVAL_CLAIMED, new DominantHolder("tritachyon", PRIMARY, SECONDARY));
 
         return claims;
     }
@@ -59,7 +64,7 @@ final class FilteredClaimsTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
                     .thenReturn(claims);
@@ -89,7 +94,7 @@ final class FilteredClaimsTest {
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
                     .thenReturn(claims);
@@ -107,10 +112,10 @@ final class FilteredClaimsTest {
                 // The selected bloc's claim carries the one spotlight key, which is what draws it
                 // at full strength and joins it to whatever else that bloc has spotlit; the
                 // rival's keeps its own bloc key, which is what the style layer reads to recede it.
-                assertThat(resolved.get("hegemony-claimed"))
+                assertThat(resolved.get(HEGEMONY_CLAIMED))
                     .isSameAs(SPOTLIT_HOLDER);
-                assertThat(resolved.get("rival-claimed"))
-                    .isSameAs(claims.get("rival-claimed"));
+                assertThat(resolved.get(RIVAL_CLAIMED))
+                    .isSameAs(claims.get(RIVAL_CLAIMED));
             }
         }
 
@@ -127,7 +132,7 @@ final class FilteredClaimsTest {
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
                     .thenReturn(claims);
@@ -145,7 +150,7 @@ final class FilteredClaimsTest {
                 // The degenerate case: the selected bloc's colour faction vanished mid-session, so
                 // its claims drop rather than paint colourless. Every other claim is unaffected.
                 assertThat(resolved).containsExactly(
-                    Map.entry("rival-claimed", claims.get("rival-claimed")));
+                    Map.entry(RIVAL_CLAIMED, claims.get(RIVAL_CLAIMED)));
             }
         }
 
@@ -158,7 +163,7 @@ final class FilteredClaimsTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
                     .thenReturn(Map.of());

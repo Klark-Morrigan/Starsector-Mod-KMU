@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 
 import org.junit.jupiter.api.Nested;
@@ -10,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,15 +32,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 final class SystemOccupancyTest {
 
-    private static final String HELD_SYSTEM = "held";
-    private static final String SETTLED_SYSTEM = "settled";
-    private static final String PRESENT_SYSTEM = "present";
+    private static final SystemKey HELD_SYSTEM = buildCellKey("held");
+    private static final SystemKey SETTLED_SYSTEM = buildCellKey("settled");
+    private static final SystemKey PRESENT_SYSTEM = buildCellKey("present");
 
     private static final DominantHolder HEGEMONY =
         new DominantHolder("hegemony", Color.GRAY, Color.GRAY);
 
     private static final DominantHolder TRITACHYON =
         new DominantHolder("tritachyon", Color.GRAY, Color.GRAY);
+
+    // Two systems the sector answers to one id for - vanilla's own unnamed deep space - which only
+    // their anchors tell apart. The pair every fact here has to be able to hold two answers for.
+    private static final SystemKey FIRST_TWIN = new SystemKey("deep space", "", "8b3");
+    private static final SystemKey SECOND_TWIN = new SystemKey("deep space", "", "38d53");
 
     @Nested
     class CreateCopyOf {
@@ -49,11 +58,11 @@ final class SystemOccupancyTest {
                 Set.of(SETTLED_SYSTEM),
                 Set.of(PRESENT_SYSTEM));
 
-            assertThat(occupancy.getHolderBySystemId())
+            assertThat(occupancy.getHolderBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, HEGEMONY));
-            assertThat(occupancy.getInhabitedSystemIds())
+            assertThat(occupancy.getInhabitedSystemKeys())
                 .containsExactly(SETTLED_SYSTEM);
-            assertThat(occupancy.getSpotlitPresenceSystemIds())
+            assertThat(occupancy.getSpotlitPresenceSystemKeys())
                 .containsExactly(PRESENT_SYSTEM);
         }
 
@@ -71,7 +80,7 @@ final class SystemOccupancyTest {
                 .isTrue();
             assertThat(occupancy.foldSpotlitPresenceOf(PRESENT_SYSTEM, true))
                 .isTrue();
-            assertThat(occupancy.getHolderBySystemId())
+            assertThat(occupancy.getHolderBySystemKey())
                 .containsOnlyKeys(HELD_SYSTEM);
         }
 
@@ -80,8 +89,8 @@ final class SystemOccupancyTest {
             // The mirror of the copy: a build that goes on reading what it handed over must not
             // see a later fold in it, or the pass's own record of what it resolved would drift as
             // the map is refreshed.
-            var holders = new LinkedHashMap<String, DominantHolder>();
-            var inhabited = new LinkedHashSet<String>();
+            var holders = new LinkedHashMap<SystemKey, DominantHolder>();
+            var inhabited = new LinkedHashSet<SystemKey>();
 
             var occupancy = SystemOccupancy.createCopyOf(holders, inhabited, Set.of());
 
@@ -105,11 +114,11 @@ final class SystemOccupancyTest {
             // reaching it first must write rather than throw.
             var occupancy = SystemOccupancy.createEmpty();
 
-            assertThat(occupancy.getHolderBySystemId())
+            assertThat(occupancy.getHolderBySystemKey())
                 .isEmpty();
-            assertThat(occupancy.getInhabitedSystemIds())
+            assertThat(occupancy.getInhabitedSystemKeys())
                 .isEmpty();
-            assertThat(occupancy.getSpotlitPresenceSystemIds())
+            assertThat(occupancy.getSpotlitPresenceSystemKeys())
                 .isEmpty();
 
             assertThat(occupancy.foldInhabitationOf(SETTLED_SYSTEM, true))
@@ -118,25 +127,25 @@ final class SystemOccupancyTest {
     }
 
     @Nested
-    class GetHolderBySystemId {
+    class GetHolderBySystemKey {
 
         @Test
-        void getHolderBySystemIdRefusesAWriteThroughTheView() {
+        void getHolderBySystemKeyRefusesAWriteThroughTheView() {
             // Every reader is answered through this, and one of them putting a holder in would be
             // a holder change no disturbance was recorded for - a cell drawn from a fact the batch
             // never noticed had moved.
             var occupancy = SystemOccupancy.createEmpty();
 
-            assertThatThrownBy(() -> occupancy.getHolderBySystemId().put(HELD_SYSTEM, HEGEMONY))
+            assertThatThrownBy(() -> occupancy.getHolderBySystemKey().put(HELD_SYSTEM, HEGEMONY))
                 .isInstanceOf(UnsupportedOperationException.class);
         }
 
         @Test
-        void getHolderBySystemIdShowsWhatALaterFoldWrote() {
+        void getHolderBySystemKeyShowsWhatALaterFoldWrote() {
             // The view is over the live map rather than a snapshot of it, so a reader holding one
             // across a refresh sees what the refresh wrote.
             var occupancy = SystemOccupancy.createEmpty();
-            var holders = occupancy.getHolderBySystemId();
+            var holders = occupancy.getHolderBySystemKey();
 
             occupancy.recordHolderOf(HELD_SYSTEM, HEGEMONY);
 
@@ -146,27 +155,27 @@ final class SystemOccupancyTest {
     }
 
     @Nested
-    class GetInhabitedSystemIds {
+    class GetInhabitedSystemKeys {
 
         @Test
-        void getInhabitedSystemIdsRefusesAWriteThroughTheView() {
+        void getInhabitedSystemKeysRefusesAWriteThroughTheView() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
-            assertThatThrownBy(() -> occupancy.getInhabitedSystemIds().add(SETTLED_SYSTEM))
+            assertThatThrownBy(() -> occupancy.getInhabitedSystemKeys().add(SETTLED_SYSTEM))
                 .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 
     @Nested
-    class GetSpotlitPresenceSystemIds {
+    class GetSpotlitPresenceSystemKeys {
 
         @Test
-        void getSpotlitPresenceSystemIdsRefusesAWriteThroughTheView() {
+        void getSpotlitPresenceSystemKeysRefusesAWriteThroughTheView() {
 
             var occupancy = SystemOccupancy.createEmpty();
 
-            assertThatThrownBy(() -> occupancy.getSpotlitPresenceSystemIds().add(PRESENT_SYSTEM))
+            assertThatThrownBy(() -> occupancy.getSpotlitPresenceSystemKeys().add(PRESENT_SYSTEM))
                 .isInstanceOf(UnsupportedOperationException.class);
         }
     }
@@ -184,7 +193,7 @@ final class SystemOccupancyTest {
 
             occupancy.recordHolderOf(HELD_SYSTEM, TRITACHYON);
 
-            assertThat(occupancy.getHolderBySystemId())
+            assertThat(occupancy.getHolderBySystemKey())
                 .containsExactly(Map.entry(HELD_SYSTEM, TRITACHYON));
         }
 
@@ -200,8 +209,24 @@ final class SystemOccupancyTest {
 
             occupancy.recordHolderOf(HELD_SYSTEM, null);
 
-            assertThat(occupancy.getHolderBySystemId())
+            assertThat(occupancy.getHolderBySystemKey())
                 .isEmpty();
+        }
+
+        @Test
+        void recordHolderOfHoldsTwoSystemsSharingAnIdUnderDifferentBlocs() {
+            // The collision the holding is keyed by SystemKey to survive: each of the pair keeps
+            // its own holder, where a map keyed by id held one entry and drew the second system in
+            // the first's colours.
+            var occupancy = SystemOccupancy.createEmpty();
+
+            occupancy.recordHolderOf(FIRST_TWIN, HEGEMONY);
+            occupancy.recordHolderOf(SECOND_TWIN, TRITACHYON);
+
+            assertThat(occupancy.getHolderBySystemKey())
+                .containsExactly(
+                    Map.entry(FIRST_TWIN, HEGEMONY),
+                    Map.entry(SECOND_TWIN, TRITACHYON));
         }
     }
 
@@ -215,7 +240,7 @@ final class SystemOccupancyTest {
 
             assertThat(occupancy.foldInhabitationOf(SETTLED_SYSTEM, true))
                 .isTrue();
-            assertThat(occupancy.getInhabitedSystemIds())
+            assertThat(occupancy.getInhabitedSystemKeys())
                 .containsExactly(SETTLED_SYSTEM);
         }
 
@@ -229,7 +254,7 @@ final class SystemOccupancyTest {
 
             assertThat(occupancy.foldInhabitationOf(SETTLED_SYSTEM, false))
                 .isTrue();
-            assertThat(occupancy.getInhabitedSystemIds())
+            assertThat(occupancy.getInhabitedSystemKeys())
                 .isEmpty();
         }
 
@@ -266,7 +291,7 @@ final class SystemOccupancyTest {
 
             assertThat(occupancy.foldSpotlitPresenceOf(PRESENT_SYSTEM, true))
                 .isTrue();
-            assertThat(occupancy.getSpotlitPresenceSystemIds())
+            assertThat(occupancy.getSpotlitPresenceSystemKeys())
                 .containsExactly(PRESENT_SYSTEM);
         }
 
@@ -280,7 +305,7 @@ final class SystemOccupancyTest {
 
             assertThat(occupancy.foldSpotlitPresenceOf(PRESENT_SYSTEM, false))
                 .isTrue();
-            assertThat(occupancy.getSpotlitPresenceSystemIds())
+            assertThat(occupancy.getSpotlitPresenceSystemKeys())
                 .isEmpty();
         }
 
@@ -297,14 +322,28 @@ final class SystemOccupancyTest {
         }
 
         @Test
+        void foldSpotlitPresenceOfMovesOnlyTheSystemOfAPairSharingAnId() {
+            // The pair the address exists to tell apart, asked of the fold: the pick arriving in
+            // one of them leaves the other where it was, where a set keyed by id would have
+            // spared both cells the recede at once.
+            var occupancy = SystemOccupancy.createEmpty();
+
+            assertThat(occupancy.foldSpotlitPresenceOf(FIRST_TWIN, true))
+                .isTrue();
+
+            assertThat(occupancy.getSpotlitPresenceSystemKeys())
+                .containsExactly(FIRST_TWIN);
+        }
+
+        @Test
         void foldSpotlitPresenceOfLeavesInhabitationAlone() {
-            // The two folds run over the same system ids and answer the same shape of question, so
+            // The two folds run over the same system keys and answer the same shape of question, so
             // a set named wrong in one of them would read as correct at every other assertion here.
             var occupancy = SystemOccupancy.createEmpty();
 
             occupancy.foldSpotlitPresenceOf(PRESENT_SYSTEM, true);
 
-            assertThat(occupancy.getInhabitedSystemIds())
+            assertThat(occupancy.getInhabitedSystemKeys())
                 .isEmpty();
         }
     }

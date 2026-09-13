@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -137,8 +138,8 @@ final class ColonyCellRibbonsIntegrationTest {
             assertThat(band.segments())
                 .extracting(RibbonSegment::colour)
                 .contains(TRITACHYON_BRIGHT);
-            assertThat(FilteredPolitics.resolveFilteredHolder(pass, TRITACHYON).contestedSystemIds())
-                .contains(SYSTEM_ID);
+            assertThat(FilteredPolitics.resolveFilteredHolder(pass, TRITACHYON).contestedSystemKeys())
+                .contains(buildCellKey(SYSTEM_ID));
         }
     }
 

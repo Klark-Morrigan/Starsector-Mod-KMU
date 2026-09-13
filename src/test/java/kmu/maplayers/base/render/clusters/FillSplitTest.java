@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * systems one state names as its coincident neighbours. All of it decidable from plain sets,
  * which is why it lives apart from the tessellation in {@link SplitFillBuilder}.
  *
- * <p>The members are addressed by key and the two exception sets by id, as the layer's holding
- * still is, so the constants come in both spellings where a case reads both.
+ * <p>The members and the two exception sets share one address, so a case states its systems by
+ * key throughout.
  */
 final class FillSplitTest {
 
@@ -57,14 +57,14 @@ final class FillSplitTest {
         @Test
         void classifyFillStateReturnsHatchedWhenTheSystemIsHatched() {
 
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM_ID), Set.of()))
+            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of()))
                 .isEqualTo(FillState.HATCHED);
         }
 
         @Test
         void classifyFillStateReturnsUnfilledWhenTheSystemIsUnfilled() {
 
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of(SYSTEM_ID)))
+            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(), Set.of(SYSTEM)))
                 .isEqualTo(FillState.UNFILLED);
         }
 
@@ -72,7 +72,7 @@ final class FillSplitTest {
         void classifyFillStateFavoursUnfilledOverHatchedWhenTheSystemIsBoth() {
             // A system drawn empty is empty whatever else the layer says about it, so unfilled
             // wins the tie.
-            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM_ID), Set.of(SYSTEM_ID)))
+            assertThat(FillSplit.classifyFillState(SYSTEM, Set.of(SYSTEM), Set.of(SYSTEM)))
                 .isEqualTo(FillState.UNFILLED);
         }
 
@@ -80,18 +80,22 @@ final class FillSplitTest {
         void classifyFillStateReturnsSolidForACellWithNoStarOfItsOwn() {
             // A null system has no per-system fill state, so it fills solid with the rest of the
             // cluster rather than probing either exception set with a null key.
-            assertThat(FillSplit.classifyFillState(null, Set.of("other"), Set.of("other")))
+            assertThat(FillSplit.classifyFillState(null, Set.of(buildCellKey("other")), Set.of(buildCellKey("other"))))
                 .isEqualTo(FillState.SOLID);
         }
 
         @Test
-        void classifyFillStateNarrowsTheKeyToTheIdTheExceptionSetsAreKeyedBy() {
-            // The join with the holding: the sets name the system by id, so a key whose other arms
-            // are stated still meets the set through its id arm.
-            var anchored = new SystemKey(SYSTEM_ID, "", "8b3");
+        void classifyFillStateDrawsTwoSystemsSharingAnIdInTheirOwnStates() {
+            // The sets name a system the way the members do, so a colliding pair can draw in two
+            // different states - where a set keyed by id could only have hatched both or neither.
+            var hatched = new SystemKey(SYSTEM_ID, "", "8b3");
+            var solid = new SystemKey(SYSTEM_ID, "", "38d53");
 
-            assertThat(FillSplit.classifyFillState(anchored, Set.of(SYSTEM_ID), Set.of()))
+            assertThat(FillSplit.classifyFillState(hatched, Set.of(hatched), Set.of()))
                 .isEqualTo(FillState.HATCHED);
+
+            assertThat(FillSplit.classifyFillState(solid, Set.of(hatched), Set.of()))
+                .isEqualTo(FillState.SOLID);
         }
     }
 
@@ -180,8 +184,8 @@ final class FillSplitTest {
                 buildCellKey("cell-hatched"),
                 buildCellKey("cell-unfilled"),
                 STARLESS_CELL),
-            Set.of(HATCHED_SYSTEM_ID),
-            Set.of(UNFILLED_SYSTEM_ID));
+            Set.of(HATCHED_SYSTEM),
+            Set.of(UNFILLED_SYSTEM));
     }
 
     // A grouping that only has to answer "which system does this cell draw as" - the split reads

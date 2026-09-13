@@ -1,5 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 
 import java.util.Set;
@@ -44,19 +46,19 @@ public final class FactionlessStyleResolver {
      * kind of settlement it is would be a third bundle's worth of theme and settings to say,
      * and the map says it in the hover box instead.
      *
-     * @param inhabitedSystemIds the systems something stands in this pass, live colony or
-     *                           known ruin
-     * @param systemId           the system the cell draws as, or null for a cell with no star
-     *                           of its own - a shard of leftover space, which names nothing to
-     *                           look up and so is never inhabited. The null id never reaches
-     *                           the set, which may be immutable and null-hostile.
+     * @param inhabitedSystemKeys the systems something stands in this pass, live colony or
+     *                            known ruin
+     * @param systemKey           the system the cell draws as, or null for a cell with no star
+     *                            of its own - a shard of leftover space, which names nothing to
+     *                            look up and so is never inhabited. The null key never reaches
+     *                            the set, which may be immutable and null-hostile.
      * @return the category the cell draws in
      */
     public static PoliticalMapCategory resolveCategoryOf(
-            Set<String> inhabitedSystemIds,
-            String systemId) {
+            Set<SystemKey> inhabitedSystemKeys,
+            SystemKey systemKey) {
 
-        return systemId != null && inhabitedSystemIds.contains(systemId)
+        return systemKey != null && inhabitedSystemKeys.contains(systemKey)
             ? PoliticalMapCategory.DECIVILISED
             : PoliticalMapCategory.UNINHABITED;
     }

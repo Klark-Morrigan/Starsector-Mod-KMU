@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReader;
 
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -46,14 +47,14 @@ public final class SectorClaims {
      *                    palette is resolved (identity for the faction view, alliance blocs for
      *                    the alliances view); a pass over no sector yields an empty map
      * @param claimReader the claim source, read once per system
-     * @return the claiming holder keyed by system id, in star-system walk order; a system with
-     *         no resolvable claim is absent from the map
+     * @return the claiming holder keyed by {@link SystemKey}, in star-system walk order; a system
+     *         with no resolvable claim is absent from the map
      */
-    public static Map<String, DominantHolder> resolveClaimingHolderBySystemId(
+    public static Map<SystemKey, DominantHolder> resolveClaimingHolderBySystemKey(
             HolderPass pass,
             ClaimReader claimReader) {
 
-        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
         var sector = pass.sector();
         var grouping = pass.grouping();
 
@@ -68,9 +69,9 @@ public final class SectorClaims {
                 grouping.resolveBlocId(claimantId));
 
             if (holder != null) {
-                ownerBySystemId.put(system.getId(), holder);
+                ownerBySystemKey.put(SystemKey.readKeyOf(system), holder);
             }
         }
-        return ownerBySystemId;
+        return ownerBySystemKey;
     }
 }

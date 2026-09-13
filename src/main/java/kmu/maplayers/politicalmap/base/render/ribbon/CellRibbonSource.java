@@ -287,10 +287,10 @@ public final class CellRibbonSource {
     // paths where no band was ever going to be laid.
     private double[] resolveBandLayoutSite(SystemKey drawnSystemKey) {
 
-        // The inhabitation gate is keyed by id, the layer's holding being keyed that way, so the
-        // system's key narrows to ask it; the site is the cut's own and is asked by key.
+        // The inhabitation gate and the site are both asked under the system's own key, which is
+        // the one address the whole build is written and read under.
         if (drawnSystemKey == null
-                || !surface.inhabitedSystemIds().contains(drawnSystemKey.systemId())) {
+                || !surface.inhabitedSystemKeys().contains(drawnSystemKey)) {
             return null;
         }
         return surface.siteBySystemKey().get(drawnSystemKey);

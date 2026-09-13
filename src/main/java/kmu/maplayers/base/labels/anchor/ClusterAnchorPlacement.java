@@ -127,12 +127,10 @@ public final class ClusterAnchorPlacement {
             if (sites.isEmpty()) {
                 continue;
             }
-            // The owner map is keyed by id, so the first member's key narrows to reach it - which
-            // answers for the first system carrying that id, as every id-keyed read does.
             var owner = partition
                 .grouping()
-                .ownerBySystemId()
-                .get(memberSystemKeys.get(0).systemId());
+                .ownerBySystemKey()
+                .get(memberSystemKeys.get(0));
 
             var subject = labelResolvers.resolveLabelSubjectFor(
                 // Set.copyOf here is where the member list stops being ordered: the sweep

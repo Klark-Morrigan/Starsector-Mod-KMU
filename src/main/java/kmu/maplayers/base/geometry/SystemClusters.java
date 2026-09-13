@@ -90,7 +90,7 @@ public final class SystemClusters {
                 || !parentByCellKey.containsKey(acrossSystem.systemKey())) {
             return;
         }
-        if (EdgeClassifier.classifyAcross(edge, cellOwner, grouping.ownerBySystemId())
+        if (EdgeClassifier.classifyAcross(edge, cellOwner, grouping.ownerBySystemKey())
                 == EdgeClass.INTERIOR_SEAM) {
             union(parentByCellKey, cellKey, acrossSystem.systemKey());
         }

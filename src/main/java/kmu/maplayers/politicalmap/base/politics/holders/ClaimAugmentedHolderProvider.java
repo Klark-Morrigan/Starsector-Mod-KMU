@@ -1,5 +1,6 @@
 package kmu.maplayers.politicalmap.base.politics.holders;
 
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 
@@ -69,12 +70,12 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
         // answer which claimed systems join the holder map, never which key each one carries.
         // The reader is opened over this pass rather than held across passes, so it reads the
         // colonies the held half just read rather than walking every system a second time.
-        var claimingHolderBySystemId = FilteredClaims.resolveFilteredClaims(
+        var claimingHolderBySystemKey = FilteredClaims.resolveFilteredClaims(
             pass,
             pass.openClaimReaderThrough(claimReaderSource),
             selectedBlocId);
 
-        return foldClaimsIntoHeld(held, claimingHolderBySystemId);
+        return foldClaimsIntoHeld(held, claimingHolderBySystemKey);
     }
 
     // Adds each claimed system the held resolve left unowned to the holder map - so held and claimed
@@ -84,21 +85,21 @@ public final class ClaimAugmentedHolderProvider implements HolderProvider {
     // already keyed for whatever spotlight is active, so the fold reads no filter of its own.
     private static HolderResolution foldClaimsIntoHeld(
             HolderResolution held,
-            Map<String, DominantHolder> claimingHolderBySystemId) {
+            Map<SystemKey, DominantHolder> claimingHolderBySystemKey) {
 
-        var ownerBySystemId = new LinkedHashMap<>(held.ownerBySystemId());
-        var unfilledSystemIds = new LinkedHashSet<>(held.unfilledSystemIds());
+        var ownerBySystemKey = new LinkedHashMap<>(held.ownerBySystemKey());
+        var unfilledSystemKeys = new LinkedHashSet<>(held.unfilledSystemKeys());
 
-        for (var claim : claimingHolderBySystemId.entrySet()) {
-            if (ownerBySystemId.containsKey(claim.getKey())) {
+        for (var claim : claimingHolderBySystemKey.entrySet()) {
+            if (ownerBySystemKey.containsKey(claim.getKey())) {
                 continue;
             }
-            ownerBySystemId.put(claim.getKey(), claim.getValue());
-            unfilledSystemIds.add(claim.getKey());
+            ownerBySystemKey.put(claim.getKey(), claim.getValue());
+            unfilledSystemKeys.add(claim.getKey());
         }
         return new HolderResolution(
-            ownerBySystemId,
-            held.contestedSystemIds(),
-            unfilledSystemIds);
+            ownerBySystemKey,
+            held.contestedSystemKeys(),
+            unfilledSystemKeys);
     }
 }

@@ -19,25 +19,22 @@ import java.util.Map;
  * than leaving each consumer to compose them - and keeps the owner map itself purely about
  * systems, which is the level a layer assigns owners at.
  *
- * <p>Cell keys and system keys share one namespace, and a system's own cell is always keyed
- * by that system's {@link SystemKey}. That is what lets an edge tagged with a system across it
- * resolve to the neighbouring cell as well as to the neighbour's owner. A cell with no system of
- * its own takes a key belonging to neither, and is simply absent from {@code systemKeyByCellKey}.
- *
- * <p>The two halves are addressed differently for now: a cell by the key that tells two systems
- * sharing an id apart, its owner by the id the layer's holding is still keyed on. So the owner
- * resolve narrows the key to its id and answers for the first system carrying it - the one every
- * id-keyed read of the sector answers with.
+ * <p>Both halves are addressed by {@link SystemKey}: a cell by the key of the system it draws as,
+ * a system by its own. One type rather than a convention two maps happen to keep, so an edge
+ * tagged with a system across it resolves to the neighbouring cell and to that neighbour's owner
+ * through the same address, and two systems sharing a vanilla id stay two entries on both sides. A
+ * cell with no system of its own takes a key belonging to neither, and is simply absent from
+ * {@code systemKeyByCellKey}.
  *
  * <p>Pure lookups over opaque owners, so any layer can group by whatever it clusters on.
  *
  * @param systemKeyByCellKey the system each cell draws as; a cell absent here has no system
  *                           of its own and so no owner, wherever on the map it sits
- * @param ownerBySystemId    the owner per system; a system absent here is unowned
+ * @param ownerBySystemKey   the owner per system; a system absent here is unowned
  */
 public record CellGrouping(
     Map<SystemKey, SystemKey> systemKeyByCellKey,
-    Map<String, String> ownerBySystemId) {
+    Map<SystemKey, String> ownerBySystemKey) {
 
     /**
      * The system one cell draws as - whose owner, palette, and name it takes.
@@ -50,19 +47,6 @@ public record CellGrouping(
     }
 
     /**
-     * The system one cell draws as, narrowed to the id a holding keyed that way is read under.
-     *
-     * @param cellKey the cell to resolve
-     * @return the id of that cell's system, or null when the cell has no system of its own
-     */
-    public String resolveDrawnSystemIdOf(SystemKey cellKey) {
-        var systemKey = resolveDrawnSystemKeyOf(cellKey);
-        return systemKey == null
-            ? null
-            : systemKey.systemId();
-    }
-
-    /**
      * The owner one cell falls under - the owner of the system it draws as.
      *
      * @param cellKey the cell to resolve
@@ -70,10 +54,10 @@ public record CellGrouping(
      *         is unowned
      */
     public String resolveOwnerOf(SystemKey cellKey) {
-        var systemId = resolveDrawnSystemIdOf(cellKey);
-        return systemId == null
+        var systemKey = resolveDrawnSystemKeyOf(cellKey);
+        return systemKey == null
             ? null
-            : ownerBySystemId.get(systemId);
+            : ownerBySystemKey.get(systemKey);
     }
 
     /**

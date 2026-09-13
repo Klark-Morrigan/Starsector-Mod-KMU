@@ -4,6 +4,7 @@ import com.fs.starfarer.api.campaign.SectorAPI;
 
 import kmlib.colour.Colours;
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.font.LazyFontMeasurer;
 import kmlib.starsector.ui.label.AspectLabelLengthEstimator;
 import kmlib.starsector.ui.label.FontLabelLengthEstimator;
@@ -106,12 +107,12 @@ final class ClusterLabelStyling {
     // the whole bloc) under that bloc's shared style decision, and cached per bloc id since
     // every cluster of a bloc draws its name the same.
     static Function<String, Color> newLabelColourResolver(
-            Map<String, DominantHolder> ownerBySystemId,
+            Map<SystemKey, DominantHolder> ownerBySystemKey,
             BlocNameStyles nameStyles,
             Function<String, BlocStyleDecision> styleDecisionByBlocId,
             FactionPalette desaturationPalette) {
 
-        var ownerByBlocId = mapHolderByBlocId(ownerBySystemId);
+        var ownerByBlocId = mapHolderByBlocId(ownerBySystemKey);
         return memoisePerBlocId(blocId -> resolveLabelColour(
             ownerByBlocId.get(blocId),
             nameStyles,
@@ -178,10 +179,10 @@ final class ClusterLabelStyling {
     // of a bloc resolves to the same two palette shades, so which of them is kept is
     // immaterial; first seen wins.
     private static Map<String, DominantHolder> mapHolderByBlocId(
-            Map<String, DominantHolder> ownerBySystemId) {
+            Map<SystemKey, DominantHolder> ownerBySystemKey) {
 
         var ownerByBlocId = new HashMap<String, DominantHolder>();
-        for (var holder : ownerBySystemId.values()) {
+        for (var holder : ownerBySystemKey.values()) {
             ownerByBlocId.putIfAbsent(holder.factionId(), holder);
         }
         return ownerByBlocId;

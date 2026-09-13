@@ -104,6 +104,18 @@ final class StyledCellBuilderTest {
         private static final DominantHolder OWNER =
             new DominantHolder("hegemony", OWNER_PRIMARY, OWNER_SECONDARY);
 
+        // Two systems the sector answers to one id for - vanilla's own unnamed deep space, which
+        // only their anchors tell apart - and the rival holding the second of them. Its seam shade
+        // is distinct from every other colour here, so an observed seam names which of the pair's
+        // holders the cell read.
+        private static final SystemKey FIRST_TWIN = new SystemKey("deep space", "", "8b3");
+        private static final SystemKey SECOND_TWIN = new SystemKey("deep space", "", "38d53");
+        private static final Color RIVAL_PRIMARY = Color.CYAN;
+        private static final Color RIVAL_SECONDARY = Color.MAGENTA;
+
+        private static final DominantHolder RIVAL_OWNER =
+            new DominantHolder("tritachyon", RIVAL_PRIMARY, RIVAL_SECONDARY);
+
         // An owned cell's fill and national border are per cluster (in StyledCluster),
         // so fill and outer are "No color" here and only inner - the interior seam -
         // resolves a real colour, the one slot these tests can observe.
@@ -135,17 +147,25 @@ final class StyledCellBuilderTest {
         }
 
         @Test
-        void buildStyledCellForSystemNarrowsTheSystemToTheIdTheHoldingIsKeyedBy() {
-            // The join with the holding: the cell arrives keyed and the holder map names a system
-            // by id, so a cell whose system states an anchor arm still finds its holder and draws
-            // as owned rather than as the empty backdrop.
-            var styled = StyledCellBuilder.buildStyledCellForSystem(
-                buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE)),
-                new SystemKey(SYSTEM_ID, "", "8b3"),
-                buildOwnedCell());
+        void buildStyledCellForSystemDrawsTwoSystemsSharingAnIdInTheirOwnHoldersColours() {
+            // The collision the whole address exists for, at the cell that shows it: both systems
+            // answer to one vanilla id and are held by different blocs, so the two cells paint in
+            // two shades - where a holding keyed by id drew the second in the first's colours.
+            var territories = buildDrawablesHeldByTwins();
 
-            assertThat(requireFusedCell(styled).seamPaint().colour())
+            assertThat(requireFusedCell(StyledCellBuilder.buildStyledCellForSystem(
+                    territories,
+                    FIRST_TWIN,
+                    buildOwnedCell()))
+                .seamPaint().colour())
                 .isEqualTo(OWNER_SECONDARY);
+
+            assertThat(requireFusedCell(StyledCellBuilder.buildStyledCellForSystem(
+                    territories,
+                    SECOND_TWIN,
+                    buildOwnedCell()))
+                .seamPaint().colour())
+                .isEqualTo(RIVAL_SECONDARY);
         }
 
         @Test
@@ -293,7 +313,7 @@ final class StyledCellBuilderTest {
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
-                    Set.of(UNHELD_INHABITED_SYSTEM_ID)),
+                    Set.of(buildCellKey(UNHELD_INHABITED_SYSTEM_ID))),
                 buildCellKey(UNHELD_INHABITED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -316,7 +336,7 @@ final class StyledCellBuilderTest {
                 buildFilteringFactionlessDrawablesWith(
                     buildFilledOutlineStyle(),
                     new ElementStyleAdjustment(0.5, true),
-                    Set.of(UNHELD_INHABITED_SYSTEM_ID)),
+                    Set.of(buildCellKey(UNHELD_INHABITED_SYSTEM_ID))),
                 buildCellKey(DECIVILISED_SYSTEM_ID),
                 buildOwnedCell());
 
@@ -527,7 +547,7 @@ final class StyledCellBuilderTest {
         private static PoliticalMapTerritories buildFilteringFactionlessDrawablesWith(
                 CategoryStyle factionlessStyle,
                 ElementStyleAdjustment recede,
-                Set<String> spotlitPresenceSystemIds) {
+                Set<SystemKey> spotlitPresenceSystemKeys) {
 
             return buildFactionlessDrawablesWith(
                 buildFactionlessTheme(
@@ -536,7 +556,7 @@ final class StyledCellBuilderTest {
                     ThemeFixtures.createInertGlobalStyle()),
                 "selected-bloc",
                 recede,
-                spotlitPresenceSystemIds);
+                spotlitPresenceSystemKeys);
         }
 
         // The unfiltered factionless backdrop with the sector-wide corner rounding switched on,
@@ -598,13 +618,13 @@ final class StyledCellBuilderTest {
                 RenderStyle theme,
                 String selectedBlocId,
                 ElementStyleAdjustment recede,
-                Set<String> spotlitPresenceSystemIds) {
+                Set<SystemKey> spotlitPresenceSystemKeys) {
 
             return new PoliticalMapTerritories(
                 SystemOccupancy.createCopyOf(
                     Map.of(),
-                    Set.of(DECIVILISED_SYSTEM_ID, UNHELD_INHABITED_SYSTEM_ID),
-                    spotlitPresenceSystemIds),
+                    Set.of(buildCellKey(DECIVILISED_SYSTEM_ID), buildCellKey(UNHELD_INHABITED_SYSTEM_ID)),
+                    spotlitPresenceSystemKeys),
                 Set.of(),
                 new MapStyling(
                     theme,
@@ -682,6 +702,33 @@ final class StyledCellBuilderTest {
             return buildDrawablesWith(buildViewMockAdjusting(ElementStyleAdjustment.NONE), true, recede);
         }
 
+        // The same backdrop holding the two systems that answer to one id, each under its own
+        // bloc - the only arrangement that tells a cell reading its holder by key from one
+        // narrowing to the id first.
+        private static PoliticalMapTerritories buildDrawablesHeldByTwins() {
+
+            var holders = new LinkedHashMap<SystemKey, DominantHolder>();
+
+            holders.put(FIRST_TWIN, OWNER);
+            holders.put(SECOND_TWIN, RIVAL_OWNER);
+
+            return new PoliticalMapTerritories(
+                SystemOccupancy.createCopyOf(holders, Set.of(), Set.of()),
+                Set.of(),
+                new MapStyling(
+                    PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),
+                    PoliticalMapTerritoryFixtures.NEUTRAL_PALETTE,
+                    new FactionPalette(DESATURATED_PRIMARY, DESATURATED_SECONDARY),
+                    new FactionPalette(PRESENCE_LIFTED, PRESENCE_LIFTED)),
+                new ViewGrouping(
+                    buildViewMockAdjusting(ElementStyleAdjustment.NONE),
+                    HolderGrouping.identity()),
+                ContentInputsFixtures.createInputsRecedingBehind(
+                    null, // No bloc spotlighted.
+                    ElementStyleAdjustment.NONE),
+                Set.of());
+        }
+
         // The one owned system every adjustment test shares over a fixed style/palette backdrop;
         // only the view stub, whether the pass filters, and the recede it applies vary.
         private static PoliticalMapTerritories buildDrawablesWith(
@@ -692,7 +739,7 @@ final class StyledCellBuilderTest {
             // A filtered pass carries the selected bloc's id; the fixture's holder is never that
             // bloc, so it reads as non-spotlit and the recede applies. Off filter the id is null.
             return new PoliticalMapTerritories(
-                SystemOccupancy.createCopyOf(Map.of(SYSTEM_ID, OWNER), Set.of(), Set.of()),
+                SystemOccupancy.createCopyOf(Map.of(buildCellKey(SYSTEM_ID), OWNER), Set.of(), Set.of()),
                 Set.of(),
                 new MapStyling(
                     PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory(STYLE),

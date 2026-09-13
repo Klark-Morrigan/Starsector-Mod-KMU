@@ -9,6 +9,7 @@ import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeTo;
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeToCell;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedOwners;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -79,19 +80,24 @@ final class EdgeClassifierTest {
 
             var edge = buildEdgeTo("B");
 
-            assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
+            assertThat(EdgeClassifier.classifyAcross(edge, "F", buildKeyedOwners(Map.of("B", "F"))))
                 .isEqualTo(EdgeClass.INTERIOR_SEAM);
         }
 
         @Test
-        void classifyAcrossNarrowsTheNeighbourToTheIdItsOwnerIsKeyedBy() {
-            // The join with the holding: an edge names its neighbour by key and the owner map
-            // names a system by id, so a neighbour whose other arms are stated still finds its
-            // owner through the id arm.
-            var edge = buildEdgeToCell(new SystemKey("B", "", "8b3"));
+        void classifyAcrossReadsTheNeighbourOfTwoSystemsSharingAnIdUnderItsOwnKey() {
+            // The collision the one shared address survives: both systems answer to "B", and the
+            // edge names the one held by a rival - so the edge is a boundary, where a lookup by
+            // id alone would have found the other's owner and fused the two cells.
+            var neighbour = new SystemKey("B", "", "8b3");
+            var twin = new SystemKey("B", "", "38d53");
+            var edge = buildEdgeToCell(neighbour);
 
-            assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
-                .isEqualTo(EdgeClass.INTERIOR_SEAM);
+            assertThat(EdgeClassifier.classifyAcross(
+                    edge,
+                    "F",
+                    Map.of(neighbour, "G", twin, "F")))
+                .isEqualTo(EdgeClass.BOUNDARY);
         }
 
         @Test
@@ -99,7 +105,7 @@ final class EdgeClassifierTest {
 
             var edge = buildEdgeTo("B");
 
-            assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "G")))
+            assertThat(EdgeClassifier.classifyAcross(edge, "F", buildKeyedOwners(Map.of("B", "G"))))
                 .isEqualTo(EdgeClass.BOUNDARY);
         }
 
@@ -131,7 +137,7 @@ final class EdgeClassifierTest {
             // toward the star. Pins the null-own direction through classifyAcross itself.
             var edge = buildEdgeTo("B");
 
-            assertThat(EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))
+            assertThat(EdgeClassifier.classifyAcross(edge, null, buildKeyedOwners(Map.of("B", "F"))))
                 .isEqualTo(EdgeClass.OPEN_FRONTIER);
         }
 
@@ -143,7 +149,7 @@ final class EdgeClassifierTest {
             var boundEdge = buildEdgeFacing(EdgeTarget.REACH_BOUND);
 
             assertThatCode(() -> assertThat(
-                        EdgeClassifier.classifyAcross(boundEdge, "F", Map.of("B", "F")))
+                        EdgeClassifier.classifyAcross(boundEdge, "F", buildKeyedOwners(Map.of("B", "F"))))
                     .isEqualTo(EdgeClass.BOUNDARY))
                 .doesNotThrowAnyException();
         }
@@ -154,7 +160,7 @@ final class EdgeClassifierTest {
             // cell, so it fuses whatever key sits either side, with no system to look up.
             var edge = buildEdgeFacing(EdgeTarget.SAME_OWNER);
 
-            assertThat(EdgeClassifier.classifyAcross(edge, "F", Map.of("B", "F")))
+            assertThat(EdgeClassifier.classifyAcross(edge, "F", buildKeyedOwners(Map.of("B", "F"))))
                 .isEqualTo(EdgeClass.INTERIOR_SEAM);
         }
 
@@ -166,7 +172,7 @@ final class EdgeClassifierTest {
             var edge = buildEdgeFacing(EdgeTarget.SAME_OWNER);
 
             assertThatCode(() -> assertThat(
-                        EdgeClassifier.classifyAcross(edge, null, Map.of("B", "F")))
+                        EdgeClassifier.classifyAcross(edge, null, buildKeyedOwners(Map.of("B", "F"))))
                     .isEqualTo(EdgeClass.INTERIOR_SEAM))
                 .doesNotThrowAnyException();
         }

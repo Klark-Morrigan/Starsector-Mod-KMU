@@ -34,21 +34,21 @@ public record DominantHolder(
     /**
      * Maps each owned system to its dominant-faction id - the per-system holder the
      * political-map geometry clusters by. Adapts the faction-holder map to the opaque
-     * {@code Map<String, String>} the agnostic geometry ({@code CellShaper},
+     * {@code Map<SystemKey, String>} the agnostic geometry ({@code CellShaper},
      * {@code SystemClusters}, {@code SystemClusterBorders}, {@code ClusterBorderTrace}) fuses on, so
      * the faction layer supplies "who owns this" while the geometry stays ignorant of factions.
      *
-     * @param ownerBySystemId the dominant holder per owned system
+     * @param ownerBySystemKey the dominant holder per owned system
      * @return each system's faction id, in the map's iteration order
      */
-    public static Map<String, String> mapFactionIdBySystemId(
-            Map<String, DominantHolder> ownerBySystemId) {
+    public static Map<SystemKey, String> mapFactionIdBySystemKey(
+            Map<SystemKey, DominantHolder> ownerBySystemKey) {
 
-        var keyBySystemId = new LinkedHashMap<String, String>();
-        for (var entry : ownerBySystemId.entrySet()) {
-            keyBySystemId.put(entry.getKey(), entry.getValue().factionId());
+        var keyBySystemKey = new LinkedHashMap<SystemKey, String>();
+        for (var entry : ownerBySystemKey.entrySet()) {
+            keyBySystemKey.put(entry.getKey(), entry.getValue().factionId());
         }
-        return keyBySystemId;
+        return keyBySystemKey;
     }
 
     /**
@@ -59,16 +59,16 @@ public record DominantHolder(
      *
      * <p>Lives here rather than on {@code CellGrouping} so the geometry layer stays ignorant of
      * factions: this is the faction layer supplying "who owns this cell", exactly as
-     * {@link #mapFactionIdBySystemId} does for the key half.
+     * {@link #mapFactionIdBySystemKey} does for the key half.
      *
      * @param systemKeyByCellKey the system each cell draws as, from the geometry cache
-     * @param ownerBySystemId    the dominant holder per owned system
+     * @param ownerBySystemKey   the dominant holder per owned system
      * @return the cells grouped by the faction id of the system each draws as
      */
     public static CellGrouping mapCellGrouping(
             Map<SystemKey, SystemKey> systemKeyByCellKey,
-            Map<String, DominantHolder> ownerBySystemId) {
-        return new CellGrouping(systemKeyByCellKey, mapFactionIdBySystemId(ownerBySystemId));
+            Map<SystemKey, DominantHolder> ownerBySystemKey) {
+        return new CellGrouping(systemKeyByCellKey, mapFactionIdBySystemKey(ownerBySystemKey));
     }
 
     /**

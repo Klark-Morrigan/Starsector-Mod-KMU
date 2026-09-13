@@ -128,10 +128,10 @@ public final class TerritoryBuilder {
             // whose rule admits only some markets - claims, for the several reasons
             // base.politics.holders sets out - leaves inhabited systems with no holder. Only this
             // read tells those apart from empty space.
-            var inhabitedSystemIds = measureSystemScan(
+            var inhabitedSystemKeys = measureSystemScan(
                 profiler,
                 FIND_INHABITED_SECTION,
-                () -> PoliticalMapInhabitation.readInhabitedSystemIds(pass));
+                () -> PoliticalMapInhabitation.readInhabitedSystemKeys(pass));
 
             // Where the spotlit bloc is living outside anything this build attributed to it, so
             // the factionless cells over its own colonies are spared the recede. Asked only of the
@@ -145,15 +145,15 @@ public final class TerritoryBuilder {
             //
             // Asked of the same habitation the scan above classified by, so a cell spared here is
             // never one that scan called empty space.
-            var spotlitPresenceSystemIds = measureSystemScan(
+            var spotlitPresenceSystemKeys = measureSystemScan(
                 profiler,
                 FIND_SPOTLIT_PRESENCE_SECTION,
-                () -> FilteredPolitics.findPresentSystemIds(
+                () -> FilteredPolitics.findPresentSystemKeys(
                     pass,
                     contentInputs.selectedBlocId(),
-                    selectUnheldSystemIdsAmong(resolution, inhabitedSystemIds)));
+                    selectUnheldSystemKeysAmong(resolution, inhabitedSystemKeys)));
 
-            return new ResolvedHolding(resolution, inhabitedSystemIds, spotlitPresenceSystemIds);
+            return new ResolvedHolding(resolution, inhabitedSystemKeys, spotlitPresenceSystemKeys);
         }
     }
 
@@ -190,13 +190,13 @@ public final class TerritoryBuilder {
                 // into what the territories hold, and a holding handed to a later rebuild has to
                 // still say what it said.
                 SystemOccupancy.createCopyOf(
-                    resolution.ownerBySystemId(),
-                    holding.inhabitedSystemIds(),
-                    holding.spotlitPresenceSystemIds()),
+                    resolution.ownerBySystemKey(),
+                    holding.inhabitedSystemKeys(),
+                    holding.spotlitPresenceSystemKeys()),
                 // The owned systems this resolution paints no fill for - held by their bloc but
                 // drawn empty inside its one border. Empty for the faction/alliance and filter
                 // paths today; the split reads it so a source that populates it needs no wiring.
-                resolution.unfilledSystemIds(),
+                resolution.unfilledSystemKeys(),
                 styling,
                 // The grouping is the pass's rather than a second sampling of the view's (the
                 // alliances view reads Nexerelin), so the holding this build resolved and the
@@ -205,7 +205,7 @@ public final class TerritoryBuilder {
                 contentInputs,
                 // The one thing this build derived about the spotlight: which of the spotlit bloc's
                 // systems it holds without dominating.
-                resolution.contestedSystemIds());
+                resolution.contestedSystemKeys());
 
             shapeAndStyleCells(profiler, territories, geometryCache);
 
@@ -230,10 +230,10 @@ public final class TerritoryBuilder {
                 .resolveHolderProvider()
                 .resolveHolder(pass, contentInputs.selectedBlocId());
 
-            politicsScope.tagCall("owned=" + resolution.ownerBySystemId().size()
+            politicsScope.tagCall("owned=" + resolution.ownerBySystemKey().size()
                 + " filtering=" + contentInputs.isFiltering()
-                + " contested=" + resolution.contestedSystemIds().size()
-                + " unfilled=" + resolution.unfilledSystemIds().size());
+                + " contested=" + resolution.contestedSystemKeys().size()
+                + " unfilled=" + resolution.unfilledSystemKeys().size());
 
             return resolution;
         }
@@ -242,13 +242,13 @@ public final class TerritoryBuilder {
     // The settled systems the holding gave to nobody, which is the only place a spotlit pick can
     // be living unattributed. Asked through the occupancy's own rule rather than restated here, so
     // a full build and an incremental refresh cannot disagree about what "unheld" means.
-    private static Set<String> selectUnheldSystemIdsAmong(
+    private static Set<SystemKey> selectUnheldSystemKeysAmong(
             HolderResolution resolution,
-            Set<String> inhabitedSystemIds) {
+            Set<SystemKey> inhabitedSystemKeys) {
 
         return SystemOccupancy
-            .createCopyOf(resolution.ownerBySystemId(), inhabitedSystemIds, Set.of())
-            .selectUnheldSystemIdsAmong(inhabitedSystemIds);
+            .createCopyOf(resolution.ownerBySystemKey(), inhabitedSystemKeys, Set.of())
+            .selectUnheldSystemKeysAmong(inhabitedSystemKeys);
     }
 
     // The paint scheme this build styles every cell from: the whole theme read once through the
@@ -375,23 +375,23 @@ public final class TerritoryBuilder {
         }
     }
 
-    // One profiled sector scan yielding a set of system ids, naming what it selected on the call.
+    // One profiled sector scan yielding a set of system keys, naming what it selected on the call.
     // The two such scans report identically rather than each spelling out a section and a reading
     // of its own - two chances for one of them to state its cost differently from the other.
-    private static Set<String> measureSystemScan(
+    private static Set<SystemKey> measureSystemScan(
             Profiler profiler,
             ProfileSection section,
-            Supplier<Set<String>> scan) {
+            Supplier<Set<SystemKey>> scan) {
 
         try (var scanScope = profiler.open(section)) {
 
-            var systemIds = scan.get();
+            var systemKeys = scan.get();
 
             // What it selected rather than what it examined: the systems it went over are counted
             // by the readers it scans through, and appear on this row by the roll-up alone.
-            scanScope.tagCall("systems=" + systemIds.size());
+            scanScope.tagCall("systems=" + systemKeys.size());
 
-            return systemIds;
+            return systemKeys;
         }
     }
 
@@ -403,6 +403,6 @@ public final class TerritoryBuilder {
             CellGeometryCache geometryCache) {
         return DominantHolder.mapCellGrouping(
             geometryCache.getSystemKeyByCellKey(),
-            territories.getHolderBySystemId());
+            territories.getHolderBySystemKey());
     }
 }

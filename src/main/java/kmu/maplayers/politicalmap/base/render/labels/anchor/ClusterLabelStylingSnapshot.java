@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.labels.anchor;
 
 import kmlib.starsector.factions.FactionPalette;
+import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -26,14 +27,14 @@ import java.util.Map;
  * straight from the sector and spotlights nothing - and agree on everything downstream, which is
  * the point of them meeting in one type.
  *
- * @param holderBySystemId    the dominant holder of each drawn system, keyed by system id
+ * @param holderBySystemKey   the dominant holder of each drawn system, keyed by {@link SystemKey}
  * @param desaturationPalette the shared shades a desaturated bloc's name recolours to
  * @param viewGrouping        the view painted and the grouping snapshot holding was resolved under
  * @param contentInputs       the picks the pass was baked under: the spotlight names and shades
  *                            recede by, and the name format they are spelled and fitted in
  */
 public record ClusterLabelStylingSnapshot(
-    Map<String, DominantHolder> holderBySystemId,
+    Map<SystemKey, DominantHolder> holderBySystemKey,
     FactionPalette desaturationPalette,
     ViewGrouping viewGrouping,
     ContentInputs contentInputs) {
@@ -47,7 +48,7 @@ public record ClusterLabelStylingSnapshot(
      */
     public static ClusterLabelStylingSnapshot resolveFrom(PoliticalMapTerritories territories) {
         return new ClusterLabelStylingSnapshot(
-            territories.getHolderBySystemId(),
+            territories.getHolderBySystemKey(),
             territories.getDesaturationPalette(),
             territories.getViewGrouping(),
             territories.getContentInputs());

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 
 import static org.assertj.core.api.Assertions.as;
@@ -68,7 +69,7 @@ final class ClaimAugmentedHolderProviderTest {
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
-                    new HolderResolution(Map.of("held", heldHolder), Set.of(), Set.of()));
+                    new HolderResolution(Map.of(buildCellKey("held"), heldHolder), Set.of(), Set.of()));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -77,23 +78,23 @@ final class ClaimAugmentedHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
-                    .thenReturn(Map.of("claimed", claimedHolder));
+                    .thenReturn(Map.of(buildCellKey("claimed"), claimedHolder));
 
                 var resolution = provider.resolveHolder(pass, null);
 
                 // The held system keeps its solid holder; the claimed system joins the holder map
                 // under its own claimant colours and is the only unfilled entry.
-                assertThat(resolution.ownerBySystemId())
+                assertThat(resolution.ownerBySystemKey())
                     .containsOnly(
-                        Map.entry("held", heldHolder),
-                        Map.entry("claimed", claimedHolder));
+                        Map.entry(buildCellKey("held"), heldHolder),
+                        Map.entry(buildCellKey("claimed"), claimedHolder));
 
-                assertThat(resolution.unfilledSystemIds())
-                    .containsExactly("claimed");
-                assertThat(resolution.contestedSystemIds())
+                assertThat(resolution.unfilledSystemKeys())
+                    .containsExactly(buildCellKey("claimed"));
+                assertThat(resolution.contestedSystemKeys())
                     .isEmpty();
             }
         }
@@ -111,7 +112,7 @@ final class ClaimAugmentedHolderProviderTest {
 
             when(baseProviderMock.resolveHolder(pass, null))
                 .thenReturn(
-                    new HolderResolution(Map.of("shared", heldHolder), Set.of(), Set.of()));
+                    new HolderResolution(Map.of(buildCellKey("shared"), heldHolder), Set.of(), Set.of()));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -120,18 +121,18 @@ final class ClaimAugmentedHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
-                    .thenReturn(Map.of("shared", claimOverHeld));
+                    .thenReturn(Map.of(buildCellKey("shared"), claimOverHeld));
 
                 var resolution = provider.resolveHolder(pass, null);
 
                 // The stronger held signal wins: the system keeps its held holder and draws solid,
                 // so the claim over it adds no unfilled entry.
-                assertThat(resolution.ownerBySystemId())
-                    .containsExactly(Map.entry("shared", heldHolder));
-                assertThat(resolution.unfilledSystemIds())
+                assertThat(resolution.ownerBySystemKey())
+                    .containsExactly(Map.entry(buildCellKey("shared"), heldHolder));
+                assertThat(resolution.unfilledSystemKeys())
                     .isEmpty();
             }
         }
@@ -152,8 +153,8 @@ final class ClaimAugmentedHolderProviderTest {
             when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(
                     new HolderResolution(
-                        Map.of("held", spotlightHolder),
-                        Set.of("held"),
+                        Map.of(buildCellKey("held"), spotlightHolder),
+                        Set.of(buildCellKey("held")),
                         Set.of()));
 
             var provider = new ClaimAugmentedHolderProvider(
@@ -164,10 +165,10 @@ final class ClaimAugmentedHolderProviderTest {
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
-                    .thenReturn(Map.of("claimed", plainClaimHolder));
+                    .thenReturn(Map.of(buildCellKey("claimed"), plainClaimHolder));
 
                 filteredPoliticsMock
                     .when(() -> FilteredPolitics
@@ -179,14 +180,14 @@ final class ClaimAugmentedHolderProviderTest {
                 // The spotlit faction's own claim carries the spotlight holder, so it fuses into the
                 // spotlight territory at full strength - drawn unfilled - rather than its plain
                 // bloc colour, which the style layer would recede.
-                assertThat(resolution.ownerBySystemId().get("claimed"))
+                assertThat(resolution.ownerBySystemKey().get(buildCellKey("claimed")))
                     .isSameAs(spotlightHolder);
-                assertThat(resolution.unfilledSystemIds())
-                    .containsExactly("claimed");
+                assertThat(resolution.unfilledSystemKeys())
+                    .containsExactly(buildCellKey("claimed"));
 
                 // The base's contested set passes through the fold untouched.
-                assertThat(resolution.contestedSystemIds())
-                    .containsExactly("held");
+                assertThat(resolution.contestedSystemKeys())
+                    .containsExactly(buildCellKey("held"));
             }
         }
 
@@ -203,7 +204,7 @@ final class ClaimAugmentedHolderProviderTest {
 
             when(baseProviderMock.resolveHolder(pass, "hegemony"))
                 .thenReturn(
-                    new HolderResolution(Map.of("held", spotlightHolder), Set.of(), Set.of()));
+                    new HolderResolution(Map.of(buildCellKey("held"), spotlightHolder), Set.of(), Set.of()));
 
             var provider = new ClaimAugmentedHolderProvider(
                 baseProviderMock,
@@ -213,20 +214,20 @@ final class ClaimAugmentedHolderProviderTest {
                     var filteredPoliticsMock = mockStatic(FilteredPolitics.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(
                         pass,
                         claimReaderMock))
-                    .thenReturn(Map.of("rival-claimed", rivalClaimHolder));
+                    .thenReturn(Map.of(buildCellKey("rival-claimed"), rivalClaimHolder));
 
                 var resolution = provider.resolveHolder(pass, "hegemony");
 
                 // A bloc other than the spotlighted one keeps its plain bloc holder, so the style
                 // layer recedes its claim into the muted background just as it recedes that bloc's
                 // held cells - the claim shares its bloc's fate.
-                assertThat(resolution.ownerBySystemId().get("rival-claimed"))
+                assertThat(resolution.ownerBySystemKey().get(buildCellKey("rival-claimed")))
                     .isSameAs(rivalClaimHolder);
-                assertThat(resolution.unfilledSystemIds())
-                    .containsExactly("rival-claimed");
+                assertThat(resolution.unfilledSystemKeys())
+                    .containsExactly(buildCellKey("rival-claimed"));
             }
         }
 
@@ -254,7 +255,7 @@ final class ClaimAugmentedHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(pass, claimReaderMock))
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
                     .thenReturn(Map.of());
 
                 provider.resolveHolder(pass, null);
@@ -288,7 +289,7 @@ final class ClaimAugmentedHolderProviderTest {
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 
                 sectorClaimsMock
-                    .when(() -> SectorClaims.resolveClaimingHolderBySystemId(pass, claimReaderMock))
+                    .when(() -> SectorClaims.resolveClaimingHolderBySystemKey(pass, claimReaderMock))
                     .thenReturn(Map.of());
 
                 provider.resolveHolder(pass, null);

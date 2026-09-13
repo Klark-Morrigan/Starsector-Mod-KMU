@@ -3,6 +3,8 @@ package kmu.maplayers.politicalmap.base.politics;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.systems.SystemKey;
+
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
@@ -44,11 +46,11 @@ public final class SectorPolitics {
      *
      * @param pass the rebuild's reading of the sector, whose walk of each system this resolve
      *             shares; a pass over no sector yields an empty map
-     * @return the dominant holder keyed by system id; a system with no owned
+     * @return the dominant holder keyed by {@link SystemKey}; a system with no owned
      *         markets is absent from the map (uninhabited)
      */
-    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(HolderPass pass) {
-        return resolveDominantHolderBySystemId(
+    public static Map<SystemKey, DominantHolder> resolveDominantHolderBySystemKey(HolderPass pass) {
+        return resolveDominantHolderBySystemKey(
             DominancePass.readRulesFromLunaSettings(pass));
     }
 
@@ -57,20 +59,21 @@ public final class SectorPolitics {
      * dominance pass, for a caller that has already sampled the player's settings.
      *
      * @param pass the weighting rule, colony rule, grouping, and sector walk this pass resolves under
-     * @return the dominant holder keyed by system id; a system with no folded
+     * @return the dominant holder keyed by {@link SystemKey}; a system with no folded
      *         markets is absent from the map (uninhabited)
      */
-    public static Map<String, DominantHolder> resolveDominantHolderBySystemId(DominancePass pass) {
+    public static Map<SystemKey, DominantHolder> resolveDominantHolderBySystemKey(
+            DominancePass pass) {
 
-        var ownerBySystemId = new LinkedHashMap<String, DominantHolder>();
+        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
 
         for (var system : pass.readSystems()) {
             var holder = resolveDominantHolder(system, pass);
             if (holder != null) {
-                ownerBySystemId.put(system.getId(), holder);
+                ownerBySystemKey.put(SystemKey.readKeyOf(system), holder);
             }
         }
-        return ownerBySystemId;
+        return ownerBySystemKey;
     }
 
     /**

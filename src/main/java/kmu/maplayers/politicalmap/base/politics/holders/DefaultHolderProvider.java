@@ -35,12 +35,12 @@ public final class DefaultHolderProvider implements HolderProvider {
             var filtered = FilteredPolitics.resolveFilteredHolder(pass, selectedBlocId);
 
             return new HolderResolution(
-                filtered.ownerBySystemId(),
-                filtered.contestedSystemIds(),
+                filtered.ownerBySystemKey(),
+                filtered.contestedSystemKeys(),
                 Set.of());
         }
         return new HolderResolution(
-            SectorPolitics.resolveDominantHolderBySystemId(pass),
+            SectorPolitics.resolveDominantHolderBySystemKey(pass),
             Set.of(),
             Set.of());
     }
