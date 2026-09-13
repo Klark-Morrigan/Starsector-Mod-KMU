@@ -5,8 +5,10 @@ import kmlib.starsector.systems.SystemKey;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Posing the systems of a map: a {@link SystemKey} per named system, and the keyed collections
@@ -48,8 +50,8 @@ public final class CellKeyFixture {
 
     /**
      * A map a case states by name, re-addressed by key and keeping the order it was stated in -
-     * for the cell-keyed stores whose values are the case's own, such as a cell's edges or its
-     * painted extent.
+     * every keyed store a case states by hand, whatever it holds: a cell's edges, its painted
+     * extent, the owner of a system, the holder of one.
      */
     public static <V> Map<SystemKey, V> buildKeyedValues(Map<String, V> valuesBySystemId) {
 
@@ -62,17 +64,11 @@ public final class CellKeyFixture {
     }
 
     /**
-     * The owners a case states by name, re-addressed by key - the half of a {@link CellGrouping}
-     * that says who holds each system, in the order it was stated in.
+     * The systems a case names, re-addressed by key and keeping the order it named them in - the
+     * membership sets a holding states beside its holder map.
      */
-    public static Map<SystemKey, String> buildKeyedOwners(Map<String, String> ownerBySystemId) {
-
-        var ownerBySystemKey = new LinkedHashMap<SystemKey, String>();
-
-        for (var entry : ownerBySystemId.entrySet()) {
-            ownerBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
-        }
-        return ownerBySystemKey;
+    public static Set<SystemKey> buildKeyedSystemKeys(Collection<String> systemIds) {
+        return new LinkedHashSet<>(buildCellKeys(systemIds.toArray(String[]::new)));
     }
 
     /**
@@ -84,7 +80,7 @@ public final class CellKeyFixture {
             Collection<SystemKey> cellKeys,
             Map<String, String> ownerBySystemId) {
 
-        return buildIdentityGroupingUnder(cellKeys, buildKeyedOwners(ownerBySystemId));
+        return buildIdentityGroupingUnder(cellKeys, buildKeyedValues(ownerBySystemId));
     }
 
     /**

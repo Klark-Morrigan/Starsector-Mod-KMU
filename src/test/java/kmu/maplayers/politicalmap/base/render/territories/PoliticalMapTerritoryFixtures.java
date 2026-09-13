@@ -4,7 +4,6 @@ import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.starsector.ui.render.gl.UiElementPaint;
 
-import kmu.maplayers.base.geometry.CellKeyFixture;
 import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
@@ -31,6 +30,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.mockito.Mockito.mock;
 
@@ -88,7 +90,7 @@ public final class PoliticalMapTerritoryFixtures {
      */
     public static PoliticalMapTerritories createTerritoriesOwnedBy(
             Map<String, DominantHolder> ownerBySystemId) {
-        return createTerritoriesOwnedByKeys(buildKeyedHolders(ownerBySystemId));
+        return createTerritoriesOwnedByKeys(buildKeyedValues(ownerBySystemId));
     }
 
     /**
@@ -133,26 +135,6 @@ public final class PoliticalMapTerritoryFixtures {
             Set.of());
     }
 
-    // The holders a case states by name, re-addressed by the key the build holds them under. Every
-    // key states the id arm alone, which is what lets a case go on naming its systems "A" and "B"
-    // while the model under it is addressed the way a live build is.
-    private static Map<SystemKey, DominantHolder> buildKeyedHolders(
-            Map<String, DominantHolder> ownerBySystemId) {
-
-        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
-
-        for (var entry : ownerBySystemId.entrySet()) {
-            ownerBySystemKey.put(CellKeyFixture.buildCellKey(entry.getKey()), entry.getValue());
-        }
-        return ownerBySystemKey;
-    }
-
-    // The systems a case names, re-addressed the same way, for the two membership sets beside the
-    // holder map.
-    private static Set<SystemKey> buildKeyedSystems(Set<String> systemIds) {
-        return new LinkedHashSet<>(CellKeyFixture.buildCellKeys(systemIds.toArray(String[]::new)));
-    }
-
     /**
      * The same territories with a bloc spotlighted, for a case about the recede a spotlight sinks
      * the rest of the sector under - or about the settled systems the pick lives in that spare it.
@@ -175,9 +157,9 @@ public final class PoliticalMapTerritoryFixtures {
 
         return createTerritoriesUnder(
             ContentInputsFixtures.createInputsSpotlighting(selectedBlocId),
-            buildKeyedHolders(ownerBySystemId),
-            buildKeyedSystems(inhabitedSystemIds),
-            buildKeyedSystems(spotlitPresenceSystemIds));
+            buildKeyedValues(ownerBySystemId),
+            buildKeyedSystemKeys(inhabitedSystemIds),
+            buildKeyedSystemKeys(spotlitPresenceSystemIds));
     }
 
     /**
@@ -197,7 +179,7 @@ public final class PoliticalMapTerritoryFixtures {
             Map<String, DominantHolder> ownerBySystemId,
             FactionNameFormatChoice nameFormat) {
 
-        var ownerBySystemKey = buildKeyedHolders(ownerBySystemId);
+        var ownerBySystemKey = buildKeyedValues(ownerBySystemId);
 
         return createTerritoriesUnder(
             ContentInputsFixtures.createInputsSpellingNames(nameFormat),

@@ -42,8 +42,9 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedSystemKeys;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -423,15 +424,9 @@ final class DebugBorderTracingBuilderTest {
     }
 
     private void stubHolders(Map<String, DominantHolder> ownerBySystemId) {
-
-        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
-
-        for (var entry : ownerBySystemId.entrySet()) {
-            ownerBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
-        }
         politicsMock
             .when(() -> SectorPolitics.resolveDominantHolderBySystemKey(any(HolderPass.class)))
-            .thenReturn(ownerBySystemKey);
+            .thenReturn(buildKeyedValues(ownerBySystemId));
     }
 
     // The systems the overlay is to treat as settled. Stubbed at the political layer's
@@ -448,7 +443,7 @@ final class DebugBorderTracingBuilderTest {
         inhabitationMock
             .when(() -> PoliticalMapInhabitation.readInhabitedSystemKeys(
                 argThat(pass -> pass != null && pass.sector() == sectorMock)))
-            .thenReturn(Set.copyOf(buildCellKeys(systemIds)));
+            .thenReturn(buildKeyedSystemKeys(List.of(systemIds)));
     }
 
     // A bundle the overlay reads only for its outer element: fill and seam never reach the

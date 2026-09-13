@@ -10,7 +10,7 @@ import java.util.Map;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedOwners;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,7 +33,7 @@ final class CellGroupingTest {
             // what the two-map indirection exists to express.
             var grouping = new CellGrouping(
                 buildDrawnSystemKeys(Map.of("wedge", "A")),
-                buildKeyedOwners(Map.of("A", "F")));
+                buildKeyedValues(Map.of("A", "F")));
 
             assertThat(grouping.resolveDrawnSystemKeyOf(buildCellKey("wedge")))
                 .isEqualTo(buildCellKey("A"));
@@ -45,7 +45,7 @@ final class CellGroupingTest {
             // has no star of its own.
             var grouping = new CellGrouping(
                 buildDrawnSystemKeys(Map.of("A", "A")),
-                buildKeyedOwners(Map.of("A", "F")));
+                buildKeyedValues(Map.of("A", "F")));
 
             assertThat(grouping.resolveDrawnSystemKeyOf(buildCellKey("shard"))).isNull();
         }
@@ -60,7 +60,7 @@ final class CellGroupingTest {
             // rather than as unowned.
             var grouping = new CellGrouping(
                 buildDrawnSystemKeys(Map.of("wedge", "A")),
-                buildKeyedOwners(Map.of("A", "F")));
+                buildKeyedValues(Map.of("A", "F")));
 
             assertThat(grouping.resolveOwnerOf(buildCellKey("wedge"))).isEqualTo("F");
         }
@@ -70,7 +70,7 @@ final class CellGroupingTest {
             // No star to look a key up through, so a shard is unowned whatever the key map says.
             var grouping = new CellGrouping(
                 buildDrawnSystemKeys(Map.of("A", "A")),
-                buildKeyedOwners(Map.of("A", "F")));
+                buildKeyedValues(Map.of("A", "F")));
 
             assertThat(grouping.resolveOwnerOf(buildCellKey("shard"))).isNull();
         }
@@ -93,7 +93,7 @@ final class CellGroupingTest {
             // under that key, as two distinct cells a border is later traced from.
             var grouping = new CellGrouping(
                     buildDrawnSystemKeys(Map.of("A", "A", "wedge", "A", "B", "B")),
-                    buildKeyedOwners(Map.of("A", "F", "B", "G")));
+                    buildKeyedValues(Map.of("A", "F", "B", "G")));
 
             var cellsByKey = grouping.groupCellKeysByOwner();
 
@@ -108,7 +108,7 @@ final class CellGroupingTest {
             // neither joins any bucket - they stay unowned, grouped under nobody.
             var grouping = new CellGrouping(
                 buildDrawnSystemKeys(Map.of("A", "A", "unowned", "U")),
-                buildKeyedOwners(Map.of("A", "F")));
+                buildKeyedValues(Map.of("A", "F")));
 
             var cellsByKey = grouping.groupCellKeysByOwner();
 
@@ -130,7 +130,7 @@ final class CellGroupingTest {
         @Test
         void twoCellsWhoseSystemsShareAnIdResolveTheirOwnHolders() {
             // The collision the one shared address is here to survive: both halves are keyed by
-            // SystemKey, so a pair sharing a vanilla id can carry two different owners and each
+            // SystemKey, so a pair sharing a vanilla ID can carry two different owners and each
             // cell groups under its own.
             var first = new SystemKey("deep space", "", "8b3");
             var second = new SystemKey("deep space", "", "38d53");

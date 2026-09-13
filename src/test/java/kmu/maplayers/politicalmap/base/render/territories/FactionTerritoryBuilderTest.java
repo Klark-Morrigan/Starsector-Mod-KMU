@@ -524,24 +524,11 @@ final class FactionTerritoryBuilderTest {
             TRITACHYON_OWNER));
     }
 
-    // The holders a case states by name, re-addressed by the key the build holds them under, so a
-    // case goes on naming its systems while the model is addressed as a live build is.
-    private static Map<SystemKey, DominantHolder> buildKeyedHolders(
-            Map<String, DominantHolder> ownerBySystemId) {
-
-        var ownerBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
-
-        for (var entry : ownerBySystemId.entrySet()) {
-            ownerBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
-        }
-        return ownerBySystemKey;
-    }
-
     private static PoliticalMapTerritories buildTerritoriesStyledBy(
             CategoryStyle style,
             Map<String, DominantHolder> ownerBySystemId) {
 
-        return buildTerritoriesHeldBy(style, buildKeyedHolders(ownerBySystemId));
+        return buildTerritoriesHeldBy(style, buildKeyedValues(ownerBySystemId));
     }
 
     // The same territories with its holders stated by key, for the one case a name cannot pose:

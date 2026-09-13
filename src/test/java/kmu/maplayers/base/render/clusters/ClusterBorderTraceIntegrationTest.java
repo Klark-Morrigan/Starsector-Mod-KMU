@@ -18,7 +18,7 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildDrawnSystemKeys;
-import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedOwners;
+import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
 import static kmu.maplayers.base.geometry.RingExtentFixture.readMaxXOf;
 import static kmu.maplayers.base.geometry.RingExtentFixture.readMinXOf;
@@ -62,7 +62,7 @@ class ClusterBorderTraceIntegrationTest {
     // Each cell drawing as its own star (identity draws-as over A and C), keyed by OWNERS - the
     // grouping every trace here runs under.
     private static final CellGrouping GROUPING =
-        new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A", "C", "C")), buildKeyedOwners(OWNERS));
+        new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A", "C", "C")), buildKeyedValues(OWNERS));
 
     @Nested
     class TraceRings {

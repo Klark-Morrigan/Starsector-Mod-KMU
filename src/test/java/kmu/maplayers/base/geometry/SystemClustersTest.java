@@ -133,7 +133,7 @@ final class SystemClustersTest {
                     "wedge", List.of(buildEdgeTo("A"))));
             var grouping = new CellGrouping(
                     CellKeyFixture.buildDrawnSystemKeys(Map.of("A", "A", "wedge", "A")),
-                    CellKeyFixture.buildKeyedOwners(Map.of("A", "F")));
+                    CellKeyFixture.buildKeyedValues(Map.of("A", "F")));
 
             var clusters = SystemClusters.findClusters(edges, grouping);
 

@@ -752,7 +752,7 @@ final class ClusterAnchorsBuilderTest {
     private ClusterLabelStylingSnapshot buildUnfilteredStyling(
             Map<String, DominantHolder> holderBySystemId) {
         return new ClusterLabelStylingSnapshot(
-            buildKeyedHolders(holderBySystemId),
+            buildKeyedValues(holderBySystemId),
             UNUSED_PALETTE,
             new ViewGrouping(viewMock, HolderGrouping.identity()),
             contentInputs);
@@ -793,20 +793,7 @@ final class ClusterAnchorsBuilderTest {
         politicsMock
             .when(() -> SectorPolitics.resolveDominantHolderBySystemKey(
                 argThat((HolderPass pass) -> HolderGrouping.identity().equals(pass.grouping()))))
-            .thenReturn(buildKeyedHolders(holderBySystemId));
-    }
-
-    // The holders a case states by name, re-addressed by the key the build holds them under - so a
-    // case goes on naming its systems while the snapshot is addressed as a live build is.
-    private static Map<SystemKey, DominantHolder> buildKeyedHolders(
-            Map<String, DominantHolder> holderBySystemId) {
-
-        var holderBySystemKey = new LinkedHashMap<SystemKey, DominantHolder>();
-
-        for (var entry : holderBySystemId.entrySet()) {
-            holderBySystemKey.put(buildCellKey(entry.getKey()), entry.getValue());
-        }
-        return holderBySystemKey;
+            .thenReturn(buildKeyedValues(holderBySystemId));
     }
 
     // A placement left over from an earlier pass, for the cases that ask whether the standing list
