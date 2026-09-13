@@ -16,7 +16,7 @@
   - [Local linting](#local-linting)
   - [Caching](#caching)
   - [Documentation](#documentation)
-- [Acknowledgements](#acknowledgements)
+- [Thanks](#thanks)
 
 ## Dependencies
 
