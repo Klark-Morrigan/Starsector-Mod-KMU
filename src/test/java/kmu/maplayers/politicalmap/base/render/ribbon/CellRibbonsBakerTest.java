@@ -138,7 +138,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL, OTHER_BANDED_CELL);
         }
 
@@ -153,7 +153,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL, UNHELD_SETTLED_CELL);
         }
 
@@ -207,9 +207,9 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRingPathCache().findRingPathOf(BANDED_CELL))
+            assertThat(territories.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
                 .isNotNull();
-            assertThat(territories.getRingPathCache().findRingPathOf(OTHER_BANDED_CELL))
+            assertThat(territories.getPaintedCells().getRingPathCache().findRingPathOf(OTHER_BANDED_CELL))
                 .isNotNull();
         }
 
@@ -223,7 +223,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            var ringAfterFirstPass = territories.getRingPathCache().findRingPathOf(BANDED_CELL);
+            var ringAfterFirstPass = territories.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL);
 
             // Stated before the identity below rather than left to the case above: two passes that
             // both kept their rings to themselves leave null standing either side of the second
@@ -233,7 +233,7 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRingPathCache().findRingPathOf(BANDED_CELL))
+            assertThat(territories.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
                 .isSameAs(ringAfterFirstPass);
         }
 
@@ -247,15 +247,15 @@ final class CellRibbonsBakerTest {
 
             bakeEveryCellThrough(territories);
 
-            var ringBeforeReshape = territories.getRingPathCache().findRingPathOf(BANDED_CELL);
+            var ringBeforeReshape = territories.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL);
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 BANDED_CELL,
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
 
             bakeEveryCellThrough(territories);
 
-            assertThat(territories.getRingPathCache().findRingPathOf(BANDED_CELL))
+            assertThat(territories.getPaintedCells().getRingPathCache().findRingPathOf(BANDED_CELL))
                 .isNotSameAs(ringBeforeReshape);
         }
     }
@@ -271,7 +271,7 @@ final class CellRibbonsBakerTest {
 
             bakeThrough(territories).bakeCellRibbonsOf(List.of(BANDED_CELL));
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(BANDED_CELL);
         }
 
@@ -285,7 +285,7 @@ final class CellRibbonsBakerTest {
             assertThatCode(() -> bakeThrough(territories).bakeCellRibbonsOf(List.of(UNDRAWN_CELL)))
                 .doesNotThrowAnyException();
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .isEmpty();
         }
     }
@@ -323,7 +323,7 @@ final class CellRibbonsBakerTest {
             SystemKey... cellKeys) {
 
         for (var cellKey : cellKeys) {
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 cellKey,
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(SQUARE_CELL));
         }

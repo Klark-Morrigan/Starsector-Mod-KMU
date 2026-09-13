@@ -8,6 +8,7 @@ import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
+import kmu.maplayers.politicalmap.base.render.territories.PaintedCellStore;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 
@@ -55,18 +56,21 @@ import java.util.Map;
  */
 public final class CellRibbonsBaker {
 
-    private final PoliticalMapTerritories territories;
+    // The cells alone, not the build they belong to: every cell this pass reads, writes or walks a
+    // ring for is in here, and nothing it does per cell asks the build anything else. What the
+    // factory below needs the whole build for is settled before the first cell is baked.
+    private final PaintedCellStore paintedCells;
     private final Map<SystemKey, SystemKey> systemKeyByCellKey;
     private final CellRibbonSource ribbonSource;
     private final boolean isRibbonPathShown;
 
     private CellRibbonsBaker(
-            PoliticalMapTerritories territories,
+            PaintedCellStore paintedCells,
             Map<SystemKey, SystemKey> systemKeyByCellKey,
             CellRibbonSource ribbonSource,
             boolean isRibbonPathShown) {
 
-        this.territories = territories;
+        this.paintedCells = paintedCells;
         this.systemKeyByCellKey = systemKeyByCellKey;
         this.ribbonSource = ribbonSource;
         this.isRibbonPathShown = isRibbonPathShown;
@@ -75,8 +79,8 @@ public final class CellRibbonsBaker {
     /**
      * Samples everything one pass's bands are baked from.
      *
-     * @param territories    the built cells, read for their shapes and written back with their
-     *                       bands
+     * @param territories    the build being baked over; its cells are what a band is read from and
+     *                       written back to, and its view is what the counts are read under
      * @param geometryCache  the cells' geometry, for the system each draws as and its site
      * @param pass           the reading of the sector the counts are made off, folded by the
      *                       grouping the cells were painted under; whose reading it is, and so how
@@ -95,7 +99,7 @@ public final class CellRibbonsBaker {
         // mint a wrapper per cell to answer one lookup. Taking it apart from the cache is also what
         // lets this state the one map it reads instead of holding the cache it lives in.
         return new CellRibbonsBaker(
-            territories,
+            territories.getPaintedCells(),
             geometryCache.getSystemKeyByCellKey(),
             CellRibbonSource.createForPass(
                 pass,
@@ -106,7 +110,7 @@ public final class CellRibbonsBaker {
 
     /** Bakes the band of every drawn cell, replacing whatever each was carrying. */
     public void bakeAllCellRibbons() {
-        bakeCellRibbonsOf(territories.getFillPolygonByCellKey().keySet());
+        bakeCellRibbonsOf(paintedCells.getFillPolygonByCellKey().keySet());
     }
 
     /**
@@ -148,7 +152,7 @@ public final class CellRibbonsBaker {
 
         for (var cellKey : cellKeys) {
 
-            var fillPolygon = territories.getFillPolygonByCellKey().get(cellKey);
+            var fillPolygon = paintedCells.getFillPolygonByCellKey().get(cellKey);
             if (fillPolygon == null) {
                 continue;
             }
@@ -162,8 +166,8 @@ public final class CellRibbonsBaker {
                 fillPolygon,
                 bakeScope);
 
-            territories.putCellRibbon(cellKey, ribbon);
-            territories.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
+            paintedCells.putCellRibbon(cellKey, ribbon);
+            paintedCells.putCellRibbonPath(cellKey, traceCellRibbonPath(cellKey, fillPolygon));
             bakedCells += ribbon.isEmpty() ? 0 : 1;
 
             // Closed after the overlay's own trace, so a turn covers everything a cell costs the

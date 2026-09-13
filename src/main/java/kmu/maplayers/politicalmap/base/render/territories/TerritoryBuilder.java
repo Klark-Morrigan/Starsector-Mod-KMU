@@ -331,7 +331,7 @@ public final class TerritoryBuilder {
             if (painted == null) {
                 continue;
             }
-            territories.putPaintedCell(entry.getKey(), painted);
+            territories.getPaintedCells().putPaintedCell(entry.getKey(), painted);
         }
         // The clusters the cursor read resolves a hovered cell's whole territory through. Derived
         // here off the same keys the shaping just fused the cells by, so a highlighted territory

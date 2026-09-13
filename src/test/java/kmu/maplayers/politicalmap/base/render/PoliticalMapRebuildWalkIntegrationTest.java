@@ -296,7 +296,7 @@ final class PoliticalMapRebuildWalkIntegrationTest {
             assertThat(territories.getInhabitedSystemKeys())
                 .containsExactly(buildCellKey(ALPHA_ID));
             // The bands: its two revealed blocs split the system, so its cell carries runs.
-            assertThat(territories.getRibbonByCellKey().get(ALPHA_CELL).isEmpty())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey().get(ALPHA_CELL).isEmpty())
                 .isFalse();
         }
 

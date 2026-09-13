@@ -193,12 +193,12 @@ final class PoliticalMapOverlayRenderer {
             float alphaMult) {
 
         CellPresenceRibbonRenderer.renderOnMap(
-            cache.getTerritories().getRibbonByCellKey().values(),
+            cache.getTerritories().getPaintedCells().getRibbonByCellKey().values(),
             factor,
             alphaMult);
 
         CellRibbonPathRenderer.renderOnMap(
-            cache.getTerritories().getRibbonPathByCellKey().values(),
+            cache.getTerritories().getPaintedCells().getRibbonPathByCellKey().values(),
             factor,
             alphaMult);
     }

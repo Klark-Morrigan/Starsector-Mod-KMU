@@ -1,13 +1,11 @@
 package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.math.geometry.CornerRounding;
-import kmlib.math.geometry.RingPath;
 import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
-import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
@@ -26,10 +24,6 @@ import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.ContentInputsFixtures;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
-import kmu.maplayers.politicalmap.base.render.ribbon.RibbonBand;
-import kmu.maplayers.politicalmap.base.render.ribbon.RibbonPathVerdict;
 import kmu.maplayers.politicalmap.base.render.style.FactionPaletteSlot;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
 
@@ -61,10 +55,10 @@ import static org.mockito.Mockito.mock;
  * the view and grouping the incremental re-shape classifies against, and the filter snapshot it
  * recedes by).
  *
- * <p>Also pins the two invariants the cursor read leans on, since a break in either is invisible
- * until a hover lands on the wrong cell: that a cell's draw record and the shape it is hit-tested
- * against are written and dropped together, and that the cluster index tracks holding through
- * the splits and merges a single flip can cause.
+ * <p>Also pins the invariant the cursor read leans on that this model owns: that the cluster index
+ * tracks holding through the splits and merges a single flip can cause, a break in which is
+ * invisible until a hover resolves the wrong territory. What one cell carries, and what is dropped
+ * when its ring is replaced, is {@link PaintedCellStoreTest}'s.
  */
 final class PoliticalMapTerritoriesTest {
 
@@ -412,250 +406,6 @@ final class PoliticalMapTerritoriesTest {
                 .isSameAs(occupancy.getSpotlitPresenceSystemKeys());
         }
     }
-
-    @Nested
-    class PutPaintedCell {
-
-        @Test
-        void putPaintedCellRecordsTheDrawRecordAndItsShapeUnderTheSameSystem() {
-
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-            var styledCell = buildAnyStyledCell();
-            var fillPolygon = buildSquarePolygon();
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(styledCell, fillPolygon));
-
-            assertThat(territories.getStyledCellByCellKey())
-                .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(territories.getStyledCellByCellKey()
-                .get(SYSTEM_CELL)).isSameAs(styledCell);
-
-            assertThat(territories.getFillPolygonByCellKey())
-                .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(territories.getFillPolygonByCellKey()
-                .get(SYSTEM_CELL)).isSameAs(fillPolygon);
-        }
-
-        @Test
-        void putPaintedCellReplacesBothHalvesWhenACellIsReshaped() {
-            // The drift the paired write exists to prevent: a re-shaped cell must not keep
-            // answering the cursor with the extent it had before it was re-shaped.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-
-            var reshapedCell = buildAnyStyledCell();
-            var reshapedPolygon = buildTrianglePolygon();
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(reshapedCell, reshapedPolygon));
-
-            assertThat(territories.getStyledCellByCellKey().get(SYSTEM_CELL))
-                .isSameAs(reshapedCell);
-            assertThat(territories.getFillPolygonByCellKey().get(SYSTEM_CELL))
-                .isSameAs(reshapedPolygon);
-        }
-
-        @Test
-        void putPaintedCellDropsTheBandLaidInsideTheShapeItReplaces() {
-            // A band is triangles fitted to one particular ring, so a re-shaped cell keeping its
-            // band would draw the last shape's stripe inside this shape's cell. The band pass
-            // lays a fresh one afterwards; what must not survive is the old one.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
-
-            assertThat(territories.getRibbonByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void putPaintedCellDropsTheBandPathTracedInsideTheShapeItReplaces() {
-            // The diagnostic goes with the band for the same reason the band goes: a path traced
-            // in the last shape drawn over this one would report the overlay's own staleness as
-            // the cell's geometry, which is the one thing a diagnostic must not do.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
-
-            assertThat(territories.getRibbonPathByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void putPaintedCellDropsTheRingTracedInsideTheShapeItReplaces() {
-            // The whole of what makes the traced ring safe to keep. It is held under no key and no
-            // revision, so a cell served a ring traced inside the shape it used to have would lay
-            // its band round a cell that is no longer there - and this write is what rules that
-            // out, by construction rather than by the band pass remembering to ask.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
-
-            assertThat(territories.getRingPathCache().findRingPathOf(SYSTEM_CELL))
-                .isNull();
-        }
-    }
-
-    @Nested
-    class RemovePaintedCell {
-
-        @Test
-        void removePaintedCellDropsTheDrawRecordAndItsShapeTogether() {
-            // A cell that draws nothing can be hovered no more than it can be seen, so the
-            // shape must go with the draw record rather than linger as a phantom hit cluster.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.removePaintedCell(SYSTEM_CELL);
-
-            assertThat(territories.getStyledCellByCellKey())
-                .isEmpty();
-            assertThat(territories.getFillPolygonByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void removePaintedCellLeavesEveryOtherCellStanding() {
-
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(DROPPED_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.putPaintedCell(KEPT_CELL, new PaintedCell(buildAnyStyledCell(), buildTrianglePolygon()));
-            territories.removePaintedCell(DROPPED_CELL);
-
-            assertThat(territories.getStyledCellByCellKey())
-                .containsOnlyKeys(KEPT_CELL);
-            assertThat(territories.getFillPolygonByCellKey())
-                .containsOnlyKeys(KEPT_CELL);
-        }
-
-        @Test
-        void removePaintedCellDropsThePresenceBandWithTheCell() {
-            // A band is drawn inside a cell, so a cell that stops drawing takes its band with it -
-            // otherwise a dropped cell keeps painting a floating stripe of triangles.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
-            territories.removePaintedCell(SYSTEM_CELL);
-
-            assertThat(territories.getRibbonByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void removePaintedCellDropsTheBandPathWithTheCell() {
-            // A path is a ring around a cell, so a cell that stops drawing leaves the overlay
-            // marking out a shape nothing paints any more.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
-            territories.removePaintedCell(SYSTEM_CELL);
-
-            assertThat(territories.getRibbonPathByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void removePaintedCellDropsTheTracedRingWithTheCell() {
-            // A cell that stops drawing has no shape for a ring to have been traced inside, so the
-            // ring goes with it - a cell drawn again later is cut afresh and is owed a fresh walk.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putPaintedCell(SYSTEM_CELL, new PaintedCell(buildAnyStyledCell(), buildSquarePolygon()));
-            territories.getRingPathCache().putRingPath(SYSTEM_CELL, RingPath.nothingLeftToTrace());
-            territories.removePaintedCell(SYSTEM_CELL);
-
-            assertThat(territories.getRingPathCache().findRingPathOf(SYSTEM_CELL))
-                .isNull();
-        }
-    }
-
-    @Nested
-    class PutCellRibbon {
-
-        @Test
-        void putCellRibbonRecordsABandUnderTheCellThatDrawsIt() {
-
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-            var ribbon = buildAnyRibbon();
-
-            territories.putCellRibbon(SYSTEM_CELL, ribbon);
-
-            assertThat(territories.getRibbonByCellKey())
-                .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(territories.getRibbonByCellKey().get(SYSTEM_CELL))
-                .isSameAs(ribbon);
-        }
-
-        @Test
-        void putCellRibbonKeepsABandlessCellOutOfTheBandMap() {
-            // Most of the sector draws no band, so the map is kept sparse rather than parallel to
-            // the cells: the render pass walks the cells that draw one and no others.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putCellRibbon(SYSTEM_CELL, CellRibbon.NONE);
-
-            assertThat(territories.getRibbonByCellKey())
-                .isEmpty();
-        }
-
-        @Test
-        void putCellRibbonClearsAStandingBandWhenTheCellStopsDrawingOne() {
-            // The re-bake that finds nothing left to report - a rival's last colony in the system
-            // has gone. Without the clear, the cell would keep drawing the band it no longer earns.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putCellRibbon(SYSTEM_CELL, buildAnyRibbon());
-            territories.putCellRibbon(SYSTEM_CELL, CellRibbon.NONE);
-
-            assertThat(territories.getRibbonByCellKey())
-                .isEmpty();
-        }
-    }
-
-    @Nested
-    class PutCellRibbonPath {
-
-        @Test
-        void putCellRibbonPathRecordsAPathUnderTheCellItWasTracedIn() {
-
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-            var ribbonPath = buildAnyRibbonPath();
-
-            territories.putCellRibbonPath(SYSTEM_CELL, ribbonPath);
-
-            assertThat(territories.getRibbonPathByCellKey())
-                .containsOnlyKeys(SYSTEM_CELL);
-            assertThat(territories.getRibbonPathByCellKey().get(SYSTEM_CELL))
-                .isSameAs(ribbonPath);
-        }
-
-        @Test
-        void putCellRibbonPathClearsAStandingPathWhenTheOverlayIsSwitchedOff() {
-            // The bake hands over nothing for every cell while the overlay is off, and that is
-            // the whole of how it is switched off: nothing else clears what an earlier pass laid,
-            // so a path surviving here would leave the map ringed with a diagnostic the player
-            // has turned off.
-            var territories = buildDrawablesWith(Map.of(), Map.of());
-
-            territories.putCellRibbonPath(SYSTEM_CELL, buildAnyRibbonPath());
-            territories.putCellRibbonPath(SYSTEM_CELL, CellRibbonPath.NONE);
-
-            assertThat(territories.getRibbonPathByCellKey())
-                .isEmpty();
-        }
-    }
-
     @Nested
     class ReindexClusters {
 
@@ -769,40 +519,6 @@ final class PoliticalMapTerritoriesTest {
             systemIdByCellId.put(cellId, cellId);
         }
         territories.reindexClusters(buildKeyedValues(edges), buildDrawnSystemKeys(systemIdByCellId));
-    }
-
-    // Two distinct fill shapes, so a test that swaps one for the other is caught by identity.
-    // Nothing here reads the geometry, only which instance is held against a system.
-    private static List<double[]> buildSquarePolygon() {
-        return List.of(
-            new double[] {0, 0},
-            new double[] {1, 0},
-            new double[] {1, 1},
-            new double[] {0, 1});
-    }
-
-    // A band that draws something, which is all these cases ask of it: what distinguishes it from
-    // CellRibbon.NONE is that it has a run at all, not what the run looks like.
-    private static CellRibbon buildAnyRibbon() {
-        return new CellRibbon(List.of(
-            new RibbonBand(Color.WHITE, new float[] {0, 0, 1, 0, 1, 1})));
-    }
-
-    // A path that draws something, which is all these cases ask of it: what distinguishes it from
-    // CellRibbonPath.NONE is that it has a stretch at all, not where that stretch runs.
-    private static CellRibbonPath buildAnyRibbonPath() {
-        return new CellRibbonPath(
-            List.of(new float[] {0, 0, 1, 0, 1, 1}),
-            List.of(),
-            new float[] {0, 0},
-            RibbonPathVerdict.LAID_AT_PAD);
-    }
-
-    private static List<double[]> buildTrianglePolygon() {
-        return List.of(
-            new double[] {0, 0},
-            new double[] {2, 0},
-            new double[] {0, 2});
     }
 
     // A territories whose only varying inputs are the two draw lists; the retained inputs are the

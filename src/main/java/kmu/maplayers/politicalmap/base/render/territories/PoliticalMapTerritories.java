@@ -9,7 +9,6 @@ import kmu.maplayers.base.geometry.SystemClusterIndex;
 import kmu.maplayers.base.geometry.SystemClusters;
 import kmu.maplayers.base.hover.MapHoverTargets;
 import kmu.maplayers.base.render.clusters.ClusterDrawLists;
-import kmu.maplayers.base.render.clusters.PaintedCell;
 import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -21,9 +20,6 @@ import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbon;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRibbonPath;
-import kmu.maplayers.politicalmap.base.render.ribbon.CellRingPathCache;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
 import kmu.maplayers.politicalmap.base.render.style.PoliticalMapCategory;
@@ -42,8 +38,8 @@ import java.util.Set;
  * incremental re-shape needs to rebuild a handful of cells against the same holding
  * and styles the full rebuild used.
  *
- * <p>The styled-cell and styled-cluster-group maps are the render output - the per-cell
- * seam/outline records, and each faction's bodies with the fill and national border they
+ * <p>The {@link PaintedCellStore} and the styled-cluster-group map are the render output - what
+ * each cell puts on the map, and each faction's bodies with the fill and national border they
  * share. They start empty and the build fills them, so they are created here rather than
  * passed in. The rest are
  * retained inputs, three of them cohesive snapshots: {@link SystemOccupancy} (who is in each
@@ -58,8 +54,8 @@ import java.util.Set;
  * classifies a cell exactly as the full build did.
  *
  * <p>A plain class rather than a record because three of its fields are mutable state,
- * not values: the styled-cell and styled-cluster-group maps are mutated
- * in place by the incremental refresh, which replaces just the cells and factions a
+ * not values: the cell store and the styled-cluster-group map are written through
+ * by the incremental refresh, which replaces just the cells and factions a
  * holder change touched, and the occupancy is folded by the same refresh as colonies come
  * and go. Its three facts are mutable together and behind that one type's folds, so no pass
  * can bring one of them up to date and leave a cell drawn from two readings of the sector.
@@ -82,40 +78,14 @@ public final class PoliticalMapTerritories implements
     ClusterDrawLists,
     MapHoverTargets {
 
-    // Render output, mutated in place by the incremental refresh. Created empty here since a
-    // fresh build fills them and no caller ever supplies them pre-populated. A bloc's bodies are
-    // keyed by its holder - a faction ID under the factions view, or one of the filter's
-    // synthetic spotlight keys - which the emission never interprets.
-    private final Map<SystemKey, StyledCell> styledCellByCellKey = new LinkedHashMap<>();
+    // The two halves of the render output, both mutated in place by the incremental refresh and
+    // created empty here since a fresh build fills them and no caller ever supplies them
+    // pre-populated. What one cell draws is the store's; what a whole bloc draws is the map's,
+    // keyed by its holder - a faction ID under the factions view, or one of the filter's synthetic
+    // spotlight keys - which the emission never interprets.
+    private final PaintedCellStore paintedCells = new PaintedCellStore();
     private final Map<String, StyledClusterGroup> styledClusterGroupByOwnerId =
         new LinkedHashMap<>();
-
-    // Each drawn cell's painted ring, the shape the cursor is tested against. Written only
-    // through putPaintedCell/removePaintedCell alongside the styled cell above, and only ever as
-    // the ring the builder laid that cell's ink on, so what answers a hover is exactly what the
-    // frame painted.
-    private final Map<SystemKey, List<double[]>> fillPolygonByCellKey = new LinkedHashMap<>();
-
-    // Each drawn cell's presence band, baked against the very shape above by its own pass once
-    // the names have been placed. Emptied for a cell whenever that shape is replaced, so a band
-    // is never read against a ring it was not laid in - the band pass then fills it back in for
-    // the cells it re-bakes. Most cells have none - a band reports what is held in a system, and
-    // most of the sector is cells nobody lives in - so the map is sparse against the two above
-    // rather than parallel to them.
-    private final Map<SystemKey, CellRibbon> ribbonByCellKey = new LinkedHashMap<>();
-
-    // Each drawn cell's band path, held only while the player has the diagnostic overlay on and
-    // emptied by the same writes as the band above, for the same reason: a path traced inside one
-    // shape says nothing about the next. Kept beside the band rather than with the other overlays
-    // because its lifetime is a cell's shape, which is what this holds and what the map's other
-    // diagnostics are built without.
-    private final Map<SystemKey, CellRibbonPath> ribbonPathByCellKey = new LinkedHashMap<>();
-
-    // The ring each cell's band is laid along, traced inside the very shape above and kept here so
-    // a re-bake walks a ring only where a cell was actually re-shaped. Dropped by the same writes
-    // as the two maps above, which is what ties a path's lifetime to the shape it describes; see
-    // CellRingPathCache for why that tie is the whole of the cache's safety.
-    private final CellRingPathCache ringPathCache = new CellRingPathCache();
 
     // Who is in each system: the holder, what stands there, and where a spotlit pick lives in a
     // system nobody holds. The one live input, folded per marked system by the incremental
@@ -192,137 +162,28 @@ public final class PoliticalMapTerritories implements
             Set.of());
     }
 
+    /**
+     * @return everything this build holds per drawn cell - the draw records, the rings they were
+     *         painted on, and the bands laid inside those rings; live, and written through by the
+     *         build and the incremental refresh alike
+     */
+    public PaintedCellStore getPaintedCells() {
+        return paintedCells;
+    }
+
+    // The two cell reads the framework seams oblige, answered off the store above. Delegated rather
+    // than left to each caller to reach through getPaintedCells, because these two are what
+    // ClusterDrawLists and PaintedCellShapes ask for by name - a seam cannot be satisfied by a
+    // getter that hands back something holding the answer.
+
     @Override
     public Map<SystemKey, StyledCell> getStyledCellByCellKey() {
-        return styledCellByCellKey;
+        return paintedCells.getStyledCellByCellKey();
     }
 
-    /**
-     * Records one cell's draw record together with the ring it was painted on, the pair the
-     * cursor read depends on staying aligned.
-     *
-     * <p>The write path for both maps, rather than each caller putting into them separately: a
-     * cell that draws and a cell that answers a hover must be the same set, and pairing the two
-     * writes here is what makes that true by construction instead of by two call sites
-     * remembering to agree. The two arrive as one {@link PaintedCell} for the same reason one step
-     * earlier - a caller that could pass a ring of its own choosing could pass one the cell never
-     * painted, and a hover would then light a shape the map does not draw.
-     *
-     * <p>Any band the cell was carrying goes with the shape it was laid inside, and so does the
-     * ring that band was laid along. A band is triangles fitted to one particular ring, so a cell
-     * re-shaped and left holding its old band would draw the last shape's band inside this shape's
-     * cell; dropping both here means a cell only ever carries a band the band pass laid in the
-     * shape it holds now, traced inside that same shape.
-     *
-     * @param cellKey     the cell this record is for
-     * @param paintedCell its draw record and the ring that record was built from - the cell's
-     *                    painted extent, with the border inset, frontier setback, keep-out
-     *                    clipping and its own corner rounding already applied
-     */
-    public void putPaintedCell(
-            SystemKey cellKey,
-            PaintedCell paintedCell) {
-
-        styledCellByCellKey.put(cellKey, paintedCell.styledCell());
-        fillPolygonByCellKey.put(cellKey, paintedCell.paintedExtent());
-        ribbonByCellKey.remove(cellKey);
-        ribbonPathByCellKey.remove(cellKey);
-        ringPathCache.dropRingPathOf(cellKey);
-    }
-
-    /**
-     * Records one cell's presence band, baked inside the shape that cell already holds.
-     *
-     * <p>Written on its own pass rather than beside the shape above, because a band is settled
-     * from more than the cell it sits in: it keeps clear of the cluster names, and those are
-     * placed only once every cell has been shaped. So the shape goes in first and the band
-     * follows, and the band pass reads the shape back off this record rather than being handed
-     * one - which is what keeps the two describing the same ring without either caller having to
-     * remember the other.
-     *
-     * @param cellKey the cell this band is for
-     * @param ribbon  the baked band, or {@link CellRibbon#NONE} where the cell draws none
-     */
-    public void putCellRibbon(SystemKey cellKey, CellRibbon ribbon) {
-
-        // A bandless cell is left out of the map rather than holding an empty value, so the render
-        // pass walks only the cells that draw one - which is a small share of them.
-        if (ribbon.isEmpty()) {
-            ribbonByCellKey.remove(cellKey);
-        } else {
-            ribbonByCellKey.put(cellKey, ribbon);
-        }
-    }
-
-    /**
-     * Records one cell's band path for the diagnostic overlay, traced inside the shape that cell
-     * already holds.
-     *
-     * <p>Written by the band pass beside the band itself, so a cell can never show a path the band
-     * it carries was not laid on. A pass with the overlay switched off hands over nothing for
-     * every cell, which is what clears the paths a pass taken while it was on left behind.
-     *
-     * @param cellKey    the cell this path is for
-     * @param ribbonPath the traced path, or {@link CellRibbonPath#NONE} where none was traced
-     */
-    public void putCellRibbonPath(SystemKey cellKey, CellRibbonPath ribbonPath) {
-
-        // Left out of the map rather than held as an empty value, exactly as a bandless cell is:
-        // the overlay walks only the cells with a path to draw, which is none of them while the
-        // player has it off.
-        if (ribbonPath.isEmpty()) {
-            ribbonPathByCellKey.remove(cellKey);
-        } else {
-            ribbonPathByCellKey.put(cellKey, ribbonPath);
-        }
-    }
-
-    /**
-     * Drops one cell entirely - it draws nothing, so it can be hovered over no more than
-     * it can be seen.
-     *
-     * @param cellKey the cell that no longer draws
-     */
-    public void removePaintedCell(SystemKey cellKey) {
-        styledCellByCellKey.remove(cellKey);
-        fillPolygonByCellKey.remove(cellKey);
-        ribbonByCellKey.remove(cellKey);
-        ribbonPathByCellKey.remove(cellKey);
-        ringPathCache.dropRingPathOf(cellKey);
-    }
-
-    /**
-     * @return each cell that draws a presence band, keyed by cell key; a cell drawing none is
-     *         absent rather than present with an empty band
-     */
-    public Map<SystemKey, CellRibbon> getRibbonByCellKey() {
-        return ribbonByCellKey;
-    }
-
-    /**
-     * @return each cell the diagnostic overlay has a band path for, keyed by cell key; empty while
-     *         the player has the overlay off
-     */
-    public Map<SystemKey, CellRibbonPath> getRibbonPathByCellKey() {
-        return ribbonPathByCellKey;
-    }
-
-    /**
-     * @return the rings this build's bands are laid along, the store the band pass asks before it
-     *         traces a cell and writes whatever it does trace into; live rather than a copy, since
-     *         a pass reading a snapshot of it would trace every cell afresh
-     */
-    public CellRingPathCache getRingPathCache() {
-        return ringPathCache;
-    }
-
-    /**
-     * @return each drawn cell's painted extent as {x, y} vertex pairs in world coordinates, the
-     *         geometry a cursor position is resolved against
-     */
     @Override
     public Map<SystemKey, List<double[]>> getFillPolygonByCellKey() {
-        return fillPolygonByCellKey;
+        return paintedCells.getFillPolygonByCellKey();
     }
 
     /**
@@ -558,6 +419,6 @@ public final class PoliticalMapTerritories implements
     // entirely.
     @Override
     public boolean isEmpty() {
-        return styledCellByCellKey.isEmpty() && styledClusterGroupByOwnerId.isEmpty();
+        return paintedCells.isEmpty() && styledClusterGroupByOwnerId.isEmpty();
     }
 }

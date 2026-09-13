@@ -316,7 +316,7 @@ final class IncrementalPoliticsRefresh {
 
         var edges = geometryCache.getCellEdgesByCellKey().get(cellKey);
         if (edges == null) {
-            territories.removePaintedCell(cellKey);
+            territories.getPaintedCells().removePaintedCell(cellKey);
             return;
         }
         // The system the cell draws as, whose holder colours and keys it. Every cell here is a
@@ -336,9 +336,9 @@ final class IncrementalPoliticsRefresh {
 
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(territories, drawnSystemKey, shaped);
         if (painted == null) {
-            territories.removePaintedCell(cellKey);
+            territories.getPaintedCells().removePaintedCell(cellKey);
         } else {
-            territories.putPaintedCell(cellKey, painted);
+            territories.getPaintedCells().putPaintedCell(cellKey, painted);
         }
     }
 

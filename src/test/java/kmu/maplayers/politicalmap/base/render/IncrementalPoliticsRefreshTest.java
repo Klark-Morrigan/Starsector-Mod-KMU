@@ -295,7 +295,7 @@ final class IncrementalPoliticsRefreshTest {
             // a flip would leave the band reporting a colony that is no longer there.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
@@ -312,7 +312,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             // Nothing else moved: a re-bake is not a re-shape.
@@ -333,7 +333,7 @@ final class IncrementalPoliticsRefreshTest {
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 FactionNameFormatChoice.SHORT);
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
@@ -350,7 +350,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .isEmpty();
         }
 
@@ -365,7 +365,7 @@ final class IncrementalPoliticsRefreshTest {
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 FactionNameFormatChoice.SHORT);
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
@@ -397,7 +397,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
 
             fittedBoxesMock.verifyNoInteractions();
@@ -411,7 +411,7 @@ final class IncrementalPoliticsRefreshTest {
             // they would take is read off the name choice rather than off the list being empty.
             var territories = buildOwnedBy(Map.of(FLIPPED_SYSTEM, HEGEMONY));
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
@@ -428,7 +428,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
@@ -443,7 +443,7 @@ final class IncrementalPoliticsRefreshTest {
                 Map.of(FLIPPED_SYSTEM, HEGEMONY),
                 FactionNameFormatChoice.SHORT);
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 buildCellKey(FLIPPED_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildBandSizedCell()));
 
@@ -464,7 +464,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(FLIPPED_SYSTEM));
         }
 
@@ -517,7 +517,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(DISTANT_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -759,7 +759,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .doesNotContainKey(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -793,7 +793,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(FLIPPED_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -819,7 +819,7 @@ final class IncrementalPoliticsRefreshTest {
             markStale(DISTANT_SYSTEM);
             applyTo(territories);
 
-            assertThat(territories.getRibbonByCellKey())
+            assertThat(territories.getPaintedCells().getRibbonByCellKey())
                 .containsOnlyKeys(buildCellKey(DISTANT_SYSTEM));
         }
 
@@ -831,7 +831,7 @@ final class IncrementalPoliticsRefreshTest {
 
             seedDistantCellGeometry(territories, buildIsolatedSquareCell(10000));
 
-            territories.putPaintedCell(
+            territories.getPaintedCells().putPaintedCell(
                 buildCellKey(DISTANT_SYSTEM),
                 PoliticalMapTerritoryFixtures.createPlaceholderPaintedCellOn(buildDistantBandSizedCell()));
         }

@@ -20,6 +20,7 @@ see the [mod README](../../../../../../../../../README.md) for project context.
 - [What recedes](#what-recedes)
 - [Borders against empty space](#borders-against-empty-space)
 - [The draw packets](#the-draw-packets)
+  - [`PaintedCellStore`: what one cell carries](#paintedcellstore-what-one-cell-carries)
 - [The split fill: solid, hatched, unfilled](#the-split-fill-solid-hatched-unfilled)
 - [Rendering](#rendering)
 - [What is not here](#what-is-not-here)
@@ -262,9 +263,30 @@ and a fresh list per frame would re-clip the wash sixty times a second.
 The retained answer is keyed on the bloc's cluster group by identity,
 so a refresh that replaces the group recomputes once and a refresh that does not costs nothing.
 
-It also records each drawn cell's painted ring alongside its `StyledCell`,
-the two arriving as one `PaintedCell` from the builder and written and dropped by the same two calls,
-and that pairing is what lets it answer `base.hover`'s `PaintedCellShapes` -
+### `PaintedCellStore`: what one cell carries
+
+Everything held per drawn cell lives in its own type,
+reached through `getPaintedCells`.
+Five stores,
+all keyed by cell:
+the `StyledCell`,
+the ring it was painted on,
+the presence band laid inside that ring
+(`CellRibbon`, from `render.ribbon`),
+that band's path for the diagnostic overlay (`CellRibbonPath`),
+and the traced ring the band was laid along (`CellRingPathCache`).
+
+They are five stores rather than one record per cell because most cells are in only two of them:
+a band reports what is held in a system and most of the sector is cells nobody lives in,
+and a path exists only while the player has the diagnostic on.
+What makes them one type is that they are **dropped together**.
+Everything after the ring is cut to one particular ring,
+so a cell re-shaped while keeping any of it would draw the last shape's work inside this shape's cell.
+Owning the five in one place is what makes a re-shape clear them by construction,
+rather than by each caller on a larger model remembering the same five fields.
+
+The ring and the `StyledCell` arrive as one `PaintedCell` from the builder,
+and that pairing is what lets the territories answer `base.hover`'s `PaintedCellShapes` -
 and through it `MapHoverTargets` -
 directly:
 the shapes a cursor is tested against are the shapes this frame painted,
@@ -272,41 +294,20 @@ never a re-derivation that could drift from them.
 The highlight reads the same shapes through `render/hover`'s adapter,
 so the cursor and the halo cannot disagree about what was drawn.
 
-The cell's presence band (`CellRibbon`, from `render.ribbon`) is written by its own call,
+The band is written by its own pass rather than beside the ring,
 because it is settled from more than the cell it sits in:
-a band keeps clear of the cluster names (a default the player can switch off),
+it keeps clear of the cluster names (a default the player can switch off),
 and those are placed only once every cell has been shaped.
-So the shape goes in first and the band follows,
-and `CellRibbonsBaker` reads the shape back off this record rather than being handed one.
-What ties the two is the write that records a shape *dropping* whatever band the cell was carrying:
-a band is triangles laid inside one particular ring,
-so a re-shaped cell keeping its band would draw the last shape's band inside this shape's cell.
-Unlike the two maps beside it this one is sparse -
-a bandless cell is left out rather than held as an empty value -
-since a band reports what is held in a system,
-and most of the sector is cells nobody lives in.
+So the ring goes in first and `CellRibbonsBaker` reads it back off the store rather than being handed one -
+the store being the only thing that pass is given,
+since nothing it does per cell asks the build anything else.
 
-Beside it sits the cell's band *path* (`CellRibbonPath`),
-written by the same pass and dropped by the same writes,
-for the same reason:
-a ring traced inside the last shape would report the overlay's staleness as this cell's geometry.
-It is held only while the player has the band-path diagnostic on -
-the bake hands over nothing per cell while it is off,
-which is how switching it off clears what an earlier pass left -
-so on an ordinary frame this map is empty.
-
-Third beside those two is the ring each band is laid along (`CellRingPathCache`),
-and it is a cache rather than a draw list -
-nothing paints it.
+The ring cache is the one member nothing paints.
 A bake happens whenever a cluster name may have moved,
 while a cell's ring changes only when the cell is cut again,
 so without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just discarded.
-The re-shaped cells walk again regardless,
-their paths having gone with their shapes;
-every other cell in a bake is what the cache spares.
-It is dropped by the same two writes as the band,
-and that is the whole of why it needs no key:
-a cache living inside the object whose lifetime it must match is correct by construction,
+Being dropped with its cell is the whole of why it needs no key:
+a cache whose lifetime is the object holding it is correct by construction,
 where a keyed one is a rule somebody has to keep true.
 
 ## The split fill: solid, hatched, unfilled

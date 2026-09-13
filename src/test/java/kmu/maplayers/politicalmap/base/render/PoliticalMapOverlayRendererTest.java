@@ -722,9 +722,9 @@ final class PoliticalMapOverlayRendererTest {
         // them are stated for the same reason: the overlay is gated by its own emptiness rather
         // than by a settings read, so this read is the only thing standing between an off toggle
         // and a pass over the map.
-        when(territoriesMock.getRibbonByCellKey())
+        when(territoriesMock.getPaintedCells().getRibbonByCellKey())
             .thenReturn(Map.of());
-        when(territoriesMock.getRibbonPathByCellKey())
+        when(territoriesMock.getPaintedCells().getRibbonPathByCellKey())
             .thenReturn(Map.of());
 
         // Read while assembling the hover highlight's arguments, so it has to resolve even though

@@ -77,7 +77,7 @@ public record RibbonBakeSurface(
             // the boxes a band keeps clear of are the boxes those very names were fitted into, so
             // a second reading could carve the bands around names the map is not drawing.
             resolveNameBoxes(clusterAnchors, territories.getContentInputs().nameFormat()),
-            territories.getRingPathCache());
+            territories.getPaintedCells().getRingPathCache());
     }
 
     // The room the names take up, or none at all for either of two reasons, answered side by side

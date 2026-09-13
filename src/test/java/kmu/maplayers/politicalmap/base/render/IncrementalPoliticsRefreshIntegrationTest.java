@@ -551,7 +551,7 @@ final class IncrementalPoliticsRefreshIntegrationTest {
             new LinkedHashSet<>(territories.getSpotlitPresenceSystemKeys()),
             new LinkedHashMap<>(territories.getStyledCellByCellKey()),
             new LinkedHashMap<>(territories.getStyledClusterGroupByOwnerId()),
-            new LinkedHashMap<>(territories.getRibbonByCellKey()));
+            new LinkedHashMap<>(territories.getPaintedCells().getRibbonByCellKey()));
     }
 
     // The systems the fixture sector lists, keyed by ID and in row order.
