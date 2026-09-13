@@ -95,7 +95,7 @@ so those colonies behave like normal ones.
   Markets only;
   fleets are explicitly out of scope to keep the recompute pure-monthly.
 - Accessibility extension as a stat injection through the standard `MutableStat` modifier API on the affected `MarketAPI`,
-  keyed by this feature's id so it is unambiguous in tooltips and removable on disable.
+  keyed by this feature's ID so it is unambiguous in tooltips and removable on disable.
 - Synthetic trade fleet spawns through a dedicated `BaseRouteFleetManager` subclass registered with its own `SOURCE_ID` (e.g. `kmu_trade`) alongside vanilla's `econ` source.
   The vanilla class is `EconomyFleetRouteManager`;
   we do not subclass or patch it.
@@ -174,15 +174,15 @@ Recommendation:
   save,
   then remove the jar.
   The cleanup must be idempotent and run before the first economy tick of the loaded session.
-- **Modifier id migration (rename strategy).** Each feature owns two id sets:
-  the **live** ids it currently writes,
-  and a **retired** list of ids it used to write in prior versions.
+- **Modifier ID migration (rename strategy).** Each feature owns two ID sets:
+  the **live** IDs it currently writes,
+  and a **retired** list of IDs it used to write in prior versions.
   Every save load,
   before the first economy tick,
-  the feature strips any modifier whose id appears in its retired list.
+  the feature strips any modifier whose ID appears in its retired list.
   A rename is then a two-step code change:
-  add the new id to live,
-  add the old id to retired,
+  add the new ID to live,
+  add the old ID to retired,
   never delete from retired.
   This reuses the same cleanup seam as the uninstall strategy
   and removes the "modifier ids are forever" constraint -
@@ -203,7 +203,7 @@ Recommendation:
   a cut-off market gets a non-zero abyssal edge to the nearest non-cut-off market,
   with weight monotonic in deep-hyperspace distance.
 - Unit:
-  accessibility contributions appear as a labelled `MutableStat` modifier with a stable id,
+  accessibility contributions appear as a labelled `MutableStat` modifier with a stable ID,
   so tooltips can name the source.
 - Unit:
   disabling the feature removes every injected modifier on the next tick.
@@ -249,7 +249,7 @@ Resolved
 - **`MutableStat` overlap with Nexerelin accessibility hooks.** Nexerelin patches several accessibility hooks
   but does not touch gates directly.
   Mitigation per [research](research.md#nexerelin-coexistence):
-  distinct `kmu_trade_`-prefixed modifier ids and read-only access to vanilla stats -
+  distinct `kmu_trade_`-prefixed modifier IDs and read-only access to vanilla stats -
   the feature only *adds* its own modifiers,
   never mutates vanilla's or Nexerelin's.
 - **Abyssal edge anchoring.** Every abyssal market gets one *stable* seam to the nearest non-hostile non-cut-off market
@@ -332,9 +332,9 @@ Still open:
 
 - **Save compatibility -
   rename.** Stat modifiers persist on `MarketAPI` across saves.
-  Renaming a modifier id in code leaves the old id orphaned on every existing save
-  (stale contribution, silent double-counting once the new id is also written).
-  Mitigated by the modifier id migration strategy in [Decisions](#decisions):
+  Renaming a modifier ID in code leaves the old ID orphaned on every existing save
+  (stale contribution, silent double-counting once the new ID is also written).
+  Mitigated by the modifier ID migration strategy in [Decisions](#decisions):
   renames go through a retired-id list that the save-load cleanup pass strips.
   A rename without updating that list is the bug,
   not the rename itself.

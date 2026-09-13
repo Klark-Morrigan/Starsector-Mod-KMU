@@ -64,7 +64,7 @@ build layout,
 and runtime entry point.
 
 Reason:
-the feature needs a stable mod id and a small runtime hook before any UI can be attached.
+the feature needs a stable mod ID and a small runtime hook before any UI can be attached.
 This step also establishes the repository release shape in `docs/dev/release.md`:
 production code in `src/main/java`,
 tests in `src/test/java`,
@@ -90,8 +90,8 @@ Implementation:
 
 - create a condition spec query class that reads `Global.getSettings().getAllMarketConditionSpecs()`;
 - filter to planetary specs with `MarketConditionSpecAPI.isPlanetary()`;
-- expose the current market condition ids from `MarketAPI.getConditions()`;
-- validate target condition ids with `Global.getSettings().getMarketConditionSpec(id)`;
+- expose the current market condition IDs from `MarketAPI.getConditions()`;
+- validate target condition IDs with `Global.getSettings().getMarketConditionSpec(id)`;
 - add only if absent,
   using `MarketAPI.addCondition(id)`;
 - mark newly added conditions surveyed with `market.getFirstCondition(id).setSurveyed(true)` when available;
@@ -242,7 +242,7 @@ Implementation:
 - do not show `Present`,
   `Absent`,
   `Add`,
-  ids,
+  IDs,
   or other state text directly in the grid;
 - clicking an absent icon is the add action;
 - clicking a present icon does not mutate the market;
@@ -259,7 +259,7 @@ Implementation:
   that KMU has not detected the exact reason yet,
   and asking the player to report the case to the KMU mod developer;
 - the tooltip metadata footer may include source mod,
-  internal condition id,
+  internal condition ID,
   icon path,
   and present-only hidden/suppressed status;
 - use a spec-based tooltip fallback only for absent conditions
@@ -267,7 +267,7 @@ Implementation:
 
 Tests:
 
-- unit test chooser view-model construction from specs and current market ids;
+- unit test chooser view-model construction from specs and current market IDs;
 - unit test chooser model location extraction from Starsector market metadata;
 - unit test summary text and highlights for market/system/constellation,
   total,
@@ -277,7 +277,7 @@ Tests:
 - unit test chooser editor handoff from resolved `MarketAPI` to dialog delegate;
 - unit test present conditions render icon and tooltip data through the live condition plugin path;
 - unit test present and absent tooltips both append source mod,
-  id,
+  ID,
   and icon path in footer metadata with low-visibility body text;
 - unit test absent tooltip metadata does not show hidden or suppressed fields;
 - unit test present and absent state is exposed to rendering as icon grey-out state,

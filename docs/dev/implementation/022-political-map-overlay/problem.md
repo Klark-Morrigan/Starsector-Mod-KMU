@@ -220,8 +220,8 @@ mitigated by the tight hit-test (the sidebar occupies empty map margin).
     tagged non-clickable,
     no sprite.
     Their `render(CampaignEngineLayers, ViewportAPI)` paints cell / connectors / blips on the layer slots chosen in [research: Visual model render-state notes](../019-political-map/research.md#visual-model-under-candidate-a).
-    The entity type id is permanent once shipped
-    (custom entities serialise by id; renaming breaks saves).
+    The entity type ID is permanent once shipped
+    (custom entities serialise by ID; renaming breaks saves).
   - **Sidebar** -
     a `CampaignUIRenderingListener` that draws the panel in UI coords
     and an `EveryFrameScript` that reads its clicks.
@@ -247,7 +247,7 @@ This refines feature 019's element-wise lexicographic proposal
    ranking planets above stations.
    A market is on a planet when `MarketAPI.getPlanetEntity()` is non-null
    and on a station when it is null.
-4. **Faction id ascending.** The always-decisive backstop,
+4. **Faction ID ascending.** The always-decisive backstop,
    so the winner never depends on economy or map iteration order.
    Reaching it requires an exact tie on all three size measures.
 
@@ -379,7 +379,7 @@ so a fortified world reads as the stronger presence even at equal size.
   so a station found this way is the market's own;
   a spatial orbit scan is deliberately not used
   (it would false-positive on rival stations, independents sharing the planet, and abandoned hulks that keep the tag after their market dies).
-  No industry ids are read -
+  No industry IDs are read -
   the entity tag captures vanilla and modded stations alike.
 - **Hidden markets.** A hidden market earns a configurable fraction of the station weight -
   `stationWeight * hiddenRate` on its token rating,
@@ -538,8 +538,8 @@ the engine's own location culling is the source of truth.
 - Per-save wiring
   (in `KMU_ModPlugin.onGameLoad(boolean)`):
   - Ensure exactly one anchor entity per inhabited system in hyperspace,
-    idempotent by id `kmu_pm_<systemId>`.
-  - Ensure the always-on hyperspace probe anchor exists (idempotent by a fixed id) for sub-view detection
+    idempotent by ID `kmu_pm_<systemId>`.
+  - Ensure the always-on hyperspace probe anchor exists (idempotent by a fixed ID) for sub-view detection
     (see [Sub-view detection](#sub-view-detection)).
   - Register the sidebar `CampaignUIRenderingListener`.
   - Register the per-frame script that (a) polls the sidebar click and (b) drives cache invalidation
@@ -575,7 +575,7 @@ the engine's own location culling is the source of truth.
   combined weight,
   heaviest single market,
   planet weight,
-  then faction id (see [Dominance rule](#dominance-rule)).
+  then faction ID (see [Dominance rule](#dominance-rule)).
 - Unit:
   the footprint read multiplies each market's base size rating by the colony-size weight -
   a doubled weight doubles a visible market's size and a hidden market's token alike,
@@ -675,11 +675,11 @@ Still open:
   Keep them to a tab-state read plus a rect test;
   do no allocation or market scanning in the per-frame path -
   that work belongs to the cached pipeline invalidated on its own cadence.
-- **Custom-entity save compatibility.** `kmu_political_marker`'s type id is serialised into saves;
+- **Custom-entity save compatibility.** `kmu_political_marker`'s type ID is serialised into saves;
   renaming it after release breaks loaded saves,
   and removing the mod jar drops the plugin class
   (`ClassNotFoundException` risk on load for saves with live anchors).
-  Pick the id once;
+  Pick the ID once;
   document the uninstall path.
 - **Map sub-view detection depends on render-order assumptions.** `getCurrentCoreTab()` returns `MAP` for both sub-views,
   so the sidebar relies on the probe-anchor stamp
