@@ -17,11 +17,21 @@
 
 ### Map layers
 
-**Sector Map Layers** is an overlay for the map screen **(Tab, Q)**, the intel screen **(E, 1)**, the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have **Random Assortment of Things** installed.
+**Sector Map Layers**
+is an overlay for the map screen **(Tab, Q)**,
+the intel screen **(E, 1)**,
+the minimap in the bottom right corner of the screen (replaces the vanilla radar) if you have **Random Assortment of Things** installed.
 
-Everything is calculated and drawn off of game data, and it gets updated as the state of the sector shanges. Map layers don't alter any of the data being used to draw it, making map layers **read-only** by design.
+Everything is calculated and drawn off of game data,
+and it gets updated as the state of the sector shanges.
+Map layers don't alter any of the data being used to draw it,
+making map layers **read-only** by design.
 
-The map layers feature **turned on by default**. After loading a save or starting a new game, when you open the map screen or the intel screen, you'll see a new `Map layers` button among map filter buttons. Clicking that button or pressing **(M)** enables the map layer overlay and its sidebar.
+The map layers feature **turned on by default**.
+After loading a save or starting a new game,
+when you open the map screen or the intel screen,
+you'll see a new `Map layers` button among map filter buttons.
+Clicking that button or pressing **(M)** enables the map layer overlay and its sidebar.
 
 The main control surface of map layers is the collapsible **sidebar** that lists all available layers and related knobs and toggles.
 
@@ -29,10 +39,49 @@ See [more on map layers](src/main/java/kmu/maplayers/README.md).
 
 #### Political map
 
-Colours the sector by who controls each system, from any of three views -
-factions, Nexerelin alliances, or vanilla system claims. See
-[the political map guide](src/main/java/kmu/maplayers/politicalmap/README.md) for the views it
-offers and how the overlay is drawn.
+- Focuses on **populated colonies** and their affiliation.
+  *Unclaimed* **unpopulated systems** are drawn very faintly just to show where systems touch.
+  Outlines of unpopulated systems can be toggled on and off independently from **populated systems**,
+  which are *always drawn even when there's no organised faction in the system*
+  (e.g. all colonies in a system are **decivilised**).
+- *Any given system can be painted by only a single faction*,
+  so each system draws a **presence ribbon** hugging its border that represents each populated colony with the color of the faction holding them.
+- **Expandable system tooltips**
+  provide detailed information on how each market affects the balance of power.
+  Tooltips list **Neutral** (unowned) markets,
+  as well as markets producing no domination score or aren't used in claim calculations.
+- Factions holding any population centers are listed in a **sortable filter**.
+  Selecting any of them spotlights their presence across the sector.
+  In domination views (**Factions** and **Alliances**)
+  **solid fill** represents domination,
+  **hatched fill** represents presence in a system dominated by somebody else,
+  **no fill** represents claims on unpopulated systems.
+  On the **Claims** view all systems are painted with solid fill.
+
+The **Political Map** comes with 3 views:
+- **Factions** -
+  paints faction territory based on a custom **domination algorithm** (highly customisable in settings)
+  that weighs markets sizes,
+  stability, whether a market is hidden,
+  presence of an orbital station (or if a station is militarised),
+  and the number of patrol fleets generated (by their sizes).
+  A faction can dominate a system claimed by another faction -
+  the claim is listed on the tooltip but otherwise isn't factored in.
+- **Alliances**
+  (only visible with **Nexerelin** installed) -
+  same as **Factions** but allied factions stand as a single political entity with their holdings combined.
+- **Claims** -
+  paints faction territory based on the vanilla **system claim** mechanic -
+  dynamic or forced.
+  **Forced claims** are set via sector memory and are the highest authority.
+  **Unless a claim is forced, system claim is resolved dynamically** -
+  the single biggest market (that participates in the economy) wins,
+  boosted by the presence of same-faction markets (of any kind) and any military industry constructed.
+  *The player faction and non-territorial factions cannot lay claims dynamically.*
+  If you filter by a non-territorial faction,
+  unclaimed systems with their presence will be spotlit.
+
+See [more on the political map](src/main/java/kmu/maplayers/README.md).
 
 ## Dependencies
 
