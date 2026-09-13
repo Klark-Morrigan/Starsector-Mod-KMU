@@ -1,19 +1,30 @@
 # Market Condition Manager Reference
 
-Research date: 2026-04-27
+Research date:
+2026-04-27
 
-Scope: local Starsector install under `mods`, excluding `mods/KMU`. The goal was
-to find usable public APIs, library dependencies, and prior mod patterns for a
-planetary condition picker.
+Scope:
+local Starsector install under `mods`,
+excluding `mods/KMU`.
+The goal was to find usable public APIs,
+library dependencies,
+and prior mod patterns for a planetary condition picker.
 
 ## Method
 
 - Classified installed mods from `mod_info.json`.
 - Counted source-bearing mods with `rg --files` for `*.java` and `*.kt`.
 - Searched source mods for market-condition and UI keywords:
-  `addCondition`, `removeCondition`, `MarketCondition`, `CustomPanelAPI`,
-  `TooltipMakerAPI`, `EveryFrameScript`, `CoreUITabId`, `getCore`,
-  `getCurrentTab`, and `getChildrenCopy`.
+  `addCondition`,
+  `removeCondition`,
+  `MarketCondition`,
+  `CustomPanelAPI`,
+  `TooltipMakerAPI`,
+  `EveryFrameScript`,
+  `CoreUITabId`,
+  `getCore`,
+  `getCurrentTab`,
+  and `getChildrenCopy`.
 - Inspected binary-only libraries and large mods with:
   - `jar tf <mod jar>` for package/class inventory;
   - `javap -public -classpath ...` for public method surfaces.
@@ -24,7 +35,10 @@ The condition data and mutation API is public and sufficient:
 
 - `SettingsAPI.getAllMarketConditionSpecs()`
 - `SettingsAPI.getMarketConditionSpec(String)`
-- `MarketConditionSpecAPI.getId()`, `getName()`, `getIcon()`, `isPlanetary()`,
+- `MarketConditionSpecAPI.getId()`,
+  `getName()`,
+  `getIcon()`,
+  `isPlanetary()`,
   `getTags()`
 - `MarketAPI.getConditions()`
 - `MarketAPI.addCondition(String)`
@@ -36,9 +50,10 @@ The condition data and mutation API is public and sufficient:
 - `MarketAPI.suppressCondition(String)` / `unsuppressCondition(String)`
 - `MarketConditionAPI.setSurveyed(boolean)`
 
-The existing mods that modify planetary conditions generally validate the
-condition spec, add or remove by id, mark the added condition surveyed, and then
-reapply or let the market update naturally.
+The existing mods that modify planetary conditions generally validate the condition spec,
+add or remove by id,
+mark the added condition surveyed,
+and then reapply or let the market update naturally.
 
 The UI API is strong for creating our own panels and dialogs:
 
@@ -53,9 +68,8 @@ The UI API is strong for creating our own panels and dialogs:
 - `BaseIndustryOptionProvider`
 - `DialogCreatorUI.showDialog(...)`
 
-There does not appear to be a clean public API for inserting controls into an
-existing colony/survey panel. Mods that do this crawl the live UI tree with
-reflection.
+There does not appear to be a clean public API for inserting controls into an existing colony/survey panel.
+Mods that do this crawl the live UI tree with reflection.
 
 ## Library Findings
 
@@ -64,10 +78,17 @@ reflection.
 Useful public API:
 
 - `lunalib.lunaSettings.LunaSettings`
-  - `getBoolean`, `getInt`, `getFloat`, `getDouble`, `getString`, `getColour`
+  - `getBoolean`,
+    `getInt`,
+    `getFloat`,
+    `getDouble`,
+    `getString`,
+    `getColour`
   - settings listeners
 - `lunalib.lunaRefit.LunaRefitManager`
-  - `addRefitButton`, `hasButtonOfClass`, `getFirstButtonOfClass`
+  - `addRefitButton`,
+    `hasButtonOfClass`,
+    `getFirstButtonOfClass`
 - `lunalib.lunaRefit.BaseRefitButton`
   - refit button lifecycle hooks and panel hooks
 
@@ -78,9 +99,11 @@ Relevant source references:
 - `mods/lunalib/src/lunalib/lunaSettings/LunaSettings.kt`
 - `mods/lunalib/src/lunalib/lunaRefit/BaseRefitButton.java`
 
-Assessment: useful for settings and refit UI, but not directly for a colony or
-survey condition picker. Its reflection/UI code is a good reference, but most of
-it is internal Kotlin implementation.
+Assessment:
+useful for settings and refit UI,
+but not directly for a colony or survey condition picker.
+Its reflection/UI code is a good reference,
+but most of it is internal Kotlin implementation.
 
 ### MagicLib
 
@@ -89,7 +112,8 @@ Useful public API:
 - `org.magiclib.util.MagicSettings`
   - typed settings helpers
 - `org.magiclib.util.MagicCampaign`
-  - campaign helper methods, including market creation helpers
+  - campaign helper methods,
+    including market creation helpers
 - `org.magiclib.util.ui.MagicRefreshableBaseIntelPlugin`
 
 Relevant source references:
@@ -98,9 +122,10 @@ Relevant source references:
 - `mods/MagicLib/src/org/magiclib/paintjobs/MagicPaintjobCampaignRefitAdder.kt`
 - `mods/MagicLib/src/org/magiclib/ReflectionUtils.kt`
 
-Assessment: good examples for UI reflection and button listener wiring. Not a
-strong dependency candidate for this feature unless we later need its settings
-or campaign helpers for other reasons.
+Assessment:
+good examples for UI reflection and button listener wiring.
+Not a strong dependency candidate for this feature
+unless we later need its settings or campaign helpers for other reasons.
 
 ### LazyLib
 
@@ -108,12 +133,15 @@ Useful public API found:
 
 - `org.lazywizard.lazylib.campaign.CampaignUtils`
 - `org.lazywizard.lazylib.ModUtils`
-- math, combat, string, and rendering helpers
+- math,
+  combat,
+  string,
+  and rendering helpers
 
-`org.lazywizard.lazylib.campaign.MarketUtils` has no public methods in the jar
-installed here.
+`org.lazywizard.lazylib.campaign.MarketUtils` has no public methods in the jar installed here.
 
-Assessment: not needed for the condition picker.
+Assessment:
+not needed for the condition picker.
 
 ### AshLib
 
@@ -125,14 +153,18 @@ Useful public API:
 - `ashlib.data.plugins.coreui.CommandUIPlugin`
 - UI widgets such as `BasePopUpDialog` and `CustomButton`
 
-Assessment: reference only for this feature right now. KMU should not declare it
-as a dependency unless a later step finds a concrete benefit over the local
-adapters and public Starsector APIs. Its command-tab and UI widget classes are
-useful implementation examples.
+Assessment:
+reference only for this feature right now.
+KMU should not declare it as a dependency
+unless a later step finds a concrete benefit over the local adapters and public Starsector APIs.
+Its command-tab and UI widget classes are useful implementation examples.
 
 ### BoxUtil, ParticleEngine, GraphicsLib, NebuLib, RetroLib
 
-These are mostly rendering, particles, planet constants, or retrofit utilities.
+These are mostly rendering,
+particles,
+planet constants,
+or retrofit utilities.
 No direct condition-editor dependency was found.
 
 ## Non-Library Reference Mods
@@ -162,8 +194,8 @@ Patterns observed:
 
 ### AOTD / Vaults of Knowledge
 
-Binary-only in this install, but class names and public APIs show an established
-architecture for market UI interception.
+Binary-only in this install,
+but class names and public APIs show an established architecture for market UI interception.
 
 Relevant public classes:
 
@@ -180,7 +212,8 @@ Pattern implied:
 - It publishes context objects containing `UIPanelAPI` and `MarketAPI`.
 - Feature listeners attach their UI when the relevant context is discovered.
 
-Assessment: this is probably the cleanest architectural model to copy locally,
+Assessment:
+this is probably the cleanest architectural model to copy locally,
 but not a dependency target.
 
 ### Terraforming Made Easy
@@ -195,9 +228,11 @@ Relevant files:
 Patterns observed:
 
 - Validate with `Global.getSettings().getMarketConditionSpec(id)`.
-- Toggle condition presence with `market.hasCondition`, `addCondition`, and
-  `removeCondition`.
-- After adding, call `market.getFirstCondition(id).setSurveyed(true)`.
+- Toggle condition presence with `market.hasCondition`,
+  `addCondition`,
+  and `removeCondition`.
+- After adding,
+  call `market.getFirstCondition(id).setSurveyed(true)`.
 - Remove mutually exclusive or hated conditions explicitly.
 
 ### DIY Planets
@@ -224,30 +259,30 @@ Relevant file:
 
 Pattern observed:
 
-- `MarketAPI.addConditionIfNotPresent(conditionId)` avoids duplicate add and
-  returns the resulting `MarketConditionAPI`.
+- `MarketAPI.addConditionIfNotPresent(conditionId)` avoids duplicate add and returns the resulting `MarketConditionAPI`.
 
 ### UAF
 
-Binary-only in this install. Useful public extension reference:
+Binary-only in this install.
+Useful public extension reference:
 
-- `data.econ.listeners.RuinRestorationOptionProvider`
-  extends `BaseIndustryOptionProvider`
-- `kaysaar.uaf.keycardshop.newUI.GiftShopUIDelegateV2`
-  implements `CustomVisualDialogDelegate`
-- `kaysaar.uaf.keycardshop.scripts.UAFCCUIInMarketScript`
-  implements `EveryFrameScript`
+- `data.econ.listeners.RuinRestorationOptionProvider` extends `BaseIndustryOptionProvider`
+- `kaysaar.uaf.keycardshop.newUI.GiftShopUIDelegateV2` implements `CustomVisualDialogDelegate`
+- `kaysaar.uaf.keycardshop.scripts.UAFCCUIInMarketScript` implements `EveryFrameScript`
 
-Assessment: good examples that condition/market features can be exposed through
-public dialog/industry option APIs without directly patching the colony panel.
+Assessment:
+good examples that condition/market features can be exposed through public dialog/industry option APIs without directly patching the colony panel.
 
 ## Recommendations For KMU
 
 1. Do not add a hard library dependency for Step 2.
 
-   The Starsector API is enough for the condition service. Existing libraries
-   help with settings, refit UI, command tabs, or rendering, but none provides a
-   simple public "add button to survey panel" API.
+   The Starsector API is enough for the condition service.
+   Existing libraries help with settings,
+   refit UI,
+   command tabs,
+   or rendering,
+   but none provides a simple public "add button to survey panel" API.
 
 2. Implement a small internal condition service.
 
@@ -264,43 +299,49 @@ public dialog/industry option APIs without directly patching the colony panel.
 
 3. Prefer opening our own editor dialog/panel over deeply rewriting vanilla UI.
 
-   Use `CustomDialogDelegate`, `CustomVisualDialogDelegate`, or a custom panel
-   launched from a small entry point. This keeps the first implementation easier
-   to test and less fragile.
+   Use `CustomDialogDelegate`,
+   `CustomVisualDialogDelegate`,
+   or a custom panel launched from a small entry point.
+   This keeps the first implementation easier to test and less fragile.
 
-4. If we must inject into an existing survey/colony panel, copy the AOTD/RAT
-   architecture locally.
+4. If we must inject into an existing survey/colony panel,
+   copy the AOTD/RAT architecture locally.
 
    Suggested internal pieces:
 
    - `KmuReflection` with cached method lookup;
-   - `KmuCoreUiLocator` for `getCore`, `getCoreUI`, `getCurrentTab`, and
-     `getChildrenCopy`;
+   - `KmuCoreUiLocator` for `getCore`,
+     `getCoreUI`,
+     `getCurrentTab`,
+     and `getChildrenCopy`;
    - `KmuMarketUiListener` interface;
    - context objects containing the discovered `UIPanelAPI` and `MarketAPI`;
-   - one `EveryFrameScript` or `CoreUITabListener` that discovers contexts and
-     notifies listeners.
+   - one `EveryFrameScript` or `CoreUITabListener` that discovers contexts and notifies listeners.
 
 5. Treat AshLib as code reference only for this feature.
 
-   Do not add AshLib to `mod_info.json` or the Gradle runtime classpath unless
-   KMU needs one of its public APIs directly. If its command-tab or widget
-   patterns are useful, copy the relevant design locally and compile against the
-   Starsector API instead.
+   Do not add AshLib to `mod_info.json` or the Gradle runtime classpath
+   unless KMU needs one of its public APIs directly.
+   If its command-tab or widget patterns are useful,
+   copy the relevant design locally and compile against the Starsector API instead.
 
 6. Use LunaLib later for user settings if needed.
 
-   It is appropriate for preferences such as "show editor button on survey
-   panel" or "allow non-planetary conditions." It should not be pulled into the
-   core condition mutation implementation.
+   It is appropriate for preferences such as "show editor button on survey panel" or "allow non-planetary conditions." It should not be pulled into the core condition mutation implementation.
 
 ## Open Questions
 
-- Should the editor appear on the colony/survey screen, or is an interaction
-  dialog / command-tab entry acceptable for the first version?
-- Should the editor allow all planetary conditions or only conditions safe to
-  add manually?
-- Should condition categories be mutually exclusive in the UI, such as farmland,
-  organics, volatiles, atmosphere, temperature, ruins, and hazard conditions?
-- Should condition mutations be dev-only, player-available, or gated behind a
-  setting?
+- Should the editor appear on the colony/survey screen,
+  or is an interaction dialog / command-tab entry acceptable for the first version?
+- Should the editor allow all planetary conditions or only conditions safe to add manually?
+- Should condition categories be mutually exclusive in the UI,
+  such as farmland,
+  organics,
+  volatiles,
+  atmosphere,
+  temperature,
+  ruins,
+  and hazard conditions?
+- Should condition mutations be dev-only,
+  player-available,
+  or gated behind a setting?

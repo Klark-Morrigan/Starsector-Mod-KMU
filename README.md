@@ -31,7 +31,11 @@
 
 ## Features
 
-This mod comes with a suite of **LunaLib** settings that allow you to tweak, visuals, sound volume, keybinds, underlying mechanics.
+This mod comes with a suite of **LunaLib** settings that allow you to tweak,
+visuals,
+sound volume,
+keybinds,
+underlying mechanics.
 
 ### Map layers
 
@@ -51,7 +55,8 @@ when you open the map screen or the intel screen,
 you'll see a new `Map layers` button among map filter buttons.
 Clicking that button or pressing **(M)** enables the map layer overlay and its sidebar.
 
-The main control surface of map layers is the collapsible **sidebar** that lists all available layers and related knobs and toggles.
+The main control surface of map layers is the collapsible **sidebar** that lists all available layers
+and related knobs and toggles.
 
 See [more on map layers](src/main/java/kmu/maplayers/README.md).
 
@@ -81,7 +86,8 @@ The **Political Map** comes with 3 views:
 - **Factions** -
   paints faction territory based on a custom **domination algorithm** (highly customisable in settings)
   that weighs markets sizes,
-  stability, whether a market is hidden,
+  stability,
+  whether a market is hidden,
   presence of an orbital station (or if a station is militarised),
   and the number of patrol fleets generated (by their sizes).
   A faction can dominate a system claimed by another faction -
@@ -93,7 +99,8 @@ The **Political Map** comes with 3 views:
   paints faction territory based on the vanilla **system claim** mechanic -
   dynamic or forced.
   **Forced claims** are set via sector memory and are the highest authority.
-  **Unless a claim is forced, system claim is resolved dynamically** -
+  **Unless a claim is forced,
+  system claim is resolved dynamically** -
   the single biggest market (that participates in the economy) wins,
   boosted by the presence of same-faction markets (of any kind) and any military industry constructed.
   *The player faction and non-territorial factions cannot lay claims dynamically.*
@@ -104,7 +111,8 @@ See [more on the political map](src/main/java/kmu/maplayers/README.md).
 
 #### Spoiler protection
 
-To avoid spoilers, map layers operate on a vanilla-derived **visibility** system:
+To avoid spoilers,
+map layers operate on a vanilla-derived **visibility** system:
 
 - **Hidden systems**
   (with no hyperspace anchor generated off of a star, nebula, or a black hole)
@@ -205,8 +213,8 @@ A push whose version matches the latest git tag stops after one cheap job;
 a version bump re-runs the PR gates on that commit,
 packages `KMU-<version>.zip`,
 pushes the tag,
-and publishes a GitHub release whose body
-is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version -
+and publishes a GitHub release
+whose body is this repo's [CHANGELOG.md](CHANGELOG.md) section for that version -
 so a release with no changelog section fails rather than shipping empty notes.
 
 Two committed files feed the update-check side of that release.
@@ -228,68 +236,76 @@ KMU states no build wiring of its own for it.
 
 ### Local linting
 
-Two delegating CI workflows lint the repo's non-Gradle surface on every pull
-request: [ci-yaml.yml](.github/workflows/ci-yaml.yml) calls Common-Automation's
-reusable `ci-yaml.yml` (actionlint, action-validator, yamllint, ansible-lint)
-and [ci-bash.yml](.github/workflows/ci-bash.yml) calls its reusable `ci-bash.yml`
-(shellcheck, check-sh-executable, bats). Each step auto-skips when its surface is
-absent. The Gradle build and tests are NOT part of these workflows - they run
-through Gradle (see [Build And Release](#build-and-release)); these gates cover
-only YAML / Actions / Bash.
+Two delegating CI workflows lint the repo's non-Gradle surface on every pull request:
+[ci-yaml.yml](.github/workflows/ci-yaml.yml) calls Common-Automation's reusable `ci-yaml.yml`
+(actionlint, action-validator, yamllint, ansible-lint) and [ci-bash.yml](.github/workflows/ci-bash.yml) calls its reusable `ci-bash.yml` (shellcheck, check-sh-executable, bats).
+Each step auto-skips when its surface is absent.
+The Gradle build and tests are NOT part of these workflows -
+they run through Gradle
+(see [Build And Release](#build-and-release));
+these gates cover only YAML / Actions / Bash.
 
-KMU's workflows run on its self-hosted runner, labelled `kmu-runner` (provisioned
-with `STARSECTOR_HOME` + JDK). [.github/actionlint.yaml](.github/actionlint.yaml)
+KMU's workflows run on its self-hosted runner,
+labelled `kmu-runner`
+(provisioned with `STARSECTOR_HOME` + JDK).
+[.github/actionlint.yaml](.github/actionlint.yaml)
 declares that label so actionlint stops flagging `runs-on` as an unknown runner.
 
-Three sibling shims reproduce that CI surface locally through Git Bash +
-Docker, each delegating to Common-Automation's orchestrator:
+Three sibling shims reproduce that CI surface locally through Git Bash + Docker,
+each delegating to Common-Automation's orchestrator:
 
-- [scripts/run-ci-yaml-and-bash.sh](scripts/run-ci-yaml-and-bash.sh) (with the
-  [run-ci-yaml-and-bash.bat](scripts/run-ci-yaml-and-bash.bat) launcher for
-  `cmd` / PowerShell) is the MAIN entry - it runs BOTH the lint suite AND the
-  bats tests in one go, the full local equivalent of ci-yaml.yml + ci-bash.yml.
+- [scripts/run-ci-yaml-and-bash.sh](scripts/run-ci-yaml-and-bash.sh)
+  (with the [run-ci-yaml-and-bash.bat](scripts/run-ci-yaml-and-bash.bat) launcher for `cmd` / PowerShell) is the MAIN entry -
+  it runs BOTH the lint suite AND the bats tests in one go,
+  the full local equivalent of ci-yaml.yml + ci-bash.yml.
   This is what most contributors run.
-- [scripts/run-lint-yaml-and-bash.sh](scripts/run-lint-yaml-and-bash.sh) (with
-  its [.bat](scripts/run-lint-yaml-and-bash.bat) launcher) runs the lint half
-  only (shellcheck, actionlint, action-validator, yamllint, ansible-lint); no
-  bats.
-- [scripts/run-tests-bash.sh](scripts/run-tests-bash.sh) (with its
-  [.bat](scripts/run-tests-bash.bat) launcher) runs the bats tests only.
+- [scripts/run-lint-yaml-and-bash.sh](scripts/run-lint-yaml-and-bash.sh)
+  (with its [.bat](scripts/run-lint-yaml-and-bash.bat) launcher) runs the lint half only
+  (shellcheck, actionlint, action-validator, yamllint, ansible-lint);
+  no bats.
+- [scripts/run-tests-bash.sh](scripts/run-tests-bash.sh)
+  (with its [.bat](scripts/run-tests-bash.bat) launcher) runs the bats tests only.
 
-All three are thin shims over Common-Automation's engine, so they require a
-Common-Automation checkout as a SIBLING directory (`..\Common-Automation`). The
-Gradle build and tests stay separate - they live in Gradle (see
-[Build And Release](#build-and-release)); these shims cover only the YAML /
-Actions / Bash surface.
+All three are thin shims over Common-Automation's engine,
+so they require a Common-Automation checkout as a SIBLING directory (`..\Common-Automation`).
+The Gradle build and tests stay separate -
+they live in Gradle
+(see [Build And Release](#build-and-release));
+these shims cover only the YAML / Actions / Bash surface.
 
-[scripts/fix-permissions.sh](scripts/fix-permissions.sh) (and its
-[.bat](scripts/fix-permissions.bat)) re-stages the executable bit on tracked
-`*.sh` files, which Windows checkouts drop; run it after adding a shell script so
-the `check-sh-executable` gate stays green.
-[.gitattributes](.gitattributes) pins line endings surgically - `*.sh` and
-`gradlew` to LF, `*.bat` and `gradlew.bat` to CRLF - and leaves binary / data
-assets to git's own detection.
+[scripts/fix-permissions.sh](scripts/fix-permissions.sh)
+(and its [.bat](scripts/fix-permissions.bat)) re-stages the executable bit on tracked `*.sh` files,
+which Windows checkouts drop;
+run it after adding a shell script so the `check-sh-executable` gate stays green.
+[.gitattributes](.gitattributes) pins line endings surgically -
+`*.sh` and `gradlew` to LF,
+`*.bat` and `gradlew.bat` to CRLF -
+and leaves binary / data assets to git's own detection.
 
 ### Caching
 
-The political map derives an expensive drawing from live campaign state and
-repaints it every frame, so nearly everything it shows is held between frames and
-rebuilt as narrowly as the change allows. [docs/dev/caching.md](docs/dev/caching.md)
-is the single description of that model: what notices a change, the revision
-counters it announces itself through, each cache and what it keys on, and the four
-rebuild paths a frame can take. Read it before adding a live input to the overlay -
+The political map derives an expensive drawing from live campaign state and repaints it every frame,
+so nearly everything it shows is held between frames and rebuilt as narrowly as the change allows.
+[docs/dev/caching.md](docs/dev/caching.md)
+is the single description of that model:
+what notices a change,
+the revision counters it announces itself through,
+each cache and what it keys on,
+and the four rebuild paths a frame can take.
+Read it before adding a live input to the overlay -
 an input no counter reports is the one way to leave the map silently stale.
 
 ### Documentation
 
-Development docs live under [docs/dev](docs/dev). Package documentation lives
-beside the Java packages it describes under
-[src/main/java/kmu](src/main/java/kmu): a README per package that owns
-behaviour worth explaining, each with Mermaid diagrams inline where a picture
-carries more than prose. Start from [map layers](src/main/java/kmu/maplayers/README.md).
+Development docs live under [docs/dev](docs/dev).
+Package documentation lives beside the Java packages it describes under [src/main/java/kmu](src/main/java/kmu):
+a README per package that owns behaviour worth explaining,
+each with Mermaid diagrams inline where a picture carries more than prose.
+Start from [map layers](src/main/java/kmu/maplayers/README.md).
 
-Diagrams are Mermaid, written inline in the README that needs them. There is no
-separate diagram source format and no standalone diagram files to keep in sync.
+Diagrams are Mermaid,
+written inline in the README that needs them.
+There is no separate diagram source format and no standalone diagram files to keep in sync.
 
 ## Thanks
 
