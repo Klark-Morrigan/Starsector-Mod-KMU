@@ -391,12 +391,6 @@ public final class ControlRows {
         return row;
     }
 
-    // Where every knob's value is kept, in one place. Each factory reads on build and writes
-    // on change, so the node was named at eleven separate call sites; one of them naming a
-    // different class would have split the panel's memory in two without failing anything.
-    //
-    // Shared with the toggle block next door for exactly that reason: its switches are knobs
-
     /**
      * The small square button that puts one control back to its default.
      *
