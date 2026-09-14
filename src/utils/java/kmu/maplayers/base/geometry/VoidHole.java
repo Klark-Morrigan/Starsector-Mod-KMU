@@ -66,7 +66,7 @@ public record VoidHole(
      *
      * @return the widest distance across it, or zero where it has fewer than two corners
      */
-    double measureSpan() {
+    public double measureSpan() {
 
         var widest = 0.0;
 

@@ -3,17 +3,17 @@ package kmu.maplayers.base.geometry.output;
 import kmlib.math.geometry.Bounds;
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.CoastCrossings;
-import kmu.maplayers.base.geometry.CoastPockets;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.render.MapLook;
+import kmu.maplayers.base.geometry.v3.BridgedContinents;
+import kmu.maplayers.base.geometry.v3.CoastCrossings;
+import kmu.maplayers.base.geometry.v3.CoastPockets;
+import kmu.maplayers.base.geometry.v3.DrawnSector;
 import kmu.svg.SvgDrawing;
 import kmu.svg.SvgPaint;
 

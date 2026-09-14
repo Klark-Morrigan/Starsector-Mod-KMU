@@ -2,16 +2,16 @@ package kmu.maplayers.base.geometry.settings;
 
 import kmlib.math.geometry.CornerRounding;
 
-import kmu.maplayers.base.geometry.Coastlines;
-import kmu.maplayers.base.geometry.ContinentBridges;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.StraightRuns;
-import kmu.maplayers.base.geometry.VoidPockets;
-import kmu.maplayers.base.geometry.VoidSection;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
+import kmu.maplayers.base.geometry.v3.Coastlines;
+import kmu.maplayers.base.geometry.v3.ContinentBridges;
+import kmu.maplayers.base.geometry.v3.StraightRuns;
+import kmu.maplayers.base.geometry.v3.VoidPockets;
+import kmu.maplayers.base.geometry.v3.VoidSection;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
 import kmu.maplayers.base.theme.SpikeSandingStyle;

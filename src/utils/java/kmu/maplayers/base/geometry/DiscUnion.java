@@ -57,7 +57,7 @@ public record DiscUnion(
      * @param point the {x, y} point to place
      * @return whether any disc holds it
      */
-    boolean isPointInside(double[] point) {
+    public boolean isPointInside(double[] point) {
 
         for (var site : sites) {
 
@@ -102,7 +102,7 @@ public record DiscUnion(
      * @return how far past the disc's edge the segment reaches, negative when it stays
      *         outside and zero when it grazes
      */
-    double measureIncursionInto(double[] from, double[] to, int site) {
+    public double measureIncursionInto(double[] from, double[] to, int site) {
 
         return reach - Segments.computeDistanceToPoint(from, to, sites.get(site));
     }

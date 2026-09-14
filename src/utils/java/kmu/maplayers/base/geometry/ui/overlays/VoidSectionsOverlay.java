@@ -1,11 +1,11 @@
 package kmu.maplayers.base.geometry.ui.overlays;
 
-import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.VoidSection;
-import kmu.maplayers.base.geometry.VoidSections;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
+import kmu.maplayers.base.geometry.v3.BridgedContinents;
+import kmu.maplayers.base.geometry.v3.VoidSection;
+import kmu.maplayers.base.geometry.v3.VoidSections;
 
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;

@@ -52,7 +52,7 @@ public final class WallMouths {
      * @return the mouth as {@code {start, width}}, or null when the wall passes too far from
      *         this circle to open one at all
      */
-    static double[] measureMouth(
+    public static double[] measureMouth(
             DiscUnion union,
             DiscUnionBoundary.Chord chord,
             int circle,

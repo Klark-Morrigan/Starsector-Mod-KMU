@@ -3,6 +3,8 @@ package kmu.maplayers.base.geometry;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.starsector.systems.SystemKey;
 
+import kmu.maplayers.base.geometry.v3.SectorPipeline;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -13,7 +15,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.geometry.SectorPipeline.loadFixture;
+import static kmu.maplayers.base.geometry.v3.SectorPipeline.loadFixture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -62,27 +62,15 @@ enforcePackageLayering {
                  of: ['kmu.maplayers.base.geometry.output',
                       'kmu.maplayers.base.geometry.ui']
 
-    // v4 may not reach into v3's drawing, and its own geometry may not reach into its drawing.
-    //
-    // The second half is the rule the flat geometry package already has one exact edge for; v4
-    // needs its own because that edge is stated 'exactly' and so covers no subpackage. Left off,
-    // v4's geometry could import the window's settings and overlays - which is how v3 came to be
-    // a construction that cannot be read without the thing drawing it.
-    //
-    // What is NOT banned is v4 importing the flat geometry package, because that package is two
-    // things at once: the substrate both constructions stand on - the fixture, the knobs, the
-    // discs and their unwalled trace - and v3's own constructions beside it. A ban would shut off
-    // the substrate with them. The separation arrives for free when v3 is deleted and what is
-    // left in that package is the substrate alone; until then v4's surface into it is the short
-    // list its imports state, and it is reviewed rather than gated.
     forbidImport under: 'kmu.maplayers.base.geometry.v4',
                  of: ['kmu.maplayers.base.geometry.output',
-                      'kmu.maplayers.base.geometry.ui']
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v3']
 
-    forbidImport exactly: 'kmu.maplayers.base.geometry.v4',
-                 of: ['kmu.maplayers.base.geometry.render',
-                      'kmu.maplayers.base.geometry.settings',
-                      'kmu.maplayers.base.geometry.v4.ui']
+    forbidImport under: 'kmu.maplayers.base.geometry.v3',
+                 of: ['kmu.maplayers.base.geometry.output',
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v4']
 
     forbidImport under: 'kmu.maplayers.base.tooltip.content',
                  of: ['kmu.maplayers.base.tooltip.layout',
@@ -116,6 +104,16 @@ enforcePackageLayering {
 
     forbidImport exactly: 'kmu.maplayers.base.geometry.ui.settings',
                  of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry.v3',
+                 of: ['kmu.maplayers.base.geometry.render',
+                      'kmu.maplayers.base.geometry.settings',
+                      'kmu.maplayers.base.geometry.v3.ui']
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry.v4',
+                 of: ['kmu.maplayers.base.geometry.render',
+                      'kmu.maplayers.base.geometry.settings',
+                      'kmu.maplayers.base.geometry.v4.ui']
 
     forbidImport exactly: 'kmu.maplayers.base.hover',
                  of: 'kmu.maplayers.base.installation'

@@ -112,18 +112,18 @@ public final class DiscUnionBoundary {
         // wall. Asked of the wall itself because everything that draws one, measures to one or
         // walks across one needs the same two points, and rebuilding them from the origin and
         // the direction is four arithmetic expressions that can each be got wrong.
-        double[] findStart() {
+        public double[] findStart() {
             return new double[] {line.originX(), line.originY()};
         }
 
-        double[] findEnd() {
+        public double[] findEnd() {
             return new double[] {
                 line.originX() + line.directionX(), line.originY() + line.directionY()};
         }
 
         // Whichever of the two ends sits on the named circle. A wall runs between two, and
         // which end is on which is fixed when the wall is built.
-        double[] findEndOn(int circle) {
+        public double[] findEndOn(int circle) {
             return circle == fromCircle ? findStart() : findEnd();
         }
     }
@@ -213,7 +213,7 @@ public final class DiscUnionBoundary {
      * @param bridges the bridges, as {@link VoidBridges} found them
      * @return one chord per bridge, in the order they were offered
      */
-    static List<Chord> buildChordsFrom(List<CellGap> bridges) {
+    public static List<Chord> buildChordsFrom(List<CellGap> bridges) {
         return buildChordsFrom(bridges, WallKind.BRIDGE);
     }
 
@@ -225,7 +225,7 @@ public final class DiscUnionBoundary {
      * @param kind  which water they cross, which is what a hole they close is later read as
      * @return one chord per span, on the line joining its two sites
      */
-    static List<Chord> buildChordsFrom(List<CellGap> spans, WallKind kind) {
+    public static List<Chord> buildChordsFrom(List<CellGap> spans, WallKind kind) {
 
         var chords = new ArrayList<Chord>(spans.size());
 
@@ -371,7 +371,7 @@ public final class DiscUnionBoundary {
      *                      arc is flattened onto
      * @return the holes, wound the way any other filled shape is
      */
-    static List<VoidHole> traceHolesAcrossWalls(
+    public static List<VoidHole> traceHolesAcrossWalls(
             DiscUnion union,
             Walls walls,
             int boundSegments) {
@@ -438,7 +438,7 @@ public final class DiscUnionBoundary {
      * @return the silhouettes, the lakes and the walled holes, one run of marks each, in walk
      *         order
      */
-    static CoastRuns traceCoastRuns(
+    public static CoastRuns traceCoastRuns(
             DiscUnion union,
             Walls walls,
             int boundSegments) {
@@ -478,7 +478,7 @@ public final class DiscUnionBoundary {
      * @param lakes       one run of marks per hole the cells closed unaided, in walk order
      * @param walled      one run of marks per hole a laid wall closed, in walk order
      */
-    record CoastRuns(
+    public record CoastRuns(
         List<List<CoastMark>> silhouettes,
         List<List<CoastMark>> lakes,
         List<List<CoastMark>> walled) {
@@ -499,7 +499,7 @@ public final class DiscUnionBoundary {
      * @param walls the walls on offer
      * @return one entry per crossing pair, as {@code {fromA, toA, fromB, toB}} cells
      */
-    static List<int[]> findWallCrossings(DiscUnion union, Walls walls) {
+    public static List<int[]> findWallCrossings(DiscUnion union, Walls walls) {
 
         var laid = findAttachableChords(union, walls);
         var crossings = new ArrayList<int[]>();
@@ -560,7 +560,7 @@ public final class DiscUnionBoundary {
      * @param walls the walls to lay across the void
      * @return one entry per broken link, where the arc ended and what it ended on
      */
-    static List<BrokenLink> findBrokenLinks(DiscUnion union, Walls walls) {
+    public static List<BrokenLink> findBrokenLinks(DiscUnion union, Walls walls) {
 
         var laid = new Walls(
             findAttachableChords(union, walls), walls.channel(), walls.pinchedCells());
@@ -646,7 +646,7 @@ public final class DiscUnionBoundary {
      * @param walls the walls on offer
      * @return the chords that can be laid, in the order they were offered
      */
-    static List<Chord> findAttachableChords(DiscUnion union, Walls walls) {
+    public static List<Chord> findAttachableChords(DiscUnion union, Walls walls) {
 
         var attachable = new ArrayList<Chord>();
 
@@ -787,7 +787,7 @@ public final class DiscUnionBoundary {
      * @param wall  the one to ask about, which must be among them
      * @return what became of it
      */
-    static ChordRefusal describeChordRefusal(DiscUnion union, Walls walls, Chord wall) {
+    public static ChordRefusal describeChordRefusal(DiscUnion union, Walls walls, Chord wall) {
 
         for (var verdict : judgeEveryOfferedChord(union, walls)) {
 
@@ -971,7 +971,7 @@ public final class DiscUnionBoundary {
      * @param walls the walls it is one of, for the channel each of its ends keeps
      * @return the two lines, each as its pair of end points
      */
-    static List<List<double[]>> findChordSides(
+    public static List<List<double[]>> findChordSides(
             DiscUnion union,
             Chord chord,
             Walls walls) {
@@ -1000,7 +1000,7 @@ public final class DiscUnionBoundary {
     // one when it pinches the pocket in two. A point on a narrowed hole's outline is further
     // from every site than the true reach, so it lies in the true void, and in the very
     // pocket it came out of.
-    static List<List<double[]>> findHolesInside(List<VoidHole> narrowed, VoidHole hole) {
+    public static List<List<double[]>> findHolesInside(List<VoidHole> narrowed, VoidHole hole) {
 
         var inside = new ArrayList<List<double[]>>();
         for (var candidate : narrowed) {
@@ -1742,7 +1742,7 @@ public final class DiscUnionBoundary {
      * @param angle the direction from the stretch's own centre
      * @return the point on the stretch's circle
      */
-    static double[] findPointOnMark(DiscUnion union, CoastMark mark, double angle) {
+    public static double[] findPointOnMark(DiscUnion union, CoastMark mark, double angle) {
         return findPointOnCircle(union.sites().get(mark.circle()), union.reach(), angle);
     }
 
@@ -1797,7 +1797,7 @@ public final class DiscUnionBoundary {
          *
          * @return the angle halfway along
          */
-        double midAngle() {
+        public double midAngle() {
             return (fromAngle + toAngle) / 2;
         }
 
@@ -1815,7 +1815,7 @@ public final class DiscUnionBoundary {
          *
          * @return the share of the full turn, from 0 to 1
          */
-        double measureShareOfCircle() {
+        public double measureShareOfCircle() {
             return (toAngle - fromAngle) / Angles.FULL_TURN;
         }
     }

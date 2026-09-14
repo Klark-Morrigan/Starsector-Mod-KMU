@@ -6,7 +6,7 @@ import kmlib.math.geometry.PolygonRegions;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorFixture;
-import kmu.maplayers.base.geometry.ShippedMap;
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,6 +34,13 @@ class BareVoidIntegrationTest {
     private static final String SECTORS =
         "kmu.maplayers.base.geometry.v4.BareVoidIntegrationTest#provideSectorNames";
 
+    // The cells' own knobs, taken from where they are declared rather than from v3's facade
+    // over them. That facade names the cell knobs and the coast rules together, which is the
+    // right shape for a report on v3's map and the wrong one here: what the bare void stands
+    // at is a fact about the cells, and v4 has no business reading anything of v3's to learn it.
+    private static final SectorGeometryParameters KNOBS =
+        SectorGeometryParameters.createDefaults();
+
     static Stream<String> provideSectorNames() {
         return SectorFixture.listSectorNames().stream();
     }
@@ -47,10 +54,10 @@ class BareVoidIntegrationTest {
 
             var fixture = SectorFixture.loadSector(sector);
 
-            var read = BareVoid.readBareVoid(fixture.getSites(), ShippedMap.KNOBS);
+            var read = BareVoid.readBareVoid(fixture.getSites(), KNOBS);
             var swept = DiscUnionBoundary.traceHoles(
-                new DiscUnion(fixture.getSites(), ShippedMap.KNOBS.cellRadius()),
-                ShippedMap.KNOBS.boundSegments());
+                new DiscUnion(fixture.getSites(), KNOBS.cellRadius()),
+                KNOBS.boundSegments());
 
             assertThat(read.countPieces())
                 .isEqualTo(swept.size());
@@ -62,7 +69,7 @@ class BareVoidIntegrationTest {
 
             var fixture = SectorFixture.loadSector(sector);
 
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), ShippedMap.KNOBS).countPieces())
+            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS).countPieces())
                 .isPositive();
         }
     }
@@ -75,7 +82,7 @@ class BareVoidIntegrationTest {
         void collectOutlinesGivesOneRingPerPiece(String sector) {
 
             var fixture = SectorFixture.loadSector(sector);
-            var bare = BareVoid.readBareVoid(fixture.getSites(), ShippedMap.KNOBS);
+            var bare = BareVoid.readBareVoid(fixture.getSites(), KNOBS);
 
             assertThat(bare.collectOutlines())
                 .hasSize(bare.countPieces());
@@ -87,7 +94,7 @@ class BareVoidIntegrationTest {
 
             var fixture = SectorFixture.loadSector(sector);
 
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), ShippedMap.KNOBS)
+            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS)
                     .collectOutlines())
                 .allSatisfy(ring ->
                     assertThat(ring.size())
@@ -102,7 +109,7 @@ class BareVoidIntegrationTest {
 
             var fixture = SectorFixture.loadSector(sector);
 
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), ShippedMap.KNOBS)
+            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS)
                     .collectOutlines())
                 .allSatisfy(ring ->
                     assertThat(PolygonRegions.computeSignedArea(ring)).isPositive());

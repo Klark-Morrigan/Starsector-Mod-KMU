@@ -1,13 +1,13 @@
 package kmu.maplayers.base.geometry.output;
 
-import kmu.maplayers.base.geometry.BridgedContinents;
-import kmu.maplayers.base.geometry.DrawnSector;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
-import kmu.maplayers.base.geometry.ShippedMap;
-import kmu.maplayers.base.geometry.VoidBridgeCache;
-import kmu.maplayers.base.geometry.VoidPockets;
+import kmu.maplayers.base.geometry.v3.BridgedContinents;
+import kmu.maplayers.base.geometry.v3.DrawnSector;
+import kmu.maplayers.base.geometry.v3.ShippedMap;
+import kmu.maplayers.base.geometry.v3.VoidBridgeCache;
+import kmu.maplayers.base.geometry.v3.VoidPockets;
 import kmu.svg.SvgRasteriser;
 
 import java.nio.file.Path;
