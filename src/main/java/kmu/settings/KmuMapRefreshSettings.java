@@ -1,5 +1,7 @@
 package kmu.settings;
 
+import kmlib.math.ranges.Ranges;
+
 /**
  * How often the map layers' staleness polls re-read the sector.
  *
@@ -48,6 +50,6 @@ public final class KmuMapRefreshSettings {
 
         var pollSeconds = KmuLunaSettings.readInt(POLL_SECONDS_FIELD, DEFAULT_POLL_SECONDS);
 
-        return Math.max(MIN_POLL_SECONDS, Math.min(MAX_POLL_SECONDS, pollSeconds));
+        return Ranges.clampInto(pollSeconds, MIN_POLL_SECONDS, MAX_POLL_SECONDS);
     }
 }

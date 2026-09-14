@@ -33,7 +33,7 @@ permissions:
 
 jobs:
   release:
-    uses: Klark-Morrigan/Starsector-Mod-KMLib/.github/workflows/mod-release.yml@0.1.0
+    uses: Klark-Morrigan/Starsector-Mod-KMLib/.github/workflows/mod-release.yml@0.2.0
     # Forwards sibling_checkout_token when this repo defines one, so the
     # pipeline can clone the private neighbours KMU's build applies shared
     # Gradle scripts from; absent, those clones fall back to github.token.

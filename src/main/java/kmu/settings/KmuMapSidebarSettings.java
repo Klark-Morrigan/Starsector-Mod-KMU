@@ -1,5 +1,7 @@
 package kmu.settings;
 
+import kmlib.math.ranges.Ranges;
+
 /**
  * The sidebar box's own chrome: where it sits, how it is drawn, how fast it moves. Every knob here
  * is a look, which is what makes the class one thing - the hatches that used to sit among them are
@@ -195,9 +197,10 @@ public final class KmuMapSidebarSettings {
             SIDEBAR_OPACITY_FIELD,
             DEFAULT_SIDEBAR_OPACITY_PERCENT);
 
-        var clamped = Math.max(
+        var clamped = Ranges.clampInto(
+            percent,
             MIN_SIDEBAR_OPACITY_PERCENT,
-            Math.min(MAX_SIDEBAR_OPACITY_PERCENT, percent));
+            MAX_SIDEBAR_OPACITY_PERCENT);
 
         return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
     }
@@ -213,9 +216,10 @@ public final class KmuMapSidebarSettings {
             SIDEBAR_SCROLLBAR_THICKNESS_FIELD,
             DEFAULT_SIDEBAR_SCROLLBAR_THICKNESS);
 
-        return Math.max(
+        return Ranges.clampInto(
+            pixels,
             MIN_SIDEBAR_SCROLLBAR_THICKNESS,
-            Math.min(MAX_SIDEBAR_SCROLLBAR_THICKNESS, pixels));
+            MAX_SIDEBAR_SCROLLBAR_THICKNESS);
     }
 
     /**
