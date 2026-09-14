@@ -22,7 +22,7 @@
 
 | Mod | Required | Notes |
 | ----- | ---------- | ------- |
-| Klark Morrigan's Library (KMLib) | Required | Shared library; version pinned in `mod_info.json` |
+| [Klark Morrigan's Library (KMLib)](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/latest) | Required | Shared library; version pinned in `mod_info.json` |
 | [LunaLib](https://fractalsoftworks.com/forum/index.php?topic=25658) | **Required** | Settings framework backing KMU's configuration tabs |
 | [LazyLib](https://fractalsoftworks.com/forum/index.php?topic=5444) | **Required** | Exposes game fonts for map labels |
 | [Console Commands](https://fractalsoftworks.com/forum/index.php?topic=4106) | *Optional* | Enables `kmu_` commands |
