@@ -564,11 +564,31 @@ public final class ToggleTree {
     // branch's fold does, and the levels stop reading as levels.
     private static JPanel layOutRow(Component box, int indent, JButton fold) {
 
-        var row = new JPanel(new BorderLayout());
-        var lead = new JPanel(new BorderLayout());
+        var row = new JPanel(new BorderLayout()) {
 
-        lead.setPreferredSize(new Dimension(
-            FoldControls.measureFoldWidth(), box.getPreferredSize().height));
+            // Stacked rather than gridded, and a stack hands out whatever height is going - so
+            // a row that did not cap itself would grow to fill the panel.
+            //
+            // Answered when asked rather than fixed while building, because the height a row
+            // needs is not settled until it has been given a width: a name that wraps is two
+            // lines at one width and three at another, and a cap taken at build time would hold
+            // the row at whatever the first guess was and cut the rest off.
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
+
+        var lead = new JPanel(new BorderLayout()) {
+
+            // The gutter that keeps every row's label in line whether or not it has a fold. As
+            // tall as whatever it stands beside, asked for at the same moment and for the same
+            // reason as the cap above.
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(FoldControls.measureFoldWidth(), box.getPreferredSize().height);
+            }
+        };
 
         if (fold != null) {
             lead.add(fold, BorderLayout.CENTER);
@@ -578,10 +598,6 @@ public final class ToggleTree {
         row.add(box, BorderLayout.CENTER);
         row.setBorder(BorderFactory.createEmptyBorder(
             ROW_PADDING, indent * INDENT_STEP, ROW_PADDING, 0));
-
-        // Stacked rather than gridded now, and a stack hands out whatever height is going -
-        // so a row that did not cap itself would grow to fill the panel.
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 
         return row;
     }
