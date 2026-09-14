@@ -39,6 +39,17 @@ keyed by `SystemKey`:
 a system ID is not unique,
 and a partition keyed on one would cut a single cell for two systems sharing it.
 
+At most one site stands on any one point.
+Two systems the sector placed on the same coordinate have no bisector between them,
+so neither clips the other and the pair comes back as two cells covering identical area,
+neither naming the other across any edge:
+fills painting twice,
+a hit test answering whichever it reaches first,
+and clusters that never union across a border the cells do not state.
+The later system is dropped from the site set the way a moving system is,
+and the pair is named in the log -
+a cell missing from the map is otherwise a shape nobody can account for.
+
 A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polygon,
 because the edge list is also the adjacency graph.
 Each edge is tagged with an [`EdgeTarget`](EdgeTarget.java) naming what is across it,

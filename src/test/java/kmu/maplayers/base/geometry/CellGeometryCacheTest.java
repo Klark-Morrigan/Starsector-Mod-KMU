@@ -344,6 +344,50 @@ final class CellGeometryCacheTest {
         }
 
         @Test
+        void updateSeedsOneCellForTwoSystemsOnOnePoint() {
+            // Two sites on one coordinate have no bisector between them, so neither clips the
+            // other and the partition would hand back two cells covering identical area with no
+            // edge between them. The later system is dropped instead, and the first keeps the
+            // point - which the neighbour proves by naming it alone across their shared edge.
+            var cache = new CellGeometryCache();
+            var first = new SystemKey("abyss", "", "425b5");
+
+            updateAtDefaultResolution(
+                cache,
+                buildAccessibleAnchoredSystem("abyss", "425b5", 0, 0),
+                buildAccessibleAnchoredSystem("abyss", "4379d", 0, 0),
+                buildAccessibleSystem("b", 1000, 0));
+
+            assertThat(cache.getCellEdgesByCellKey())
+                .containsOnlyKeys(first, buildCellKey("b"));
+            assertThat(listNeighboursOf(cache, "b"))
+                .containsExactly(first);
+        }
+
+        @Test
+        void updateSeedsACellForADroppedSystemOnceThePointItStoodOnIsFree() {
+            // The drop is a reading of the current site set rather than a verdict remembered about
+            // a system: the system that lost the point takes a cell of its own as soon as the one
+            // holding it leaves the map.
+            var cache = new CellGeometryCache();
+            var second = new SystemKey("abyss", "", "4379d");
+
+            updateAtDefaultResolution(
+                cache,
+                buildAccessibleAnchoredSystem("abyss", "425b5", 0, 0),
+                buildAccessibleAnchoredSystem("abyss", "4379d", 0, 0));
+
+            updateAtDefaultResolution(
+                cache,
+                buildAccessibleAnchoredSystem("abyss", "4379d", 0, 0));
+
+            assertThat(cache.getCellEdgesByCellKey())
+                .containsOnlyKeys(second);
+            assertThat(cache.getCellEdgesByCellKey().get(second))
+                .isNotEmpty();
+        }
+
+        @Test
         void updateDropsTheAdjacencyOfASystemThatLosesAccess() {
 
             var cache = new CellGeometryCache();

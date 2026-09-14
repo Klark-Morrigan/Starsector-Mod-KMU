@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry;
 
+import com.fs.starfarer.api.Global;
+
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.ActiveProfiler;
@@ -11,6 +13,8 @@ import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
 import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
+
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +50,12 @@ import java.util.Set;
  * ordinary remove or add in the diff - it comes to rest and rejoins with no special
  * case here.
  *
+ * <p>At most one site stands on any one point. Two systems the sector placed on the same
+ * coordinate have no bisector between them, so neither clips the other and the pair comes back as
+ * two cells covering identical area, neither naming the other across any edge - and nothing
+ * downstream recovers from that. The later of the two is therefore dropped from the site set the
+ * way a mover is, and the pair is named in the log.
+ *
  * <p>Each cell is kept as a list of {@link CellEdge}s - the raw convex
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
  * across it, which the render layer classifies into interior seams and cluster
@@ -67,6 +77,8 @@ import java.util.Set;
  * alone, independent of how the cells are drawn.
  */
 public final class CellGeometryCache {
+
+    private static final Logger LOG = Global.getLogger(CellGeometryCache.class);
 
     // Every update writes its line: the cut runs when something moved rather than on a clock, so
     // each of its calls is an event a reader following a rebuild through the log wants to see -
@@ -96,6 +108,13 @@ public final class CellGeometryCache {
     // this to spot the change and force a full rebuild. Null until the first update, which
     // is what makes that update rebuild from scratch rather than diff against nothing.
     private CellSeedInputs lastSeedInputs;
+
+    // The systems the last reported coincidence dropped, so the same pair is not named again on
+    // every update that re-collects the same sites. Not a warn-once mute: what a repeat line would
+    // add is a *different* pair, and an occupied point that later frees up - a mobile colony coming
+    // to rest on another system's point, and leaving again - changes this set and is said out loud
+    // both times.
+    private Set<SystemKey> lastReportedCoincidentKeys = Set.of();
 
     /**
      * Empties the cached partition and forgets the seed inputs it was built at, so the next update
@@ -318,15 +337,15 @@ public final class CellGeometryCache {
     }
 
     // The live sites the partition is built from: every drawn system's position,
-    // minus the ones currently moving. A mover is left out so it seeds no cell and
-    // clips no neighbour; the cells around it fill the space as if it were absent.
-    // The pass's visibility rules reach the drawn-set walk, so a forced or
+    // minus the ones currently moving and the ones standing on a point already taken. A mover is
+    // left out so it seeds no cell and clips no neighbour; the cells around it fill the space as if
+    // it were absent. The pass's visibility rules reach the drawn-set walk, so a forced or
     // undiscovered-colony system enters the partition like any other site.
     //
     // The pass is the rebuild's rather than one opened here, so this walk of the sector is
     // the same walk the stages after it make. A geometry update handed a sector could open a
     // reading of its own, which is what put three readings in one rebuild.
-    private static Map<SystemKey, double[]> collectAccessibleSites(
+    private Map<SystemKey, double[]> collectAccessibleSites(
             MapVisibilityPass pass,
             Collection<SystemKey> movingSystemKeys) {
 
@@ -335,7 +354,72 @@ public final class CellGeometryCache {
         // told apart by, each of them seeding a cell of its own.
         var sites = DrawnSystemPositions.collectLivePositions(pass);
         sites.keySet().removeAll(movingSystemKeys);
+        dropLaterSitesOnAnOccupiedPoint(sites);
         return sites;
+    }
+
+    // One site per point, enforced here rather than left to whatever admitted the systems.
+    //
+    // The partition decides a point by which site is nearest it, and two sites on one coordinate
+    // are equally near everything: the half-plane each of their cells would be clipped to has a
+    // zero normal, so neither takes anything from the other. The pair comes back as two cells
+    // covering identical area with no shared edge between them - the fills paint over one another,
+    // the hit test answers whichever it reaches first, and the clusters never union across a border
+    // the cells do not state. Dropping one leaves one cell where one cell is all that can be cut,
+    // which is what every consumer downstream already assumes.
+    //
+    // The later of the two goes rather than the earlier, so the point keeps the system the sector
+    // lists first - the same system the ID index and the ID lookup name of a colliding pair, and
+    // the reason one rebuild's answer here is the next one's.
+    //
+    // The sector places such a pair today - RAT's two abyss systems sit on one hyperspace point -
+    // and only one of them reaches here, the other being cut off from hyperspace and declined by
+    // the drawn-set rule. The rule is stated all the same, because the drawn set is free to widen
+    // (a reveal override already does) and the geometry is what breaks when it does.
+    private void dropLaterSitesOnAnOccupiedPoint(Map<SystemKey, double[]> sites) {
+
+        var keyByPoint = new HashMap<SitePoint, SystemKey>();
+        var admittedByDroppedKey = new LinkedHashMap<SystemKey, SystemKey>();
+        var siteIterator = sites.entrySet().iterator();
+
+        while (siteIterator.hasNext()) {
+
+            var site = siteIterator.next();
+            var position = site.getValue();
+            var admitted = keyByPoint.putIfAbsent(
+                new SitePoint(position[0], position[1]), site.getKey());
+
+            if (admitted != null) {
+                admittedByDroppedKey.put(site.getKey(), admitted);
+                siteIterator.remove();
+            }
+        }
+        reportCoincidentSites(admittedByDroppedKey, sites);
+    }
+
+    // Names each dropped system beside the one holding its point, so a cell missing from the map
+    // is one line away from its cause rather than a shape nobody can account for. Said only when
+    // the dropped set moves: the same pair is re-collected on every update, and a line per update
+    // would bury the one that is new.
+    private void reportCoincidentSites(
+            Map<SystemKey, SystemKey> admittedByDroppedKey,
+            Map<SystemKey, double[]> sites) {
+
+        if (admittedByDroppedKey.keySet().equals(lastReportedCoincidentKeys)) {
+            return;
+        }
+        lastReportedCoincidentKeys = new LinkedHashSet<>(admittedByDroppedKey.keySet());
+
+        for (var coincidence : admittedByDroppedKey.entrySet()) {
+
+            // Read back off the admitted system, which is still in the set and by definition
+            // stands on the very point the dropped one was removed from.
+            var point = sites.get(coincidence.getValue());
+
+            LOG.warn("Two star systems sit on one hyperspace point [" + point[0] + ", " + point[1]
+                + "]: '" + coincidence.getValue().systemId() + "' takes the cell there, so '"
+                + coincidence.getKey().systemId() + "' is drawn no cell at all");
+        }
     }
 
     // The systems whose site is within the neighbourhood radius of origin - the
@@ -391,5 +475,16 @@ public final class CellGeometryCache {
         boolean isEmpty() {
             return added.isEmpty() && removed.isEmpty();
         }
+    }
+
+    /**
+     * One point in hyperspace, compared by what it is rather than by which array holds it - the
+     * address a site occupies, which a raw {@code {x, y}} pair cannot be, two equal arrays being
+     * two distinct keys.
+     *
+     * @param x the point's hyperspace x
+     * @param y the point's hyperspace y
+     */
+    private record SitePoint(double x, double y) {
     }
 }
