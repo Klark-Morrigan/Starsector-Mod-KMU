@@ -3,7 +3,7 @@
   "name": "Klark Morrigan's Utilities",
   "author": "Klark Morrigan",
   "utility": "true",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Utility and quality of life tools: (1) Sector Map Layers - (1A) Political Map (factions / alliances / claims)",
   "gameVersion": "0.98a-RC8",
   "jars": ["jars/KMU.jar"],
