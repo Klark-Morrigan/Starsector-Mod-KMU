@@ -65,9 +65,6 @@ public final class SectorSvgWriter {
     private static final String CELL_COLOUR = "#2a2a2a";
     private static final String NEUTRAL_COLOUR = "#555";
 
-    private static final double CELL_STROKE = 30.0;
-    private static final double SITE_RADIUS = 120.0;
-
     // Spreads owner colours around the hue circle by ID hash, so neighbouring owners are
     // very unlikely to share one and the eye can separate clusters at a glance.
     private static final int HUE_RANGE = 360;
@@ -138,7 +135,7 @@ public final class SectorSvgWriter {
 
             drawing.drawPolygon(
                 CellEdges.convertEdgesToRing(edges),
-                SvgPaint.outlineOnly(CELL_COLOUR, CELL_STROKE));
+                SvgPaint.outlineOnly(CELL_COLOUR, MapLook.CELL_STROKE));
         }
     }
 
@@ -316,7 +313,7 @@ public final class SectorSvgWriter {
         var paint = SvgPaint.fillOnly(SITE_COLOUR);
 
         for (var site : sites) {
-            drawing.drawCircle(site, SITE_RADIUS, paint);
+            drawing.drawCircle(site, MapLook.SITE_RADIUS, paint);
         }
     }
 

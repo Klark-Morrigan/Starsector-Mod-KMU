@@ -40,10 +40,15 @@ final class SystemClusterBordersTest {
     private static final double MITER_SPIKE_LIMIT = 4.0;
     // No neighbour opted out of the channel: every boundary edge insets by it, the way a
     // trace of a whole cluster runs.
-    // The trace tuning every case shares, the tolerances being the trace's own tuning rather
-    // than anything a case is about; the one case that varies the channel builds its own.
-    private static final BorderTraceTolerances TOLERANCES =
-        new BorderTraceTolerances(BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
+    // The trace tuning every case shares, being the trace's own tuning rather than anything a
+    // case is about; the cases that vary the channel or the rule build their own.
+    private static final BorderTraceStyle STYLE = new BorderTraceStyle(
+        EdgeInsetRule.AT_EVERY_BORDER, BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
+
+    // The same trace with nothing inset, for the case about where a ring lands rather than
+    // about which edges bound it.
+    private static final BorderTraceStyle UNINSET_STYLE = new BorderTraceStyle(
+        EdgeInsetRule.NOWHERE, BORDER_INSET, WELD_TOLERANCE, MITER_SPIKE_LIMIT);
 
     private static final Set<SystemKey> NO_COINCIDENT_NEIGHBOURS = Set.of();
 
@@ -54,34 +59,14 @@ final class SystemClusterBordersTest {
             Map<String, List<CellEdge>> edges,
             CellGrouping grouping,
             Set<SystemKey> coincidentNeighbourSystemKeys,
-            BorderTraceTolerances tolerances) {
-
-        return traceBorderRingsUnder(
-            groupCellIds,
-            edges,
-            grouping,
-            coincidentNeighbourSystemKeys,
-            EdgeInsetRule.AT_EVERY_BORDER,
-            tolerances);
-    }
-
-    // The same, under a stated inset rule, for the cases about where the ring lands rather than
-    // about which edges bound it.
-    private static List<List<double[]>> traceBorderRingsUnder(
-            List<String> groupCellIds,
-            Map<String, List<CellEdge>> edges,
-            CellGrouping grouping,
-            Set<SystemKey> coincidentNeighbourSystemKeys,
-            EdgeInsetRule insetRule,
-            BorderTraceTolerances tolerances) {
+            BorderTraceStyle style) {
 
         return SystemClusterBorders.traceBorderRings(
             buildCellKeys(groupCellIds.toArray(String[]::new)),
             buildKeyedValues(edges),
             grouping,
             coincidentNeighbourSystemKeys,
-            insetRule,
-            tolerances);
+            style);
     }
 
     @Nested
@@ -102,7 +87,7 @@ final class SystemClusterBordersTest {
 
             var rings = traceBorderRings(
                     List.of("A", "B"), edges, buildIdentityGroupingByName(edges.keySet(), owners), NO_COINCIDENT_NEIGHBOURS,
-                    TOLERANCES);
+                    STYLE);
 
             assertThat(rings).hasSize(1);
             assertThat(rings.get(0).size()).isGreaterThanOrEqualTo(3);
@@ -121,7 +106,7 @@ final class SystemClusterBordersTest {
 
             var rings = traceBorderRings(
                     List.of("A"), edges, buildIdentityGroupingByName(edges.keySet(), owners), NO_COINCIDENT_NEIGHBOURS,
-                    TOLERANCES);
+                    STYLE);
 
             assertThat(rings).hasSize(1);
         }
@@ -141,7 +126,7 @@ final class SystemClusterBordersTest {
 
             var rings = traceBorderRings(
                     List.of("A"), edges, buildIdentityGroupingByName(edges.keySet(), owners), NO_COINCIDENT_NEIGHBOURS,
-                    TOLERANCES);
+                    STYLE);
 
             assertThat(rings).hasSize(1);
         }
@@ -158,13 +143,12 @@ final class SystemClusterBordersTest {
                             buildEdgeFacing(10, 10, 0, 10, null), buildEdgeFacing(0, 10, 0, 0, null)));
             var owners = Map.of("A", "F");
 
-            var rings = traceBorderRingsUnder(
+            var rings = traceBorderRings(
                     List.of("A"),
                     edges,
                     buildIdentityGroupingByName(edges.keySet(), owners),
                     NO_COINCIDENT_NEIGHBOURS,
-                    EdgeInsetRule.NOWHERE,
-                    TOLERANCES);
+                    UNINSET_STYLE);
 
             assertThat(rings)
                 .hasSize(1);
@@ -179,7 +163,7 @@ final class SystemClusterBordersTest {
             var rings = traceBorderRings(
                     List.of("missing"), Map.of(), buildIdentityGroupingByName(Set.of(), Map.of()),
                     NO_COINCIDENT_NEIGHBOURS,
-                    TOLERANCES);
+                    STYLE);
 
             assertThat(rings).isEmpty();
         }
@@ -196,7 +180,11 @@ final class SystemClusterBordersTest {
 
             var rings = traceBorderRings(
                     List.of("A"), edges, buildIdentityGroupingByName(edges.keySet(), owners), NO_COINCIDENT_NEIGHBOURS,
-                    new BorderTraceTolerances(20.0, WELD_TOLERANCE, MITER_SPIKE_LIMIT));
+                    new BorderTraceStyle(
+                        EdgeInsetRule.AT_EVERY_BORDER,
+                        20.0,
+                        WELD_TOLERANCE,
+                        MITER_SPIKE_LIMIT));
 
             assertThat(rings).isEmpty();
         }
@@ -243,11 +231,11 @@ final class SystemClusterBordersTest {
                     traceBorderRings(
                             List.of("A"), edges, buildIdentityGroupingByName(edges.keySet(), owners),
                             aCoincidentNeighbours,
-                            TOLERANCES).get(0),
+                            STYLE).get(0),
                     traceBorderRings(
                             List.of("B"), edges, buildIdentityGroupingByName(edges.keySet(), owners),
                             bCoincidentNeighbours,
-                            TOLERANCES).get(0));
+                            STYLE).get(0));
         }
 
         @Test
@@ -264,7 +252,7 @@ final class SystemClusterBordersTest {
 
             var rings = traceBorderRings(
                     List.of("A"), edges, buildIdentityGroupingByName(edges.keySet(), owners), NO_COINCIDENT_NEIGHBOURS,
-                    TOLERANCES);
+                    STYLE);
 
             assertThat(rings).hasSize(1);
             assertThat(readMaxXOf(rings.get(0))).isCloseTo(98.0, within(1e-6));

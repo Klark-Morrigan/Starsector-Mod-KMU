@@ -73,13 +73,11 @@ public final class SystemClusterBorders {
      *                                      two clusters traced against each other meet exactly;
      *                                      empty for a trace that gives every boundary edge the
      *                                      uniform channel
-     * @param insetRule                     which of those edges the channel is actually cut
-     *                                      into; the same rule the cell shaping is given, so a
-     *                                      cluster's outline and its cells' fills stop in one
-     *                                      place rather than two. A rule that insets even a
-     *                                      shared edge fuses nothing, so no seam is dropped
-     *                                      and a group of one cell traces that cell's own ring
-     * @param tolerances                    the three distances the trace is tuned by
+     * @param style                         which edges the channel is cut into, and the three
+     *                                      distances the trace is tuned by. A rule that insets
+     *                                      even a shared edge fuses nothing, so no seam is
+     *                                      dropped and a group of one cell traces that cell's
+     *                                      own ring
      * @return one inset (un-rounded) ring per cluster and per enclave, in world
      *         coordinates; empty when the group holds no borderable geometry
      */
@@ -88,22 +86,20 @@ public final class SystemClusterBorders {
             Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
             Set<SystemKey> coincidentNeighbourSystemKeys,
-            EdgeInsetRule insetRule,
-            BorderTraceTolerances tolerances) {
+            BorderTraceStyle style) {
 
         var boundary = collectBoundarySegments(
             groupCellKeys,
             edgesByCellKey,
             grouping,
             coincidentNeighbourSystemKeys,
-            insetRule,
-            tolerances.borderInset());
+            style);
 
         var rings = new ArrayList<List<double[]>>();
         for (var ring : EdgeRings.chainIntoRingsWithEdgeValues(
                 boundary.segments(),
                 boundary.edgeDistances(),
-                tolerances.vertexWeldTolerance())) {
+                style.vertexWeldTolerance())) {
 
             // Offset each ring edge by its own distance: the channel for an ordinary
             // boundary, nothing across a coincident neighbour. The per-edge miter path is
@@ -112,7 +108,7 @@ public final class SystemClusterBorders {
             var inset = PolygonOffsets.insetPolygonByMiter(
                 ring.corners(),
                 ring.edgeValues(),
-                tolerances.miterSpikeLimit());
+                style.miterSpikeLimit());
 
             if (!isCollapsed(ring.corners(), inset)) {
                 rings.add(inset);
@@ -135,8 +131,7 @@ public final class SystemClusterBorders {
             Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
             Set<SystemKey> coincidentNeighbourSystemKeys,
-            EdgeInsetRule insetRule,
-            double borderInset) {
+            BorderTraceStyle style) {
 
         var segments = new ArrayList<Segment>();
         var distances = new ArrayList<Double>();
@@ -155,16 +150,12 @@ public final class SystemClusterBorders {
                     cellOwner,
                     grouping.ownerBySystemKey());
 
-                if (!edgeClass.isBoundary() && insetRule.isFusingSharedEdges()) {
+                if (!edgeClass.isBoundary() && style.insetRule().isFusingSharedEdges()) {
                     continue;
                 }
 
                 segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
-                distances.add(computeEdgeInset(
-                    edge,
-                    coincidentNeighbourSystemKeys,
-                    insetRule,
-                    borderInset));
+                distances.add(computeEdgeInset(edge, coincidentNeighbourSystemKeys, style));
             }
         }
         return new BoundarySegments(segments, toDoubleArray(distances));
@@ -177,8 +168,7 @@ public final class SystemClusterBorders {
     private static double computeEdgeInset(
             CellEdge edge,
             Set<SystemKey> coincidentNeighbourSystemKeys,
-            EdgeInsetRule insetRule,
-            double borderInset) {
+            BorderTraceStyle style) {
 
         // A coincident neighbour's edge stays on the raw cell border, so the cluster traced
         // from the other side lands on the same line and the two abut with no channel
@@ -188,7 +178,7 @@ public final class SystemClusterBorders {
         var isAbutted = edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
             && coincidentNeighbourSystemKeys.contains(acrossSystem.systemKey());
 
-        return insetRule.resolveInsetOf(!isAbutted, borderInset);
+        return style.insetRule().resolveInsetOf(!isAbutted, style.borderInset());
     }
 
     // Copies a distance list into a primitive array, so the per-edge distances hand to the

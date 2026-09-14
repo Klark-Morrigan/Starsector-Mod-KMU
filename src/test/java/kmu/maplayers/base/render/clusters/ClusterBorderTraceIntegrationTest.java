@@ -2,7 +2,7 @@ package kmu.maplayers.base.render.clusters;
 
 import kmlib.starsector.systems.SystemKey;
 
-import kmu.maplayers.base.geometry.BorderTraceTolerances;
+import kmu.maplayers.base.geometry.BorderTraceStyle;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
@@ -99,8 +99,8 @@ class ClusterBorderTraceIntegrationTest {
                 EDGES,
                 GROUPING,
                 Set.of(),
-                EdgeInsetRule.AT_EVERY_BORDER,
-                new BorderTraceTolerances(
+                new BorderTraceStyle(
+                    EdgeInsetRule.AT_EVERY_BORDER,
                     CellShaper.BORDER_INSET_DISTANCE,
                     WELD_TOLERANCE,
                     MITER_SPIKE_LIMIT));

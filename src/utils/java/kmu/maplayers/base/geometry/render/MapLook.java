@@ -39,6 +39,15 @@ public final class MapLook {
     // How wide a cell's own border is drawn.
     public static final float RING_STROKE = 90f;
 
+    // How wide a cell's inset contour and the centreline under it are drawn. Lighter than the
+    // cluster border above, because a cell edge inside a cluster is a division within one body
+    // while the ring is where that body stops.
+    public static final float CELL_STROKE = 30f;
+
+    // How large the dot marking a system's own position is drawn. Big enough to find at the
+    // zoom where a whole sector fits, and small enough not to cover the cell it sits in.
+    public static final float SITE_RADIUS = 120f;
+
     public static final int OPAQUE_ALPHA = 255;
 
     public static final Color OWNED_CELL = new Color(0x4a, 0x8a, 0xd0);

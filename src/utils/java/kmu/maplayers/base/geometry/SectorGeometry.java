@@ -88,7 +88,8 @@ public record SectorGeometry(
 
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 
-        var tolerances = new BorderTraceTolerances(
+        var borderStyle = new BorderTraceStyle(
+            insetRule,
             parameters.borderInset(),
             parameters.weldTolerance(),
             parameters.miterSpikeLimit());
@@ -96,7 +97,7 @@ public record SectorGeometry(
         for (var group : groupCellKeysByOwner(owners).entrySet()) {
             rings.put(
                 group.getKey(),
-                traceOwnerRings(group.getValue(), cellEdges, grouping, insetRule, tolerances));
+                traceOwnerRings(group.getValue(), cellEdges, grouping, borderStyle));
         }
         return new SectorGeometry(cellEdges, owners, shaped, rings);
     }
@@ -112,18 +113,12 @@ public record SectorGeometry(
             List<SystemKey> memberCellKeys,
             Map<SystemKey, List<CellEdge>> cellEdges,
             CellGrouping grouping,
-            EdgeInsetRule insetRule,
-            BorderTraceTolerances tolerances) {
+            BorderTraceStyle borderStyle) {
 
-        if (insetRule.isFusingSharedEdges()) {
+        if (borderStyle.insetRule().isFusingSharedEdges()) {
 
             return SystemClusterBorders.traceBorderRings(
-                memberCellKeys,
-                cellEdges,
-                grouping,
-                Set.of(),
-                insetRule,
-                tolerances);
+                memberCellKeys, cellEdges, grouping, Set.of(), borderStyle);
         }
 
         var rings = new ArrayList<List<double[]>>();
@@ -131,12 +126,7 @@ public record SectorGeometry(
         for (var cellKey : memberCellKeys) {
 
             rings.addAll(SystemClusterBorders.traceBorderRings(
-                List.of(cellKey),
-                cellEdges,
-                grouping,
-                Set.of(),
-                insetRule,
-                tolerances));
+                List.of(cellKey), cellEdges, grouping, Set.of(), borderStyle));
         }
         return rings;
     }
