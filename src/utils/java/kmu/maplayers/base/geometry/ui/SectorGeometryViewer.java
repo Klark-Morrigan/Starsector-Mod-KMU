@@ -7,6 +7,7 @@ import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.DrawnSector;
+import kmu.maplayers.base.geometry.EdgeClassifier;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.NamedRegion;
 import kmu.maplayers.base.geometry.PickLog;
@@ -82,7 +83,9 @@ import javax.swing.SwingUtilities;
  *   <li>{@code VoronoiCellBuilder.buildLabelledCell} - per system, via
  *       {@link SectorFixture#buildCellEdgesBySystemKey}</li>
  *   <li>{@link CellShaper#shapeCells} - and through it {@link EdgeClassifier} and the kmlib
- *       per-edge inset</li>
+ *       per-edge inset. Which edges that inset reaches is this window's own pick: at the
+ *       default it is the map's rule, and the other two positions shape a map the game does
+ *       not ship, which is the point of offering them.</li>
  *   <li>{@link SystemClusterBorders#traceBorderRings} - and through it the kmlib chainer and
  *       per-edge miter. This is what {@code ClusterBorderTrace.traceRings} forwards to, at
  *       the same {@code CellShaper.BORDER_INSET_DISTANCE}; only the weld tolerance and
@@ -459,7 +462,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     public void rebuildGeometry() {
 
         var start = System.nanoTime();
-        geometry = SectorGeometry.buildSectorGeometry(fixture, settings.parameters);
+        geometry = SectorGeometry.buildSectorGeometry(
+            fixture, settings.cellInsetRule, settings.parameters);
         smoothedRingsByOwner = smoothClusterRings(geometry);
         cellNames = buildCellNames();
 
@@ -849,7 +853,8 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                     continue;
                 }
 
-                var cellEdge = geometry.ownerByCellKey().containsKey(entry.getKey())
+                var cellOwner = geometry.ownerByCellKey().get(entry.getKey());
+                var cellEdge = cellOwner != null
                     ? settings.ownedCellEdge
                     : settings.unownedCellEdge;
 
@@ -857,18 +862,25 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
                 for (var index = 0; index < fill.size(); index++) {
 
+                    var from = fill.get(index);
+                    var to = fill.get((index + 1) % fill.size());
+                    var facing = findEdgeFacing(trueEdges, from, to);
+
                     // A seam left on the true cell border fuses two same-owner fills into
                     // one shape. Stroking it would draw a division that the fill itself
                     // deliberately does not have.
-                    if (!shaped.edgeIsBoundary()[index]) {
+                    //
+                    // Two questions, not one: the fill fuses only where the edge is BOTH a
+                    // same-owner seam and still on its true line. Read off the inset alone
+                    // this is right only while the inset follows the ownership - under a
+                    // rule that insets nothing every edge is on its true line, and a cell
+                    // would lose the outline it has against a rival.
+                    if (!shaped.edgeIsBoundary()[index] && isFusedSeamAt(facing, cellOwner)) {
                         continue;
                     }
 
-                    var from = fill.get(index);
-                    var to = fill.get((index + 1) % fill.size());
-
                     g2.setColor(MapPainting.applyAlpha(
-                        doesFaceAnotherCell(trueEdges, from, to)
+                        facing != null && facing.target() instanceof EdgeTarget.AcrossSystem
                             ? settings.channelEdge
                             : cellEdge,
                         OPAQUE_ALPHA));
@@ -903,17 +915,33 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             }
         }
 
-        private static boolean doesFaceAnotherCell(
+        // Which of the cell's true edges a drawn edge came from, matched by its middle. A drawn
+        // edge sits on its true edge's line or on a line parallel to it, so the middle lands
+        // nearest the edge it was cut from whatever the inset rule pulled it back by.
+        private static CellEdge findEdgeFacing(
                 List<CellEdge> trueEdges,
                 double[] from,
                 double[] to) {
 
-            var nearest = CellEdges.findNearestEdge(
+            return CellEdges.findNearestEdge(
                 trueEdges,
                 (from[0] + to[0]) / 2.0,
                 (from[1] + to[1]) / 2.0);
+        }
 
-            return nearest != null && nearest.target() instanceof EdgeTarget.AcrossSystem;
+        // Whether this edge is one the cluster fuses along, which is a question about the
+        // owners either side and not about where the edge was drawn. Asked through the shaper's
+        // own rule rather than by comparing owners here, so the line the map does not stroke
+        // and the line the shaper does not inset stay the same line.
+        //
+        // The owners are addressed by cell, which is the address the edge's target names while
+        // each cell is its own star's - the identity the geometry is built under.
+        private boolean isFusedSeamAt(CellEdge facing, String cellOwner) {
+
+            return facing != null
+                && !EdgeClassifier
+                    .classifyAcross(facing, cellOwner, geometry.ownerByCellKey())
+                    .isBoundary();
         }
 
         // Puts the view back to "not yet fitted", which is what a zero scale means to the

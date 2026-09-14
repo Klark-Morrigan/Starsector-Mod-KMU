@@ -213,6 +213,7 @@ class SectorGeometryIntegrationTest {
     private static SectorGeometry readGeometryOf(String sector) {
         return GEOMETRIES.computeIfAbsent(sector, name -> SectorGeometry.buildSectorGeometry(
             loadFixture(name),
+            EdgeInsetRule.AT_EVERY_BORDER,
             SectorGeometryParameters.createDefaults()));
     }
 

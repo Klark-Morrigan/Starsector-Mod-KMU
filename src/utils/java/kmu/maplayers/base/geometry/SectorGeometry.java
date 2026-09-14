@@ -48,12 +48,19 @@ public record SectorGeometry(
     /**
      * Runs the full pipeline: partition the sites, shape each cell, trace each owner.
      *
+     * <p>The inset rule is asked for rather than assumed, because the cells' true partition and
+     * the channel cut into it are two separate things and the caller is the one that knows
+     * which of them it wants to look at. The map itself always ships
+     * {@link EdgeInsetRule#AT_EVERY_BORDER}.
+     *
      * @param fixture    the sector to build
+     * @param insetRule  which cell edges take the border channel
      * @param parameters the knobs to build it under
      * @return the assembled geometry
      */
     public static SectorGeometry buildSectorGeometry(
             SectorFixture fixture,
+            EdgeInsetRule insetRule,
             SectorGeometryParameters parameters) {
 
         var cellEdges = fixture.buildCellEdgesBySystemKey(
@@ -73,7 +80,12 @@ public record SectorGeometry(
         // under asks under the key it holds that cell by - the grouping's own map is keyed by the
         // system a cell draws as, which is the same key only while every cell is its own star's.
         var owners = mapOwnerByCellKey(cellEdges.keySet(), grouping);
-        var shaped = CellShaper.shapeCells(cellEdges, grouping, parameters.borderInset());
+        var shaped = CellShaper.shapeCells(
+            cellEdges,
+            grouping,
+            insetRule,
+            parameters.borderInset());
+
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 
         for (var group : groupCellKeysByOwner(owners).entrySet()) {
@@ -135,6 +147,7 @@ public record SectorGeometry(
         var ownerByCellKey = new LinkedHashMap<SystemKey, String>();
 
         for (var cellKey : cellKeys) {
+
             var owner = grouping.resolveOwnerOf(cellKey);
             if (owner != null) {
                 ownerByCellKey.put(cellKey, owner);

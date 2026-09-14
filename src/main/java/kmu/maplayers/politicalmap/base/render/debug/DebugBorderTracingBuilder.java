@@ -8,6 +8,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
@@ -182,6 +183,7 @@ public final class DebugBorderTracingBuilder {
                 entry.getValue(),
                 null,
                 cellGrouping.ownerBySystemKey(),
+                EdgeInsetRule.AT_EVERY_BORDER,
                 CellShaper.BORDER_INSET_DISTANCE);
 
             if (shaped.fillPolygon().isEmpty()) {

@@ -47,7 +47,8 @@ final class CellGroupingTest {
                 buildDrawnSystemKeys(Map.of("A", "A")),
                 buildKeyedValues(Map.of("A", "F")));
 
-            assertThat(grouping.resolveDrawnSystemKeyOf(buildCellKey("shard"))).isNull();
+            assertThat(grouping.resolveDrawnSystemKeyOf(buildCellKey("shard")))
+                .isNull();
         }
     }
 
@@ -62,7 +63,8 @@ final class CellGroupingTest {
                 buildDrawnSystemKeys(Map.of("wedge", "A")),
                 buildKeyedValues(Map.of("A", "F")));
 
-            assertThat(grouping.resolveOwnerOf(buildCellKey("wedge"))).isEqualTo("F");
+            assertThat(grouping.resolveOwnerOf(buildCellKey("wedge")))
+                .isEqualTo("F");
         }
 
         @Test
@@ -72,7 +74,8 @@ final class CellGroupingTest {
                 buildDrawnSystemKeys(Map.of("A", "A")),
                 buildKeyedValues(Map.of("A", "F")));
 
-            assertThat(grouping.resolveOwnerOf(buildCellKey("shard"))).isNull();
+            assertThat(grouping.resolveOwnerOf(buildCellKey("shard")))
+                .isNull();
         }
 
         @Test
@@ -80,7 +83,8 @@ final class CellGroupingTest {
             // The cell draws as a real star, but that star holds no market, so it is unowned.
             var grouping = new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A")), Map.of());
 
-            assertThat(grouping.resolveOwnerOf(buildCellKey("A"))).isNull();
+            assertThat(grouping.resolveOwnerOf(buildCellKey("A")))
+                .isNull();
         }
     }
 
@@ -99,7 +103,8 @@ final class CellGroupingTest {
 
             assertThat(cellsByKey.get("F"))
                 .containsExactlyInAnyOrderElementsOf(buildCellKeys("A", "wedge"));
-            assertThat(cellsByKey.get("G")).containsExactly(buildCellKey("B"));
+            assertThat(cellsByKey.get("G"))
+                .containsExactly(buildCellKey("B"));
         }
 
         @Test
@@ -112,15 +117,19 @@ final class CellGroupingTest {
 
             var cellsByKey = grouping.groupCellKeysByOwner();
 
-            assertThat(cellsByKey).containsOnlyKeys("F");
-            assertThat(cellsByKey.get("F")).containsExactly(buildCellKey("A"));
+            assertThat(cellsByKey)
+                .containsOnlyKeys("F");
+            assertThat(cellsByKey.get("F"))
+                .containsExactly(buildCellKey("A"));
         }
 
         @Test
         void groupCellKeysByOwnerIsEmptyWhenNothingIsGrouped() {
+
             var grouping = new CellGrouping(buildDrawnSystemKeys(Map.of("A", "A")), Map.of());
 
-            assertThat(grouping.groupCellKeysByOwner()).isEmpty();
+            assertThat(grouping.groupCellKeysByOwner())
+                .isEmpty();
         }
     }
 
@@ -140,9 +149,12 @@ final class CellGroupingTest {
 
             var cellsByKey = grouping.groupCellKeysByOwner();
 
-            assertThat(cellsByKey.get("F")).containsExactly(first);
-            assertThat(cellsByKey.get("G")).containsExactly(second);
-            assertThat(grouping.resolveOwnerOf(second)).isEqualTo("G");
+            assertThat(cellsByKey.get("F"))
+                .containsExactly(first);
+            assertThat(cellsByKey.get("G"))
+                .containsExactly(second);
+            assertThat(grouping.resolveOwnerOf(second))
+                .isEqualTo("G");
         }
     }
 }

@@ -4,6 +4,7 @@ import kmlib.math.geometry.CornerRounding;
 
 import kmu.maplayers.base.geometry.Coastlines;
 import kmu.maplayers.base.geometry.ContinentBridges;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.StraightRuns;
 import kmu.maplayers.base.geometry.VoidPockets;
@@ -407,6 +408,14 @@ public final class ViewerSettings {
     public boolean showUnboundedCells;
 
     public SectorGeometryParameters parameters = SectorGeometryParameters.createDefaults();
+
+    // Which cell edges take the border channel. The map's own rule to open on, so the window
+    // opens on the map; the other two answer for every edge at once and are what separates the
+    // cells' true partition from the channel cut into it on screen.
+    //
+    // The cells only. The void is not shaped through this, and will not be until the pockets
+    // are pieces of one partition with edges of their own to ask the question of.
+    public EdgeInsetRule cellInsetRule = EdgeInsetRule.AT_EVERY_BORDER;
 
     // One chosen colour for every owner, optionally spread in brightness so neighbours can
     // still be told apart. Brightness rather than hue on purpose: a hue jitter makes each

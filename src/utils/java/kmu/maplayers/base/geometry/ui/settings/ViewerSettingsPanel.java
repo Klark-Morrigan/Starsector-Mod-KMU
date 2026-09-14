@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry.ui.settings;
 
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.ui.CollapsibleSection;
@@ -465,6 +466,22 @@ public final class ViewerSettingsPanel {
                 value,
                 settings.parameters.weldTolerance(),
                 settings.parameters.miterSpikeLimit())));
+
+        // Which edges the channel above is actually cut into. Directly under the depth slider
+        // because the two are one statement between them - how deep, and where - and a reader
+        // who has just moved the depth and seen nothing move is a reader whose edges are all
+        // seams.
+        //
+        // A rebuild rather than a repaint: the rule decides the fill polygon, not its colour.
+        controls.add(ControlRows.buildRadio(
+            "cellInsetRule",
+            "Cell insets",
+            List.of(
+                new ControlRows.Pick<>("By ownership", EdgeInsetRule.AT_EVERY_BORDER),
+                new ControlRows.Pick<>("None", EdgeInsetRule.NOWHERE),
+                new ControlRows.Pick<>("All", EdgeInsetRule.EVERYWHERE)),
+            rule -> settings.cellInsetRule = rule,
+            refreshes::rebuildGeometry));
 
         controls.add(buildSlider(
             "weldTolerance",

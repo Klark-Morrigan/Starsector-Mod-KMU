@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
@@ -303,6 +305,92 @@ public final class ControlRows {
         return row;
     }
 
+    /**
+     * One option in a radio row.
+     *
+     * @param label what it is called on screen
+     * @param value what picking it means
+     * @param <T>   what the row picks between
+     */
+    public record Pick<T>(
+        String label,
+        T value) {
+    }
+
+    /**
+     * A row of radio buttons that remembers which is picked, with a reset button.
+     *
+     * <p>A radio rather than the dropdown next door where the options are few and the point is
+     * comparing them: every answer stays on screen, so a reader can see what else the map could
+     * be showing without opening anything to find out.
+     *
+     * <p>Remembered under the option's own value rather than its label, so rewording a label
+     * does not silently put everyone back to the default.
+     *
+     * <p><b>The owner is told the remembered pick before the row is returned</b>, for the
+     * reason {@link #buildRememberedCheckBox} is: a row drawing one answer while its owner
+     * holds another is a control whose first use appears to do the wrong thing.
+     *
+     * @param key      what to remember it under
+     * @param title    what the choice is called
+     * @param picks    what can be picked, the first of which is the default
+     * @param apply    records the new pick
+     * @param onChange what to run once it changes
+     * @param <T>      what the row picks between
+     * @return the row
+     */
+    public static <T> JPanel buildRadio(
+            String key,
+            String title,
+            List<Pick<T>> picks,
+            Consumer<T> apply,
+            Runnable onChange) {
+
+        var fallback = picks.get(0);
+
+        // A remembered pick can name an option that is no longer offered, the way the dropdown's
+        // can, and a radio group with nothing selected shows every button empty.
+        var pickedIndex = findIndexOfPickNamed(
+            picks,
+            SavedValues.findSavedValues().get(key, resolveNameOf(fallback)));
+
+        var group = new ButtonGroup();
+        var buttons = new JPanel(new GridLayout(SINGLE_ROW, picks.size()));
+        var everyButton = new ArrayList<JRadioButton>(picks.size());
+
+        for (var index = 0; index < picks.size(); index++) {
+
+            var pick = picks.get(index);
+            var button = new JRadioButton(pick.label(), index == pickedIndex);
+
+            button.addActionListener(event -> recordPick(key, pick, apply, onChange));
+
+            group.add(button);
+            buttons.add(button);
+            everyButton.add(button);
+        }
+
+        apply.accept(picks.get(pickedIndex).value());
+
+        var row = new JPanel(new BorderLayout());
+
+        row.add(new JLabel(title), BorderLayout.NORTH);
+        row.add(buttons, BorderLayout.CENTER);
+        row.add(buildResetButton(
+            () -> {
+
+                everyButton.get(0).setSelected(true);
+
+                recordPick(key, fallback, apply, onChange);
+
+            }),
+            BorderLayout.EAST);
+
+        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
+
+        return row;
+    }
+
     // Where every knob's value is kept, in one place. Each factory reads on build and writes
     // on change, so the node was named at eleven separate call sites; one of them naming a
     // different class would have split the panel's memory in two without failing anything.
@@ -371,5 +459,39 @@ public final class ControlRows {
         panel.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
 
         return panel;
+    }
+
+    // The one order a pick is acted on in, shared by the buttons and the reset so the two
+    // cannot come to disagree: the owner is told, the choice is written down, and only then
+    // does anything redraw off it.
+    private static <T> void recordPick(
+            String key,
+            Pick<T> pick,
+            Consumer<T> apply,
+            Runnable onChange) {
+
+        apply.accept(pick.value());
+
+        SavedValues.findSavedValues().put(key, resolveNameOf(pick));
+
+        onChange.run();
+    }
+
+    // Which option a remembered name stands for, or the first where it stands for none.
+    private static <T> int findIndexOfPickNamed(List<Pick<T>> picks, String name) {
+
+        for (var index = 0; index < picks.size(); index++) {
+            if (resolveNameOf(picks.get(index)).equals(name)) {
+                return index;
+            }
+        }
+        return 0;
+    }
+
+    // What a pick is written down as. The value's own name rather than the label beside it: a
+    // label is copy and gets reworded, and a saved file keyed by copy forgets what was picked
+    // the first time someone improves the wording.
+    private static String resolveNameOf(Pick<?> pick) {
+        return String.valueOf(pick.value());
     }
 }

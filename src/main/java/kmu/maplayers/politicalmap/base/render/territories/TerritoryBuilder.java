@@ -12,6 +12,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
@@ -374,6 +375,7 @@ public final class TerritoryBuilder {
             return CellShaper.shapeCells(
                 geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
+                EdgeInsetRule.AT_EVERY_BORDER,
                 CellShaper.BORDER_INSET_DISTANCE);
         }
     }

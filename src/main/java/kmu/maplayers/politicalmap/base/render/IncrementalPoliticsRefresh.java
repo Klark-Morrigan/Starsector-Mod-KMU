@@ -10,6 +10,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
@@ -335,6 +336,7 @@ final class IncrementalPoliticsRefresh {
             edges,
             ownerFactionId,
             DominantHolder.mapFactionIdBySystemKey(holderBySystemKey),
+            EdgeInsetRule.AT_EVERY_BORDER,
             CellShaper.BORDER_INSET_DISTANCE);
 
         var painted = PaintedCellBuilder.buildPaintedCellForSystem(territories, drawnSystemKey, shaped);

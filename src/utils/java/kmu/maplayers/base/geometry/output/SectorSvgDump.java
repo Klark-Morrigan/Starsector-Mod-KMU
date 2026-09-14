@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.output;
 
 import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.DrawnSector;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.ShippedMap;
@@ -52,7 +53,10 @@ public final class SectorSvgDump {
             //
             // At the shipped knobs, which is what a batch dump is for: a picture of the map as
             // it comes rather than as anyone has tuned it.
-            var geometry = SectorGeometry.buildSectorGeometry(fixture, ShippedMap.KNOBS);
+            var geometry = SectorGeometry.buildSectorGeometry(
+                fixture,
+                EdgeInsetRule.AT_EVERY_BORDER,
+                ShippedMap.KNOBS);
 
             var laid = BridgedContinents.layContinents(
                 fixture.getSites(),
@@ -63,7 +67,11 @@ public final class SectorSvgDump {
 
             writeMap(fixture, geometry, laid, sectorName, VoidPockets.PocketShaping.WITH_CHANNEL);
             writeMap(
-                fixture, geometry, laid, sectorName, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
+                fixture,
+                geometry,
+                laid,
+                sectorName,
+                VoidPockets.PocketShaping.AT_TRUE_EXTENT);
         }
     }
 
@@ -88,7 +96,10 @@ public final class SectorSvgDump {
             target,
             fixture,
             DrawnSector.buildDrawnSector(
-                geometry, DrawnSector.DEFAULT_SMOOTHING, laid, shaping));
+                geometry,
+                DrawnSector.DEFAULT_SMOOTHING,
+                laid,
+                shaping));
 
         System.out.println("wrote " + target.toAbsolutePath());
 

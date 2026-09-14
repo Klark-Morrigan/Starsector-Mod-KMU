@@ -13,6 +13,7 @@ import kmu.maplayers.base.geometry.CoastVoidReport;
 import kmu.maplayers.base.geometry.CoastWallReport;
 import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.LaidCoast;
 import kmu.maplayers.base.geometry.PickedPointCheck;
@@ -164,7 +165,11 @@ public final class VoidRegionsDump {
     // the void beside it is painted a bright colour instead of the backdrop's black.
     private static void reportChannelWidths(SectorFixture fixture) {
 
-        var geometry = SectorGeometry.buildSectorGeometry(fixture, SHIPPED);
+        var geometry = SectorGeometry.buildSectorGeometry(
+            fixture,
+            EdgeInsetRule.AT_EVERY_BORDER,
+            SHIPPED);
+
         var reachFacing = new ArrayList<Double>();
         var cellFacing = new ArrayList<Double>();
 
