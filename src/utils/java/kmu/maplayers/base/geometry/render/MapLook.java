@@ -128,6 +128,11 @@ public final class MapLook {
     // colour of the line that closed it.
     public static final Color CONTINENT_COASTAL_VOID = new Color(0x90, 0x50, 0xc0);
 
+    // The void the cells close around before anything divides it. No shade of any layer drawn
+    // over it, because that is the comparison it exists for: what a construction did to the
+    // void has to read as a difference from this rather than as a lighter copy of it.
+    public static final Color BARE_VOID = new Color(0x20, 0x70, 0x60);
+
     // The two halves of a coast crossing a cell, in colours nothing else on the map uses: the
     // run that goes where it should not, and the cell it goes into. Diagnostic rather than
     // decorative - when the construction is right, neither is ever drawn.

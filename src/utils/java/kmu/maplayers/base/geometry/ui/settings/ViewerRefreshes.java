@@ -21,6 +21,16 @@ public interface ViewerRefreshes {
     /** Traces the coasts again, and lays everything that stands on them. */
     public void refreshCoastlines();
 
+    /**
+     * Reads v4's void again.
+     *
+     * <p>Its own call rather than a share of the coast refresh above, because the two
+     * constructions are separate on purpose: a v4 knob that traced v3's coasts would make one
+     * construction pay for the other, and would quietly couple the two things this window
+     * exists to compare.
+     */
+    public void refreshVoidV4();
+
     /** Traces the unclipped partition again. */
     public void refreshUnboundedCells();
 

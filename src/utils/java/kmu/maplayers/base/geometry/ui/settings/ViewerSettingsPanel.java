@@ -80,6 +80,9 @@ public final class ViewerSettingsPanel {
     private static final String INTERCONTINENTAL_SHORES = "showIntercontinentalShores";
     private static final String INTERCONTINENTAL_ENCLOSED_FILL = "showIntercontinentalEnclosedFill";
 
+    // v4's layers. One key so far: the void before anything divides it.
+    private static final String BARE_VOID = "showBareVoid";
+
     // One name switch per kind of piece, under the layer that shuts that kind in.
     private static final String PUDDLE_NAMES = "showContinentPuddleNames";
     private static final String LAKE_NAMES = "showContinentLakeNames";
@@ -92,6 +95,12 @@ public final class ViewerSettingsPanel {
     // construction rather than taken from the heading, which is copy and gets reworded.
     private static final CollapsibleSection.SectionKeys CONTINENT_VOID_KEYS =
         CollapsibleSection.SectionKeys.forSection("continentVoid");
+
+    // v4's own, beside it rather than inside it. The two constructions answer the same question
+    // differently, so neither is a branch of the other - and a reader comparing them wants each
+    // to fold away whole, which a shared tree cannot offer.
+    private static final CollapsibleSection.SectionKeys VOID_V4_KEYS =
+        CollapsibleSection.SectionKeys.forSection("voidV4");
 
     // How far apart two cells may sit and still be taken to hold the void between them, in
     // cell radii from centre to centre. Four is the width at which a whole further cell
@@ -262,10 +271,21 @@ public final class ViewerSettingsPanel {
         // the way to nothing.
         controls.add(CollapsibleSection.buildSection(
             CONTINENT_VOID_KEYS,
-            "Void pockets",
+            "Void pockets - v3",
             new CollapsibleSection.MasterSwitch(
                 true, on -> settings.showContinentVoid = on, refreshes::refreshCoastlines),
             buildSectionBody(this::addVoidPocketRows)));
+
+        // Beside v3 rather than under it, each construction with its own tree and its own root.
+        // What puts them side by side is that they answer one question two ways: a reader judges
+        // v4 by setting v3 down and picking it up again, which wants two switches at one level
+        // rather than one pick that can only ever show one of them.
+        controls.add(CollapsibleSection.buildSection(
+            VOID_V4_KEYS,
+            "Void pockets - v4",
+            new CollapsibleSection.MasterSwitch(
+                false, on -> settings.showVoidV4 = on, refreshes::refreshVoidV4),
+            buildSectionBody(this::addVoidV4Rows)));
 
         controls.add(ControlRows.buildDivider());
 
@@ -689,6 +709,33 @@ public final class ViewerSettingsPanel {
     // In the order the construction builds in, which is the order a reader follows it: what
     // there is to see, then the coasts everything else is laid against, then the spans across
     // the inlets those coasts leave, then the links between one continent and the next.
+    // v4's layers, in the same shape v3's are: a tree with a roll-up at its root and the layers
+    // under it. One layer so far, and the tree is here rather than deferred until there are
+    // several because the shape is what a later layer is added TO - grown from a bare switch, the
+    // first two layers would arrive with the tree rebuilt around them.
+    //
+    // The colour sits beside the switch rather than with the cells' colours. Two constructions
+    // are compared by their fills, so which colour each is drawn in is part of using this section
+    // rather than a decision about the palette.
+    private void addVoidV4Rows(JPanel controls) {
+
+        controls.add(ToggleTree.buildToggleTree(
+            refreshes::refreshVoidV4,
+            ToggleTree.Row.ofRollUp(0, "allVoidV4Layers", "Every v4 layer", BARE_VOID),
+            ToggleTree.Row.ofSwitch(1, new ToggleTree.Switch(
+                BARE_VOID,
+                "Bare void",
+                true,
+                on -> settings.showBareVoid = on))));
+
+        controls.add(ColourRows.buildColour(
+            "bareVoidColour",
+            "Bare void",
+            ViewerSettings.BARE_VOID_DEFAULT,
+            colour -> settings.bareVoidColour = colour,
+            refreshes::repaintMap));
+    }
+
     private void addVoidPocketRows(JPanel controls) {
 
         controls.add(buildContinentVoidToggles());

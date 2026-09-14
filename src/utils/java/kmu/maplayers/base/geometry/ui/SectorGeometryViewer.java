@@ -25,6 +25,7 @@ import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
 import kmu.maplayers.base.geometry.ui.overlays.voidpockets.ContinentCoastOverlay;
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
+import kmu.maplayers.base.geometry.v4.ui.BareVoidOverlay;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 
 import java.awt.BorderLayout;
@@ -195,6 +196,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     private final ContinentCoastOverlay continentCoasts =
         new ContinentCoastOverlay(settings);
     private final VoidSectionsOverlay voidSections = new VoidSectionsOverlay(settings);
+    private final BareVoidOverlay bareVoid = new BareVoidOverlay(settings);
 
     // The laying the last refresh drew the continent construction from, kept so that a file
     // saved from the window is a picture of that frame rather than of a laying opened again
@@ -395,6 +397,16 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         repaintMap();
     }
 
+    // v4's own refresh, reaching nothing of v3's. The two constructions share the fixture and
+    // the cell knobs and nothing else, which is the whole point of the split - so this reads the
+    // void again and stops.
+    @Override
+    public void refreshVoidV4() {
+
+        bareVoid.refresh(fixture);
+        repaintMap();
+    }
+
     @Override
     public void repaintMap() {
         canvas.repaint();
@@ -464,6 +476,12 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
                 settings.parameters.boundSegments());
         }
         refreshCoastlines();
+
+        // Both constructions, because what moved is under both of them: the reach the cells
+        // stand at and the bound their arcs are flattened onto are the cells' own knobs, and a
+        // v4 layer left unread here would be drawn against the sector as it used to be.
+        refreshVoidV4();
+
         lastBuildMillis = (System.nanoTime() - start) / NANOS_PER_MILLI;
         refreshStatus();
     }
@@ -705,6 +723,13 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // clip cut down, so it reads as what is underneath rather than as another layer
             // laid over the top.
             cells.paintBeneath(g2, unboundedCells);
+
+            // Under v3's fills, so that with both constructions down the newer one reads as
+            // what the older is drawn over rather than as a layer covering it. It is also the
+            // widest thing on the map - every piece of void, undivided - so painted last it
+            // would hide whatever it is meant to be compared with.
+            bareVoid.paintPieces(g2);
+
             continentCoasts.paintPocketFills(g2);
 
             cells.paintFills(g2, geometry, smoothedRingsByOwner);

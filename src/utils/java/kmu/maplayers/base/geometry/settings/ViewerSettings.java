@@ -112,6 +112,8 @@ public final class ViewerSettings {
 
     public static final Color BRIDGE_FRONTAGE_DEFAULT = MapLook.BRIDGE_FRONTAGE;
 
+    public static final Color BARE_VOID_DEFAULT = MapLook.BARE_VOID;
+
     public static final Color CONTINENT_COASTAL_VOID_DEFAULT = MapLook.CONTINENT_COASTAL_VOID;
 
     public static final Color SITE_COLOUR = MapLook.SITE;
@@ -182,6 +184,17 @@ public final class ViewerSettings {
     // always was. Off by default, it would instead be a hidden reason for a knob to do nothing
     // when moved.
     public boolean showContinentVoid = true;
+
+    // v4's own master, the twin of the switch above. Each construction has a tree of its own
+    // and each tree has a root, which is what makes the two comparable: a reader sets one down
+    // and picks the other up without either reaching into the other's layers.
+    //
+    // Off, so the window opens on exactly what it opened on before v4 existed.
+    public boolean showVoidV4;
+
+    // v4's base: the void the cells close around, before any line divides it. Every later v4
+    // layer is a division of this, so it is the first thing that layer stack has to agree with.
+    public boolean showBareVoid = true;
 
     // The cells' own names, whose system IDs the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
@@ -386,6 +399,8 @@ public final class ViewerSettings {
     public Color continentCoastalVoidColour = CONTINENT_COASTAL_VOID_DEFAULT;
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
+    public Color bareVoidColour = BARE_VOID_DEFAULT;
+
     public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
     public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
     public Color continentCoastColour = CONTINENT_COAST_DEFAULT;
@@ -517,6 +532,19 @@ public final class ViewerSettings {
             case INLET -> showContinentBridges && showContinentInletFill;
             case INTERCONTINENTAL -> showIntercontinentalBridges && showIntercontinentalFill;
         };
+    }
+
+    /**
+     * Whether v4's bare void is drawn, which is its construction's master and its own switch.
+     *
+     * <p>Asked here rather than at the layer, for the reason the pairings above are: the master
+     * and the leaf are two switches declared together, and a layer reading only its own would go
+     * on drawing after its whole construction had been set down.
+     *
+     * @return true where both are on
+     */
+    public boolean isBareVoidShown() {
+        return showVoidV4 && showBareVoid;
     }
 
     /**
