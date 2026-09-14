@@ -193,11 +193,24 @@ and every rule here stays exercisable on hand-built shades.
   a desaturated bloc's fill is held at the *faction* opacity,
   so a desaturated surface reads as one uniform grey rather than splitting into two weights of empty.
 
+- `ResolvedBlocPaint` -
+  carries that bundle and adjustment down to the shades,
+  and is the one read every element is painted through:
+  `pickPaintOf` picks the element's slot out of the palette at its own opacity scaled by the mute.
+  The desaturation swap is applied as the record is resolved rather than per element,
+  since it is one decision for the whole bloc.
+  A cell nobody holds resolves one over shades stated outright -
+  the neutral, or the neutral lifted where a spotlight spared it -
+  so a lone cell's fill and outline are painted by the very rule a bloc's are.
+
 The decision and the mapping are deliberately two steps.
 `BlocStyleResolver` stays theme-free so the label path and the fill path resolve the same answer;
 `BlocStyling` is where a theme is finally required.
-Callers ask for the pair through `TerritoryBuildInputs.resolveBlocStyling`,
-which composes both off the one reading a build was baked under.
+The fill path asks for the whole paint through `TerritoryBuildInputs.resolveBlocPaintOf`,
+which composes all of it off the one reading a build was baked under;
+the label path,
+which needs a name's colour rather than an element's paint,
+reads `BlocStyleResolver` directly.
 
 ## What is not here
 

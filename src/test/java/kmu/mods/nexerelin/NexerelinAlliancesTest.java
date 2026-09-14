@@ -16,14 +16,19 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Pins the soft-dependency gate on the side a Nex-free install takes. The other side cannot be
- * driven here at all - it resolves the holder that names {@code exerelin.*}, which is absent from
- * the test classpath by the same arrangement that keeps it off a Nex-free install's - so what is
- * held is that the gate answers before touching it.
+ * Pins the soft-dependency gate on the side a Nex-free install takes: the gate answers before
+ * anything naming {@code exerelin.*} is resolved, so a classloader that has no such class to find
+ * is never asked to find one.
  *
  * <p>Worth holding because the answer is a visibility rule's input: a gate that threw, or that
  * invented a partnership, would decide what an install without Nexerelin is told about a concealed
  * base.
+ *
+ * <p>The other side cannot be driven here at all, and not for want of the jar: Nexerelin's alliance
+ * manager reads its own configuration off {@code Global.getSettings()} in a static initialiser, so
+ * naming that class outside a running game fails to initialise it whatever is on the classpath.
+ * What the far side does with alliances once it has them is
+ * {@link NexAllianceSourceTest}'s, over the flattening that needs no manager.
  */
 class NexerelinAlliancesTest {
 

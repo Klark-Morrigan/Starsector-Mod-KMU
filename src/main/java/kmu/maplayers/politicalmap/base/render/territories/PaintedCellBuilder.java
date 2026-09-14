@@ -2,9 +2,7 @@ package kmu.maplayers.politicalmap.base.render.territories;
 
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
-import kmlib.starsector.factions.FactionPalette;
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.ShapedCell;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
@@ -13,11 +11,9 @@ import kmu.maplayers.base.render.clusters.StyledCell;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.VertexRuns;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
-import kmu.maplayers.base.theme.ElementStyle;
-import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.style.FactionlessStyleResolver;
-import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
+import kmu.maplayers.politicalmap.base.render.style.ResolvedBlocPaint;
 
 import java.util.List;
 
@@ -99,27 +95,20 @@ public final class PaintedCellBuilder {
     // A fused cell: its seams, in the holder's effective palette. Its fill and border are the
     // cluster's, drawn from the cluster's own shape, so this form has no slot for either, and its
     // painted ring is the raw inset extent - what bounds the ink is the cluster's own border rather
-    // than anything resolved per cell. The style and adjustment come from the pass's one styling
-    // read, so the seams paint exactly as the cluster paints its fill and border. Desaturating swaps
-    // the holder's own palette for the pass's shared desaturation palette, and the opacity
-    // multiplier scales every alpha on top of the style's own opacities.
+    // than anything resolved per cell. The paint comes from the pass's one reading of what this
+    // bloc draws in, so the seams paint exactly as the cluster paints its fill and border.
     private static PaintedCell buildOwnedCell(
             TerritoryBuildInputs buildInputs,
             DominantHolder holder,
             ShapedCell shaped) {
 
-        var styling = buildInputs.resolveBlocStyling(holder.factionId());
-        var style = styling.style();
-        var adjustment = styling.adjustment();
-        var palette = MapPalettes.resolveEffectivePalette(
-            adjustment,
-            holder,
-            buildInputs.styling().desaturationPalette());
+        var blocPaint = buildInputs.resolveBlocPaintOf(holder.factionId(), holder);
+        var style = blocPaint.style();
 
         return new PaintedCell(
             new StyledCell.FusedCell(
                 VertexRuns.flattenEdgesOfClass(shaped, false),
-                resolvePaintOf(style.inner(), palette, adjustment),
+                blocPaint.pickPaintOf(style.inner()),
                 (float) style.innerWidth()),
             shaped.fillPolygon());
     }
@@ -183,7 +172,11 @@ public final class PaintedCellBuilder {
             ? mapStyling.presencePalette()
             : mapStyling.neutralPalette();
 
-        var palette = MapPalettes.resolveEffectivePalette(
+        // Stated over the shades rather than resolved off a holder, there being nobody to ask: the
+        // desaturation swap and the per-element reads are the bloc path's all the same, so a lone
+        // cell's fill and outline are painted by the very rule a bloc's are.
+        var cellPaint = ResolvedBlocPaint.resolveFrom(
+            style,
             adjustment,
             ownPalette,
             mapStyling.desaturationPalette());
@@ -203,25 +196,10 @@ public final class PaintedCellBuilder {
                     ? PolygonTessellator.tessellateToTriangles(List.of(outline))
                     : GlVertexRuns.NO_VERTICES,
                 GlVertexRuns.flattenClosedLoopAsSegments(outline),
-                resolvePaintOf(style.fill(), palette, adjustment),
-                resolvePaintOf(style.outer(), palette, adjustment),
+                cellPaint.pickPaintOf(style.fill()),
+                cellPaint.pickPaintOf(style.outer()),
                 (float) style.outerWidth()),
             outline);
-    }
-
-    // One element's paint as this cell resolves it: its colour picked from the cell's own two
-    // palette shades - null for a "No color" choice, so the draw pass skips it - at its style
-    // opacity scaled by the bloc's mute.
-    private static UiElementPaint resolvePaintOf(
-            ElementStyle element,
-            FactionPalette palette,
-            ElementStyleAdjustment adjustment) {
-
-        return new UiElementPaint(
-            MapPalettes.pickPaletteColour(
-                element.colour(),
-                palette),
-            adjustment.muteOpacity(element.opacity()));
     }
 
     // The ring a factionless cell strokes and fills from: its inset outline, corner-rounded when

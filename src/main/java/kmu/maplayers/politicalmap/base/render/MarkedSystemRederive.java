@@ -36,20 +36,45 @@ import java.util.Set;
  * <p>Nothing here draws. What each change costs is the caller's, and differs by which fact moved -
  * a flip re-shapes a ring of cells and rebuilds two territories, where the other two are cell-local
  * - so what this reports is the disturbance rather than the work.
+ *
+ * <p>One of these is made per batch and holds what the batch reads and writes throughout, so each
+ * read below names only the system it is about. What it accumulates travels with it for the same
+ * reason: a re-derive and the record of what that owes are one batch's, and threading the record
+ * through every read left each of them able to be handed somebody else's.
  */
 final class MarkedSystemRederive {
 
-    // Re-derives only; never instantiated.
-    private MarkedSystemRederive() {
+    // The built map being brought up to date, and the cells a flipped system's neighbours are read
+    // from.
+    private final PoliticalMapTerritories territories;
+    private final CellGeometryCache geometryCache;
+
+    // The batch's one reading of the sector, and its holding half. Both are held because the reads
+    // below differ in which they are entitled to: who holds a system is settled by the weighting
+    // rule the pass carries, while whether anybody lives there and whether the pick is among them
+    // are questions no weighting rule takes part in answering.
+    private final DominancePass pass;
+    private final HolderPass holding;
+
+    // What this batch has disturbed so far. Accumulated as one value rather than sets filled side
+    // by side: every flip owes both a re-shape and a territory rebuild, so recording one without
+    // the other is exactly the half-done redraw this has to avoid.
+    private final StalePoliticsDisturbance disturbance = new StalePoliticsDisturbance();
+
+    private MarkedSystemRederive(
+            PoliticalMapTerritories territories,
+            CellGeometryCache geometryCache,
+            DominancePass pass) {
+
+        this.territories = territories;
+        this.geometryCache = geometryCache;
+        this.pass = pass;
+        this.holding = pass.holding();
     }
 
     /**
      * Re-derives every marked system, folding what changed into one record of what the batch
      * disturbed.
-     *
-     * <p>What the batch disturbed is accumulated as one value rather than sets filled side by
-     * side: every flip owes both a re-shape and a territory rebuild, so recording one without the
-     * other is exactly the half-done redraw this has to avoid.
      *
      * <p>Every marked system is re-derived before the caller redraws anything, so the redraw reads
      * a fully updated holder map even when two adjacent systems flipped in one batch.
@@ -66,12 +91,19 @@ final class MarkedSystemRederive {
             DominancePass pass,
             Set<SystemKey> markedSystemKeys) {
 
+        return new MarkedSystemRederive(territories, geometryCache, pass)
+            .rederiveEachMarkedSystem(markedSystemKeys);
+    }
+
+    // The batch itself: every marked system's three facts, then the presence read the whole batch
+    // shares.
+    private StalePoliticsDisturbance rederiveEachMarkedSystem(Set<SystemKey> markedSystemKeys) {
+
         // Off the batch's own reading rather than a traversal opened here: every other read below
         // goes through that pass, and a second traversal for the systems alone is what the bound on
         // a batch counts against it. By key rather than by ID, so a marked system that shares an ID
         // with another is re-derived as itself rather than as whichever of them comes first.
-        var systemByKey = pass.holding().sectorIndex().readSystemsByKey();
-        var disturbance = new StalePoliticsDisturbance();
+        var systemByKey = holding.sectorIndex().readSystemsByKey();
 
         for (var systemKey : markedSystemKeys) {
 
@@ -79,10 +111,10 @@ final class MarkedSystemRederive {
             // itself - the key stays the address whether or not a system still stands behind it.
             var markedSystem = new MarkedSystem(systemKey, systemByKey.get(systemKey));
 
-            rederiveSystemHolder(territories, geometryCache, pass, markedSystem, disturbance);
-            rederiveSystemInhabitation(territories, pass.holding(), markedSystem, disturbance);
+            rederiveSystemHolder(markedSystem);
+            rederiveSystemInhabitation(markedSystem);
         }
-        rederiveSpotlitPresence(territories, pass, markedSystemKeys, disturbance);
+        rederiveSpotlitPresence(markedSystemKeys);
 
         return disturbance;
     }
@@ -91,12 +123,7 @@ final class MarkedSystemRederive {
     // what this batch disturbed: the cells to re-shape (the system and its neighbours, whose
     // edge against it flips between a same-faction seam and a national border) and the factions
     // whose territory must rebuild (the old and the new holder).
-    private static void rederiveSystemHolder(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
-            DominancePass pass,
-            MarkedSystem marked,
-            StalePoliticsDisturbance disturbance) {
+    private void rederiveSystemHolder(MarkedSystem marked) {
 
         // Re-derived under the pass this batch opened, which carries the grouping the full build
         // resolved this system's holder with, so a single-system refresh lands the same winning
@@ -112,7 +139,7 @@ final class MarkedSystemRederive {
         territories.getOccupancy().recordHolderOf(marked.systemKey(), newHolder);
         disturbance.recordFlip(
             marked.systemKey(),
-            neighbourSystemKeysOf(geometryCache, marked.systemKey()),
+            neighbourSystemKeysOf(marked.systemKey()),
             oldHolder,
             newHolder);
     }
@@ -124,15 +151,7 @@ final class MarkedSystemRederive {
     // is scanned once where a rebuild begins, so between rebuilds it goes stale exactly over the
     // systems the events have already moved - and on a layer whose holding cannot account for a
     // system, its cell is the only surface that reports the change at all.
-    //
-    // Handed the batch's reading of the sector rather than the whole pass, on the same terms the
-    // presence read below is: whether anybody lives in a system is a question no weighting rule
-    // takes part in answering.
-    private static void rederiveSystemInhabitation(
-            PoliticalMapTerritories territories,
-            HolderPass holding,
-            MarkedSystem marked,
-            StalePoliticsDisturbance disturbance) {
+    private void rederiveSystemInhabitation(MarkedSystem marked) {
 
         var isInhabited = PoliticalMapInhabitation.isSystemInhabited(holding, marked.system());
 
@@ -148,22 +167,15 @@ final class MarkedSystemRederive {
     // and off filter it returns before touching an economy at all - so a batch on an unfiltered
     // map pays a call that decides nothing rather than a per-system branch stating the same thing.
     //
-    // Handed the batch's reading of the sector rather than the whole pass: presence is a question
-    // about who is in a system, which no weighting rule takes part in answering.
-    //
     // Asked of the marked systems the updated holders left unheld, as the full build asks it of
     // the unheld inhabited ones: presence is what spares a cell no bloc holds, so a system that
     // has just been given to somebody drops out of the set rather than being carried in it under
     // a holder that draws it anyway.
-    private static void rederiveSpotlitPresence(
-            PoliticalMapTerritories territories,
-            DominancePass pass,
-            Set<SystemKey> markedSystemKeys,
-            StalePoliticsDisturbance disturbance) {
+    private void rederiveSpotlitPresence(Set<SystemKey> markedSystemKeys) {
 
         var occupancy = territories.getOccupancy();
         var presentSystemKeys = FilteredPolitics.findPresentSystemKeys(
-            pass.holding(),
+            holding,
             territories.getBuildInputs().contentInputs().selectedBlocId(),
             occupancy.selectUnheldSystemKeysAmong(markedSystemKeys));
 
@@ -180,9 +192,7 @@ final class MarkedSystemRederive {
     // The systems whose cell borders this one, read from the adjacency graph. When this
     // system's holder flips, each neighbour's shared edge flips between a same-faction
     // seam and a national border, so every neighbour re-shapes too.
-    private static Set<SystemKey> neighbourSystemKeysOf(
-            CellGeometryCache geometryCache,
-            SystemKey systemKey) {
+    private Set<SystemKey> neighbourSystemKeysOf(SystemKey systemKey) {
 
         var neighbours = new LinkedHashSet<SystemKey>();
         var edges = geometryCache.getCellEdgesByCellKey().get(systemKey);

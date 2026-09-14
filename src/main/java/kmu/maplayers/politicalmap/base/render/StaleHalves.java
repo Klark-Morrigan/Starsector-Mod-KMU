@@ -1,8 +1,8 @@
 package kmu.maplayers.politicalmap.base.render;
 
 /**
- * What one frame's staleness question answered: which of the cache's two halves are stale, and
- * the values a rebuild would carry forward - the inputs its cells would be cut under, the picks it
+ * What one frame's staleness question answered: which of the cache's two halves are stale, and the
+ * values a rebuild would carry forward - the inputs its cells would be cut under, the picks it
  * would bake under, and the two revisions it would advance to.
  *
  * <p>A value crossing between two steps rather than fields on the cache, because the question is
@@ -12,9 +12,10 @@ package kmu.maplayers.politicalmap.base.render;
  * the settings a second time and could cut under one reading while the decision was taken under
  * another.
  *
- * @param standingCellCut what the cells currently held were cut from, or null while nothing has
- *                        been cut - carried so a recut can say what it moved from, the decider
- *                        being the one holder of that reading
+ * <p>It carries this frame's sampled readings and the answers taken off them, never the baselines
+ * those answers were compared against: what the standing map was built under stays behind the
+ * decider that holds it, so nothing downstream can read a baseline and reach its own verdict.
+ *
  * @param cellCut         what the cells would be cut from now: the reachable-set revision, the
  *                        seed knobs and the visibility rules, sampled once
  * @param isCellCutStale  whether those differ from what the standing cells were cut from
@@ -27,7 +28,6 @@ package kmu.maplayers.politicalmap.base.render;
  *                        that stops at the decision
  */
 record StaleHalves(
-    CellCutInputs standingCellCut,
     CellCutInputs cellCut,
     boolean isCellCutStale,
     ContentInputs contentInputs,

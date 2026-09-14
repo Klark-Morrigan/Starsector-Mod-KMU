@@ -16,6 +16,9 @@ import kmu.maplayers.base.labels.anchor.ClusterAnchor;
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
+import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
+import kmu.maplayers.base.refresh.MapLayerRefreshSignal;
+import kmu.maplayers.base.refresh.RefreshSignalTracker;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
@@ -83,6 +86,14 @@ final class PoliticalMapCache {
     // cache, so no two cuts of these cells can be mistaken for each other.
     private static final int FIRST_CUT_NUMBER = 0;
 
+    // The sidebar preferences whose raises are traced onto a rebuild's line. These three and no
+    // others, because these are the ones nothing folds into staleness: a signal a consumer does
+    // read is already accounted for by the rebuild it caused.
+    private static final MapLayerRefreshSignal[] TRACED_PREFERENCE_SIGNALS = {
+        MapLayerCommonRefreshSignal.FILTER,
+        MapLayerCommonRefreshSignal.RECEDE_STYLE,
+        MapLayerCommonRefreshSignal.MAP_STYLE};
+
     // The machinery installed on the sector this cache draws. The sector a rebuild cuts cells from,
     // the movers that cut leaves out and the board it reads staleness off all come off this one
     // handle, so none of the three can name a different sector - a cut taken from the running game
@@ -113,6 +124,11 @@ final class PoliticalMapCache {
     // stage below reports itself complete, so a thrown rebuild is asked again next frame.
     private final PoliticalMapRebuildDecider decider;
 
+    // Which sidebar preference a player touched since the last rebuild, for the line a rebuild
+    // writes. Held here rather than by the decider because it decides nothing: a raise is context
+    // read beside a rebuild, and this is what writes that rebuild's line.
+    private final RefreshSignalTracker signalTracker;
+
     // The holding the last rebuild resolved, kept so a rebuild that owes no new reading of the
     // sector - a style pick moved and nothing else - can paint over what the last one read rather
     // than walk the economy for the same answer. Dropped, not just superseded, whenever the sector
@@ -126,6 +142,9 @@ final class PoliticalMapCache {
     PoliticalMapCache(SectorMapMachinery machinery) {
         this.machinery = machinery;
         this.decider = new PoliticalMapRebuildDecider(machinery);
+        this.signalTracker = new RefreshSignalTracker(
+            machinery.resolveRefreshBoard(),
+            TRACED_PREFERENCE_SIGNALS);
     }
 
     /** @return the built production draw lists, or null while the debug overlay has replaced them */
@@ -254,7 +273,7 @@ final class PoliticalMapCache {
                 + " " + drawables.describeBuiltCounts()
                 + " geometryRebuilt=" + staleHalves.isCellCutStale()
                 + " holdingReused=" + wasHoldingReused
-                + " signalsRaised=" + decider.describeSignalsRaisedSinceTheLastRebuild());
+                + " signalsRaised=" + signalTracker.describeRaisesSinceTheLastReading());
         }
     }
 
@@ -389,9 +408,11 @@ final class PoliticalMapCache {
         var cellCut = staleHalves.cellCut();
 
         // Transition trace: a stale cell or one left behind after an access change can be tied
-        // to the revision step - or the seed inputs or toggle flip - that drove it.
+        // to the revision step - or the seed inputs or toggle flip - that drove it. Described by
+        // the decider, which holds the reading being moved away from, and read before the cut is
+        // recorded below.
         LOG.debug("Political map geometry stale; rebuilding cut " + cellGeometry.revision()
-            + " from " + staleHalves.standingCellCut() + " to " + cellCut);
+            + " " + decider.describeCellCutTransition(staleHalves));
 
         var pass = new MapVisibilityPass(
             sectorIndex,

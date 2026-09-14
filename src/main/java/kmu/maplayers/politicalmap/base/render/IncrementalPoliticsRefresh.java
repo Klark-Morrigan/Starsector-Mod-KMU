@@ -14,7 +14,6 @@ import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.labels.LabelsBuilder;
 import kmu.maplayers.base.labels.anchor.ClusterNameDisturbance;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
-import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterAnchorsBuilder;
 import kmu.maplayers.politicalmap.base.render.labels.anchor.ClusterLabelStylingSnapshot;
@@ -28,7 +27,6 @@ import org.apache.log4j.Logger;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -49,6 +47,11 @@ import java.util.Set;
  * re-shape. What that costs differs between the two paths, and only because a re-fit does: a
  * batch that flipped nothing moved no name, so only the marked systems' bands are re-baked, while
  * a flip re-fits and so owes a band to every cell one of the moved names reaches as well.
+ *
+ * <p>One of these is made per batch and holds what the whole batch works over - the map being
+ * edited and the reading of the sector it is edited against. Every stage below then names only
+ * what varies between stages, which is what the batch found disturbed; threading the map through
+ * each of them instead left every signature restating what none of them chooses.
  */
 final class IncrementalPoliticsRefresh {
     private static final Logger LOG = Global.getLogger(IncrementalPoliticsRefresh.class);
@@ -56,8 +59,25 @@ final class IncrementalPoliticsRefresh {
     private static final ProfileSection APPLY_UPDATES_SECTION =
         ProfileSection.registerSection("politicalMap.applyPoliticsUpdates");
 
-    // Refreshes only; never instantiated.
-    private IncrementalPoliticsRefresh() {
+    // The map this batch edits, and the two halves of it every stage reaches for. Unpacked once
+    // here rather than at each stage, since a stage that unpacked it for itself could be handed a
+    // different standing map than the one the stage before it wrote to.
+    private final StandingPoliticalMap standingMap;
+    private final PoliticalMapTerritories territories;
+    private final CellGeometryCache geometryCache;
+
+    // The batch's one reading of the sector. Every question asked about a marked system - its
+    // holder, the spotlit bloc's presence in it, and the counts its band reports - is answered off
+    // this single walk of it; resolving a holder per system used to open a reading apiece, which
+    // paid a settings read and a colony walk for each of them.
+    private final DominancePass pass;
+
+    private IncrementalPoliticsRefresh(StandingPoliticalMap standingMap, DominancePass pass) {
+
+        this.standingMap = standingMap;
+        this.territories = standingMap.territories();
+        this.geometryCache = standingMap.cellGeometry().cells();
+        this.pass = pass;
     }
 
     // Folds the changes of the systems a colony resize marked stale into the standing territories,
@@ -65,50 +85,42 @@ final class IncrementalPoliticsRefresh {
     // sector, then redraw whatever that disturbed.
     //
     // Both the sector and the marked systems arrive from the caller rather than being resolved
-    // here. These entry points are static and are handed the standing map whole, so this holds no
+    // here. This entry point is static and is handed the standing map whole, so the batch holds no
     // machinery to ask either of - and the caller that assembles that map is exactly the one
     // that does hold it, so what it drains and what it reads the colonies of are one sector's by
     // construction. It is also what answers for the frames with nothing marked, which is nearly all
     // of them: having drained the board itself, it knows there is nothing to fold before it
     // assembles anything for one.
-    //
-    // The batch opens one pass, so every question asked about a marked system - its holder, and
-    // the spotlit bloc's presence in it - is answered off a single walk of it. Resolving a holder
-    // per system used to open a pass apiece, which paid a settings read and a colony walk for each
-    // of them.
     static void applyStalePoliticsUpdates(
             SectorAPI sector,
             StandingPoliticalMap standingMap,
             Set<SystemKey> staleSystemKeys) {
 
         try (var refreshScope = ActiveProfiler.resolveProfiler().open(APPLY_UPDATES_SECTION)) {
-            applyMarkedPoliticsUpdates(sector, standingMap, staleSystemKeys);
+
+            var pass = DominancePass.readFromLunaSettings(
+                sector,
+                standingMap.territories().getBuildInputs().viewGrouping().grouping());
+
+            new IncrementalPoliticsRefresh(standingMap, pass)
+                .applyMarkedPoliticsUpdates(staleSystemKeys);
         }
     }
 
     // The batch itself, inside the measurement the entry point opened.
-    private static void applyMarkedPoliticsUpdates(
-            SectorAPI sector,
-            StandingPoliticalMap standingMap,
-            Set<SystemKey> staleSystemKeys) {
-
-        var pass = DominancePass.readFromLunaSettings(
-            sector,
-            standingMap.territories().getBuildInputs().viewGrouping().grouping());
+    private void applyMarkedPoliticsUpdates(Set<SystemKey> staleSystemKeys) {
 
         // A system with no cell seeds no drawing, so it is left out of the whole batch: a
         // resize changes what is in systems already on the map, never map membership.
-        var markedSystemKeys = selectDrawnSystemKeys(
-            standingMap.cellGeometry().cells(),
-            staleSystemKeys);
+        var markedSystemKeys = selectDrawnSystemKeys(staleSystemKeys);
 
         var disturbance = MarkedSystemRederive.rederiveMarkedSystems(
-            standingMap.territories(),
-            standingMap.cellGeometry().cells(),
+            territories,
+            geometryCache,
             pass,
             markedSystemKeys);
 
-        redrawDisturbedCells(standingMap, pass, markedSystemKeys, disturbance);
+        redrawDisturbedCells(markedSystemKeys, disturbance);
     }
 
     // The marked systems that draw a cell, in the order they were marked.
@@ -119,9 +131,7 @@ final class IncrementalPoliticsRefresh {
     // of a reading of the sector, which is what keeps a system the sector has since dropped in the
     // batch: its cell stands until the next cut, and a mark on it is exactly the change the redraw
     // has to show.
-    private static Set<SystemKey> selectDrawnSystemKeys(
-            CellGeometryCache geometryCache,
-            Set<SystemKey> staleSystemKeys) {
+    private Set<SystemKey> selectDrawnSystemKeys(Set<SystemKey> staleSystemKeys) {
 
         var drawnSystemKeys = new LinkedHashSet<SystemKey>();
         var cellEdgesByCellKey = geometryCache.getCellEdgesByCellKey();
@@ -143,37 +153,26 @@ final class IncrementalPoliticsRefresh {
     // spotlit bloc just settled, draws differently with its holder exactly where it was. What the
     // flips still decide is everything below the cells, all of which is a consequence of holding
     // having moved.
-    //
-    // Takes the batch's pass rather than reaching for the global sector, so every half of one
-    // redraw is answered off the reading the re-derive already worked from - the names off its
-    // sector, and the bands off its walk of each system rather than off a second one opened for a
-    // sector that cannot have moved since.
-    private static void redrawDisturbedCells(
-            StandingPoliticalMap standingMap,
-            DominancePass pass,
+    private void redrawDisturbedCells(
             Set<SystemKey> markedSystemKeys,
             StalePoliticsDisturbance disturbance) {
 
-        var territories = standingMap.territories();
-        var geometryCache = standingMap.cellGeometry().cells();
-
         for (var cellKey : disturbance.getCellKeysToRedraw()) {
-            reshapeCellInPlace(territories, geometryCache, cellKey);
+            reshapeCellInPlace(cellKey);
         }
         var nameDisturbance = disturbance.hasFlips()
-            ? rebuildFlippedHolding(standingMap, pass.sector(), disturbance)
+            ? rebuildFlippedHolding(disturbance)
             : ClusterNameDisturbance.NONE;
 
         // A marked system's band counts what is in it, and the events that mark a system are
         // exactly the ones that add or remove a colony - so its band is re-baked whether or not
         // anything about its cell moved.
         var cellKeysToBake = collectCellKeysToBake(
-            territories.getFillPolygonByCellKey(),
             markedSystemKeys,
             disturbance,
             nameDisturbance);
 
-        bakeBandsOf(standingMap, pass.holding(), cellKeysToBake);
+        bakeBandsOf(cellKeysToBake);
 
         LOG.debug("Political map politics updated incrementally; marked="
             + markedSystemKeys.size()
@@ -185,13 +184,7 @@ final class IncrementalPoliticsRefresh {
     // What a flip owes beyond the cells themselves: the cluster index and the two sides'
     // territories rebuilt off the updated holders, and the names re-fitted over them. Reports what
     // that re-fit moved, since the bands below have to be re-laid wherever a name did.
-    private static ClusterNameDisturbance rebuildFlippedHolding(
-            StandingPoliticalMap standingMap,
-            SectorAPI sector,
-            StalePoliticsDisturbance disturbance) {
-
-        var territories = standingMap.territories();
-        var geometryCache = standingMap.cellGeometry().cells();
+    private ClusterNameDisturbance rebuildFlippedHolding(StalePoliticsDisturbance disturbance) {
 
         // A flip changes which systems are contiguous - it can sever one territory in two or
         // bridge two into one - so the cursor read's cluster index is re-derived off the
@@ -200,7 +193,7 @@ final class IncrementalPoliticsRefresh {
             geometryCache.getCellEdgesByCellKey(),
             geometryCache.getSystemKeyByCellKey());
 
-        rebuildAffectedFactionTerritories(territories, geometryCache, disturbance);
+        rebuildAffectedFactionTerritories(disturbance);
 
         // A flip can split or merge clusters (a lost system severs one, a gained
         // one bridges two), so the whole placement list is re-derived off the updated
@@ -211,10 +204,13 @@ final class IncrementalPoliticsRefresh {
         // affected factions would buy nothing this does not already get. A no-op while both
         // consumers are off. The name labels then rebuild from the placements so a renamed or
         // relocated cluster's name follows.
+        //
+        // Fitted over the batch's own sector rather than the running game's, so every half of one
+        // redraw is answered off the reading the re-derive already worked from.
         var nameDisturbance = ClusterAnchorsBuilder.rebuildClusterAnchors(
             standingMap.standingAnchors(),
             standingMap.cellGeometry(),
-            sector,
+            pass.sector(),
             ClusterLabelStylingSnapshot.resolveFrom(territories));
 
         // The name choice off the standing map rather than off the preference: this fold edits the
@@ -233,10 +229,7 @@ final class IncrementalPoliticsRefresh {
     // holders' territories can have changed shape; every other faction's rings trace unchanged
     // cells, so they are left as-is. A faction's members are the cells it draws, so they are
     // grouped from the cells here to match what buildFactionTerritory traces.
-    private static void rebuildAffectedFactionTerritories(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
-            StalePoliticsDisturbance disturbance) {
+    private void rebuildAffectedFactionTerritories(StalePoliticsDisturbance disturbance) {
 
         var cellGrouping = territories.resolveCellGroupingOver(
             geometryCache.getSystemKeyByCellKey());
@@ -245,8 +238,6 @@ final class IncrementalPoliticsRefresh {
 
         for (var factionId : disturbance.getAffectedFactionIds()) {
             rebuildFactionTerritoryInPlace(
-                territories,
-                geometryCache,
                 cellGrouping,
                 factionId,
                 cellsByFaction.get(factionId));
@@ -261,16 +252,13 @@ final class IncrementalPoliticsRefresh {
     // already holds, at the cost of walking every system a second time. Its grouping is the
     // territories' - the batch opened it from exactly that - which is the condition a shared
     // reading has to meet before bands are planned through it.
-    private static void bakeBandsOf(
-            StandingPoliticalMap standingMap,
-            HolderPass pass,
-            Collection<SystemKey> cellKeys) {
+    private void bakeBandsOf(Collection<SystemKey> cellKeys) {
 
         CellRibbonsBaker
             .createForPass(
-                standingMap.territories(),
-                standingMap.cellGeometry().cells(),
-                pass,
+                territories,
+                geometryCache,
+                pass.holding(),
                 standingMap.standingAnchors().getAnchors())
             .bakeCellRibbonsOf(cellKeys);
     }
@@ -288,8 +276,7 @@ final class IncrementalPoliticsRefresh {
     // wherever its new cluster is roomiest, which can be a cell this batch never went near - so
     // the alternative to naming those cells is re-baking the whole sector, which is what this did
     // before the fit reported what it moved.
-    private static Set<SystemKey> collectCellKeysToBake(
-            Map<SystemKey, List<double[]>> fillPolygonByCellKey,
+    private Set<SystemKey> collectCellKeysToBake(
             Set<SystemKey> markedSystemKeys,
             StalePoliticsDisturbance disturbance,
             ClusterNameDisturbance nameDisturbance) {
@@ -297,7 +284,8 @@ final class IncrementalPoliticsRefresh {
         var cellKeysToBake = new LinkedHashSet<>(markedSystemKeys);
 
         cellKeysToBake.addAll(disturbance.getCellKeysToRedraw());
-        cellKeysToBake.addAll(nameDisturbance.selectDisturbedCellKeys(fillPolygonByCellKey));
+        cellKeysToBake.addAll(
+            nameDisturbance.selectDisturbedCellKeys(territories.getFillPolygonByCellKey()));
 
         return cellKeysToBake;
     }
@@ -312,10 +300,7 @@ final class IncrementalPoliticsRefresh {
     // The cell's band is not laid here: replacing the shape drops it, and the band pass at the end
     // of the batch lays a fresh one inside the new shape, once the names it has to keep clear of
     // have been re-fitted.
-    private static void reshapeCellInPlace(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
-            SystemKey cellKey) {
+    private void reshapeCellInPlace(SystemKey cellKey) {
 
         var edges = geometryCache.getCellEdgesByCellKey().get(cellKey);
         if (edges == null) {
@@ -339,7 +324,11 @@ final class IncrementalPoliticsRefresh {
             EdgeInsetRule.AT_EVERY_BORDER,
             CellShaper.BORDER_INSET_DISTANCE);
 
-        var painted = PaintedCellBuilder.buildPaintedCellForSystem(territories, drawnSystemKey, shaped);
+        var painted = PaintedCellBuilder.buildPaintedCellForSystem(
+            territories,
+            drawnSystemKey,
+            shaped);
+
         if (painted == null) {
             territories.getPaintedCells().removePaintedCell(cellKey);
         } else {
@@ -350,9 +339,7 @@ final class IncrementalPoliticsRefresh {
     // Rebuilds (or drops) one faction's territory entry from its current members. A
     // faction that lost its last member, or whose cluster no longer yields drawable
     // geometry, is removed so its fill and border stop drawing.
-    private static void rebuildFactionTerritoryInPlace(
-            PoliticalMapTerritories territories,
-            CellGeometryCache geometryCache,
+    private void rebuildFactionTerritoryInPlace(
             CellGrouping cellGrouping,
             String factionId,
             List<SystemKey> memberCellKeys) {

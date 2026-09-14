@@ -27,8 +27,8 @@ import static org.mockito.Mockito.mock;
  * advance on: a first frame owes everything; a frame after a recorded rebuild with nothing moved
  * owes nothing; the geometry signal owes a recut; a moved pick owes a rebuild but no recut; and
  * the baselines stand still until a stage is reported complete, so a rebuild that threw is asked
- * for again. Beside those, when the standing holding may be painted over rather than read, and
- * which traced signals a rebuild names as raised since the one before.
+ * for again. Beside those, when the standing holding may be painted over rather than read, and how
+ * the recut a caller is about to take names the reading it moves away from.
  *
  * <p>Nothing here opens a reading of the sector: the decision is answerable from the board and
  * the settings alone, which is the property the class exists to keep, so the sector the machinery
@@ -38,9 +38,6 @@ import static org.mockito.Mockito.mock;
 final class PoliticalMapRebuildDeciderTest {
 
     private static final String HEGEMONY_ID = "hegemony";
-
-    // What a description names when no traced signal moved, as the reading reports it.
-    private static final String NO_SIGNALS_RAISED = "none";
 
     // The screen each decision is taken for. A stand-in rather than one of the two live screens:
     // nothing here turns on which panel the frame was prepared for.
@@ -76,15 +73,13 @@ final class PoliticalMapRebuildDeciderTest {
                 .isTrue();
             assertThat(staleHalves.isCellCutStale())
                 .isTrue();
-            assertThat(staleHalves.standingCellCut())
-                .isNull();
         }
 
         @Test
         void decideWhatIsStaleOwesNothingOnceTheRebuildIsRecordedAndNothingMoved() {
             // The frame the map spends nearly all of its life on: a rebuild has been recorded and
             // no input moved since, so the decision stops here and opens no reading.
-            var rebuilt = decideAndRecordARebuild();
+            decideAndRecordARebuild();
 
             var staleHalves = decideAfterABuild();
 
@@ -92,8 +87,6 @@ final class PoliticalMapRebuildDeciderTest {
                 .isFalse();
             assertThat(staleHalves.isCellCutStale())
                 .isFalse();
-            assertThat(staleHalves.standingCellCut())
-                .isEqualTo(rebuilt.cellCut());
         }
 
         @Test
@@ -200,36 +193,24 @@ final class PoliticalMapRebuildDeciderTest {
     }
 
     @Nested
-    class DescribeSignalsRaisedSinceTheLastRebuild {
+    class DescribeCellCutTransition {
 
         @Test
-        void describeSignalsRaisedSinceTheLastRebuildNamesATracedSignalRaisedSinceConstruction() {
-
-            machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-
-            assertThat(decider.describeSignalsRaisedSinceTheLastRebuild())
-                .isEqualTo(MapLayerCommonRefreshSignal.FILTER.getId());
+        void describeCellCutTransitionNamesTheNeverCutStateBeforeAnythingIsCut() {
+            // The never-cut state is a reading of its own rather than a zero one, so the first
+            // recut says so instead of naming a set of inputs no player was ever under.
+            assertThat(decider.describeCellCutTransition(decideWithNothingBuilt()))
+                .startsWith("from null to ");
         }
 
         @Test
-        void describeSignalsRaisedSinceTheLastRebuildAdvancesSoTheNextReadingStartsAfresh() {
-            // Each description is against the rebuild before it, so a raise is named once.
-            machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-            decider.describeSignalsRaisedSinceTheLastRebuild();
+        void describeCellCutTransitionNamesTheStandingReadingOnceACutIsRecorded() {
+            // The other half of recording a cut: the reading a later recut moves away from is the
+            // one that was actually cut, so a transition described after it names no absence.
+            decideAndRecordARebuild();
 
-            assertThat(decider.describeSignalsRaisedSinceTheLastRebuild())
-                .isEqualTo(NO_SIGNALS_RAISED);
-        }
-
-        @Test
-        void describeSignalsRaisedSinceTheLastRebuildIgnoresRaisesMadeBeforeItWasBuilt() {
-            // The board may already carry raises from a load, and reporting those against the
-            // first rebuild would name flips that happened before the cache existed.
-            machinery.resolveRefreshBoard().requestRefresh(MapLayerCommonRefreshSignal.FILTER);
-
-            assertThat(new PoliticalMapRebuildDecider(machinery)
-                    .describeSignalsRaisedSinceTheLastRebuild())
-                .isEqualTo(NO_SIGNALS_RAISED);
+            assertThat(decider.describeCellCutTransition(decideAfterABuild()))
+                .doesNotContain("null");
         }
     }
 

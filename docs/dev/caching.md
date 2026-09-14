@@ -285,10 +285,15 @@ a screen switch changes every one of them while every counter stands still,
 which a counter-driven test reads as no change at all.
 
 That leaves `FILTER`,
-`RECEDE_STYLE` and `MAP_STYLE` **raised and unread** -
-the four setters bump them and nothing folds them anywhere.
+`RECEDE_STYLE` and `MAP_STYLE` **raised and traced rather than read** -
+the four setters bump them,
+nothing folds them into any staleness,
+and the only reader is `RefreshSignalTracker`,
+which the overlay cache holds to name on each rebuild's line whichever of them a player has touched since the last one.
+So they are the record of what was clicked,
+read beside a rebuild rather than causing one.
 Whether they and their raises go,
-or something starts reading them again,
+or something starts folding them again,
 is an open decision;
 the setters' `board` argument is what carries the "raise on the sector you were handed" rule,
 so removing the three is a change to four holders' signatures

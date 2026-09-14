@@ -5,9 +5,11 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.ViewGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
+import kmu.maplayers.politicalmap.base.politics.DominantHolder;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyleResolver;
 import kmu.maplayers.politicalmap.base.render.style.BlocStyling;
+import kmu.maplayers.politicalmap.base.render.style.ResolvedBlocPaint;
 
 import java.util.Set;
 
@@ -67,17 +69,29 @@ public record TerritoryBuildInputs(
     }
 
     /**
-     * The concrete style and adjustment one bloc draws under this build, cascading the retained
-     * view, grouping, filter state, and theme in one step.
+     * Everything one bloc's elements paint from under this build, cascading the retained view,
+     * grouping, filter state and theme in one step and carrying the result down to the shades.
      *
      * <p>Asked of the inputs rather than assembled by each builder from the three snapshots: every
      * input is this build's own retained reading, so a bloc's fill, its national border, and its
      * cells' interior seams all resolve from the same read and cannot diverge.
      *
      * @param blocId the bloc to style - a faction ID, or one of the filter's synthetic keys
-     * @return the category bundle and the adjustment applied over it
+     * @param holder whose shades it paints in where nothing desaturates it
+     * @return the bundle, the adjustment over it, and the shades its elements pick from
      */
-    public BlocStyling resolveBlocStyling(String blocId) {
+    public ResolvedBlocPaint resolveBlocPaintOf(String blocId, DominantHolder holder) {
+        return ResolvedBlocPaint.resolveFrom(
+            resolveBlocStyling(blocId),
+            holder,
+            styling.desaturationPalette());
+    }
+
+    // The bundle and adjustment behind that paint: the view's own per-bloc decision mapped onto
+    // this build's theme. Private because a caller wanting one is a caller about to paint an
+    // element with it, and resolving the shades separately is how a fill comes to be muted while
+    // the border beside it is not.
+    private BlocStyling resolveBlocStyling(String blocId) {
         return BlocStyling.resolveFrom(
             styling.renderStyle(),
             BlocStyleResolver.resolveBlocStyleDecision(

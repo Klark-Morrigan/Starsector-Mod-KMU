@@ -5,7 +5,6 @@ import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.systems.SystemKey;
-import kmlib.starsector.ui.render.gl.UiElementPaint;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
@@ -18,7 +17,6 @@ import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.render.clusters.TracedFill;
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
-import kmu.maplayers.politicalmap.base.render.style.MapPalettes;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -80,30 +78,21 @@ public final class FactionTerritoryBuilder {
         var buildInputs = territories.getBuildInputs();
         var globalStyle = buildInputs.styling().renderStyle().global();
 
-        // A desaturated bloc's fill and border swap to the pass's shared desaturation palette
-        // instead of its own two shades, exactly as its cells' seams do - both read this one call.
-        var styling = buildInputs.resolveBlocStyling(blocId);
-        var style = styling.style();
-        var adjustment = styling.adjustment();
-
+        // What this bloc's elements paint from, in one read: the bundle, the recede over it, and
+        // the shades those resolve against - a desaturated bloc swapping to the pass's shared
+        // desaturation palette, exactly as its cells' seams do off this same call.
+        //
         // Every system of a bloc shares its palette, so any member resolves the same colours.
-        var holder = territories
-            .getOccupancy()
-            .getHolderBySystemKey()
-            .get(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0)));
+        var blocPaint = buildInputs.resolveBlocPaintOf(
+            blocId,
+            territories
+                .getOccupancy()
+                .getHolderBySystemKey()
+                .get(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));
 
-        var palette = MapPalettes.resolveEffectivePalette(
-            adjustment,
-            holder,
-            buildInputs.styling().desaturationPalette());
-
-        var fillColour = MapPalettes.pickPaletteColour(
-            style.fill().colour(),
-            palette);
-
-        var borderColour = MapPalettes.pickPaletteColour(
-            style.outer().colour(),
-            palette);
+        var style = blocPaint.style();
+        var fillColour = blocPaint.pickColourOf(style.fill());
+        var borderColour = blocPaint.pickColourOf(style.outer());
 
         if (fillColour == null && borderColour == null) {
             return null;
@@ -153,12 +142,8 @@ public final class FactionTerritoryBuilder {
 
         return new StyledClusterGroup(
             buildClusters(clusterRegions, tracedFill, borderColour),
-            new UiElementPaint(
-                fillColour,
-                adjustment.muteOpacity(style.fill().opacity())),
-            new UiElementPaint(
-                borderColour,
-                adjustment.muteOpacity(style.outer().opacity())),
+            blocPaint.pickPaintOf(style.fill()),
+            blocPaint.pickPaintOf(style.outer()),
             (float) style.outerWidth());
     }
 

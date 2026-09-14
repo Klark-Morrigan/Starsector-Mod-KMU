@@ -83,12 +83,12 @@ and `StyledCell`,
 Element colours,
 opacities,
 and widths come from cascading the `base.theme` records with each bloc's recede adjustment,
-asked for through `TerritoryBuildInputs.resolveBlocStyling` so every part of a bloc resolves from one read.
+asked for through `TerritoryBuildInputs.resolveBlocPaintOf` so every part of a bloc resolves from one read.
 
 ## What recedes
 
 The Mute and Desaturate toggles sink the background behind a spotlighted bloc.
-Every non-spotlit **bloc** recedes through `resolveBlocStyling`,
+Every non-spotlit **bloc** recedes through `resolveBlocPaintOf`,
 and so does a **settled** factionless cell:
 it carries a fill of its own,
 so leaving it at full strength lets it out-read the bloc the spotlight is meant to isolate.
@@ -333,9 +333,13 @@ A reader takes the record and names which snapshot it reads -
 `contentInputs()` -
 rather than reaching one field of it through a flat getter on the built map,
 which is what let a pass compose a cell out of one snapshot's theme and another's grouping without the type saying so.
-`resolveBlocStyling` sits on the record for the same reason:
-it cascades all three,
-so it belongs to the type that holds all three.
+`resolveBlocPaintOf` sits on the record for the same reason:
+it cascades the view, the grouping, the picks and the theme's shades into the one thing an element is painted from
+(`ResolvedBlocPaint`, in [`render.style`](../style/README.md)),
+so it belongs to the type that holds all four.
+The bundle-and-adjustment step behind it stays private:
+a caller wanting one is a caller about to paint an element with it,
+and resolving the shades separately is how a fill comes to be muted while the border beside it is not.
 
 ## The split fill: solid, hatched, unfilled
 
