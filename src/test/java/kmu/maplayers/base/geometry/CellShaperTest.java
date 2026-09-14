@@ -11,6 +11,8 @@ import java.util.Map;
 import static kmu.maplayers.base.geometry.CellEdgeFixture.buildEdgeFacing;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildIdentityGrouping;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.base.geometry.RingExtentFixture.readMaxXOf;
+import static kmu.maplayers.base.geometry.RingExtentFixture.readMinXOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -304,24 +306,17 @@ final class CellShaperTest {
             buildEdgeFacing(10, 10, 10, 0, leftNeighbour));
     }
 
+    // How far a shaped cell's fill reaches, which is how a case here tells an inset edge from a
+    // raw one. Read through the ring fixture, so a cell's extent and a traced ring's are the one
+    // measurement rather than two that could come to disagree.
     private static double computeMaxXOf(ShapedCell shaped) {
 
-        return shaped
-            .fillPolygon()
-            .stream()
-            .mapToDouble(vertex -> vertex[0])
-            .max()
-            .orElseThrow();
+        return readMaxXOf(shaped.fillPolygon());
     }
 
     private static double computeMinXOf(ShapedCell shaped) {
 
-        return shaped
-            .fillPolygon()
-            .stream()
-            .mapToDouble(vertex -> vertex[0])
-            .min()
-            .orElseThrow();
+        return readMinXOf(shaped.fillPolygon());
     }
 
     private static long countSeamEdges(ShapedCell shaped) {
