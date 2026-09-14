@@ -53,4 +53,35 @@ final class EdgeInsetRuleTest {
                 .isCloseTo(37.0, within(1e-9));
         }
     }
+
+    @Nested
+    class IsFusingSharedEdges {
+
+        @Test
+        void isFusingSharedEdgesHoldsWhereASharedEdgeKeepsItsLine() {
+
+            assertThat(EdgeInsetRule.AT_EVERY_BORDER.isFusingSharedEdges())
+                .isTrue();
+            assertThat(EdgeInsetRule.NOWHERE.isFusingSharedEdges())
+                .isTrue();
+        }
+
+        @Test
+        void isFusingSharedEdgesFailsWhereEvenASharedEdgePullsIn() {
+
+            assertThat(EdgeInsetRule.EVERYWHERE.isFusingSharedEdges())
+                .isFalse();
+        }
+
+        @Test
+        void isFusingSharedEdgesAgreesWithWhatTheRuleGivesASharedEdge() {
+            // The two are one statement: a shared edge left at zero is a shared edge the two
+            // bodies meet along, and one pulled back by anything is a channel between them.
+            for (var rule : EdgeInsetRule.values()) {
+
+                assertThat(rule.isFusingSharedEdges())
+                    .isEqualTo(rule.resolveInsetOf(false, DEPTH) == 0.0);
+            }
+        }
+    }
 }

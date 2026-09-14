@@ -73,6 +73,12 @@ public final class SystemClusterBorders {
      *                                      two clusters traced against each other meet exactly;
      *                                      empty for a trace that gives every boundary edge the
      *                                      uniform channel
+     * @param insetRule                     which of those edges the channel is actually cut
+     *                                      into; the same rule the cell shaping is given, so a
+     *                                      cluster's outline and its cells' fills stop in one
+     *                                      place rather than two. A rule that insets even a
+     *                                      shared edge fuses nothing, so no seam is dropped
+     *                                      and a group of one cell traces that cell's own ring
      * @param tolerances                    the three distances the trace is tuned by
      * @return one inset (un-rounded) ring per cluster and per enclave, in world
      *         coordinates; empty when the group holds no borderable geometry
@@ -82,6 +88,7 @@ public final class SystemClusterBorders {
             Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
             Set<SystemKey> coincidentNeighbourSystemKeys,
+            EdgeInsetRule insetRule,
             BorderTraceTolerances tolerances) {
 
         var boundary = collectBoundarySegments(
@@ -89,6 +96,7 @@ public final class SystemClusterBorders {
             edgesByCellKey,
             grouping,
             coincidentNeighbourSystemKeys,
+            insetRule,
             tolerances.borderInset());
 
         var rings = new ArrayList<List<double[]>>();
@@ -118,17 +126,23 @@ public final class SystemClusterBorders {
     // each paired with the distance its ring edge later insets by. Same-owner
     // seams are dropped, so the surviving segments trace only the cluster's outer
     // boundary and its enclaves.
+    //
+    // A seam is only a seam while the rule leaves it on its line. Under one that insets every
+    // edge there is a channel along each of them, so nothing fuses and no edge is dropped -
+    // a group handed in as one cell then closes into that cell's own ring.
     private static BoundarySegments collectBoundarySegments(
             Collection<SystemKey> groupCellKeys,
             Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
             Set<SystemKey> coincidentNeighbourSystemKeys,
+            EdgeInsetRule insetRule,
             double borderInset) {
 
         var segments = new ArrayList<Segment>();
         var distances = new ArrayList<Double>();
 
         for (var cellKey : groupCellKeys) {
+
             var edges = edgesByCellKey.get(cellKey);
             if (edges == null) {
                 continue;
@@ -141,23 +155,29 @@ public final class SystemClusterBorders {
                     cellOwner,
                     grouping.ownerBySystemKey());
 
-                if (!edgeClass.isBoundary()) {
+                if (!edgeClass.isBoundary() && insetRule.isFusingSharedEdges()) {
                     continue;
                 }
 
                 segments.add(new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()));
-                distances.add(computeEdgeInset(edge, coincidentNeighbourSystemKeys, borderInset));
+                distances.add(computeEdgeInset(
+                    edge,
+                    coincidentNeighbourSystemKeys,
+                    insetRule,
+                    borderInset));
             }
         }
         return new BoundarySegments(segments, toDoubleArray(distances));
     }
 
-    // The inward miter inset one boundary segment receives: nothing (zero) across a
-    // coincident neighbour, the border channel for every other boundary edge - an organised
-    // boundary, unowned space, or the map bound alike.
+    // What one boundary segment faces, handed to the rule that decides what that earns it. A
+    // coincident neighbour is one the cluster abuts rather than stands off from, so it counts
+    // as no border of it; every other boundary edge - a different owner, unowned space, or the
+    // map bound alike - is one, and takes the channel the rule gives a border.
     private static double computeEdgeInset(
             CellEdge edge,
             Set<SystemKey> coincidentNeighbourSystemKeys,
+            EdgeInsetRule insetRule,
             double borderInset) {
 
         // A coincident neighbour's edge stays on the raw cell border, so the cluster traced
@@ -165,18 +185,19 @@ public final class SystemClusterBorders {
         // between them. Only an edge naming a system can be coincident: a reach bound has
         // no neighbour to be carved away from, and a same-cell cut is no boundary at
         // all.
-        if (edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
-                && coincidentNeighbourSystemKeys.contains(acrossSystem.systemKey())) {
-            return 0;
-        }
-        return borderInset;
+        var isAbutted = edge.target() instanceof EdgeTarget.AcrossSystem acrossSystem
+            && coincidentNeighbourSystemKeys.contains(acrossSystem.systemKey());
+
+        return insetRule.resolveInsetOf(!isAbutted, borderInset);
     }
 
     // Copies a distance list into a primitive array, so the per-edge distances hand to the
     // chainer and miter inset as a plain double[] parallel to the segments.
     private static double[] toDoubleArray(List<Double> values) {
+
         var array = new double[values.size()];
         for (var i = 0; i < array.length; i++) {
+
             array[i] = values.get(i);
         }
         return array;
@@ -199,8 +220,10 @@ public final class SystemClusterBorders {
         }
         var rawArea = PolygonRegions.computeSignedArea(rawRing);
         var insetArea = PolygonRegions.computeSignedArea(insetRing);
+
         if (Math.abs(insetArea) < MIN_RING_SIGNED_AREA
                 || Math.signum(rawArea) != Math.signum(insetArea)) {
+
             return true;
         }
         return rawArea > 0 && insetArea > rawArea;

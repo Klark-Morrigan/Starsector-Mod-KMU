@@ -56,11 +56,31 @@ final class SystemClusterBordersTest {
             Set<SystemKey> coincidentNeighbourSystemKeys,
             BorderTraceTolerances tolerances) {
 
+        return traceBorderRingsUnder(
+            groupCellIds,
+            edges,
+            grouping,
+            coincidentNeighbourSystemKeys,
+            EdgeInsetRule.AT_EVERY_BORDER,
+            tolerances);
+    }
+
+    // The same, under a stated inset rule, for the cases about where the ring lands rather than
+    // about which edges bound it.
+    private static List<List<double[]>> traceBorderRingsUnder(
+            List<String> groupCellIds,
+            Map<String, List<CellEdge>> edges,
+            CellGrouping grouping,
+            Set<SystemKey> coincidentNeighbourSystemKeys,
+            EdgeInsetRule insetRule,
+            BorderTraceTolerances tolerances) {
+
         return SystemClusterBorders.traceBorderRings(
             buildCellKeys(groupCellIds.toArray(String[]::new)),
             buildKeyedValues(edges),
             grouping,
             coincidentNeighbourSystemKeys,
+            insetRule,
             tolerances);
     }
 
@@ -124,6 +144,34 @@ final class SystemClusterBordersTest {
                     TOLERANCES);
 
             assertThat(rings).hasSize(1);
+        }
+
+        @Test
+        void traceBorderRingsLandsTheRingOnTheRawOutlineUnderNowhere() {
+            // The same lone F cell as the frontier case, traced with nothing inset: the ring
+            // sits on the raw square (0..10) rather than pulled back to the 2..8 channel band.
+            // The cluster's outline and its cells' fills are cut by one rule, so a cell drawn
+            // on its true border is outlined on its true border.
+            var edges = Map.of(
+                    "A", List.of(
+                            buildEdgeFacing(0, 0, 10, 0, null), buildEdgeFacing(10, 0, 10, 10, "B"),
+                            buildEdgeFacing(10, 10, 0, 10, null), buildEdgeFacing(0, 10, 0, 0, null)));
+            var owners = Map.of("A", "F");
+
+            var rings = traceBorderRingsUnder(
+                    List.of("A"),
+                    edges,
+                    buildIdentityGroupingByName(edges.keySet(), owners),
+                    NO_COINCIDENT_NEIGHBOURS,
+                    EdgeInsetRule.NOWHERE,
+                    TOLERANCES);
+
+            assertThat(rings)
+                .hasSize(1);
+            assertThat(readMinXOf(rings.get(0)))
+                .isCloseTo(0.0, within(1e-6));
+            assertThat(readMaxXOf(rings.get(0)))
+                .isCloseTo(10.0, within(1e-6));
         }
 
         @Test

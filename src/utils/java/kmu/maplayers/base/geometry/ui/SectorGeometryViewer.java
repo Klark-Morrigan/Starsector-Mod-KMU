@@ -804,6 +804,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // it - an enclave - instead of painting over it solid. Filling each ring on its own
         // paints an enclave as another island of the owner's colour, which is the opposite of
         // what it means.
+        //
+        // Whatever the inset rule is. A rule under which nothing fuses gives an owner one ring
+        // per cell rather than one per cluster, which is a count this reads no differently - an
+        // owner already arrives here as several rings whenever its cells sit apart.
         private void paintOwnerClusters(Graphics2D g2) {
 
             for (var entry : smoothedRingsByOwner.entrySet()) {

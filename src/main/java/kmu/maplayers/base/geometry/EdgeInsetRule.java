@@ -40,4 +40,25 @@ public enum EdgeInsetRule {
             case EVERYWHERE -> borderInset;
         };
     }
+
+    /**
+     * Whether two bodies sharing an edge still meet along it, and so fuse into one shape.
+     *
+     * <p>A consequence of the rule rather than a second setting: an edge pulled back off its
+     * line leaves a channel, and two shapes with a channel between them are two shapes. So a
+     * rule that insets even a shared edge has no fused bodies to speak of - there are no
+     * clusters, only cells - and anything that draws a cluster outline has nothing to draw.
+     *
+     * <p>Asked here rather than worked out per drawing, so nothing has to enumerate the rules a
+     * second time to find out; an exhaustive fold, so a rule added later cannot quietly inherit
+     * an answer.
+     *
+     * @return true where a shared edge is left on its line
+     */
+    public boolean isFusingSharedEdges() {
+        return switch (this) {
+            case AT_EVERY_BORDER, NOWHERE -> true;
+            case EVERYWHERE -> false;
+        };
+    }
 }

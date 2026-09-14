@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.BorderTraceTolerances;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
 
 import org.junit.jupiter.api.Nested;
@@ -98,6 +99,7 @@ class ClusterBorderTraceIntegrationTest {
                 EDGES,
                 GROUPING,
                 Set.of(),
+                EdgeInsetRule.AT_EVERY_BORDER,
                 new BorderTraceTolerances(
                     CellShaper.BORDER_INSET_DISTANCE,
                     WELD_TOLERANCE,

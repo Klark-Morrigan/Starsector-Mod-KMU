@@ -6,6 +6,7 @@ import kmu.maplayers.base.geometry.BorderTraceTolerances;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
+import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SystemClusterBorders;
 import kmu.settings.KmuMapLabelSettings;
 
@@ -63,6 +64,7 @@ public record ClusterBorderTrace(
             edgesByCellKey,
             grouping,
             coincidentNeighbourSystemKeys,
+            EdgeInsetRule.AT_EVERY_BORDER,
             new BorderTraceTolerances(
                 CellShaper.BORDER_INSET_DISTANCE,
                 weldTolerance,

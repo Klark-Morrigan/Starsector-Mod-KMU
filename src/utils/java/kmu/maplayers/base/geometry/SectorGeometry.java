@@ -88,20 +88,57 @@ public record SectorGeometry(
 
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 
+        var tolerances = new BorderTraceTolerances(
+            parameters.borderInset(),
+            parameters.weldTolerance(),
+            parameters.miterSpikeLimit());
+
         for (var group : groupCellKeysByOwner(owners).entrySet()) {
             rings.put(
                 group.getKey(),
-                SystemClusterBorders.traceBorderRings(
-                    group.getValue(),
-                    cellEdges,
-                    grouping,
-                    Set.of(),
-                    new BorderTraceTolerances(
-                        parameters.borderInset(),
-                        parameters.weldTolerance(),
-                        parameters.miterSpikeLimit())));
+                traceOwnerRings(group.getValue(), cellEdges, grouping, insetRule, tolerances));
         }
         return new SectorGeometry(cellEdges, owners, shaped, rings);
+    }
+
+    // One owner's rings.
+    //
+    // Its cells fuse into clusters along the edges the rule leaves on their line, so the whole
+    // set is traced at once and the shared edges fall away. Under a rule that insets every edge
+    // there is a channel along each of them and nothing fuses - so each cell is traced as the
+    // single-cell cluster it now is, and comes back as a ring of its own that everything
+    // downstream, the smoothing included, treats like any other.
+    private static List<List<double[]>> traceOwnerRings(
+            List<SystemKey> memberCellKeys,
+            Map<SystemKey, List<CellEdge>> cellEdges,
+            CellGrouping grouping,
+            EdgeInsetRule insetRule,
+            BorderTraceTolerances tolerances) {
+
+        if (insetRule.isFusingSharedEdges()) {
+
+            return SystemClusterBorders.traceBorderRings(
+                memberCellKeys,
+                cellEdges,
+                grouping,
+                Set.of(),
+                insetRule,
+                tolerances);
+        }
+
+        var rings = new ArrayList<List<double[]>>();
+
+        for (var cellKey : memberCellKeys) {
+
+            rings.addAll(SystemClusterBorders.traceBorderRings(
+                List.of(cellKey),
+                cellEdges,
+                grouping,
+                Set.of(),
+                insetRule,
+                tolerances));
+        }
+        return rings;
     }
 
     /**
