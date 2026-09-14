@@ -69,6 +69,8 @@ See [more on map layers](src/main/java/kmu/maplayers/README.md).
   (e.g. all colonies in a system are **decivilised**).
 - *Any given system can be painted by only a single faction*,
   so each system draws a **presence ribbon** hugging its border that represents each populated colony with the color of the faction holding them.
+  Ribbons are shortened to represent **solidified control** when only a single faction or alliance is present is a system,
+  while that presence is in no violation of **unconditional claims**.
 - **Expandable system tooltips**
   provide detailed information on how each market affects the balance of power.
   Tooltips list **Neutral** (unowned) markets,
