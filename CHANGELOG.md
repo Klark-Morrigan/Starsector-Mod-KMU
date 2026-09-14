@@ -5,12 +5,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Index
 
-- [Unreleased](#unreleased)
-- [0.1.0](#010---unreleased)
+- [0.1.0](#010---2026-09-14)
 
-## [Unreleased]
-
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-09-14
 
 First tagged release, so there is no prior version to diff against.
 
