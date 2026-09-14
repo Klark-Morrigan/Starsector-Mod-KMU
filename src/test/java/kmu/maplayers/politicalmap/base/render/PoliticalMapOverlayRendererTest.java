@@ -14,6 +14,7 @@ import kmu.maplayers.base.theme.GlobalStyle;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapHoverGates;
 import kmu.maplayers.politicalmap.base.render.hover.PoliticalMapPreviewHighlightRenderer;
 import kmu.maplayers.politicalmap.base.render.ribbon.CellPresenceRibbonRenderer;
+import kmu.maplayers.politicalmap.base.render.territories.PaintedCellStore;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.settings.KmuPoliticalMapDiagnosticsSettings;
 import kmu.settings.KmuPoliticalMapDrawOrderSettings;
@@ -693,9 +694,16 @@ final class PoliticalMapOverlayRendererTest {
     private static PoliticalMapCache buildCacheMock() {
 
         var territoriesMock = mock(PoliticalMapTerritories.class);
+        var paintedCellsMock = mock(PaintedCellStore.class);
 
         when(territoriesMock.getStyledCellByCellKey())
             .thenReturn(Map.of());
+
+        // The store itself is stated, since a mock answers null for it and the two reads below are
+        // taken off whatever it hands back - the chained stubbing they were written as resolved
+        // that null before Mockito ever saw the call.
+        when(territoriesMock.getPaintedCells())
+            .thenReturn(paintedCellsMock);
 
         // Stated rather than left to the default a mock would answer with, since the upper band is
         // asserted to have reached the band pass at all - and a stub that resolves by accident is
@@ -703,9 +711,9 @@ final class PoliticalMapOverlayRendererTest {
         // them are stated for the same reason: the overlay is gated by its own emptiness rather
         // than by a settings read, so this read is the only thing standing between an off toggle
         // and a pass over the map.
-        when(territoriesMock.getPaintedCells().getRibbonByCellKey())
+        when(paintedCellsMock.getRibbonByCellKey())
             .thenReturn(Map.of());
-        when(territoriesMock.getPaintedCells().getRibbonPathByCellKey())
+        when(paintedCellsMock.getRibbonPathByCellKey())
             .thenReturn(Map.of());
 
         // Read while assembling the hover highlight's arguments, so it has to resolve even though

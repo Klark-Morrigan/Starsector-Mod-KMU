@@ -151,22 +151,22 @@ class MapVisibilityPassTest {
     }
 
     @Nested
-    class IsHiddenSystem {
+    class HasOwnPlaceOnMap {
 
         @Test
-        void callsASystemWithNoAccessAndNobodyInItHiddenEvenWhereThePassShowsIt() {
+        void deniesAPlaceToASystemWithNoAccessAndNobodyInItEvenWhereThePassShowsIt() {
             // The question is what the map would show of the system, not what this pass is showing:
             // asked under the override that puts every system on the map, it still has to answer
             // that this one is only there because of it.
             var system = buildSystem("empty");
             var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), SHOWING_HIDDEN_SYSTEMS);
 
-            assertThat(pass.isHiddenSystem(system))
-                .isTrue();
+            assertThat(pass.hasOwnPlaceOnMap(system))
+                .isFalse();
         }
 
         @Test
-        void callsAnInhabitedSystemShownInItsOwnRight() {
+        void givesAnInhabitedSystemAPlaceOfItsOwn() {
             // Somebody living there is a place on the map the override has nothing to do with, so
             // the same forcing pass has to tell this system from the one above.
             var system = buildSystem("ruined");
@@ -175,8 +175,8 @@ class MapVisibilityPassTest {
 
             var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), SHOWING_HIDDEN_SYSTEMS);
 
-            assertThat(pass.isHiddenSystem(system))
-                .isFalse();
+            assertThat(pass.hasOwnPlaceOnMap(system))
+                .isTrue();
         }
     }
 

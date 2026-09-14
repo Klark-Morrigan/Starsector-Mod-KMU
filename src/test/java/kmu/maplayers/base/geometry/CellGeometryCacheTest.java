@@ -345,10 +345,10 @@ final class CellGeometryCacheTest {
 
         @Test
         void updateSeedsOneCellForTwoSystemsOnOnePoint() {
-            // Two sites on one coordinate have no bisector between them, so neither clips the
-            // other and the partition would hand back two cells covering identical area with no
-            // edge between them. The later system is dropped instead, and the first keeps the
-            // point - which the neighbour proves by naming it alone across their shared edge.
+            // The seam: the sites a cut is made from are collected under the one-site-per-point
+            // rule, so a coincident pair reaches the partition as a single site. Which of the two
+            // keeps the point is settled next door - what this shows is that the cut is made from
+            // what survived, the neighbour naming the survivor alone across their shared edge.
             var cache = new CellGeometryCache();
             var first = new SystemKey("abyss", "", "425b5");
 
@@ -362,52 +362,6 @@ final class CellGeometryCacheTest {
                 .containsOnlyKeys(first, buildCellKey("b"));
             assertThat(listNeighboursOf(cache, "b"))
                 .containsExactly(first);
-        }
-
-        @Test
-        void updateGivesASharedPointToTheSystemTheMapShowsRatherThanToAHiddenOne() {
-            // Showing hidden systems is what lets an unreachable system reach the partition at all,
-            // and it can land on a settled system's point. The point goes to the system the map
-            // shows in its own right even though the sector lists the hidden one first: the hidden
-            // one leaves the map the moment the setting goes off, and what the settled system is
-            // drawn as must not turn on a toggle about something else.
-            var cache = new CellGeometryCache();
-            var shown = new SystemKey("abyss", "", "425b5");
-
-            cache.updateFromSector(
-                MapVisibilityPass.over(
-                    buildStarAnchoredSectorOf(
-                        buildInaccessibleAnchoredSystem("abyss", "4379d", 0, 0),
-                        buildAccessibleAnchoredSystem("abyss", "425b5", 0, 0)),
-                    FORCED_ONTO_MAP),
-                NO_MOVING_SYSTEMS,
-                DEFAULT_SEED_INPUTS);
-
-            assertThat(cache.getCellEdgesByCellKey())
-                .containsOnlyKeys(shown);
-        }
-
-        @Test
-        void updateSeedsACellForADroppedSystemOnceThePointItStoodOnIsFree() {
-            // The drop is a reading of the current site set rather than a verdict remembered about
-            // a system: the system that lost the point takes a cell of its own as soon as the one
-            // holding it leaves the map.
-            var cache = new CellGeometryCache();
-            var second = new SystemKey("abyss", "", "4379d");
-
-            updateAtDefaultResolution(
-                cache,
-                buildAccessibleAnchoredSystem("abyss", "425b5", 0, 0),
-                buildAccessibleAnchoredSystem("abyss", "4379d", 0, 0));
-
-            updateAtDefaultResolution(
-                cache,
-                buildAccessibleAnchoredSystem("abyss", "4379d", 0, 0));
-
-            assertThat(cache.getCellEdgesByCellKey())
-                .containsOnlyKeys(second);
-            assertThat(cache.getCellEdgesByCellKey().get(second))
-                .isNotEmpty();
         }
 
         @Test
@@ -592,18 +546,6 @@ final class CellGeometryCacheTest {
             float y) {
 
         return StarSystemFixture.anchorSystemTo(buildAccessibleSystem(id, x, y), anchorEntityId);
-    }
-
-    // A system the map would not show, carrying a hyperspace anchor of its own - the pair a case
-    // about which of two systems keeps a shared point needs, one side of it on the map by the
-    // hidden-system override alone.
-    private static StarSystemAPI buildInaccessibleAnchoredSystem(
-            String id,
-            String anchorEntityId,
-            float x,
-            float y) {
-
-        return StarSystemFixture.anchorSystemTo(buildInaccessibleSystem(id, x, y), anchorEntityId);
     }
 
     private static StarSystemAPI buildInaccessibleSystem(String id, float x, float y) {

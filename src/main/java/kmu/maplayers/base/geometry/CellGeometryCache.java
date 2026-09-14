@@ -1,7 +1,5 @@
 package kmu.maplayers.base.geometry;
 
-import com.fs.starfarer.api.Global;
-
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.VoronoiCellBuilder;
 import kmlib.profiling.ActiveProfiler;
@@ -11,10 +9,7 @@ import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.profiling.MapBuildCounters;
 import kmu.maplayers.base.profiling.RebuildStepTerms;
-import kmu.maplayers.base.visibility.systems.DrawnSystemPositions;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
-
-import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,22 +36,10 @@ import java.util.Set;
  * {@link CellSeedInputs} passed in also force a full rebuild when they change, since
  * each reseeds every cell, invalidating them all regardless of the access diff.
  *
- * <p>Moving systems are excluded from the partition. A system that rewrites its own
- * hyperspace position (a mobile colony) has no stable cell to draw, and letting it
- * clip its neighbours would drag their borders around with it, so the moving systems
- * passed in are dropped from the site set: a mover seeds no cell and clips no
- * neighbour, and the surrounding cells fill the space as if it were absent. Because a
- * mover is simply out of the site set, its entering or leaving that set reads as an
- * ordinary remove or add in the diff - it comes to rest and rejoins with no special
- * case here.
- *
- * <p>At most one site stands on any one point. Two systems the sector placed on the same
- * coordinate have no bisector between them, so neither clips the other and the pair comes back as
- * two cells covering identical area, neither naming the other across any edge - and nothing
- * downstream recovers from that. One of them is therefore dropped from the site set the way a
- * mover is, and the pair is named in the log. The point goes to the system the map shows in its
- * own right over one only being shown as a hidden system, and otherwise to whichever the sector
- * lists first.
+ * <p>Which systems seed a site at all is {@link PartitionSites}', the moving systems passed in
+ * among them. Because a system left out is simply absent from the site set, its entering or
+ * leaving reads as an ordinary add or remove in the diff below - a mover comes to rest and rejoins
+ * with no special case here.
  *
  * <p>Each cell is kept as a list of {@link CellEdge}s - the raw convex
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
@@ -80,8 +63,6 @@ import java.util.Set;
  */
 public final class CellGeometryCache {
 
-    private static final Logger LOG = Global.getLogger(CellGeometryCache.class);
-
     // Every update writes its line: the cut runs when something moved rather than on a clock, so
     // each of its calls is an event a reader following a rebuild through the log wants to see -
     // the fast ones included, a cut that recomputed nothing being an answer in itself.
@@ -93,6 +74,11 @@ public final class CellGeometryCache {
     // or was handed nothing at all.
     private static final String UNCHANGED_CALL = "unchanged";
     private static final String REBUILT_CALL = "rebuilt";
+
+    // What may seed a site, and where each seeding system sits. Held rather than built per update
+    // because it remembers what it has already said about a coincidence, and that memory belongs to
+    // one partition's run of updates.
+    private final PartitionSites partitionSites = new PartitionSites();
 
     private final Map<SystemKey, double[]> siteBySystemKey = new LinkedHashMap<>();
 
@@ -110,13 +96,6 @@ public final class CellGeometryCache {
     // this to spot the change and force a full rebuild. Null until the first update, which
     // is what makes that update rebuild from scratch rather than diff against nothing.
     private CellSeedInputs lastSeedInputs;
-
-    // The systems the last reported coincidence dropped, so the same pair is not named again on
-    // every update that re-collects the same sites. Not a warn-once mute: what a repeat line would
-    // add is a *different* pair, and an occupied point that later frees up - a mobile colony coming
-    // to rest on another system's point, and leaving again - changes this set and is said out loud
-    // both times.
-    private Set<SystemKey> lastReportedCoincidentKeys = Set.of();
 
     /**
      * Empties the cached partition and forgets the seed inputs it was built at, so the next update
@@ -144,15 +123,14 @@ public final class CellGeometryCache {
      * through the same add/remove diff as an access change - the caller forces this
      * update when one moves.
      *
-     * @param pass            the rebuild's reading of the sector, whose walk of each system this
-     *                        update shares and whose rules the drawn set is taken under; a pass
-     *                        over no sector seeds nothing
-     * @param movingSystemKeys the systems currently moving, left out of the partition -
-     *                         each seeds no cell and clips no neighbour, so the cells
-     *                         around it fill the space as if it were absent
-     * @param seedInputs      what to seed each cell with - its frontier resolution and its
-     *                        reach; a change from the last update reseeds every cell, and
-     *                        the reach also sets how far the diff scans
+     * @param pass             the rebuild's reading of the sector, whose walk of each system this
+     *                         update shares and whose rules the drawn set is taken under; a pass
+     *                         over no sector seeds nothing
+     * @param movingSystemKeys the systems currently moving, passed to {@link PartitionSites} to be
+     *                         left out of the site set
+     * @param seedInputs       what to seed each cell with - its frontier resolution and its
+     *                         reach; a change from the last update reseeds every cell, and
+     *                         the reach also sets how far the diff scans
      */
     public void updateFromSector(
             MapVisibilityPass pass,
@@ -204,7 +182,7 @@ public final class CellGeometryCache {
             CellSeedInputs seedInputs,
             ProfileScope updateScope) {
 
-        var newSites = collectAccessibleSites(pass, movingSystemKeys);
+        var newSites = partitionSites.collectSitesFrom(pass, movingSystemKeys);
 
         reseedIfSeedInputsMoved(seedInputs);
 
@@ -336,104 +314,6 @@ public final class CellGeometryCache {
             recomputedCellEdges += edges.size();
         }
         return recomputedCellEdges;
-    }
-
-    // The live sites the partition is built from: every drawn system's position,
-    // minus the ones currently moving and the ones standing on a point already taken. A mover is
-    // left out so it seeds no cell and clips no neighbour; the cells around it fill the space as if
-    // it were absent. The pass's visibility rules reach the drawn-set walk, so a forced or
-    // undiscovered-colony system enters the partition like any other site.
-    //
-    // The pass is the rebuild's rather than one opened here, so this walk of the sector is
-    // the same walk the stages after it make. A geometry update handed a sector could open a
-    // reading of its own, which is what put three readings in one rebuild.
-    private Map<SystemKey, double[]> collectAccessibleSites(
-            MapVisibilityPass pass,
-            Collection<SystemKey> movingSystemKeys) {
-
-        // Addressed by key because a cell is keyed by the system it is cut for, which is the
-        // address the movers are named by as well - and the address two systems sharing an ID are
-        // told apart by, each of them seeding a cell of its own.
-        var sites = DrawnSystemPositions.collectLivePositions(pass);
-        sites.keySet().removeAll(movingSystemKeys);
-        dropSitesLosingTheirPoint(pass, sites);
-        return sites;
-    }
-
-    // One site per point, enforced here rather than left to whatever admitted the systems.
-    //
-    // The partition decides a point by which site is nearest it, and two sites on one coordinate
-    // are equally near everything: the half-plane each of their cells would be clipped to has a
-    // zero normal, so neither takes anything from the other. The pair comes back as two cells
-    // covering identical area with no shared edge between them - the fills paint over one another,
-    // the hit test answers whichever it reaches first, and the clusters never union across a border
-    // the cells do not state. Dropping one leaves one cell where one cell is all that can be cut,
-    // which is what every consumer downstream already assumes.
-    //
-    // The sector places such a pair today - RAT's two abyss systems sit on one hyperspace point -
-    // and only one of them reaches here, the other being cut off from hyperspace and declined by
-    // the drawn-set rule. The rule is stated all the same, because the drawn set is free to widen -
-    // showing hidden systems already does - and the geometry is what breaks when it does.
-    private void dropSitesLosingTheirPoint(
-            MapVisibilityPass pass,
-            Map<SystemKey, double[]> sites) {
-
-        var systemsByKey = pass.sectorIndex().readSystemsByKey();
-        var holderByPoint = new HashMap<SitePoint, SystemKey>();
-        var pointByDroppedKey = new LinkedHashMap<SystemKey, SitePoint>();
-
-        for (var site : sites.entrySet()) {
-
-            var position = site.getValue();
-            var point = new SitePoint(position[0], position[1]);
-            var holder = holderByPoint.putIfAbsent(point, site.getKey());
-
-            if (holder == null) {
-                continue;
-            }
-            // Which of the two keeps the point is the tie-breakers' to say, this being a question
-            // about the systems rather than about the geometry - the two sites are equally near
-            // every point around them, so there is nothing here to decide it on.
-            if (SiteTieBreaker.shouldTakePoint(
-                    pass,
-                    systemsByKey.get(holder),
-                    systemsByKey.get(site.getKey()))) {
-                holderByPoint.put(point, site.getKey());
-                pointByDroppedKey.put(holder, point);
-            } else {
-                pointByDroppedKey.put(site.getKey(), point);
-            }
-        }
-        // Removed after the walk rather than during it, since the site losing a point can be one
-        // already passed over.
-        sites.keySet().removeAll(pointByDroppedKey.keySet());
-
-        reportCoincidentSites(pointByDroppedKey, holderByPoint);
-    }
-
-    // Names each dropped system beside the one holding its point, so a cell missing from the map
-    // is one line away from its cause rather than a shape nobody can account for. Said only when
-    // the dropped set moves: the same pair is re-collected on every update, and a line per update
-    // would bury the one that is new.
-    private void reportCoincidentSites(
-            Map<SystemKey, SitePoint> pointByDroppedKey,
-            Map<SitePoint, SystemKey> holderByPoint) {
-
-        if (pointByDroppedKey.keySet().equals(lastReportedCoincidentKeys)) {
-            return;
-        }
-        lastReportedCoincidentKeys = new LinkedHashSet<>(pointByDroppedKey.keySet());
-
-        for (var dropped : pointByDroppedKey.entrySet()) {
-
-            // Read off the point rather than remembered per drop, so a system displaced by one
-            // that was itself displaced still names whoever ended up holding the point.
-            var point = dropped.getValue();
-
-            LOG.warn("Two star systems sit on one hyperspace point [" + point.x() + ", " + point.y()
-                + "]: '" + holderByPoint.get(point).systemId() + "' takes the cell there, so '"
-                + dropped.getKey().systemId() + "' is drawn no cell at all");
-        }
     }
 
     // The systems whose site is within the neighbourhood radius of origin - the

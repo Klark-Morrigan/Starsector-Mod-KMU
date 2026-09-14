@@ -7,12 +7,11 @@ import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 /**
  * What settles which of two star systems standing on one hyperspace point keeps it.
  *
- * <p>One point seeds one cell: two sites on the same coordinate have no bisector between them, so
- * neither clips the other and the pair would come back as two cells covering identical area with no
- * edge between them. One of the two therefore seeds nothing, and nothing about the geometry can
- * choose which - both are equally near every point around them. The choice is made on what the map
- * knows about each system instead, which is why it is stated here rather than as a condition inside
- * the collection that applies it.
+ * <p>Only one of them may seed a site there, for the reason {@link PartitionSites} states. Which
+ * one is not the geometry's to answer - two sites on one coordinate are equally near every point
+ * around them, so there is nothing in the partition to tell them apart. The choice is made on what
+ * the map knows about each system instead, which is why it is stated here rather than as a
+ * condition inside the collection that applies it.
  *
  * <p>Declaration order is precedence order. The first tie-breaker that prefers one system over the
  * other settles the point and the ones below it are never asked, so a new consideration is a new
@@ -39,7 +38,7 @@ public enum SiteTieBreaker {
     SHOWN_IN_ITS_OWN_RIGHT {
         @Override
         boolean isPreferred(MapVisibilityPass pass, StarSystemAPI system) {
-            return !pass.isHiddenSystem(system);
+            return pass.hasOwnPlaceOnMap(system);
         }
     };
 

@@ -39,30 +39,22 @@ keyed by `SystemKey`:
 a system ID is not unique,
 and a partition keyed on one would cut a single cell for two systems sharing it.
 
-At most one site stands on any one point.
-Two systems the sector placed on the same coordinate have no bisector between them,
-so neither clips the other and the pair comes back as two cells covering identical area,
-neither naming the other across any edge:
-fills painting twice,
-a hit test answering whichever it reaches first,
-and clusters that never union across a border the cells do not state.
-One of the two is dropped from the site set the way a moving system is,
-and the pair is named in the log -
-a cell missing from the map is otherwise a shape nobody can account for.
-
-Which of the two keeps the point is [`SiteTieBreaker`](SiteTieBreaker.java)'s,
-not the geometry's -
-two sites on one coordinate are equally near every point around them,
-so there is nothing in the partition to decide it on.
-It is an ordered list of preferences,
+What the cut is made from is [`PartitionSites`](PartitionSites.java)' rather than the cache's:
+which systems seed a site,
+and where each of them sits.
+A system the map does not draw seeds none,
+nor does one that is moving,
+nor the second of two standing on the same hyperspace point -
+a point being all a cell can be cut around.
+That last one is a choice between two systems rather than a rule about either,
+so it goes to [`SiteTieBreaker`](SiteTieBreaker.java):
+an ordered list of preferences,
 declaration order being precedence order,
-and the first one that separates the two settles it.
-Today the list holds one:
-a system the map shows in its own right keeps the point
-over one that is on the map only because hidden systems are being shown,
-since a hidden system leaves the map again the moment that setting goes off
-and what the system beside it is drawn as must not turn on a toggle about something else.
-Where nothing separates them the point stays with whichever the sector lists first.
+the first one to separate the two settling it,
+and the sector's own listing order deciding a pair nothing separates.
+Today the list holds one,
+which keeps a system the map shows in its own right
+over one that is on the map only because hidden systems are being shown.
 
 A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polygon,
 because the edge list is also the adjacency graph.
