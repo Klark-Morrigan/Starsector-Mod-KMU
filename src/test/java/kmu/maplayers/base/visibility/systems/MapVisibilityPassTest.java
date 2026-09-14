@@ -8,6 +8,7 @@ import kmlib.starsector.systems.SectorPassIndex;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.DecivilisedPlanetFixtures;
+import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,12 @@ class MapVisibilityPassTest {
     // What one poll's reads of a system amount to once the memo holds: the fingerprint scan asks
     // for the salt and again through membership, and the motion walk asks a third time.
     private static final int ONE_READ = 1;
+
+    // The override on, so a case about what the map would show of a system is posed over a pass
+    // that is showing it either way - which is the only arrangement in which the two answers
+    // can be told apart.
+    private static final MapVisibilityRules SHOWING_HIDDEN_SYSTEMS =
+        new MapVisibilityRules(ColonyVisibility.BASE_FOG, true);
 
     @Nested
     class Constructor {
@@ -139,6 +146,36 @@ class MapVisibilityPassTest {
                 MapVisibilityRules.BASE);
 
             assertThat(pass.isDrawn(null))
+                .isFalse();
+        }
+    }
+
+    @Nested
+    class IsHiddenSystem {
+
+        @Test
+        void callsASystemWithNoAccessAndNobodyInItHiddenEvenWhereThePassShowsIt() {
+            // The question is what the map would show of the system, not what this pass is showing:
+            // asked under the override that puts every system on the map, it still has to answer
+            // that this one is only there because of it.
+            var system = buildSystem("empty");
+            var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), SHOWING_HIDDEN_SYSTEMS);
+
+            assertThat(pass.isHiddenSystem(system))
+                .isTrue();
+        }
+
+        @Test
+        void callsAnInhabitedSystemShownInItsOwnRight() {
+            // Somebody living there is a place on the map the override has nothing to do with, so
+            // the same forcing pass has to tell this system from the one above.
+            var system = buildSystem("ruined");
+
+            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
+
+            var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), SHOWING_HIDDEN_SYSTEMS);
+
+            assertThat(pass.isHiddenSystem(system))
                 .isFalse();
         }
     }

@@ -53,8 +53,10 @@ import java.util.Set;
  * <p>At most one site stands on any one point. Two systems the sector placed on the same
  * coordinate have no bisector between them, so neither clips the other and the pair comes back as
  * two cells covering identical area, neither naming the other across any edge - and nothing
- * downstream recovers from that. The later of the two is therefore dropped from the site set the
- * way a mover is, and the pair is named in the log.
+ * downstream recovers from that. One of them is therefore dropped from the site set the way a
+ * mover is, and the pair is named in the log. The point goes to the system the map shows in its
+ * own right over one only being shown as a hidden system, and otherwise to whichever the sector
+ * lists first.
  *
  * <p>Each cell is kept as a list of {@link CellEdge}s - the raw convex
  * cell and, at once, the cell-adjacency graph. Every edge is tagged with what lies
@@ -354,7 +356,7 @@ public final class CellGeometryCache {
         // told apart by, each of them seeding a cell of its own.
         var sites = DrawnSystemPositions.collectLivePositions(pass);
         sites.keySet().removeAll(movingSystemKeys);
-        dropLaterSitesOnAnOccupiedPoint(sites);
+        dropSitesLosingTheirPoint(pass, sites);
         return sites;
     }
 
@@ -368,33 +370,45 @@ public final class CellGeometryCache {
     // the cells do not state. Dropping one leaves one cell where one cell is all that can be cut,
     // which is what every consumer downstream already assumes.
     //
-    // The later of the two goes rather than the earlier, so the point keeps the system the sector
-    // lists first - the same system the ID index and the ID lookup name of a colliding pair, and
-    // the reason one rebuild's answer here is the next one's.
-    //
     // The sector places such a pair today - RAT's two abyss systems sit on one hyperspace point -
     // and only one of them reaches here, the other being cut off from hyperspace and declined by
-    // the drawn-set rule. The rule is stated all the same, because the drawn set is free to widen
-    // (a reveal override already does) and the geometry is what breaks when it does.
-    private void dropLaterSitesOnAnOccupiedPoint(Map<SystemKey, double[]> sites) {
+    // the drawn-set rule. The rule is stated all the same, because the drawn set is free to widen -
+    // showing hidden systems already does - and the geometry is what breaks when it does.
+    private void dropSitesLosingTheirPoint(
+            MapVisibilityPass pass,
+            Map<SystemKey, double[]> sites) {
 
-        var keyByPoint = new HashMap<SitePoint, SystemKey>();
-        var admittedByDroppedKey = new LinkedHashMap<SystemKey, SystemKey>();
-        var siteIterator = sites.entrySet().iterator();
+        var systemsByKey = pass.sectorIndex().readSystemsByKey();
+        var holderByPoint = new HashMap<SitePoint, SystemKey>();
+        var pointByDroppedKey = new LinkedHashMap<SystemKey, SitePoint>();
 
-        while (siteIterator.hasNext()) {
+        for (var site : sites.entrySet()) {
 
-            var site = siteIterator.next();
             var position = site.getValue();
-            var admitted = keyByPoint.putIfAbsent(
-                new SitePoint(position[0], position[1]), site.getKey());
+            var point = new SitePoint(position[0], position[1]);
+            var holder = holderByPoint.putIfAbsent(point, site.getKey());
 
-            if (admitted != null) {
-                admittedByDroppedKey.put(site.getKey(), admitted);
-                siteIterator.remove();
+            if (holder == null) {
+                continue;
+            }
+            // Which of the two keeps the point is the tie-breakers' to say, this being a question
+            // about the systems rather than about the geometry - the two sites are equally near
+            // every point around them, so there is nothing here to decide it on.
+            if (SiteTieBreaker.shouldTakePoint(
+                    pass,
+                    systemsByKey.get(holder),
+                    systemsByKey.get(site.getKey()))) {
+                holderByPoint.put(point, site.getKey());
+                pointByDroppedKey.put(holder, point);
+            } else {
+                pointByDroppedKey.put(site.getKey(), point);
             }
         }
-        reportCoincidentSites(admittedByDroppedKey, sites);
+        // Removed after the walk rather than during it, since the site losing a point can be one
+        // already passed over.
+        sites.keySet().removeAll(pointByDroppedKey.keySet());
+
+        reportCoincidentSites(pointByDroppedKey, holderByPoint);
     }
 
     // Names each dropped system beside the one holding its point, so a cell missing from the map
@@ -402,23 +416,23 @@ public final class CellGeometryCache {
     // the dropped set moves: the same pair is re-collected on every update, and a line per update
     // would bury the one that is new.
     private void reportCoincidentSites(
-            Map<SystemKey, SystemKey> admittedByDroppedKey,
-            Map<SystemKey, double[]> sites) {
+            Map<SystemKey, SitePoint> pointByDroppedKey,
+            Map<SitePoint, SystemKey> holderByPoint) {
 
-        if (admittedByDroppedKey.keySet().equals(lastReportedCoincidentKeys)) {
+        if (pointByDroppedKey.keySet().equals(lastReportedCoincidentKeys)) {
             return;
         }
-        lastReportedCoincidentKeys = new LinkedHashSet<>(admittedByDroppedKey.keySet());
+        lastReportedCoincidentKeys = new LinkedHashSet<>(pointByDroppedKey.keySet());
 
-        for (var coincidence : admittedByDroppedKey.entrySet()) {
+        for (var dropped : pointByDroppedKey.entrySet()) {
 
-            // Read back off the admitted system, which is still in the set and by definition
-            // stands on the very point the dropped one was removed from.
-            var point = sites.get(coincidence.getValue());
+            // Read off the point rather than remembered per drop, so a system displaced by one
+            // that was itself displaced still names whoever ended up holding the point.
+            var point = dropped.getValue();
 
-            LOG.warn("Two star systems sit on one hyperspace point [" + point[0] + ", " + point[1]
-                + "]: '" + coincidence.getValue().systemId() + "' takes the cell there, so '"
-                + coincidence.getKey().systemId() + "' is drawn no cell at all");
+            LOG.warn("Two star systems sit on one hyperspace point [" + point.x() + ", " + point.y()
+                + "]: '" + holderByPoint.get(point).systemId() + "' takes the cell there, so '"
+                + dropped.getKey().systemId() + "' is drawn no cell at all");
         }
     }
 

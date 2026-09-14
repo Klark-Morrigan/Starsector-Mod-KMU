@@ -82,8 +82,30 @@ public final class MapVisibility {
             MapVisibilityRules visibilityRules) {
 
         return visibilityRules.isForcedOntoMap()
-            || hasVisibleMapAccess(system, visibleStars)
-            || isInhabited;
+            || hasOwnPlaceOnMap(system, visibleStars, isInhabited);
+    }
+
+    /**
+     * Whether the system earns its place on the map in its own right - reached in a way the player
+     * can see, or lived in - rather than by the override that shows hidden systems.
+     *
+     * <p>The other half of {@link #shouldAppearOnMap}, published because whether a system is on the
+     * map <em>only</em> because hidden systems are being shown is a question of its own: such a
+     * system is one the player has not been shown and is about to stop being shown the moment the
+     * override goes off, so it must not take anything from a system the map keeps either way.
+     *
+     * @param system       the system to test
+     * @param visibleStars the index of systems whose star the map draws
+     * @param isInhabited  whether the system holds a colony somebody lives on or a collapsed
+     *                     colony the player may be shown, decided by the caller
+     * @return true when the system would be on the map with nothing forced onto it
+     */
+    public static boolean hasOwnPlaceOnMap(
+            StarSystemAPI system,
+            VisibleStars visibleStars,
+            boolean isInhabited) {
+
+        return hasVisibleMapAccess(system, visibleStars) || isInhabited;
     }
 
     // The access path onto the map, taken arm by arm rather than through the reachability fold

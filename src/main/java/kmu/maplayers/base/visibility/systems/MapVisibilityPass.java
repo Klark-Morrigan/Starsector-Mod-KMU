@@ -177,6 +177,31 @@ public final class MapVisibilityPass {
     }
 
     /**
+     * Whether the map shows one system only because hidden systems are being shown - a system with
+     * no access the player can see and nobody living in it.
+     *
+     * <p>Asked where two systems compete for something only one of them can have, the partition's
+     * shared hyperspace point among them. A hidden system is one the player has not been shown and
+     * stops being shown the moment the override goes off, so letting it take anything from a system
+     * the map keeps either way would make what the settled system is drawn as depend on a toggle
+     * about something else.
+     *
+     * <p>Not remembered per system the way {@link #isDrawn} is. Its callers ask it of the few
+     * systems that collide over one thing rather than of every system in the sector, so a memo
+     * would cost a map to save a read nothing repeats.
+     *
+     * @param system the system to test; null reads as hidden, there being no system to show
+     * @return true when the system is on this pass's map by the override alone
+     */
+    public boolean isHiddenSystem(StarSystemAPI system) {
+
+        return !MapVisibility.hasOwnPlaceOnMap(
+            system,
+            visibleStars,
+            isSystemInhabited(system));
+    }
+
+    /**
      * Whether the system holds a collapsed colony the player may be shown.
      *
      * <p>Published rather than kept private because inhabitation folds it in and cannot report

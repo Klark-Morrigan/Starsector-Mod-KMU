@@ -46,9 +46,23 @@ neither naming the other across any edge:
 fills painting twice,
 a hit test answering whichever it reaches first,
 and clusters that never union across a border the cells do not state.
-The later system is dropped from the site set the way a moving system is,
+One of the two is dropped from the site set the way a moving system is,
 and the pair is named in the log -
 a cell missing from the map is otherwise a shape nobody can account for.
+
+Which of the two keeps the point is [`SiteTieBreaker`](SiteTieBreaker.java)'s,
+not the geometry's -
+two sites on one coordinate are equally near every point around them,
+so there is nothing in the partition to decide it on.
+It is an ordered list of preferences,
+declaration order being precedence order,
+and the first one that separates the two settles it.
+Today the list holds one:
+a system the map shows in its own right keeps the point
+over one that is on the map only because hidden systems are being shown,
+since a hidden system leaves the map again the moment that setting goes off
+and what the system beside it is drawn as must not turn on a toggle about something else.
+Where nothing separates them the point stays with whichever the sector lists first.
 
 A cell is kept as a list of [`CellEdge`](CellEdge.java) rather than a bare polygon,
 because the edge list is also the adjacency graph.
