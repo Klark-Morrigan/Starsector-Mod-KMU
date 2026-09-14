@@ -3,6 +3,9 @@ package kmu.maplayers.base.geometry.ui;
 import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 
+import kmu.desktop.ui.SavedValues;
+import kmu.desktop.ui.swing.ControlRows;
+import kmu.desktop.ui.swing.WindowLayout;
 import kmu.maplayers.base.geometry.BridgedContinents;
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellEdges;
@@ -27,9 +30,6 @@ import kmu.maplayers.base.geometry.ui.overlays.voidpockets.ContinentCoastOverlay
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
-import kmu.ui.ControlRows;
-import kmu.ui.SavedValues;
-import kmu.ui.WindowLayout;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;

@@ -1,4 +1,4 @@
-package kmu.ui;
+package kmu.desktop.ui;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

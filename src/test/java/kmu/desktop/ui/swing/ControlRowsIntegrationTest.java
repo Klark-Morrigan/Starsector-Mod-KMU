@@ -1,4 +1,6 @@
-package kmu.ui;
+package kmu.desktop.ui.swing;
+
+import kmu.desktop.ui.SavedValues;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

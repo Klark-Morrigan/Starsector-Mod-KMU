@@ -1,4 +1,4 @@
-package kmu.ui;
+package kmu.desktop.ui.swing;
 
 import java.awt.Dimension;
 import java.awt.Insets;

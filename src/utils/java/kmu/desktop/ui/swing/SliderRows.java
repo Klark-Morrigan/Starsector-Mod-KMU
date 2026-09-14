@@ -1,4 +1,6 @@
-package kmu.ui;
+package kmu.desktop.ui.swing;
+
+import kmu.desktop.ui.SavedValues;
 
 import java.awt.Dimension;
 import java.util.Locale;

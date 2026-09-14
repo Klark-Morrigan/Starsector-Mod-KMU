@@ -3,11 +3,11 @@ package kmu.maplayers.base.geometry.ui.settings;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
-import kmu.ui.CollapsibleSection;
-import kmu.ui.ColourRows;
-import kmu.ui.ControlRows;
-import kmu.ui.SliderRows;
-import kmu.ui.ToggleTree;
+import kmu.desktop.ui.swing.CollapsibleSection;
+import kmu.desktop.ui.swing.ColourRows;
+import kmu.desktop.ui.swing.ControlRows;
+import kmu.desktop.ui.swing.SliderRows;
+import kmu.desktop.ui.swing.ToggleTree;
 
 import java.util.ArrayList;
 import java.util.List;
