@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -82,6 +83,10 @@ public final class ToggleTree {
     // A row at the outermost level, which nothing above can fold away.
     private static final int NO_PARENT = -1;
 
+    // How a paired row divides its line: one row of two equal halves.
+    private static final int SINGLE_ROW = 1;
+    private static final int PAIRED_HALVES = 2;
+
     private ToggleTree() {
     }
 
@@ -109,7 +114,7 @@ public final class ToggleTree {
      * list; nothing else about them is alike, and a reader taking a row apart is made to say
      * which one it has.
      */
-    public sealed interface Row permits SwitchRow, RollUpRow {
+    public sealed interface Row permits SwitchRow, RollUpRow, PairRow {
 
         /** @return how many levels in it sits, which is what decides what it folds away */
         int indent();
@@ -136,6 +141,39 @@ public final class ToggleTree {
          */
         static Row ofSwitch(int indent, Switch toggle) {
             return new SwitchRow(indent, toggle);
+        }
+
+        /**
+         * Two switches sharing one line, at the given depth.
+         *
+         * <p>A switch carries one bit and needs one line's height to say so, while a branch of
+         * a dozen of them is read as a block - so the ones that pair naturally share a line and
+         * the block stays short enough to hold in the eye.
+         *
+         * @param indent how many levels in they sit
+         * @param left   the switch on the left
+         * @param right  the switch on the right
+         * @return the row
+         */
+        static Row ofSwitchPair(int indent, Switch left, Switch right) {
+            return new PairRow(indent, ofSwitch(indent, left), ofSwitch(indent, right));
+        }
+
+        /**
+         * Any two rows sharing one line, at the given depth.
+         *
+         * <p>Rows rather than switches, because the roll-ups pair for the same reason the
+         * switches do and there is nothing about a line that cares which it was given. A pair
+         * of roll-ups is how the flat block at the foot of a tree stops being six lines saying
+         * one word each.
+         *
+         * @param indent how many levels in they sit, which both halves must agree with
+         * @param left   the row on the left
+         * @param right  the row on the right
+         * @return the row holding both
+         */
+        static Row ofPair(int indent, Row left, Row right) {
+            return new PairRow(indent, left, right);
         }
 
         /**
@@ -169,6 +207,53 @@ public final class ToggleTree {
         @Override
         public String foldKey() {
             return toggle.key() + FOLD_KEY_SUFFIX;
+        }
+    }
+
+    /**
+     * A row that is two rows side by side.
+     *
+     * <p>One ROW, not two: it folds as one, it sits at one depth, and the pairing is a fact
+     * about the layout rather than about what was paired. Each half is still whatever it was -
+     * a switch saved under its own key, a roll-up reading its own set - so sharing a line
+     * reaches nothing about what either means.
+     *
+     * <p>Folded under the LEFT half's key, since a row has one folded state and a pair has two
+     * identities. Nothing sits under a pair today, so which half names the fold decides nothing
+     * a reader can see; stated so that it stays decided if one ever gains a branch.
+     *
+     * <p><b>Both halves must sit at the pair's own depth, and neither may be a pair.</b> The
+     * first because the two are one line and a line is at one depth - a half carrying a
+     * different one is a statement the layout cannot honour, and silently ignoring it is how a
+     * tree comes to be read as saying something it does not. The second because a line is two
+     * halves wide and nesting would make it four, at which point the indentation stops meaning
+     * anything.
+     *
+     * @param indent how many levels in they sit
+     * @param left   the row on the left
+     * @param right  the row on the right
+     */
+    public record PairRow(int indent, Row left, Row right) implements Row {
+
+        public PairRow {
+            if (left.indent() != indent || right.indent() != indent) {
+                throw new IllegalArgumentException(
+                    "a paired row and both its halves sit at one depth, not "
+                        + indent + ", " + left.indent() + " and " + right.indent());
+            }
+            if (left instanceof PairRow || right instanceof PairRow) {
+                throw new IllegalArgumentException("a paired row holds two halves, not four");
+            }
+        }
+
+        @Override
+        public String title() {
+            return left.title();
+        }
+
+        @Override
+        public String foldKey() {
+            return left.foldKey();
         }
     }
 
@@ -267,7 +352,11 @@ public final class ToggleTree {
     }
 
     // One row's control, wired to write through and redraw the roll-ups whenever it moves.
-    private static JCheckBox buildRowBox(
+    //
+    // A Component rather than a checkbox, because a paired row is two of them in a panel. What
+    // the layout below needs is something to put in the row, and it has never needed to know
+    // which kind it was handed.
+    private static Component buildRowBox(
             Row row,
             Row[] rows,
             Map<String, JCheckBox> switches,
@@ -295,6 +384,22 @@ public final class ToggleTree {
             });
 
             return box;
+        }
+
+        if (row instanceof PairRow pair) {
+
+            var line = new JPanel(new GridLayout(SINGLE_ROW, PAIRED_HALVES));
+
+            // Each half through this same method, so a half behaves exactly as it would on a
+            // line of its own - which is the whole claim a pair makes.
+            line.add(buildRowBox(pair.left(), rows, switches, rollUps, saved, redraw, onChange));
+            line.add(buildRowBox(pair.right(), rows, switches, rollUps, saved, redraw, onChange));
+
+            // Transparent, so the pair reads as two controls on a line rather than as a panel
+            // laid over the block behind them.
+            line.setOpaque(false);
+
+            return line;
         }
 
         var toggle = ((SwitchRow) row).toggle();
@@ -398,15 +503,40 @@ public final class ToggleTree {
 
         for (var row : rows) {
 
-            if (row instanceof SwitchRow switchRow) {
-
-                var toggle = switchRow.toggle();
-                var state = switches.get(toggle.key()).isSelected();
-
-                toggle.apply().accept(state);
-                saved.putBoolean(toggle.key(), state);
-            }
+            applyRow(row, switches, saved);
         }
+    }
+
+    // One row told what it now stands at. A pair is walked through to its halves, so a switch
+    // sharing a line is applied exactly as one on a line of its own; a roll-up holds no state
+    // and there is nothing to apply.
+    private static void applyRow(
+            Row row,
+            Map<String, JCheckBox> switches,
+            SavedValues saved) {
+
+        if (row instanceof SwitchRow switchRow) {
+            applyOne(switchRow.toggle(), switches, saved);
+
+        } else if (row instanceof PairRow pair) {
+
+            applyRow(pair.left(), switches, saved);
+            applyRow(pair.right(), switches, saved);
+        }
+    }
+
+    // One switch told what it now stands at, and written down at the same moment. The two
+    // together because a state applied without being saved is a knob that forgets on restart,
+    // and one saved without being applied is a map drawn against a setting nobody holds.
+    private static void applyOne(
+            Switch toggle,
+            Map<String, JCheckBox> switches,
+            SavedValues saved) {
+
+        var state = switches.get(toggle.key()).isSelected();
+
+        toggle.apply().accept(state);
+        saved.putBoolean(toggle.key(), state);
     }
 
     private static TriState readState(Map<String, JCheckBox> switches, List<String> covers) {

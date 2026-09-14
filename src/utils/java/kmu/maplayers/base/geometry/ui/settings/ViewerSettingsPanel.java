@@ -793,10 +793,12 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 1,
                 "puddlePockets", "Puddle pockets", PUDDLE_BRIDGES, PUDDLE_FILL, PUDDLE_NAMES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 PUDDLE_BRIDGES, "Bridges", false,
-                on -> settings.showContinentPuddleBridges = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentPuddleBridges = on),
+                new ToggleTree.Switch(
                 PUDDLE_FILL, "Fill", false,
                 on -> settings.showContinentPuddleFill = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -807,16 +809,20 @@ public final class ViewerSettingsPanel {
                 "interiorCoastlines",
                 "Interior coastlines",
                 LAKE_COASTLINE, LAKE_FILL, LAKE_FRONTAGES, LAKE_NAMES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 LAKE_COASTLINE, "Coastline", false,
-                on -> settings.showContinentLakeCoastline = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentLakeCoastline = on),
+                new ToggleTree.Switch(
                 LAKE_FILL, "Fill", false,
                 on -> settings.showContinentLakeFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 LAKE_FRONTAGES, "Bridgeable frontage", false,
-                on -> settings.showContinentLakeFrontages = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentLakeFrontages = on),
+                new ToggleTree.Switch(
                 LAKE_NAMES, "Names", false,
                 on -> settings.showContinentLakeNames = on)),
             ToggleTree.Row.ofRollUp(
@@ -824,25 +830,31 @@ public final class ViewerSettingsPanel {
                 "exteriorCoastlines",
                 "Exterior coastlines",
                 CONTINENT_COASTLINE, CONTINENT_FILL, CONTINENT_FRONTAGES, COAST_NAMES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 CONTINENT_COASTLINE, "Coastline", false,
-                on -> settings.showContinentCoastline = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentCoastline = on),
+                new ToggleTree.Switch(
                 CONTINENT_FILL, "Fill", false,
                 on -> settings.showContinentCoastFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 CONTINENT_FRONTAGES, "Bridgeable frontage", false,
-                on -> settings.showContinentCoastFrontages = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentCoastFrontages = on),
+                new ToggleTree.Switch(
                 COAST_NAMES, "Names", false,
                 on -> settings.showContinentCoastNames = on)),
             ToggleTree.Row.ofRollUp(
                 1,
                 "lakeBridges", "Lake bridges", LAKE_BRIDGES, LAKE_POCKET_FILL, LAKE_POCKET_NAMES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 LAKE_BRIDGES, "Bridges", false,
-                on -> settings.showContinentLakeBridges = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentLakeBridges = on),
+                new ToggleTree.Switch(
                 LAKE_POCKET_FILL, "Fill", false,
                 on -> settings.showContinentLakePocketFill = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -851,10 +863,12 @@ public final class ViewerSettingsPanel {
             ToggleTree.Row.ofRollUp(
                 1,
                 "inletBridges", "Inlet bridges", CONTINENT_BRIDGES, INLET_FILL, INLET_NAMES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 CONTINENT_BRIDGES, "Bridges", false,
-                on -> settings.showContinentBridges = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showContinentBridges = on),
+                new ToggleTree.Switch(
                 INLET_FILL, "Fill", false,
                 on -> settings.showContinentInletFill = on)),
             ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
@@ -869,10 +883,12 @@ public final class ViewerSettingsPanel {
                 "Intercontinental bridges",
                 INTERCONTINENTAL_BRIDGES, INTERCONTINENTAL_FILL, INTERCONTINENTAL_SHORES,
                 INTERCONTINENTAL_ENCLOSED_FILL, INTERCONTINENTAL_NAMES),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
                 INTERCONTINENTAL_BRIDGES, "Bridges", false,
-                on -> settings.showIntercontinentalBridges = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
+                on -> settings.showIntercontinentalBridges = on),
+                new ToggleTree.Switch(
                 INTERCONTINENTAL_FILL, "Fill", false,
                 on -> settings.showIntercontinentalFill = on)),
 
@@ -884,14 +900,16 @@ public final class ViewerSettingsPanel {
                 INTERCONTINENTAL_SHORES, "Coastline", false,
                 on -> settings.showIntercontinentalShores = on)),
 
-            // Last of the branch, because it is defined by what the rest leave: the water the
-            // links enclose that no other layer paints.
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                INTERCONTINENTAL_ENCLOSED_FILL, "Enclosed water", false,
-                on -> settings.showIntercontinentalEnclosedFill = on)),
-            ToggleTree.Row.ofSwitch(2, new ToggleTree.Switch(
-                INTERCONTINENTAL_NAMES, "Names", false,
-                on -> settings.showIntercontinentalNames = on)));
+            // Last of the branch, because the enclosed water is defined by what the rest leave:
+            // what the links shut in that no other layer paints.
+            ToggleTree.Row.ofSwitchPair(
+                2,
+                new ToggleTree.Switch(
+                    INTERCONTINENTAL_ENCLOSED_FILL, "Enclosed water", false,
+                    on -> settings.showIntercontinentalEnclosedFill = on),
+                new ToggleTree.Switch(
+                    INTERCONTINENTAL_NAMES, "Names", false,
+                    on -> settings.showIntercontinentalNames = on)));
     }
 
     // The globals: one per KIND of thing, cutting across every branch above. No switches of
@@ -900,38 +918,44 @@ public final class ViewerSettingsPanel {
     private List<ToggleTree.Row> buildContinentGlobalRows() {
 
         return List.of(
-            ToggleTree.Row.ofRollUp(
+            ToggleTree.Row.ofPair(
                 1,
-                "everyWall",
-                "Walls",
-                LAKE_COASTLINE, CONTINENT_COASTLINE,
-                LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES,
-                INTERCONTINENTAL_BRIDGES),
-            ToggleTree.Row.ofRollUp(
+                ToggleTree.Row.ofRollUp(
+                    1,
+                    "everyWall",
+                    "Walls",
+                    LAKE_COASTLINE, CONTINENT_COASTLINE,
+                    LAKE_BRIDGES, CONTINENT_BRIDGES, PUDDLE_BRIDGES,
+                    INTERCONTINENTAL_BRIDGES),
+                ToggleTree.Row.ofRollUp(
+                    1,
+                    "everyCoastline",
+                    "Coastline",
+                    LAKE_COASTLINE, CONTINENT_COASTLINE, INTERCONTINENTAL_SHORES)),
+            ToggleTree.Row.ofPair(
                 1,
-                "everyCoastline",
-                "Coastline",
-                LAKE_COASTLINE, CONTINENT_COASTLINE, INTERCONTINENTAL_SHORES),
-            ToggleTree.Row.ofRollUp(
+                ToggleTree.Row.ofRollUp(
+                    1,
+                    "everyFrontage", "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
+                ToggleTree.Row.ofRollUp(
+                    1,
+                    "everyBridge",
+                    "Bridges",
+                    PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES, INTERCONTINENTAL_BRIDGES)),
+            ToggleTree.Row.ofPair(
                 1,
-                "everyFrontage", "Bridgeable frontage", LAKE_FRONTAGES, CONTINENT_FRONTAGES),
-            ToggleTree.Row.ofRollUp(
-                1,
-                "everyBridge",
-                "Bridges",
-                PUDDLE_BRIDGES, LAKE_BRIDGES, CONTINENT_BRIDGES, INTERCONTINENTAL_BRIDGES),
-            ToggleTree.Row.ofRollUp(
-                1,
-                "everyFill",
-                "Fill",
-                LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL,
-                INTERCONTINENTAL_FILL, INTERCONTINENTAL_ENCLOSED_FILL),
-            ToggleTree.Row.ofRollUp(
-                1,
-                "everyName",
-                "Names",
-                PUDDLE_NAMES, LAKE_NAMES, COAST_NAMES, LAKE_POCKET_NAMES, INLET_NAMES,
-                INTERCONTINENTAL_NAMES));
+                ToggleTree.Row.ofRollUp(
+                    1,
+                    "everyFill",
+                    "Fill",
+                    LAKE_FILL, CONTINENT_FILL, PUDDLE_FILL, LAKE_POCKET_FILL, INLET_FILL,
+                    INTERCONTINENTAL_FILL, INTERCONTINENTAL_ENCLOSED_FILL),
+                ToggleTree.Row.ofRollUp(
+                    1,
+                    "everyName",
+                    "Names",
+                    PUDDLE_NAMES, LAKE_NAMES, COAST_NAMES, LAKE_POCKET_NAMES, INLET_NAMES,
+                    INTERCONTINENTAL_NAMES)));
     }
 
     // What the coastlines are and how they are drawn, which is what everything below is

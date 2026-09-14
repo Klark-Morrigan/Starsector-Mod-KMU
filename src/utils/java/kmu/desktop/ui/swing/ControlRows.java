@@ -20,8 +20,10 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 
 /**
  * The viewer's smaller knobs, and the furniture every knob in the panel shares.
@@ -46,10 +48,6 @@ public final class ControlRows {
     // Wider than a row's own padding, so the rule reads as a break between subjects
     // rather than as one more gap in an evenly spaced column.
     private static final int DIVIDER_PADDING = 8;
-
-    private static final int LABELLED_ROWS = 2;
-
-    private static final int SINGLE_COLUMN = 1;
 
     private static final int SINGLE_ROW = 1;
 
@@ -424,11 +422,17 @@ public final class ControlRows {
      * a row whose padding and column widths are its own, and a column of those reads as a list
      * of unrelated controls rather than as one panel.
      *
+     * <p>The name WRAPS rather than being cut off. A label is the only part of a row that has
+     * anything to say, and the column is narrow enough that several of these are already too
+     * long for one line of it - so the name takes the lines it needs and the row grows, which
+     * is the one arrangement where nothing has to be shortened to fit and nothing is lost to
+     * the edge.
+     *
      * @param title    what the control is called
      * @param valueBox the box showing its value, beside the reset
      * @param reset    what to do when the reset is pressed
      * @param slider   the track spanning the full width beneath, which every row of this
-     *                 shape has - the grid is laid out for two rows and fills both
+     *                 shape has
      * @return the row
      */
     public static JPanel layOutLabelledRow(
@@ -439,22 +443,65 @@ public final class ControlRows {
 
         var heading = new JPanel(new BorderLayout());
 
-        heading.add(new JLabel(title), BorderLayout.CENTER);
+        heading.add(buildWrappingLabel(title), BorderLayout.CENTER);
 
         var trailing = new JPanel(new BorderLayout());
 
         trailing.add(valueBox, BorderLayout.CENTER);
         trailing.add(buildResetButton(reset), BorderLayout.EAST);
 
-        heading.add(trailing, BorderLayout.EAST);
+        // Held to the top of the side rather than filling it, so the value and the reset stay
+        // level with the name's FIRST line instead of drifting to the middle of a name that has
+        // grown to three.
+        var side = new JPanel(new BorderLayout());
 
-        var panel = new JPanel(new GridLayout(LABELLED_ROWS, SINGLE_COLUMN));
+        side.add(trailing, BorderLayout.NORTH);
+        heading.add(side, BorderLayout.EAST);
 
-        panel.add(heading);
-        panel.add(slider);
+        // A border rather than a grid of two equal rows. A grid gives the heading whatever
+        // height the track takes, which is the arrangement that cut a wrapped name off at one
+        // line; under this the heading keeps the height its name needs and the track keeps its
+        // own.
+        var panel = new JPanel(new BorderLayout());
+
+        panel.add(heading, BorderLayout.NORTH);
+        panel.add(slider, BorderLayout.CENTER);
         panel.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
 
         return panel;
+    }
+
+    /**
+     * A label that wraps instead of running off the end of its column.
+     *
+     * <p>A {@link JLabel} truncates, which loses the end of the name - and it is the end that
+     * carries the units, so a cut label reads as a different knob rather than as a shortened
+     * one. A text area laid out to look like a label wraps to whatever width it is given, which
+     * is what lets a narrow column hold a long name without anything being reworded to fit.
+     *
+     * <p>Not editable, not focusable and not painted: everything that makes a text area a text
+     * area is turned off, and what is left is a label that wraps.
+     *
+     * @param text what it says
+     * @return the label
+     */
+    public static JTextArea buildWrappingLabel(String text) {
+
+        var label = new JTextArea(text);
+
+        label.setLineWrap(true);
+        label.setWrapStyleWord(true);
+        label.setEditable(false);
+        label.setFocusable(false);
+        label.setOpaque(false);
+        label.setBorder(null);
+
+        // Taken from the look a real label has rather than left at a text area's, which is a
+        // different font and a different colour - the point is that this reads as a label.
+        label.setFont(UIManager.getFont("Label.font"));
+        label.setForeground(UIManager.getColor("Label.foreground"));
+
+        return label;
     }
 
     // The one order a pick is acted on in, shared by the buttons and the reset so the two
