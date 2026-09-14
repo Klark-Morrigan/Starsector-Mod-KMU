@@ -29,6 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@code Map - Dev} is where the two part company - it carries the tuning of geometry every layer
  * shares, but most of that tuning is read by the political layer that resolves it, so a class named
  * for that tab would be imported by both halves and be the shared surface again under a new name.
+ * {@link KmuMapRefreshSettings} is the framework's own row on that tab: the cadence every staleness
+ * poll runs on, read by the loop the polls share and by nothing a layer holds.
  *
  * <p>The political map's own set is split again by what its knobs act on, one class per section
  * of the settings screen: {@link KmuPoliticalMapTerritorySettings} for how each kind of

@@ -357,7 +357,9 @@ The last good draw lists stay on screen in the meantime.
 
 **A rebuild is a pass too**,
 on the same terms the poll is and for the heavier reason:
-a poll runs every four to five campaign seconds,
+a poll runs on a cadence of a few campaign seconds,
+four to five out of the box and
+[the player's to set](../../src/main/java/kmu/maplayers/base/refresh/README.md#the-cadence-is-the-players),
 while a rebuild runs whenever the drawn set moves,
 a toggle flips,
 a view switches or a colony changes hands.

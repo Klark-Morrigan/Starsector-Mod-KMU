@@ -102,14 +102,6 @@ final class LunaSettingsCsvIntegrationTest {
     private static final String BOOLEAN_FIELD_TYPE = "Boolean";
     private static final String KEYCODE_FIELD_TYPE = "Keycode";
 
-    // The one row whose bounds are declared twice - once as the slider's ends here, once as the clamp
-    // its getter puts round whatever LunaLib hands back. Named singly rather than walked for every
-    // numeric row, because every other numeric getter takes the stored value as it comes: a walk over
-    // all of them would be machinery for a set of one, and would have to invent a rule for the rows
-    // that clamp nothing. A second clamped row joining is what turns this into a walk.
-    private static final String CLAMPED_FIELD_ID = "kmu_map_visuals_sidebar_opacity";
-    private static final String CLAMPED_MINIMUM_CONSTANT = "MIN_SIDEBAR_OPACITY_PERCENT";
-    private static final String CLAMPED_MAXIMUM_CONSTANT = "MAX_SIDEBAR_OPACITY_PERCENT";
     private static final String BOOLEAN_ON_VALUE = "TRUE";
     private static final String BOOLEAN_OFF_VALUE = "FALSE";
 
@@ -544,29 +536,33 @@ final class LunaSettingsCsvIntegrationTest {
     @Nested
     class NumericFieldBounds {
 
-        @Test
-        void numericFieldBoundsMatchTheClampTheirGetterApplies() {
+        @ParameterizedTest(name = "{0}")
+        @ArgumentsSource(ClampedFieldBoundsProvider.class)
+        void numericFieldBoundsMatchTheClampTheirGetterApplies(
+                String fieldId,
+                String minimumConstant,
+                String maximumConstant) {
 
-            assertThat(readDeclaredNumber(CLAMPED_MINIMUM_CONSTANT))
+            assertThat(readDeclaredNumber(minimumConstant))
                 .as(
                     "%s in the settings sources against the low end of %s in %s: the slider's end is"
                         + " as far as a player can drag the row, and the clamp is how far the value"
                         + " is allowed once read, so two bounds let a saved value sit somewhere the"
                         + " slider will not go back to",
-                    CLAMPED_MINIMUM_CONSTANT,
-                    CLAMPED_FIELD_ID,
+                    minimumConstant,
+                    fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    readColumn(CLAMPED_FIELD_ID, MIN_VALUE_COLUMN, INT_FIELD_TYPE)));
+                    readColumn(fieldId, MIN_VALUE_COLUMN, INT_FIELD_TYPE)));
 
-            assertThat(readDeclaredNumber(CLAMPED_MAXIMUM_CONSTANT))
+            assertThat(readDeclaredNumber(maximumConstant))
                 .as(
                     "%s in the settings sources against the high end of %s in %s",
-                    CLAMPED_MAXIMUM_CONSTANT,
-                    CLAMPED_FIELD_ID,
+                    maximumConstant,
+                    fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    readColumn(CLAMPED_FIELD_ID, MAX_VALUE_COLUMN, INT_FIELD_TYPE)));
+                    readColumn(fieldId, MAX_VALUE_COLUMN, INT_FIELD_TYPE)));
         }
     }
 
@@ -1171,6 +1167,40 @@ final class LunaSettingsCsvIntegrationTest {
                 .stream()
                 .filter(row -> NUMERIC_FIELD_TYPES.contains(row.get(FIELD_TYPE_COLUMN)))
                 .map(row -> Arguments.of(row.get(FIELD_ID_COLUMN), row.get(FIELD_TYPE_COLUMN)));
+        }
+    }
+
+    /**
+     * The rows whose bounds are declared twice - once as the slider's ends in the file, once as the
+     * clamp the getter puts round whatever LunaLib hands back - each with the two constants that
+     * clamp it.
+     *
+     * <p>A hand table rather than a walk of the file, because nothing in a row says whether its
+     * getter clamps: every other numeric getter takes the stored value as it comes, and a walk over
+     * all of them would have to invent a rule for the rows that bound nothing. The cost is that a
+     * new clamp added without a line here goes unheld, which is why the clamp's own bounds are
+     * named where they are declared and this list only holds them against the file.
+     */
+    static final class ClampedFieldBoundsProvider implements ArgumentsProvider {
+
+        @Override
+        public Stream<? extends Arguments> provideArguments(
+                ParameterDeclarations parameters,
+                ExtensionContext context) {
+
+            return Stream.of(
+                Arguments.of(
+                    "kmu_map_visuals_sidebar_opacity",
+                    "MIN_SIDEBAR_OPACITY_PERCENT",
+                    "MAX_SIDEBAR_OPACITY_PERCENT"),
+                Arguments.of(
+                    "kmu_map_visuals_sidebar_scrollbarThickness",
+                    "MIN_SIDEBAR_SCROLLBAR_THICKNESS",
+                    "MAX_SIDEBAR_SCROLLBAR_THICKNESS"),
+                Arguments.of(
+                    "kmu_map_dev_refresh_pollSeconds",
+                    "MIN_POLL_SECONDS",
+                    "MAX_POLL_SECONDS"));
         }
     }
 

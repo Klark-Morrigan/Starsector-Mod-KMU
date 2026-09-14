@@ -13,6 +13,7 @@ Part of [the map layers framework](../../README.md).
 
 - [The signals and the board](#the-signals-and-the-board)
 - [The poll](#the-poll)
+- [The cadence is the player's](#the-cadence-is-the-players)
 - [Two scripts, two classes](#two-scripts-two-classes)
 - [The substrate's poll](#the-substrates-poll)
 
@@ -43,7 +44,8 @@ a colony founded in a system already drawn -
 so the only way to find them is to re-read the sector on a cadence
 and diff it against the last read.
 `StalenessPollLoop` is that cadence:
-a throttle of a few campaign seconds,
+a throttle of a few campaign seconds -
+[how few being the player's](#the-cadence-is-the-players) -
 a fault guard that says once per session which source faulted and keeps polling,
 and the call into a `MapLayerStalenessSource`.
 What to re-read,
@@ -56,6 +58,43 @@ so the geometry leaves a mover out of the partition rather than chase it.
 A mover is named by `SystemKey`,
 since a system ID is not unique and two systems sharing one would otherwise be one observation -
 a move by either reading as a move by whichever the sector lists last.
+
+## The cadence is the player's
+
+`KmuMapRefreshSettings` holds it,
+one `Int` row on `Map - Dev` in seconds,
+and every poll reads it through `StalenessPollLoop`.
+What the throttle trades is a reading of the whole sector against how long a change takes to show,
+and how that trade falls depends on how big the sector is and what else is installed -
+which is a measurement rather than a taste,
+so it is a knob rather than a constant.
+
+**One knob rather than the window.**
+The spread between the two ends is jitter,
+so several polls advanced by the same frame do not all elapse on one,
+and the far end is derived from the floor at a fixed ratio.
+A second row for it would only ever be set a little past the first,
+and the shipped 4-5 second window is exactly that ratio over the shipped floor,
+so an untouched setting polls as it always has.
+
+**The floor is above zero.**
+Zero polls every frame on the campaign thread,
+which would make a diagnostics row a frame-cost hazard -
+the one value a cadence must not offer.
+The ceiling is low for a reason of its own:
+the polls are chained,
+the substrate writing what a system's inhabitants saw and a layer's own pass reading the gate that reads it,
+so a fact reaches the map after as much as two periods rather than one.
+The accessor clamps to the same bounds the slider carries,
+LunaLib pruning nothing and handing a value left behind by an earlier spelling of a row to whatever later reads that ID.
+
+**A retune is gated on the settings revision, and then on the value.**
+`IntervalUtil.setInterval` draws a fresh interval and zeroes the elapsed time with it,
+so a loop re-applying the reading it already held would reset its own timer every frame and never reach an interval's end.
+The revision gate keeps the settings off the per-frame path;
+the value gate is what makes re-applying safe at all,
+since LunaLib announces that the settings changed rather than which one
+and so every KMU knob the player moves arrives here.
 
 ## Two scripts, two classes
 
