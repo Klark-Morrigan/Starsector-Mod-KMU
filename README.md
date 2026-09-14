@@ -97,10 +97,10 @@ The **Political Map** comes with 3 views:
   same as **Factions** but allied factions stand as a single political entity with their holdings combined.
 - **Claims** -
   paints faction territory based on the vanilla **system claim** mechanic -
-  dynamic or forced.
-  **Forced claims** are set via sector memory and are the highest authority.
-  **Unless a claim is forced,
-  system claim is resolved dynamically** -
+  dynamic or unconditional.
+  **Unconditional claims** are set via sector memory and are the highest authority.
+  **Unless a claim is unconditional,**
+  **it is resolved dynamically** -
   the single biggest market (that participates in the economy) wins,
   boosted by the presence of same-faction markets (of any kind) and any military industry constructed.
   *The player faction and non-territorial factions cannot lay claims dynamically.*
