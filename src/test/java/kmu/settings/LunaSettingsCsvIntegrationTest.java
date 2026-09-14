@@ -11,20 +11,17 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.support.ParameterDeclarations;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static kmu.settings.LunaSettingsTable.BOOLEAN_FIELD_TYPE;
+import static kmu.settings.LunaSettingsTable.INT_FIELD_TYPE;
+import static kmu.settings.LunaSettingsTable.KEYCODE_FIELD_TYPE;
+import static kmu.settings.LunaSettingsTable.RADIO_FIELD_TYPE;
+import static kmu.settings.LunaSettingsTable.SETTINGS_CSV;
+import static kmu.settings.SettingsSourceText.MAIN_SOURCE_ROOT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,6 +31,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * enum fails silently in play: the read finds no match, falls back to the default, and the player's
  * pick simply does nothing with no error to trace. Nothing else checks the two agree - the enums say so
  * only in a doc comment - so this reads the real data file rather than a fixture.
+ *
+ * <p>Every check here is one of the two readings held against the other, or against a table stated
+ * below: {@link LunaSettingsTable} is the shipped file as rows and cells, {@link SettingsSourceText}
+ * the shipped Java as the constants a row is reached through. Neither judges anything, which is what
+ * this file is for - what each reading ought to say is the whole of what is written here, and the
+ * tables that say it are the only thing a pass over the settings screen has to keep current.
  *
  * <p>An option label is therefore a stored key wearing the costume of a caption, and is frozen for the
  * same reason a field ID is: tidying the wording of one resets that setting for every player who had
@@ -85,22 +88,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * draws from one of them alone, and is held to filling that one and leaving the other empty.
  */
 final class LunaSettingsCsvIntegrationTest {
-
-    private static final Path SETTINGS_CSV = Path.of("data", "config", "LunaSettings.csv");
-
-    // The CSV's own column order, as its header row declares it.
-    private static final int FIELD_ID_COLUMN = 0;
-    private static final int FIELD_NAME_COLUMN = 4;
-    private static final int FIELD_TYPE_COLUMN = 6;
-    private static final int DEFAULT_VALUE_COLUMN = 7;
-    private static final int OPTIONS_COLUMN = 8;
-    private static final int MIN_VALUE_COLUMN = 14;
-    private static final int MAX_VALUE_COLUMN = 15;
-    private static final int TAB_COLUMN = 16;
-    private static final String RADIO_FIELD_TYPE = "Radio";
-    private static final String INT_FIELD_TYPE = "Int";
-    private static final String BOOLEAN_FIELD_TYPE = "Boolean";
-    private static final String KEYCODE_FIELD_TYPE = "Keycode";
 
     private static final String BOOLEAN_ON_VALUE = "TRUE";
     private static final String BOOLEAN_OFF_VALUE = "FALSE";
@@ -181,9 +168,6 @@ final class LunaSettingsCsvIntegrationTest {
         "Map - Dev",
         "Dev",
         "Market Condition Manager (MCM)");
-
-    // LunaLib splits a Radio's options on commas; the authored rows space them out for readability.
-    private static final String OPTION_SEPARATOR = ",";
 
     // The Radio fields whose options are not a LabeledChoice enum's labels, and so cannot be held
     // against one. The log level's options are log4j's own level names, which KmLogging hands
@@ -269,55 +253,10 @@ final class LunaSettingsCsvIntegrationTest {
             "DEFAULT_PREVIEW_HIGHLIGHT_COLOUR",
             FactionPaletteChoice.values()));
 
-    // A named Java fallback as the settings classes declare it: the constant, then the enum constant
-    // it is assigned. Anchored on the constant's own name so the two rows backed by the same enum
-    // with different defaults are still told apart, and the enum is left unnamed so a choice moved to
-    // another type still resolves.
-    private static final String CHOICE_DEFAULT_PATTERN = "\\b%s\\s*=\\s*\\w+\\.([A-Z][A-Z0-9_]*)\\s*;";
-
     // The numeric field types, whose default column holds a number the Java fallback beside the
     // getter has to agree with. Radio and Boolean rows are held against their own defaults above,
     // each in the terms that type is spelt in.
     private static final Set<String> NUMERIC_FIELD_TYPES = Set.of("Double", "Int");
-
-    // The three links a row's two defaults are followed along, each anchored on the name the
-    // previous one yielded: the field ID to the constant declaring it, that constant to the
-    // fallback passed beside it at the read, and that fallback to the value it is declared as.
-    // Following the shipped text rather than tabulating the pairs is what holds the convention the
-    // getters are written to, since a getter written some other way fails the walk rather than
-    // dropping out of it.
-    //
-    // The first link is the same whatever the row holds - a field ID is a field ID - so it is
-    // shared, and only the two that read a value are spelt per type.
-    private static final String FIELD_CONSTANT_PATTERN = "(\\w+)\\s*=\\s*\"%s\"";
-
-    // Every typed read a numeric row can be fetched through. Named one by one rather than as a
-    // wildcard so that a read this walk has no answer for - a choice or a boolean read against a
-    // numeric row - fails as an unfollowed link instead of being matched and held against the wrong
-    // kind of default.
-    private static final String NUMERIC_FALLBACK_READ_PATTERN =
-        "read(?:Double|Float|Int)\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
-
-    private static final String NUMERIC_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(-?[\\d.]+[fFdD]?)\\s*;";
-
-    // The same last two links for a Boolean row. Only one read can fetch one, so unlike the numeric
-    // alternation this names a single method - which is what makes a switch read through anything
-    // else fail the walk rather than pass it.
-    private static final String BOOLEAN_FALLBACK_READ_PATTERN =
-        "readBoolean\\(\\s*%s\\s*,\\s*(\\w+)\\s*\\)";
-
-    private static final String BOOLEAN_DEFAULT_PATTERN = "\\b%s\\s*=\\s*(true|false)\\s*;";
-
-    // The two row types that carry an ID so LunaLib can place them but store nothing, so no source
-    // reads either: a section caption, and a run of prose standing among the knobs. Every other row
-    // holds a value. They are told apart below as well as together - a caption owns the rows under
-    // it, while prose owns nothing and is free to stand ahead of every caption on its tab.
-    private static final String HEADER_FIELD_TYPE = "Header";
-    private static final String TEXT_FIELD_TYPE = "Text";
-
-    // KMU's field IDs all carry the mod's prefix, which is also what tells a field row from the
-    // file's own column-header line.
-    private static final String FIELD_ID_PREFIX = "kmu_";
 
     // Strings that carry the mod prefix without being settings fields, and so are held against no row.
     // Every one is registered with the game rather than with LunaLib - a render surface's terrain ID,
@@ -330,12 +269,6 @@ final class LunaSettingsCsvIntegrationTest {
             "kmu_sector_map_layer_above_starscape_nebulae_terrain",
             "kmu_openly_known_colony");
 
-    // A field ID as the sources spell it: quoted, so a mention in prose or a comment does not count
-    // as reading the field.
-    private static final Pattern FIELD_ID_LITERAL = Pattern.compile("\"(kmu_[A-Za-z0-9_]+)\"");
-    private static final Path MAIN_SOURCE_ROOT = Path.of("src", "main", "java");
-    private static final String JAVA_SOURCE_SUFFIX = ".java";
-
     @Nested
     class RadioOptionLabels {
 
@@ -347,7 +280,7 @@ final class LunaSettingsCsvIntegrationTest {
 
             // A subset is legitimate - a field may offer only some of its enum's options - but an
             // option the enum cannot name is dead: picking it reads back as the fallback.
-            assertThat(readOptions(fieldId))
+            assertThat(LunaSettingsTable.readOptions(fieldId))
                 .isSubsetOf(expectedLabels);
         }
 
@@ -357,8 +290,8 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(ChoiceBackedRadioFieldIdsProvider.class)
         void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
 
-            assertThat(readOptions(fieldId))
-                .contains(readColumn(fieldId, DEFAULT_VALUE_COLUMN, RADIO_FIELD_TYPE));
+            assertThat(LunaSettingsTable.readOptions(fieldId))
+                .contains(LunaSettingsTable.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
         }
     }
 
@@ -372,7 +305,7 @@ final class LunaSettingsCsvIntegrationTest {
                 String defaultConstant,
                 LabeledChoice[] choices) {
 
-            assertThat(readFallbackLabel(defaultConstant, choices))
+            assertThat(SettingsSourceText.readFallbackLabel(defaultConstant, choices))
                 .as(
                     "%s in the settings sources against the default of %s in %s: the row's default"
                         + " is what a fresh player is given and the constant is what answers while"
@@ -381,7 +314,7 @@ final class LunaSettingsCsvIntegrationTest {
                     defaultConstant,
                     fieldId,
                     SETTINGS_CSV)
-                .isEqualTo(readColumn(fieldId, DEFAULT_VALUE_COLUMN, RADIO_FIELD_TYPE));
+                .isEqualTo(LunaSettingsTable.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
         }
     }
 
@@ -391,7 +324,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyRadioFieldInTheFileIsClassifiedBySuite() {
 
-            assertThat(readRadioFieldIds())
+            assertThat(LunaSettingsTable.readRadioFieldIds())
                 .as(
                     "Radio rows in %s not listed as choice-backed or as non-choice-backed,"
                         + " so nothing holds their option labels frozen",
@@ -407,7 +340,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(HoverTierFieldIdsProvider.class)
         void hoverTierRowsAllShipSwitchedOn(String fieldId) {
 
-            assertThat(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: every hover tier ships on, so the tiering is invisible"
                         + " to a player who has switched none of them",
@@ -424,7 +357,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(VisibilityOverrideFieldIdsProvider.class)
         void visibilityOverrideRowsAllShipSwitchedOff(String fieldId) {
 
-            assertThat(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: a visibility override ships off, so what a fresh player"
                         + " is shown of the sector is what the ordinary rules admit and nothing"
@@ -441,7 +374,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theUnfinishedFeatureRowShipsSwitchedOff() {
 
-            assertThat(readColumn(UNFINISHED_FEATURE_FIELD_ID, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(UNFINISHED_FEATURE_FIELD_ID, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: the feature is unfinished and changes campaign state, so"
                         + " it ships off and a player runs it only by asking for it",
@@ -457,7 +390,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theFilterRowToggleShipsSwitchedOn() {
 
-            assertThat(readColumn(FILTER_ROW_TOGGLE_FIELD_ID, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(FILTER_ROW_TOGGLE_FIELD_ID, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: shipped off, neither map screen gets the control that shows"
                         + " and hides the layers, and a screen with no control never hides them - so"
@@ -475,7 +408,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theNoLayerTabShipsOnTheNKey() {
 
-            assertThat(readColumn(NO_LAYER_KEY_FIELD_ID, DEFAULT_VALUE_COLUMN, KEYCODE_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(NO_LAYER_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
                 .as(
                     "default of %s in %s: 49 is LWJGL's KEY_N, the letter of the tab it jumps to, and"
                         + " free on both the map and intel screens the bar draws on",
@@ -487,7 +420,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void thePoliticalMapTabShipsOnThePKey() {
 
-            assertThat(readColumn(POLITICAL_MAP_KEY_FIELD_ID, DEFAULT_VALUE_COLUMN, KEYCODE_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(POLITICAL_MAP_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
                 .as(
                     "default of %s in %s: 25 is LWJGL's KEY_P, and clear of the intel screen's own"
                         + " bindings - its item actions take T, U and G, its tag filter Q and Ctrl+S",
@@ -499,7 +432,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theFilterRowToggleShipsOnTheMKey() {
 
-            assertThat(readColumn(FILTER_ROW_TOGGLE_KEY_FIELD_ID, DEFAULT_VALUE_COLUMN, KEYCODE_FIELD_TYPE))
+            assertThat(LunaSettingsTable.readDefaultValue(FILTER_ROW_TOGGLE_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
                 .as(
                     "default of %s in %s: 50 is LWJGL's KEY_M, for map. Deliberately not a digit - the"
                         + " vanilla filter row this box is appended to keys its own six buttons to"
@@ -518,9 +451,9 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(NumericFieldDefaultsProvider.class)
         void numericFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId, String fieldType) {
 
-            var defaultConstant = findNumericFallbackConstant(fieldId);
+            var defaultConstant = SettingsSourceText.findNumericFallbackConstant(fieldId);
 
-            assertThat(readDeclaredNumber(defaultConstant))
+            assertThat(SettingsSourceText.readDeclaredNumber(defaultConstant))
                 .as(
                     "%s in the settings sources against the default of %s in %s: the row's default"
                         + " is the number a fresh player is given and the constant is what answers"
@@ -529,7 +462,8 @@ final class LunaSettingsCsvIntegrationTest {
                     defaultConstant,
                     fieldId,
                     SETTINGS_CSV)
-                .isEqualTo(Double.parseDouble(readColumn(fieldId, DEFAULT_VALUE_COLUMN, fieldType)));
+                .isEqualTo(Double.parseDouble(
+                    LunaSettingsTable.readDefaultValue(fieldId, fieldType)));
         }
     }
 
@@ -543,7 +477,7 @@ final class LunaSettingsCsvIntegrationTest {
                 String minimumConstant,
                 String maximumConstant) {
 
-            assertThat(readDeclaredNumber(minimumConstant))
+            assertThat(SettingsSourceText.readDeclaredNumber(minimumConstant))
                 .as(
                     "%s in the settings sources against the low end of %s in %s: the slider's end is"
                         + " as far as a player can drag the row, and the clamp is how far the value"
@@ -553,16 +487,16 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    readColumn(fieldId, MIN_VALUE_COLUMN, INT_FIELD_TYPE)));
+                    LunaSettingsTable.readMinValue(fieldId, INT_FIELD_TYPE)));
 
-            assertThat(readDeclaredNumber(maximumConstant))
+            assertThat(SettingsSourceText.readDeclaredNumber(maximumConstant))
                 .as(
                     "%s in the settings sources against the high end of %s in %s",
                     maximumConstant,
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    readColumn(fieldId, MAX_VALUE_COLUMN, INT_FIELD_TYPE)));
+                    LunaSettingsTable.readMaxValue(fieldId, INT_FIELD_TYPE)));
         }
     }
 
@@ -573,9 +507,9 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(BooleanFieldIdsProvider.class)
         void booleanFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId) {
 
-            var defaultConstant = findBooleanFallbackConstant(fieldId);
+            var defaultConstant = SettingsSourceText.findBooleanFallbackConstant(fieldId);
 
-            assertThat(readDeclaredFlag(defaultConstant))
+            assertThat(SettingsSourceText.readDeclaredFlag(defaultConstant))
                 .as(
                     "%s in the settings sources against the default of %s in %s: the row's default"
                         + " is the state a fresh player is given and the constant is what answers"
@@ -584,7 +518,7 @@ final class LunaSettingsCsvIntegrationTest {
                     defaultConstant,
                     fieldId,
                     SETTINGS_CSV)
-                .isEqualTo(readColumn(fieldId, DEFAULT_VALUE_COLUMN, BOOLEAN_FIELD_TYPE)
+                .isEqualTo(LunaSettingsTable.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE)
                     .equalsIgnoreCase(BOOLEAN_ON_VALUE));
         }
     }
@@ -595,9 +529,9 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyValueFieldIdIsNamedBySomeSource() {
 
-            var namedFieldIds = readFieldIdLiteralsInMainSources();
+            var namedFieldIds = SettingsSourceText.readFieldIdLiteralsInMainSources();
 
-            assertThat(readValueFieldIds())
+            assertThat(LunaSettingsTable.readValueFieldIds())
                 .as(
                     "field ids declared in %s that no source under %s names, so either the row or"
                         + " the constant behind it was renamed and the player's stored value is"
@@ -611,10 +545,12 @@ final class LunaSettingsCsvIntegrationTest {
         void everyFieldIdNamedBySourceIsDeclaredInTheFile() {
 
             var declaredFieldIds = Stream
-                .concat(readDeclaredFieldIds().stream(), NON_SETTINGS_PREFIXED_IDS.stream())
+                .concat(
+                    LunaSettingsTable.readDeclaredFieldIds().stream(),
+                    NON_SETTINGS_PREFIXED_IDS.stream())
                 .toList();
 
-            assertThat(readFieldIdLiteralsInMainSources())
+            assertThat(SettingsSourceText.readFieldIdLiteralsInMainSources())
                 .as(
                     "prefixed ids named under %s that %s declares no row for, so a getter reads a"
                         + " key the shipped file never writes and silently answers its fallback"
@@ -631,7 +567,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyRowIsPlacedOnAKnownTab() {
 
-            assertThat(readDeclaredTabs())
+            assertThat(LunaSettingsTable.readDeclaredTabs())
                 .as(
                     "tab names declared in %s that the settings screen's layout does not know,"
                         + " so a mistyped one strands its field on a tab of its own",
@@ -645,7 +581,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyKnownTabHoldsAtLeastOneRow() {
 
-            assertThat(readDeclaredTabs())
+            assertThat(LunaSettingsTable.readDeclaredTabs())
                 .as("tabs the layout names that %s places no row on", SETTINGS_CSV)
                 .containsAll(KNOWN_TABS);
         }
@@ -653,7 +589,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyValueRowSitsOnItsSectionTab() {
 
-            assertThat(findRowsStrandedFromTheirSection())
+            assertThat(LunaSettingsTable.findRowsStrandedFromTheirSection())
                 .as(
                     "value rows in %s on a different tab from the section caption above them, so"
                         + " the section's heading and its knobs draw on different tabs",
@@ -668,7 +604,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyTabsRowsSitInOneUnbrokenRun() {
 
-            assertThat(findTabsDeclaredInMoreThanOneRun())
+            assertThat(LunaSettingsTable.findTabsDeclaredInMoreThanOneRun())
                 .as(
                     "tabs in %s whose rows are interrupted by another tab's, so the file no longer"
                         + " reads as one block per tab",
@@ -683,7 +619,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyHeaderRowDrawsTheCaptionItNames() {
 
-            assertThat(findHeaderRowsWhoseCaptionColumnsDisagree())
+            assertThat(LunaSettingsTable.findHeaderRowsWhoseCaptionColumnsDisagree())
                 .as(
                     "section captions in %s whose name and drawn columns differ: LunaLib draws a"
                         + " Header from its default-value column, so the other one is inert and an"
@@ -699,7 +635,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyTextRowCarriesItsWordsInTheDrawnColumn() {
 
-            assertThat(findTextRowsWhoseWordsAreNotDrawn())
+            assertThat(LunaSettingsTable.findTextRowsWhoseWordsAreNotDrawn())
                 .as(
                     "prose rows in %s whose words are not where LunaLib reads them: a Text row is"
                         + " drawn from its default-value column alone and shows no name column, so"
@@ -718,15 +654,6 @@ final class LunaSettingsCsvIntegrationTest {
             .toList();
     }
 
-    // Every Radio field the shipped file declares, in file order.
-    private static List<String> readRadioFieldIds() {
-        return readSettingsRows().stream()
-            .filter(row -> row.size() > FIELD_TYPE_COLUMN)
-            .filter(row -> RADIO_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
-            .map(row -> row.get(FIELD_ID_COLUMN))
-            .toList();
-    }
-
     // The Radio fields this suite has an answer for: those held against a choice enum above, plus
     // those declared to have no enum behind them.
     private static List<String> listClassifiedRadioFieldIds() {
@@ -737,371 +664,10 @@ final class LunaSettingsCsvIntegrationTest {
             .toList();
     }
 
-    // The tabs whose rows are split into more than one run by another tab's. LunaLib places a row
-    // by its tab column alone, so an interleaved file still draws the same screen - what breaks is
-    // reading it. The file is authored one unbroken block per tab, separated by a spacer row, and
-    // that is what makes a misplaced section show up as a stray run of its own rather than as a
-    // handful of cells among a hundred-odd identical-looking ones.
-    private static List<String> findTabsDeclaredInMoreThanOneRun() {
-        var runsPerTab = new LinkedHashMap<String, Integer>();
-
-        // Empty rather than any tab name, so the file's first row opens a run instead of joining
-        // one. No tab is named by the empty string, the spacer rows carrying no prefixed id.
-        var previousTab = "";
-
-        for (var tab : readDeclaredTabs()) {
-            if (!tab.equals(previousTab)) {
-                runsPerTab.merge(tab, 1, Integer::sum);
-                previousTab = tab;
-            }
-        }
-        return runsPerTab
-            .entrySet()
-            .stream()
-            .filter(tabRuns -> tabRuns.getValue() > 1)
-            .map(Map.Entry::getKey)
-            .toList();
-    }
-
-    // The value rows placed on a different tab from the caption that heads their section. LunaLib
-    // draws a section as the caption plus the rows following it, so the file's order is what binds
-    // the two - a row moved between tabs on its own leaves its heading behind, and a row added under
-    // the wrong caption inherits a tab nobody chose for it.
-    private static List<String> findRowsStrandedFromTheirSection() {
-        var strandedFieldIds = new ArrayList<String>();
-
-        // Empty until the first caption, so a value row ahead of every caption reads as stranded -
-        // it has no section to belong to.
-        var sectionTab = "";
-
-        for (var row : readFieldRows()) {
-            if (HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN))) {
-                sectionTab = row.get(TAB_COLUMN);
-            } else if (isStoredValueRow(row) && !sectionTab.equals(row.get(TAB_COLUMN))) {
-                strandedFieldIds.add(row.get(FIELD_ID_COLUMN));
-            }
-        }
-        return strandedFieldIds;
-    }
-
-    // Whether a row is one the screen stores a value for, as against the caption and prose rows that
-    // only draw. Both of those carry an ID and neither belongs to any section, so the walks that ask
-    // what a field is worth, and the one that asks which caption owns it, have to leave them out.
-    private static boolean isStoredValueRow(List<String> row) {
-
-        var fieldType = row.get(FIELD_TYPE_COLUMN);
-
-        return !HEADER_FIELD_TYPE.equals(fieldType) && !TEXT_FIELD_TYPE.equals(fieldType);
-    }
-
-    // The section captions whose two caption cells hold different text. A Header is drawn through
-    // addSectionHeading(defaultValue), so the name column beside it is inert for this row type
-    // alone - every other row type shows its name column and stores its default. Both are authored
-    // to the same text so that the row reads the same however it is skimmed, and this is what says
-    // so: without it, an edit to the inert column is a caption change that silently does not happen.
-    private static List<String> findHeaderRowsWhoseCaptionColumnsDisagree() {
-        return readFieldRows()
-            .stream()
-            .filter(row -> HEADER_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
-            .filter(row -> !row.get(FIELD_NAME_COLUMN).equals(row.get(DEFAULT_VALUE_COLUMN)))
-            .map(row -> row.get(FIELD_ID_COLUMN))
-            .toList();
-    }
-
-    // The prose rows whose words would not reach the screen. LunaLib draws a Text row through
-    // addPara(defaultValue) and shows no name column for it, so words authored beside it are
-    // invisible and an empty drawn column is a blank note taking up space. Neither shows as an
-    // error anywhere - the row loads, it simply says nothing - which is why it is asked here.
-    private static List<String> findTextRowsWhoseWordsAreNotDrawn() {
-        return readFieldRows()
-            .stream()
-            .filter(row -> TEXT_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
-            .filter(row -> !row.get(FIELD_NAME_COLUMN).isEmpty()
-                    || row.get(DEFAULT_VALUE_COLUMN).isEmpty())
-            .map(row -> row.get(FIELD_ID_COLUMN))
-            .toList();
-    }
-
-    // Every row the file declares for a KMU field, section captions included, in file order. The
-    // spacing rows between sections and the file's own column-header line carry no prefixed ID, so
-    // the prefix is also what tells a row from the file's furniture.
-    private static List<List<String>> readFieldRows() {
-        return readSettingsRows()
-            .stream()
-            .filter(row -> row.size() > TAB_COLUMN)
-            .filter(row -> row.get(FIELD_ID_COLUMN).startsWith(FIELD_ID_PREFIX))
-            .toList();
-    }
-
-    // Every field the screen stores a value for, in file order.
-    private static List<String> readValueFieldIds() {
-        return readFieldRows()
-            .stream()
-            .filter(LunaSettingsCsvIntegrationTest::isStoredValueRow)
-            .map(row -> row.get(FIELD_ID_COLUMN))
-            .toList();
-    }
-
-    // Every prefixed ID the file declares a row for, section captions included: a caption stores nothing,
-    // but it is still a row the file declares, so a source naming one is not naming a key that does not
-    // exist.
-    private static List<String> readDeclaredFieldIds() {
-        return readFieldRows()
-            .stream()
-            .map(row -> row.get(FIELD_ID_COLUMN))
-            .toList();
-    }
-
-    // The tab every row asks to be placed on, section captions included: a caption is what carries a
-    // section onto a tab, so it is placed the same way a value row is.
-    private static List<String> readDeclaredTabs() {
-        return readFieldRows()
-            .stream()
-            .map(row -> row.get(TAB_COLUMN))
-            .toList();
-    }
-
-    // Every field ID the shipped sources name, wherever they hold it.
-    private static Set<String> readFieldIdLiteralsInMainSources() {
-        try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
-            return sources
-                .filter(source -> source.toString().endsWith(JAVA_SOURCE_SUFFIX))
-                .flatMap(LunaSettingsCsvIntegrationTest::findFieldIdLiterals)
-                .collect(Collectors.toSet());
-        } catch (IOException failure) {
-            // Surfaced for the reason the CSV read is: an unreadable source tree means the walk is
-            // looking in the wrong place, not that every field is read.
-            throw new UncheckedIOException(
-                "Could not walk " + MAIN_SOURCE_ROOT.toAbsolutePath(),
-                failure);
-        }
-    }
-
-    private static Stream<String> findFieldIdLiterals(Path source) {
-        return FIELD_ID_LITERAL
-            .matcher(readSource(source))
-            .results()
-            .map(match -> match.group(1));
-    }
-
-    private static String readSource(Path source) {
-        try {
-            return Files.readString(source, StandardCharsets.UTF_8);
-        } catch (IOException failure) {
-            throw new UncheckedIOException("Could not read " + source.toAbsolutePath(), failure);
-        }
-    }
-
-    // The option label the named Java fallback constant resolves to. Read out of the source text
-    // rather than restated in the table above, so this holds the shipped constant and not a copy of
-    // it - the constants are private, so there is no other way to reach one.
-    private static String readFallbackLabel(String defaultConstant, LabeledChoice[] choices) {
-
-        var declaredChoice = findDeclaredChoiceName(defaultConstant);
-
-        return Arrays
-            .stream(choices)
-            .filter(choice -> ((Enum<?>) choice).name().equals(declaredChoice))
-            .map(LabeledChoice::getLabel)
-            .findFirst()
-            .orElseThrow(() -> new AssertionError(
-                defaultConstant + " is declared as " + declaredChoice
-                    + ", which is no option of the enum this row's table names"));
-    }
-
-    // The constant a numeric row's getter passes as its fallback, followed through any of the typed
-    // reads a number may be fetched by.
-    private static String findNumericFallbackConstant(String fieldId) {
-        return findFallbackConstant(fieldId, NUMERIC_FALLBACK_READ_PATTERN);
-    }
-
-    // The same two links for a Boolean row, followed through the one read a switch is fetched by.
-    private static String findBooleanFallbackConstant(String fieldId) {
-        return findFallbackConstant(fieldId, BOOLEAN_FALLBACK_READ_PATTERN);
-    }
-
-    // The constant a row's getter passes as its fallback, found by following the two links the
-    // sources spell out: the field ID to the constant holding it, then that constant to the read it
-    // is passed to. Walked rather than tabulated so the pairing is the shipped one; a getter written
-    // some other way is named by the failure rather than quietly skipped, which is what keeps the
-    // convention itself held.
-    //
-    // Only the second link varies by type, so it is the parameter: which reads may fetch this kind
-    // of row is the caller's statement, and a row fetched through some other kind of read then fails
-    // as an unfollowed link rather than being matched and held against the wrong kind of default.
-    private static String findFallbackConstant(String fieldId, String fallbackReadPattern) {
-
-        var fieldConstant = findSoleMatch(
-            FIELD_CONSTANT_PATTERN.formatted(Pattern.quote(fieldId)),
-            "the constant holding field id " + fieldId);
-
-        return findSoleMatch(
-            fallbackReadPattern.formatted(Pattern.quote(fieldConstant)),
-            "the fallback passed beside " + fieldConstant);
-    }
-
-    // The number a fallback constant is declared as. Read out of the source text rather than off the
-    // class, since these constants are private - the same reason the choice fallbacks above are read
-    // this way. A float literal's trailing suffix is not part of the number and is dropped.
-    private static double readDeclaredNumber(String defaultConstant) {
-
-        var declared = findSoleMatch(
-            NUMERIC_DEFAULT_PATTERN.formatted(Pattern.quote(defaultConstant)),
-            "a declaration of " + defaultConstant);
-
-        return Double.parseDouble(declared.replaceAll("[fFdD]$", ""));
-    }
-
-    // The state a switch's fallback constant is declared as, read out of the source text for the
-    // same reason its numeric neighbour is: the constants are private, so there is no other way to
-    // reach one.
-    private static boolean readDeclaredFlag(String defaultConstant) {
-
-        return Boolean.parseBoolean(findSoleMatch(
-            BOOLEAN_DEFAULT_PATTERN.formatted(Pattern.quote(defaultConstant)),
-            "a declaration of " + defaultConstant));
-    }
-
-    // The one capture the pattern finds across every shipped source. Exactly one is expected: none
-    // means the sources no longer spell the thing this walk follows, and two would leave it holding
-    // whichever file happened to be read first.
-    private static String findSoleMatch(String pattern, String soughtDescription) {
-
-        var matches = Pattern
-            .compile(pattern)
-            .matcher(readMainSourceText())
-            .results()
-            .map(match -> match.group(1))
-            .distinct()
-            .toList();
-
-        assertThat(matches)
-            .as("%s in %s", soughtDescription, MAIN_SOURCE_ROOT)
-            .hasSize(1);
-
-        return matches.get(0);
-    }
-
-    // Every shipped source as one text, so a walk that follows a link across classes - a field ID
-    // declared in one and read in another - sees both ends of it.
-    private static String readMainSourceText() {
-        try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
-            return sources
-                .filter(source -> source.toString().endsWith(JAVA_SOURCE_SUFFIX))
-                .map(LunaSettingsCsvIntegrationTest::readSource)
-                .collect(Collectors.joining("\n"));
-        } catch (IOException failure) {
-            // Surfaced for the reason the CSV read is: an unreadable source tree means the walk is
-            // looking in the wrong place, not that every fallback agrees.
-            throw new UncheckedIOException(
-                "Could not walk " + MAIN_SOURCE_ROOT.toAbsolutePath(),
-                failure);
-        }
-    }
-
-    // The enum constant a fallback is declared as. Exactly one declaration is expected: none means
-    // the table names a constant the sources no longer hold, and two would leave the walk holding
-    // whichever the file listed first.
-    private static String findDeclaredChoiceName(String defaultConstant) {
-
-        var pattern = Pattern.compile(CHOICE_DEFAULT_PATTERN.formatted(defaultConstant));
-
-        try (var sources = Files.walk(MAIN_SOURCE_ROOT)) {
-
-            var declarations = sources
-                .filter(source -> source.toString().endsWith(JAVA_SOURCE_SUFFIX))
-                .flatMap(source -> pattern.matcher(readSource(source)).results())
-                .map(match -> match.group(1))
-                .toList();
-
-            assertThat(declarations)
-                .as("declarations of %s under %s", defaultConstant, MAIN_SOURCE_ROOT)
-                .hasSize(1);
-
-            return declarations.get(0);
-
-        } catch (IOException failure) {
-            throw new UncheckedIOException(
-                "Could not walk " + MAIN_SOURCE_ROOT.toAbsolutePath(),
-                failure);
-        }
-    }
-
-    // The row's offered option labels, trimmed of the spacing the authored rows use.
-    private static List<String> readOptions(String fieldId) {
-        return Arrays
-            .stream(readColumn(fieldId, OPTIONS_COLUMN, RADIO_FIELD_TYPE).split(OPTION_SEPARATOR))
-            .map(String::trim)
-            .filter(option -> !option.isEmpty())
-            .toList();
-    }
-
-    // One cell of the named field's row. Fails the test outright when the row is missing or is not of
-    // the type the caller reads it as, since either means the tables below no longer describe the
-    // shipped file - and a cell read off a row of the wrong type would otherwise be held against a
-    // column that means something else there.
-    private static String readColumn(String fieldId, int column, String expectedFieldType) {
-        var row = findRow(fieldId);
-        assertThat(row.get(FIELD_TYPE_COLUMN))
-            .as("field type of %s", fieldId)
-            .isEqualTo(expectedFieldType);
-        return row.get(column);
-    }
-
-    private static List<String> findRow(String fieldId) {
-
-        var rows = readSettingsRows().stream()
-            .filter(row -> row.size() > OPTIONS_COLUMN)
-            .filter(row -> fieldId.equals(row.get(FIELD_ID_COLUMN)))
-            .toList();
-
-        assertThat(rows)
-            .as("rows for field %s in %s", fieldId, SETTINGS_CSV)
-            .hasSize(1);
-
-        return rows.get(0);
-    }
-
-    private static List<List<String>> readSettingsRows() {
-        try {
-            return Files
-                .readAllLines(SETTINGS_CSV, StandardCharsets.UTF_8)
-                .stream()
-                .map(LunaSettingsCsvIntegrationTest::splitCsvLine)
-                .toList();
-        } catch (IOException failure) {
-            // Surfaced rather than swallowed: the file is shipped data, so a read failure means the
-            // test is looking in the wrong place, not that the settings are fine.
-            throw new UncheckedIOException(
-                "Could not read " + SETTINGS_CSV.toAbsolutePath(),
-                failure);
-        }
-    }
-
-    // Splits one CSV line into its cells, honouring double quotes - the description and option columns
-    // both contain commas, so a plain split would shift every later column.
-    private static List<String> splitCsvLine(String line) {
-        var cells = new ArrayList<String>();
-        var cell = new StringBuilder();
-        var isQuoted = false;
-        for (var character : line.toCharArray()) {
-            if (character == '"') {
-                isQuoted = !isQuoted;
-            } else if (character == ',' && !isQuoted) {
-                cells.add(cell.toString().trim());
-                cell.setLength(0);
-            } else {
-                cell.append(character);
-            }
-        }
-        cells.add(cell.toString().trim());
-        return cells;
-    }
-
     /**
      * The choice-backed rows paired with the enum whose labels their options have to be.
      *
-     * <p>The four providers below are classes rather than factory methods so the cases name them by
+     * <p>The providers below are classes rather than factory methods so the cases name them by
      * class literal: a factory method is reached by a fully-qualified string that no rename ever
      * follows, which leaves the suite compiling and failing at run time instead.
      */
@@ -1163,10 +729,10 @@ final class LunaSettingsCsvIntegrationTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            return readFieldRows()
+            return LunaSettingsTable.readFieldIdsAndTypes()
                 .stream()
-                .filter(row -> NUMERIC_FIELD_TYPES.contains(row.get(FIELD_TYPE_COLUMN)))
-                .map(row -> Arguments.of(row.get(FIELD_ID_COLUMN), row.get(FIELD_TYPE_COLUMN)));
+                .filter(row -> NUMERIC_FIELD_TYPES.contains(row.fieldType()))
+                .map(row -> Arguments.of(row.fieldId(), row.fieldType()));
         }
     }
 
@@ -1215,10 +781,10 @@ final class LunaSettingsCsvIntegrationTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            return readFieldRows()
+            return LunaSettingsTable.readFieldIdsAndTypes()
                 .stream()
-                .filter(row -> BOOLEAN_FIELD_TYPE.equals(row.get(FIELD_TYPE_COLUMN)))
-                .map(row -> Arguments.of(row.get(FIELD_ID_COLUMN)));
+                .filter(row -> BOOLEAN_FIELD_TYPE.equals(row.fieldType()))
+                .map(row -> Arguments.of(row.fieldId()));
         }
     }
 
