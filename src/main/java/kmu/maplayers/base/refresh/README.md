@@ -96,6 +96,15 @@ the value gate is what makes re-applying safe at all,
 since LunaLib announces that the settings changed rather than which one
 and so every KMU knob the player moves arrives here.
 
+**The revision is read rather than subscribed to**,
+though `KmuLunaSettings` offers the callback and the mod's start-up wiring takes it.
+A subscription cannot be withdrawn -
+LunaLib's listener list only ever grows -
+while a loop is built per watcher per sector and rebuilt on every load,
+so subscribing would leave one listener per load standing for the life of the process.
+A counter compared on a frame the loop is already being handed costs nothing beside that,
+and goes away with the script.
+
 ## Two scripts, two classes
 
 The loop is held by a script rather than being one,
@@ -112,7 +121,13 @@ and KMLib's `SectorScripts.installTransientScript` clears by the built script's 
 so a second instance of one class silently replaces the first,
 and a layer taking its own poll back on a switch-off would take the substrate's with it.
 A poll that must be installed and cleared on its own timetable needs an identity of its own,
-and that identity is the whole of what each script class owns.
+and that identity is the whole of what each script class owns:
+everything else -
+the loop,
+and the engine's three per-frame answers -
+is `BaseStalenessSectorWatcher`'s.
+A subtype is enough for that,
+the class the engine is handed being the concrete one either way.
 
 ## The substrate's poll
 

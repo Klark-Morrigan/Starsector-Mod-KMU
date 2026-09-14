@@ -99,6 +99,13 @@ final class StalenessPollLoop {
 
     // Installs a retuned cadence, and only a retuned one.
     //
+    // Read off the revision rather than subscribed to, though KmuLunaSettings offers the callback
+    // and the mod's start-up wiring takes it: a subscription cannot be withdrawn - LunaLib's
+    // listener list only ever grows - while a loop is built per watcher per sector and rebuilt on
+    // every load, so subscribing would leave a listener per load standing for the life of the
+    // process. A counter compared on a frame the loop is already being handed costs nothing by
+    // comparison and is taken back with the script.
+    //
     // Gated twice. On the revision first, so the settings are not read on every campaign frame; and
     // then on the value, because LunaLib announces that the settings changed rather than which one,
     // so every knob the player moves reaches here.

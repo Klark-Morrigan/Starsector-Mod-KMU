@@ -13,6 +13,10 @@ import static org.mockito.Mockito.verify;
  * Pins a layer's share of the engine's script list: it never retires, it does not run while the
  * game is paused, and every frame it is advanced reaches the poll. The throttle, the fault guard
  * and what a fault costs are {@link StalenessPollLoop}'s to pin.
+ *
+ * <p>Asked of this class rather than of the base that answers for it, since a watcher exists to be
+ * a class the engine can install and clear on its own: the three answers are only worth anything
+ * reached through the identity that carries them.
  */
 final class MapLayerSectorWatcherTest {
 

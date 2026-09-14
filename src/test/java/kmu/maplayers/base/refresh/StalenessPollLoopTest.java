@@ -2,17 +2,12 @@ package kmu.maplayers.base.refresh;
 
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
-import kmu.settings.KmuLunaSettings;
-import kmu.settings.KmuMapRefreshSettings;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -23,10 +18,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
  * the engine's per-frame path nor stops the next poll. What the source then marks stale is its own
  * test's subject.
  *
- * <p>The cases that settle no setting are the unreadable-setting case as well as the cadence one:
- * nothing here runs inside a game, so the reader answers with its own fallback and the loop polls on
- * the shipped window. Only the two retune cases stand the reader in, and they are the ones about a
- * player having moved the row.
+ * <p>The cases that open no settings scope are the unreadable-setting case as well as the cadence
+ * one: nothing here runs inside a game, so the reader answers with its own fallback and the loop
+ * polls on the shipped window. Only the retune cases stand the reader in, and they are the ones
+ * about a player having moved the row.
  */
 final class StalenessPollLoopTest {
 
@@ -40,8 +35,12 @@ final class StalenessPollLoopTest {
     // a retune reset.
     private static final float ADVANCE_HALF_PAST_POLL_INTERVAL = 3f;
 
-    // The shipped cadence, stood in so a retune has something to move away from.
-    private static final int SHIPPED_POLL_SECONDS = 4;
+    // The shipped window's own two ends, which are the knob's default and the jitter ratio over it
+    // and are stated as a fixed 4-5 seconds in the register and the notes. A hair under four cannot
+    // elapse an interval floored at four; five always elapses one ceilinged at five.
+    private static final float ADVANCE_UNDER_SHIPPED_FLOOR = 3.99f;
+    private static final float ADVANCE_AT_SHIPPED_CEILING = 5f;
+
     // Far enough past the shipped window that one advance can sit between the two: past the shipped
     // ceiling, so the old cadence would have polled, and short of this one's floor.
     private static final int RETUNED_POLL_SECONDS = 20;
@@ -49,7 +48,6 @@ final class StalenessPollLoopTest {
     // whatever the jitter drew.
     private static final float ADVANCE_PAST_RETUNED_INTERVAL = 30f;
 
-    private static final int UNMOVED_SETTINGS_REVISION = 0;
     private static final int MOVED_SETTINGS_REVISION = 1;
 
     @Nested
@@ -131,23 +129,46 @@ final class StalenessPollLoopTest {
         }
 
         @Test
+        void pollsNoSoonerThanTheShippedWindowsFloor() {
+            // The window is stated as a fixed 4-5 seconds wherever it is written down, and it is the
+            // shipped default times the jitter ratio rather than a constant any longer. This end and
+            // the one below are what hold that ratio to the window it is said to produce.
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                var stalenessSourceMock = mock(MapLayerStalenessSource.class);
+
+                new StalenessPollLoop(stalenessSourceMock)
+                    .advancePoll(ADVANCE_UNDER_SHIPPED_FLOOR);
+
+                verifyNoInteractions(stalenessSourceMock);
+            }
+        }
+
+        @Test
+        void pollsNoLaterThanTheShippedWindowsCeiling() {
+
+            try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers()) {
+
+                var stalenessSourceMock = mock(MapLayerStalenessSource.class);
+
+                new StalenessPollLoop(stalenessSourceMock)
+                    .advancePoll(ADVANCE_AT_SHIPPED_CEILING);
+
+                verify(stalenessSourceMock)
+                    .markChangesSinceLastPoll();
+            }
+        }
+
+        @Test
         void installsARetunedCadenceOnTheNextSettingsRevision() {
 
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
-                 var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
-                 var refreshSettingsMock = mockStatic(KmuMapRefreshSettings.class)) {
+                 var settingsScope = RefreshSettingsScope.openOnTheShippedCadence()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
-                var pollLoop = buildPollLoopOnTheShippedCadence(
-                    lunaSettingsMock,
-                    refreshSettingsMock,
-                    stalenessSourceMock);
+                var pollLoop = new StalenessPollLoop(stalenessSourceMock);
 
-                stubSettings(
-                    lunaSettingsMock,
-                    refreshSettingsMock,
-                    MOVED_SETTINGS_REVISION,
-                    RETUNED_POLL_SECONDS);
+                settingsScope.settleCadence(MOVED_SETTINGS_REVISION, RETUNED_POLL_SECONDS);
 
                 // Past the cadence the loop was built on and short of the one it has just been
                 // handed, so what this observes is which of the two is installed.
@@ -169,22 +190,14 @@ final class StalenessPollLoopTest {
             // interval and zero the elapsed time with it, so a poll part-way through its wait would
             // start over on every settings change the player made.
             try (var globalMock = StubbedGlobalLogger.openGlobalAnsweringLoggers();
-                 var lunaSettingsMock = mockStatic(KmuLunaSettings.class);
-                 var refreshSettingsMock = mockStatic(KmuMapRefreshSettings.class)) {
+                 var settingsScope = RefreshSettingsScope.openOnTheShippedCadence()) {
 
                 var stalenessSourceMock = mock(MapLayerStalenessSource.class);
-                var pollLoop = buildPollLoopOnTheShippedCadence(
-                    lunaSettingsMock,
-                    refreshSettingsMock,
-                    stalenessSourceMock);
+                var pollLoop = new StalenessPollLoop(stalenessSourceMock);
 
                 pollLoop.advancePoll(ADVANCE_HALF_PAST_POLL_INTERVAL);
 
-                stubSettings(
-                    lunaSettingsMock,
-                    refreshSettingsMock,
-                    MOVED_SETTINGS_REVISION,
-                    SHIPPED_POLL_SECONDS);
+                settingsScope.settleRevisionAtTheShippedCadence(MOVED_SETTINGS_REVISION);
 
                 pollLoop.advancePoll(ADVANCE_HALF_PAST_POLL_INTERVAL);
 
@@ -192,38 +205,6 @@ final class StalenessPollLoopTest {
                     .markChangesSinceLastPoll();
             }
         }
-    }
-
-    // A loop built while the reader answers the shipped cadence, so a case about a retune starts
-    // from the window every other case here runs on.
-    private static StalenessPollLoop buildPollLoopOnTheShippedCadence(
-            MockedStatic<KmuLunaSettings> lunaSettingsMock,
-            MockedStatic<KmuMapRefreshSettings> refreshSettingsMock,
-            MapLayerStalenessSource stalenessSource) {
-
-        stubSettings(
-            lunaSettingsMock,
-            refreshSettingsMock,
-            UNMOVED_SETTINGS_REVISION,
-            SHIPPED_POLL_SECONDS);
-
-        return new StalenessPollLoop(stalenessSource);
-    }
-
-    // The two reads a retune is decided by, settled together: a revision on its own says nothing
-    // until there is a cadence behind it to compare.
-    private static void stubSettings(
-            MockedStatic<KmuLunaSettings> lunaSettingsMock,
-            MockedStatic<KmuMapRefreshSettings> refreshSettingsMock,
-            int settingsRevision,
-            int pollSeconds) {
-
-        lunaSettingsMock
-            .when(KmuLunaSettings::getSettingsRevision)
-            .thenReturn(settingsRevision);
-        refreshSettingsMock
-            .when(KmuMapRefreshSettings::getMapRefreshPollSeconds)
-            .thenReturn(pollSeconds);
     }
 
     // A source whose every poll throws, for the two cases about what a fault costs.
