@@ -48,7 +48,7 @@ public record PoliticalMapHoverHighlightSource(
         // A factionless cell (decivilised, or uninhabited while its outline is drawn) fuses into
         // no territory, so it has no frontier at all and offers no candidates - its cell still
         // washes, just without a halo.
-        var holder = territories.getOccupancy().getHolderBySystemKey().get(cellKey);
+        var holder = territories.getOccupancy().readHolderOf(cellKey);
         if (holder == null) {
             return List.of();
         }
@@ -65,7 +65,7 @@ public record PoliticalMapHoverHighlightSource(
         // the halo over an unowned cell is the shade its own outline drew in.
         return MapPalettes.pickHolderPaletteColour(
             paintSelection,
-            territories.getOccupancy().getHolderBySystemKey().get(cellKey),
+            territories.getOccupancy().readHolderOf(cellKey),
             territories.getBuildInputs().styling().readNeutralColour());
     }
 }

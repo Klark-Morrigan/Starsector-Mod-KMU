@@ -155,6 +155,60 @@ final class SystemOccupancyTest {
     }
 
     @Nested
+    class ReadHolderOf {
+
+        @Test
+        void readHolderOfAnswersTheHolderOfOneSystem() {
+
+            var occupancy = SystemOccupancy.createCopyOf(
+                Map.of(HELD_SYSTEM, HEGEMONY),
+                Set.of(),
+                Set.of());
+
+            assertThat(occupancy.readHolderOf(HELD_SYSTEM))
+                .isSameAs(HEGEMONY);
+        }
+
+        @Test
+        void readHolderOfAnswersNothingForASystemNobodyHolds() {
+            // An absent entry is what "nobody holds this" is, so the narrow read says the same
+            // thing a lookup in the map would - every caller branches on the null.
+            assertThat(SystemOccupancy.createEmpty().readHolderOf(HELD_SYSTEM))
+                .isNull();
+        }
+
+        @Test
+        void readHolderOfTellsApartTwoSystemsSharingAnId() {
+            // The narrow read is addressed the way the map is, so the arms that separate a
+            // colliding pair still separate it - a read that had narrowed to the ID would answer
+            // whichever of them came first.
+            var holders = new LinkedHashMap<SystemKey, DominantHolder>();
+
+            holders.put(FIRST_TWIN, HEGEMONY);
+            holders.put(SECOND_TWIN, TRITACHYON);
+
+            var occupancy = SystemOccupancy.createCopyOf(holders, Set.of(), Set.of());
+
+            assertThat(occupancy.readHolderOf(FIRST_TWIN))
+                .isSameAs(HEGEMONY);
+            assertThat(occupancy.readHolderOf(SECOND_TWIN))
+                .isSameAs(TRITACHYON);
+        }
+
+        @Test
+        void readHolderOfShowsWhatALaterFoldWrote() {
+            // Off the holding itself rather than through the view, so a caller asking after a
+            // refresh reads what the refresh recorded rather than what the build resolved.
+            var occupancy = SystemOccupancy.createEmpty();
+
+            occupancy.recordHolderOf(HELD_SYSTEM, HEGEMONY);
+
+            assertThat(occupancy.readHolderOf(HELD_SYSTEM))
+                .isSameAs(HEGEMONY);
+        }
+    }
+
+    @Nested
     class GetInhabitedSystemKeys {
 
         @Test

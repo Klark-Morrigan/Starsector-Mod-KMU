@@ -8,8 +8,8 @@ import kmlib.opengl.GlRuns;
 import kmlib.profiling.ActiveProfiler;
 import kmlib.profiling.ProfileSection;
 
-import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.labels.anchor.DiagnosticPalette;
+import kmu.maplayers.base.render.MapFrame;
 
 import org.lwjgl.opengl.GL11;
 

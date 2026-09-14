@@ -116,6 +116,27 @@ public final class SystemOccupancy {
     }
 
     /**
+     * Who holds one system.
+     *
+     * <p>The read most callers want, and the reason the whole map is not it: a caller asking about
+     * one system would otherwise take the entire holding and look a key up in it, which hands out
+     * far more than the question needs and answers one hop further away, through the unmodifiable
+     * view rather than off the holding itself. The map read stays for the folds that really do span
+     * every system - the cell grouping, the faction-ID projection the shaper compares against, and
+     * the label styling snapshot.
+     *
+     * <p>Answers null for a system nobody holds, which is what an absent entry means. A caller with
+     * no system to name - a cell drawn as no star - asks nothing rather than probing with a null
+     * key.
+     *
+     * @param systemKey the system to read
+     * @return its holder, or null where nobody holds it
+     */
+    public DominantHolder readHolderOf(SystemKey systemKey) {
+        return holderBySystemKey.get(systemKey);
+    }
+
+    /**
      * @return every system something is standing in, whoever holds it and whether or not this
      *         layer's holding accounts for them
      */

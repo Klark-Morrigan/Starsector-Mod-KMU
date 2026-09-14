@@ -2,11 +2,11 @@ package kmu.maplayers.politicalmap.base.render;
 
 import com.fs.starfarer.api.Global;
 
-import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.hover.HoverHighlightRenderer;
 import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.labels.LabelRenderer;
 import kmu.maplayers.base.labels.anchor.ClusterAnchorRenderer;
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapOverlayBand;
 import kmu.maplayers.base.render.clusters.ClusterRenderer;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageRenderer;

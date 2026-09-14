@@ -87,8 +87,7 @@ public final class FactionTerritoryBuilder {
             blocId,
             territories
                 .getOccupancy()
-                .getHolderBySystemKey()
-                .get(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));
+                .readHolderOf(cellGrouping.resolveDrawnSystemKeyOf(memberCellKeys.get(0))));
 
         var style = blocPaint.style();
         var fillColour = blocPaint.pickColourOf(style.fill());

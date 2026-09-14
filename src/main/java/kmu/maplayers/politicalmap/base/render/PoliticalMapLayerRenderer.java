@@ -8,7 +8,6 @@ import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
-import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.hover.MapHoverCues;
 import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
@@ -16,6 +15,7 @@ import kmu.maplayers.base.hover.MapHoverState;
 import kmu.maplayers.base.hover.cover.MapCoverReader;
 import kmu.maplayers.base.layer.MapLayerScreens;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
+import kmu.maplayers.base.render.MapFrame;
 import kmu.maplayers.base.render.MapFrameBeats;
 import kmu.maplayers.base.render.MapFrameSections;
 import kmu.maplayers.base.render.MapLayerRenderer;

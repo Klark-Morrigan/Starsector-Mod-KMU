@@ -311,16 +311,19 @@ final class IncrementalPoliticsRefresh {
         // star's own, so it resolves to that star, but the resolve is explicit so an
         // absorbed cell would key by its holder rather than its own missing star.
         var drawnSystemKey = geometryCache.getSystemKeyByCellKey().get(cellKey);
-        var holderBySystemKey = territories.getOccupancy().getHolderBySystemKey();
+        var occupancy = territories.getOccupancy();
         var holder = drawnSystemKey == null
             ? null
-            : holderBySystemKey.get(drawnSystemKey);
+            : occupancy.readHolderOf(drawnSystemKey);
 
+        // This cell's own holder narrowly, and the whole holding beside it: the shaper compares
+        // every neighbour's holder against this one to tell a same-bloc seam from a border, so that
+        // half is one of the few reads the map itself answers.
         var ownerFactionId = holder == null ? null : holder.factionId();
         var shaped = CellShaper.shapeCell(
             edges,
             ownerFactionId,
-            DominantHolder.mapFactionIdBySystemKey(holderBySystemKey),
+            DominantHolder.mapFactionIdBySystemKey(occupancy.getHolderBySystemKey()),
             EdgeInsetRule.AT_EVERY_BORDER,
             CellShaper.BORDER_INSET_DISTANCE);
 

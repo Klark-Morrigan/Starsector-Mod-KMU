@@ -129,7 +129,7 @@ final class MarkedSystemRederive {
         // resolved this system's holder with, so a single-system refresh lands the same winning
         // bloc the bulk pass would.
         var newHolder = SectorPolitics.resolveDominantHolder(marked.system(), pass);
-        var oldHolder = territories.getOccupancy().getHolderBySystemKey().get(marked.systemKey());
+        var oldHolder = territories.getOccupancy().readHolderOf(marked.systemKey());
 
         // DominantHolder is a record, so equality covers the faction and its palette: a
         // resize that leaves the same winner leaves the drawing identical.
