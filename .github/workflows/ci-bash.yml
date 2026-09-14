@@ -1,0 +1,20 @@
+# Delegates to the shared bash CI workflow in Common-Automation. It
+# shellchecks production bash (.github/actions/), runner bash
+# (scripts/), and git hooks; verifies the +x bit on every tracked
+# *.sh; and runs every *.bats suite under the repo. Empty surfaces
+# auto-skip with ::notice::. For KMU the bash surface is the runner
+# shims under scripts/ and the git hooks - held to the same strict bar
+# as every other repo.
+#
+# PR-only: the release path re-runs this same gate through KMLib's
+# reusable mod-release workflow, which calls Common-Automation's
+# ci-bash directly rather than routing back through this caller.
+name: Common-Automation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci-bash:
+    uses: Klark-Morrigan/Common-Automation/.github/workflows/ci-bash.yml@master

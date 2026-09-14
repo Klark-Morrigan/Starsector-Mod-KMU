@@ -1,0 +1,40 @@
+# KMU's release entry point. Triggers on push to master and delegates the
+# whole pipeline to KMLib's reusable mod-release workflow, which derives every
+# mod-specific value (mod id, version, runner label, zip name, jar path, and
+# the repos its Gradle build needs beside the checkout) from this repo's
+# mod_info.json - so this caller passes no inputs.
+#
+# The pipeline only does real work when mod_info.json's version differs from
+# the latest git tag, so an ordinary push (no version bump) costs one cheap
+# config job and stops. On a bump it re-runs the PR gates against the exact
+# commit being released, packages the mod zip, tags, and publishes a GitHub
+# release whose body is this repo's CHANGELOG.md section for that version,
+# followed by a line naming the KMLib release it requires.
+#
+# Pinned to a KMLib tag rather than a branch so an unrelated KMLib commit
+# cannot change how KMU releases after the fact. This pin and the kmlib
+# dependency version in mod_info.json move together, in the same commit -
+# see KMLib's docs/dev/versioning.md.
+#
+# The pipeline refuses to release when that kmlib pin names a KMLib version
+# with no published release, so KMLib is released before KMU is - see the
+# same document.
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+# A reusable workflow's permissions are capped by its caller, so the tag and
+# release the pipeline publishes need the grant repeated here.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    uses: Klark-Morrigan/Starsector-Mod-KMLib/.github/workflows/mod-release.yml@0.2.0
+    # Forwards sibling_checkout_token when this repo defines one, so the
+    # pipeline can clone the private neighbours KMU's build applies shared
+    # Gradle scripts from; absent, those clones fall back to github.token.
+    secrets: inherit

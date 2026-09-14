@@ -1,0 +1,14 @@
+# CI for this repo's YAML surfaces. Delegates to the reusable workflow
+# in Common-Automation, which runs four lint jobs in parallel:
+# actionlint, action-validator, yamllint, ansible-lint. Each job
+# auto-skips when its target surface is absent, so a PowerShell repo
+# with no Ansible content gets workflow/YAML linting at no extra cost.
+name: Common-Automation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ci-yaml:
+    uses: Klark-Morrigan/Common-Automation/.github/workflows/ci-yaml.yml@master

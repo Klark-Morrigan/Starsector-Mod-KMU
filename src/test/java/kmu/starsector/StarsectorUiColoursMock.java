@@ -1,0 +1,135 @@
+package kmu.starsector;
+
+import com.fs.starfarer.api.util.Misc;
+
+import org.mockito.MockedStatic;
+
+import java.awt.Color;
+import java.util.Map;
+
+import static org.mockito.Mockito.mockStatic;
+
+/**
+ * Stands in for the engine's live UI colours: the {@code Misc} shades a look resolves through and the
+ * named settings keys behind the rest, installed together and closed together. A subject built from the
+ * running game's palette cannot be reached under the test JVM without both halves, and a case that
+ * installed only one gets a null shade from whichever accessor it forgot.
+ *
+ * <p>Every shade below is a different colour, deliberately. A case pins a wiring - which live read
+ * reaches which part of the look - and it can only pin that if the two reads it is telling apart answer
+ * differently: setup that hands two roles one shade passes a subject that took the wrong one. Keeping
+ * them apart here rather than per case is also what stops two files disagreeing about which shade stands
+ * for which role, which would leave each file's cases sound only against its own setup.
+ *
+ * <p>Colour reads alone. Whatever the subject makes of them - which chevron the player picked, which
+ * band height a screen stands at - is the case's own to name, since those are choices a case may want to
+ * vary while the palette underneath holds still.
+ */
+public final class StarsectorUiColoursMock implements AutoCloseable {
+
+    /** The player faction's base accent, the shade its chrome and controls are ruled in. */
+    public static final Color PLAYER_BASE = new Color(170, 222, 255);
+
+    /** Its brighter step, taken by a lit label or a ticked box. */
+    public static final Color PLAYER_BRIGHT = new Color(200, 240, 255);
+
+    /** Its dark step, the recessive shade its frames and its button interiors are drawn in. */
+    public static final Color PLAYER_DARK = new Color(31, 94, 112, 175);
+
+    /**
+     * The fixed UI grey the engine frames its own panels in, which no player faction moves. Translucent
+     * as the engine's own is ({@code textGrayColor} carries an alpha under 255): a shade sunk from this
+     * one is expected to carry that translucency through, so a fixture that handed the subject an opaque
+     * grey would let a step that flattened it pass.
+     */
+    public static final Color UI_GRAY = new Color(155, 155, 155, 180);
+
+    /** The lighter grey the engine writes its plain body text in, a step above {@link #UI_GRAY}. */
+    public static final Color UI_TEXT = new Color(220, 220, 220);
+
+    /** The blue the engine writes its button and tab labels in. */
+    public static final Color BUTTON_TEXT = new Color(130, 200, 230);
+
+    /**
+     * The near-white the engine titles its tooltips in - the fixed palette's bright step above
+     * {@link #BUTTON_TEXT}. Named rather than left to {@link #ENGINE_UI_SHADE} because it is one step of
+     * an accent, and a case pinning which step went where needs them to differ.
+     */
+    public static final Color LIGHT_HIGHLIGHT = new Color(203, 245, 255);
+
+    /**
+     * The dark teal a resting vanilla button fills and frames with - the fixed palette's own dark step,
+     * one below {@link #BUTTON_TEXT}.
+     */
+    public static final Color BUTTON_BG_DARK = new Color(31, 60, 75, 175);
+
+    /** The gold an emphasised word reads in. */
+    public static final Color HIGHLIGHT_GOLD = new Color(255, 255, 175);
+
+    /**
+     * What every other named engine colour key answers with - {@code buttonShortcut} and the rest. One
+     * shade for all of them because a case pinning a particular key names it itself; this is the floor
+     * that keeps an unnamed key from resolving null and failing the whole look.
+     */
+    public static final Color ENGINE_UI_SHADE = new Color(100, 100, 100);
+
+    // The engine keys the named shades above are stored under, so the proxy can answer those apart from
+    // the floor. Spelt here rather than reached for through the palette enum: this fake stands in for
+    // the engine, so it answers keys the way the engine stores them.
+    private static final Map<String, Color> NAMED_ENGINE_SHADES = Map.of(
+        "tooltipTitleAndLightHighlightColor", LIGHT_HIGHLIGHT,
+        "buttonBgDark", BUTTON_BG_DARK);
+
+    private final MockedStatic<Misc> miscMock;
+
+    private StarsectorUiColoursMock(MockedStatic<Misc> miscMock) {
+        this.miscMock = miscMock;
+    }
+
+    /**
+     * Installs the palette: the {@code Misc} accessors answer with the shades above and the settings
+     * proxy answers every named colour key. Close the result to take both back down - a leaked static
+     * mock fails the next case in the class to touch the same type.
+     *
+     * @return the installed palette, to be closed when the case is done with it
+     */
+    public static StarsectorUiColoursMock install() {
+
+        StarsectorSettingsFake.installSettings(
+            key -> NAMED_ENGINE_SHADES.getOrDefault(key, ENGINE_UI_SHADE));
+
+        var miscMock = mockStatic(Misc.class);
+
+        miscMock
+            .when(Misc::getBasePlayerColor)
+            .thenReturn(PLAYER_BASE);
+        miscMock
+            .when(Misc::getBrightPlayerColor)
+            .thenReturn(PLAYER_BRIGHT);
+        miscMock
+            .when(Misc::getDarkPlayerColor)
+            .thenReturn(PLAYER_DARK);
+        miscMock
+            .when(Misc::getGrayColor)
+            .thenReturn(UI_GRAY);
+        miscMock
+            .when(Misc::getTextColor)
+            .thenReturn(UI_TEXT);
+        miscMock
+            .when(Misc::getButtonTextColor)
+            .thenReturn(BUTTON_TEXT);
+        miscMock
+            .when(Misc::getHighlightColor)
+            .thenReturn(HIGHLIGHT_GOLD);
+
+        return new StarsectorUiColoursMock(miscMock);
+    }
+
+    @Override
+    public void close() {
+
+        miscMock.close();
+
+        StarsectorSettingsFake.clearSettings();
+    }
+}

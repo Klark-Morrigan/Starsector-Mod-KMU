@@ -1,0 +1,35 @@
+package kmu.maplayers.base.render;
+
+/**
+ * Where one part of a layer's overlay is painted in the map's own draw order, relative to the
+ * per-system nebulae the map holds icons for. The map surface paints one band per pass and tells the
+ * renderer which, so a sub-layer moves between them by being emitted for a different band rather
+ * than by anything about it changing.
+ *
+ * <p>Those nebula icons are drawn in <em>both</em> map looks, not only in Starscape - what the
+ * Starscape filter changes is how: a large blended sprite over the sector rather than the ordinary
+ * nebula terrain render. The names carry the mode because that sprite is what the split is for, and
+ * because Starscape is the only look with a surface above the nebulae at all - the schematic map
+ * owns one icon and so paints both bands in one pass, below them, exactly as it always has.
+ *
+ * <p>The bands are named for their positions, not their contents, and no inventory of what rides
+ * where belongs here: what a fogged sub-layer costs is a question about how the picture reads, and
+ * a layer may well hand the answer to the player. What each band is remains fixed however its
+ * contents move, which is exactly what naming them for their contents would have given up.
+ */
+public enum MapOverlayBand {
+
+    /**
+     * Under the nebulae, so whatever is emitted here is dimmed by them - one large blended sprite
+     * across the sector under Starscape, ordinary nebula terrain otherwise. Painted first, and in
+     * every map look.
+     */
+    BENEATH_STARSCAPE_NEBULAE,
+
+    /**
+     * Over the nebulae, and still under the vanilla star and constellation names: whatever is
+     * emitted here reads at full strength. Painted last, and only where a surface exists to put it
+     * there - the schematic map owns one terrain icon and so paints both bands back to back.
+     */
+    ABOVE_STARSCAPE_NEBULAE
+}

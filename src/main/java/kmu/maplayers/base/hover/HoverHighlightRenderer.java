@@ -1,0 +1,169 @@
+package kmu.maplayers.base.hover;
+
+import kmlib.opengl.GlBlendMode;
+import kmlib.opengl.GlColour;
+import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.GlPasses;
+import kmlib.opengl.GlRuns;
+import kmlib.time.Timings;
+
+import kmu.maplayers.base.render.MapFrame;
+import kmu.maplayers.base.theme.HoverGlowStyle;
+import kmu.maplayers.base.theme.HoverHighlightStyle;
+import kmu.maplayers.base.theme.HoverWashStyle;
+
+import org.lwjgl.opengl.GL11;
+
+import java.awt.Color;
+
+/**
+ * Draws a highlight over the map: a halo blooming off the loops it was handed and a wash
+ * lifting the extents beside them.
+ *
+ * <p>Both burn additively rather than blending over the map. A halo is layers of the same
+ * loop stacked on each other - only additive blending lets those layers accumulate into a
+ * soft outward falloff instead of the topmost one simply replacing the rest - and the wash
+ * brightens what is already painted, so adding light to the fill under it reads as the cell
+ * lighting up rather than as a second, flatter fill laid over it.
+ *
+ * <p>The pass itself is pure GL emission over a resolved highlight, a resolved colour and the
+ * style the theme baked, so what lights up and what it lights up in are the caller's to decide.
+ * The cursor's own entry composes the three - {@link HoverHighlightGeometry} for the shapes and
+ * {@link HoverHighlightColour} for the shade - and is the only part of this that knows a cursor
+ * exists.
+ */
+public final class HoverHighlightRenderer {
+
+    private final HoverHighlightGeometry geometry = new HoverHighlightGeometry();
+
+    /**
+     * Paints the cursor's hover highlight for one map frame, or nothing when the cursor is
+     * over no cell.
+     *
+     * @param source    the active layer's answers about the frame it painted - the hovered
+     *                  extent, the loops around it, and the shade its fill draws in
+     * @param style     the theme's highlight tier, which owns the shape of the halo and the
+     *                  weight of the wash
+     * @param hover     what the cursor is over this frame
+     * @param mapFrame  the scale every coordinate is multiplied by, and the map's own fade applied
+     *                  on top of every element's opacity
+     */
+    public void renderCursorHighlightOnMap(
+            HoverHighlightSource source,
+            HoverHighlightStyle style,
+            MapHover hover,
+            MapFrame mapFrame) {
+
+        var colour = HoverHighlightColour.resolveColourFor(source, hover, style);
+        // Checked here rather than left to the pass's own gate, since it is what says whether the
+        // geometry is worth resolving at all: a null colour is a parked hover or a highlight the
+        // player has switched off, and both stand every frame the map is open.
+        if (colour == null) {
+            return;
+        }
+        renderHighlightOnMap(
+            geometry.resolveHighlightFor(source, hover),
+            colour,
+            style,
+            mapFrame);
+    }
+
+    /**
+     * Paints one resolved highlight, whatever resolved it.
+     *
+     * @param highlight the loops to bloom off and the extents to wash
+     * @param colour    the single shade both burn in
+     * @param style     the tier owning the shape of the halo and the weight of the wash
+     * @param mapFrame  the scale every coordinate is multiplied by, and the map's own fade applied
+     *                  on top of every element's opacity
+     */
+    public static void renderHighlightOnMap(
+            HoverHighlight highlight,
+            Color colour,
+            HoverHighlightStyle style,
+            MapFrame mapFrame) {
+
+        // Nothing to paint when the highlight resolved no shape, no colour was resolved for it, or
+        // the map has fully faded at the ends of its zoom fade - each would emit every run for
+        // nothing, so each skips the GL state push rather than being left to blend away.
+        if (highlight.isEmpty() || colour == null || mapFrame.isFadedOut()) {
+            return;
+        }
+        // Additive and smoothed: the halo is layers of one loop stacked on each other, which only
+        // additive blending accumulates into a bloom, and only smoothing keeps the outer layers
+        // from reading as concentric hard rings. The pass restores the map's own blend function
+        // on the way out - every pass after this one (the anchors, the cluster names) expects to
+        // draw over the map, not into it.
+        GlPasses.runBlendedPass(
+            GlBlendMode.ADDITIVE,
+            GlLineQuality.SMOOTHED,
+            () -> {
+                drawGlow(highlight, style.glow(), colour, mapFrame);
+                drawWash(highlight, style.wash(), colour, mapFrame);
+            });
+    }
+
+    // Strokes every loop the highlight carries once per layer, so the additive layers pile into a
+    // halo; each layer's width and alpha come off the style, which owns the shape of the stack.
+    private static void drawGlow(
+            HoverHighlight highlight,
+            HoverGlowStyle style,
+            Color colour,
+            MapFrame mapFrame) {
+
+        if (style.opacity() <= 0 || style.layers() < 1) {
+            return;
+        }
+        // The pulse rides a wall clock rather than the campaign's own: the sector map is open
+        // on a paused game, where advance() does not tick, and a halo frozen mid-breath while
+        // the player studies the map would read as the overlay having hung. Read once for the
+        // whole stack, so every layer of one frame is phased alike.
+        var timeSeconds = Timings.convertNanosToSeconds(System.nanoTime());
+
+        for (var layer = 0; layer < style.layers(); layer++) {
+            GL11.glLineWidth((float) style.computeLayerWidth(layer));
+            GlColour.set(
+                colour,
+                (float) (mapFrame.alphaMult() * style.computeLayerAlpha(layer, timeSeconds)));
+
+            for (var loop : highlight.glowLoops()) {
+                GlRuns.drawScaled(
+                    GL11.GL_LINE_LOOP,
+                    loop,
+                    mapFrame.factor());
+            }
+        }
+    }
+
+    // Lifts what the highlight covers: its whole extent brightened, then its boundary traced all
+    // the way round. The trace is what names a lit cell inside a cluster - one walled in by its
+    // own neighbours draws no border of its own, so without it a wash inside a same-coloured
+    // cluster would have no edge to read.
+    private static void drawWash(
+            HoverHighlight highlight,
+            HoverWashStyle style,
+            Color colour,
+            MapFrame mapFrame) {
+
+        if (style.fillOpacity() > 0) {
+            GlColour.set(colour, (float) (mapFrame.alphaMult() * style.fillOpacity()));
+            GlRuns.drawScaled(
+                GL11.GL_TRIANGLES,
+                highlight.washTriangles(),
+                mapFrame.factor());
+        }
+        if (style.outlineOpacity() > 0) {
+            GL11.glLineWidth((float) style.outlineWidth());
+            GlColour.set(
+                colour,
+                (float) (mapFrame.alphaMult() * style.outlineOpacity()));
+
+            for (var loop : highlight.washOutline()) {
+                GlRuns.drawScaled(
+                    GL11.GL_LINE_LOOP,
+                    loop,
+                    mapFrame.factor());
+            }
+        }
+    }
+}

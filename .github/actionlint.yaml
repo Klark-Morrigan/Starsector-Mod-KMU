@@ -1,0 +1,7 @@
+# Declares the self-hosted runner labels this repo's workflows target,
+# so actionlint stops flagging `runs-on: [self-hosted, kmu-runner]` as
+# an unknown label. kmu-runner is the self-hosted runner provisioned
+# with STARSECTOR_HOME + JDK for compiling and testing this mod.
+self-hosted-runner:
+  labels:
+    - kmu-runner

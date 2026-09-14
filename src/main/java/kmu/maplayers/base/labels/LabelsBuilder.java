@@ -1,0 +1,206 @@
+package kmu.maplayers.base.labels;
+
+import kmlib.math.geometry.Segment;
+import kmlib.profiling.ActiveProfiler;
+import kmlib.profiling.ProfileSection;
+
+import kmu.maplayers.base.labels.anchor.ClusterAnchor;
+import kmu.maplayers.base.profiling.MapBuildCounters;
+import kmu.maplayers.base.profiling.RebuildStepTerms;
+
+import org.lazywizard.lazylib.ui.LazyFont;
+import org.lazywizard.lazylib.ui.LazyFont.DrawableString;
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Builds the cached cluster-name labels from the resolved cluster placements. One name
+ * block per cluster whose placement search accepted a box: the owner's display name in the
+ * lines and at the font size the fit already chose, the lines stacked perpendicular to the
+ * accepted line and centred as a block on its midpoint, slanted to its slope, in the
+ * owner's bright colour.
+ *
+ * <p>Reuses the cluster-anchor placements rather than re-fitting: the anchor carries the
+ * wrapped lines, the font height, and the band thickness its box was sized for, so the drawn
+ * block matches the fitted footprint by construction and the (costly) placement search runs
+ * once. The line spacing is read back out of that band rather than off the setting a second
+ * time, which is what keeps "by construction" honest - a spacing change between the fit and
+ * the draw cannot leave the block spilling out of the box it was fitted into. This class adds
+ * only the geometry of the stack - each line's own hang point along the block's perpendicular
+ * - and the GL strings; it never touches the sector. The label font is the
+ * fixed face loaded and cached by {@link LabelFonts} - the same face whose metrics
+ * sized the boxes - and a face that failed to load leaves the labels empty.
+ *
+ * <p>The {@link DrawableString}s own GL buffers, so a rebuild disposes the previous list's
+ * strings before minting the new ones; nothing here runs per frame.
+ */
+public final class LabelsBuilder {
+
+    // Every mint writes its line: it runs on a rebuild rather than per frame, so each call is a
+    // step a reader following that rebuild through the log expects to find.
+    private static final ProfileSection BUILD_SECTION = ProfileSection.registerSection(
+        "mapLayer.buildLabels", RebuildStepTerms.LOGGED_EVERY_CALL);
+
+    // Below two lines there is no gap between line centres to measure, so the band holds one
+    // line height and nothing more.
+    private static final int MIN_LINES_TO_STACK = 2;
+
+    // Builds only; never instantiated.
+    private LabelsBuilder() {
+    }
+
+    // Rebuilds the label list in place from the current placements: disposes the standing
+    // strings (they hold GL buffers), clears, and - only when names are drawn at all - mints
+    // one string per planned line. Whether they are is the caller's answer, not a setting read
+    // here: the placements can be built for the debug overlay alone, and only the layer that
+    // asked for them knows whether its names are showing. Profiled and timed on its own so the
+    // label build's cost is visible next to the drawables and anchor builds; a failed font
+    // load leaves the list empty. Runs at rebuild time only, never per frame.
+    public static void rebuildLabels(
+            List<Label> labels,
+            List<ClusterAnchor> anchors,
+            boolean areNamesDrawn) {
+
+        disposeAll(labels);
+        labels.clear();
+        if (!areNamesDrawn) {
+            return;
+        }
+        var resolvedFont = LabelFonts.loadMapLabelFont();
+        if (resolvedFont == null) {
+            return;
+        }
+        try (var buildScope = ActiveProfiler.resolveProfiler().open(BUILD_SECTION)) {
+            // The plan step (each line's text, colour, hang point, slant, and font size)
+            // is pure computation; only the mint below touches GL, so the stacking
+            // geometry stays a self-contained calculation apart from GL resource creation.
+            for (var plan : planLabels(anchors)) {
+
+                var text = resolvedFont.createText(
+                    plan.text(),
+                    plan.colour(),
+                    plan.fontHeight());
+
+                text.setAnchor(LazyFont.TextAnchor.CENTER);
+                labels.add(new Label(
+                    text,
+                    plan.colour(),
+                    plan.hangX(),
+                    plan.hangY(),
+                    plan.slantDegrees()));
+            }
+            // The lines are what the mint is paid per, so they are the count; how many clusters
+            // they came from is a fact about this one call rather than a volume of work, and rides
+            // on its name.
+            buildScope.addCount(MapBuildCounters.LABELS, labels.size());
+            buildScope.tagCall("ofClusters=" + anchors.size());
+        }
+    }
+
+    /**
+     * One planned label line, before any GL string is minted: its text, the colour to draw
+     * it in, the world point its centre hangs on, its slant, and the font height
+     * (single-line world height) it renders at. The pure output of {@link #planLabels},
+     * holding the placement-to-line geometry as plain data, separate from the GL string
+     * minting that consumes it.
+     */
+    public record LabelPlan(
+        String text,
+        Color colour,
+        float hangX,
+        float hangY,
+        float slantDegrees,
+        float fontHeight) {
+    }
+
+    // Plans every label line: skipping a collapsed placement (dot only, no accepted
+    // axis) and any cluster with no wrapped name (an owner whose font or display name
+    // did not resolve at fit time), then laying the cluster's lines out as a block -
+    // stacked along the accepted line's perpendicular, centred on the anchor, first line
+    // on the upper side so the block reads top-down. The slant is folded upright first,
+    // so the stacking normal is taken from the direction the text actually reads in.
+    // Pure - no GL, no font, no sector.
+    public static List<LabelPlan> planLabels(List<ClusterAnchor> anchors) {
+
+        var plans = new ArrayList<LabelPlan>(anchors.size());
+        for (var anchor : anchors) {
+            if (anchor.acceptedAxis() == null || anchor.nameLines().isEmpty()) {
+                continue;
+            }
+            var slantDegrees = computeSlantDegrees(anchor.acceptedAxis());
+            planBlockLines(plans, anchor, slantDegrees);
+        }
+        return plans;
+    }
+
+    // Disposes every standing label's DrawableString so their GL buffers are freed at the
+    // moment of rebuild rather than left to LazyLib's finalizer sweep. Public entry for the
+    // plugin to call on cleanup as well as the rebuild here.
+    public static void disposeAll(List<Label> labels) {
+        for (var label : labels) {
+            label.text().dispose();
+        }
+    }
+
+    // Lays one cluster's lines out around its anchor: line centres spaced one step apart
+    // along the upright slant's "up" perpendicular, the whole stack centred on the anchor
+    // point, first line highest.
+    private static void planBlockLines(
+            List<LabelPlan> plans,
+            ClusterAnchor anchor,
+            float slantDegrees) {
+
+        var lines = anchor.nameLines();
+        var slantRadians = Math.toRadians(slantDegrees);
+
+        // The unit perpendicular on the reading direction's upper side: for an upright
+        // slant (|slant| <= 90) its y-component is non-negative, so "up" is screen-up.
+        var upX = (float) -Math.sin(slantRadians);
+        var upY = (float) Math.cos(slantRadians);
+        var lineStep = computeLineStep(anchor);
+
+        for (var lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+            // Offsets run from +((L-1)/2)*step for the first line down to its negative
+            // for the last, symmetric about the anchor.
+            var offset = ((lines.size() - 1) / 2f - lineIndex) * lineStep;
+            plans.add(new LabelPlan(
+                lines.get(lineIndex),
+                anchor.colour(),
+                anchor.anchorX() + upX * offset,
+                anchor.anchorY() + upY * offset,
+                slantDegrees,
+                anchor.fontHeight()));
+        }
+    }
+
+    // The gap between two stacked line centres, read back out of the band the fit already
+    // reserved rather than off the line-spacing setting a second time. The fit sizes a band
+    // of thickness fontHeight * ((lineCount - 1) * lineSpacing + 1) - one line height plus a
+    // step per gap - so the step is what is left of the band once the last line's own height
+    // is taken off, divided between the gaps. Deriving it here is what makes "the drawn block
+    // fills the fitted box" true by construction: the block cannot be stacked at a spacing the
+    // box was not sized for, however the setting moves between the fit and the draw. A single
+    // line has no gap, and its step goes unread.
+    private static float computeLineStep(ClusterAnchor anchor) {
+        if (anchor.lineCount() < MIN_LINES_TO_STACK) {
+            return 0f;
+        }
+        return (anchor.thickness() - anchor.fontHeight()) / (anchor.lineCount() - 1);
+    }
+
+    // The slope of the accepted line in degrees, folded upright so the name reads
+    // left-to-right: a line pointing into the left half-plane is reversed first, so a
+    // name never renders upside down. The remaining lean (bounded by the anchor's
+    // max-slant cap) is kept as every line's slant.
+    private static float computeSlantDegrees(Segment axis) {
+        var deltaX = axis.endX() - axis.startX();
+        var deltaY = axis.endY() - axis.startY();
+        if (deltaX < 0.0) {
+            deltaX = -deltaX;
+            deltaY = -deltaY;
+        }
+        return (float) Math.toDegrees(Math.atan2(deltaY, deltaX));
+    }
+}

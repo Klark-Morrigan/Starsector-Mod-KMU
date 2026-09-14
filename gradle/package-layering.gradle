@@ -1,0 +1,127 @@
+// KMU's layering rules: which of its package roots may not import which.
+//
+// Its own file because these are a description of the mod's architecture rather
+// than of its build. They outgrew the build file - there are more lines of them
+// than of everything else put together - and a reader opening build.gradle to
+// find out how the mod is assembled had to scroll past the whole shape of the
+// code first. The mechanism they are declared through stays in Common-Java's
+// gradle/tasks/lint/structure/enforce-package-layering.gradle; this is only the
+// edges, which are a per-project fact.
+//
+// Applied AFTER the shared conventions, since those are what register the task
+// this configures. Applied before them, the name resolves to nothing and the
+// build fails at configuration time.
+// Every package tree beside kmu.mods, closed below against the optional mods'
+// own types. Stated as an enumeration because the gate has no exemption clause:
+// a single 'under: kmu' edge would shut kmu.mods off from the very mods its
+// adapters exist to adapt. A new top-level tree has to be added here to be
+// covered - the list is the rule.
+//
+// kmu.maplayers is missing on purpose, and is the one tree still open: its
+// PoliticalMapMarketTransferListener implements a Nexerelin interface from
+// inside the political map's own listeners package. Closing it is a matter of
+// moving that class to kmu.mods.nexerelin, where the installer that defers it
+// already lives; until then this list would fail rather than hold.
+def treesClosedToOptionalMods = ['kmu.conditions', 'kmu.diagnostics',
+    'kmu.settings', 'kmu.starsector', 'kmu.svg', 'kmu.ui', 'kmu.util']
+
+// The mods KMU may run without: named only by the adapter that stands behind a
+// presence gate for each. LazyLib and LunaLib are deliberately absent - the mod
+// is compiled against them and cannot run without them, so they belong with the
+// code that uses them rather than under kmu.mods.
+def optionalModPackages = ['assortment_of_things', 'exerelin', 'org.lazywizard.console']
+
+enforcePackageLayering {
+
+    // Optional-mod bans:
+
+    treesClosedToOptionalMods.each { closedTree ->
+        forbidImport under: closedTree, of: optionalModPackages
+    }
+
+    // The mod plugin sits in the root package itself and registers the adapters,
+    // so it names kmu.mods; naming a mod's own types there would defeat the
+    // deferral those adapters are built around. 'exactly' rather than 'under',
+    // which would re-close every tree above.
+    forbidImport exactly: 'kmu', of: optionalModPackages
+
+    // Group bans:
+
+    forbidImport under: 'kmu.maplayers.base',
+                 of: 'kmu.maplayers.politicalmap'
+
+    forbidImport under: 'kmu.maplayers.base.geometry.output',
+                 of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport under: 'kmu.maplayers.base.geometry.render',
+                 of: ['kmu.maplayers.base.geometry.output',
+                      'kmu.maplayers.base.geometry.settings',
+                      'kmu.maplayers.base.geometry.ui']
+
+    forbidImport under: 'kmu.maplayers.base.geometry.settings',
+                 of: ['kmu.maplayers.base.geometry.output',
+                      'kmu.maplayers.base.geometry.ui']
+
+    forbidImport under: 'kmu.maplayers.base.geometry.v4',
+                 of: ['kmu.maplayers.base.geometry.output',
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v3']
+
+    forbidImport under: 'kmu.maplayers.base.geometry.v3',
+                 of: ['kmu.maplayers.base.geometry.output',
+                      'kmu.maplayers.base.geometry.ui',
+                      'kmu.maplayers.base.geometry.v4']
+
+    forbidImport under: 'kmu.maplayers.base.tooltip.content',
+                 of: ['kmu.maplayers.base.tooltip.layout',
+                      'kmu.maplayers.base.tooltip.detail']
+
+    forbidImport under: 'kmu.maplayers.base.tooltip.detail',
+                 of: ['kmu.maplayers.base.tooltip.content',
+                      'kmu.maplayers.base.tooltip.layout']
+
+    forbidImport under: 'kmu.maplayers.base.visibility.colonies',
+                 of: 'kmu.maplayers.base.visibility.systems'
+
+    forbidImport under: 'kmu.maplayers.base.visibility.observations',
+                 of: ['kmu.maplayers.base.visibility.colonies',
+                      'kmu.maplayers.base.visibility.structures',
+                      'kmu.maplayers.base.visibility.systems']
+
+    forbidImport under: 'kmu.svg',
+                 of: 'kmu.maplayers'
+
+    forbidImport under: 'kmu.ui',
+                 of: 'kmu.maplayers'
+
+    // Exact bans:
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry',
+                 of: ['kmu.maplayers.base.geometry.output',
+                      'kmu.maplayers.base.geometry.render',
+                      'kmu.maplayers.base.geometry.settings',
+                      'kmu.maplayers.base.geometry.ui']
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry.ui.settings',
+                 of: 'kmu.maplayers.base.geometry.ui'
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry.v3',
+                 of: ['kmu.maplayers.base.geometry.render',
+                      'kmu.maplayers.base.geometry.settings',
+                      'kmu.maplayers.base.geometry.v3.ui']
+
+    forbidImport exactly: 'kmu.maplayers.base.geometry.v4',
+                 of: ['kmu.maplayers.base.geometry.render',
+                      'kmu.maplayers.base.geometry.settings',
+                      'kmu.maplayers.base.geometry.v4.ui']
+
+    forbidImport exactly: 'kmu.maplayers.base.hover',
+                 of: 'kmu.maplayers.base.installation'
+
+    forbidImport exactly: 'kmu.maplayers.base.refresh',
+                 of: 'kmu.maplayers.base.installation'
+
+    forbidImport exactly: 'kmu.maplayers.base.tooltip',
+                 of: ['kmu.maplayers.base.tooltip.layout',
+                      'kmu.maplayers.base.tooltip.content']
+}

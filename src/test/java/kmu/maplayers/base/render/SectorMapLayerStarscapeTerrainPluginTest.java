@@ -1,0 +1,176 @@
+package kmu.maplayers.base.render;
+
+import kmu.maplayers.base.layer.MapLayerRegistry;
+import kmu.maplayers.base.layer.MapLayerScreens;
+import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
+import kmu.settings.KmuMapHoverSettings;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import static kmu.maplayers.base.render.MapSurfaceFixtures.seatSurfacesInAnInstalledSector;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+/**
+ * Pins the two things this half adds to the map's draw: it paints only while a Starscape map is on
+ * screen, so no two surfaces lay the same overlay down in one frame, and it paints the lower band
+ * alone - the half of the picture the map's nebulae are allowed to fog. It is also the surface
+ * that prepares the frame, that being what the lower band carries with it, while the cursor read it
+ * takes beside that is a pass's own and is taken by the surface above it as well.
+ *
+ * <p>Every case seats the surface on an installed sector, the stand-aside one included: a surface
+ * with nowhere to resolve its machinery draws nothing whatever else is staged, so a case left
+ * unseated would pass without pinning anything.
+ */
+final class SectorMapLayerStarscapeTerrainPluginTest {
+
+    private static final float FACTOR = 1f;
+    private static final float ALPHA_MULT = 1f;
+
+    // A screen with the whole of its layers on it, which is the state every case here poses: what the
+    // hide fade does to the pass is the base surface's subject, both halves drawing through the one pass.
+    private static final float FULLY_SHOWN = 1f;
+
+    private final MapLayerRenderer layerRendererMock = mock(MapLayerRenderer.class);
+
+    // The surface reads the compatibility constraint before it draws, and that read reaches LunaLib,
+    // which no test has. Stubbed for the class rather than per case because every case here is about
+    // the bands and the stand-aside; Mockito's own default answers the constraint off, which is both
+    // the shipped default and the state these cases mean to describe.
+    private MockedStatic<KmuMapHoverSettings> mapLayerSettingsMock;
+
+    // Stood in for the class, but left unstubbed until a case asks: the stand-aside case asserts that
+    // the registry was never reached at all, which a stubbing set up for every case would spend.
+    private MockedStatic<MapLayerRegistry> layerRegistryMock;
+
+    // The screens' own stand-in, opened beside it: the surface asks the registry what draws and the
+    // screens how far through a hide the showing one stands, and a case posing one poses both.
+    private MockedStatic<MapLayerScreens> layerScreensMock;
+
+    @BeforeEach
+    void standInForTheLayerRegistryAndSettings() {
+
+        mapLayerSettingsMock = mockStatic(KmuMapHoverSettings.class);
+        layerRegistryMock = mockStatic(MapLayerRegistry.class);
+        layerScreensMock = mockStatic(MapLayerScreens.class);
+    }
+
+    @AfterEach
+    void releaseTheLayerRegistryAndSettings() {
+
+        layerScreensMock.close();
+        layerRegistryMock.close();
+        mapLayerSettingsMock.close();
+    }
+
+    // The index is process-wide, so a sector installed on by one case would go on answering for the
+    // next - including with the frame it left half prepared, the claim being the machinery's.
+    @BeforeEach
+    @AfterEach
+    void clearEveryMachinery() {
+        SectorMapMachineryIndex.disposeAllMachinery();
+    }
+
+    // Puts a renderer behind the active pick, on a screen showing its layers in full, for the cases
+    // about what this surface draws through it. The fade is stated rather than left to the stand-in's
+    // own default, which would be a screen with none of its layers on it and would take every alpha
+    // below to nothing - the pass is what these cases are about, not the dissolve.
+    private void stubTheActiveLayersRendererOnAShownScreen() {
+
+        layerRegistryMock
+            .when(() -> MapLayerRegistry.resolveDrawnMapRenderer(any()))
+            .thenReturn(layerRendererMock);
+
+        layerScreensMock
+            .when(MapLayerScreens::resolveShownFadeOnLiveScreen)
+            .thenReturn(FULLY_SHOWN);
+    }
+
+    @Nested
+    class RenderOnMap {
+
+        @Test
+        void renderOnMapPaintsTheLowerBandWhileAStarscapeMapIsShowing() {
+
+            var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
+
+            seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRendererOnAShownScreen();
+
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
+
+            verify(layerRendererMock)
+                .renderOnMap(FACTOR, ALPHA_MULT, MapOverlayBand.BENEATH_STARSCAPE_NEBULAE);
+        }
+
+        @Test
+        void renderOnMapLeavesTheUpperBandToTheSurfaceAboveTheNebulae() {
+            // Painting it here as well would put the names back under the fog: this surface's icon
+            // sits beneath the nebulae, so anything it emits is drawn beneath them whatever it is.
+            var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
+
+            seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRendererOnAShownScreen();
+
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
+
+            verify(layerRendererMock, never())
+                .renderOnMap(anyFloat(), anyFloat(), eq(MapOverlayBand.ABOVE_STARSCAPE_NEBULAE));
+        }
+
+        @Test
+        void renderOnMapPreparesTheFrameForTheSurfaceAboveItAsWell() {
+            // The upper surface prepares nothing, so this is the frame's only preparation whenever
+            // Starscape is the look on screen.
+            var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
+
+            seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRendererOnAShownScreen();
+
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
+
+            verify(layerRendererMock)
+                .prepareFrame(FACTOR);
+        }
+
+        @Test
+        void renderOnMapPublishesTheHoverForItsOwnPass() {
+            // Both Starscape surfaces read, this one included: the read inverts the transform its
+            // own pass bound, so a surface skipping it would leave the frame's answer to whichever
+            // other pass drew - the fault this arrangement exists to close.
+            var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> true);
+
+            seatSurfacesInAnInstalledSector(plugin);
+            stubTheActiveLayersRendererOnAShownScreen();
+
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
+
+            verify(layerRendererMock)
+                .publishHoverForPass(FACTOR);
+        }
+
+        @Test
+        void renderOnMapStandsAsideWhileNoStarscapeMapIsShowing() {
+            // The engine calls this half in either mode, so standing aside is the only thing
+            // keeping it off the map while the base half is the one already drawing there.
+            var plugin = new SectorMapLayerStarscapeTerrainPlugin(() -> false);
+
+            seatSurfacesInAnInstalledSector(plugin);
+
+            plugin.renderOnMap(FACTOR, ALPHA_MULT);
+
+            layerRegistryMock
+                .verifyNoInteractions();
+        }
+    }
+}

@@ -1,0 +1,11 @@
+entityTypeId,isAdmitted,kind
+station_research_remnant,true,
+station_mining_remnant,true,
+orbital_habitat_remnant,true,
+derelict_cryosleeper,true,
+derelict_mothership,true,
+derelict_survey_ship,true,
+derelict_probe,true,
+derelict_gatehauler,true,
+coronal_tap,true,
+inactive_gate,true,

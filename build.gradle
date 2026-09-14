@@ -1,0 +1,397 @@
+// KMU's build. The shared Starsector mod conventions live in KMLib's
+// gradle/starsector-mod.gradle (java target, test stack, coverage, the
+// Starsector API classpath, mod_info.json versioning, jar output) and are
+// applied below; this file keeps only what is specific to KMU - its group
+// and the extra dependencies it pulls beyond the API.
+apply from: "${rootDir}/../Starsector-Mod-KMLib/gradle/starsector-mod.gradle"
+
+group = 'kmu'
+
+// Developer tooling that is neither shipped nor a test: the sector fixture, the pipeline
+// that assembles it into shapes, and the viewer and SVG writer that draw it. It sits in its
+// own source set so none of it can reach the mod's jar, while the tests can still depend on
+// it - the fixture and the assembly path are shared by the viewer and the assertions, and
+// keeping one copy is what makes the picture evidence about what the tests check.
+//
+// Declared before `dependencies` because creating the source set is what creates its
+// utilsCompileOnly / utilsRuntimeOnly configurations, which that block then populates.
+sourceSets {
+    // src/utils/java and src/utils/resources are this source set's conventional layout, so
+    // they are not declared: naming a srcDir that is already one registers it twice and
+    // every resource then arrives as a duplicate.
+    //
+    // Only the mod's own classes are added to the classpaths. The game and library jars
+    // arrive through this source set's own utilsCompileOnly / utilsRuntimeOnly
+    // configurations, rather than by borrowing main's: main declares them compileOnly
+    // because Starsector supplies them at runtime, so borrowing its runtime configuration
+    // would hand utils an empty one and the viewer would compile and then die on
+    // NoClassDefFoundError.
+    utils {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+    test {
+        compileClasspath += sourceSets.utils.output
+        runtimeClasspath += sourceSets.utils.output
+    }
+}
+
+// KMU's own layering edges. Kept beside the build rather than in it: they
+// describe the mod's architecture, not how it is assembled.
+apply from: "${rootDir}/gradle/package-layering.gradle"
+
+enforceNoTestVocabulary {
+    exemptSourceSet name: 'utils'
+}
+
+enforcePackageVocabulary {
+    forbidWords under: 'kmu.maplayers.base',
+                words: ['territory', 'territories', 'national border',
+                        'contested fill', 'bloc', 'blocs']
+
+    // *Cell* means a system's polygon everywhere else under this root - the
+    // geometry that shapes one, the edges it is classified by, the hit test
+    // that finds one under the pointer. The arranging modal borrowed it for the
+    // vanilla elements its box is laid out from, which is a table's word for a
+    // thing that is not one: the modal's head and foot are cells of no row. The
+    // engine already names them - a `createUIElement` returns an element - so
+    // the modal says *element*, and the map keeps the word.
+    forbidWords under: 'kmu.maplayers.base.chrome.arrange',
+                words: ['cell', 'cells']
+
+    // The one file that may say it, for the reason the map-layer README may say
+    // *ground*: the package's own README is where this rule is written down, and
+    // a rule that cannot name the word it forbids cannot be read. The singular
+    // alone - the prose there states the rule rather than discussing a column of
+    // them, so the plural stays closed even in the file that explains it.
+    allowWord word: 'cell',
+            inFile: 'src/main/java/kmu/maplayers/base/chrome/arrange/README.md'
+
+    // *Ground* is simply unclear. It stood for a cell, a cluster's fill,
+    // a whole territory and the receded backdrop in different sentences of the
+    // same file, so a reader had to guess which each time - and the words it
+    // stood for were all available. Declared here beside the layering words so
+    // both halves of "what this tree may not say" read as one block.
+    forbidWords under: 'kmu',
+                words: ['ground']
+
+    // The one file that may say it: the map-layer README is where this rule is
+    // written down, and a rule that cannot name the word it forbids cannot be
+    // read. The same shape as the political-word exemptions below - naming an
+    // identifier or a rule is not the tree speaking the word for itself.
+    allowWord word: 'ground',
+            inFile: 'src/main/java/kmu/maplayers/README.md'
+
+    // The four files that may say it, each for a reason no rewording reaches.
+    // Three name the sector-memory keys the picker's selection is stored under:
+    // those are save-serialised identities, frozen for the reason the terrain
+    // plugin's class name is, so the word is part of a key rather than a claim
+    // about the framework.
+    allowWord word: 'bloc',
+            inFile: 'src/main/java/kmu/maplayers/base/sidebar/FilterSelection.java'
+    allowWord word: 'bloc',
+            inFile: 'src/main/java/kmu/maplayers/base/sidebar/README.md'
+    allowWord word: 'bloc',
+            inFile: 'src/test/java/kmu/maplayers/base/sidebar/FilterSelectionTest.java'
+
+    // The fourth is the legitimate shape the faction row above describes: the
+    // theme's README explains why `MapPalettes` stays political, and it cannot
+    // make that argument without naming what the political map resolves.
+    allowWord word: 'bloc',
+            inFile: 'src/main/java/kmu/maplayers/base/theme/README.md'
+
+    // The geometry viewer's header lists the pipeline stages it does *not*
+    // exercise, by their real class names on the political side. Naming another
+    // package's types is not this package speaking the word for itself, and the
+    // names are not ours to reword.
+    allowWords words: ['territory', 'territories'],
+            inFile: 'src/utils/java/kmu/maplayers/base/geometry/ui/SectorGeometryViewer.java'
+}
+
+// Two ambient reads the map layers contain, each at the seams named below.
+//
+// The map layers derive everything they draw from one sector, and each holds the
+// machinery of the sector it was handed. Reading the running game's sector
+// instead is how a pass ends up drawing, marking stale or previewing a map
+// nobody is looking at - which no compiler can see, since the tenth such read
+// compiles exactly like the first.
+//
+// So the reads are contained at the seams vanilla drives with no sector named,
+// and those seams are named here. Three of the four resolve a *sector* for a
+// screen that hands them none - the pause cover, the filter self-heal and the
+// live claim reader; the fourth is the installation index, which is where a
+// sector-less caller resolves the machinery it should draw through, and is the
+// one read the whole arrangement rests on.
+enforceRestrictedCalls {
+    restrictCall call: 'Global.getSector()',
+        under: 'kmu.maplayers',
+        toTypes: [
+            'FilterSelectionHeal',
+            'LiveVisibilityClaimBreakdownReader',
+            'SectorMapMachineryIndex',
+            'PauseMenuMapCover']
+
+    // Every choice made on a sidebar panel is that screen's own, and a screen's
+    // key is the preference's base key with the screen's segment composed onto
+    // it. A holder reaching a memory slot by a bare key gets one slot per save
+    // instead: both panels then share the pick, which reads as the feature
+    // working right up until the player sets one panel and finds the other
+    // moved. Nothing about that is compile-visible, so the three ways into a
+    // slot are contained at the holders that compose a key through a
+    // ScreenMemoryScope.
+    //
+    // The two wrappers are the general road - AddressedMemoryFlag and
+    // AddressedMemoryString hold one slot per address and are what a new
+    // preference declares. The two named beside them build a slot directly
+    // because each is constructed per screen and holds one scope for life, so
+    // there is no address to take per call. The raw memory handle is contained
+    // at the active-layer pick, which reads and writes a key it composed in its
+    // own constructor.
+    restrictCall call: 'new SectorMemoryFlag(',
+        under: 'kmu.maplayers',
+        toTypes: [
+            'AddressedMemoryFlag',
+            'PersistedMapLayerVisibility',
+            'PersistedSidebarFold']
+    restrictCall call: 'new SectorMemoryString(',
+        under: 'kmu.maplayers',
+        toTypes: ['AddressedMemoryString']
+    restrictCall call: 'SectorMemoryAccess.readSectorMemory()',
+        under: 'kmu.maplayers',
+        toTypes: ['PersistedActiveLayerSelection']
+}
+
+// On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
+// sets above because the shared script formats
+// whichever ones exist when it runs; utils is KMU's own code, so it is styled
+// like main and test rather than exempted.
+apply from: "${rootDir}/../Common-Java/gradle/spotless-java.gradle"
+
+// The shared conventions expose the resolved install root so KMU can locate
+// its own extra dependencies without re-deriving the path.
+def starsectorRoot = project.ext.starsectorRoot
+def consoleCommandsJars = findModJars('lw_Console.jar')
+
+// KMLib hosts shared helpers (palette, localisation lookups). Named by its
+// coordinates rather than by a path: settings.gradle includes the sibling
+// checkout as a build, so Gradle substitutes this notation with that project
+// and rebuilds the jar behind it whenever its source changes. Deliberately
+// without a version - the substitution binds to whatever the included build
+// produces, so pinning one here would only be a second place to update on
+// every KMLib release.
+def kmlibDependency = 'kmlib:KMLib'
+
+// LazyLib is a hard dependency in mod_info.json (its LazyFont/DrawableString draw
+// the political-map faction names - there is no vanilla font API). The mod
+// classloader supplies the jar at runtime, so compiling against it is enough.
+// Resolved via the install root because LazyLib always lives at
+// <starsector>/mods/lw_lazylib, the launcher's expected layout.
+def lazyLibJarFile = resolveModJarFile('lw_lazylib', 'LazyLib.jar')
+
+// LunaLib is a hard dependency in mod_info.json, and KMU compiles against none of
+// it - the coupling is KMLib's, in KmLogging and LunaSettingsReader. It is still
+// needed at TEST runtime: KMU's own settings classes reach that reader, whose
+// inner relay implements LunaLib's listener interface, so loading one without the
+// jar dies on NoClassDefFoundError. The game classloader hands it over in play;
+// nothing outside the game does.
+def lunaLibJarFile = resolveModJarFile('lunalib', 'LunaLib.jar')
+
+// Nexerelin is an optional runtime dependency. KMU compiles against its
+// InvasionListener so the political map can repaint a colony that changes hands
+// in a Nex war; the mod classloader supplies the jar at runtime when Nex is
+// installed, and NexerelinInvasionListenerInstaller gates the listener behind a
+// mod-enabled check so a Nex-free install never resolves the type.
+def nexJars = findModJars('ExerelinCore.jar')
+
+// XStream backs Starsector's save serialisation. KMU compiles against it to
+// override configureXStream and alias the map-layer terrain plugin's former
+// class names, so saves written before each rename still resolve. It ships inside
+// starsector-core (always present with the game), so the game classloader
+// supplies it at runtime - compileOnly for the mod itself. The tests need it on
+// their own runtime classpath as well: the alias test stands an XStream in for
+// the game's and verifies what the mod registers on it, which needs the real
+// class present to stand in for. Globbed so a version bump does not break the
+// path.
+def xstreamJars = findCoreJars(['xstream-*.jar'])
+
+// The obfuscated core, carrying the concrete campaign classes the published API only exposes as
+// interfaces. KMU compiles against one of them: CampaignTerrain, which the map layers' Starscape
+// terrain entity subclasses so it can report the terrain type the sector map draws in Starscape
+// mode. The API side has nothing to subclass - LocationAPI.addTerrain always builds a
+// plain CampaignTerrain - so the concrete class is the only way in. compileOnly, like the API jar:
+// the game classloader supplies it at runtime.
+//
+// Deliberately not on testCompileOnly. These classes carry members whose names are not legal Java
+// identifiers, so a verifying JVM outside the game refuses to load them; keeping them off the test
+// compile classpath is what stops a type that cannot run there from being named there.
+//
+// Both jars are needed to name one type: starfarer_obf.jar has CampaignTerrain itself, and
+// fs.common_obf.jar has the DoNotObfuscate and LayeredRenderable its supertype chain reaches -
+// javac resolves the whole chain of anything it is asked to subclass.
+def obfJars = findCoreJars(['starfarer_obf.jar', 'fs.common_obf.jar'])
+
+// MagicLib backs KMLib's CoreUiTree, the reflection bypass every read of the live core-UI widget
+// tree goes through. KMU names it nowhere and compiles without it - the coupling is KMLib's, declared
+// and gated there - but this suite needs it on its runtime classpath, because the map-chrome tests
+// drive that read over KMLib's own fakes rather than around it: a row reached off a map widget's own
+// accessor is what a row on screen is, and a fixture handing one over directly would stand for a
+// state no screen is ever in. Located by jar name since the install folder is version-stamped.
+def magicLibJars = findModJars('MagicLib.jar')
+
+// That bypass is written in Kotlin, so its class initialiser calls into the Kotlin runtime LazyLib
+// ships beside its own jar. In game the classloader has both loaded; under test the class fails to
+// initialise without it, which surfaces as a NoClassDefFoundError on kotlin/jvm/internal/Intrinsics
+// from whatever first walked the widget tree.
+//
+// It is a compile input too, despite no KMU source naming a Kotlin type. LazyFont's DrawableString
+// carries Kotlin @Deprecated annotations whose level is a kotlin.DeprecationLevel constant, and
+// javac reads the annotations on every member it resolves. Off the compile classpath the enum
+// cannot be resolved and each one warns "unknown enum constant DeprecationLevel.HIDDEN" - noise
+// that reads like a real problem and is not one.
+def lazyLibKotlinRuntimeJarFile = resolveModJarFile('lw_lazylib', 'internal/Kotlin-Runtime.jar')
+
+// org.json backs the preferences KMU keeps in the game's common data, which is a folder of JSON
+// files: the port KMLib publishes for it is spelled in JSONObject, so javac must resolve the type
+// to compile a caller of it. The classes ship in starsector-core/json.jar and the game classloader
+// provides them at runtime, so compileOnly like the rest - the test runtime already sees the jar
+// through the core-jar set the shared conventions put there.
+def jsonJars = findCoreJars(['json.jar'])
+
+// LWJGL, which carries the GLU tessellator the render layer resolves a territory's winding with.
+// The utils tooling runs that same geometry outside the game to draw and to write SVGs, so it
+// needs the jar at RUNTIME - the game classloader is not there to hand it over. Compiling without
+// it succeeds and the tool then dies on NoClassDefFoundError, which is exactly the trap the
+// source-set comment above warns about.
+def lwjglJars = findCoreJars(['lwjgl.jar', 'lwjgl_util.jar'])
+
+// The utils tooling needs its jars at RUNTIME as well as to compile, for the same reason the tests
+// do: compileOnly is enough for the mod itself because Starsector's mod classloader hands it these
+// at runtime, but nothing outside the game does. A viewer that compiles and then dies on
+// NoClassDefFoundError is the shape that mistake takes. KMU's own shape rather than a shared one -
+// utils is this mod's source set, and the conventions know nothing of it.
+def dependOnUtilsJars = { Object jars ->
+    ['utilsCompileOnly', 'utilsRuntimeOnly'].each { configurationName ->
+        dependencies.add(configurationName, jars)
+    }
+}
+
+// Everything the mod and its tooling both build against, in the two shapes the conventions define:
+// a jar the game's own install carries, and a jar that arrives with another mod.
+dependOnGameJars(jsonJars)
+dependOnGameJars(xstreamJars)
+
+dependOnModJars(consoleCommandsJars)
+dependOnModJars(nexJars)
+dependOnModJars(files(lazyLibJarFile))
+dependOnModJars(files(lazyLibKotlinRuntimeJarFile))
+// KMLib is a hard dependency in mod_info.json; Starsector's mod classloader provides the jar at
+// runtime so compileOnly is enough. KMU drives its logging through KMLib's KmLogging, so the LunaLib
+// coupling lives in KMLib's classpath and KMU compiles against none of it - only the runtime
+// dependency declared in mod_info.json, plus the test runtime entry below, where nothing hands the
+// jar over.
+dependOnModJars(kmlibDependency)
+
+dependOnUtilsJars(consoleCommandsJars)
+dependOnUtilsJars(nexJars)
+dependOnUtilsJars(kmlibDependency)
+dependOnUtilsJars(files(lazyLibJarFile))
+dependOnUtilsJars(files(lazyLibKotlinRuntimeJarFile))
+// At compile time as well as at runtime, because KMLib's geometry is overloaded on LWJGL's vector
+// type: without the jar to resolve those signatures against, every such call fails to compile and
+// the caller writes its own arithmetic instead of using the shared one.
+dependOnUtilsJars(lwjglJars)
+
+dependencies {
+    // Compile only, and deliberately not on the test compile classpath: these classes carry members
+    // whose names are not legal Java identifiers, so naming one in a test would not run.
+    compileOnly obfJars
+
+    // Compile only for the tooling: utils builds against the mod's own classes, so javac has to
+    // resolve the XStream types their signatures name. Nothing utils runs touches a save, so the
+    // jar is not on its runtime.
+    utilsCompileOnly xstreamJars
+
+    // The fixtures KMLib publishes as a variant of their own - the fakes of its ports and the market
+    // and colony shapes its reads are posed against. A variant rather than part of the jar above,
+    // because a fixture is a test artefact and the jar the game loads must not carry one.
+    testCompileOnly testFixtures(kmlibDependency)
+    testRuntimeOnly testFixtures(kmlibDependency)
+
+    // Test runtime only: nothing in KMU names these types, but a class it does name loads one.
+    // LunaLib arrives through KMLib's settings reader, MagicLib through its core-UI walk.
+    testRuntimeOnly files(lunaLibJarFile)
+    testRuntimeOnly magicLibJars
+}
+
+// Room for the geometry integration tests, which build whole generated sectors in memory
+// and partition them. They overrun Gradle's 512 MB default, and an executor that dies of it
+// takes the rest of the suite with it - so a run reports a couple of hundred tests and a
+// heap error rather than a result. Raised here rather than in the shared Java conventions:
+// it is this mod's fixtures that need the room, not every repo applying those conventions.
+test {
+    maxHeapSize = '2g'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    doFirst {
+        if (consoleCommandsJars.files.isEmpty()) {
+            throw new GradleException(
+                "Could not find Console Commands jar under " +
+                "${starsectorRoot}/mods/**/jars/lw_Console.jar. " +
+                "Install Console Commands for compiling KMU console command integration.")
+        }
+        // No KMLib check sits here. The other jars are found or not found on the
+        // machine, so each needs its own "install this" message; KMLib is built
+        // from the included checkout, which Gradle fails on far earlier - at
+        // configuration, where build.gradle applies its shared conventions - so
+        // a missing KMLib can never reach this point to be reported.
+        //
+        // LazyLib is a hard dependency at runtime, but its LazyFont is needed to
+        // compile the political-map faction-name renderer, so the jar must be
+        // present to build.
+        if (!lazyLibJarFile.exists()) {
+            throw new GradleException(
+                "Could not find LazyLib jar at ${lazyLibJarFile}. " +
+                "Install LazyLib under mods/lw_lazylib/jars/LazyLib.jar " +
+                "for compiling KMU's political-map faction labels.")
+        }
+        // Nex is optional at runtime but its InvasionListener is needed to
+        // compile PoliticalMapMarketTransferListener, so the jar must be present
+        // to build even though a player can run KMU without Nex installed.
+        if (nexJars.files.isEmpty()) {
+            throw new GradleException(
+                "Could not find Nexerelin jar under " +
+                "${starsectorRoot}/mods/**/jars/ExerelinCore.jar. " +
+                "Install Nexerelin for compiling KMU's market-transfer map integration.")
+        }
+    }
+}
+
+// Opens the map layers' cell geometry in an interactive window, rebuilt live as its knobs
+// move. A dev tool, not part of `build`: the knobs it drives are geometric, and their effect
+// is only legible as a shape rather than as a number in a settings file.
+tasks.register('viewSectorGeometry', JavaExec) {
+    group = 'help'
+    description = 'Opens the sector geometry viewer (live sliders over a real sector).'
+    classpath = sourceSets.utils.runtimeClasspath
+    mainClass = 'kmu.maplayers.base.geometry.ui.SectorGeometryViewer'
+}
+
+// The same shapes the viewer draws, written straight to file with the frontier off and on. The
+// viewer needs someone sitting at it; a shape often has to be looked at when nobody is - to attach
+// to a plan, to diff two runs of a geometry change, or to hand to someone else.
+tasks.register('writeSectorSvg', JavaExec) {
+    group = 'help'
+    description = 'Writes every sector fixture to SVG, frontier off and on, into build/reports.'
+    classpath = sourceSets.utils.runtimeClasspath
+    mainClass = 'kmu.maplayers.base.geometry.output.SectorSvgDump'
+}
+
+// Walks the void between cells directly, with no raster in the way: a grid of its own would put
+// its own artefacts into the answer, and every one of them would read as a property of the map.
+tasks.register('writeVoidRegions', JavaExec) {
+    group = 'help'
+    description = 'Traces the void between cells exactly and reports how it divides.'
+    classpath = sourceSets.utils.runtimeClasspath
+    mainClass = 'kmu.maplayers.base.geometry.output.VoidRegionsDump'
+}
