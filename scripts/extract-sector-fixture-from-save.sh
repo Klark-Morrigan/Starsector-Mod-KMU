@@ -55,7 +55,10 @@ fi
 if [[ $# -gt 0 ]]; then
     save="$1"
 else
-    save="$(find_newest_save "$(resolve_starsector_root)")"
+    # Resolved in its own statement so a failure inside it surfaces as this script's exit
+    # status instead of being masked by the surrounding substitution.
+    starsector_root="$(resolve_starsector_root)"
+    save="$(find_newest_save "${starsector_root}")"
     echo "No save given; using the most recently written one:"
     echo "  ${save}"
     echo
