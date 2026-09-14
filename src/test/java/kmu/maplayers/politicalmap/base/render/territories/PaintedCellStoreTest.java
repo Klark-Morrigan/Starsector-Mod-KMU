@@ -278,7 +278,6 @@ final class PaintedCellStoreTest {
         }
     }
 
-
     // A painted cell whose record only has to exist, against the ring the case is about: these
     // stores are exercised on which ring is held and what goes when it is replaced, never on ink.
     private static PaintedCell buildPaintedCellOn(List<double[]> paintedExtent) {
