@@ -40,6 +40,10 @@ sourceSets {
 // describe the mod's architecture, not how it is assembled.
 apply from: "${rootDir}/gradle/package-layering.gradle"
 
+// Which of the game's own type names the compiled mod may carry, for the same
+// reason and on the same terms.
+apply from: "${rootDir}/gradle/referenced-types.gradle"
+
 enforceNoTestVocabulary {
     exemptSourceSet name: 'utils'
 }
