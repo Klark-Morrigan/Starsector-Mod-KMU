@@ -79,10 +79,6 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
      */
     void installReseatOn(SectorAPI sector) {
 
-        // Named once and used twice: the placement read has to be asked about the same entity the
-        // move is aimed at, and two copies of the lookup would be two chances for one of them to be
-        // repointed at the other surface.
-        //
         // Read afresh per call rather than resolved here, since a save load replaces the entity and
         // the script outlives no load anyway - but asked about the sector being installed on, which
         // is the one whose terrain this reseat exists to lift.
@@ -97,13 +93,14 @@ final class StarscapeTerrainReseat implements InstalledMachinery {
         // fog to rescue.
         //
         // Where the icon currently sits is KMLib's to read - it reads that itself rather than being
-        // told, the widget's ordering being its own subject.
+        // told, the widget's ordering being its own subject. Handed as the read rather than as a
+        // reading of this entity, so the script asks it about whichever entity it is moving.
         installedReseat.installOn(
             sector,
             () -> new MapIconReseater(
                 new MapPresence()::isStarscapeMapShowing,
                 findAboveNebulaeTerrain,
-                () -> MapIconLayeringProbe.readLayeringOf(findAboveNebulaeTerrain.get())));
+                MapIconLayeringProbe::readLayeringOf));
     }
 
     /**
