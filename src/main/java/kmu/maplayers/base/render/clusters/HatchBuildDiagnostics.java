@@ -82,13 +82,11 @@ public final class HatchBuildDiagnostics {
     }
 
     // The specification line. Both halves of the style are named: a capture is attributed to the
-    // settings that produced it, and either half alone leaves it half attributed. The stroke prints
-    // as itself rather than as fields picked out here, so a stroke of a kind this class has never
-    // heard of still says what it is.
+    // settings that produced it, and either half alone leaves it half attributed. Each half prints
+    // as itself rather than as fields picked out here, so a half that grows a component - or a
+    // stroke of a kind this class has never heard of - still says what it is.
     static String describeHatchSpecification(HatchStyle hatch) {
-        return "Cluster hatch specification; spacing=" + hatch.spacing()
-            + " angleRadians=" + hatch.angleRadians()
-            + " tolerance=" + hatch.joinToleranceFraction()
+        return "Cluster hatch specification; pattern=" + hatch.pattern()
             + " stroke=" + hatch.stroke()
             + GAP_UNITS_NOTE;
     }

@@ -1,11 +1,11 @@
 package kmu.maplayers.base.render.clusters;
 
 import kmlib.math.geometry.RingRegion;
+import kmlib.opengl.hatch.HatchPattern;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
-import kmu.maplayers.base.theme.HatchStyle;
 import kmu.maplayers.base.theme.ThemeFixtures;
 
 import org.junit.jupiter.api.Nested;
@@ -45,7 +45,8 @@ final class SplitFillBuilderTest {
     private static final String HATCHED_SYSTEM_ID = "B";
     private static final SystemKey HELD_SYSTEM = buildCellKey(HELD_SYSTEM_ID);
     private static final SystemKey HATCHED_SYSTEM = buildCellKey(HATCHED_SYSTEM_ID);
-    private static final HatchStyle HATCH = ThemeFixtures.createHatchStyle(200, Math.PI / 4, 1);
+    private static final HatchPattern HATCH_PATTERN =
+        ThemeFixtures.createHatchPattern(200, Math.PI / 4);
     private static final double WELD_TOLERANCE = 1e-3;
     private static final double MITER_SPIKE_LIMIT = 4.0;
 
@@ -181,7 +182,7 @@ final class SplitFillBuilderTest {
                     TWIN_EDGES,
                     TWIN_GROUPING,
                     new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
-                    HATCH)
+                    HATCH_PATTERN)
                 .traceFill(
                     false, // Is not spotlit.
                     FillSplit.splitMembersByFillState(
@@ -253,7 +254,7 @@ final class SplitFillBuilderTest {
             EDGES,
             GROUPING,
             new ClusterBorderTrace(WELD_TOLERANCE, MITER_SPIKE_LIMIT),
-            HATCH);
+            HATCH_PATTERN);
     }
 
     // Both members held outright - the common case, and the one the solid fast path is for.

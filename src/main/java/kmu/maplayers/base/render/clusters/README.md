@@ -164,7 +164,9 @@ nothing here decides it.
 the common case,
 which pays nothing for the machinery.
 Built per owner around the context the whole fill shares
-(the cells, their grouping, the trace, the hatch geometry),
+(the cells, their grouping, the trace, the hatch pattern -
+the [`HatchStyle`](../../theme/README.md)'s baked half alone,
+never the stroke a frame reads),
 and answered per owner rather than per body,
 since the split's rings are the owner's and are traced once.
 
@@ -255,6 +257,9 @@ once for the whole map instead of being pushed and popped around each owner.
 That pass is where `HatchStroke` is dispatched on:
 the theme decides which substrate the hatch reaches the screen through,
 and the renderer reads only the numbers that substrate carries.
+The pattern's spacing goes down with the stroke,
+since the GL-line substrate scales its pixel width off it -
+the renderer hands over the frame's scale and the substrate says what width that comes to.
 
 What it paints arrives through `ClusterDrawLists`,
 which is four reads and no more -

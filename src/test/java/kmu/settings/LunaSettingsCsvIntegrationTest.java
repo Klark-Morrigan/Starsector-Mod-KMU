@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static kmu.settings.LunaSettingsTable.BOOLEAN_FIELD_TYPE;
+import static kmu.settings.LunaSettingsTable.DOUBLE_FIELD_TYPE;
 import static kmu.settings.LunaSettingsTable.INT_FIELD_TYPE;
 import static kmu.settings.LunaSettingsTable.KEYCODE_FIELD_TYPE;
 import static kmu.settings.LunaSettingsTable.RADIO_FIELD_TYPE;
@@ -256,7 +257,7 @@ final class LunaSettingsCsvIntegrationTest {
     // The numeric field types, whose default column holds a number the Java fallback beside the
     // getter has to agree with. Radio and Boolean rows are held against their own defaults above,
     // each in the terms that type is spelt in.
-    private static final Set<String> NUMERIC_FIELD_TYPES = Set.of("Double", "Int");
+    private static final Set<String> NUMERIC_FIELD_TYPES = Set.of(DOUBLE_FIELD_TYPE, INT_FIELD_TYPE);
 
     // Strings that carry the mod prefix without being settings fields, and so are held against no row.
     // Every one is registered with the game rather than with LunaLib - a render surface's terrain ID,
@@ -474,6 +475,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(ClampedFieldBoundsProvider.class)
         void numericFieldBoundsMatchTheClampTheirGetterApplies(
                 String fieldId,
+                String fieldType,
                 String minimumConstant,
                 String maximumConstant) {
 
@@ -487,7 +489,7 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    LunaSettingsTable.readMinValue(fieldId, INT_FIELD_TYPE)));
+                    LunaSettingsTable.readMinValue(fieldId, fieldType)));
 
             assertThat(SettingsSourceText.readDeclaredNumber(maximumConstant))
                 .as(
@@ -496,7 +498,7 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    LunaSettingsTable.readMaxValue(fieldId, INT_FIELD_TYPE)));
+                    LunaSettingsTable.readMaxValue(fieldId, fieldType)));
         }
     }
 
@@ -738,8 +740,8 @@ final class LunaSettingsCsvIntegrationTest {
 
     /**
      * The rows whose bounds are declared twice - once as the slider's ends in the file, once as the
-     * clamp the getter puts round whatever LunaLib hands back - each with the two constants that
-     * clamp it.
+     * clamp the getter puts round whatever LunaLib hands back - each with its own field type and
+     * the two constants that clamp it.
      *
      * <p>A hand table rather than a walk of the file, because nothing in a row says whether its
      * getter clamps: every other numeric getter takes the stored value as it comes, and a walk over
@@ -757,16 +759,24 @@ final class LunaSettingsCsvIntegrationTest {
             return Stream.of(
                 Arguments.of(
                     "kmu_map_visuals_sidebar_opacity",
+                    INT_FIELD_TYPE,
                     "MIN_SIDEBAR_OPACITY_PERCENT",
                     "MAX_SIDEBAR_OPACITY_PERCENT"),
                 Arguments.of(
                     "kmu_map_visuals_sidebar_scrollbarThickness",
+                    INT_FIELD_TYPE,
                     "MIN_SIDEBAR_SCROLLBAR_THICKNESS",
                     "MAX_SIDEBAR_SCROLLBAR_THICKNESS"),
                 Arguments.of(
                     "kmu_map_dev_refresh_pollSeconds",
+                    INT_FIELD_TYPE,
                     "MIN_POLL_SECONDS",
-                    "MAX_POLL_SECONDS"));
+                    "MAX_POLL_SECONDS"),
+                Arguments.of(
+                    "kmu_map_dev_hatchFill_width",
+                    DOUBLE_FIELD_TYPE,
+                    "MIN_HATCH_WIDTH_PERCENT",
+                    "MAX_HATCH_WIDTH_PERCENT"));
         }
     }
 

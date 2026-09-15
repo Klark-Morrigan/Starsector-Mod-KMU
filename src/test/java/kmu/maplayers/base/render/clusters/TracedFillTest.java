@@ -35,7 +35,6 @@ final class TracedFillTest {
 
     private static final double HATCH_SPACING = 200.0;
     private static final double HATCH_ANGLE_RADIANS = 0;
-    private static final double HATCH_WIDTH_PIXELS = 1.0;
 
     private static final String CUT_HATCH_SECTION = "mapLayer.cutHatch";
 
@@ -106,9 +105,6 @@ final class TracedFillTest {
         return new TracedFill.PerFillState(
             List.of(),
             hatchedRings,
-            ThemeFixtures.createHatchStyle(
-                HATCH_SPACING,
-                HATCH_ANGLE_RADIANS,
-                HATCH_WIDTH_PIXELS));
+            ThemeFixtures.createHatchPattern(HATCH_SPACING, HATCH_ANGLE_RADIANS));
     }
 }

@@ -1,26 +1,27 @@
 package kmu.maplayers.base.theme;
 
+import kmlib.opengl.hatch.HatchPattern;
+
 /**
- * The sector-wide hatch pattern that a fill in the
+ * The sector-wide hatch a fill in the
  * {@link kmu.maplayers.base.render.clusters.FillSplit.FillState#HATCHED} state is cut with, so
- * it reads apart from the solid fill beside it while staying the same colour. One pattern for
+ * it reads apart from the solid fill beside it while staying the same colour. One hatch for
  * the whole sector, so this is a global-tier value (part of {@link GlobalStyle}) rather than
  * something that varies per cluster.
  *
- * <p>Split along when each part is decided. The first three components shape the geometry and are
- * baked into the drawables, so changing one costs a rebuild; the stroke is read at the emit, so
- * changing it costs a frame. Holding the two halves in one record is what keeps "the hatch" one
- * value to pass around while still letting each reader take only the half it acts on.
+ * <p>Two halves, split by when each is decided. The pattern shapes the clipped line geometry and
+ * is baked into the drawables, so changing it costs a rebuild; the stroke is read at the emit, so
+ * changing it costs a frame. Each half is its own value rather than both being flattened into one
+ * record of five components, which is what lets the cut take the pattern alone and never hold a
+ * per-frame number it could come to bake by mistake.
  *
- * @param spacing               the perpendicular gap between lines, in world units
- * @param angleRadians          the direction the lines run in
- * @param joinToleranceFraction how far apart two of one line's crossings may sit and still count
- *                              as the same stroke, as a fraction of the spacing
- * @param stroke                how the resulting primitives are put on screen
+ * <p>Holding the two as one value is what keeps "the hatch" a single thing to pass around and to
+ * read a capture against, while every reader below still takes only the half it acts on.
+ *
+ * @param pattern the line family the hatched area is cut with
+ * @param stroke  how the resulting primitives are put on screen
  */
 public record HatchStyle(
-    double spacing,
-    double angleRadians,
-    double joinToleranceFraction,
+    HatchPattern pattern,
     HatchStroke stroke) {
 }

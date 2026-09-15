@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.HatchPattern;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -277,7 +278,7 @@ final class RenderStyleReaderTest {
 
         private static final double HATCH_SPACING = 123.0;
         private static final double HATCH_ANGLE = 0.75;
-        private static final double HATCH_WIDTH = 2.5;
+        private static final double HATCH_WIDTH_FRACTION = 0.25;
         private static final double HATCH_JOIN_TOLERANCE = 0.002;
         private static final double CORNER_RADIUS = 300.0;
         private static final int CORNER_SEGMENTS = 4;
@@ -312,8 +313,8 @@ final class RenderStyleReaderTest {
                     .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchAngleRadians)
                     .thenReturn(HATCH_ANGLE);
                 geometrySettingsMock
-                    .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchWidth)
-                    .thenReturn(HATCH_WIDTH);
+                    .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchWidthFraction)
+                    .thenReturn(HATCH_WIDTH_FRACTION);
                 geometrySettingsMock
                     .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchJoinToleranceFraction)
                     .thenReturn(HATCH_JOIN_TOLERANCE);
@@ -345,18 +346,15 @@ final class RenderStyleReaderTest {
 
                 var global = RenderStyleReader.readGlobalStyle();
 
-                assertThat(global.hatch().spacing())
-                    .isEqualTo(HATCH_SPACING);
-                assertThat(global.hatch().angleRadians())
-                    .isEqualTo(HATCH_ANGLE);
-
-                assertThat(global.hatch().joinToleranceFraction())
-                    .isEqualTo(HATCH_JOIN_TOLERANCE);
+                // The pattern whole, since the three are cut with together and a knob threaded
+                // into a neighbouring slot is what asserting them one at a time would miss.
+                assertThat(global.hatch().pattern())
+                    .isEqualTo(new HatchPattern(HATCH_SPACING, HATCH_ANGLE, HATCH_JOIN_TOLERANCE));
 
                 // Both halves of the stroke at once, since the width the player set is only the
                 // stroke they asked for if it arrives at the quality they set as well.
                 assertThat(global.hatch().stroke())
-                    .isEqualTo(new GlLineHatchStroke(GlLineQuality.ALIASED, HATCH_WIDTH));
+                    .isEqualTo(new GlLineHatchStroke(GlLineQuality.ALIASED, HATCH_WIDTH_FRACTION));
 
                 var cornerRounding = global.borderSmoothing().cornerRounding();
 
@@ -406,13 +404,13 @@ final class RenderStyleReaderTest {
                     .when(KmuPoliticalMapGeometrySettings::shouldSmoothHatchLines)
                     .thenReturn(true);
                 geometrySettingsMock
-                    .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchWidth)
-                    .thenReturn(HATCH_WIDTH);
+                    .when(KmuPoliticalMapGeometrySettings::getPoliticalMapHatchWidthFraction)
+                    .thenReturn(HATCH_WIDTH_FRACTION);
 
                 var global = RenderStyleReader.readGlobalStyle();
 
                 assertThat(global.hatch().stroke())
-                    .isEqualTo(new GlLineHatchStroke(GlLineQuality.SMOOTHED, HATCH_WIDTH));
+                    .isEqualTo(new GlLineHatchStroke(GlLineQuality.SMOOTHED, HATCH_WIDTH_FRACTION));
             }
         }
     }

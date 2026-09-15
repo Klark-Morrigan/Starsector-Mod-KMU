@@ -17,6 +17,7 @@
   - [Caching](#caching)
   - [Documentation](#documentation)
 - [Thanks](#thanks)
+- [Licence](#licence)
 
 ## Dependencies
 
@@ -323,3 +324,20 @@ There is no separate diagram source format and no standalone diagram files to ke
   for providing features this mod relies on.
 - To awesome folks over at **r/Starsector** and in **Discord** communities
   for feedback and support.
+
+## Licence
+
+KMU is licensed under the
+[GNU Lesser General Public License version 3](LICENSE),
+with the GPL it incorporates by reference at [LICENSE.GPL](LICENSE.GPL).
+
+LGPL rather than a permissive licence for what this mod hosts:
+a map-layer framework other mods register into.
+Building a layer on it costs you nothing -
+a mod that compiles against `kmu.maplayers` keeps whatever terms it likes,
+conveys none of KMU itself,
+and inherits no obligations from this licence.
+What the licence does ask is that a *fork of KMU* stays open under the same terms.
+
+The images under [`promo/`](promo/) are documentation rather than shipped content,
+and are not covered by the above.
