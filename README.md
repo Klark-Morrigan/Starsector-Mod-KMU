@@ -320,7 +320,6 @@ There is no separate diagram source format and no standalone diagram files to ke
 - To developers and maintainers of
   **LazyLib**,
   **LunaLib**,
-  **MagicLib**,
   **Console Commands**
   for providing features this mod relies on.
 - To awesome folks over at **r/Starsector** and in **Discord** communities
