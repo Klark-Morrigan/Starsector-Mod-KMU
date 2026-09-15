@@ -109,6 +109,13 @@ because how a hatch reaches the screen decides which numbers it needs at all,
 and a flat record carrying every substrate's fields would leave combinations nothing can draw representable.
 The renderer dispatches on which arrived and reads only what that one carries.
 
+The split is *when*, not *whose*:
+the line stroke's width is a fraction of the baked `spacing`,
+so the frame that reads it resolves the two together.
+Stated in pixels it would be a screen-space number over world-space geometry,
+and the share of the gap it inked would change with every zoom -
+solid at one end of the range and shard-clipped just short of it.
+
 ## The element unit
 
 `ElementStyle` is the unit every drawn element shares -

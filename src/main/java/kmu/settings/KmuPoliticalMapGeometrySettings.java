@@ -1,5 +1,7 @@
 package kmu.settings;
 
+import kmlib.math.ranges.Ranges;
+
 /**
  * The shapes the map is built out of: the cell partition each system's territory is cut from, the
  * two passes that smooth a cluster border, and the hatch a contested fill is cut with.
@@ -72,10 +74,22 @@ public final class KmuPoliticalMapGeometrySettings {
     // a line that moves some ten world units, a tenth of a pixel at the zoom a sector is read at.
     private static final double DEFAULT_BORDER_ROUND_BELOW_ANGLE_DEGREES = 170.0;
 
-    // About ten lines across a default-reach cell, on a 45-degree diagonal at a hairline stroke.
+    // About ten lines across a default-reach cell, on a 45-degree diagonal.
     private static final double DEFAULT_HATCH_SPACING = 1000.0;
     private static final double DEFAULT_HATCH_ANGLE_DEGREES = 45.0;
-    private static final double DEFAULT_HATCH_WIDTH = 50.0;
+
+    // Half the gap inked and half left open, the reading furthest from either failure the width
+    // can approach: nothing at all to see at the bottom of the range, and a fill indistinguishable
+    // from the solid one beside it at the top.
+    private static final double DEFAULT_HATCH_WIDTH_PERCENT = 50.0;
+
+    // Floored where a line still reads as a line rather than as the rasteriser's own minimum
+    // stroke, which is what anything thinner comes out as however far it is dragged down.
+    private static final double MIN_HATCH_WIDTH_PERCENT = 5.0;
+
+    // Held short of the whole gap, the one width that is not a hatch at all: ink meeting ink
+    // paints the solid fill this pattern exists to read apart from.
+    private static final double MAX_HATCH_WIDTH_PERCENT = 90.0;
 
     // Hard-edged, which is the state the hatch was tuned and verified at.
     private static final boolean DEFAULT_HATCH_SMOOTHING = false;
@@ -91,7 +105,10 @@ public final class KmuPoliticalMapGeometrySettings {
     // because the slider rounds a Double to two decimals: a fraction authored directly would
     // collapse to zero the moment it was dragged.
     private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.2;
-    private static final double HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT = 100.0;
+
+    // Shared by both knobs the CSV states as a percentage of the hatch spacing, so the two cannot
+    // come to convert against different units.
+    private static final double PERCENT_PER_UNIT = 100.0;
 
     private KmuPoliticalMapGeometrySettings() {
     }
@@ -212,10 +229,21 @@ public final class KmuPoliticalMapGeometrySettings {
     }
 
     /**
-     * @return the line width the contested-cluster hatch strokes at, in pixels; 50.0 by default
+     * @return the width the contested-cluster hatch strokes at, as a fraction of the hatch
+     *         spacing; 0.5 by default, held between 0.05 and 0.9. Authored as a percentage of the
+     *         spacing and converted here, the stroke scaling its pixel width off the spacing per
+     *         frame so the pattern holds its proportions at every zoom. Clamped here as well as
+     *         bounded on the slider because LunaLib prunes nothing: this row was once read as a
+     *         pixel count over a wider range, and a value stored under that reading is handed
+     *         straight to this one
      */
-    public static double getPoliticalMapHatchWidth() {
-        return KmuLunaSettings.readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH);
+    public static double getPoliticalMapHatchWidthFraction() {
+
+        var widthPercent =
+            KmuLunaSettings.readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH_PERCENT);
+
+        return Ranges.clampInto(widthPercent, MIN_HATCH_WIDTH_PERCENT, MAX_HATCH_WIDTH_PERCENT)
+            / PERCENT_PER_UNIT;
     }
 
     /**
@@ -236,6 +264,6 @@ public final class KmuPoliticalMapGeometrySettings {
         return KmuLunaSettings.readDouble(
             HATCH_JOIN_TOLERANCE_FIELD,
             DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT)
-            / HATCH_JOIN_TOLERANCE_PERCENT_PER_UNIT;
+            / PERCENT_PER_UNIT;
     }
 }

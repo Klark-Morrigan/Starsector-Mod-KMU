@@ -173,9 +173,9 @@ public final class ClusterRenderer {
     // turned into pixels differs.
     private static void drawHatchedFills(ClusterMapFrame frame) {
 
-        var stroke = frame.drawLists().getGlobalStyle().hatch().stroke();
-        if (stroke instanceof GlLineHatchStroke lineStroke) {
-            drawHatchAsGlLines(frame, lineStroke);
+        var hatch = frame.drawLists().getGlobalStyle().hatch();
+        if (hatch.stroke() instanceof GlLineHatchStroke lineStroke) {
+            drawHatchAsGlLines(frame, hatch.spacing(), lineStroke);
         }
     }
 
@@ -183,13 +183,20 @@ public final class ClusterRenderer {
     // and width it strokes at are the hatch's own rather than whatever the surrounding fill pass
     // happened to leave in force. A cluster that fills solid carries an empty hatch run and so
     // costs this pass nothing beyond the colour bind its group already needs.
-    private static void drawHatchAsGlLines(ClusterMapFrame frame, GlLineHatchStroke stroke) {
+    //
+    // The spacing comes down with the stroke because this substrate's width is a fraction of it:
+    // the segments are world-space geometry the frame scales, so a width that did not scale with
+    // them would cover a different share of the gap at every zoom - see GlLineHatchStroke.
+    private static void drawHatchAsGlLines(
+            ClusterMapFrame frame,
+            double spacing,
+            GlLineHatchStroke stroke) {
 
         GlPasses.runBlendedPass(
             GlBlendMode.ALPHA,
             stroke.quality(),
             () -> {
-                GL11.glLineWidth((float) stroke.widthPixels());
+                GL11.glLineWidth(stroke.computeWidthPixelsAt(spacing, frame.getFactor()));
                 drawEachClusterRun(
                     frame,
                     GL11.GL_LINES,

@@ -89,7 +89,7 @@ public final class RenderStyleReader {
                 KmuPoliticalMapGeometrySettings.getPoliticalMapHatchJoinToleranceFraction(),
                 new GlLineHatchStroke(
                     resolveHatchLineQualityOf(KmuPoliticalMapGeometrySettings.shouldSmoothHatchLines()),
-                    KmuPoliticalMapGeometrySettings.getPoliticalMapHatchWidth())),
+                    KmuPoliticalMapGeometrySettings.getPoliticalMapHatchWidthFraction())),
             readBorderSmoothingStyle(),
             readHoverHighlightStyle(),
             readPreviewHighlightStyle(),

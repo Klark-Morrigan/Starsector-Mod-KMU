@@ -255,6 +255,9 @@ once for the whole map instead of being pushed and popped around each owner.
 That pass is where `HatchStroke` is dispatched on:
 the theme decides which substrate the hatch reaches the screen through,
 and the renderer reads only the numbers that substrate carries.
+The pattern's spacing goes down with the stroke,
+since the GL-line substrate scales its pixel width off it -
+the renderer hands over the frame's scale and the substrate says what width that comes to.
 
 What it paints arrives through `ClusterDrawLists`,
 which is four reads and no more -

@@ -103,20 +103,20 @@ public final class ThemeFixtures {
      * <p>The axes a caller does not name are the ones a geometry case has no opinion on, and
      * pinning them here is what keeps a suite from having to state a stroke it never draws.
      *
-     * @param spacing      the perpendicular gap between lines, in world units
-     * @param angleRadians the direction the lines run in
-     * @param widthPixels  the pixel width the lines stroke at
+     * @param spacing       the perpendicular gap between lines, in world units
+     * @param angleRadians  the direction the lines run in
+     * @param widthFraction the share of the spacing each line inks
      * @return a live hatch style
      */
     public static HatchStyle createHatchStyle(
             double spacing,
             double angleRadians,
-            double widthPixels) {
+            double widthFraction) {
 
         return new HatchStyle(
             spacing,
             angleRadians,
             FIXTURE_HATCH_JOIN_TOLERANCE,
-            new GlLineHatchStroke(GlLineQuality.ALIASED, widthPixels));
+            new GlLineHatchStroke(GlLineQuality.ALIASED, widthFraction));
     }
 }

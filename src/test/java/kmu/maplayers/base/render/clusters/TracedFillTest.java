@@ -35,7 +35,7 @@ final class TracedFillTest {
 
     private static final double HATCH_SPACING = 200.0;
     private static final double HATCH_ANGLE_RADIANS = 0;
-    private static final double HATCH_WIDTH_PIXELS = 1.0;
+    private static final double HATCH_WIDTH_FRACTION = 0.5;
 
     private static final String CUT_HATCH_SECTION = "mapLayer.cutHatch";
 
@@ -109,6 +109,6 @@ final class TracedFillTest {
             ThemeFixtures.createHatchStyle(
                 HATCH_SPACING,
                 HATCH_ANGLE_RADIANS,
-                HATCH_WIDTH_PIXELS));
+                HATCH_WIDTH_FRACTION));
     }
 }

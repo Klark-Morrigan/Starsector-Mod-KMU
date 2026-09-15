@@ -25,7 +25,7 @@ final class HatchBuildDiagnosticsTest {
     private static final double SPACING = 400.0;
     private static final double ANGLE_RADIANS = 0.75;
     private static final double JOIN_TOLERANCE = 0.001;
-    private static final double WIDTH_PIXELS = 2.0;
+    private static final double WIDTH_FRACTION = 0.4;
 
     @Nested
     class DescribeHatchSpecification {
@@ -40,7 +40,7 @@ final class HatchBuildDiagnosticsTest {
                 .isEqualTo("Cluster hatch specification; spacing=400.0"
                     + " angleRadians=0.75"
                     + " tolerance=0.001"
-                    + " stroke=GlLineHatchStroke[quality=ALIASED, widthPixels=2.0]"
+                    + " stroke=GlLineHatchStroke[quality=ALIASED, widthFraction=0.4]"
                     + " (tolerance and gaps as fractions of spacing)");
         }
     }
@@ -107,6 +107,6 @@ final class HatchBuildDiagnosticsTest {
             SPACING,
             ANGLE_RADIANS,
             JOIN_TOLERANCE,
-            new GlLineHatchStroke(GlLineQuality.ALIASED, WIDTH_PIXELS));
+            new GlLineHatchStroke(GlLineQuality.ALIASED, WIDTH_FRACTION));
     }
 }
