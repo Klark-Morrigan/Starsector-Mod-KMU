@@ -13,6 +13,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Updated for [KMLib 0.3.0](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.3.0) and [KMLib 0.3.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.3.1).
 - The project is relicenced under under **LGPL-3.0-only**.
 
+### Fixed
+
+- **Hatched fill** lines clipping and overlapping when zoomed out at low resolutions. The hatch line width is now set as a percentage of the hatch spacing rather than in pixels, so the pattern keeps its proportions at every zoom. The *Map - Dev* **Hatch width** setting changes unit with it (0.5-100 pixels becomes 5-90 percent) and keeps whatever number you had set.
+
 ## [0.1.0] - 2026-09-14
 
 First tagged release, so there is no prior version to diff against.
