@@ -5,11 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Index
 
-- [Unreleased](#unreleased)
+- [0.1.1](#011---2026-09-15)
 - [0.1.0](#010---2026-09-14)
 
-## [Unreleased]
+## [0.1.1] - 2026-09-15
 
+- Updated for [KMLib 0.3.0](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.3.0) and [KMLib 0.3.1](https://github.com/Klark-Morrigan/Starsector-Mod-KMLib/releases/tag/0.3.1).
 - The project is relicenced under under **LGPL-3.0-only**.
 
 ## [0.1.0] - 2026-09-14
