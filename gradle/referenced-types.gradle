@@ -1,0 +1,37 @@
+// The game types KMU is allowed to name, on top of what every KM mod inherits.
+//
+// Kept beside the build rather than in it for the reason the layering edges are:
+// this describes what the mod is allowed to depend on, not how it is assembled.
+// The mechanism stays in Common-Java's
+// gradle/tasks/lint/structure/enforce-referenced-types.gradle, and the namespace
+// and published API in KMLib's starsector-mod.gradle - being facts about the
+// game rather than about this mod. What is left here is KMU's own.
+//
+// Applied AFTER the shared conventions, since those are what register the task
+// this configures and what declare the two names it reads.
+
+// The concrete classes whose names the game keeps. The reach into anything else
+// belongs to KMLib, which owns the by-name walk into the live widget tree; a mod
+// naming a second such type here would be reaching past that seam.
+def stableGameTypes = [
+    // The terrain entity the map layers' own drawn surfaces are built on. The
+    // API publishes the interface but not a base an entity can extend.
+    'com.fs.starfarer.campaign.CampaignTerrain',
+
+    // Named by no source file here. Extending that terrain has the compiler
+    // write a bridge for its inherited render into the subclass, and the bridge
+    // carries the parameter types of the method it forwards to - which is the
+    // kind of reference only compiled code shows, and the reason this gate reads
+    // classes rather than sources.
+    'com.fs.starfarer.combat.CombatViewport',
+]
+
+// The whole rule in one call, the inherited halves and this mod's own together:
+// the gate takes a namespace once, so a second declaration over the same one
+// would judge every class twice and allow it under neither.
+enforceReferencedTypes {
+
+    restrictReferences namespace: gameNamespace,
+        allowingPackages: publishedGameApiPackages,
+        allowingTypes: stableGameTypes
+}
