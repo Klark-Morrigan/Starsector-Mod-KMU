@@ -9,6 +9,7 @@ import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.mods.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinContestWording;
 
 import java.util.List;
 
@@ -69,7 +70,12 @@ public final class SystemDominationTooltip extends SystemStandingsTooltip {
      * <p>This is where the alliance set behind the allied block is bound, and the only place the
      * domination box names where alliances come from. The gate answers with the identity grouping
      * wherever the mod supplying them is absent, so the box needs no branch of its own and reads as
-     * its dominating and contested blocks alone on such an install.
+     * its dominating and rival blocks alone on such an install.
+     *
+     * <p>The wording of that rival block is bound here for the same reason and off the same mod: a
+     * sector nothing ever takes a system in is not one the block can call contested. Both are gates
+     * rather than branches, so the box below states one shape and the install decides what it comes
+     * to.
      *
      * <p>Deliberately not the active view's own grouping, which is what the map paints under: the
      * faction view pins that to identity so fills, runs and rows stay per faction, and reusing it
@@ -77,13 +83,15 @@ public final class SystemDominationTooltip extends SystemStandingsTooltip {
      */
     public static final SystemDominationTooltip INSTANCE = new SystemDominationTooltip(
         VANILLA_CLAIM_BREAKDOWN_READER,
-        NexerelinAlliances::resolveGrouping);
+        NexerelinAlliances::resolveGrouping,
+        NexerelinContestWording::resolveWording);
 
     SystemDominationTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource) {
+            HolderGroupingSource holderGroupingSource,
+            ContestWordingSource contestWordingSource) {
 
-        super(claimBreakdownReader, holderGroupingSource);
+        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
     }
 
     @Override

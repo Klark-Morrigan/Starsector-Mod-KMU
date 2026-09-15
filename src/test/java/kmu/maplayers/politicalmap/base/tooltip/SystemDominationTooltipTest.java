@@ -198,8 +198,15 @@ final class SystemDominationTooltipTest {
     // ungrouped for the rest - the state an install with nothing grouping factions is in.
     private HolderGrouping allianceSet = HolderGrouping.identity();
 
-    private final SystemDominationTooltip tooltip =
-        new SystemDominationTooltip(claimBreakdownReaderFake, () -> allianceSet);
+    // How the rival block is headed, restated by the case about an install where no system ever
+    // changes hands and left as the contest for the rest - which is what every case predating the
+    // wording was written under.
+    private ContestWording contestWording = ContestWording.CONTESTED;
+
+    private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
+        claimBreakdownReaderFake,
+        () -> allianceSet,
+        () -> contestWording);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -385,6 +392,31 @@ final class SystemDominationTooltipTest {
                     "Friendly with the system holder:",
                     "The Luddic Church",
                     "Contested by:",
+                    "Persean League");
+        }
+
+        @Test
+        void composeBodyHeadsTheRivalsAsPresentWhereNoSystemEverChangesHands() {
+            // The same groups in the same system, on an install that never transfers one: the bloc
+            // beside the holder is a neighbour indefinitely rather than a challenger, so the heading
+            // states its presence and leaves the struggle unsaid. Only the wording moves - the blocks
+            // above it name relations that hold whether or not anybody can act on them.
+            contestWording = ContestWording.PRESENT;
+
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of())),
+                List.of(
+                    createLoneGroupEntry(),
+                    createNamedGroupEntry("Persean League")));
+
+            assertThat(readSectionOpeningWords(
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Present:",
                     "Persean League");
         }
 

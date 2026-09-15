@@ -605,7 +605,12 @@ final class SystemStandingsTooltipTest {
                 ClaimBreakdownReader claimBreakdownReader,
                 HolderGroupingSource holderGroupingSource) {
 
-            super(claimBreakdownReader, holderGroupingSource);
+            // Headed as a contest throughout, the wording being the concrete boxes' to vary: these
+            // cases are about which block a group lands in, which no wording reaches.
+            super(
+                claimBreakdownReader,
+                holderGroupingSource,
+                ContestWordingFixtures.CONTESTED_WORDING);
         }
 
         @Override
@@ -646,7 +651,10 @@ final class SystemStandingsTooltipTest {
         private final List<HoverTooltipDetailLevel> requestedLevels = new ArrayList<>();
 
         private AccountingStandingsTooltip(ClaimBreakdownReader claimBreakdownReader) {
-            super(claimBreakdownReader, HolderGrouping::identity);
+            super(
+                claimBreakdownReader,
+                HolderGrouping::identity,
+                ContestWordingFixtures.CONTESTED_WORDING);
         }
 
         @Override

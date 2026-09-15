@@ -93,9 +93,10 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
     protected SystemClaimContestTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource) {
+            HolderGroupingSource holderGroupingSource,
+            ContestWordingSource contestWordingSource) {
 
-        super(claimBreakdownReader, holderGroupingSource);
+        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
     }
 
     @Override
@@ -276,8 +277,12 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
             KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
             buildRelationEntries(reading, contest.selectFriendlyStandings()));
 
+        // The one heading the install decides: a rival is contesting the claim only where systems
+        // change hands, and is otherwise a faction that could have taken this one and did not, on a
+        // border that will not move again. Sampled here, once, with the blocks around it, so the box
+        // is headed under a single reading of the install.
         body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
+            KmuStrings.get(resolveContestWording().resolveHeadingKey()),
             buildEligibilityEntries(
                 reading,
                 contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));

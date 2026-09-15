@@ -194,8 +194,15 @@ final class SystemClaimTooltipTest {
     // permanently in and the state every case predating the allied block was written under.
     private HolderGrouping holderGrouping = HolderGrouping.identity();
 
-    private final SystemClaimTooltip tooltip =
-        new SystemClaimTooltip(claimBreakdownReaderFake, () -> holderGrouping);
+    // How the rival block is headed, restated by the case about an install where no system ever
+    // changes hands and left as the contest for the rest - which is what every case predating the
+    // wording was written under.
+    private ContestWording contestWording = ContestWording.CONTESTED;
+
+    private final SystemClaimTooltip tooltip = new SystemClaimTooltip(
+        claimBreakdownReaderFake,
+        () -> holderGrouping,
+        () -> contestWording);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -292,6 +299,27 @@ final class SystemClaimTooltipTest {
                     "Tri-Tachyon",
                     "Non-territorial:",
                     "Pirates");
+        }
+
+        @Test
+        void composeBodyHeadsTheRivalsAsPresentWhereNoSystemEverChangesHands() {
+            // The same rivals under the same claim, on an install that never transfers a system: they
+            // could have taken it, they did not, and the border between them will not move again.
+            // Calling that a contest reports a fight the player will wait the whole game for, so the
+            // heading states the presence and stops there. What the block holds does not move with it.
+            contestWording = ContestWording.PRESENT;
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL))));
+
+            var sections = tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections();
+
+            assertThat(readSectionOpeningWords(sections))
+                .containsExactly("Claim:", "The Hegemony", "Present:", "Tri-Tachyon");
         }
 
         @Test
@@ -1693,7 +1721,10 @@ final class SystemClaimTooltipTest {
         private final List<HoverTooltipDetailLevel> requestedLevels = new ArrayList<>();
 
         private AccountingClaimContestTooltip(ClaimBreakdownReader claimBreakdownReader) {
-            super(claimBreakdownReader, HolderGrouping::identity);
+            super(
+                claimBreakdownReader,
+                HolderGrouping::identity,
+                ContestWordingFixtures.CONTESTED_WORDING);
         }
 
         @Override

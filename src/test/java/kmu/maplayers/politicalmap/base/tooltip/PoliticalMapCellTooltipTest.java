@@ -207,12 +207,15 @@ final class PoliticalMapCellTooltipTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            // The alliance seam is stood in as the identity grouping: these cases are about the
-            // heading over the box, which no grouping reaches.
+            // The alliance seam is stood in as the identity grouping and the wording as the contested
+            // one: these cases are about the heading over the box, which neither reaches.
             return Stream.of(
                 describeBox(
                     "the faction and alliance views' box",
-                    reader -> new SystemDominationTooltip(reader, HolderGrouping::identity)));
+                    reader -> new SystemDominationTooltip(
+                        reader,
+                        HolderGrouping::identity,
+                        ContestWordingFixtures.CONTESTED_WORDING)));
         }
     }
 
@@ -228,12 +231,15 @@ final class PoliticalMapCellTooltipTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            // The alliance seam is stood in as the identity grouping: these cases are about the
-            // heading over the box, which no grouping reaches.
+            // The alliance seam is stood in as the identity grouping and the wording as the contested
+            // one: these cases are about the heading over the box, which neither reaches.
             return Stream.of(
                 describeBox(
                     "the claims view's box",
-                    reader -> new SystemClaimTooltip(reader, HolderGrouping::identity)));
+                    reader -> new SystemClaimTooltip(
+                        reader,
+                        HolderGrouping::identity,
+                        ContestWordingFixtures.CONTESTED_WORDING)));
         }
     }
 
