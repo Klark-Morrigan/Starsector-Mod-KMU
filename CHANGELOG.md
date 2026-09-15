@@ -5,7 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Index
 
+- [Unreleased](#unreleased)
 - [0.1.0](#010---2026-09-14)
+
+## [Unreleased]
+
+- The project is relicenced under under **LGPL-3.0-only**.
 
 ## [0.1.0] - 2026-09-14
 

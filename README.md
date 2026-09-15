@@ -1,7 +1,5 @@
 # Klark Morrigan's Utilities
 
-[Install with **TriOS**](https://trilink.wispborne.com/open.html?mod=%7B%22url%22%3A%22https%3A%2F%2Fgithub.com%2FKlark-Morrigan%2FStarsector-Mod-KMU%2Freleases%2Flatest%2Fdownload%2Fkmu.version%22%2C%22id%22%3A%22kmu%22%2C%22version%22%3A%220.1.0%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fraw.githubusercontent.com%2FLazyWizard%2Flazylib%2Fmaster%2Fmod%2Flazylib.version%22%2C%22id%22%3A%22lw_lazylib%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fraw.githubusercontent.com%2FLukas22041%2FLunaLib%2Fmain%2FLunaLib.version%22%2C%22id%22%3A%22lunalib%22%7D&dep=%7B%22url%22%3A%22https%3A%2F%2Fgithub.com%2FKlark-Morrigan%2FStarsector-Mod-KMLib%2Freleases%2Flatest%2Fdownload%2Fkmlib.version%22%2C%22id%22%3A%22kmlib%22%7D)
-
 ## Index
 
 - [Dependencies](#dependencies)
@@ -19,6 +17,7 @@
   - [Caching](#caching)
   - [Documentation](#documentation)
 - [Thanks](#thanks)
+- [Licence](#licence)
 
 ## Dependencies
 
@@ -320,7 +319,25 @@ There is no separate diagram source format and no standalone diagram files to ke
 - To developers and maintainers of
   **LazyLib**,
   **LunaLib**,
+  **MagicLib**,
   **Console Commands**
   for providing features this mod relies on.
 - To awesome folks over at **r/Starsector** and in **Discord** communities
   for feedback and support.
+
+## Licence
+
+KMU is licensed under the
+[GNU Lesser General Public License version 3](LICENSE),
+with the GPL it incorporates by reference at [LICENSE.GPL](LICENSE.GPL).
+
+LGPL rather than a permissive licence for what this mod hosts:
+a map-layer framework other mods register into.
+Building a layer on it costs you nothing -
+a mod that compiles against `kmu.maplayers` keeps whatever terms it likes,
+conveys none of KMU itself,
+and inherits no obligations from this licence.
+What the licence does ask is that a *fork of KMU* stays open under the same terms.
+
+The images under [`promo/`](promo/) are documentation rather than shipped content,
+and are not covered by the above.
