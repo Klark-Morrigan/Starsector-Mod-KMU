@@ -3,12 +3,12 @@ package kmu.maplayers.base.render.clusters;
 import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
 import kmlib.opengl.PolygonTessellator;
+import kmlib.opengl.hatch.HatchPattern;
 import kmlib.opengl.hatch.HatchRun;
 import kmlib.opengl.hatch.Hatching;
 import kmlib.profiling.ActiveProfiler;
 
 import kmu.maplayers.base.render.clusters.SplitFillBuilder.ClusterFill;
-import kmu.maplayers.base.theme.HatchStyle;
 
 import java.util.List;
 
@@ -85,12 +85,14 @@ public sealed interface TracedFill {
      *
      * @param solidRings        the solid state's traced rings, empty when no member is solid
      * @param hatchedRings      the hatched state's traced rings, empty when no member is hatched
-     * @param hatch             the sector-wide hatch geometry the hatched area is cut with
+     * @param hatchPattern      the sector-wide line family the hatched area is cut with; the
+     *                          pattern alone rather than the whole hatch style, a cut having
+     *                          nothing to do with how the segments it produces are stroked
      */
     record PerFillState(
         List<List<double[]>> solidRings,
         List<List<double[]>> hatchedRings,
-        HatchStyle hatch) implements TracedFill {
+        HatchPattern hatchPattern) implements TracedFill {
 
         @Override
         public ClusterFill buildFillFor(RingRegion clusterRegion) {
@@ -110,11 +112,7 @@ public sealed interface TracedFill {
                     .resolveProfiler()
                     .open(HatchBuildDiagnostics.CUT_HATCH_SECTION)) {
 
-                hatchRun = Hatching.computeHatchRun(
-                    hatchedTriangles,
-                    hatch.angleRadians(),
-                    hatch.spacing(),
-                    hatch.joinToleranceFraction());
+                hatchRun = Hatching.computeHatchRun(hatchedTriangles, hatchPattern);
 
                 HatchBuildDiagnostics.reportHatchRun(cutScope, hatchRun);
             }

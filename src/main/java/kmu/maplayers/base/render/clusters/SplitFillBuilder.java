@@ -1,11 +1,11 @@
 package kmu.maplayers.base.render.clusters;
 
+import kmlib.opengl.hatch.HatchPattern;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.render.clusters.FillSplit.FillState;
-import kmu.maplayers.base.theme.HatchStyle;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -17,7 +17,7 @@ import java.util.Map;
  * from, taking the per-state trace only where the split actually needs one.
  *
  * <p>Built per owner around the trace context the whole fill shares - the cells, their
- * grouping, the border trace, and the hatch geometry - so the several tessellation steps read
+ * grouping, the border trace, and the hatch pattern - so the several tessellation steps read
  * one consistent snapshot instead of threading the lot through each hop.
  *
  * <p>Each drawn state is traced from its own rings rather than from its members' individual
@@ -40,7 +40,7 @@ public final class SplitFillBuilder {
     private final Map<SystemKey, List<CellEdge>> cellEdgesByCellKey;
     private final CellGrouping cellGrouping;
     private final ClusterBorderTrace borderTrace;
-    private final HatchStyle hatch;
+    private final HatchPattern hatchPattern;
 
     /**
      * @param cellEdgesByCellKey the raw cell adjacency the sub-cluster rings are traced from -
@@ -49,18 +49,18 @@ public final class SplitFillBuilder {
      * @param cellGrouping       which system each cell draws as, paired with each system's
      *                           owner - the keys the sub-clusters are derived from
      * @param borderTrace        the trace parameters the whole fill shares with its border
-     * @param hatch              the sector-wide hatch geometry the hatched sub-cluster is cut with
+     * @param hatchPattern       the sector-wide line family the hatched sub-cluster is cut with
      */
     public SplitFillBuilder(
             Map<SystemKey, List<CellEdge>> cellEdgesByCellKey,
             CellGrouping cellGrouping,
             ClusterBorderTrace borderTrace,
-            HatchStyle hatch) {
+            HatchPattern hatchPattern) {
 
         this.cellEdgesByCellKey = cellEdgesByCellKey;
         this.cellGrouping = cellGrouping;
         this.borderTrace = borderTrace;
-        this.hatch = hatch;
+        this.hatchPattern = hatchPattern;
     }
 
     /**
@@ -104,7 +104,7 @@ public final class SplitFillBuilder {
         return new TracedFill.PerFillState(
             traceSubClusterRings(FillState.SOLID, split, subClusterOwners),
             traceSubClusterRings(FillState.HATCHED, split, subClusterOwners),
-            hatch);
+            hatchPattern);
     }
 
     // Keys the footprint's three fill states apart, so the border tracer - which fuses cells sharing

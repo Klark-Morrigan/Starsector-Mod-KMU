@@ -106,10 +106,6 @@ public final class KmuPoliticalMapGeometrySettings {
     // collapse to zero the moment it was dragged.
     private static final double DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT = 0.2;
 
-    // Shared by both knobs the CSV states as a percentage of the hatch spacing, so the two cannot
-    // come to convert against different units.
-    private static final double PERCENT_PER_UNIT = 100.0;
-
     private KmuPoliticalMapGeometrySettings() {
     }
 
@@ -243,7 +239,7 @@ public final class KmuPoliticalMapGeometrySettings {
             KmuLunaSettings.readDouble(HATCH_WIDTH_FIELD, DEFAULT_HATCH_WIDTH_PERCENT);
 
         return Ranges.clampInto(widthPercent, MIN_HATCH_WIDTH_PERCENT, MAX_HATCH_WIDTH_PERCENT)
-            / PERCENT_PER_UNIT;
+            / KmuLunaSettings.PERCENT_PER_UNIT;
     }
 
     /**
@@ -264,6 +260,6 @@ public final class KmuPoliticalMapGeometrySettings {
         return KmuLunaSettings.readDouble(
             HATCH_JOIN_TOLERANCE_FIELD,
             DEFAULT_HATCH_JOIN_TOLERANCE_PERCENT)
-            / PERCENT_PER_UNIT;
+            / KmuLunaSettings.PERCENT_PER_UNIT;
     }
 }

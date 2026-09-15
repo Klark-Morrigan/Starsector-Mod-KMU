@@ -175,7 +175,7 @@ public final class ClusterRenderer {
 
         var hatch = frame.drawLists().getGlobalStyle().hatch();
         if (hatch.stroke() instanceof GlLineHatchStroke lineStroke) {
-            drawHatchAsGlLines(frame, hatch.spacing(), lineStroke);
+            drawHatchAsGlLines(frame, hatch.pattern().spacing(), lineStroke);
         }
     }
 

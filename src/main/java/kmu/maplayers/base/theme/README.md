@@ -99,10 +99,12 @@ and why only one of them blooms.
 
 `HatchStyle` splits along the same line,
 by *when* each part is decided rather than by which pass reads it:
-`spacing`,
-`angleRadians` and `joinToleranceFraction` shape the clipped line geometry
-and are baked into the drawables,
-while `stroke` is read per frame at the emit.
+its `pattern` shapes the clipped line geometry and is baked into the drawables,
+while its `stroke` is read per frame at the emit.
+The pattern is KMLib's own `HatchPattern` -
+the whole of what a cut depends on,
+and therefore exactly what `Hatching.computeHatchRun` takes -
+so the cut is handed the pattern alone and never holds a per-frame number it could come to bake.
 The stroke is the one sealed interface here -
 `GlLineHatchStroke` today -
 because how a hatch reaches the screen decides which numbers it needs at all,
@@ -110,7 +112,7 @@ and a flat record carrying every substrate's fields would leave combinations not
 The renderer dispatches on which arrived and reads only what that one carries.
 
 The split is *when*, not *whose*:
-the line stroke's width is a fraction of the baked `spacing`,
+the line stroke's width is a fraction of the pattern's baked spacing,
 so the frame that reads it resolves the two together.
 Stated in pixels it would be a screen-space number over world-space geometry,
 and the share of the gap it inked would change with every zoom -

@@ -2,6 +2,7 @@ package kmu.maplayers.base.render.clusters;
 
 import kmlib.opengl.GlLineQuality;
 import kmlib.opengl.hatch.HatchJoinTally;
+import kmlib.opengl.hatch.HatchPattern;
 import kmlib.opengl.hatch.HatchRun;
 import kmlib.profiling.recording.RecordingProfiler;
 
@@ -37,9 +38,9 @@ final class HatchBuildDiagnosticsTest {
             // prints as itself rather than as fields picked out here, which is what keeps a kind
             // this class has never heard of legible.
             assertThat(HatchBuildDiagnostics.describeHatchSpecification(createHatchStyle()))
-                .isEqualTo("Cluster hatch specification; spacing=400.0"
-                    + " angleRadians=0.75"
-                    + " tolerance=0.001"
+                .isEqualTo("Cluster hatch specification;"
+                    + " pattern=HatchPattern[spacing=400.0, angleRadians=0.75,"
+                    + " joinToleranceFraction=0.001]"
                     + " stroke=GlLineHatchStroke[quality=ALIASED, widthFraction=0.4]"
                     + " (tolerance and gaps as fractions of spacing)");
         }
@@ -104,9 +105,7 @@ final class HatchBuildDiagnosticsTest {
 
     private static HatchStyle createHatchStyle() {
         return new HatchStyle(
-            SPACING,
-            ANGLE_RADIANS,
-            JOIN_TOLERANCE,
+            new HatchPattern(SPACING, ANGLE_RADIANS, JOIN_TOLERANCE),
             new GlLineHatchStroke(GlLineQuality.ALIASED, WIDTH_FRACTION));
     }
 }

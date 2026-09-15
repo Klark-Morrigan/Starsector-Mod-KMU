@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.HatchPattern;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CategoryStyle;
@@ -84,9 +85,10 @@ public final class RenderStyleReader {
     public static GlobalStyle readGlobalStyle() {
         return new GlobalStyle(
             new HatchStyle(
-                KmuPoliticalMapGeometrySettings.getPoliticalMapHatchSpacing(),
-                KmuPoliticalMapGeometrySettings.getPoliticalMapHatchAngleRadians(),
-                KmuPoliticalMapGeometrySettings.getPoliticalMapHatchJoinToleranceFraction(),
+                new HatchPattern(
+                    KmuPoliticalMapGeometrySettings.getPoliticalMapHatchSpacing(),
+                    KmuPoliticalMapGeometrySettings.getPoliticalMapHatchAngleRadians(),
+                    KmuPoliticalMapGeometrySettings.getPoliticalMapHatchJoinToleranceFraction()),
                 new GlLineHatchStroke(
                     resolveHatchLineQualityOf(KmuPoliticalMapGeometrySettings.shouldSmoothHatchLines()),
                     KmuPoliticalMapGeometrySettings.getPoliticalMapHatchWidthFraction())),
@@ -105,7 +107,7 @@ public final class RenderStyleReader {
      *
      * @return the sector-wide smoothing profile as the player has it set
      */
-    public static BorderSmoothingStyle readBorderSmoothingStyle() {
+    static BorderSmoothingStyle readBorderSmoothingStyle() {
         return new BorderSmoothingStyle(
             new SpikeSandingStyle(
                 KmuPoliticalMapGeometrySettings.shouldSandBorderSpikes(),
@@ -123,7 +125,7 @@ public final class RenderStyleReader {
     // paint in, the frontier halo's stack and pulse, and the hovered cell's wash. Read here
     // with the rest of the theme rather than per frame in the highlight pass, so a knob moved
     // mid-hover repaints through the same rebuild every other style change does.
-    public static HoverHighlightStyle readHoverHighlightStyle() {
+    static HoverHighlightStyle readHoverHighlightStyle() {
         return new HoverHighlightStyle(
             FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapHighlightSettings.getPoliticalMapHoverHighlightColour()),
             new HoverGlowStyle(
@@ -147,7 +149,7 @@ public final class RenderStyleReader {
     // The trace's weights are fixed for the same reason rather than being offered as knobs: only a
     // thin, near-solid line reads as the edge of a lit region instead of as a second border laid
     // over the territory's own.
-    public static HoverHighlightStyle readPreviewHighlightStyle() {
+    static HoverHighlightStyle readPreviewHighlightStyle() {
         return new HoverHighlightStyle(
             FactionPaletteSlot.resolvePaintSelectionOf(
                 KmuPoliticalMapHighlightSettings.getPoliticalMapPreviewHighlightColour()),
@@ -160,7 +162,7 @@ public final class RenderStyleReader {
 
     // Reads each owned category's eight style settings into one bundle, so the build
     // loop applies them per cluster without eight lookups each.
-    public static CategoryStyle readFactionStyle() {
+    static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
             new ElementStyle(
                 FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionFillColour()),
@@ -175,7 +177,7 @@ public final class RenderStyleReader {
             KmuPoliticalMapTerritorySettings.getFactionInnerBorderWidth());
     }
 
-    public static CategoryStyle readIndependentStyle() {
+    static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
             new ElementStyle(
                 FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentFillColour()),
@@ -194,7 +196,7 @@ public final class RenderStyleReader {
     // once, so it reads as occupied space rather than a bare ring around nothing. Neither
     // element has a colour choice - a factionless cell has no palette to pick from - so the
     // outline is unconditionally drawn and each opacity is its element's own on/off.
-    public static CategoryStyle readDecivilisedStyle() {
+    static CategoryStyle readDecivilisedStyle() {
         return neutralStyle(
             new ElementStyle(
                 FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY),
@@ -209,7 +211,7 @@ public final class RenderStyleReader {
     // on/off is the one style input that is not a LunaLib field - the sidebar's
     // uninhabited-systems checkbox, a per-save preference the rebuild samples and hands over -
     // while the opacity and width it strokes at stay settings-screen knobs read here.
-    public static CategoryStyle readUninhabitedStyle(boolean isUninhabitedOutlineDrawn) {
+    static CategoryStyle readUninhabitedStyle(boolean isUninhabitedOutlineDrawn) {
         return neutralStyle(
             ElementStyle.NOT_DRAWN,
             isUninhabitedOutlineDrawn,

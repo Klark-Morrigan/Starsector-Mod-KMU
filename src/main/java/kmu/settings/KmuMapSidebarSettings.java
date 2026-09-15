@@ -202,7 +202,7 @@ public final class KmuMapSidebarSettings {
             MIN_SIDEBAR_OPACITY_PERCENT,
             MAX_SIDEBAR_OPACITY_PERCENT);
 
-        return clamped / (float) MAX_SIDEBAR_OPACITY_PERCENT;
+        return clamped / (float) KmuLunaSettings.PERCENT_PER_UNIT;
     }
 
     /**

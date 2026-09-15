@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.render.style;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.HatchPattern;
 
 import kmu.maplayers.base.theme.CategoryStyle;
 import kmu.maplayers.base.theme.ElementStyle;
@@ -345,13 +346,10 @@ final class RenderStyleReaderTest {
 
                 var global = RenderStyleReader.readGlobalStyle();
 
-                assertThat(global.hatch().spacing())
-                    .isEqualTo(HATCH_SPACING);
-                assertThat(global.hatch().angleRadians())
-                    .isEqualTo(HATCH_ANGLE);
-
-                assertThat(global.hatch().joinToleranceFraction())
-                    .isEqualTo(HATCH_JOIN_TOLERANCE);
+                // The pattern whole, since the three are cut with together and a knob threaded
+                // into a neighbouring slot is what asserting them one at a time would miss.
+                assertThat(global.hatch().pattern())
+                    .isEqualTo(new HatchPattern(HATCH_SPACING, HATCH_ANGLE, HATCH_JOIN_TOLERANCE));
 
                 // Both halves of the stroke at once, since the width the player set is only the
                 // stroke they asked for if it arrives at the quality they set as well.

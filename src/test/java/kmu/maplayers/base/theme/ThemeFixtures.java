@@ -1,6 +1,7 @@
 package kmu.maplayers.base.theme;
 
 import kmlib.opengl.GlLineQuality;
+import kmlib.opengl.hatch.HatchPattern;
 
 /**
  * Shared fixtures for the tests that need a theme they are not testing: the global tier and the
@@ -97,11 +98,21 @@ public final class ThemeFixtures {
     }
 
     /**
-     * A hatch laid out to the given pattern and stroked the way the shipped theme strokes it, for
-     * a suite whose subject is the hatched geometry rather than how it reaches the screen.
+     * The line family a cut is made to, for a suite whose subject is the hatched geometry. The
+     * join tolerance a caller does not name is the one a geometry case has no opinion on, and
+     * pinning it here is what keeps those suites from each choosing their own.
      *
-     * <p>The axes a caller does not name are the ones a geometry case has no opinion on, and
-     * pinning them here is what keeps a suite from having to state a stroke it never draws.
+     * @param spacing      the perpendicular gap between lines, in world units
+     * @param angleRadians the direction the lines run in
+     * @return a live hatch pattern
+     */
+    public static HatchPattern createHatchPattern(double spacing, double angleRadians) {
+        return new HatchPattern(spacing, angleRadians, FIXTURE_HATCH_JOIN_TOLERANCE);
+    }
+
+    /**
+     * The same pattern stroked the way the shipped theme strokes it, for a suite that needs a
+     * whole hatch style rather than the pattern a cut is made to.
      *
      * @param spacing       the perpendicular gap between lines, in world units
      * @param angleRadians  the direction the lines run in
@@ -114,9 +125,7 @@ public final class ThemeFixtures {
             double widthFraction) {
 
         return new HatchStyle(
-            spacing,
-            angleRadians,
-            FIXTURE_HATCH_JOIN_TOLERANCE,
+            createHatchPattern(spacing, angleRadians),
             new GlLineHatchStroke(GlLineQuality.ALIASED, widthFraction));
     }
 }

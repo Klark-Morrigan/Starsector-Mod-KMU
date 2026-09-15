@@ -128,7 +128,7 @@ public final class FactionTerritoryBuilder {
                 geometryCache.getCellEdgesByCellKey(),
                 cellGrouping,
                 borderTrace,
-                globalStyle.hatch())
+                globalStyle.hatch().pattern())
             .traceFill(
                 FilteredPolitics.isSpotlitBloc(blocId),
                 FillSplit.splitMembersByFillState(

@@ -164,7 +164,9 @@ nothing here decides it.
 the common case,
 which pays nothing for the machinery.
 Built per owner around the context the whole fill shares
-(the cells, their grouping, the trace, the hatch geometry),
+(the cells, their grouping, the trace, the hatch pattern -
+the [`HatchStyle`](../../theme/README.md)'s baked half alone,
+never the stroke a frame reads),
 and answered per owner rather than per body,
 since the split's rings are the owner's and are traced once.
 
