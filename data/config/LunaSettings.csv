@@ -17,6 +17,7 @@ kmu_features_toggles_isMarketConditionManagerEnabled,,,,Enable Market Condition 
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_contentsNote,,,,,,Text,"Available settings:
+
 - [Map layers]
   - Hide fade time
 - [Overlay sidebar]
@@ -90,6 +91,7 @@ kmu_map_visuals_tooltips_redacted_darkeningStrength,,,,Darkening strength,,Doubl
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_contentsNote,,,,,,Text,"Available settings:
+
 - [Faction systems]
   - Outer border colour, opacity, thickness
   - Inner border colour, opacity, thickness
@@ -207,6 +209,7 @@ kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels,,,,Faction n
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_domination_contentsNote,,,,,,Text,"Available settings:
+
 - [Stability]
   - Stability weighs dominance
 - [Colony size]
@@ -293,6 +296,7 @@ kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_contentsNote,,,,,,Text,"Available settings:
+
 - [Profiling]
   - Level
   - Frame beat budget
