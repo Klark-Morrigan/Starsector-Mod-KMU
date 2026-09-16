@@ -305,7 +305,7 @@ kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled,,
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_contentsNote,,,,,,Text,"Available settings:
 - [Profiling]
-  - Profiling level
+  - Level
   - Frame beat budget
 - [Refresh polling]
   - Refresh poll interval
@@ -357,7 +357,7 @@ kmu_map_dev_contentsNote,,,,,,Text,"Available settings:
   - Intel sidebar pixel font sharpness",,,,,,,,,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_profiling_header,,,,Profiling,,Header,Profiling,,,,,,,,,Map - Dev
-kmu_map_dev_profiling_level,,,,Profiling level,,Radio,Off,"Off, Coarse, Fine",,,"How much of what the map layers do is timed, for the kmu_profiling console readout. Off measures nothing and costs nothing, which is what you want unless you are chasing a slow map. Coarse times the beats of a map frame and the steps of a rebuild, which is what says where a frame went. Fine adds what one turn of a per-item loop costs - a few clock reads per system per rebuild - which is what says which part of a slow step is slow. A running capture keeps what it has measured in memory until you clear it with kmu_profiling reset, and moving this starts a fresh one. [Default: Off].",,,,,Map - Dev
+kmu_map_dev_profiling_level,,,,Level,,Radio,Off,"Off, Coarse, Fine",,,"How much of what the map layers do is timed, for the kmu_profiling console readout. Off measures nothing and costs nothing, which is what you want unless you are chasing a slow map. Coarse times the beats of a map frame and the steps of a rebuild, which is what says where a frame went. Fine adds what one turn of a per-item loop costs - a few clock reads per system per rebuild - which is what says which part of a slow step is slow. A running capture keeps what it has measured in memory until you clear it with kmu_profiling reset, and moving this starts a fresh one. [Default: Off].",,,,,Map - Dev
 kmu_map_dev_profiling_frameBeat_budgetMillis,,,,Frame beat budget,,Double,4,,,,"How long one beat of a map frame may take before a running profile capture flags it, in milliseconds. A beat is one part of the frame the map layers are given: the preparation before anything is drawn, each band of paint, the cursor read, the hover box. A beat over this is marked in the profiling report and written to the log once, with what that call was doing - which is what turns a table of durations into something that says where to look. 0 states no bound, leaving the report to show the numbers and judge nothing. Costs nothing unless a capture is running. [Default: 4].",,,0,50,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_refresh_header,,,,Refresh polling,,Header,Refresh polling,,,,,,,,,Map - Dev
@@ -424,7 +424,7 @@ kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_intelScreen,,,,Intel sidebar pix
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_dev_logging_header,,,,Logging,,Header,Logging,,,,,,,,,Dev
-kmu_dev_logging_level,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics. [Default: WARN].,,,,,Dev
+kmu_dev_logging_level,,,,Verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics. [Default: WARN].,,,,,Dev
 kmu_dev_logging_areReflectionProbesEnabled,,,,Reflection probe traces,,Boolean,FALSE,,,,"Enables reflection related logs. Each line runs to about a kilobyte, so this is left off for normal play. [Requires log verbosity set to DEBUG.] [Default: false].",,,,,Dev
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
