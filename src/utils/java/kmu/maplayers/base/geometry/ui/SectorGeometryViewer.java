@@ -149,10 +149,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     // the divider is still findable.
     private static final int CONTROL_MINIMUM_WIDTH = 80;
 
-    // A slider row is about this tall, so one wheel notch moves the control panel by roughly
-    // one knob rather than by one pixel.
-    private static final int SCROLL_UNIT_INCREMENT = 16;
-
     private static final double ZOOM_PER_NOTCH = 1.15;
     private static final double INITIAL_MARGIN = 1.05;
 
@@ -303,22 +299,15 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         controls.add(buildSaveSvgButton());
         controls.add(canvas.statusLabel);
 
-        // Anchored to the top of a wrapper, because a BoxLayout column shorter than its
-        // viewport - every section folded - hands the spare height to whichever rows will
-        // take it, and a stretched dropdown reads as a broken control. Anchored NORTH, the
-        // slack falls below the rows instead of into them.
-        var anchored = new JPanel(new BorderLayout());
-
-        anchored.add(controls, BorderLayout.NORTH);
-
-        // Scrolled, because the knob count now exceeds a window height and a control that has
-        // fallen off the bottom of a fixed panel is a control nobody knows exists.
-        var scroller = new JScrollPane(anchored);
+        // Scrolled down and never sideways, and fitted to whatever width the divider leaves.
+        // The knob count exceeds a window height, so a control that has fallen off the bottom
+        // of a fixed panel is a control nobody knows exists - while a control that has fallen
+        // off the SIDE is one whose name is still on screen and whose value is not.
+        var scroller = WindowLayout.buildControlScroller(controls);
 
         // A minimum rather than a fixed size now that the split decides the width: without
         // one the divider can be dragged past the knobs and they vanish with no way back.
         scroller.setMinimumSize(new Dimension(CONTROL_MINIMUM_WIDTH, 0));
-        scroller.getVerticalScrollBar().setUnitIncrement(SCROLL_UNIT_INCREMENT);
 
         // Every knob applies its remembered value as it is built, and until they all have,
         // nothing has the settings the session was left on - the reach, the miter limit, the

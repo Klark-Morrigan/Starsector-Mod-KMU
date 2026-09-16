@@ -58,8 +58,10 @@ final class SliderRowsIntegrationTest {
 
             buildPair();
 
-            assertThat(leftValue).isEqualTo(LEFT_DEFAULT);
-            assertThat(rightValue).isEqualTo(RIGHT_DEFAULT);
+            assertThat(leftValue)
+                .isEqualTo(LEFT_DEFAULT);
+            assertThat(rightValue)
+                .isEqualTo(RIGHT_DEFAULT);
         }
 
         @Test
@@ -70,8 +72,10 @@ final class SliderRowsIntegrationTest {
 
             buildPair();
 
-            assertThat(leftValue).isEqualTo(10);
-            assertThat(rightValue).isEqualTo(90);
+            assertThat(leftValue)
+                .isEqualTo(10);
+            assertThat(rightValue)
+                .isEqualTo(90);
         }
 
         @Test
@@ -79,8 +83,10 @@ final class SliderRowsIntegrationTest {
 
             var boxes = collectValueBoxes(buildPair());
 
-            assertThat(boxes).hasSize(2);
-            assertThat(boxes.get(0).getText()).isNotEqualTo(boxes.get(1).getText());
+            assertThat(boxes)
+                .hasSize(2);
+            assertThat(boxes.get(0).getText())
+                .isNotEqualTo(boxes.get(1).getText());
         }
 
         @Test
@@ -88,7 +94,8 @@ final class SliderRowsIntegrationTest {
 
             var pair = buildPair();
 
-            assertThat(collectResets(pair)).hasSize(2);
+            assertThat(collectResets(pair))
+                .hasSize(2);
         }
     }
 

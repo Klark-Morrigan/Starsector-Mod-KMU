@@ -54,9 +54,12 @@ final class ToggleTreeIntegrationTest {
 
             buildPairedTree(true, false);
 
-            assertThat(applied).containsExactly("left=true", "right=false");
-            assertThat(isLeftOn).isTrue();
-            assertThat(isRightOn).isFalse();
+            assertThat(applied)
+                .containsExactly("left=true", "right=false");
+            assertThat(isLeftOn)
+                .isTrue();
+            assertThat(isRightOn)
+                .isFalse();
         }
 
         // The roll-up's own box is a checkbox too, so it is named here: what the pair adds is
@@ -84,8 +87,10 @@ final class ToggleTreeIntegrationTest {
 
             buildPairedTree(true, false);
 
-            assertThat(isLeftOn).isFalse();
-            assertThat(isRightOn).isTrue();
+            assertThat(isLeftOn)
+                .isFalse();
+            assertThat(isRightOn)
+                .isTrue();
         }
 
         @Test
@@ -93,8 +98,10 @@ final class ToggleTreeIntegrationTest {
 
             buildPairedTree(true, false);
 
-            assertThat(SavedValues.findSavedValues().getBoolean(LEFT_KEY, false)).isTrue();
-            assertThat(SavedValues.findSavedValues().getBoolean(RIGHT_KEY, true)).isFalse();
+            assertThat(SavedValues.findSavedValues().getBoolean(LEFT_KEY, false))
+                .isTrue();
+            assertThat(SavedValues.findSavedValues().getBoolean(RIGHT_KEY, true))
+                .isFalse();
         }
 
         // The half a roll-up would forget: a pair is one ROW, and a roll-up that walked rows
@@ -107,8 +114,10 @@ final class ToggleTreeIntegrationTest {
 
             rollUp.doClick();
 
-            assertThat(isLeftOn).isTrue();
-            assertThat(isRightOn).isTrue();
+            assertThat(isLeftOn)
+                .isTrue();
+            assertThat(isRightOn)
+                .isTrue();
         }
     }
 
