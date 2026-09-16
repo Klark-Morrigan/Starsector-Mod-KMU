@@ -14,6 +14,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.tooltip.ContestWordingFixtures.CONTESTED_WORDING;
 
 /**
  * How an integration suite stands one of the two hover families up over a stubbed sector and reads
@@ -71,7 +72,8 @@ final class PoliticalMapBoxReads {
 
         return new SystemClaimTooltip(
                 buildClaimBreakdownReaderOver(sector),
-                HolderGrouping::identity)
+                HolderGrouping::identity,
+                CONTESTED_WORDING)
             .composeBody(sector, system, detailLevel).blocks().readSections();
     }
 
@@ -81,7 +83,10 @@ final class PoliticalMapBoxReads {
      * @return a box over the plain faction view
      */
     static SystemDominationTooltip buildDominanceBox() {
-        return new SystemDominationTooltip(new ClaimBreakdownReaderFake(), HolderGrouping::identity);
+        return new SystemDominationTooltip(
+            new ClaimBreakdownReaderFake(),
+            HolderGrouping::identity,
+            CONTESTED_WORDING);
     }
 
     /**

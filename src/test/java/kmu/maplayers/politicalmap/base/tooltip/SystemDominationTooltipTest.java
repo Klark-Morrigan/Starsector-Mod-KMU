@@ -198,8 +198,15 @@ final class SystemDominationTooltipTest {
     // ungrouped for the rest - the state an install with nothing grouping factions is in.
     private HolderGrouping allianceSet = HolderGrouping.identity();
 
-    private final SystemDominationTooltip tooltip =
-        new SystemDominationTooltip(claimBreakdownReaderFake, () -> allianceSet);
+    // How the rival block is headed, restated by the case about an install where no system ever
+    // changes hands and left as the contest for the rest - which is what every case predating the
+    // wording was written under.
+    private ContestWording contestWording = ContestWording.CONTESTED;
+
+    private final SystemDominationTooltip tooltip = new SystemDominationTooltip(
+        claimBreakdownReaderFake,
+        () -> allianceSet,
+        () -> contestWording);
 
     private final SectorAPI sectorMock = mock(SectorAPI.class);
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
@@ -386,6 +393,51 @@ final class SystemDominationTooltipTest {
                     "The Luddic Church",
                     "Contested by:",
                     "Persean League");
+        }
+
+        @Test
+        void composeBodyHeadsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
+            // The five blocks of the case above, in the same system, on an install that never
+            // transfers one: the bloc beside the holder is a neighbour indefinitely rather than a
+            // challenger, so that heading states its presence and leaves the struggle unsaid.
+            //
+            // Posed over the whole chain rather than over the one block, because what the wording is
+            // not allowed to reach is the point: the four headings around it name relations and a
+            // candidacy that hold whether or not anybody can act on them, and a wording read by the
+            // loop that draws all five could move any of them.
+            contestWording = ContestWording.PRESENT;
+            allianceSet = buildAllianceOf(CORE_FACTION, ALLY_FACTION);
+
+            stubFaction(sectorMock, FRIENDLY_FACTION, "The Luddic Church", MEMBER_CREST);
+            stubDispositionToward(sectorMock, FRIENDLY_FACTION, CORE_FACTION, RepLevel.FAVORABLE);
+
+            StandingsTooltipSeamsFake.stubRankedGroups(
+                List.of(
+                    new GroupStanding(CORE_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(ALLY_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(FRIENDLY_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(RIVAL_FACTION, ANY_SCORE, List.of()),
+                    new GroupStanding(Factions.NEUTRAL, ANY_SCORE, List.of())),
+                List.of(
+                    createLoneGroupEntry(),
+                    createAlliedGroupEntry(),
+                    createNamedGroupEntry("The Luddic Church"),
+                    createNamedGroupEntry("Persean League"),
+                    createPlaceholderGroupEntry()));
+
+            assertThat(readSectionOpeningWords(
+                    tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections()))
+                .containsExactly(
+                    "Dominated by:",
+                    "Rebel Pact",
+                    "Allied with the system holder:",
+                    "Tri-Tachyon",
+                    "Friendly with the system holder:",
+                    "The Luddic Church",
+                    "Present:",
+                    "Persean League",
+                    "Non-political:",
+                    "Neutral");
         }
 
         @Test

@@ -194,8 +194,15 @@ final class SystemClaimTooltipTest {
     // permanently in and the state every case predating the allied block was written under.
     private HolderGrouping holderGrouping = HolderGrouping.identity();
 
-    private final SystemClaimTooltip tooltip =
-        new SystemClaimTooltip(claimBreakdownReaderFake, () -> holderGrouping);
+    // How the rival block is headed, restated by the case about an install where no system ever
+    // changes hands and left as the contest for the rest - which is what every case predating the
+    // wording was written under.
+    private ContestWording contestWording = ContestWording.CONTESTED;
+
+    private final SystemClaimTooltip tooltip = new SystemClaimTooltip(
+        claimBreakdownReaderFake,
+        () -> holderGrouping,
+        () -> contestWording);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
     private final SectorAPI sectorMock = mock(SectorAPI.class);
@@ -292,6 +299,49 @@ final class SystemClaimTooltipTest {
                     "Tri-Tachyon",
                     "Non-territorial:",
                     "Pirates");
+        }
+
+        @Test
+        void composeBodyHeadsOnlyTheRivalsDifferentlyWhereNoSystemEverChangesHands() {
+            // The same rivals under the same claim, on an install that never transfers a system: they
+            // could have taken it, they did not, and the border between them will not move again.
+            // Calling that a contest reports a fight the player will wait the whole game for, so that
+            // heading states the presence and stops there.
+            //
+            // Posed over the whole chain, like the five-block case it mirrors, because what the
+            // wording is not allowed to reach is the point: the blocks around it name a claim, two
+            // relations and an eligibility, none of which an install can make false.
+            contestWording = ContestWording.PRESENT;
+            holderGrouping = buildAllianceOf(HEGEMONY, TRITACHYON);
+
+            stubFaction(sectorMock, LUDDIC_CHURCH, "The Luddic Church", null);
+            stubDispositionToward(sectorMock, LUDDIC_CHURCH, HEGEMONY, RepLevel.FAVORABLE);
+
+            stubBreakdown(new SystemClaimBreakdown(
+                null,
+                HEGEMONY,
+                List.of(
+                    buildStandingOnOneMarket(HEGEMONY, TOP_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(TRITACHYON, RIVAL_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(LUDDIC_CHURCH, RIVAL_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(PIRATES, OUTSIDER_SCORE, IS_TERRITORIAL),
+                    buildStandingOnOneMarket(
+                        Factions.NEUTRAL,
+                        OUTSIDER_SCORE,
+                        IS_NON_TERRITORIAL))));
+
+            assertThat(readSectionOpeningWords(tooltip.composeBody(sectorMock, systemMock, FACTIONS).blocks().readSections()))
+                .containsExactly(
+                    "Claim:",
+                    "The Hegemony",
+                    "Allied with the claim holder:",
+                    "Tri-Tachyon",
+                    "Friendly with the claim holder:",
+                    "The Luddic Church",
+                    "Present:",
+                    "Pirates",
+                    "Non-territorial:",
+                    "Neutral");
         }
 
         @Test
@@ -1693,7 +1743,10 @@ final class SystemClaimTooltipTest {
         private final List<HoverTooltipDetailLevel> requestedLevels = new ArrayList<>();
 
         private AccountingClaimContestTooltip(ClaimBreakdownReader claimBreakdownReader) {
-            super(claimBreakdownReader, HolderGrouping::identity);
+            super(
+                claimBreakdownReader,
+                HolderGrouping::identity,
+                ContestWordingFixtures.CONTESTED_WORDING);
         }
 
         @Override

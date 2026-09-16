@@ -74,10 +74,14 @@ final class PoliticalMapStatusRevealIntegrationTest {
         new PatrolWeighting(false, 0.25, 0.5, 1.0, 0.5));
 
     private final ClaimBreakdownReaderFake claimBreakdownReaderFake = new ClaimBreakdownReaderFake();
-    private final SystemClaimTooltip claimTooltip =
-        new SystemClaimTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
-    private final SystemDominationTooltip dominationTooltip =
-        new SystemDominationTooltip(claimBreakdownReaderFake, HolderGrouping::identity);
+    private final SystemClaimTooltip claimTooltip = new SystemClaimTooltip(
+        claimBreakdownReaderFake,
+        HolderGrouping::identity,
+        ContestWordingFixtures.CONTESTED_WORDING);
+    private final SystemDominationTooltip dominationTooltip = new SystemDominationTooltip(
+        claimBreakdownReaderFake,
+        HolderGrouping::identity,
+        ContestWordingFixtures.CONTESTED_WORDING);
 
     private final StarSystemAPI systemMock = mock(StarSystemAPI.class);
 

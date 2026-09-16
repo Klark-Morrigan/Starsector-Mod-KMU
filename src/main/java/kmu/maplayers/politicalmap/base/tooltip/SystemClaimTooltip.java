@@ -8,6 +8,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntry;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.mods.nexerelin.NexerelinAlliances;
+import kmu.mods.nexerelin.NexerelinContestWording;
 
 import java.util.List;
 
@@ -56,6 +57,10 @@ public final class SystemClaimTooltip extends SystemClaimContestTooltip {
      * supplying them is absent, so the box needs no branch of its own and reads as its two eligibility
      * blocks alone on such an install.
      *
+     * <p>The wording of the rival block is bound here for the same reason and off the same mod: a
+     * claim nothing can ever overturn is not one the block can call contested. Both are gates rather
+     * than branches, so the box below states one shape and the install decides what it comes to.
+     *
      * <p>Deliberately not the claims view's own grouping, which pins itself to identity so the fills
      * stay per claiming faction: that decision is about what the map paints, while the block needs the
      * live alliance set, and reusing the view's would leave it permanently empty on the one layer that
@@ -63,13 +68,15 @@ public final class SystemClaimTooltip extends SystemClaimContestTooltip {
      */
     public static final SystemClaimTooltip INSTANCE = new SystemClaimTooltip(
         VANILLA_CLAIM_BREAKDOWN_READER,
-        NexerelinAlliances::resolveGrouping);
+        NexerelinAlliances::resolveGrouping,
+        NexerelinContestWording::resolveWording);
 
     SystemClaimTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource) {
+            HolderGroupingSource holderGroupingSource,
+            ContestWordingSource contestWordingSource) {
 
-        super(claimBreakdownReader, holderGroupingSource);
+        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
     }
 
     @Override

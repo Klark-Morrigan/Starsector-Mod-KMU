@@ -554,6 +554,21 @@ where members are already one bloc,
 and on an install with nothing grouping factions -
 dropped there by the same rule that drops any other block standing over no entries.
 
+What the block left standing against the holder is *called* is the one thing about it an install decides (`ContestWording`).
+Where a mod transfers systems between factions,
+those blocs really are competing for the one under the cursor and `Contested by:` reports something the player can watch play out;
+where nothing transfers anything,
+the sector's holdings are the ones it was generated with and stay that way,
+so the same blocs are neighbours indefinitely and the block simply says `Present:`.
+Which install this is comes from `NexerelinContestWording`,
+bound at each box's composition root beside the alliance gate (`ContestWordingSource`) and sampled per hover -
+the boxes stand in static fields,
+so one resolved at construction could settle on the empty mod set of a game that has not stood its own up yet
+and head every hover of the session that way.
+Nothing else in the box moves with it:
+which blocs land in the block, their order and their scores are all settled before the heading is drawn,
+and the blocks above it name relations that hold whether or not anybody can act on them.
+
 Inside that split,
 disposition sorts what alliance left standing against the holder.
 `BlocFriendliness` answers whether two blocs are on good terms -
@@ -885,7 +900,21 @@ both whatever their eligibility,
 and the two eligibility blocks divide what neither took.
 Where a relation heading leaves the box unable to say which kind a line is,
 the line says it (`non-territorial`) -
-one rule over both blocks rather than one per block.
+declared with the block rather than decided per block,
+since it follows from what that block's own heading already states.
+The four are a closed set (`ClaimContestBlock`),
+the claim family's own sibling to `StandingBlock`:
+each constant carries its heading,
+the standings it selects out of the one `ListedClaimContest`,
+and whether its lines carry that qualifier,
+so the order they read in is a declaration rather than a sequence of calls,
+and a fifth block cannot be added to one family and silently skipped in the other.
+The sets stay apart because the blocks are not the same blocks -
+these name factions by how they stand to a claim and end on eligibility,
+those name blocs by how they stand to a holder and end on candidacy.
+The claim block itself is outside the set:
+it names the claimant rather than selecting over standings,
+and what it lists turns on what the banner above it said.
 Why the relations outrank eligibility,
 why disposition sorts inside alliance,
 and why an install without Nexerelin needs no branch are all `SystemClaimContestTooltip`'s to state.
@@ -1028,7 +1057,9 @@ and not what kind of record the contest gave it:
 routing by record kind would file a pirate base's owner beside a Remnant station's,
 which are ineligible and eligible respectively.
 A territorial faction holding only zero-claim colonies did enter the running by the mechanic's own gate and scored nothing there,
-which is what `Contested by:` plus a nought says exactly.
+which is what the rival block plus a nought says exactly -
+`Contested by:` or `Present:` depending on the install,
+the wording being the one thing about that block an install moves.
 That nought reads in the quiet shade
 (`statesUncountedValue`, the same treatment an unweighed market line takes):
 it is the contest's statement about a faction it never weighed

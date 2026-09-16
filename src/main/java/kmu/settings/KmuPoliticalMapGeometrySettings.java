@@ -4,7 +4,7 @@ import kmlib.math.ranges.Ranges;
 
 /**
  * The shapes the map is built out of: the cell partition each system's territory is cut from, the
- * two passes that smooth a cluster border, and the hatch a contested fill is cut with.
+ * two passes that smooth a cluster border, and the hatch a shared fill is cut with.
  *
  * <p>These sit on the framework's {@code Map - Dev} tab because the geometry they move is the
  * framework's, and they are filed here because the political map is what reads them - the
@@ -207,7 +207,7 @@ public final class KmuPoliticalMapGeometrySettings {
     }
 
     /**
-     * @return the perpendicular gap between the diagonal hatch lines filling the contested cluster,
+     * @return the perpendicular gap between the diagonal hatch lines filling the shared cluster,
      *         in world units; 1000.0 by default
      */
     public static double getPoliticalMapHatchSpacing() {
@@ -215,7 +215,7 @@ public final class KmuPoliticalMapGeometrySettings {
     }
 
     /**
-     * @return the direction the contested-cluster hatch lines run, in radians; 45 degrees off
+     * @return the direction the shared-cluster hatch lines run, in radians; 45 degrees off
      *         horizontal by default. Authored in degrees and converted here, the hatch math working
      *         in radians
      */
@@ -225,7 +225,7 @@ public final class KmuPoliticalMapGeometrySettings {
     }
 
     /**
-     * @return the width the contested-cluster hatch strokes at, as a fraction of the hatch
+     * @return the width the shared-cluster hatch strokes at, as a fraction of the hatch
      *         spacing; 0.5 by default, held between 0.05 and 0.9. Authored as a percentage of the
      *         spacing and converted here, the stroke scaling its pixel width off the spacing per
      *         frame so the pattern holds its proportions at every zoom. Clamped here as well as
@@ -243,7 +243,7 @@ public final class KmuPoliticalMapGeometrySettings {
     }
 
     /**
-     * @return whether the contested-cluster hatch is antialiased rather than stroked hard-edged;
+     * @return whether the shared-cluster hatch is antialiased rather than stroked hard-edged;
      *         off by default. Covers the hatch alone - the fills and borders around it pick their
      *         own line quality - and a GL bridge that ignores the smoothing hint leaves it inert
      */

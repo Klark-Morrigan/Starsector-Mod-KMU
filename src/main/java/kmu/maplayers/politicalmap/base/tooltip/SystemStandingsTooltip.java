@@ -72,9 +72,10 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
     protected SystemStandingsTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource) {
+            HolderGroupingSource holderGroupingSource,
+            ContestWordingSource contestWordingSource) {
 
-        super(claimBreakdownReader, holderGroupingSource);
+        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
     }
 
     @Override
@@ -238,11 +239,14 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
         // The account is settled once for the whole box, before any group is named, so a box reading
         // the economy to build one reads it once however many groups hold the system - and every
         // faction listed is explained from that one read rather than from a read of its own.
+        // The wording is sampled once for the whole box, beside the account, so every block is headed
+        // under one reading of the install - the same rule the relations behind the blocks follow.
         appendStandingSections(
             body,
             sector,
             ranking,
-            createAdmittedAccountResolver(system, pass, detailLevel));
+            createAdmittedAccountResolver(system, pass, detailLevel),
+            resolveContestWording());
 
         return body.readBlocks();
     }
@@ -261,13 +265,14 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
             CellTooltipBody body,
             SectorAPI sector,
             RankedStandings ranking,
-            FactionAccountResolver accountResolver) {
+            FactionAccountResolver accountResolver,
+            ContestWording contestWording) {
 
         var grouping = ranking.pass().grouping();
 
         for (var block : StandingBlock.values()) {
             body.appendSection(
-                KmuStrings.get(block.resolveHeadingKey()),
+                KmuStrings.get(block.resolveHeadingKey(contestWording)),
                 StandingRowResolver.resolveRows(
                     sector,
                     ranking.routing().selectStandingsIn(block),

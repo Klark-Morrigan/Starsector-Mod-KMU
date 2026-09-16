@@ -2,23 +2,60 @@ fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_settingsNote,,,,,,Text,"All KMU settings [take effect immediatedly]. Navigate to the relevant tab and if it's big, there will be a [note at the top listing the settings] it contains. Each description ends with the default shipped value, for example [Default: 0.25].
+
+This tab decides which features run at all. Every other tab tunes how a feature runs.
+
+For full diagnostic logs set [Verbosity] to [DEBUG] under [Logging] section of [Dev] tab and enable [Reflection probe traces].
+
+In case of bad performance related to map layers, set [Level] to [Fine] under [Profiling] section of [Map - Dev] tab, and execute [kmu_profiling tree] console command to log the results. [kmu_profiling reset] will clear stored measurements if you need to start over.",,,,,,,,,Features
+,,,,,,,,,,,,,,,,
 kmu_features_toggles_header,,,,Feature toggles,,Header,Feature toggles,,,,,,,,,Features
 kmu_features_toggles_areMapLayersEnabled,,,,Enable map layers,,Boolean,TRUE,,,,"Enables [KMU Map Layers] and all related components (sidebar, mouseover effect, etc.). Map layers are rendered on sector map widgets (map screen, intel screen, Random Assortment of Things minimap replacement, etc.) as an information and presentation tool, with no effect on gameplay. Can be safely toggled on and off on a save. [If you want to uninstall KMU, disable this feature and overwrite your save with]. This is the framework every map layer rides on - KMU's own [Political Map] and [any map layer another mod registers with KMU] - so switching it off takes every one of them off the map, other mods' layers included. [Default: true].",,,,,Features
 kmu_features_toggles_isMarketConditionManagerEnabled,,,,Enable Market Condition Manager (MCM),,Boolean,FALSE,,,,"Enables the [KMU Market Condition Manager] ([MCM]). Currently [UNFINISHED]. [Default: false].",,,,,Features
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_visuals_contentsNote,,,,,,Text,"Available settings:
+- [Map layers]
+  - Hide fade time
+- [Overlay sidebar]
+  - Border thickness
+  - Opacity
+  - Scrollbar thickness
+  - Collapse time
+  - Map screen top, left, bottom padding
+  - Intel screen map visor top padding
+- [Overlay sidebar - colours]
+  - Colour scheme
+  - Collapse notch chevron colour
+- [Map labels]
+  - Name min and max font size
+  - Name max lines
+  - Name line spacing
+- [Hovering]
+  - Enable hovering
+  - Enable hover effects
+  - Enable hover tooltips
+- [Hover tooltip - density]
+  - Tooltip nesting level shrink
+  - Tooltip line gaps - normal, tier 2, and tier 3
+- [Hover tooltip - connecting lines]
+  - Thickness, opacity
+- [Hover tooltip - redacted text]
+  - Darkening strength",,,,,,,,,Map - Visuals
+,,,,,,,,,,,,,,,,
 kmu_map_visuals_layers_header,,,,Map layers,,Header,Map layers,,,,,,,,,Map - Visuals
 kmu_map_visuals_layers_hideFadeSeconds,,,,Hide fade time,,Double,0.25,,,,"How long the map layers take to fade off the screen when they are hidden (and to fade back in when they are shown again), in seconds. Everything the layers draw fades together - the overlay, its names, and the overlay control box. 0 switches them straight off with no animation; higher makes the fade slower and smoother, up to 2 seconds. [Default: 0.25].",,,0,2,Map - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_sidebar_header,,,,Overlay sidebar,,Header,Overlay sidebar,,,,,,,,,Map - Visuals
-kmu_map_visuals_sidebar_borderWidth,,,,Border width,,Int,1,,,,"Line width of the outer border framing the overlay control box, in pixels; 0 draws no border. [Default: 1].",,,0,8,Map - Visuals
+kmu_map_visuals_sidebar_borderWidth,,,,Border thickness,,Int,1,,,,"Line width of the outer border framing the overlay control box, in pixels; 0 draws no border. [Default: 1].",,,0,8,Map - Visuals
 kmu_map_visuals_sidebar_opacity,,,,Opacity,,Int,80,,,,"Background opacity of the overlay control box, as a percentage: 50 is the most see-through the box goes, 100 fully opaque. The box's text always draws solid, so the background only has to be dark enough to read that text against. [Default: 80].",,,50,100,Map - Visuals
 kmu_map_visuals_sidebar_scrollbarThickness,,,,Scrollbar thickness,,Int,3,,,,"How thick the scrollbar down the right edge of the overlay control box draws, in pixels - both its track and the thumb riding in it. Past 3 the box itself widens to hold the thicker bar, so the list rows stay exactly where they are instead of the bar covering them. [Default: 3].",,,1,12,Map - Visuals
 kmu_map_visuals_sidebar_collapseSeconds,,,,Collapse time,,Double,0.25,,,,"How long the overlay control box takes to fold down to its docked rail (and to unfold again) when you click its collapse handle, in seconds. 0 snaps it instantly with no animation; higher makes the slide slower and smoother, up to 2 seconds. [Default: 0.25].",,,0,2,Map - Visuals
-kmu_map_visuals_sidebar_paddingTop,,,,M-map top padding,,Int,36,,,,"How far down from the top edge of the screen the overlay control box sits, in pixels - clears the sector map's tab strip so the box does not overlap it. [Default: 36].",,,0,600,Map - Visuals
-kmu_map_visuals_sidebar_paddingLeft,,,,M-map left padding,,Int,9,,,,"How far in from the left edge of the screen the overlay control box sits, in pixels. [Default: 9].",,,0,600,Map - Visuals
-kmu_map_visuals_sidebar_paddingBottom,,,,M-map bottom padding,,Int,79,,,,"How far above the bottom edge of the screen the overlay control box must stay, in pixels. The box caps its height to this margin so it never runs off the bottom; when the faction/alliance list is longer than the room left, the list scrolls within it while the controls above stay pinned. [Default: 79].",,,0,600,Map - Visuals
+kmu_map_visuals_sidebar_paddingTop,,,,Map screen top padding,,Int,36,,,,"How far down from the top edge of the screen the overlay control box sits, in pixels - clears the sector map's tab strip so the box does not overlap it. [Default: 36].",,,0,600,Map - Visuals
+kmu_map_visuals_sidebar_paddingLeft,,,,Map screen left padding,,Int,9,,,,"How far in from the left edge of the screen the overlay control box sits, in pixels. [Default: 9].",,,0,600,Map - Visuals
+kmu_map_visuals_sidebar_paddingBottom,,,,Map screen bottom padding,,Int,79,,,,"How far above the bottom edge of the screen the overlay control box must stay, in pixels. The box caps its height to this margin so it never runs off the bottom; when the faction/alliance list is longer than the room left, the list scrolls within it while the controls above stay pinned. [Default: 79].",,,0,600,Map - Visuals
 kmu_map_visuals_sidebar_intelPaddingTop,,,,Intel screen map visor top padding,,Int,21,,,,"How far down from the top edge of the intel screen's map preview (the visor) the overlay control box sits, in pixels - pushes the box below the vanilla Starscape and fuel-range toggles at the top of that map, leaving the same three-pixel channel those toggles keep between themselves. The box overlays the visor, flush against its left edge, and its height is capped by the visor's bottom. [Default: 21].",,,0,600,Map - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_visuals_sidebar_colours_header,,,,Overlay sidebar - colours,,Header,Overlay sidebar - colours,,,,,,,,,Map - Visuals
@@ -52,13 +89,56 @@ kmu_map_visuals_tooltips_redacted_darkeningStrength,,,,Darkening strength,,Doubl
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_politics_visuals_contentsNote,,,,,,Text,"Available settings:
+- [Faction systems]
+  - Outer border colour, opacity, thickness
+  - Inner border colour, opacity, thickness
+  - Fill colour and opacity
+  - Name opacity
+- [Independent systems]
+  - The same nine settings
+- [Decivilised systems]
+  - Border opacity, thickness
+  - Fill opacity
+- [Uninhabited systems]
+  - Border opacity, thickness
+- [Style mutators]
+  - Presence lightening
+  - Muted element opacity modifier
+  - Desaturation darkening
+- [Presence ribbons]
+  - Show presence ribbons
+  - Shortened presence ribbons on single-faction / single-alliance systems
+  - Keep ribbons clear of cluster names
+  - What a ribbon keeps clear of
+  - Always draw a planned ribbon
+  - Ribbon width, inset
+  - Colony run length
+  - Separator length
+- [Hover highlight]
+  - Enable hover effects
+  - Highlight colour
+  - Halo opacity, width, layers
+  - Halo pulse strength, period
+  - Cell wash opacity, outline opacity and width
+- [Filter list preview]
+  - Highlight colour
+  - Cell wash opacity
+- [Hover tooltip]
+  - Enable hover tooltip
+- [Nebula draw order]
+  - Territory fills
+  - Borders
+  - Presence bands
+  - Faction names",,,,,,,,,Map - Politics - Visuals
+,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_faction_header,,,,Faction systems,,Header,Faction systems,,,,,,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_outerBorder_colour,,,,Outer border colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which faction palette colour the outer (national) border draws in, or No color to hide it. [Default: Primary faction color].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_outerBorder_opacity,,,,Outer border opacity,,Double,1,,,,Opacity of the outer (national) border for faction systems. [Default: 1].,,,0,1,Map - Politics - Visuals
-kmu_map_politics_visuals_faction_outerBorder_width,,,,Outer border width,,Double,3,,,,"Line width of the outer (national) border for faction systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
+kmu_map_politics_visuals_faction_outerBorder_width,,,,Outer border thickness,,Double,3,,,,"Line width of the outer (national) border for faction systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_innerBorder_colour,,,,Inner border colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which faction palette colour the inner (province seam) borders draw in, or No color to hide them. [Default: Primary faction color].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_innerBorder_opacity,,,,Inner border opacity,,Double,0.1,,,,Opacity of the inner (province seam) borders for faction systems. [Default: 0.1].,,,0,1,Map - Politics - Visuals
-kmu_map_politics_visuals_faction_innerBorder_width,,,,Inner border width,,Double,10,,,,"Line width of the inner (province seam) borders for faction systems, in pixels. [Default: 10].",,,0.5,100,Map - Politics - Visuals
+kmu_map_politics_visuals_faction_innerBorder_width,,,,Inner border thickness,,Double,10,,,,"Line width of the inner (province seam) borders for faction systems, in pixels. [Default: 10].",,,0.5,100,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_fill_colour,,,,Fill colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which faction palette colour the territory fill draws in, or No color to leave it unfilled. [Default: Primary faction color].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_fill_opacity,,,,Fill opacity,,Double,0.4,,,,Fill opacity for faction systems. [Default: 0.4].,,,0,1,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_name_opacity,,,,Name opacity,,Double,1,,,,"How opaque each faction cluster's name draws, as a fraction of its owner's colour: 1 draws faction names at full strength, lower fades only the faction names so they recede behind the fills and borders. Independent space's names have their own Name opacity. The map's own zoom fade still dims names further at the edges of its zoom range. [Default: 1].",,,0,1,Map - Politics - Visuals
@@ -66,36 +146,36 @@ kmu_map_politics_visuals_faction_name_opacity,,,,Name opacity,,Double,1,,,,"How 
 kmu_map_politics_visuals_independent_header,,,,Independent systems,,Header,Independent systems,,,,,,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_outerBorder_colour,,,,Outer border colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which independent palette colour the outer (national) border draws in, or No color to hide it. [Default: Primary faction color].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_outerBorder_opacity,,,,Outer border opacity,,Double,0.5,,,,Opacity of the outer (national) border for independent-held systems. [Default: 0.5].,,,0,1,Map - Politics - Visuals
-kmu_map_politics_visuals_independent_outerBorder_width,,,,Outer border width,,Double,3,,,,"Line width of the outer (national) border for independent-held systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
+kmu_map_politics_visuals_independent_outerBorder_width,,,,Outer border thickness,,Double,3,,,,"Line width of the outer (national) border for independent-held systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_innerBorder_colour,,,,Inner border colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which independent palette colour the inner (province seam) borders draw in, or No color to hide them. [Default: Primary faction color].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_innerBorder_opacity,,,,Inner border opacity,,Double,0.1,,,,Opacity of the inner (province seam) borders for independent-held systems. [Default: 0.1].,,,0,1,Map - Politics - Visuals
-kmu_map_politics_visuals_independent_innerBorder_width,,,,Inner border width,,Double,10,,,,"Line width of the inner (province seam) borders for independent-held systems, in pixels. [Default: 10].",,,0.5,100,Map - Politics - Visuals
+kmu_map_politics_visuals_independent_innerBorder_width,,,,Inner border thickness,,Double,10,,,,"Line width of the inner (province seam) borders for independent-held systems, in pixels. [Default: 10].",,,0.5,100,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_fill_colour,,,,Fill colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which independent palette colour the territory fill draws in, or No color to leave it unfilled. [Default: Primary faction color].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_fill_opacity,,,,Fill opacity,,Double,0.2,,,,Fill opacity for independent-held systems. [Default: 0.2].,,,0,1,Map - Politics - Visuals
 kmu_map_politics_visuals_independent_name_opacity,,,,Name opacity,,Double,1,,,,"How opaque each independent-held cluster's name draws, as a fraction of its owner's colour: 1 draws independent names at full strength, lower fades only the independent names so they recede behind the fills and borders. Faction systems have their own Name opacity. The map's own zoom fade still dims names further at the edges of its zoom range. [Default: 1].",,,0,1,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_decivilised_header,,,,Decivilised systems,,Header,Decivilised systems,,,,,,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_decivilised_border_opacity,,,,Border opacity,,Double,0.45,,,,"Outline opacity for decivilised systems - known dead colonies, drawn in the shared neutral colour. 0 hides the outline. [Default: 0.45].",,,0,1,Map - Politics - Visuals
-kmu_map_politics_visuals_decivilised_border_width,,,,Border width,,Double,3,,,,"Outline line width for decivilised systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
+kmu_map_politics_visuals_decivilised_border_width,,,,Border thickness,,Double,3,,,,"Outline line width for decivilised systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
 kmu_map_politics_visuals_decivilised_fill_opacity,,,,Fill opacity,,Double,0.15,,,,"Fill opacity for decivilised systems - the neutral-colour wash inside each dead system's outline, so a dead colony reads as occupied territory rather than a bare ring. 0 leaves it unfilled and draws the outline alone. [Default: 0.15].",,,0,1,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_uninhabited_header,,,,Uninhabited systems,,Header,Uninhabited systems,,,,,,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_uninhabited_border_opacity,,,,Border opacity,,Double,0.15,,,,Outline opacity for uninhabited systems (drawn only while the overlay sidebar's uninhabited-systems checkbox is on). [Default: 0.15].,,,0,1,Map - Politics - Visuals
-kmu_map_politics_visuals_uninhabited_border_width,,,,Border width,,Double,3,,,,"Outline line width for uninhabited systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
+kmu_map_politics_visuals_uninhabited_border_width,,,,Border thickness,,Double,3,,,,"Outline line width for uninhabited systems, in pixels. [Default: 3].",,,0.5,100,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_styleMutators_header,,,,Style mutators,,Header,Style mutators,,,,,,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_styleMutators_presenceLightening,,,,Presence lightening,,Double,1.0,,,,"How far a system the spotlit faction lives in but does not claim is washed toward white, as the fraction of the way there: the cell keeps the shared neutral colour and only its brightness lifts, so it reads clear of the sunk greys around it without taking on a faction hue. 0 leaves it at the plain neutral, 1 goes to white. [Default: 1].",,,0,1,Map - Politics - Visuals
 kmu_map_politics_visuals_styleMutators_mutedOpacityModifier,,,,Muted element opacity modifier,,Double,0.5,,,,"How far the Mute non-allied factions toggle (in the Alliances view's on-map sidebar) dims a non-allied faction's borders, fills, and name, as a fraction of its normal opacity: 0.5 halves it, 0 hides it, 1 leaves it unchanged. Alliances are never dimmed. [Ignored while Mute non-allied factions is off]. [Default: 0.5].",,,0,1,Map - Politics - Visuals
 kmu_map_politics_visuals_styleMutators_desaturationDarkening,,,,Desaturation darkening,,Double,0.5,,,,"How far a Desaturate sidebar toggle sinks a receded bloc's colour toward black, as the fraction of brightness removed: a desaturated bloc paints a uniform grey based on the Independent faction's own colour, darkened by this much so it reads behind genuine independent-held space. Applies wherever Desaturate recedes a bloc - the spotlight filter's faded backdrop (any bloc that is not spotlit, alliances included) and the Alliances view's non-allied factions. 0 leaves it at the Independent colour, 0.5 draws it 50%% darker, 1 goes to black. Desaturate starts on, so this applies from the first spotlight; [it is read only while at least one Desaturate toggle is ticked]. [Default: 0.5].",,,0,1,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
-kmu_map_politics_visuals_presenceRibbons_header,,,,Presence bands,,Header,Presence bands,,,,,,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_areEnabled,,,,Show presence bands,,Boolean,TRUE,,,,"Whether a system draws a banded stroke inside its own cell border, with a run of colour per colony, saying which factions hold colonies there and how many. Where more than one faction holds colonies, that is the one thing the cell's own colour cannot say - the faction the cell is coloured for is in the band too, so the rivals beside it have a scale to read against. A system only one faction holds colonies in bands too, saying how many are there where its colour has already said whose they are; how loudly it does so is the setting below's business. [Default: true].",,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_shouldShortenUncontestedRuns,,,,Short runs on uncontested systems,,Boolean,TRUE,,,,"Whether each colony in an uncontested system's band draws at a single band width instead of the Colony run length below, so a large holding nobody contests reads as a tally of what is there rather than out-shouting the contested systems beside it. The separator between colonies keeps its own length either way. Systems more than one faction holds colonies in are unaffected - a contest always draws at the Colony run length. [Default: true].",,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_shouldKeepClearOfNames,,,,Keep bands clear of cluster names,,Boolean,TRUE,,,,"Whether the bands keep out of the way of the cluster names, each band breaking around the room a name takes over its cell so the words stay readable. Off lets a band run its whole ring, with any name over the cell drawn straight across it - which of the two readouts wins the room they share is a matter of taste, so it is not decided for you. [Default: true].",,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_nameClearance,,,,What a band keeps clear of,,Radio,The words themselves,"The name's fitted box, The words themselves",,,"How much room a cluster name is taken to need, where a band keeps clear of one. The words themselves gives up only the ring each drawn line actually covers. The name's fitted box gives up the whole box the name was placed into, which reaches past the words at both ends - the placement accepts any span at least as long as the name, so the spare is room nothing is ever drawn in. [Ignored while Keep bands clear of cluster names is off]. [Default: The words themselves].",,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_areAlwaysDrawn,,,,Always draw a planned band,,Boolean,TRUE,,,,"Whether a system that has a band to draw draws one even where its cell leaves no room for it. A cluster name covering the whole of a cell's ring is ignored rather than leaving that cell bare, and a cell too narrow to hold the band and its inset together gives up the inset rather than the band. Off, such a cell simply draws nothing - which is tidier, and leaves no way to tell a system with nothing to say from one that was refused the room to say it. [Default: true].",,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_width,,,,Band width,,Double,200,,,,"How thick the presence band is, in world units - the units the map's cells are cut in, so a band keeps the same share of its cell's outline at every zoom. Higher reads from further out; lower keeps it a fine line inside the border. [Default: 200].",,,10,500,Map - Politics - Visuals
-kmu_map_politics_visuals_presenceRibbons_insetPad,,,,Band inset,,Double,200,,,,"How far clear of its cell's own border the presence band runs, in world units, so it reads as sitting inside the border rather than thickening it. Higher pulls the band deeper into the cell; 0 lays it against the border. A cell with no room for the band and this gap together draws none at all. [Default: 200].",,,0,500,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_header,,,,Presence ribbons,,Header,Presence ribbons,,,,,,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_areEnabled,,,,Show presence ribbons,,Boolean,TRUE,,,,"Whether a system draws a banded stroke inside its own cell border, with a run of colour per colony, encoding with it which factions hold colonies there and how many. Where more than one faction holds colonies, that is the one thing the cell's own colour cannot say - the faction the cell is coloured for is in the band too, so the rivals beside it have a scale to read against. A system only one faction holds colonies in bands too, saying how many are there where its colour has already said whose they are; how loudly it does so is governed by the setting below. [Default: true].",,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_shouldShortenUncontestedRuns,,,,Shortened presence ribbons on single-faction / single-alliance systems,,Boolean,TRUE,,,,"Whether each colony in a single-faction (and also single-alliance with [Nexerelin] installed) system's band draws at a single band width instead of the [Colony run length] below. It represents [solidified control], so a large holding nobody shares reads as a tally of what is there rather than out-shouting the shared systems beside it. The separator between colonies keeps its own length either way. Systems more than one faction holds colonies in are unaffected - a shared system always draws at the Colony run length. Systems [claimed unconditionally] by faction A with none of its presence, but with presence of faction B don't draw shortened presence ribbons. [Default: true].",,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_shouldKeepClearOfNames,,,,Keep ribbons clear of cluster names,,Boolean,TRUE,,,,"Whether the bands keep out of the way of the cluster names, each band breaking around the room a name takes over its cell so the words stay readable. Off lets a band run its whole ring, with any name over the cell drawn straight across it - which of the two readouts wins the room they share is a matter of taste, so it is not decided for you. [Default: true].",,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_nameClearance,,,,What a ribbon keeps clear of,,Radio,The words themselves,"The name's fitted box, The words themselves",,,"How much room a cluster name is taken to need, where a band keeps clear of one. The words themselves gives up only the ring each drawn line actually covers. The name's fitted box gives up the whole box the name was placed into, which reaches past the words at both ends - the placement accepts any span at least as long as the name, so the spare is room nothing is ever drawn in. [Ignored while Keep bands clear of cluster names is off]. [Default: The words themselves].",,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_areAlwaysDrawn,,,,Always draw a planned ribbon,,Boolean,TRUE,,,,"Whether a system that has a band to draw draws one even where its cell leaves no room for it. A cluster name covering the whole of a cell's ring is ignored rather than leaving that cell bare, and a cell too narrow to hold the band and its inset together gives up the inset rather than the band. Off, such a cell simply draws nothing - which is tidier, and leaves no way to tell a system with nothing to say from one that was refused the room to say it. [Default: true].",,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_width,,,,Ribbon width,,Double,200,,,,"How thick the presence band is, in world units - the units the map's cells are cut in, so a band keeps the same share of its cell's outline at every zoom. Higher reads from further out; lower keeps it a fine line inside the border. [Default: 200].",,,10,500,Map - Politics - Visuals
+kmu_map_politics_visuals_presenceRibbons_insetPad,,,,Ribbon inset,,Double,200,,,,"How far clear of its cell's own border the presence band runs, in world units, so it reads as sitting inside the border rather than thickening it. Higher pulls the band deeper into the cell; 0 lays it against the border. A cell with no room for the band and this gap together draws none at all. [Default: 200].",,,0,500,Map - Politics - Visuals
 kmu_map_politics_visuals_presenceRibbons_segmentLength,,,,Colony run length,,Int,3,,,,"How far the run one colony draws in the presence band reaches, measured in band widths. Read against the separator length below: the wider the gap between the two, the more one faction's stretch of band reads as several separate colonies rather than a single large holding. [Default: 3].",,,1,10,Map - Politics - Visuals
 kmu_map_politics_visuals_presenceRibbons_interjectionLength,,,,Separator length,,Int,1,,,,"How far a darker parting in the presence band reaches, measured in band widths. It parts two colonies of the same faction, and it also closes off a faction's whole stretch where the next faction's begins - drawn in the outgoing faction's own darker shade, so it reads as that faction's holdings ending rather than as a gap belonging to nobody. The last stretch in a band is left open. [Default: 1].",,,1,10,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
@@ -119,12 +199,33 @@ kmu_map_politics_visuals_hoverTooltip_header,,,,Hover tooltip,,Header,Hover tool
 kmu_map_politics_visuals_hoverTooltip_isEnabled,,,,Enable hover tooltip,,Boolean,TRUE,,,,"Whether the political map shows its own hover box - the hovered star system named, with the factions ranked behind the colour it is filled in. Turns the box off for this map alone and leaves every other map layer's alone; the Map - Visuals tab's Enable hover tooltips turns them all off at once. [Ignored while either switch above it is off]. [Default: true].",,,,,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_starscape_positionRelativeToNebulae_header,,,,Nebula draw order,,Header,Nebula draw order,,,,,,,,,Map - Politics - Visuals
-kmu_map_politics_visuals_starscape_positionRelativeToNebulae_fills,,,,Territory fills,,Radio,Below,"Below, Above",,,"Whether the territory fills - each cluster's own colour, and the hatch over a contested one - paint below the map's nebulae or above them. Raising the fills raises the borders with them whatever the Borders setting says, because a fill painted over its own borders leaves a blank cell; the hover highlight goes up with them too, since it brightens the fill beneath the cursor. Above paints clear of the haze the Starscape look lays over the sector, Below is dimmed by it. The schematic look has no such haze, so there the setting only reorders the overlay against itself. [Default: Below].",,,,,Map - Politics - Visuals
+kmu_map_politics_visuals_starscape_positionRelativeToNebulae_fills,,,,Territory fills,,Radio,Below,"Below, Above",,,"Whether the territory fills - each cluster's own colour, and the hatch over a shared one - paint below the map's nebulae or above them. Raising the fills raises the borders with them whatever the Borders setting says, because a fill painted over its own borders leaves a blank cell; the hover highlight goes up with them too, since it brightens the fill beneath the cursor. Above paints clear of the haze the Starscape look lays over the sector, Below is dimmed by it. The schematic look has no such haze, so there the setting only reorders the overlay against itself. [Default: Below].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_starscape_positionRelativeToNebulae_borders,,,,Borders,,Radio,Below,"Below, Above",,,"Whether the borders - cluster boundaries, province seams, and the outlines around decivilised and uninhabited systems - paint below the map's nebulae or above them. Borders may be lifted on their own, but they cannot be sunk below the fills: [while Territory fills is set to Above, the borders paint above whatever this says]. Above paints clear of the haze the Starscape look lays over the sector, Below is dimmed by it. The schematic look has no such haze, so there the setting only reorders the overlay against itself. [Default: Below].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_starscape_positionRelativeToNebulae_presenceRibbons,,,,Presence bands,,Radio,Below,"Below, Above",,,"Whether the presence bands - the banded stroke inside a cell's border saying which factions hold colonies there - paint below the map's nebulae or above them. Below is dimmed by the haze the Starscape look lays over the sector, Above paints clear of it. The schematic look has no such haze, so there the setting only reorders the overlay against itself. [Default: Below].",,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels,,,,Faction names,,Radio,Above,"Below, Above",,,"Whether the cluster names paint below the map's nebulae or above them. Above paints clear of the haze the Starscape look lays over the sector, Below is dimmed by it - which reaches words rather than shapes, so it is the one of these settings that decides whether a name is read at all rather than how strongly it reads. The schematic look has no such haze, so there the setting only reorders the overlay against itself. [Default: Above].",,,,,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+kmu_map_politics_domination_contentsNote,,,,,,Text,"Available settings:
+- [Stability]
+  - Stability weighs dominance
+- [Colony size]
+  - Colony size weight
+  - Colony low-stability penalty
+- [Hidden markets]
+  - Hidden market scaling
+  - Hidden market fixed weight
+- [Orbital stations]
+  - Station weighs dominance
+  - Station weight
+  - Hidden-market station fraction
+  - Station low-stability penalty
+- [Patrols]
+  - Patrols weigh dominance
+  - Small patrol weight
+  - Medium patrol weight
+  - Large patrol weight
+  - Patrol low-stability penalty",,,,,,,,,Map - Politics - Domination
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_domination_stability_header,,,,Stability,,Header,Stability,,,,,,,,,Map - Politics - Domination
 kmu_map_politics_domination_stability_isEnabled,,,,Stability weighs dominance,,Boolean,TRUE,,,,"Master switch for stability scaling. When on, each dominance factor (colony size, station bonus, patrols) is cut at low stability by its own low-stability penalty below, so a destabilised colony holds less of its system than a functioning one. Turn off to ignore stability entirely and rank colonies by their raw weighted size, station, and patrol sum. [Default: true].",,,,,Map - Politics - Domination
@@ -177,7 +278,7 @@ kmu_map_keybinds_layers_factions,,,,Factions tab key,,Keycode,25,,,,"Keyboard sh
 kmu_map_visibility_overrides_header,,,,Visibility overrides (SPOILERS),,Header,Visibility overrides (SPOILERS),,,,,,,,,Map - Visibility
 kmu_map_visibility_overrides_shouldShowUndiscoveredMarkets,,,,Show undiscovered markets,,Boolean,FALSE,,,,"Show [market entities marked as discoverable] the player has not gotten close to yet. [Default: false].",,,,,Map - Visibility
 kmu_map_visibility_overrides_shouldShowUnseenHiddenMarkets,,,,Show unseen hidden colonies,,Boolean,FALSE,,,,"Show [markets marked as hidden] before the player has seen them where they stand or their system is settled by any faction (e.g. Galatia Academy in Galatia). [Default: false].",,,,,Map - Visibility
-kmu_map_visibility_overrides_decivilisedWorldSurveyLevel,,,,Show decivilised worlds surveyed at least to,,Radio,Seen,"Not surveyed, Seen, Preliminary, Full",,,"Survey level required for [decivilised colonies] to be revealed. At [Not surveyed] every decivilised world shows. At [Seen] one is also revealed by another faction's colony in the same system. At [Preliminary] and [Full] only player survey counts. [Default: Seen].",,,,,Map - Visibility
+kmu_map_visibility_overrides_decivilisedWorldSurveyLevel,,,,Show decivilised worlds surveyed at least to,,Radio,Seen,"Not surveyed, Seen, Preliminary, Full",,,"Survey level required for [decivilised colonies] to be revealed. At [Not surveyed] every decivilised world shows. At [Seen] one is also revealed by another faction's colony in the same system, or a player visit to the system. At [Preliminary] and [Full] only player survey counts. [Default: Seen].",,,,,Map - Visibility
 kmu_map_visibility_overrides_shouldShowUnseenAbandonedStations,,,,Show unseen derelicts,,Boolean,FALSE,,,,"Show [unowned (neutral) markets with Abandoned Station condition] before the player has seen them where they stand or their system is settled by any faction. [Default: false].",,,,,Map - Visibility
 kmu_map_visibility_overrides_shouldShowHiddenSystems,,,,Show hidden star systems,,Boolean,FALSE,,,,"Seed map geometry for [every star system in the sector], not just the reachable, visible, or inhabited ones - forces a cell onto a system the map would otherwise omit. A forced system draws as uninhabited unless it holds a colony. [Default: false].",,,,,Map - Visibility
 ,,,,,,,,,,,,,,,,
@@ -191,8 +292,53 @@ kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_dev_contentsNote,,,,,,Text,"Available settings:
+- [Profiling]
+  - Level
+  - Frame beat budget
+- [Refresh polling]
+  - Refresh poll interval
+- [Map controls]
+  - Add map layers toggle to the filter row
+  - Always show the layer arrangement button
+- [Cell geometry]
+  - Territory reach
+  - Cell frontier segments
+- [Border tracing]
+  - National border weld tolerance, miter limit
+- [Spike sanding]
+  - Sand border spikes
+  - Spike height, angle
+- [Corner rounding]
+  - Round border corners
+  - Corner radius, segments
+  - Chamfer angle
+  - Round below angle
+- [Hatch fill]
+  - Hatch width
+  - Smooth hatch lines
+  - Hatch angle, spacing
+- [Hatch fill - joining]
+  - Join tolerance
+- [Label anchors]
+  - Anchor direction count, offset count
+  - Anchor font tolerance
+  - Anchor vertical penalty, vertical penalty falloff
+  - Anchor max slant
+  - Anchor end inset
+  - Anchor icon clearance
+  - Anchor band opacity, band line opacity
+- [Diagnostics]
+  - Show cluster label anchors
+  - Show rejected cluster axes, unbiased cluster axes
+  - Show presence band paths
+  - Debug border tracing
+- [UI]
+  - Map screen sidebar pixel font sharpness
+  - Intel sidebar pixel font sharpness",,,,,,,,,Map - Dev
+,,,,,,,,,,,,,,,,
 kmu_map_dev_profiling_header,,,,Profiling,,Header,Profiling,,,,,,,,,Map - Dev
-kmu_map_dev_profiling_level,,,,Profiling level,,Radio,Off,"Off, Coarse, Fine",,,"How much of what the map layers do is timed, for the kmu_profiling console readout. Off measures nothing and costs nothing, which is what you want unless you are chasing a slow map. Coarse times the beats of a map frame and the steps of a rebuild, which is what says where a frame went. Fine adds what one turn of a per-item loop costs - a few clock reads per system per rebuild - which is what says which part of a slow step is slow. A running capture keeps what it has measured in memory until you clear it with kmu_profiling reset, and moving this starts a fresh one. [Default: Off].",,,,,Map - Dev
+kmu_map_dev_profiling_level,,,,Level,,Radio,Off,"Off, Coarse, Fine",,,"How much of what the map layers do is timed, for the kmu_profiling console readout. Off measures nothing and costs nothing, which is what you want unless you are chasing a slow map. Coarse times the beats of a map frame and the steps of a rebuild, which is what says where a frame went. Fine adds what one turn of a per-item loop costs - a few clock reads per system per rebuild - which is what says which part of a slow step is slow. A running capture keeps what it has measured in memory until you clear it with kmu_profiling reset, and moving this starts a fresh one. [Default: Off].",,,,,Map - Dev
 kmu_map_dev_profiling_frameBeat_budgetMillis,,,,Frame beat budget,,Double,4,,,,"How long one beat of a map frame may take before a running profile capture flags it, in milliseconds. A beat is one part of the frame the map layers are given: the preparation before anything is drawn, each band of paint, the cursor read, the hover box. A beat over this is marked in the profiling report and written to the log once, with what that call was doing - which is what turns a table of durations into something that says where to look. 0 states no bound, leaving the report to show the numbers and judge nothing. Costs nothing unless a capture is running. [Default: 4].",,,0,50,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_refresh_header,,,,Refresh polling,,Header,Refresh polling,,,,,,,,,Map - Dev
@@ -225,10 +371,10 @@ kmu_map_dev_cornerRounding_chamferAngle,,,,Chamfer angle,,Double,35,,,,Corners s
 kmu_map_dev_cornerRounding_angleThreshold,,,,Round below angle,,Double,170,,,,"Corners flatter than this interior angle (degrees) keep their vertex instead of being rounded. A border is cell arcs sampled at fixed angles joined by straight runs, and those samples meet at about 173 degrees, so a setting past them rounds the samples too - roughly twice the border vertices for a line that moves about ten world units. Lower rounds fewer corners and leaves gentle bends sharp. [Default: 170].",,,0,180,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_hatchFill_header,,,,Hatch fill,,Header,Hatch fill,,,,,,,,,Map - Dev
-kmu_map_dev_hatchFill_width,,,,Hatch width,,Double,50,,,,"How much of each gap between the contested-cluster hatch lines the line itself inks, as a percentage of the hatch spacing. Higher makes the hatch read heavier and darker; 100 would fill it in solid, so the range stops short of that. Measured against the spacing rather than in pixels so the pattern keeps its proportions at every zoom - a fixed pixel width fills in solid as the map zooms out. Only the filter's contested territory hatches. [Default: 50].",,,5,90,Map - Dev
-kmu_map_dev_hatchFill_isSmoothed,,,,Smooth hatch lines,,Boolean,FALSE,,,,"Antialiases the contested-cluster hatch instead of stroking it hard-edged. On softens each line's edges, which reads smoother at a wide stroke but also makes the hatch slightly wider, lighter and less crisp against the solid fill beside it, and costs a blend for every pixel the hatch covers. The hatch is the one pass that chooses this for itself - the cluster fills and borders are unaffected either way. [Some GL bridges (Fast Rendering) may ignore the smoothing hint above a one-pixel stroke, in which case this changes nothing on screen]. [Default: false].",,,,,Map - Dev
-kmu_map_dev_hatchFill_angle,,,,Hatch angle,,Double,45,,,,"The direction the contested-cluster hatch lines run, in degrees off horizontal (a hatch line is undirected, so 0 and 180 match). 0 lays the lines flat, 90 stands them upright, 45 is a diagonal. Only the filter's contested territory hatches. [Default: 45].",,,0,180,Map - Dev
-kmu_map_dev_hatchFill_spacing,,,,Hatch spacing,,Double,1000,,,,"The perpendicular gap between the diagonal hatch lines that fill a contested cluster - the spotlighted bloc's present-but-dominated systems under the faction/alliance filter - in world units. Lower packs the hatch denser, higher opens it up. Only the filter's contested territory hatches; every other territory fills solid. [Default: 1000].",,,50,2000,Map - Dev
+kmu_map_dev_hatchFill_width,,,,Hatch width,,Double,50,,,,"How much of each gap between the shared-cluster hatch lines the line itself inks, as a percentage of the hatch spacing. Higher makes the hatch read heavier and darker; 100 would fill it in solid, so the range stops short of that. Measured against the spacing rather than in pixels so the pattern keeps its proportions at every zoom - a fixed pixel width fills in solid as the map zooms out. Only the filter's shared territory hatches. [Default: 50].",,,5,90,Map - Dev
+kmu_map_dev_hatchFill_isSmoothed,,,,Smooth hatch lines,,Boolean,FALSE,,,,"Antialiases the shared-cluster hatch instead of stroking it hard-edged. On softens each line's edges, which reads smoother at a wide stroke but also makes the hatch slightly wider, lighter and less crisp against the solid fill beside it, and costs a blend for every pixel the hatch covers. The hatch is the one pass that chooses this for itself - the cluster fills and borders are unaffected either way. [Some GL bridges (Fast Rendering) may ignore the smoothing hint above a one-pixel stroke, in which case this changes nothing on screen]. [Default: false].",,,,,Map - Dev
+kmu_map_dev_hatchFill_angle,,,,Hatch angle,,Double,45,,,,"The direction the shared-cluster hatch lines run, in degrees off horizontal (a hatch line is undirected, so 0 and 180 match). 0 lays the lines flat, 90 stands them upright, 45 is a diagonal. Only the filter's shared territory hatches. [Default: 45].",,,0,180,Map - Dev
+kmu_map_dev_hatchFill_spacing,,,,Hatch spacing,,Double,1000,,,,"The perpendicular gap between the diagonal hatch lines that fill a shared cluster - the spotlighted bloc's present-but-dominated systems under the faction/alliance filter - in world units. Lower packs the hatch denser, higher opens it up. Only the filter's shared territory hatches; every other territory fills solid. [Default: 1000].",,,50,2000,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_hatchJoining_header,,,,Hatch fill - joining,,Header,Hatch fill - joining,,,,,,,,,Map - Dev
 kmu_map_dev_hatchJoining_tolerance,,,,Join tolerance,,Double,0.2,,,,"How far apart two of one hatch line's crossings may sit and still merge into a single stroke, as a percentage of the hatch spacing (0.2 is a fifth of a percent). A line crossing several of the cluster's triangles is clipped once per triangle, and merging those crossings is what stops a wide line restarting its stair-step phase mid-stroke, which shows as sideways steps and darker ticks. Two triangles sharing an edge should cross a line at the same point exactly; this absorbs a tessellation that does not quite agree. 0 merges only exact abutments, which leaves some of those artefacts visible. [Default: 0.2].",,,0,5,Map - Dev
@@ -253,13 +399,13 @@ kmu_map_dev_diagnostics_cells_ribbons_arePathsShown,,,,Show presence band paths,
 kmu_map_dev_diagnostics_cells_borders_isDebugTracingShown,,,,Debug border tracing,,Boolean,FALSE,,,,"Replace the normal political-map render with a border-tracing diagnostic that layers the smoothing pipeline's stages so you can see what each pass did. From bottom to top: the base traced border in red, the despiked border in yellow, and the rounded border in green. Respects the two smoothing gates - a stage draws only when its pass ran, so with sanding off there is no yellow and with rounding off no green. [Default: false].",,,,,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_ui_header,,,,UI,,Header,UI,,,,,,,,,Map - Dev
-kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_mMap,,,,M-map sidebar pixel font sharpness,,Double,0.0,,,,"How hard the sector-map sidebar tab labels read. Same trade as the intel knob beside it - the condensed atlas those tabs are lettered in carries no antialiasing of its own, so interpolated it reads dimmer than the colour it was set in and unfiltered it reads harder than the vanilla tabs directly above it. Settled against those tabs at none at all: the softer end is what matches them, where the intel row beside vanilla's buttons wants nearly all of it. 0 leaves them as the loader hands them over, 1 draws them unfiltered. [Default: 0].",,,0,1,Map - Dev
+kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_mMap,,,,Map screen sidebar pixel font sharpness,,Double,0.0,,,,"How hard the sector-map sidebar tab labels read. Same trade as the intel knob beside it - the condensed atlas those tabs are lettered in carries no antialiasing of its own, so interpolated it reads dimmer than the colour it was set in and unfiltered it reads harder than the vanilla tabs directly above it. Settled against those tabs at none at all: the softer end is what matches them, where the intel row beside vanilla's buttons wants nearly all of it. 0 leaves them as the loader hands them over, 1 draws them unfiltered. [Default: 0].",,,0,1,Map - Dev
 kmu_map_dev_ui_fontSharpness_tabHeaders_sidebar_intelScreen,,,,Intel sidebar pixel font sharpness,,Double,0.8,,,,"How hard the intel-screen sidebar's raised-button labels read. The atlas those labels are drawn from is a pixel face, and the font loader hands it over interpolated, which costs every single-pixel stroke part of itself and leaves the text reading dimmer than the colour it was set in; drawn unfiltered instead they read harder-edged than the vanilla chrome beside them. 0 leaves them as the loader hands them over, 1 draws them unfiltered, and anything between lays the two over one another at that weight. The default is mostly hard: what matches the vanilla row is the tone rather than the edge. [Default: 0.8].",,,0,1,Map - Dev
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 kmu_dev_logging_header,,,,Logging,,Header,Logging,,,,,,,,,Dev
-kmu_dev_logging_level,,,,KMU log verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics. [Default: WARN].,,,,,Dev
+kmu_dev_logging_level,,,,Verbosity,,Radio,WARN,"OFF, ERROR, WARN, INFO, DEBUG, ALL",,,Verbosity of KMU's own output in starsector.log. WARN is the normal level; INFO adds routine lines and DEBUG adds per-frame overlay diagnostics. [Default: WARN].,,,,,Dev
 kmu_dev_logging_areReflectionProbesEnabled,,,,Reflection probe traces,,Boolean,FALSE,,,,"Enables reflection related logs. Each line runs to about a kilobyte, so this is left off for normal play. [Requires log verbosity set to DEBUG.] [Default: false].",,,,,Dev
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,

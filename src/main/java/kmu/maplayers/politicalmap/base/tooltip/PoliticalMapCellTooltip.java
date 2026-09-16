@@ -59,12 +59,19 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
     // captured at construction would go on filing a group under the alliance it left an hour ago.
     private final HolderGroupingSource holderGroupingSource;
 
+    // Where the wording of the block beneath the friendly one is taken from. A source rather than a
+    // wording for the reason that port sets out: these boxes stand in static fields, so construction
+    // can fall before the game has a mod set to read.
+    private final ContestWordingSource contestWordingSource;
+
     protected PoliticalMapCellTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource) {
+            HolderGroupingSource holderGroupingSource,
+            ContestWordingSource contestWordingSource) {
 
         this.claimBreakdownReader = claimBreakdownReader;
         this.holderGroupingSource = holderGroupingSource;
+        this.contestWordingSource = contestWordingSource;
     }
 
     @Override
@@ -104,6 +111,20 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
         return new BlocRelations(
             new BlocAffiliation(holderGroupingSource.resolveGrouping()),
             new BlocFriendliness(StarsectorFactionRelations.createDispositionReader(sector)));
+    }
+
+    /**
+     * Takes the wording for the block listing everyone present who stands neither in the holder's
+     * alliance nor on good terms with it.
+     *
+     * <p>Bound here rather than by each shape for the reason the relations above are: both shapes
+     * draw that block, and two of them reading the install for themselves are two chances to word it
+     * as a contest on one tab and as plain presence on the next.
+     *
+     * @return the wording the install calls for as the block is drawn
+     */
+    protected final ContestWording resolveContestWording() {
+        return contestWordingSource.resolveWording();
     }
 
     /**

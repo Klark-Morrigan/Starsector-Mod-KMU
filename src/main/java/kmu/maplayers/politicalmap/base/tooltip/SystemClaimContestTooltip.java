@@ -27,14 +27,13 @@ import java.util.List;
 
 /**
  * The shape every box built on a hovered system's claim contest takes: what the system is, then who
- * claims it, then the factions standing with the claimant by alliance, then the ones standing with it
- * in disposition, then the rivals who could have taken it, then the factions present that were never
- * eligible to.
+ * claims it, then the blocks the factions around the claimant are listed in ({@link ClaimContestBlock},
+ * which is where they and their order are declared).
  *
  * <p>The claim mechanic publishes only a winner, so a fill on its own leaves the player guessing at a
  * border they cannot check. Naming the claimant beside the contest behind it is what turns the layer
- * from a colouring into something readable: a system reads as narrowly contested, uncontested, or
- * held by decree over rivals who out-score its holder.
+ * from a colouring into something readable: a system reads as narrowly taken, taken outright, or held
+ * by decree over rivals who out-score its holder.
  *
  * <p>The claim block is drawn wherever there is an answer worth stating: a claimant, or a populated
  * system nobody has taken - which is a real finding, since the factions listed below are present and yet
@@ -67,9 +66,9 @@ import java.util.List;
  *
  * <p>That leaves the two relation blocks holding both eligibilities under headings naming neither, so
  * the fact moves onto the row: an ineligible faction listed in either is qualified on its own line,
- * the device the decreed claim already uses. The qualifier is drawn only where the heading has not
- * already said it, so it is absent under the blocks whose heading is that very fact - one thing said
- * once per hover, the rule {@link #isStatingCoreClaimInBody} follows for the decree.
+ * the device the decreed claim already uses. Which blocks need that of their lines is declared with
+ * the blocks themselves, since it follows from what each heading already says - one thing said once
+ * per hover, the rule {@link #isStatingCoreClaimInBody} follows for the decree.
  *
  * <p>All of that is settled here rather than per box, so a layer built on this contest states one
  * contest however deep it is read. The breakdown is read once, the status is judged against that same
@@ -83,19 +82,12 @@ import java.util.List;
  */
 public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip {
 
-    // Whether the block naming a faction has to say on its lines which of them could have taken the
-    // system. A relation block's heading states how a faction stands to the holder and no eligibility,
-    // so both kinds sit under it and the line is the only place left to tell them apart; the other two
-    // blocks are headed by the eligibility itself, where a qualifier would state one fact twice in the
-    // space of two rows.
-    private static final boolean IS_STATING_ELIGIBILITY_ON_LINE = true;
-    private static final boolean IS_ELIGIBILITY_LEFT_TO_THE_HEADING = false;
-
     protected SystemClaimContestTooltip(
             ClaimBreakdownReader claimBreakdownReader,
-            HolderGroupingSource holderGroupingSource) {
+            HolderGroupingSource holderGroupingSource,
+            ContestWordingSource contestWordingSource) {
 
-        super(claimBreakdownReader, holderGroupingSource);
+        super(claimBreakdownReader, holderGroupingSource, contestWordingSource);
     }
 
     @Override
@@ -256,37 +248,29 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         return MapVisibilityRules.readFromLunaSettings().colonyVisibility();
     }
 
-    // Everyone present other than the claimant, in the blocks their standing to it puts them in: who
-    // stands with it by alliance, who stands with it in disposition, who stands against it, and who was
-    // never in the running at all. So the box reads as the holder and then the contest around it.
+    // Everyone present other than the claimant, in the blocks their standing to it puts them in, laid
+    // down in the order those blocks are declared in rather than in one restated here. So the box reads
+    // as the holder and then the contest around it.
     //
-    // Every block is appended unconditionally - the allied one is empty wherever the claimant has no
+    // Every block is offered unconditionally - the allied one is empty wherever the claimant has no
     // ally present, which is every system on an install with nothing grouping factions, and the
     // friendly one wherever nobody present is above neutral with the holder - since a block standing
     // over no entries is dropped by the same rule that drops any other.
+    //
+    // The wording is sampled once for the whole run, so the box is headed under a single reading of
+    // the install rather than one taken again per block.
     private void appendStandingSections(CellTooltipBody body, HoveredClaimReading reading) {
 
-        var contest = reading.contest();
+        var contestWording = resolveContestWording();
 
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_HOLDER),
-            buildRelationEntries(reading, contest.selectAlliedStandings()));
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_CLAIM_HOLDER),
-            buildRelationEntries(reading, contest.selectFriendlyStandings()));
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
-            buildEligibilityEntries(
-                reading,
-                contest.selectRivalStandings(FactionClaimStanding::isTerritorial)));
-
-        body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_TERRITORIAL),
-            buildEligibilityEntries(
-                reading,
-                contest.selectRivalStandings(standing -> !standing.isTerritorial())));
+        for (var block : ClaimContestBlock.values()) {
+            body.appendSection(
+                KmuStrings.get(block.resolveHeadingKey(contestWording)),
+                buildListedEntries(
+                    reading,
+                    block.selectStandings(reading.contest()),
+                    block.isStatingEligibilityOnLine()));
+        }
     }
 
     // The hovered system's contest as this box may state it: the whole scored read, the colony rule
@@ -401,30 +385,6 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
     // the system by decree.
     private static boolean isCoreClaim(SystemClaimBreakdown breakdown) {
         return breakdown.isClaimedByDecree();
-    }
-
-    // One relation block's lines: everyone present standing with the claim holder in the way that
-    // block is about, of either eligibility, since how a faction stands to the holder places it before
-    // its eligibility does. Neither heading names an eligibility, so each line states its own where it
-    // is the ineligible one.
-    //
-    // Both blocks are built through this one call rather than each stating the rule for itself, the
-    // rule being about what their headings leave unsaid rather than about which of the two a line
-    // landed in - written per block, one of them could later be left silently dropping the word.
-    private List<CellTooltipEntry> buildRelationEntries(
-            HoveredClaimReading reading,
-            List<FactionClaimStanding> standings) {
-
-        return buildListedEntries(reading, standings, IS_STATING_ELIGIBILITY_ON_LINE);
-    }
-
-    // One eligibility block's lines: everyone the two relation blocks left, narrowed to the
-    // eligibility that block is about. That eligibility is the heading, so no line beneath restates it.
-    private List<CellTooltipEntry> buildEligibilityEntries(
-            HoveredClaimReading reading,
-            List<FactionClaimStanding> standings) {
-
-        return buildListedEntries(reading, standings, IS_ELIGIBILITY_LEFT_TO_THE_HEADING);
     }
 
     // One block's entries over the standings routed into it, in the order the breakdown handed them
