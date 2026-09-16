@@ -402,38 +402,42 @@ public final class ViewerSettingsPanel {
         // The two that say how a corner is drawn once it has been judged one, on a line of
         // their own: neither means anything without the other, and a reader setting a radius
         // is already looking at the segment count it will be drawn with.
-        controls.add(buildSliderPair(
-            "roundingRadius",
-            "Corner rounding radius, in map units",
-            ROUNDING_RADIUS_MINIMUM,
-            ROUNDING_RADIUS_MAXIMUM,
-            ViewerSettings.ROUNDING_RADIUS_DEFAULT,
-            radius -> settings.roundingRadius = radius,
-            "roundingSegments",
-            "Segments per rounded corner",
-            ROUNDING_SEGMENTS_MINIMUM,
-            ROUNDING_SEGMENTS_MAXIMUM,
-            ViewerSettings.ROUNDING_SEGMENTS_DEFAULT,
-            segments -> settings.roundingSegments = (int) segments));
+        controls.add(SliderRows.buildSliderPair(
+            buildSliderSpec(
+                "roundingRadius",
+                "Corner rounding radius, in map units",
+                ROUNDING_RADIUS_MINIMUM,
+                ROUNDING_RADIUS_MAXIMUM,
+                ViewerSettings.ROUNDING_RADIUS_DEFAULT,
+                radius -> settings.roundingRadius = radius),
+            buildSliderSpec(
+                "roundingSegments",
+                "Segments per rounded corner",
+                ROUNDING_SEGMENTS_MINIMUM,
+                ROUNDING_SEGMENTS_MAXIMUM,
+                ViewerSettings.ROUNDING_SEGMENTS_DEFAULT,
+                segments -> settings.roundingSegments = (int) segments)));
 
         // The pass that runs BEFORE the three above, and so is read after them: what it takes
         // out is what the rounding would otherwise be handed and be unable to fix.
         //
         // Paired for the reason the two above are - a spike is what it is by BOTH its angle and
         // its height, and either alone decides nothing.
-        controls.add(buildSliderPair(
-            "spikeBelowDegrees",
-            "Sand spikes sharper than, in degrees",
-            SPIKE_BELOW_MINIMUM,
-            SPIKE_BELOW_MAXIMUM,
-            ViewerSettings.SPIKE_BELOW_DEGREES_DEFAULT,
-            degrees -> settings.spikeBelowDegrees = degrees,
-            "spikeHeight",
-            "Tallest spike sanded, in map units",
-            SPIKE_HEIGHT_MINIMUM,
-            SPIKE_HEIGHT_MAXIMUM,
-            ViewerSettings.SPIKE_HEIGHT_DEFAULT,
-            height -> settings.spikeHeight = height));
+        controls.add(SliderRows.buildSliderPair(
+            buildSliderSpec(
+                "spikeBelowDegrees",
+                "Sand spikes sharper than, in degrees",
+                SPIKE_BELOW_MINIMUM,
+                SPIKE_BELOW_MAXIMUM,
+                ViewerSettings.SPIKE_BELOW_DEGREES_DEFAULT,
+                degrees -> settings.spikeBelowDegrees = degrees),
+            buildSliderSpec(
+                "spikeHeight",
+                "Tallest spike sanded, in map units",
+                SPIKE_HEIGHT_MINIMUM,
+                SPIKE_HEIGHT_MAXIMUM,
+                ViewerSettings.SPIKE_HEIGHT_DEFAULT,
+                height -> settings.spikeHeight = height)));
     }
 
     // Everything a cell is drawn WITH, as against what it is shaped like: the fills and their
@@ -463,36 +467,39 @@ public final class ViewerSettingsPanel {
     // partition, which is what makes them geometry rather than paint.
     private void addCellGeometryRows(JPanel controls) {
 
-        controls.add(buildSlider(
-            "cellRadius",
-            "Cell reach (cell radius)",
-            REACH_MINIMUM,
-            REACH_MAXIMUM,
-            settings.parameters.cellRadius(),
-            value -> settings.parameters = new SectorGeometryParameters(
-                value,
-                settings.parameters.boundSegments(),
-                settings.parameters.borderInset(),
-                settings.parameters.weldTolerance(),
-                settings.parameters.miterSpikeLimit())));
-
-        controls.add(buildSlider(
-            "borderInset",
-            "Border channel (inset)",
-            INSET_MINIMUM,
-            INSET_MAXIMUM,
-            settings.parameters.borderInset(),
-            value -> settings.parameters = new SectorGeometryParameters(
+        // How far a cell reaches, and how deep the channel cut into its border is. Paired
+        // because they are the two lengths the whole partition is measured in, and a reader
+        // setting either is judging it against the other.
+        controls.add(SliderRows.buildSliderPair(
+            buildSliderSpec(
+                "cellRadius",
+                "Cell reach (cell radius)",
+                REACH_MINIMUM,
+                REACH_MAXIMUM,
                 settings.parameters.cellRadius(),
-                settings.parameters.boundSegments(),
-                value,
-                settings.parameters.weldTolerance(),
-                settings.parameters.miterSpikeLimit())));
+                value -> settings.parameters = new SectorGeometryParameters(
+                    value,
+                    settings.parameters.boundSegments(),
+                    settings.parameters.borderInset(),
+                    settings.parameters.weldTolerance(),
+                    settings.parameters.miterSpikeLimit())),
+            buildSliderSpec(
+                "borderInset",
+                "Border channel (inset)",
+                INSET_MINIMUM,
+                INSET_MAXIMUM,
+                settings.parameters.borderInset(),
+                value -> settings.parameters = new SectorGeometryParameters(
+                    settings.parameters.cellRadius(),
+                    settings.parameters.boundSegments(),
+                    value,
+                    settings.parameters.weldTolerance(),
+                    settings.parameters.miterSpikeLimit()))));
 
-        // Which edges the channel above is actually cut into. Directly under the depth slider
-        // because the two are one statement between them - how deep, and where - and a reader
-        // who has just moved the depth and seen nothing move is a reader whose edges are all
-        // seams.
+        // Which edges the channel above is actually cut into. Directly under the row carrying
+        // the depth because the two are one statement between them - how deep, and where - and
+        // a reader who has just moved the depth and seen nothing move is a reader whose edges
+        // are all seams.
         //
         // A rebuild rather than a repaint: the rule decides the fill polygon, not its colour.
         controls.add(ControlRows.buildRadio(
@@ -505,31 +512,34 @@ public final class ViewerSettingsPanel {
             rule -> settings.cellInsetRule = rule,
             refreshes::rebuildGeometry));
 
-        controls.add(buildSlider(
-            "weldTolerance",
-            "Weld tolerance",
-            WELD_MINIMUM,
-            WELD_MAXIMUM,
-            settings.parameters.weldTolerance(),
-            value -> settings.parameters = new SectorGeometryParameters(
-                settings.parameters.cellRadius(),
-                settings.parameters.boundSegments(),
-                settings.parameters.borderInset(),
-                value,
-                settings.parameters.miterSpikeLimit())));
-
-        controls.add(buildSlider(
-            "miterSpikeLimit",
-            "Miter spike limit",
-            MITER_MINIMUM,
-            MITER_MAXIMUM,
-            settings.parameters.miterSpikeLimit(),
-            value -> settings.parameters = new SectorGeometryParameters(
-                settings.parameters.cellRadius(),
-                settings.parameters.boundSegments(),
-                settings.parameters.borderInset(),
+        // The two tolerances the ring tracer is held to, on one line: what counts as one corner
+        // rather than two, and how far a join may run out before it is cut back. Both are about
+        // what the trace forgives, and neither is read without the other.
+        controls.add(SliderRows.buildSliderPair(
+            buildSliderSpec(
+                "weldTolerance",
+                "Weld tolerance",
+                WELD_MINIMUM,
+                WELD_MAXIMUM,
                 settings.parameters.weldTolerance(),
-                value)));
+                value -> settings.parameters = new SectorGeometryParameters(
+                    settings.parameters.cellRadius(),
+                    settings.parameters.boundSegments(),
+                    settings.parameters.borderInset(),
+                    value,
+                    settings.parameters.miterSpikeLimit())),
+            buildSliderSpec(
+                "miterSpikeLimit",
+                "Miter spike limit",
+                MITER_MINIMUM,
+                MITER_MAXIMUM,
+                settings.parameters.miterSpikeLimit(),
+                value -> settings.parameters = new SectorGeometryParameters(
+                    settings.parameters.cellRadius(),
+                    settings.parameters.boundSegments(),
+                    settings.parameters.borderInset(),
+                    settings.parameters.weldTolerance(),
+                    value))));
 
         controls.add(buildSlider(
             "cellBoundSegments",
@@ -981,39 +991,37 @@ public final class ViewerSettingsPanel {
             },
             refreshes::repaintMap));
 
-        // The frontage floor: how little of its own border a cell may face the void with and
-        // still be walked through. Asked as a percentage because that is how anyone reading a
-        // map thinks about how far a cell sticks out; what the floor means is documented at
-        // the field it writes.
-        controls.add(SliderRows.buildSlider(
-            "continentLeastFrontage",
-            "Least frontage faced, in % of a cell",
-            new SliderRows.SliderRange(
-                MIN_FRONTAGE_MINIMUM,
-                MIN_FRONTAGE_MAXIMUM,
-                ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
-                    * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new SliderRows.SliderWork(
-                percent -> settings.continentMinFrontageShare =
-                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
-
-        // The puddle floor, beside the frontage floor it works with: that one judges a
-        // cell's stretch of shore, this one a whole lake. Asked for in percent the way the
-        // frontage share is, and at the same scale.
-        controls.add(SliderRows.buildSlider(
-            "minLakeShare",
-            "Least lake, in % of a cell",
-            new SliderRows.SliderRange(
-                MIN_LAKE_MINIMUM,
-                MIN_LAKE_MAXIMUM,
-                ViewerSettings.MIN_LAKE_SHARE_DEFAULT * ViewerSettings.FRONTAGE_PERCENT_SCALE),
-            new SliderRows.SliderWork(
-                percent -> settings.minLakeShare =
-                    percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
-                refreshes::refreshCoastlines,
-                () -> { })));
+        // The two floors, on one line because they work as a pair: the frontage one judges a
+        // cell's stretch of shore, the puddle one a whole lake. Both asked as a percentage
+        // because that is how anyone reading a map thinks about how far a cell sticks out, and
+        // both at the same scale; what each floor means is documented at the field it writes.
+        controls.add(SliderRows.buildSliderPair(
+            new SliderRows.SliderSpec(
+                "continentLeastFrontage",
+                "Least frontage faced, in % of a cell",
+                new SliderRows.SliderRange(
+                    MIN_FRONTAGE_MINIMUM,
+                    MIN_FRONTAGE_MAXIMUM,
+                    ViewerSettings.CONTINENT_MIN_FRONTAGE_DEFAULT
+                        * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+                new SliderRows.SliderWork(
+                    percent -> settings.continentMinFrontageShare =
+                        percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                    refreshes::refreshCoastlines,
+                    () -> { })),
+            new SliderRows.SliderSpec(
+                "minLakeShare",
+                "Least lake, in % of a cell",
+                new SliderRows.SliderRange(
+                    MIN_LAKE_MINIMUM,
+                    MIN_LAKE_MAXIMUM,
+                    ViewerSettings.MIN_LAKE_SHARE_DEFAULT
+                        * ViewerSettings.FRONTAGE_PERCENT_SCALE),
+                new SliderRows.SliderWork(
+                    percent -> settings.minLakeShare =
+                        percent / ViewerSettings.FRONTAGE_PERCENT_SCALE,
+                    refreshes::refreshCoastlines,
+                    () -> { }))));
 
         // Beside the puddle floor, because the two decide one thing between them: that one says
         // which holes are too small for a shore, and this one how far a span may reach to cross
@@ -1054,32 +1062,36 @@ public final class ViewerSettingsPanel {
 
         // In map units, so the slider needs no scaling; what the slack means is documented at
         // the field it writes.
-        controls.add(SliderRows.buildSlider(
-            "continentBridgeCoastSlack",
-            "Off a wall still counted as along it",
-            new SliderRows.SliderRange(
-                COAST_SLACK_MINIMUM,
-                COAST_SLACK_MAXIMUM,
-                ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
-            new SliderRows.SliderWork(
-                slack -> settings.continentBridgeCoastSlack = slack,
-                refreshes::refreshCoastlines,
-                () -> { })));
-
-        // Beside the thinning, because the two answer one crowded anchor: that one drops the
-        // spans buying nothing, this moves the feet of the ones that stay. Over every span the
-        // construction lays, links included, so it is read here whichever set is on screen.
-        controls.add(SliderRows.buildSlider(
-            "spanAnchorSeparation",
-            "Least space between two span feet",
-            new SliderRows.SliderRange(
-                ANCHOR_SEPARATION_MINIMUM,
-                ANCHOR_SEPARATION_MAXIMUM,
-                ViewerSettings.SPAN_ANCHOR_SEPARATION_DEFAULT),
-            new SliderRows.SliderWork(
-                separation -> settings.spanAnchorSeparation = separation,
-                refreshes::refreshCoastlines,
-                () -> { })));
+        // The two knobs that place a span once it has been offered, on one line: how far off a
+        // wall it may run and still count as running along it, and how close two feet may stand
+        // before one of them moves. Both in map units, so neither slider needs scaling.
+        //
+        // Read beside the thinning below, because the three answer one crowded anchor between
+        // them: the thinning drops the spans buying nothing, and these two decide what the ones
+        // that stay are measured by. Over every span the construction lays, links included.
+        controls.add(SliderRows.buildSliderPair(
+            new SliderRows.SliderSpec(
+                "continentBridgeCoastSlack",
+                "Off a wall still counted as along it",
+                new SliderRows.SliderRange(
+                    COAST_SLACK_MINIMUM,
+                    COAST_SLACK_MAXIMUM,
+                    ViewerSettings.CONTINENT_BRIDGE_COAST_SLACK_DEFAULT),
+                new SliderRows.SliderWork(
+                    slack -> settings.continentBridgeCoastSlack = slack,
+                    refreshes::refreshCoastlines,
+                    () -> { })),
+            new SliderRows.SliderSpec(
+                "spanAnchorSeparation",
+                "Least space between two span feet",
+                new SliderRows.SliderRange(
+                    ANCHOR_SEPARATION_MINIMUM,
+                    ANCHOR_SEPARATION_MAXIMUM,
+                    ViewerSettings.SPAN_ANCHOR_SEPARATION_DEFAULT),
+                new SliderRows.SliderWork(
+                    separation -> settings.spanAnchorSeparation = separation,
+                    refreshes::refreshCoastlines,
+                    () -> { }))));
 
         // A rule rather than a layer, so it sits with the sliders that decide which spans
         // exist rather than among the switches that decide what is drawn. Rebuilds, because
@@ -1166,30 +1178,9 @@ public final class ViewerSettingsPanel {
                 () -> { }));
     }
 
-    // Two knobs that are read together, on one line. What decides a pairing is the two names:
-    // a paired half gives a name the whole of its width, so two short ones read fine there and
-    // two long ones cost more lines than they save.
-    private JPanel buildSliderPair(
-            String leftKey,
-            String leftTitle,
-            double leftMinimum,
-            double leftMaximum,
-            double leftInitial,
-            DoubleConsumer leftApply,
-            String rightKey,
-            String rightTitle,
-            double rightMinimum,
-            double rightMaximum,
-            double rightInitial,
-            DoubleConsumer rightApply) {
-
-        return SliderRows.buildSliderPair(
-            buildSliderSpec(leftKey, leftTitle, leftMinimum, leftMaximum, leftInitial, leftApply),
-            buildSliderSpec(
-                rightKey, rightTitle, rightMinimum, rightMaximum, rightInitial, rightApply));
-    }
-
-    // One slider's four parts, under the same refresh every geometry knob takes.
+    // One slider's four parts, under the same refresh every geometry knob takes. Named rather
+    // than a twelve-argument pairing method: two of a pair's arguments are multi-line lambdas,
+    // and in a positional list of twelve nothing would catch a left and a right transposed.
     private SliderRows.SliderSpec buildSliderSpec(
             String key,
             String title,
