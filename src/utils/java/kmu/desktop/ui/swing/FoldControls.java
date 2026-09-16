@@ -1,9 +1,11 @@
 package kmu.desktop.ui.swing;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 
 /**
  * The control that folds something away, and the one statement of what one looks like.
@@ -28,6 +30,15 @@ public final class FoldControls {
     private static final String UNFOLDED_LABEL = "-";
 
     private static final String FOLD_TOOLTIP = "Fold this away";
+
+    // What marks a control as a fold rather than a setting, for the one walk that has to tell
+    // them apart: greying a section's body must not take the folds inside it with the switches.
+    //
+    // A mark rather than a test on JButton, because the panel's other buttons are settings -
+    // every reset is one - and a rule written by type would either spare those too or spare
+    // neither. Qualified, since a client property is a slot on the component shared with the
+    // look-and-feel's own.
+    private static final String FOLD_MARKER = "kmu.desktop.ui.swing.isFold";
 
     // Square enough to read as a marker rather than a button with a caption, and small enough
     // that a column of them beside checkboxes does not set the row height.
@@ -58,12 +69,30 @@ public final class FoldControls {
 
         var fold = new JButton(isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL);
 
+        fold.putClientProperty(FOLD_MARKER, Boolean.TRUE);
         fold.setToolTipText(FOLD_TOOLTIP);
         fold.setMargin(new Insets(0, 0, 0, 0));
         fold.setPreferredSize(new Dimension(FOLD_BUTTON_WIDTH, FOLD_BUTTON_HEIGHT));
         fold.setFocusable(false);
 
         return fold;
+    }
+
+    /**
+     * Whether a control is one of these.
+     *
+     * <p>Asked by whatever greys a run of controls. A fold decides nothing about the map - it
+     * says whether the rows beneath it are on screen - so it stays live however the settings
+     * around it stand: a reader has to be able to open a branch and read what is in it without
+     * switching an overlay on to do it, which is the opposite of what the panel is for.
+     *
+     * @param control the control, which may be anything and may be null
+     * @return whether it folds something away
+     */
+    public static boolean isFoldControl(Component control) {
+
+        return control instanceof JComponent component
+            && Boolean.TRUE.equals(component.getClientProperty(FOLD_MARKER));
     }
 
     /**
