@@ -11,6 +11,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.2] - 2026-09-16
 
+### Added
+
+- A general note for **settings**.
+- **Settings** notes on big tabs listing their contents.
+
 ### Changed
 
 - **Star system tooltips** only use term *contested* when **Nexerelin** is installed. Without it factions are *present*.
