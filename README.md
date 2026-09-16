@@ -11,7 +11,7 @@
     - [Spoiler protection](#spoiler-protection)
   - [Console commands](#console-commands)
   - [Compatibility](#compatibility)
-  - [Diagnostic](#diagnostics)
+  - [Diagnostics](#diagnostics)
 - [For developers](#for-developers)
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
@@ -181,7 +181,7 @@ the mod has been made specifically compatible with:
   To write all internal mod logs.
 - A **reflection** logs toggle in **KMU** dev settings.
   To trace issues interacting with vanilla UI.
-- **Profiling** toggle and level in **KMU** map dev settings.
+- **Profiling** toggle and level in **KMU** map dev settings combined with usage of **kmu_profiling** console command.
   To trace where performance drops occur.
 
 ## For developers
