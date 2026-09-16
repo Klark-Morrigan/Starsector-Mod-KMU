@@ -5,8 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Index
 
+- [0.1.2](#012---2026-09-16)
 - [0.1.1](#011---2026-09-15)
 - [0.1.0](#010---2026-09-14)
+
+## [0.1.2] - 2026-09-16
+
+### Changed
+
+- **Star system tooltips** only use term *contested* when **Nexerelin** is installed. Without it factions are *present*.
 
 ## [0.1.1] - 2026-09-15
 
