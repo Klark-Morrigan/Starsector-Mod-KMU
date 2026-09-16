@@ -16,7 +16,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.machinery.SectorMapMachineryIndex;
-import kmu.maplayers.base.sidebar.FilterSelectionBinder;
+import kmu.maplayers.base.sidebar.ListPickerBinder;
 import kmu.maplayers.politicalmap.base.politics.BlocPresenceIndex;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
 import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
@@ -219,7 +219,7 @@ final class PoliticalMapLayerTest {
 
             try (var globalMock = mockStatic(Global.class);
                     var controlsMock = mockStatic(PoliticalMapBodyControls.class);
-                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+                    var pickerMock = mockStatic(ListPickerBinder.class)) {
 
                 globalMock
                     .when(Global::getSector)
@@ -236,8 +236,7 @@ final class PoliticalMapLayerTest {
 
                 stubSharedControlsAndSelector(controlsMock);
                 pickerMock
-                    .when(() -> FilterSelectionBinder.buildPicker(
-                        any(),
+                    .when(() -> ListPickerBinder.buildPicker(
                         any(),
                         any(),
                         any(),
@@ -374,7 +373,7 @@ final class PoliticalMapLayerTest {
             registerViewWithOneBloc(viewWithoutControlsMock);
             try (var globalMock = mockStatic(Global.class);
                     var controlsMock = mockStatic(PoliticalMapBodyControls.class);
-                    var pickerMock = mockStatic(FilterSelectionBinder.class)) {
+                    var pickerMock = mockStatic(ListPickerBinder.class)) {
 
                 globalMock
                     .when(Global::getSector)
@@ -392,9 +391,8 @@ final class PoliticalMapLayerTest {
                 PoliticalMapLayer.INSTANCE.getBodyControls(BODY_SCREEN);
 
                 pickerMock.verify(
-                    () -> FilterSelectionBinder.buildPicker(
+                    () -> ListPickerBinder.buildPicker(
                         argThat(slot -> PICKER_VIEW_ID.equals(slot.scopeId())),
-                        any(),
                         any(),
                         any(),
                         any()));
@@ -438,8 +436,7 @@ final class PoliticalMapLayerTest {
                         any(),
                         argThat(target -> installedBoard.equals(target.board()))));
                 pickerMock.verify(
-                    () -> FilterSelectionBinder.buildPicker(
-                        any(),
+                    () -> ListPickerBinder.buildPicker(
                         any(),
                         any(),
                         any(),
@@ -473,9 +470,8 @@ final class PoliticalMapLayerTest {
                         any(),
                         argThat(target -> BODY_SCREEN.equals(target.memoryScope()))));
                 pickerMock.verify(
-                    () -> FilterSelectionBinder.buildPicker(
+                    () -> ListPickerBinder.buildPicker(
                         argThat(slot -> BODY_SCREEN.equals(slot.screenSlot().memoryScope())),
-                        any(),
                         any(),
                         any(),
                         any()));
@@ -491,10 +487,9 @@ final class PoliticalMapLayerTest {
             // back nothing every existing save holds, which no store's own suite can catch.
             buildBodyOverInstalledSector((sector, machinery, controlsMock, pickerMock, recedeMock) ->
                 pickerMock.verify(
-                    () -> FilterSelectionBinder.buildPicker(
+                    () -> ListPickerBinder.buildPicker(
                         argThat(slot ->
                             KmuMod.MAP_STORE_NAMESPACE.equals(slot.screenSlot().namespace())),
-                        any(),
                         any(),
                         any(),
                         any())));
@@ -596,7 +591,7 @@ final class PoliticalMapLayerTest {
 
         try (var globalMock = mockStatic(Global.class);
                 var controlsMock = mockStatic(PoliticalMapBodyControls.class);
-                var pickerMock = mockStatic(FilterSelectionBinder.class);
+                var pickerMock = mockStatic(ListPickerBinder.class);
                 var recedeMock = mockStatic(RecedeControl.class)) {
 
             globalMock
@@ -609,8 +604,7 @@ final class PoliticalMapLayerTest {
 
             stubSharedControlsAndSelector(controlsMock);
             pickerMock
-                .when(() -> FilterSelectionBinder.buildPicker(
-                    any(),
+                .when(() -> ListPickerBinder.buildPicker(
                     any(),
                     any(),
                     any(),
@@ -747,7 +741,7 @@ final class PoliticalMapLayerTest {
                 SectorAPI sector,
                 SectorMapMachinery machinery,
                 MockedStatic<PoliticalMapBodyControls> controlsMock,
-                MockedStatic<FilterSelectionBinder> pickerMock,
+                MockedStatic<ListPickerBinder> pickerMock,
                 MockedStatic<RecedeControl> recedeMock);
     }
 }

@@ -32,10 +32,15 @@ import static org.mockito.Mockito.never;
 
 /**
  * Pins the join between KMLib's picker and the calling mod's save slots, which is the whole of what the
- * binder does: the spotlighted ID and the stored sort are read off the shared stores for the slot on
- * the way in, and each of the picker's three picks reaches the store that keeps it on the way out. The
- * picker's own shape and click rules are KMLib's and are pinned there; the stores are mocked, so this
- * reads the wiring alone.
+ * binder does: the spotlighted ID, the stored sort and the stored column count are read off the shared
+ * stores for the slot on the way in, and each of the picker's three picks reaches the store that keeps
+ * it on the way out. The picker's own shape and click rules are KMLib's and are pinned there; the
+ * stores are mocked, so this reads the wiring alone.
+ *
+ * <p>Every one of those addresses is pinned as derived from the one slot handed in rather than as
+ * anything a caller supplies, since an answer read at an address composed beside the slot is how a
+ * picker's three picks come apart - the column count being the one that would re-wrap the other
+ * screen's list.
  *
  * <p>The slot is pinned as the one the picker was built for rather than one resolved when a report
  * lands, since a report can land after the player has moved: a pick belongs to the panel it was
@@ -51,7 +56,7 @@ import static org.mockito.Mockito.never;
  * capture is shaped by no layer in particular: these types stand in for a second layer's list, so a
  * capture that only worked over the first layer's own item type would not compile here.
  */
-final class FilterSelectionBinderTest {
+final class ListPickerBinderTest {
 
     // The slot a pick, clear or hover is read from and written into: the mod and panel this picker is
     // built for, and the list it lists. A stand-in mod on a stand-in screen, since neither which mod
@@ -203,10 +208,9 @@ final class FilterSelectionBinderTest {
                     .when(() -> SortSelectionBinder.resolveStoredSort(OTHER_SCREEN_SLOT, MODES))
                     .thenReturn(sortOf(HazardSortMode.ALPHA));
 
-                var picker = buildPickerFor(FilterSelectionBinder.buildPicker(
+                var picker = buildPickerFor(ListPickerBinder.buildPicker(
                     OTHER_SCREEN_SLOT,
                     HAZARD_PICKER,
-                    ListColumns.ONE,
                     List.of(),
                     machinery));
                 picker.action().activateCell(0);
@@ -284,6 +288,7 @@ final class FilterSelectionBinderTest {
                     var binderMock = mockStatic(ColumnSelectionBinder.class)) {
 
                 stubLabels(stringsMock);
+                stubStoredColumns(binderMock, ListColumns.ONE);
 
                 var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker()
                     .get(COLUMNS_SELECTOR);
@@ -293,6 +298,40 @@ final class FilterSelectionBinderTest {
 
                 binderMock.verify(
                     () -> ColumnSelectionBinder.storeColumns(SLOT.screenSlot(), ListColumns.TWO));
+            }
+        }
+
+        @Test
+        void buildPickerReadsTheColumnCountUnderTheScreenHalfOfTheSlotItWritesOneTo() {
+            // The read half of the column tie, and the one address a caller used to supply: read at
+            // the screen half of this slot, which is exactly where a pick above is written back, so
+            // the count a list lays out under and the count a click stores cannot name two screens
+            // or two mods.
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var binderMock = mockStatic(ColumnSelectionBinder.class)) {
+
+                stubLabels(stringsMock);
+                stubStoredColumns(binderMock, ListColumns.ONE);
+
+                buildPicker();
+
+                binderMock.verify(
+                    () -> ColumnSelectionBinder.resolveStoredColumns(SLOT.screenSlot()));
+            }
+        }
+
+        @Test
+        void buildPickerWrapsTheListAcrossTheStoredColumnCount() {
+            // What that read is for: the stored count reaches the list rather than a default, so a
+            // player who wrapped this panel's list finds it wrapped on the next body build.
+            try (var stringsMock = mockStatic(KmuStrings.class);
+                    var binderMock = mockStatic(ColumnSelectionBinder.class)) {
+
+                stubLabels(stringsMock);
+                stubStoredColumns(binderMock, ListColumns.TWO);
+
+                assertThat(buildPickerFor(buildPicker()).columnCount())
+                    .isEqualTo(ListColumns.TWO.columnCount());
             }
         }
 
@@ -342,10 +381,9 @@ final class FilterSelectionBinderTest {
 
                 stubLabels(stringsMock);
 
-                assertThat(FilterSelectionBinder.buildPicker(
+                assertThat(ListPickerBinder.buildPicker(
                         SLOT,
                         ListPicker.empty(),
-                        ListColumns.ONE,
                         List.of(),
                         machinery))
                     .isEmpty();
@@ -368,10 +406,9 @@ final class FilterSelectionBinderTest {
     // vocabulary, a single column, and nothing paired beside the sort, since none of those is what
     // this suite varies.
     private List<ControlSpec> buildPicker() {
-        return FilterSelectionBinder.buildPicker(
+        return ListPickerBinder.buildPicker(
             SLOT,
             HAZARD_PICKER,
-            ListColumns.ONE,
             List.of(),
             machinery);
     }
@@ -383,17 +420,26 @@ final class FilterSelectionBinderTest {
     }
 
     // Stubs the text the binder resolves through this mod's strings table, so the assertions read
-    // the wiring without the live table. A control's labels are copied and reject a null option
-    // name, so every sort row must resolve to real text; the constant names stand in for the drawn
-    // labels, which no assertion here reads.
+    // the wiring without the live table: the sort rows' labels, which are the caller's vocabulary's
+    // own, and the columns caption, which is the framework's.
     private static void stubLabels(MockedStatic<KmuStrings> stringsMock) {
-        for (var mode : HazardSortMode.values()) {
-            stringsMock
-                .when(() -> KmuStrings.get(mode.labelKey()))
-                .thenReturn(mode.name());
-        }
+
+        HazardSortMode.stubLabelsOn(stringsMock);
+
         stringsMock
             .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");
+    }
+
+    // The count this slot's screen has stored, for the cases that mock the column binder away. Named
+    // rather than stubbed inline because a mocked binder answers null for the read as well as
+    // swallowing the write, and a null count reaches the list widget as a missing spread.
+    private static void stubStoredColumns(
+            MockedStatic<ColumnSelectionBinder> binderMock,
+            ListColumns storedColumns) {
+
+        binderMock
+            .when(() -> ColumnSelectionBinder.resolveStoredColumns(SLOT.screenSlot()))
+            .thenReturn(storedColumns);
     }
 }
