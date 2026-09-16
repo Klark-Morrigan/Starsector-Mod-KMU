@@ -6,8 +6,8 @@ import java.util.function.Function;
 
 /**
  * The blocks a hovered system's standings are listed under, in the order a box lays them down: who
- * holds the system, who stands with them by alliance, who stands with them in disposition, who
- * contests it, and who was never in the running at all.
+ * holds the system, who stands with them by alliance, who stands with them in disposition, who stands
+ * against them, and who was never in the running at all.
  *
  * <p>A closed set rather than a heading string handed around, so which block a group falls in is an
  * answer the compiler checks: a block stated here is a block the box lays down, and a routing that

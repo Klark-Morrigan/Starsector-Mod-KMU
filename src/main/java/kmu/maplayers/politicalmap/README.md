@@ -900,7 +900,21 @@ both whatever their eligibility,
 and the two eligibility blocks divide what neither took.
 Where a relation heading leaves the box unable to say which kind a line is,
 the line says it (`non-territorial`) -
-one rule over both blocks rather than one per block.
+declared with the block rather than decided per block,
+since it follows from what that block's own heading already states.
+The four are a closed set (`ClaimContestBlock`),
+the claim family's own sibling to `StandingBlock`:
+each constant carries its heading,
+the standings it selects out of the one `ListedClaimContest`,
+and whether its lines carry that qualifier,
+so the order they read in is a declaration rather than a sequence of calls,
+and a fifth block cannot be added to one family and silently skipped in the other.
+The sets stay apart because the blocks are not the same blocks -
+these name factions by how they stand to a claim and end on eligibility,
+those name blocs by how they stand to a holder and end on candidacy.
+The claim block itself is outside the set:
+it names the claimant rather than selecting over standings,
+and what it lists turns on what the banner above it said.
 Why the relations outrank eligibility,
 why disposition sorts inside alliance,
 and why an install without Nexerelin needs no branch are all `SystemClaimContestTooltip`'s to state.

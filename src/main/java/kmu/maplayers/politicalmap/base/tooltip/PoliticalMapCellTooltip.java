@@ -121,9 +121,6 @@ public abstract class PoliticalMapCellTooltip extends SystemCellTooltip {
      * draw that block, and two of them reading the install for themselves are two chances to word it
      * as a contest on one tab and as plain presence on the next.
      *
-     * <p>Sampled where the block is headed rather than held, since the source is what stands between
-     * a box built before the game's mod set and the wording that set calls for.
-     *
      * @return the wording the install calls for as the block is drawn
      */
     protected final ContestWording resolveContestWording() {

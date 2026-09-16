@@ -131,8 +131,8 @@ record ListedClaimContest(
      * <p>Narrowed on eligibility rather than on which kind of standing the contest gave a
      * faction, because that is what the two headings actually say. A territorial faction
      * holding only concealed bases is in the running by the mechanic's own gate and scored
-     * nothing in this system, which is what {@code Contested by:} plus a nought states exactly
-     * - while sorting it by record kind would file it beside a Remnant station's owner, which
+     * nothing in this system, which is what the rival block plus a nought states exactly -
+     * while sorting it by record kind would file it beside a Remnant station's owner, which
      * is ineligible where it is not.
      */
     List<FactionClaimStanding> selectRivalStandings(

@@ -15,6 +15,9 @@ public final class KmuPoliticalMapRibbonSettings {
     // colours of whoever is present and so has no shade of its own to take away.
     private static final String RIBBON_ENABLED_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_areEnabled";
+    // Keeps the word the player copy dropped, and deliberately: the field ID is the key a saved
+    // setting is stored under, so renaming it would leave every player who had moved this switch
+    // reading a default they never chose. The name a player sees is the CSV's to state.
     private static final String RIBBON_UNCONTESTED_SHORT_RUNS_FIELD =
         "kmu_map_politics_visuals_presenceRibbons_shouldShortenUncontestedRuns";
     private static final String RIBBON_KEEP_CLEAR_OF_NAMES_FIELD =
@@ -72,7 +75,7 @@ public final class KmuPoliticalMapRibbonSettings {
     }
 
     /**
-     * @return whether the band on an uncontested cell draws each colony at a single width rather
+     * @return whether the band on a single-faction cell draws each colony at a single width rather
      *         than at the authored run length; on by default. A cell some rival holds something in
      *         draws at the authored length whatever this says
      */

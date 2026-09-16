@@ -34,7 +34,6 @@ final class LunaSettingsTable {
     static final String RADIO_FIELD_TYPE = "Radio";
     static final String DOUBLE_FIELD_TYPE = "Double";
     static final String INT_FIELD_TYPE = "Int";
-    static final String DOUBLE_FIELD_TYPE = "Double";
     static final String BOOLEAN_FIELD_TYPE = "Boolean";
     static final String KEYCODE_FIELD_TYPE = "Keycode";
 
