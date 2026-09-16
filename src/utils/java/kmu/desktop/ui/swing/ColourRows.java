@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
-import javax.swing.JLabel;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 /**
@@ -33,13 +33,9 @@ public final class ColourRows {
     // competing with the sliders for the panel, which at full height push the sliders off it.
     private static final int SWATCH_HEIGHT = 11;
 
+    // Tighter than the padding a labelled row takes, for the same reason a swatch is shorter
+    // than one: there are fifteen of these competing with the sliders for the panel.
     private static final int SWATCH_ROW_PADDING = 1;
-
-    // A swatch row carries a label and one or two swatches side by side, so the grid it is
-    // laid in is a single row of however many there are.
-    private static final int SINGLE_ROW = 1;
-
-    private static final int SWATCH_ROW_COLUMNS = 2;
 
     private ColourRows() {
     }
@@ -83,29 +79,15 @@ public final class ColourRows {
             Runnable onChange) {
 
         var swatch = buildSwatch(key, title, fallback, apply, onChange);
-        var trailing = new JPanel(new BorderLayout());
 
-        trailing.add(swatch, BorderLayout.CENTER);
-        trailing.add(ControlRows.buildResetButton(
+        return layOutSwatchRow(
+            title,
+            swatch,
             () -> {
 
                 resetSwatch(swatch, key, fallback, apply);
                 onChange.run();
-
-            }),
-            BorderLayout.EAST);
-
-        var row = new JPanel(new BorderLayout());
-
-        row.add(new JLabel(title), BorderLayout.CENTER);
-        row.add(trailing, BorderLayout.EAST);
-        row.setBorder(BorderFactory.createEmptyBorder(
-            SWATCH_ROW_PADDING,
-            0,
-            SWATCH_ROW_PADDING,
-            0));
-
-        return row;
+            });
     }
 
     /**
@@ -145,28 +127,46 @@ public final class ColourRows {
             edge.apply(),
             onChange);
 
-        var swatches = new JPanel(new GridLayout(SINGLE_ROW, SWATCH_ROW_COLUMNS));
+        var swatches = new JPanel(
+            new GridLayout(ControlRows.SINGLE_ROW, ControlRows.PAIRED_COLUMNS));
 
         swatches.add(fillSwatch);
         swatches.add(edgeSwatch);
 
-        var trailing = new JPanel(new BorderLayout());
-
-        trailing.add(swatches, BorderLayout.CENTER);
-        trailing.add(ControlRows.buildResetButton(
+        return layOutSwatchRow(
+            title,
+            swatches,
             () -> {
 
                 resetSwatch(fillSwatch, key + " fill", fill.fallback(), fill.apply());
                 resetSwatch(edgeSwatch, key + " outline", edge.fallback(), edge.apply());
 
                 onChange.run();
+            });
+    }
 
-            }),
-            BorderLayout.EAST);
+    /**
+     * A swatch row: its name on the left, its swatches and reset on the right.
+     *
+     * <p>Beside the name rather than above it, which is where a dropdown's or a radio row's
+     * name goes. A swatch is 40 pixels wide and does not want the column, so the two fit on one
+     * line - and it is the whole reason a swatch row is half the height of a labelled one.
+     *
+     * @param title    what the colour or the pair is for
+     * @param swatches the swatch, or two of them already laid out side by side
+     * @param reset    what to do when the reset is pressed
+     * @return the row
+     */
+    private static JPanel layOutSwatchRow(String title, JComponent swatches, Runnable reset) {
+
+        var trailing = new JPanel(new BorderLayout());
+
+        trailing.add(swatches, BorderLayout.CENTER);
+        trailing.add(ControlRows.buildResetButton(reset), BorderLayout.EAST);
 
         var row = new JPanel(new BorderLayout());
 
-        row.add(new JLabel(title), BorderLayout.CENTER);
+        row.add(ControlRows.buildWrappingLabel(title), BorderLayout.CENTER);
         row.add(trailing, BorderLayout.EAST);
         row.setBorder(BorderFactory.createEmptyBorder(
             SWATCH_ROW_PADDING,
@@ -177,6 +177,23 @@ public final class ColourRows {
         return row;
     }
 
+    /**
+     * The clickable colour itself: a button whose background IS its value.
+     *
+     * <p>Opened on what was remembered and its owner told before it is returned, for the reason
+     * every remembered control does it - a swatch showing one colour while the map is drawn in
+     * another is a control whose first use appears to change the wrong thing.
+     *
+     * <p>A cancelled chooser leaves everything alone rather than recording a null, which is what
+     * makes changing your mind free.
+     *
+     * @param key      what to remember it under
+     * @param title    what the colour is for, which also names the chooser
+     * @param fallback the colour to start at
+     * @param apply    records the new colour
+     * @param onChange what to run once it changes
+     * @return the swatch
+     */
     private static JButton buildSwatch(
             String key,
             String title,
@@ -215,6 +232,17 @@ public final class ColourRows {
         return swatch;
     }
 
+    /**
+     * One swatch put back to its default: the button, the owner and the saved value together.
+     *
+     * <p>All three because a pair's reset has to do it twice, and a reset that moved two swatches
+     * but wrote down one would come back half-changed on the next run.
+     *
+     * @param swatch   the swatch to repaint
+     * @param key      what it is remembered under
+     * @param fallback the colour to go back to
+     * @param apply    records the colour
+     */
     private static void resetSwatch(
             JButton swatch,
             String key,

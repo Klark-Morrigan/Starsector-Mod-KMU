@@ -83,10 +83,6 @@ public final class ToggleTree {
     // A row at the outermost level, which nothing above can fold away.
     private static final int NO_PARENT = -1;
 
-    // How a paired row divides its line: one row of two equal halves.
-    private static final int SINGLE_ROW = 1;
-    private static final int PAIRED_HALVES = 2;
-
     private ToggleTree() {
     }
 
@@ -388,7 +384,8 @@ public final class ToggleTree {
 
         if (row instanceof PairRow pair) {
 
-            var line = new JPanel(new GridLayout(SINGLE_ROW, PAIRED_HALVES));
+            var line = new JPanel(
+                new GridLayout(ControlRows.SINGLE_ROW, ControlRows.PAIRED_COLUMNS));
 
             // Each half through this same method, so a half behaves exactly as it would on a
             // line of its own - which is the whole claim a pair makes.

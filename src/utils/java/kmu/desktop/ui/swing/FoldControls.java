@@ -1,8 +1,6 @@
 package kmu.desktop.ui.swing;
 
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Insets;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -20,9 +18,10 @@ import javax.swing.JComponent;
  * end up opposite - at which point half the panel says "press me to open" and the other half
  * says "this is open".
  *
- * <p>ASCII only, for the reason the reset button is: the viewer runs wherever the JDK's default
- * font does, and a glyph that renders as a box makes the control unreadable rather than merely
- * plain.
+ * <p>What one LOOKS like is not decided here. A fold and a reset are the same small square
+ * button to the eye, and {@link ControlRows#buildMarkButton} is where that is stated once; what
+ * belongs to a fold is the marks it carries, that it is chrome rather than a setting, and that
+ * it stays live when the settings around it do not.
  */
 public final class FoldControls {
 
@@ -40,11 +39,6 @@ public final class FoldControls {
     // look-and-feel's own.
     private static final String FOLD_MARKER = "kmu.desktop.ui.swing.isFold";
 
-    // Square enough to read as a marker rather than a button with a caption, and small enough
-    // that a column of them beside checkboxes does not set the row height.
-    private static final int FOLD_BUTTON_WIDTH = 22;
-    private static final int FOLD_BUTTON_HEIGHT = 18;
-
     private FoldControls() {
     }
 
@@ -53,7 +47,7 @@ public final class FoldControls {
      *         keep its label in line with the rows that have one
      */
     public static int measureFoldWidth() {
-        return FOLD_BUTTON_WIDTH;
+        return ControlRows.measureMarkWidth();
     }
 
     /**
@@ -67,12 +61,10 @@ public final class FoldControls {
      */
     public static JButton buildFoldButton(boolean isUnfolded) {
 
-        var fold = new JButton(isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL);
+        var fold = ControlRows.buildMarkButton(
+            isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL, FOLD_TOOLTIP);
 
         fold.putClientProperty(FOLD_MARKER, Boolean.TRUE);
-        fold.setToolTipText(FOLD_TOOLTIP);
-        fold.setMargin(new Insets(0, 0, 0, 0));
-        fold.setPreferredSize(new Dimension(FOLD_BUTTON_WIDTH, FOLD_BUTTON_HEIGHT));
         fold.setFocusable(false);
 
         return fold;

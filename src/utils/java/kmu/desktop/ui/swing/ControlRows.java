@@ -16,7 +16,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSeparator;
@@ -50,18 +50,24 @@ public final class ControlRows {
     // rather than as one more gap in an evenly spaced column.
     private static final int DIVIDER_PADDING = 8;
 
-    private static final int SINGLE_ROW = 1;
+    // How a line is divided when things share it: one row of however many columns. Shared with
+    // the rest of the package rather than restated per class, since three classes laying out
+    // rows all mean the same two numbers by it.
+    static final int SINGLE_ROW = 1;
 
-    private static final int PAIRED_COLUMNS = 2;
+    static final int PAIRED_COLUMNS = 2;
 
     // The gutter between two rows sharing a line. Enough that the left one's track stops short
     // of the right one's name rather than running into it - with no gap the two read as one
     // wide control whose parts are unrelated.
     private static final int PAIR_GUTTER = 8;
 
-    private static final int RESET_BUTTON_WIDTH = 22;
+    // The size every small square button in the panel takes. Square enough to read as a marker
+    // rather than as a button with a caption, and short enough that a column of them beside
+    // checkboxes does not set the row height.
+    private static final int MARK_BUTTON_WIDTH = 22;
 
-    private static final int RESET_BUTTON_HEIGHT = 18;
+    private static final int MARK_BUTTON_HEIGHT = 18;
 
     // ASCII only: the viewer runs wherever the JDK's default font does, and a glyph that
     // renders as a box on one machine makes the control unreadable rather than merely plain.
@@ -155,10 +161,9 @@ public final class ControlRows {
             Runnable onChange) {
 
         var toggle = buildRememberedCheckBox(key, title, fallback, apply, onChange);
-        var row = new JPanel(new BorderLayout());
 
-        row.add(toggle, BorderLayout.CENTER);
-        row.add(buildResetButton(
+        return layOutControlRow(
+            toggle,
             () -> {
 
                 toggle.setSelected(fallback);
@@ -167,13 +172,7 @@ public final class ControlRows {
                 SavedValues.findSavedValues().putBoolean(key, fallback);
 
                 onChange.run();
-
-            }),
-            BorderLayout.EAST);
-
-        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
-
-        return row;
+            });
     }
 
     /**
@@ -227,10 +226,8 @@ public final class ControlRows {
             boxes.add(check);
         }
 
-        var row = new JPanel(new BorderLayout());
-
-        row.add(boxes, BorderLayout.CENTER);
-        row.add(buildResetButton(
+        return layOutControlRow(
+            boxes,
             () -> {
 
                 for (var index = 0; index < toggles.length; index++) {
@@ -249,13 +246,7 @@ public final class ControlRows {
                 }
 
                 onChange.run();
-
-            }),
-            BorderLayout.EAST);
-
-        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
-
-        return row;
+            });
     }
 
     /**
@@ -300,14 +291,7 @@ public final class ControlRows {
 
         apply.accept(picked);
 
-        var row = new JPanel(new BorderLayout());
-
-        row.add(new JLabel(title), BorderLayout.NORTH);
-        row.add(choice, BorderLayout.CENTER);
-        row.add(buildResetButton(() -> choice.setSelectedItem(fallback)), BorderLayout.EAST);
-        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
-
-        return row;
+        return layOutNamedControlRow(title, choice, () -> choice.setSelectedItem(fallback));
     }
 
     /**
@@ -377,23 +361,15 @@ public final class ControlRows {
 
         apply.accept(picks.get(pickedIndex).value());
 
-        var row = new JPanel(new BorderLayout());
-
-        row.add(new JLabel(title), BorderLayout.NORTH);
-        row.add(buttons, BorderLayout.CENTER);
-        row.add(buildResetButton(
+        return layOutNamedControlRow(
+            title,
+            buttons,
             () -> {
 
                 everyButton.get(0).setSelected(true);
 
                 recordPick(key, fallback, apply, onChange);
-
-            }),
-            BorderLayout.EAST);
-
-        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
-
-        return row;
+            });
     }
 
     /**
@@ -409,14 +385,49 @@ public final class ControlRows {
      */
     public static JButton buildResetButton(Runnable reset) {
 
-        var button = new JButton(RESET_LABEL);
+        var button = buildMarkButton(RESET_LABEL, RESET_TOOLTIP);
 
-        button.setToolTipText(RESET_TOOLTIP);
-        button.setMargin(new Insets(0, 0, 0, 0));
-        button.setPreferredSize(new Dimension(RESET_BUTTON_WIDTH, RESET_BUTTON_HEIGHT));
         button.addActionListener(event -> reset.run());
 
         return button;
+    }
+
+    /**
+     * A small square button carrying one character.
+     *
+     * <p>Two things in the panel are this: the reset beside every remembered control, and the
+     * fold beside every heading and branch. They mean entirely different things - one is a
+     * setting put back, the other is rows going off screen - but they are the same object to
+     * look at, and a reader picks them apart by the mark and by where they sit. Built in two
+     * places they were free to drift apart in size, in padding, and in whether their marks were
+     * legible at all, at which point the panel has two kinds of small button for no reason a
+     * reader could name.
+     *
+     * <p>ASCII only, for the reason the reset's own label is: the viewer runs wherever the JDK's
+     * default font does, and a glyph that renders as a box makes the control unreadable rather
+     * than merely plain.
+     *
+     * @param mark    the one character it shows
+     * @param tooltip what it says it does
+     * @return the button, with nothing wired to it
+     */
+    public static JButton buildMarkButton(String mark, String tooltip) {
+
+        var button = new JButton(mark);
+
+        button.setToolTipText(tooltip);
+        button.setMargin(new Insets(0, 0, 0, 0));
+        button.setPreferredSize(new Dimension(MARK_BUTTON_WIDTH, MARK_BUTTON_HEIGHT));
+
+        return button;
+    }
+
+    /**
+     * @return how wide one of these is, so that a row without one can leave the same gap and
+     *         keep its label in line with the rows that have one
+     */
+    public static int measureMarkWidth() {
+        return MARK_BUTTON_WIDTH;
     }
 
     /**
@@ -517,6 +528,52 @@ public final class ControlRows {
         pair.add(right);
 
         return pair;
+    }
+
+    /**
+     * A control with a reset beside it, padded like every other row in the panel.
+     *
+     * <p>The plainest row there is, and the one most of the panel's controls want: the control
+     * says what it is itself - a checkbox carries its own label, a row of them carries several -
+     * so there is nothing to put above it.
+     *
+     * @param body  the control, or several of them already laid out
+     * @param reset what to do when the reset is pressed
+     * @return the row
+     */
+    private static JPanel layOutControlRow(JComponent body, Runnable reset) {
+
+        var row = new JPanel(new BorderLayout());
+
+        row.add(body, BorderLayout.CENTER);
+        row.add(buildResetButton(reset), BorderLayout.EAST);
+        row.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
+
+        return row;
+    }
+
+    /**
+     * The same row with a name over it.
+     *
+     * <p>For the controls that cannot say what they are themselves. A dropdown shows whichever
+     * option is picked and a radio row shows the options, and in both cases what a reader needs
+     * to know first - what the choice is ABOUT - is nowhere on the control.
+     *
+     * <p>Above rather than beside, because the control below is already as wide as the column
+     * and a name set beside it would take width from the thing it names.
+     *
+     * @param title what the control is called
+     * @param body  the control
+     * @param reset what to do when the reset is pressed
+     * @return the row
+     */
+    private static JPanel layOutNamedControlRow(String title, JComponent body, Runnable reset) {
+
+        var row = layOutControlRow(body, reset);
+
+        row.add(buildWrappingLabel(title), BorderLayout.NORTH);
+
+        return row;
     }
 
     // The value box with its reset, which both row shapes carry and neither owns.
