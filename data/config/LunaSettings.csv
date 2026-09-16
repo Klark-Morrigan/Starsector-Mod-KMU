@@ -2,6 +2,14 @@ fieldID,,,,fieldName,,fieldType,defaultValue,secondaryValue,,,fieldDescription,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_settingsNote,,,,,,Text,"All KMU settings [take effect immediatedly]. Navigate to the relevant tab and if it's big, there will be a [note at the top listing the settings] it contains. Each description ends with the default shipped value, for example [Default: 0.25].
+
+This tab decides which features run at all. Every other tab tunes how a feature runs.
+
+For full diagnostic logs set [Verbosity] to [DEBUG] under [Logging] section of [Dev] tab and enable [Reflection probe traces].
+
+In case of bad performance related to map layers, set [Level] to [Fine] under [Profiling] section of [Map - Dev] tab, and execute [kmu_profiling tree] console command to log the results. [kmu_profiling reset] will clear stored measurements if you need to start over.",,,,,,,,,Features
+,,,,,,,,,,,,,,,,
 kmu_features_toggles_header,,,,Feature toggles,,Header,Feature toggles,,,,,,,,,Features
 kmu_features_toggles_areMapLayersEnabled,,,,Enable map layers,,Boolean,TRUE,,,,"Enables [KMU Map Layers] and all related components (sidebar, mouseover effect, etc.). Map layers are rendered on sector map widgets (map screen, intel screen, Random Assortment of Things minimap replacement, etc.) as an information and presentation tool, with no effect on gameplay. Can be safely toggled on and off on a save. [If you want to uninstall KMU, disable this feature and overwrite your save with]. This is the framework every map layer rides on - KMU's own [Political Map] and [any map layer another mod registers with KMU] - so switching it off takes every one of them off the map, other mods' layers included. [Default: true].",,,,,Features
 kmu_features_toggles_isMarketConditionManagerEnabled,,,,Enable Market Condition Manager (MCM),,Boolean,FALSE,,,,"Enables the [KMU Market Condition Manager] ([MCM]). Currently [UNFINISHED]. [Default: false].",,,,,Features
