@@ -9,9 +9,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.awt.Container;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.JTextField;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,7 +80,7 @@ final class SliderRowsIntegrationTest {
         @Test
         void buildSliderPairGivesEachHalfItsOwnValueBox() {
 
-            var boxes = collectValueBoxes(buildPair());
+            var boxes = ComponentTreeFixture.findAll(buildPair(), JTextField.class);
 
             assertThat(boxes)
                 .hasSize(2);
@@ -94,7 +93,7 @@ final class SliderRowsIntegrationTest {
 
             var pair = buildPair();
 
-            assertThat(collectResets(pair))
+            assertThat(ComponentTreeFixture.findAll(pair, JButton.class))
                 .hasSize(2);
         }
     }
@@ -114,35 +113,4 @@ final class SliderRowsIntegrationTest {
                 new SliderRows.SliderWork(value -> rightValue = value, () -> { }, () -> { })));
     }
 
-    private static List<JTextField> collectValueBoxes(Container root) {
-
-        var found = new ArrayList<JTextField>();
-
-        for (var child : root.getComponents()) {
-
-            if (child instanceof JTextField box) {
-                found.add(box);
-
-            } else if (child instanceof Container nested) {
-                found.addAll(collectValueBoxes(nested));
-            }
-        }
-        return found;
-    }
-
-    private static List<javax.swing.JButton> collectResets(Container root) {
-
-        var found = new ArrayList<javax.swing.JButton>();
-
-        for (var child : root.getComponents()) {
-
-            if (child instanceof javax.swing.JButton button) {
-                found.add(button);
-
-            } else if (child instanceof Container nested) {
-                found.addAll(collectResets(nested));
-            }
-        }
-        return found;
-    }
 }

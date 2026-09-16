@@ -68,7 +68,7 @@ final class ToggleTreeIntegrationTest {
         void ofSwitchPairDrawsBothSwitchesOnOneRow() {
 
             var tree = buildPairedTree(true, false);
-            var boxes = collectCheckBoxes(tree);
+            var boxes = ComponentTreeFixture.findAll(tree, JCheckBox.class);
 
             assertThat(boxes)
                 .extracting(JCheckBox::getText)
@@ -110,7 +110,7 @@ final class ToggleTreeIntegrationTest {
         void ofSwitchPairLetsARollUpReachTheRightHalf() {
 
             var tree = buildPairedTree(false, false);
-            var rollUp = collectCheckBoxes(tree).get(0);
+            var rollUp = ComponentTreeFixture.findAll(tree, JCheckBox.class).get(0);
 
             rollUp.doClick();
 
@@ -139,20 +139,4 @@ final class ToggleTreeIntegrationTest {
                 })));
     }
 
-    // Every checkbox the block drew, in the order it drew them, whatever it nested them in.
-    private static List<JCheckBox> collectCheckBoxes(Container root) {
-
-        var found = new ArrayList<JCheckBox>();
-
-        for (var child : root.getComponents()) {
-
-            if (child instanceof JCheckBox box) {
-                found.add(box);
-
-            } else if (child instanceof Container nested) {
-                found.addAll(collectCheckBoxes(nested));
-            }
-        }
-        return found;
-    }
 }

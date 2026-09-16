@@ -640,15 +640,18 @@ public final class ViewerSettingsPanel {
     // is: the colours above say what a cell IS, and this says how hard the map works to stop
     // two of them reading as one shape.
     private void addJitterRows(JPanel controls) {
+        // Remembered under their own names rather than under their labels, as every other
+        // control here is. A label is copy: reworded, a control keyed by one loses whatever was
+        // set and comes back at its default, with nothing to say why.
         controls.add(ControlRows.buildToggleRow(
             refreshes::repaintMap,
             new ControlRows.Toggle(
-                "Jitter owned",
+                "jitterOwned",
                 "Jitter owned",
                 true,
                 on -> settings.jitterOwned = on),
             new ControlRows.Toggle(
-                "Jitter unowned",
+                "jitterUnowned",
                 "Jitter unowned",
                 false,
                 on -> settings.jitterUnowned = on)));
@@ -1123,10 +1126,8 @@ public final class ViewerSettingsPanel {
     // Every geometry knob rebuilds; that is what makes it a geometry knob rather than a
     // colour. Bound once here so a new one cannot be added that quietly only repaints.
     //
-    // The title doubles as the key it is remembered under. A knob's label is the one thing
-    // about it already unique and already meaningful, so keying on it means a knob cannot be
-    // added without being remembered - which is how the last panel ended up with several
-    // that were not.
+    // Remembered under a key of its own rather than under its label, as every control here is:
+    // a label is copy, and a knob keyed by one loses whatever was set the moment it is reworded.
     private JPanel buildSlider(
             String key,
             String title,
@@ -1134,11 +1135,9 @@ public final class ViewerSettingsPanel {
             double maximum,
             double initial,
             DoubleConsumer apply) {
+
         return SliderRows.buildSlider(
-            key,
-            title,
-            new SliderRows.SliderRange(minimum, maximum, initial),
-            new SliderRows.SliderWork(apply, refreshes::rebuildGeometry, () -> { }));
+            buildSliderSpec(key, title, minimum, maximum, initial, apply));
     }
 
     /**
@@ -1165,7 +1164,7 @@ public final class ViewerSettingsPanel {
             DoubleConsumer apply,
             Runnable onChange) {
 
-        return SliderRows.buildSlider(
+        return SliderRows.buildSlider(new SliderRows.SliderSpec(
             key,
             "Bridge reach, in cell radii (x100)",
             new SliderRows.SliderRange(
@@ -1175,7 +1174,7 @@ public final class ViewerSettingsPanel {
             new SliderRows.SliderWork(
                 stepped -> apply.accept(stepped / ViewerSettings.BRIDGE_REACH_STEP_SCALE),
                 onChange,
-                () -> { }));
+                () -> { })));
     }
 
     // One slider's four parts, under the same refresh every geometry knob takes. Named rather

@@ -82,24 +82,18 @@ public final class SliderRows {
     /**
      * A slider with a typed value box and a reset button.
      *
-     * @param key   what to remember it under
-     * @param title what the knob is called
-     * @param range where it may go and where it starts
-     * @param work  what to do as it moves
+     * @param spec the knob: what to remember it under, what it is called, where it may go and
+     *             what to do as it moves
      * @return the row
      */
-    public static JPanel buildSlider(
-            String key,
-            String title,
-            SliderRange range,
-            SliderWork work) {
+    public static JPanel buildSlider(SliderSpec spec) {
 
-        var parts = prepareSlider(key, range, work);
+        var parts = prepareSlider(spec.key(), spec.range(), spec.work());
 
         return ControlRows.layOutLabelledRow(
-            title,
+            spec.title(),
             parts.valueBox(),
-            () -> applyValue(parts, key, range, work, range.fallback()),
+            buildReset(parts, spec),
             parts.slider());
     }
 
@@ -145,10 +139,14 @@ public final class SliderRows {
         var parts = prepareSlider(spec.key(), spec.range(), spec.work());
 
         return ControlRows.layOutStackedRow(
-            spec.title(),
-            parts.valueBox(),
-            () -> applyValue(parts, spec.key(), spec.range(), spec.work(), spec.range().fallback()),
-            parts.slider());
+            spec.title(), parts.valueBox(), buildReset(parts, spec), parts.slider());
+    }
+
+    // Putting one slider back where it started, which is the same act in either row shape.
+    private static Runnable buildReset(SliderParts parts, SliderSpec spec) {
+
+        return () -> applyValue(
+            parts, spec.key(), spec.range(), spec.work(), spec.range().fallback());
     }
 
     // The widgets and the wiring, which are the same whichever shape the row is laid out in.

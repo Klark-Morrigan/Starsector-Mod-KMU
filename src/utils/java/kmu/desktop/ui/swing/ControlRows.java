@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -81,15 +82,12 @@ public final class ControlRows {
      */
     public static JPanel buildDivider() {
 
-        var row = new JPanel(new BorderLayout());
+        // Capped, because a separator takes whatever height it is offered and the column offers
+        // everything left over - without one the rule becomes a gap the height of the window.
+        var row = buildCappedRow(new BorderLayout());
 
         row.add(new JSeparator(SwingConstants.HORIZONTAL), BorderLayout.CENTER);
         row.setBorder(BorderFactory.createEmptyBorder(DIVIDER_PADDING, 0, DIVIDER_PADDING, 0));
-
-        // A separator will take whatever height it is offered, and the panel's layout offers
-        // it everything left over - so without a cap the rule becomes a gap the height of the
-        // window and pushes the knobs under it off the bottom.
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 
         return row;
     }
@@ -513,14 +511,12 @@ public final class ControlRows {
      */
     public static JPanel layOutPairedRow(JPanel left, JPanel right) {
 
-        var pair = new JPanel(new GridLayout(SINGLE_ROW, PAIRED_COLUMNS, PAIR_GUTTER, 0));
+        var pair = buildCappedRow(new GridLayout(SINGLE_ROW, PAIRED_COLUMNS, PAIR_GUTTER, 0));
 
         pair.add(left);
         pair.add(right);
 
-        // Answered when asked rather than fixed while building, for the reason a tree row's cap
-        // is: the height a wrapped name needs is not settled until it has been given a width.
-        return capToPreferredHeight(pair);
+        return pair;
     }
 
     // The value box with its reset, which both row shapes carry and neither owns.
@@ -548,22 +544,32 @@ public final class ControlRows {
         return panel;
     }
 
-    // A row that refuses to grow past the height it needs, asked at the moment it is laid out.
-    // A stack hands out whatever height is going, and a cap taken while building freezes a row
-    // at a height worked out before it had a width to wrap against.
-    private static JPanel capToPreferredHeight(JPanel panel) {
+    /**
+     * A row that refuses to grow past the height it needs.
+     *
+     * <p>Every row in a stacked column wants this. A stack hands out whatever height is going,
+     * so a row that does not refuse the surplus takes the height of the window and pushes the
+     * rows under it off the bottom.
+     *
+     * <p><b>Answered when asked rather than fixed while building.</b> A cap taken while
+     * building freezes a row at a height worked out before it had a width - which is wrong for
+     * any row whose name wraps, since how many lines that takes is not settled until there is a
+     * width to wrap against. It is also what asks for font metrics during construction, and a
+     * machine with no usable fonts cannot supply those: the same call, made at build time, is
+     * what fails on a headless runner.
+     *
+     * @param layout how the row arranges what is put in it
+     * @return the row, empty
+     */
+    public static JPanel buildCappedRow(LayoutManager layout) {
 
-        var capped = new JPanel(new BorderLayout()) {
+        return new JPanel(layout) {
 
             @Override
             public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
             }
         };
-
-        capped.add(panel, BorderLayout.CENTER);
-
-        return capped;
     }
 
     /**

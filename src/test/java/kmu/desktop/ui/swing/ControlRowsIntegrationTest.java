@@ -96,7 +96,7 @@ final class ControlRowsIntegrationTest {
                 told::add,
                 () -> refreshes.add("refreshed"));
 
-            listRadioButtonsIn(row).get(1).doClick();
+            ComponentTreeFixture.findAll(row, JRadioButton.class).get(1).doClick();
 
             assertThat(told)
                 .containsExactly(Loudness.QUIET, Loudness.LOUD);
@@ -114,7 +114,7 @@ final class ControlRowsIntegrationTest {
             var told = new ArrayList<Loudness>();
             var row = ControlRows.buildRadio(KEY, "Loudness", PICKS, told::add, () -> { });
 
-            findResetIn(row).doClick();
+            ComponentTreeFixture.findOnly(row, JButton.class).doClick();
 
             assertThat(told)
                 .containsExactly(Loudness.LOUD, Loudness.QUIET);
@@ -143,46 +143,11 @@ final class ControlRowsIntegrationTest {
 
         var selected = new ArrayList<String>();
 
-        for (var button : listRadioButtonsIn(row)) {
+        for (var button : ComponentTreeFixture.findAll(row, JRadioButton.class)) {
             if (button.isSelected()) {
                 selected.add(button.getText());
             }
         }
         return selected;
-    }
-
-    private static List<JRadioButton> listRadioButtonsIn(Container row) {
-
-        var buttons = new ArrayList<JRadioButton>();
-
-        collectRadioButtons(row, buttons);
-
-        return buttons;
-    }
-
-    // The row nests its buttons inside a panel of its own, so the walk is over the whole tree
-    // rather than the row's immediate children.
-    private static void collectRadioButtons(Container container, List<JRadioButton> buttons) {
-
-        for (var child : container.getComponents()) {
-
-            if (child instanceof JRadioButton button) {
-                buttons.add(button);
-
-            } else if (child instanceof Container nested) {
-                collectRadioButtons(nested, buttons);
-            }
-        }
-    }
-
-    // The row's only plain button, which is the reset every remembered control carries.
-    private static JButton findResetIn(Container row) {
-
-        for (var child : row.getComponents()) {
-            if (child instanceof JButton reset) {
-                return reset;
-            }
-        }
-        throw new IllegalStateException("the row carries no reset button");
     }
 }
