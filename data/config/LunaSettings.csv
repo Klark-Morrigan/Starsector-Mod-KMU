@@ -8,6 +8,41 @@ kmu_features_toggles_isMarketConditionManagerEnabled,,,,Enable Market Condition 
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_visuals_contentsNote,,,,,,Text,"Available settings:
+- [Map layers]
+  - Hide fade time
+- [Overlay sidebar]
+  - Border width
+  - Opacity
+  - Scrollbar thickness
+  - Collapse time
+  - M-map top padding
+  - M-map left padding
+  - M-map bottom padding
+  - Intel screen map visor top padding
+- [Overlay sidebar - colours]
+  - Colour scheme
+  - Collapse notch chevron colour
+- [Map labels]
+  - Name min font size
+  - Name max font size
+  - Name max lines
+  - Name line spacing
+- [Hovering]
+  - Enable hovering
+  - Enable hover effects
+  - Enable hover tooltips
+- [Hover tooltip - density]
+  - Tooltip nesting level shrink
+  - Tooltip line gap
+  - Tooltip tier 2 line gap
+  - Tooltip tier 3 line gap
+- [Hover tooltip - connecting lines]
+  - Thickness
+  - Opacity
+- [Hover tooltip - redacted text]
+  - Darkening strength",,,,,,,,,Map - Visuals
+,,,,,,,,,,,,,,,,
 kmu_map_visuals_layers_header,,,,Map layers,,Header,Map layers,,,,,,,,,Map - Visuals
 kmu_map_visuals_layers_hideFadeSeconds,,,,Hide fade time,,Double,0.25,,,,"How long the map layers take to fade off the screen when they are hidden (and to fade back in when they are shown again), in seconds. Everything the layers draw fades together - the overlay, its names, and the overlay control box. 0 switches them straight off with no animation; higher makes the fade slower and smoother, up to 2 seconds. [Default: 0.25].",,,0,2,Map - Visuals
 ,,,,,,,,,,,,,,,,
@@ -51,6 +86,62 @@ kmu_map_visuals_tooltips_redacted_header,,,,Hover tooltip - redacted text,,Heade
 kmu_map_visuals_tooltips_redacted_darkeningStrength,,,,Darkening strength,,Double,0.4,,,,"How much of a line's colour is taken off the blocks a withheld name draws as, where a hover tooltip states that something is there without naming it. A solid block reads heavier than text of the same shade, because letters spend much of their edge half-transparent where a block does not - so a value above 0 is what sets the blocks level with the words either side of them rather than above them. 0 fills them in the line's own colour; 1 fills them black. [Default: 0.4].",,,0,1,Map - Visuals
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+kmu_map_politics_visuals_contentsNote,,,,,,Text,"Available settings:
+- [Faction systems]
+  - Outer border colour
+  - Outer border opacity
+  - Outer border width
+  - Inner border colour
+  - Inner border opacity
+  - Inner border width
+  - Fill colour
+  - Fill opacity
+  - Name opacity
+- [Independent systems]
+  - The same nine settings, for independent-held space
+- [Decivilised systems]
+  - Border opacity
+  - Border width
+  - Fill opacity
+- [Uninhabited systems]
+  - Border opacity
+  - Border width
+- [Style mutators]
+  - Presence lightening
+  - Muted element opacity modifier
+  - Desaturation darkening
+- [Presence ribbons]
+  - Show presence ribbons
+  - Shortened presence ribbons on single-faction / single-alliance systems
+  - Keep ribbons clear of cluster names
+  - What a ribbon keeps clear of
+  - Always draw a planned ribbon
+  - Ribbon width
+  - Ribbon inset
+  - Colony run length
+  - Separator length
+- [Hover highlight]
+  - Enable hover effects
+  - Highlight colour
+  - Halo opacity
+  - Halo width
+  - Halo layers
+  - Halo pulse strength
+  - Halo pulse period
+  - Cell wash opacity
+  - Cell wash outline opacity
+  - Cell wash outline width
+- [Filter list preview]
+  - Highlight colour
+  - Cell wash opacity
+- [Hover tooltip]
+  - Enable hover tooltip
+- [Nebula draw order]
+  - Territory fills
+  - Borders
+  - Presence bands
+  - Faction names",,,,,,,,,Map - Politics - Visuals
 ,,,,,,,,,,,,,,,,
 kmu_map_politics_visuals_faction_header,,,,Faction systems,,Header,Faction systems,,,,,,,,,Map - Politics - Visuals
 kmu_map_politics_visuals_faction_outerBorder_colour,,,,Outer border colour,,Radio,Primary faction color,"Primary faction color, Secondary faction color, No color",,,"Which faction palette colour the outer (national) border draws in, or No color to hide it. [Default: Primary faction color].",,,,,Map - Politics - Visuals
@@ -126,6 +217,27 @@ kmu_map_politics_visuals_starscape_positionRelativeToNebulae_labels,,,,Faction n
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+kmu_map_politics_domination_contentsNote,,,,,,Text,"Available settings:
+- [Stability]
+  - Stability weighs dominance
+- [Colony size]
+  - Colony size weight
+  - Colony low-stability penalty
+- [Hidden markets]
+  - Hidden market scaling
+  - Hidden market fixed weight
+- [Orbital stations]
+  - Station weighs dominance
+  - Station weight
+  - Hidden-market station fraction
+  - Station low-stability penalty
+- [Patrols]
+  - Patrols weigh dominance
+  - Small patrol weight
+  - Medium patrol weight
+  - Large patrol weight
+  - Patrol low-stability penalty",,,,,,,,,Map - Politics - Domination
+,,,,,,,,,,,,,,,,
 kmu_map_politics_domination_stability_header,,,,Stability,,Header,Stability,,,,,,,,,Map - Politics - Domination
 kmu_map_politics_domination_stability_isEnabled,,,,Stability weighs dominance,,Boolean,TRUE,,,,"Master switch for stability scaling. When on, each dominance factor (colony size, station bonus, patrols) is cut at low stability by its own low-stability penalty below, so a destabilised colony holds less of its system than a functioning one. Turn off to ignore stability entirely and rank colonies by their raw weighted size, station, and patrol sum. [Default: true].",,,,,Map - Politics - Domination
 ,,,,,,,,,,,,,,,,
@@ -190,6 +302,59 @@ kmu_map_compatibility_foreignMapSurfaces_isMouseoverEnabledInGameSpace,,,,Allow 
 kmu_map_compatibility_foreignMapSurfaces_isRandomAssortmentOfThingsModeEnabled,,,,Random Assortment of Things compatibility mode,,Boolean,TRUE,,,,"Treat the minimap from Random Assortment of Things as a map worth answering, rather than as one more surface to stand clear of. That minimap takes the campaign radar's place and is on screen with no map screen open, so it is the one modded map the player is deliberately pointing at. [Engages only when that mod is installed and its own Enable Mini-map setting is on], so an install without the minimap behaves the same either way. It works inside the two constraints above rather than around them: whatever they forbid stays forbidden. It also stops that minimap drawing while the mod has it slid off screen, and lets it draw again the moment any part of it slides back into view: a minimap you cannot see still renders a whole sector map behind whatever screen you opened, which costs the work and can pull the mouseover on the real map away from the pointer. Turn off if the layers misbehave on that minimap, or if you would rather nothing here touched it. [Default: true].",,,,,Map - Compatibility
 ,,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+kmu_map_dev_contentsNote,,,,,,Text,"Available settings:
+- [Profiling]
+  - Profiling level
+  - Frame beat budget
+- [Refresh polling]
+  - Refresh poll interval
+- [Map controls]
+  - Add map layers toggle to the filter row
+  - Always show the layer arrangement button
+- [Cell geometry]
+  - Territory reach
+  - Cell frontier segments
+- [Border tracing]
+  - National border weld tolerance
+  - National border miter limit
+- [Spike sanding]
+  - Sand border spikes
+  - Spike height
+  - Spike angle
+- [Corner rounding]
+  - Round border corners
+  - Corner radius
+  - Corner segments
+  - Chamfer angle
+  - Round below angle
+- [Hatch fill]
+  - Hatch width
+  - Smooth hatch lines
+  - Hatch angle
+  - Hatch spacing
+- [Hatch fill - joining]
+  - Join tolerance
+- [Label anchors]
+  - Anchor direction count
+  - Anchor offset count
+  - Anchor font tolerance
+  - Anchor vertical penalty
+  - Anchor vertical penalty falloff
+  - Anchor max slant
+  - Anchor end inset
+  - Anchor icon clearance
+  - Anchor band opacity
+  - Anchor band line opacity
+- [Diagnostics]
+  - Show cluster label anchors
+  - Show rejected cluster axes
+  - Show unbiased cluster axes
+  - Show presence band paths
+  - Debug border tracing
+- [UI]
+  - M-map sidebar pixel font sharpness
+  - Intel sidebar pixel font sharpness",,,,,,,,,Map - Dev
 ,,,,,,,,,,,,,,,,
 kmu_map_dev_profiling_header,,,,Profiling,,Header,Profiling,,,,,,,,,Map - Dev
 kmu_map_dev_profiling_level,,,,Profiling level,,Radio,Off,"Off, Coarse, Fine",,,"How much of what the map layers do is timed, for the kmu_profiling console readout. Off measures nothing and costs nothing, which is what you want unless you are chasing a slow map. Coarse times the beats of a map frame and the steps of a rebuild, which is what says where a frame went. Fine adds what one turn of a per-item loop costs - a few clock reads per system per rebuild - which is what says which part of a slow step is slow. A running capture keeps what it has measured in memory until you clear it with kmu_profiling reset, and moving this starts a fresh one. [Default: Off].",,,,,Map - Dev
