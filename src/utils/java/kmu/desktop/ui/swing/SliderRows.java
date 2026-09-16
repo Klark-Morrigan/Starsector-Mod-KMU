@@ -94,6 +94,67 @@ public final class SliderRows {
             SliderRange range,
             SliderWork work) {
 
+        var parts = prepareSlider(key, range, work);
+
+        return ControlRows.layOutLabelledRow(
+            title,
+            parts.valueBox(),
+            () -> applyValue(parts, key, range, work, range.fallback()),
+            parts.slider());
+    }
+
+    /**
+     * Everything one slider is asked for, as a single value.
+     *
+     * <p>Four things that only mean anything together, and which a pairing has to carry twice.
+     * Passed loose that is eight arguments, of which two pairs are the same types in the same
+     * order - a transposition the compiler cannot see and a reader would have to count to spot.
+     *
+     * @param key   what to remember it under
+     * @param title what the knob is called
+     * @param range where it may go and where it starts
+     * @param work  what to do as it moves
+     */
+    public record SliderSpec(
+        String key,
+        String title,
+        SliderRange range,
+        SliderWork work) {
+    }
+
+    /**
+     * Two sliders on one line, each with its name above its own value and reset.
+     *
+     * <p>Stacked rather than laid out as a full-width row is, because half a column does not
+     * leave a name room beside its value box: measured on the smoothing knobs, a name beside
+     * the value wraps to four lines in half a column and to two above it. So the pairing and
+     * the shape are one decision, made here, and a caller cannot ask for one without the other.
+     *
+     * @param left  the slider on the left
+     * @param right the slider on the right
+     * @return the line holding both
+     */
+    public static JPanel buildSliderPair(SliderSpec left, SliderSpec right) {
+
+        return ControlRows.layOutPairedRow(layOutStacked(left), layOutStacked(right));
+    }
+
+    // One slider in the shape a paired line wants.
+    private static JPanel layOutStacked(SliderSpec spec) {
+
+        var parts = prepareSlider(spec.key(), spec.range(), spec.work());
+
+        return ControlRows.layOutStackedRow(
+            spec.title(),
+            parts.valueBox(),
+            () -> applyValue(parts, spec.key(), spec.range(), spec.work(), spec.range().fallback()),
+            parts.slider());
+    }
+
+    // The widgets and the wiring, which are the same whichever shape the row is laid out in.
+    // Everything that reads or writes the value happens here; only where the name sits differs.
+    private static SliderParts prepareSlider(String key, SliderRange range, SliderWork work) {
+
         var saved = readDouble(key, range.fallback());
 
         var parts = new SliderParts(
@@ -109,10 +170,7 @@ public final class SliderRows {
         parts.valueBox().setText(formatValue(saved));
         work.apply().accept(saved);
 
-        Runnable reset = () -> applyValue(parts, key, range, work, range.fallback());
-
-        return ControlRows.layOutLabelledRow(
-            title, parts.valueBox(), reset, parts.slider());
+        return parts;
     }
 
     /**

@@ -399,15 +399,16 @@ public final class ViewerSettingsPanel {
             ViewerSettings.ROUND_BELOW_DEGREES_DEFAULT,
             degrees -> settings.roundBelowDegrees = degrees));
 
-        controls.add(buildSlider(
+        // The two that say how a corner is drawn once it has been judged one, on a line of
+        // their own: neither means anything without the other, and a reader setting a radius
+        // is already looking at the segment count it will be drawn with.
+        controls.add(buildSliderPair(
             "roundingRadius",
             "Corner rounding radius, in map units",
             ROUNDING_RADIUS_MINIMUM,
             ROUNDING_RADIUS_MAXIMUM,
             ViewerSettings.ROUNDING_RADIUS_DEFAULT,
-            radius -> settings.roundingRadius = radius));
-
-        controls.add(buildSlider(
+            radius -> settings.roundingRadius = radius,
             "roundingSegments",
             "Segments per rounded corner",
             ROUNDING_SEGMENTS_MINIMUM,
@@ -417,15 +418,16 @@ public final class ViewerSettingsPanel {
 
         // The pass that runs BEFORE the three above, and so is read after them: what it takes
         // out is what the rounding would otherwise be handed and be unable to fix.
-        controls.add(buildSlider(
+        //
+        // Paired for the reason the two above are - a spike is what it is by BOTH its angle and
+        // its height, and either alone decides nothing.
+        controls.add(buildSliderPair(
             "spikeBelowDegrees",
             "Sand spikes sharper than, in degrees",
             SPIKE_BELOW_MINIMUM,
             SPIKE_BELOW_MAXIMUM,
             ViewerSettings.SPIKE_BELOW_DEGREES_DEFAULT,
-            degrees -> settings.spikeBelowDegrees = degrees));
-
-        controls.add(buildSlider(
+            degrees -> settings.spikeBelowDegrees = degrees,
             "spikeHeight",
             "Tallest spike sanded, in map units",
             SPIKE_HEIGHT_MINIMUM,
@@ -1162,6 +1164,45 @@ public final class ViewerSettingsPanel {
                 stepped -> apply.accept(stepped / ViewerSettings.BRIDGE_REACH_STEP_SCALE),
                 onChange,
                 () -> { }));
+    }
+
+    // Two knobs that are read together, on one line. What decides a pairing is the two names:
+    // a paired half gives a name the whole of its width, so two short ones read fine there and
+    // two long ones cost more lines than they save.
+    private JPanel buildSliderPair(
+            String leftKey,
+            String leftTitle,
+            double leftMinimum,
+            double leftMaximum,
+            double leftInitial,
+            DoubleConsumer leftApply,
+            String rightKey,
+            String rightTitle,
+            double rightMinimum,
+            double rightMaximum,
+            double rightInitial,
+            DoubleConsumer rightApply) {
+
+        return SliderRows.buildSliderPair(
+            buildSliderSpec(leftKey, leftTitle, leftMinimum, leftMaximum, leftInitial, leftApply),
+            buildSliderSpec(
+                rightKey, rightTitle, rightMinimum, rightMaximum, rightInitial, rightApply));
+    }
+
+    // One slider's four parts, under the same refresh every geometry knob takes.
+    private SliderRows.SliderSpec buildSliderSpec(
+            String key,
+            String title,
+            double minimum,
+            double maximum,
+            double initial,
+            DoubleConsumer apply) {
+
+        return new SliderRows.SliderSpec(
+            key,
+            title,
+            new SliderRows.SliderRange(minimum, maximum, initial),
+            new SliderRows.SliderWork(apply, refreshes::rebuildGeometry, () -> { }));
     }
 
     private JPanel buildOpacitySlider(String key, String title, DoubleConsumer apply) {
