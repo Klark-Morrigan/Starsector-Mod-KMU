@@ -1,5 +1,7 @@
 package kmu.util;
 
+import kmlib.testfixtures.reflection.DeclaredConstants;
+
 import kmu.starsector.StarsectorSettingsFake;
 
 import org.junit.jupiter.api.Nested;
@@ -7,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -111,31 +112,15 @@ final class KmuStringsIntegrationTest {
     }
 
     // Every string ID KmuStrings names, kept against the constant naming it so a failure says which
-    // constant is at fault rather than only which key is missing.
+    // constant is at fault rather than only which key is missing. CATEGORY names the category the
+    // keys sit in rather than one of them, so it is dropped before the file is asked about it.
     private static Map<String, String> readStringIdsByConstantName() {
 
-        var idsByConstantName = new LinkedHashMap<String, String>();
+        var idsByConstantName =
+            new LinkedHashMap<>(DeclaredConstants.readConstantsByName(KmuStrings.class, String.class));
 
-        for (var field : KmuStrings.class.getDeclaredFields()) {
-            var modifiers = field.getModifiers();
+        idsByConstantName.remove(CATEGORY_CONSTANT);
 
-            if (!Modifier.isPublic(modifiers)
-                    || !Modifier.isStatic(modifiers)
-                    || field.getType() != String.class
-                    || CATEGORY_CONSTANT.equals(field.getName())) {
-
-                continue;
-            }
-            idsByConstantName.put(field.getName(), readConstant(field.getName()));
-        }
         return idsByConstantName;
-    }
-
-    private static String readConstant(String constantName) {
-        try {
-            return (String) KmuStrings.class.getField(constantName).get(null);
-        } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("Cannot read KmuStrings." + constantName, exception);
-        }
     }
 }
