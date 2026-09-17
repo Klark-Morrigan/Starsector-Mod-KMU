@@ -9,8 +9,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortModes;
  * holds the two raw keys but knows nothing of what they mean; this is the one place the two meet.
  *
  * <p>It exists so no reading layer carries the join. A caller asks for the stored sort with its own
- * mode set and hands a picked sort back, exactly as it did while the resolution lived on the model
- * itself, so the storage inversion that let the model move out of this mod cost its callers nothing.
+ * mode set and hands a picked sort back, naming neither of the two keys the pair is kept under.
  */
 public final class SortSelectionBinder {
 

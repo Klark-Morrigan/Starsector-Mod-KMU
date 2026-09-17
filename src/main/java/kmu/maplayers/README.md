@@ -227,10 +227,12 @@ so it is the arrangement all of them use,
 rather than a central list of keys that could only ever hold some of them.
 
 A holder does not compose the key itself.
-It declares `AddressedMemoryFlag` or `AddressedMemoryString` with its base key (and, for a flag, its default)
+It declares KMLib's `AddressedMemoryFlag` or `AddressedMemoryString` with its base key (and, for a flag, its default)
 and names an address on every read and write;
 the two build the sector-memory slot behind it.
-`MemoryKeyAddress` is what an address is:
+`MemoryKeyAddress` is what an address is - KMLib's too,
+a value held once per point on a declared axis being nothing to do with a map -
+and what the axis is here is this mod's:
 `ScreenMemoryScope` partitions by screen,
 the sidebar's `ScreenSelectionSlot` by the mod whose store it is and by screen,
 and a picker's `SelectionSlot` by those two and by the scope its list was listed under.

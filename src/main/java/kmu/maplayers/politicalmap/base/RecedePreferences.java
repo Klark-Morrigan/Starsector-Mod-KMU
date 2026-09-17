@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmu.maplayers.base.layer.AddressedMemoryFlag;
+import kmlib.starsector.memory.AddressedMemoryFlag;
+
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;

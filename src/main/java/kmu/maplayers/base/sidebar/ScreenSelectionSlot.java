@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
-import kmu.maplayers.base.layer.MemoryKeyAddress;
+import kmlib.starsector.memory.MemoryKeyAddress;
+
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 
 /**

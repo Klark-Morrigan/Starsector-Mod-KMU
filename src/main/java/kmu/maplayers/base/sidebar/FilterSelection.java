@@ -1,6 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
-import kmu.maplayers.base.layer.AddressedMemoryString;
+import kmlib.starsector.memory.AddressedMemoryString;
+
 import kmu.maplayers.base.refresh.MapLayerCommonRefreshSignal;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 

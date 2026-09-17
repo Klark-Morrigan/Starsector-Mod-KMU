@@ -1,6 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmu.maplayers.base.layer.MemoryKeyAddress;
+import kmlib.starsector.memory.MemoryKeyAddress;
 
 /**
  * Where one sidebar picker keeps a selection: the mod and screen its panel's answers are kept under,

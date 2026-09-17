@@ -144,22 +144,21 @@ enforceRestrictedCalls {
     // slot are contained at the holders that compose a key through a
     // ScreenMemoryScope.
     //
-    // The two wrappers are the general road - AddressedMemoryFlag and
+    // The general road is KMLib's addressed wrappers - AddressedMemoryFlag and
     // AddressedMemoryString hold one slot per address and are what a new
-    // preference declares. The two named beside them build a slot directly
-    // because each is constructed per screen and holds one scope for life, so
-    // there is no address to take per call. The raw memory handle is contained
-    // at the active-layer pick, which reads and writes a key it composed in its
-    // own constructor.
+    // preference declares, so nothing here builds a slot on their behalf. The
+    // two named below build one directly because each is constructed per screen
+    // and holds one scope for life, so there is no address to take per call.
+    // Nothing composes a string slot that way, so that call is closed outright.
+    // The raw memory handle is contained at the active-layer pick, which reads
+    // and writes a key it composed in its own constructor.
     restrictCall call: 'new SectorMemoryFlag(',
         under: 'kmu.maplayers',
         toTypes: [
-            'AddressedMemoryFlag',
             'PersistedMapLayerVisibility',
             'PersistedSidebarFold']
     restrictCall call: 'new SectorMemoryString(',
-        under: 'kmu.maplayers',
-        toTypes: ['AddressedMemoryString']
+        under: 'kmu.maplayers'
     restrictCall call: 'SectorMemoryAccess.readSectorMemory()',
         under: 'kmu.maplayers',
         toTypes: ['PersistedActiveLayerSelection']

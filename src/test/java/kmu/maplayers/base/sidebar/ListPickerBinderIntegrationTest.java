@@ -1,17 +1,17 @@
 package kmu.maplayers.base.sidebar;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.testfixtures.starsector.memory.SectorMemoryFake;
+import kmlib.testfixtures.starsector.ui.widgets.lists.Anomaly;
+import kmlib.testfixtures.starsector.ui.widgets.lists.AnomalySortMode;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.starsector.StarsectorUiColoursMock;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -21,8 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.awt.Color;
 import java.util.List;
+
+import static kmlib.testfixtures.starsector.ui.widgets.lists.ListPickerBlockReads.readColumnsSelector;
+import static kmlib.testfixtures.starsector.ui.widgets.lists.ListPickerBlockReads.readItemList;
+import static kmlib.testfixtures.starsector.ui.widgets.lists.ListPickerBlockReads.readSortSelector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * fake, which is what parts this from the binder's own suite - that one mocks the stores and pins which
  * binder a report reaches, and this one pins the key it reaches the save at.
  *
- * <p>Run over the foreign {@link Hazard} rows and {@link HazardSortMode} vocabulary under a stand-in
+ * <p>Run over KMLib's {@link Anomaly} rows and {@link AnomalySortMode} vocabulary under a stand-in
  * namespace, since a consumer is exactly a mod this one names nowhere. The frozen keys this mod's own
  * namespace composes are asserted absent beside every write, which is the half a shared store gets
  * wrong: two mods listing under one scope string wrote one key before the namespace parted them, and
@@ -52,66 +55,51 @@ final class ListPickerBinderIntegrationTest {
         new ScreenSelectionSlot(
             MapLayerStoreNamespaces.createStandInNamespace(),
             ScreenMemoryScopes.createStandInScreen()),
-        "hazards");
+        "anomalies");
 
     // The keys both sides compose, as literals: what this suite is about is which spelling a pick
     // lands at, so composing the expectation through the address under test would assert nothing. The
     // host's are this mod's frozen spellings over the very same screen and scope, so the namespace is
     // the one axis parting them.
-    private static final String CONSUMER_SORT_MODE_KEY = "$test_map_sort_mode_hazards_test";
-    private static final String CONSUMER_SORT_DIRECTION_KEY = "$test_map_sort_direction_hazards_test";
+    private static final String CONSUMER_SORT_MODE_KEY = "$test_map_sort_mode_anomalies_test";
+    private static final String CONSUMER_SORT_DIRECTION_KEY = "$test_map_sort_direction_anomalies_test";
     private static final String CONSUMER_COLUMNS_KEY = "$test_map_list_columns_test";
 
-    private static final String HOST_SORT_MODE_KEY = "$kmu_map_sort_mode_hazards_test";
-    private static final String HOST_SORT_DIRECTION_KEY = "$kmu_map_sort_direction_hazards_test";
+    private static final String HOST_SORT_MODE_KEY = "$kmu_map_sort_mode_anomalies_test";
+    private static final String HOST_SORT_DIRECTION_KEY = "$kmu_map_sort_direction_anomalies_test";
     private static final String HOST_COLUMNS_KEY = "$kmu_map_list_columns_test";
 
-    private static final ListSortModes<Hazard> MODES =
-        new ListSortModes<>(List.of(HazardSortMode.values()), HazardSortMode.ALPHA);
+    private static final ListSortModes<Anomaly> MODES =
+        new ListSortModes<>(List.of(AnomalySortMode.values()), AnomalySortMode.ALPHA);
 
-    private static final ListPicker<Hazard> HAZARD_PICKER = new ListPicker<>(
+    private static final ListPicker<Anomaly> ANOMALY_PICKER = new ListPicker<>(
         List.of(
-            new Hazard("storm_1", "Storm", "crest_storm", 9, 8),
-            new Hazard("drift_1", "Drift", null, 2, 3)),
+            new Anomaly("storm_1", "Storm", "crest_storm", 9, 8),
+            new Anomaly("drift_1", "Drift", null, 2, 3)),
         MODES);
-
-    // The rows the picker lays out, so a case names the widget it clicks rather than an index.
-    private static final int COLUMNS_SELECTOR = 1;
-    private static final int SORT_ROW = 2;
 
     // The sector's machinery the picker is built over: the board an item pick repaints through and the
     // slot a hovered row is recorded in both come off it. Neither is this suite's subject, but the
     // build takes one.
     private final SectorMapMachinery machinery = new SectorMapMachinery(null);
 
-    private MockedStatic<Misc> miscMock;
-
     private SectorMemoryFake sectorMemoryFake;
 
     private MockedStatic<KmuStrings> stringsMock;
+
+    // The engine palette the picker resolves its row tones through, installed and taken down as one.
+    private StarsectorUiColoursMock uiColours;
 
     @BeforeEach
     void openTheSave() {
 
         sectorMemoryFake = new SectorMemoryFake();
+        uiColours = StarsectorUiColoursMock.install();
 
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load. Both row tones,
-        // since the picker resolves the receded one whether or not a row uses it.
-        StarsectorSettingsFake.installSettings();
-
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(Color.LIGHT_GRAY);
-        miscMock
-            .when(Misc::getGrayColor)
-            .thenReturn(Color.DARK_GRAY);
-
-        // The one thing here that stays mocked: a strings table is a game resource, and a consumer's
-        // sort labels are in its own bundle rather than in any table a test JVM can open.
+        // The one thing here that stays mocked beside the palette: the columns caption is the
+        // framework's own chrome, read from a strings table no test JVM can open. The consumer's
+        // sort labels are its own and arrive already drawn.
         stringsMock = Mockito.mockStatic(KmuStrings.class);
-        HazardSortMode.stubLabelsOn(stringsMock);
         stringsMock
             .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");
@@ -121,9 +109,7 @@ final class ListPickerBinderIntegrationTest {
     void closeTheSave() {
 
         stringsMock.close();
-        miscMock.close();
-
-        StarsectorSettingsFake.clearSettings();
+        uiColours.close();
 
         sectorMemoryFake.close();
     }
@@ -135,7 +121,7 @@ final class ListPickerBinderIntegrationTest {
         void buildPickerPersistsASortPickUnderTheConsumersOwnKeys() {
             // Both halves of the pair land, since the selector reports a whole sort rather than the
             // half that moved: the mode picked and the direction that mode ranks in by default.
-            pickSortMode(HazardSortMode.SEVERITY);
+            pickSortMode(AnomalySortMode.SEVERITY);
 
             assertThat(sectorMemoryFake.readStoredValue(CONSUMER_SORT_MODE_KEY))
                 .isEqualTo("severity");
@@ -147,7 +133,7 @@ final class ListPickerBinderIntegrationTest {
         void buildPickerLeavesThisModsSortKeysAloneOnAConsumersPick() {
             // The scope string and the screen are both this mod's own; only the namespace parts the
             // two, so this is the case that fails if a store ever composed a key without it.
-            pickSortMode(HazardSortMode.SEVERITY);
+            pickSortMode(AnomalySortMode.SEVERITY);
 
             assertThat(sectorMemoryFake.hasStoredValue(HOST_SORT_MODE_KEY))
                 .isFalse();
@@ -160,8 +146,8 @@ final class ListPickerBinderIntegrationTest {
             // A re-pick flips the direction the build read back, so this only passes if the sort is
             // read at the key it was written to. The first pick stores severity descending; the
             // rebuild lights that row; the second pick on it asks for the opposite.
-            pickSortMode(HazardSortMode.SEVERITY);
-            pickSortMode(HazardSortMode.SEVERITY);
+            pickSortMode(AnomalySortMode.SEVERITY);
+            pickSortMode(AnomalySortMode.SEVERITY);
 
             assertThat(sectorMemoryFake.readStoredValue(CONSUMER_SORT_MODE_KEY))
                 .isEqualTo("severity");
@@ -206,7 +192,7 @@ final class ListPickerBinderIntegrationTest {
         void buildPickerWrapsTheListAcrossTheCountStoredUnderTheConsumersKey() {
             sectorMemoryFake.storeValue(CONSUMER_COLUMNS_KEY, "2");
 
-            assertThat(readItemList().columnCount())
+            assertThat(readItemList(buildPicker()).columnCount())
                 .isEqualTo(ListColumns.TWO.columnCount());
         }
 
@@ -216,7 +202,7 @@ final class ListPickerBinderIntegrationTest {
             // itself could get wrong: a count under another namespace is another mod's layout.
             sectorMemoryFake.storeValue(HOST_COLUMNS_KEY, "2");
 
-            assertThat(readItemList().columnCount())
+            assertThat(readItemList(buildPicker()).columnCount())
                 .isEqualTo(ListColumns.ONE.columnCount());
         }
     }
@@ -224,22 +210,14 @@ final class ListPickerBinderIntegrationTest {
     // The block as the consumer's own body would build it: its rows and vocabulary, its address, and
     // nothing paired beside the sort.
     private List<ControlSpec> buildPicker() {
-        return ListPickerBinder.buildPicker(CONSUMER_SLOT, HAZARD_PICKER, List.of(), machinery);
-    }
-
-    // The item list of a freshly built block, which is the last row of it and the one thing inside the
-    // scrolling section that holds it.
-    private ControlSpec.VerticalTable readItemList() {
-        var controls = buildPicker();
-        var section = (ControlSpec.ScrollingSection) controls.get(controls.size() - 1);
-        return (ControlSpec.VerticalTable) section.controls().get(0);
+        return ListPickerBinder.buildPicker(CONSUMER_SLOT, ANOMALY_PICKER, List.of(), machinery);
     }
 
     // The item rows' names in the order the block draws them, which is the order the stored sort ranks
     // them in rather than the order the picker was handed. A row's name is its label's one run, the
     // crest and the sort value riding in the slots either side of it.
     private List<String> readItemRowLabels() {
-        return readItemList()
+        return readItemList(buildPicker())
             .labelledRows()
             .stream()
             .map(row -> ((TextSpan) row.labelRuns().get(0)).text())
@@ -248,20 +226,16 @@ final class ListPickerBinderIntegrationTest {
 
     // A click on one sort row of a freshly built block. Fresh every time, since the direction a click
     // reports is computed from what that build read back out of the save.
-    private void pickSortMode(HazardSortMode mode) {
+    private void pickSortMode(AnomalySortMode mode) {
 
-        var sortSelector = (ControlSpec.VerticalTable)
-            ((ControlSpec.SideBySide) buildPicker().get(SORT_ROW))
-                .leftColumn()
-                .get(0);
-
-        sortSelector.action().activateCell(List.of(HazardSortMode.values()).indexOf(mode));
+        var sortSelector = readSortSelector(buildPicker());
+        sortSelector.action().activateCell(List.of(AnomalySortMode.values()).indexOf(mode));
     }
 
     // A click on the two-column segment of a freshly built block.
     private void pickTwoColumns() {
 
-        var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker().get(COLUMNS_SELECTOR);
+        var columnsSelector = readColumnsSelector(buildPicker());
         columnsSelector.action().activateCell(List.of(ListColumns.values()).indexOf(ListColumns.TWO));
     }
 }
