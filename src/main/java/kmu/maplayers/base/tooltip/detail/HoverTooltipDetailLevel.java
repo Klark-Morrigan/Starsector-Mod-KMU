@@ -1,6 +1,6 @@
 package kmu.maplayers.base.tooltip.detail;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 /**
  * How deep the hover box reads the one tree a layer composes for a system: four ordered depths,
@@ -29,16 +29,16 @@ import kmu.util.KmuStrings;
 public enum HoverTooltipDetailLevel {
 
     /** Who holds the system: the groups holding it, and the factions gathered inside one. */
-    FACTIONS(0, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS),
+    FACTIONS(0, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_COLLAPSE_FACTIONS),
 
     /** Adds the markets each faction holds the system with. */
-    SYSTEM_COMPOSITION(1, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION),
+    SYSTEM_COMPOSITION(1, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_SYSTEM_COMPOSITION),
 
     /** Adds stability, size and the patrol total per market. */
-    MARKET_STATS(2, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS),
+    MARKET_STATS(2, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_MARKET_STATS),
 
     /** Adds the small/medium/large split behind each patrol total. */
-    PATROL_DETAILS(3, KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS);
+    PATROL_DETAILS(3, KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_EXPAND_PATROL_DETAILS);
 
     // How far under the box's own voice a line breaking down a listed one stands - what an account
     // *is*, rather than which level first admits one. The same one step the laying-out takes when it
@@ -126,7 +126,7 @@ public enum HoverTooltipDetailLevel {
      * @return the phrase for arriving here
      */
     public String resolveArrivalPhrase() {
-        return KmuStrings.get(arrivalPhraseKey);
+        return KmuStringKeys.get(arrivalPhraseKey);
     }
 
     /**

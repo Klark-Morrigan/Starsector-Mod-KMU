@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 /**
  * How a political box words the block holding everyone present who stands neither in the holder's
@@ -27,14 +27,14 @@ public enum ContestWording {
      * Systems change hands, so presence beside a holder is a claim on the system - which is what the
      * player is being told when the block names it.
      */
-    CONTESTED(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
+    CONTESTED(KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_CONTESTED),
 
     /**
      * Systems never change hands, so presence beside a holder is presence and nothing further. The
      * block still earns its place - it is where the player reads who else is in the system and what
      * they are worth there - and it simply stops asserting a struggle over it.
      */
-    PRESENT(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_PRESENT);
+    PRESENT(KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_PRESENT);
 
     private final String headingKey;
 

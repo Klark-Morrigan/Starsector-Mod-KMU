@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -50,7 +50,7 @@ public final class SharedBlocSortModes {
 
         return new BlocMetricSortMode<>(
             MARKET_SIZE_PERSISTENCE_KEY,
-            KmuStrings.POLITICAL_MAP_CTL_SORT_MARKET_SIZE,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_MARKET_SIZE,
             SizedBlocMetrics::marketSize,
             canonicalMetricChain);
     }

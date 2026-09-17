@@ -7,7 +7,7 @@ import kmlib.starsector.ui.highlight.HighlightedParagraph;
 import kmu.conditions.ui.picker.model.KmuConditionPickerLocation;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.model.KmuPickerFaction;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -64,12 +64,12 @@ public final class KmuConditionPickerLocationParagraphFactory {
 
     private static HighlightedParagraph buildHeaderLine() {
         return new HighlightedParagraph(
-            KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION),
+            KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_LOCATION),
             StarsectorUiColour.VANILLA_GRAY.resolve());
     }
 
     private static HighlightedParagraph buildUnknownLine(Color highlightColour) {
-        var unknown = KmuStrings.get(KmuStrings.CONDITION_MANAGER_LOCATION_UNKNOWN);
+        var unknown = KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_LOCATION_UNKNOWN);
         return new HighlightedParagraph(
             unknown,
             new Highlight(unknown, highlightColour));

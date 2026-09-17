@@ -7,7 +7,7 @@ import kmu.maplayers.politicalmap.base.dominance.MarketWeights;
 import kmu.maplayers.politicalmap.base.dominance.PatrolFactor;
 import kmu.maplayers.politicalmap.base.dominance.PatrolTierFactor;
 import kmu.maplayers.politicalmap.base.dominance.StationFactor;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 /**
  * How one dominance factor's arithmetic reads as words: the rating that went in, the weight that came
@@ -74,7 +74,7 @@ public final class MarketFactorText {
         var ratingText = KmlibNumbers.formatCompactDecimal(factor.sizeRating());
 
         if (isFixedRating) {
-            ratingText = KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, ratingText);
+            ratingText = KmuStringKeys.format(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_FIXED, ratingText);
         }
         return appendPenalty(
             formatWeighed(ratingText, factor.contribution()),
@@ -126,8 +126,8 @@ public final class MarketFactorText {
      * @return that name with the clarifier the station line states it under
      */
     public static String formatMilitaryStationName(String stationName) {
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY,
+        return KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_STATION_MILITARY,
             stationName);
     }
 
@@ -186,7 +186,7 @@ public final class MarketFactorText {
     // separator saying the number past it is that same quantity on the dominance grid. The one home
     // of that separator, whether the value is drawn as one run or as the two a line colours apart.
     private static String formatRatedWorking(String ratingText) {
-        return KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_RATED, ratingText);
+        return KmuStringKeys.format(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_RATED, ratingText);
     }
 
     // The left half of a counted value: how many of a thing there are, run on into the separator
@@ -194,15 +194,15 @@ public final class MarketFactorText {
     // are different quantities here - so many patrols, so much weight - and a reader tracing one
     // into the other would otherwise expect the units to match.
     private static String formatCountedWorking(String countText) {
-        return KmuStrings.format(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED, countText);
+        return KmuStringKeys.format(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_COUNTED, countText);
     }
 
     // A working half and the weight it resolves to, set side by side. The one place a value's two
     // halves are run together, so however a half was worded the whole reads at the same spacing the
     // lines that colour their halves apart are drawn at.
     private static String joinToWeight(String workingText, double contribution) {
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
+        return KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
             workingText,
             formatWeight(contribution));
     }
@@ -222,8 +222,8 @@ public final class MarketFactorText {
         if (penaltyPercent <= NO_PENALTY_PERCENT) {
             return valueText;
         }
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY,
+        return KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_PENALTY,
             valueText,
             penaltyPercent);
     }

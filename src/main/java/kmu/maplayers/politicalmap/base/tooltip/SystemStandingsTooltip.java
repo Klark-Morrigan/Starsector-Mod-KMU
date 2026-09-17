@@ -16,7 +16,7 @@ import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
 import kmu.maplayers.politicalmap.base.dominance.SystemStandings;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.Optional;
 
@@ -272,7 +272,7 @@ public abstract class SystemStandingsTooltip extends PoliticalMapCellTooltip {
 
         for (var block : StandingBlock.values()) {
             body.appendSection(
-                KmuStrings.get(block.resolveHeadingKey(contestWording)),
+                KmuStringKeys.get(block.resolveHeadingKey(contestWording)),
                 StandingRowResolver.resolveRows(
                     sector,
                     ranking.routing().selectStandingsIn(block),

@@ -60,7 +60,7 @@ public interface PoliticalMapView {
      * player clicks to activate it. A key rather than the resolved string so the segment follows
      * the player's language and the resolution stays with the view radio that draws it.
      *
-     * @return the {@code KmuStrings} key for this view's radio-segment label
+     * @return the {@code KmuStringKeys} key for this view's radio-segment label
      */
     String getSegmentLabelKey();
 

@@ -11,7 +11,7 @@ import kmu.maplayers.politicalmap.base.NameFormatPreference;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,19 +59,19 @@ public final class PoliticalMapBodyControls {
             ControlSpec.Checkbox.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
                 new TextSpan(
-                    KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_UNINHABITED),
+                    KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
                 UninhabitedOutlinePreference.isOutlineDrawn(target.memoryScope()),
                 cellIndex -> toggleUninhabitedSystems(target)),
             ControlSpec.HorizontalRadio
                 .of(
                     List.of(
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_FULL),
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_SHORT),
-                        KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NAME_NONE)),
+                        KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NAME_FULL),
+                        KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NAME_SHORT),
+                        KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NAME_NONE)),
                     nameFormatRadioState(target.memoryScope()),
                     segmentIndex -> selectNameFormatSegment(segmentIndex, target))
-                .showsCaption(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FACTION_NAMES)));
+                .showsCaption(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_FACTION_NAMES)));
     }
 
     /**
@@ -89,7 +89,7 @@ public final class PoliticalMapBodyControls {
 
         var labels = new ArrayList<String>();
         for (var view : PoliticalMapViewRegistry.getViews()) {
-            labels.add(KmuStrings.get(view.getSegmentLabelKey()));
+            labels.add(KmuStringKeys.get(view.getSegmentLabelKey()));
         }
         // No caption: the segment labels already name the views, so a trailing word would only repeat
         // what the row reads as.

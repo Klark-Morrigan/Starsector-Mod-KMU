@@ -5,7 +5,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 
@@ -32,7 +32,7 @@ public final class AllianceBodyControls {
     public static List<ControlSpec> buildControls(BodyControlTarget target) {
         return RecedeControl.buildControls(
             RecedePreferences.ALLIANCE_NON_ALLIED,
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),
+            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION),
             target);
     }
 }

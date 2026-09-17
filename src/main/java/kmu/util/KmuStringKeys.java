@@ -3,17 +3,18 @@ package kmu.util;
 import kmlib.starsector.strings.StarsectorStrings;
 
 /**
- * KMU's localisation entry point. Holds the KMU settings category
- * and the string IDs registered in {@code data/strings/strings.json},
- * and exposes thin {@link #get(String)} / {@link #format(String, Object...)}
- * accessors that bind the KMU category so call sites do not have to
- * repeat it.
+ * KMU's localisation entry point. Holds the category KMU registers in
+ * {@code data/strings/strings.json}, the IDs of the strings inside it,
+ * and thin {@link #get(String)} / {@link #format(String, Object...)}
+ * accessors that bind that category so call sites never repeat it.
  *
  * <p>The lookup and fallback behaviour live in KMLib's
  * {@link StarsectorStrings}; this class is a category-bound shortcut,
  * not a parallel implementation.
  */
-public final class KmuStrings {
+public final class KmuStringKeys {
+
+    /** strings.json category namespacing every KMU-owned string. */
     public static final String CATEGORY = "kmu";
 
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
@@ -171,7 +172,7 @@ public final class KmuStrings {
     public static final String POLITICAL_MAP_TOOLTIP_PATROL_MEDIUM = "political_map_tooltip_patrol_medium";
     public static final String POLITICAL_MAP_TOOLTIP_PATROL_LARGE = "political_map_tooltip_patrol_large";
 
-    private KmuStrings() {
+    private KmuStringKeys() {
     }
 
     /** Looks up {@code key} under the KMU category. See

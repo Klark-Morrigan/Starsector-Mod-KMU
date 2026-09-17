@@ -37,7 +37,7 @@ import kmu.maplayers.politicalmap.base.ribbon.RibbonSegmentLengths;
 import kmu.maplayers.politicalmap.base.ribbon.UncontestedRibbonRuns;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -97,7 +97,7 @@ final class ClaimsViewTest {
         @Test
         void getSegmentLabelKeyIsTheClaimsRadioLabel() {
             assertThat(ClaimsView.INSTANCE.getSegmentLabelKey())
-                .isEqualTo(KmuStrings.POLITICAL_MAP_CTL_CLAIMS);
+                .isEqualTo(KmuStringKeys.POLITICAL_MAP_CTL_CLAIMS);
         }
     }
 

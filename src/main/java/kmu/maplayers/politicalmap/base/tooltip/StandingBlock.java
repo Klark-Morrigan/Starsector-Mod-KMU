@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base.tooltip;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.function.Function;
 
@@ -29,17 +29,17 @@ public enum StandingBlock {
      * The bloc the map fills the system in the colour of. The strongest of those in the running,
      * which is what keeps the box an explanation of the cell beneath it.
      */
-    HOLDER(wording -> KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
+    HOLDER(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_DOMINATED),
 
     /** The blocs the alliance set folds into the holder's own, which are not contesting it. */
-    ALLIED(wording -> KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER),
+    ALLIED(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_ALLIED_WITH_SYSTEM_HOLDER),
 
     /**
      * The blocs on good terms with the holder without standing in its alliance. Inside the allied
      * block rather than beside it: an ally who is merely favourable is still an ally, so disposition
      * sorts only what alliance left standing against the holder.
      */
-    FRIENDLY(wording -> KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER),
+    FRIENDLY(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_FRIENDLY_WITH_SYSTEM_HOLDER),
 
     /**
      * The blocs standing against the holder - or merely standing beside it, on an install where no
@@ -53,7 +53,7 @@ public enum StandingBlock {
      * and never named as holding it. Which blocs those are is
      * {@link kmu.maplayers.politicalmap.base.dominance.BlocCandidacy}'s answer.
      */
-    NON_POLITICAL(wording -> KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL);
+    NON_POLITICAL(wording -> KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_NON_POLITICAL);
 
     private final Function<ContestWording, String> headingKeySource;
 

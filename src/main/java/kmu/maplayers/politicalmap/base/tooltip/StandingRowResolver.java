@@ -11,7 +11,7 @@ import kmu.maplayers.politicalmap.base.dominance.GroupStanding;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.StandingFraction;
 import kmu.maplayers.politicalmap.base.dominance.WeighedFactionStanding;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -162,8 +162,8 @@ public final class StandingRowResolver {
         if (!fraction.isStated()) {
             return line;
         }
-        return line.qualifiedWith(KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
+        return line.qualifiedWith(KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_FRACTION,
             fraction.count(),
             fraction.total()));
     }

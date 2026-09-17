@@ -25,7 +25,7 @@ import kmu.maplayers.politicalmap.base.ribbon.SystemRibbonPlanner;
 import kmu.maplayers.politicalmap.base.tooltip.SystemClaimTooltip;
 import kmu.maplayers.politicalmap.claims.ribbon.ClaimedSystemRibbonPlanner;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.Optional;
 
@@ -77,7 +77,7 @@ public final class ClaimsView implements PoliticalMapView {
     public String getSegmentLabelKey() {
         // "Claims" - this view's segment on the view-selector radio, sibling to the faction and
         // alliance ones.
-        return KmuStrings.POLITICAL_MAP_CTL_CLAIMS;
+        return KmuStringKeys.POLITICAL_MAP_CTL_CLAIMS;
     }
 
     @Override

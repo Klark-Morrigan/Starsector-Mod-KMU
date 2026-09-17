@@ -4,7 +4,7 @@ import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
 import java.util.Comparator;
@@ -78,7 +78,7 @@ public final class BlocMetricSortMode<S extends BlocMetrics> implements ListSort
      */
     @Override
     public String resolveLabelText() {
-        return KmuStrings.get(labelKey);
+        return KmuStringKeys.get(labelKey);
     }
 
     /**

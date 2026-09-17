@@ -6,7 +6,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
 import kmlib.text.KmlibNumbers;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
 import java.util.Comparator;
@@ -113,7 +113,7 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
      */
     @Override
     public String resolveLabelText() {
-        return KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_SORT_ATTITUDE);
+        return KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_SORT_ATTITUDE);
     }
 
     /**
@@ -201,7 +201,7 @@ public final class BlocStandingSortMode<S extends BlocMetrics>
         return List.of(
             lowestRun,
             new TextSpan(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR),
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_SORT_ATTITUDE_RANGE_SEPARATOR),
                 defaultColour).joinsPreviousRun(),
             resolveRelationRun(range.highest()).joinsPreviousRun());
     }

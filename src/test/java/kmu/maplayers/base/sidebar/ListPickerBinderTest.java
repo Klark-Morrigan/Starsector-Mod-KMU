@@ -13,7 +13,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.starsector.StarsectorUiColoursMock;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -133,7 +133,7 @@ final class ListPickerBinderTest {
         void buildPickerLightsTheRowTheSlotsStoredIdNames() {
             // The ID the picker lights comes from this slot, which is the read half of the
             // binding - a picker handed nothing would light no row whatever the save holds.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -155,7 +155,7 @@ final class ListPickerBinderTest {
             // The picker takes its caption as drawn text, so resolving it out of this mod's table is
             // the binder's - a caller left to pass it would be naming a string key the picker has no
             // business knowing.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -169,7 +169,7 @@ final class ListPickerBinderTest {
 
         @Test
         void buildPickerWritesAnItemPickIntoTheSlot() {
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -186,7 +186,7 @@ final class ListPickerBinderTest {
         void buildPickerWritesAnItemPickUnderTheSlotItWasBuiltFor() {
             // The slot is captured at the build, so a picker stood on one panel files its pick there
             // whatever screen is up when the click is handled.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -211,7 +211,7 @@ final class ListPickerBinderTest {
         void buildPickerClearsTheSlotOnARePick() {
             // The picker reports a clear rather than a pick when the lit row is re-clicked, and the
             // clear lands on this slot alone.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -233,7 +233,7 @@ final class ListPickerBinderTest {
             // The pointer's row reaches the sector's own slot, which is what a layer previews the
             // spotlight from. Written into the scope the picks use, so a layer cannot end up
             // previewing one scope's row while filtering by another's.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -251,7 +251,7 @@ final class ListPickerBinderTest {
             // The leave is the one reading a stream never says out loud, so it arrives as a report
             // of its own - swallowed here, a layer would go on previewing the last row the pointer
             // crossed while the pointer is somewhere else entirely.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var selectionMock = mockStatic(FilterSelection.class)) {
 
                 stubLabels(stringsMock);
@@ -271,7 +271,7 @@ final class ListPickerBinderTest {
             // The other two picks are handed to the binders that already own those slots. Asserted
             // at the binder rather than at the sector-memory key behind it: what this class decides
             // is which binder a report goes to, and the binder's own suite pins the write.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var binderMock = mockStatic(ColumnSelectionBinder.class)) {
 
                 stubLabels(stringsMock);
@@ -293,7 +293,7 @@ final class ListPickerBinderTest {
             // the screen half of this slot, which is exactly where a pick above is written back, so
             // the count a list lays out under and the count a click stores cannot name two screens
             // or two mods.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var binderMock = mockStatic(ColumnSelectionBinder.class)) {
 
                 stubLabels(stringsMock);
@@ -310,7 +310,7 @@ final class ListPickerBinderTest {
         void buildPickerWrapsTheListAcrossTheStoredColumnCount() {
             // What that read is for: the stored count reaches the list rather than a default, so a
             // player who wrapped this panel's list finds it wrapped on the next body build.
-            try (var stringsMock = mockStatic(KmuStrings.class);
+            try (var stringsMock = mockStatic(KmuStringKeys.class);
                     var binderMock = mockStatic(ColumnSelectionBinder.class)) {
 
                 stubLabels(stringsMock);
@@ -323,7 +323,7 @@ final class ListPickerBinderTest {
 
         @Test
         void buildPickerRoutesASortPickToTheSortBinder() {
-            try (var stringsMock = mockStatic(KmuStrings.class)) {
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stubLabels(stringsMock);
 
@@ -344,7 +344,7 @@ final class ListPickerBinderTest {
             // lets two layers holding different vocabularies share the one binder. Read under the
             // scope the item pick uses, so a layer cannot bind its filter and its sort to different
             // slots.
-            try (var stringsMock = mockStatic(KmuStrings.class)) {
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stubLabels(stringsMock);
                 buildPicker();
@@ -360,7 +360,7 @@ final class ListPickerBinderTest {
             // before any stored sort is resolved - resolving first would land on nothing. Both
             // halves are asserted, since returning no controls while still reading the vocabulary
             // would fail only once a caller actually handed over an empty picker in play.
-            try (var stringsMock = mockStatic(KmuStrings.class)) {
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stubLabels(stringsMock);
 
@@ -398,9 +398,9 @@ final class ListPickerBinderTest {
     // Stubs the one piece of text the binder resolves through this mod's strings table - the columns
     // caption, which is the framework's own chrome. The sort rows' labels are the caller's
     // vocabulary's and arrive already drawn.
-    private static void stubLabels(MockedStatic<KmuStrings> stringsMock) {
+    private static void stubLabels(MockedStatic<KmuStringKeys> stringsMock) {
         stringsMock
-            .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION))
+            .when(() -> KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");
     }
 

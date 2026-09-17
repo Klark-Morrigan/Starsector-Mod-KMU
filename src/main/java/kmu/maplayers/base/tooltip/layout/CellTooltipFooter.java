@@ -8,7 +8,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipSection;
 
 import kmu.maplayers.base.tooltip.HoverTooltipDetailLevelInput;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -153,6 +153,6 @@ final class CellTooltipFooter {
     // What the line says about the entries the box could not fit - the count over the whole box,
     // whichever listings the cut fell in.
     private static String formatWithheldPhrase(int withheldEntryCount) {
-        return KmuStrings.format(KmuStrings.MAP_LAYER_TOOLTIP_FOOTER_WITHHELD, withheldEntryCount);
+        return KmuStringKeys.format(KmuStringKeys.MAP_LAYER_TOOLTIP_FOOTER_WITHHELD, withheldEntryCount);
     }
 }

@@ -9,7 +9,7 @@ import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.starsector.StarsectorSettingsFake;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,7 +90,7 @@ final class RecedeControlTest {
 
         @Test
         void buildControlsHeadsWithTheCallerCaptionLabel() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
@@ -108,7 +108,7 @@ final class RecedeControlTest {
         void buildControlsPlacesMuteThenDesaturateCheckboxes() {
             // The two toggles read left-to-right: Mute before Desaturate, both checkboxes, so the
             // control reads "<caption> [ ] Muted [ ] Desaturated".
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
 
@@ -125,7 +125,7 @@ final class RecedeControlTest {
         void buildControlsLightsTheMuteCheckboxWhenTheBackdropIsMuted() {
             // The checkbox reflects the passed set's live toggle, so a set that muted its receded
             // backdrop shows the box ticked (its one cell, index 0, lit) on the next rebuild.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(true);
@@ -136,7 +136,7 @@ final class RecedeControlTest {
 
         @Test
         void buildControlsLeavesTheMuteCheckboxOffWhenTheBackdropIsNotMuted() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(false);
@@ -148,7 +148,7 @@ final class RecedeControlTest {
 
         @Test
         void buildControlsLightsTheDesaturateCheckboxWhenTheBackdropIsDesaturated() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(true);
@@ -160,7 +160,7 @@ final class RecedeControlTest {
 
         @Test
         void buildControlsLeavesTheDesaturateCheckboxOffWhenTheBackdropIsNotDesaturated() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(false);
@@ -174,7 +174,7 @@ final class RecedeControlTest {
         void clickingTheMuteCheckboxTurnsMutingOnWhenItIsOff() {
             // A checkbox click flips the passed set's toggle, so clicking an unticked Mute box turns
             // muting on for that set.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(false);
@@ -187,7 +187,7 @@ final class RecedeControlTest {
 
         @Test
         void clickingTheMuteCheckboxTurnsMutingOffWhenItIsOn() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isMuted(BUILT_SCREEN)).thenReturn(true);
@@ -200,7 +200,7 @@ final class RecedeControlTest {
 
         @Test
         void clickingTheDesaturateCheckboxTurnsDesaturationOnWhenItIsOff() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(false);
@@ -213,7 +213,7 @@ final class RecedeControlTest {
 
         @Test
         void clickingTheDesaturateCheckboxTurnsDesaturationOffWhenItIsOn() {
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubCheckboxLabels(stringsMock);
                 var preferencesMock = mock(RecedePreferences.class);
                 when(preferencesMock.isDesaturated(BUILT_SCREEN)).thenReturn(true);
@@ -237,10 +237,10 @@ final class RecedeControlTest {
     // Stubs the two checkbox labels to their plain text so the assertions read the wiring - which key
     // lands in which position - without depending on the live strings table. The caption is the
     // caller's own string, passed in, so it needs no stub.
-    private static void stubCheckboxLabels(MockedStatic<KmuStrings> stringsMock) {
-        stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED))
+    private static void stubCheckboxLabels(MockedStatic<KmuStringKeys> stringsMock) {
+        stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_MUTED))
                 .thenReturn("Muted");
-        stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED))
+        stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_DESATURATED))
                 .thenReturn("Desaturated");
     }
 }
