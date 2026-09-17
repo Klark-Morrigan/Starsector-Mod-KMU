@@ -35,6 +35,10 @@ import javax.swing.JPanel;
  * nothing inside was independently disabled - true of a panel of settings, and the reason this
  * belongs to a section rather than to controls in general.
  *
+ * <p>The folds inside it are the exception, and stay live whatever the switch is set to. A fold
+ * is not a setting: it says whether rows are on screen, so greying one would mean a reader had
+ * to switch a whole run on to find out what is in it.
+ *
  * <p>Both what the switch is set to and whether the run is folded are remembered, under keys
  * given rather than taken from the heading. A heading is copy and gets reworded; two sections
  * that came to be worded alike would then share a key and fold each other.
@@ -183,7 +187,7 @@ public final class CollapsibleSection {
 
         // Capped, for the reason a divider is: the column's layout offers a row everything
         // left over, and an uncapped heading would take the height of the window.
-        var heading = ControlRows.buildCappedRow(new BorderLayout());
+        var heading = RowFurniture.buildCappedRow(new BorderLayout());
 
         heading.add(fold, BorderLayout.WEST);
         heading.add(title, BorderLayout.CENTER);
@@ -201,6 +205,14 @@ public final class CollapsibleSection {
     // Swing does not pass enablement down a container, so a disabled panel still draws its
     // children live. Walked rather than set on the body alone for that reason.
     private static void applyEnabled(Component component, boolean isEnabled) {
+
+        // A fold is left as it was, and so is anything under it. The walk cannot otherwise tell
+        // a setting from a view, so it would take the folds of every tree row in the section -
+        // and of every section nested in it - along with the switches, leaving a branch that
+        // cannot be opened precisely while its section is off.
+        if (FoldControls.isFoldControl(component)) {
+            return;
+        }
 
         component.setEnabled(isEnabled);
 

@@ -1,9 +1,9 @@
 package kmu.desktop.ui.swing;
 
-import java.awt.Dimension;
-import java.awt.Insets;
+import java.awt.Component;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 
 /**
  * The control that folds something away, and the one statement of what one looks like.
@@ -18,9 +18,10 @@ import javax.swing.JButton;
  * end up opposite - at which point half the panel says "press me to open" and the other half
  * says "this is open".
  *
- * <p>ASCII only, for the reason the reset button is: the viewer runs wherever the JDK's default
- * font does, and a glyph that renders as a box makes the control unreadable rather than merely
- * plain.
+ * <p>What one LOOKS like is not decided here. A fold and a reset are the same small square
+ * button to the eye, and {@link RowFurniture#buildMarkButton} is where that is stated once; what
+ * belongs to a fold is the marks it carries, that it is chrome rather than a setting, and that
+ * it stays live when the settings around it do not.
  */
 public final class FoldControls {
 
@@ -29,10 +30,14 @@ public final class FoldControls {
 
     private static final String FOLD_TOOLTIP = "Fold this away";
 
-    // Square enough to read as a marker rather than a button with a caption, and small enough
-    // that a column of them beside checkboxes does not set the row height.
-    private static final int FOLD_BUTTON_WIDTH = 22;
-    private static final int FOLD_BUTTON_HEIGHT = 18;
+    // What marks a control as a fold rather than a setting, for the one walk that has to tell
+    // them apart: greying a section's body must not take the folds inside it with the switches.
+    //
+    // A mark rather than a test on JButton, because the panel's other buttons are settings -
+    // every reset is one - and a rule written by type would either spare those too or spare
+    // neither. Qualified, since a client property is a slot on the component shared with the
+    // look-and-feel's own.
+    private static final String FOLD_MARKER = "kmu.desktop.ui.swing.isFold";
 
     private FoldControls() {
     }
@@ -42,7 +47,7 @@ public final class FoldControls {
      *         keep its label in line with the rows that have one
      */
     public static int measureFoldWidth() {
-        return FOLD_BUTTON_WIDTH;
+        return RowFurniture.measureMarkWidth();
     }
 
     /**
@@ -56,14 +61,30 @@ public final class FoldControls {
      */
     public static JButton buildFoldButton(boolean isUnfolded) {
 
-        var fold = new JButton(isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL);
+        var fold = RowFurniture.buildMarkButton(
+            isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL, FOLD_TOOLTIP);
 
-        fold.setToolTipText(FOLD_TOOLTIP);
-        fold.setMargin(new Insets(0, 0, 0, 0));
-        fold.setPreferredSize(new Dimension(FOLD_BUTTON_WIDTH, FOLD_BUTTON_HEIGHT));
+        fold.putClientProperty(FOLD_MARKER, Boolean.TRUE);
         fold.setFocusable(false);
 
         return fold;
+    }
+
+    /**
+     * Whether a control is one of these.
+     *
+     * <p>Asked by whatever greys a run of controls. A fold decides nothing about the map - it
+     * says whether the rows beneath it are on screen - so it stays live however the settings
+     * around it stand: a reader has to be able to open a branch and read what is in it without
+     * switching an overlay on to do it, which is the opposite of what the panel is for.
+     *
+     * @param control the control, which may be anything and may be null
+     * @return whether it folds something away
+     */
+    public static boolean isFoldControl(Component control) {
+
+        return control instanceof JComponent component
+            && Boolean.TRUE.equals(component.getClientProperty(FOLD_MARKER));
     }
 
     /**

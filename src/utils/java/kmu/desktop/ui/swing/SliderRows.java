@@ -88,13 +88,7 @@ public final class SliderRows {
      */
     public static JPanel buildSlider(SliderSpec spec) {
 
-        var parts = prepareSlider(spec.key(), spec.range(), spec.work());
-
-        return ControlRows.layOutLabelledRow(
-            spec.title(),
-            parts.valueBox(),
-            buildReset(parts, spec),
-            parts.slider());
+        return RowFurniture.layOutLabelledRow(describeRow(spec));
     }
 
     /**
@@ -130,43 +124,50 @@ public final class SliderRows {
      */
     public static JPanel buildSliderPair(SliderSpec left, SliderSpec right) {
 
-        return ControlRows.layOutPairedRow(layOutStacked(left), layOutStacked(right));
+        return RowFurniture.layOutPairedRow(layOutStacked(left), layOutStacked(right));
     }
 
     // One slider in the shape a paired line wants.
     private static JPanel layOutStacked(SliderSpec spec) {
 
-        var parts = prepareSlider(spec.key(), spec.range(), spec.work());
+        return RowFurniture.layOutStackedRow(describeRow(spec));
+    }
 
-        return ControlRows.layOutStackedRow(
+    // One knob built and named, in the shape either row takes. Shared because the two shapes
+    // differ in where the name sits and in nothing else: built apart, they were the same four
+    // parts listed twice, free to come to hold different things.
+    private static RowFurniture.RowParts describeRow(SliderSpec spec) {
+
+        var parts = prepareSlider(spec);
+
+        return new RowFurniture.RowParts(
             spec.title(), parts.valueBox(), buildReset(parts, spec), parts.slider());
     }
 
     // Putting one slider back where it started, which is the same act in either row shape.
     private static Runnable buildReset(SliderParts parts, SliderSpec spec) {
 
-        return () -> applyValue(
-            parts, spec.key(), spec.range(), spec.work(), spec.range().fallback());
+        return () -> applyValue(parts, spec, spec.range().fallback());
     }
 
     // The widgets and the wiring, which are the same whichever shape the row is laid out in.
     // Everything that reads or writes the value happens here; only where the name sits differs.
-    private static SliderParts prepareSlider(String key, SliderRange range, SliderWork work) {
+    private static SliderParts prepareSlider(SliderSpec spec) {
 
-        var saved = readDouble(key, range.fallback());
+        var saved = readDouble(spec.key(), spec.range().fallback());
 
         var parts = new SliderParts(
-            new JSlider(0, SLIDER_STEPS, convertToStep(saved, range)),
+            new JSlider(0, SLIDER_STEPS, convertToStep(saved, spec.range())),
             new JTextField(VALUE_BOX_COLUMNS),
             new boolean[1]);
 
         parts.valueBox().setMaximumSize(new Dimension(VALUE_BOX_WIDTH, VALUE_BOX_HEIGHT));
 
-        bindHandleMovement(parts, key, range, work);
-        bindTypedValue(parts, key, range, work);
+        bindHandleMovement(parts, spec);
+        bindTypedValue(parts, spec);
 
         parts.valueBox().setText(formatValue(saved));
-        work.apply().accept(saved);
+        spec.work().apply().accept(saved);
 
         return parts;
     }
@@ -190,70 +191,57 @@ public final class SliderRows {
 
     // Dragging the handle: the box follows, the knob takes the value, and the expensive work
     // waits until the handle is let go.
-    private static void bindHandleMovement(
-            SliderParts parts,
-            String key,
-            SliderRange range,
-            SliderWork work) {
+    private static void bindHandleMovement(SliderParts parts, SliderSpec spec) {
 
         parts.slider().addChangeListener(event -> {
 
-            var value = convertToValue(parts.slider().getValue(), range);
+            var value = convertToValue(parts.slider().getValue(), spec.range());
 
             if (!parts.isSyncing()[0]) {
                 parts.valueBox().setText(formatValue(value));
             }
 
-            work.apply().accept(value);
+            spec.work().apply().accept(value);
 
-            writeDouble(key, value);
+            writeDouble(spec.key(), value);
 
-            work.onChanged().run();
+            spec.work().onChanged().run();
 
             if (!parts.slider().getValueIsAdjusting()) {
-                work.onSettled().run();
+                spec.work().onSettled().run();
             }
         });
     }
 
     // Typing a value: anything unreadable puts the box back to where the handle stands, so a
     // half-typed number cannot leave the two showing different things.
-    private static void bindTypedValue(
-            SliderParts parts,
-            String key,
-            SliderRange range,
-            SliderWork work) {
+    private static void bindTypedValue(SliderParts parts, SliderSpec spec) {
 
         parts.valueBox().addActionListener(event -> {
 
-            var typed = parseValue(parts.valueBox().getText(), range);
+            var typed = parseValue(parts.valueBox().getText(), spec.range());
 
             if (Double.isNaN(typed)) {
 
                 parts.valueBox().setText(
-                    formatValue(convertToValue(parts.slider().getValue(), range)));
+                    formatValue(convertToValue(parts.slider().getValue(), spec.range())));
                 return;
             }
-            applyValue(parts, key, range, work, typed);
+            applyValue(parts, spec, typed);
         });
     }
 
     // One value put through everything: the widgets, the knob, the saved value and both halves
     // of the work. Shared by the typed box and the reset button, which are the same act.
-    private static void applyValue(
-            SliderParts parts,
-            String key,
-            SliderRange range,
-            SliderWork work,
-            double value) {
+    private static void applyValue(SliderParts parts, SliderSpec spec, double value) {
 
-        applyTypedValue(parts, range, value);
-        work.apply().accept(value);
+        applyTypedValue(parts, spec.range(), value);
+        spec.work().apply().accept(value);
 
-        writeDouble(key, value);
+        writeDouble(spec.key(), value);
 
-        work.onChanged().run();
-        work.onSettled().run();
+        spec.work().onChanged().run();
+        spec.work().onSettled().run();
     }
 
     // Set explicitly rather than left to the slider's own listener: the step a value

@@ -118,10 +118,16 @@ public final class WindowLayout {
         }
     }
 
-    // Window size and divider, kept across runs. A geometry knob is only worth anything at a
-    // particular zoom and a particular amount of screen, and having to re-establish both
-    // before every session is enough friction to stop someone checking a shape they would
-    // otherwise have checked.
+    /**
+     * Puts a window back to the size it was and its divider back where it sat.
+     *
+     * <p>Remembered at all because a geometry knob is only worth anything at a particular zoom
+     * and a particular amount of screen, and having to re-establish both before every session is
+     * enough friction to stop someone checking a shape they would otherwise have checked.
+     *
+     * @param frame the window
+     * @param split the divider between the map and the controls
+     */
     public static void restoreLayout(JFrame frame, JSplitPane split) {
 
         var saved = SavedValues.findSavedValues();

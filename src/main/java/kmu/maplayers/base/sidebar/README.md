@@ -241,9 +241,9 @@ and filtered.
 `SortSelection`,
 `ColumnSelection`,
 and `FilterSelection` are those stores,
-and `SortSelectionBinder`,
-`ColumnSelectionBinder`,
-and `FilterSelectionBinder` are what tie each to the widget that changes it.
+and `ListPickerBinder` is the one call that ties all three to the widget that changes them -
+`SortSelectionBinder` and `ColumnSelectionBinder` being how it reaches two of them,
+and the filter it reaches directly.
 `ScreenSelectionSlot` and `SelectionSlot` are what they are addressed by,
 over the `MapLayerStoreNamespace` that says whose answers a slot holds,
 and `FilterHoverSlot` stands beside them under a `PickerScope`,
@@ -251,8 +251,17 @@ holding where the pointer rests rather than what was picked -
 which is no fourth store:
 what it holds belongs to a sector rather than to a save.
 Three stores,
-three binders,
+one door over them,
 the three addresses they take and the hover slot is the whole of this half of the package.
+
+**A mod's own rows are all a consumer brings.**
+Its item type implements KMLib's `SelectableListItem`,
+its own vocabulary implements `ListSortMode`,
+the two arrive bundled as a `ListPicker`,
+and one `ListPickerBinder.buildPicker` hands back the whole block with every pick persisted -
+so the list this mod's own spotlight picker is made of is reachable by a mod that knows nothing about this one.
+Nothing about where an answer is kept appears in the calling layer,
+which is what makes it the same call for a consumer and for the layer the components came out of.
 
 The stores are leaves:
 they hold the raw stored keys and nothing that resolves one.
@@ -387,27 +396,37 @@ what stays the caller's is clearing within a sector's life,
 at the pointer leaving a row and at a panel standing down without a leave ever being reported,
 since neither is visible from here.
 
-`FilterSelectionBinder` is the one binder that also builds,
-because the picker's three ties resolve at one point:
-it reads the scope's spotlighted ID and the scope's stored sort on the way in,
+`ListPickerBinder` is the one that also builds,
+because the picker's four ties resolve at one point:
+it reads the scope's spotlighted ID,
+the scope's stored sort and the screen's stored column count on the way in,
 resolves the columns caption out of this mod's strings,
-and routes each of the picker's three reported picks to the slot that keeps it -
+and routes each of the picker's three reported picks back to the slot that keeps it -
 the item pick to `FilterSelection` under that scope,
-the other two through the binders beside it,
-the sort under that same scope.
+the other two through the binders beside it.
 The row the pointer rests on routes the same way,
 into `FilterHoverSlot` under the `PickerScope` that slot resolves to,
 and it is the one report that raises nothing and persists nothing:
 a preview is drawn over paint already on the map.
-One slot covers every one of those answers,
+
+**Every one of those addresses is derived from the one `SelectionSlot`** -
+the column count off its `ScreenSelectionSlot`,
+the hover off the `PickerScope` it resolves to,
+the other two off the slot whole -
 so a layer cannot bind its filter,
-its sort and its preview to different lists.
-A layer that composed the picker itself would have to name all three slots,
-which is exactly the knowledge these binders exist to hold,
-so a calling layer hands over its `ListPicker`,
-its column count,
-and whatever it pairs beside the sort selector,
+its sort,
+its column count and its preview to different lists.
+A caller resolving one of the three reads for itself and passing the value in would be reading at an address composed beside the slot rather than from it,
+which is the one way a picker's answers come apart:
+a count read under the other screen re-wraps the list on this one.
+So a calling layer hands over its `ListPicker` and whatever it pairs beside the sort selector,
 and names no store at all.
+
+The columns caption is resolved here rather than taken from the caller because it is the framework's own chrome.
+The split is the one the layer seam already draws:
+a row's name and a sort mode's label say what the caller's list holds and are the caller's to resolve,
+while the word over a column count says what the control does and is the host's,
+read from this mod's bundle as the framework's settings are read from this mod's tabs.
 
 The sector arrives as the whole `SectorMapMachinery` rather than as the refresh board alone,
 because two of those writers are that sector's:

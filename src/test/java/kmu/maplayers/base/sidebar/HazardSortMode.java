@@ -6,6 +6,8 @@ import kmlib.starsector.ui.widgets.lists.SortDirection;
 
 import kmu.util.KmuStrings;
 
+import org.mockito.MockedStatic;
+
 import java.awt.Color;
 import java.util.Comparator;
 import java.util.List;
@@ -70,6 +72,22 @@ enum HazardSortMode implements ListSortMode<Hazard> {
         this.ascendingOrder = ascendingOrder;
     }
 
+    /**
+     * Stubs every mode's label on a mocked strings table, so a suite exercising a picker over these
+     * modes resolves drawable text without the live table. A control's labels are copied and reject a
+     * null option name, so a suite that skips this fails on the read rather than on what it is about;
+     * the constant names stand in for the drawn labels, which no assertion reads.
+     *
+     * @param stringsMock the mocked strings table these labels resolve through
+     */
+    static void stubLabelsOn(MockedStatic<KmuStrings> stringsMock) {
+        for (var mode : values()) {
+            stringsMock
+                .when(() -> KmuStrings.get(mode.labelKey))
+                .thenReturn(mode.name());
+        }
+    }
+
     @Override
     public String persistenceKey() {
         return persistenceKey;
@@ -90,11 +108,5 @@ enum HazardSortMode implements ListSortMode<Hazard> {
         return direction == SortDirection.ASCENDING
             ? ascendingOrder
             : ascendingOrder.reversed();
-    }
-
-    // The key this mode's label resolves through, so a suite stubbing the strings table names the
-    // same key the resolution reads rather than repeating the spelling.
-    String labelKey() {
-        return labelKey;
     }
 }
