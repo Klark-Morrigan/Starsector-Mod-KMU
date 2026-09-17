@@ -632,10 +632,11 @@ public final class ControlRows {
     /**
      * A label that wraps instead of running off the end of its column.
      *
-     * <p>A {@link JLabel} truncates, which loses the end of the name - and it is the end that
-     * carries the units, so a cut label reads as a different knob rather than as a shortened
-     * one. A text area laid out to look like a label wraps to whatever width it is given, which
-     * is what lets a narrow column hold a long name without anything being reworded to fit.
+     * <p>A {@link javax.swing.JLabel} truncates, which loses the end of the name - and it is the
+     * end that carries the units, so a cut label reads as a different knob rather than as a
+     * shortened one. A text area laid out to look like a label wraps to whatever width it is
+     * given, which is what lets a narrow column hold a long name without anything being reworded
+     * to fit.
      *
      * <p>Not editable, not focusable and not painted: everything that makes a text area a text
      * area is turned off, and what is left is a label that wraps.
