@@ -564,26 +564,13 @@ public final class ToggleTree {
     // branch's fold does, and the levels stop reading as levels.
     private static JPanel layOutRow(Component box, int indent, JButton fold) {
 
-        var row = new JPanel(new BorderLayout()) {
-
-            // Stacked rather than gridded, and a stack hands out whatever height is going - so
-            // a row that did not cap itself would grow to fill the panel.
-            //
-            // Answered when asked rather than fixed while building, because the height a row
-            // needs is not settled until it has been given a width: a name that wraps is two
-            // lines at one width and three at another, and a cap taken at build time would hold
-            // the row at whatever the first guess was and cut the rest off.
-            @Override
-            public Dimension getMaximumSize() {
-                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
-            }
-        };
+        var row = ControlRows.buildCappedRow(new BorderLayout());
 
         var lead = new JPanel(new BorderLayout()) {
 
             // The gutter that keeps every row's label in line whether or not it has a fold. As
-            // tall as whatever it stands beside, asked for at the same moment and for the same
-            // reason as the cap above.
+            // tall as whatever it stands beside, and asked for when the row is laid out rather
+            // than while it is built, for the reason the cap on the row itself is.
             @Override
             public Dimension getPreferredSize() {
                 return new Dimension(FoldControls.measureFoldWidth(), box.getPreferredSize().height);

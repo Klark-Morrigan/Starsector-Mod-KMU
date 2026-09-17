@@ -357,9 +357,11 @@ final class FilterSelectionBinderTest {
         }
     }
 
-    // The picker list is always the block's last row, so a test reads it from the tail.
+    // The picker list is always the block's last row, and that row is the scrolling section holding
+    // it - so a test reaches through the section and reads the vertical table inside.
     private static ControlSpec.VerticalTable buildPickerFor(List<ControlSpec> controls) {
-        return (ControlSpec.VerticalTable) controls.get(controls.size() - 1);
+        var section = (ControlSpec.ScrollingSection) controls.get(controls.size() - 1);
+        return (ControlSpec.VerticalTable) section.controls().get(0);
     }
 
     // The one call into the binder every test goes through: the two items with their own

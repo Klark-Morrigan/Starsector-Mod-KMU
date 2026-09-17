@@ -5,7 +5,6 @@ import kmu.desktop.ui.SavedValues;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.util.function.Consumer;
 
@@ -182,15 +181,13 @@ public final class CollapsibleSection {
 
     private static JPanel layOutSection(JButton fold, JComponent title, JPanel body) {
 
-        var heading = new JPanel(new BorderLayout());
+        // Capped, for the reason a divider is: the column's layout offers a row everything
+        // left over, and an uncapped heading would take the height of the window.
+        var heading = ControlRows.buildCappedRow(new BorderLayout());
 
         heading.add(fold, BorderLayout.WEST);
         heading.add(title, BorderLayout.CENTER);
         heading.setBorder(BorderFactory.createEmptyBorder(HEADER_PADDING, 0, HEADER_PADDING, 0));
-
-        // Capped, for the reason a divider is: the column's layout offers a row everything
-        // left over, and an uncapped heading would take the height of the window.
-        heading.setMaximumSize(new Dimension(Integer.MAX_VALUE, heading.getPreferredSize().height));
 
         var section = new JPanel();
 

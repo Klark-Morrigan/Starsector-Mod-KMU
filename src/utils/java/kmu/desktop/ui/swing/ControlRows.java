@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -51,6 +52,13 @@ public final class ControlRows {
 
     private static final int SINGLE_ROW = 1;
 
+    private static final int PAIRED_COLUMNS = 2;
+
+    // The gutter between two rows sharing a line. Enough that the left one's track stops short
+    // of the right one's name rather than running into it - with no gap the two read as one
+    // wide control whose parts are unrelated.
+    private static final int PAIR_GUTTER = 8;
+
     private static final int RESET_BUTTON_WIDTH = 22;
 
     private static final int RESET_BUTTON_HEIGHT = 18;
@@ -74,15 +82,12 @@ public final class ControlRows {
      */
     public static JPanel buildDivider() {
 
-        var row = new JPanel(new BorderLayout());
+        // Capped, because a separator takes whatever height it is offered and the column offers
+        // everything left over - without one the rule becomes a gap the height of the window.
+        var row = buildCappedRow(new BorderLayout());
 
         row.add(new JSeparator(SwingConstants.HORIZONTAL), BorderLayout.CENTER);
         row.setBorder(BorderFactory.createEmptyBorder(DIVIDER_PADDING, 0, DIVIDER_PADDING, 0));
-
-        // A separator will take whatever height it is offered, and the panel's layout offers
-        // it everything left over - so without a cap the rule becomes a gap the height of the
-        // window and pushes the knobs under it off the bottom.
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
 
         return row;
     }
@@ -445,23 +450,91 @@ public final class ControlRows {
 
         heading.add(buildWrappingLabel(title), BorderLayout.CENTER);
 
-        var trailing = new JPanel(new BorderLayout());
-
-        trailing.add(valueBox, BorderLayout.CENTER);
-        trailing.add(buildResetButton(reset), BorderLayout.EAST);
-
         // Held to the top of the side rather than filling it, so the value and the reset stay
         // level with the name's FIRST line instead of drifting to the middle of a name that has
         // grown to three.
         var side = new JPanel(new BorderLayout());
 
-        side.add(trailing, BorderLayout.NORTH);
+        side.add(buildValueAndReset(valueBox, reset), BorderLayout.NORTH);
         heading.add(side, BorderLayout.EAST);
 
-        // A border rather than a grid of two equal rows. A grid gives the heading whatever
-        // height the track takes, which is the arrangement that cut a wrapped name off at one
-        // line; under this the heading keeps the height its name needs and the track keeps its
-        // own.
+        return layOutHeadedRow(heading, slider);
+    }
+
+    /**
+     * The same row with its name on a line of its own, above the value and the reset.
+     *
+     * <p>For a row that has half a column rather than a whole one. Beside the value box a name
+     * is left about a quarter of the width, which wraps a long one to four lines; over it the
+     * name has the whole width and settles in two. Measured on the smoothing knobs, the two
+     * shapes come to 104px and 76px in half a column - and the other way round at full width,
+     * where a name fits beside the value and the extra line is wasted.
+     *
+     * <p>So the shape follows the width a row is given, and the only thing that knows which is
+     * whatever decided to pair it.
+     *
+     * @param title    what the control is called
+     * @param valueBox the box showing its value, beside the reset
+     * @param reset    what to do when the reset is pressed
+     * @param slider   the track beneath
+     * @return the row
+     */
+    public static JPanel layOutStackedRow(
+            String title,
+            JTextField valueBox,
+            Runnable reset,
+            JSlider slider) {
+
+        var heading = new JPanel(new BorderLayout());
+
+        heading.add(buildWrappingLabel(title), BorderLayout.NORTH);
+        heading.add(buildValueAndReset(valueBox, reset), BorderLayout.CENTER);
+
+        return layOutHeadedRow(heading, slider);
+    }
+
+    /**
+     * Two rows sharing one line.
+     *
+     * <p>A column of full-width rows spends its height on knobs that do not need it, and the
+     * ones that belong together - a radius and the segments it is drawn with, a height and the
+     * angle it is judged by - say more side by side than stacked.
+     *
+     * <p>Takes finished rows rather than building them, so anything the panel can already lay
+     * out can be paired without this knowing what it is. Each half keeps its own name, value and
+     * reset: the pairing is layout and nothing else, and a shared reset would put two separate
+     * knobs back at once.
+     *
+     * @param left  the row on the left
+     * @param right the row on the right
+     * @return the line holding both
+     */
+    public static JPanel layOutPairedRow(JPanel left, JPanel right) {
+
+        var pair = buildCappedRow(new GridLayout(SINGLE_ROW, PAIRED_COLUMNS, PAIR_GUTTER, 0));
+
+        pair.add(left);
+        pair.add(right);
+
+        return pair;
+    }
+
+    // The value box with its reset, which both row shapes carry and neither owns.
+    private static JPanel buildValueAndReset(JTextField valueBox, Runnable reset) {
+
+        var trailing = new JPanel(new BorderLayout());
+
+        trailing.add(valueBox, BorderLayout.CENTER);
+        trailing.add(buildResetButton(reset), BorderLayout.EAST);
+
+        return trailing;
+    }
+
+    // A heading over a track, which is the half both row shapes share. A border layout rather
+    // than a grid of two equal rows: a grid gives the heading whatever height the TRACK takes,
+    // which is what cuts a wrapped name off at one line.
+    private static JPanel layOutHeadedRow(JPanel heading, JSlider slider) {
+
         var panel = new JPanel(new BorderLayout());
 
         panel.add(heading, BorderLayout.NORTH);
@@ -469,6 +542,34 @@ public final class ControlRows {
         panel.setBorder(BorderFactory.createEmptyBorder(ROW_PADDING, 0, ROW_PADDING, 0));
 
         return panel;
+    }
+
+    /**
+     * A row that refuses to grow past the height it needs.
+     *
+     * <p>Every row in a stacked column wants this. A stack hands out whatever height is going,
+     * so a row that does not refuse the surplus takes the height of the window and pushes the
+     * rows under it off the bottom.
+     *
+     * <p><b>Answered when asked rather than fixed while building.</b> A cap taken while
+     * building freezes a row at a height worked out before it had a width - which is wrong for
+     * any row whose name wraps, since how many lines that takes is not settled until there is a
+     * width to wrap against. It is also what asks for font metrics during construction, and a
+     * machine with no usable fonts cannot supply those: the same call, made at build time, is
+     * what fails on a headless runner.
+     *
+     * @param layout how the row arranges what is put in it
+     * @return the row, empty
+     */
+    public static JPanel buildCappedRow(LayoutManager layout) {
+
+        return new JPanel(layout) {
+
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+            }
+        };
     }
 
     /**

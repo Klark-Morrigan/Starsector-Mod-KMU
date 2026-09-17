@@ -1,40 +1,39 @@
 #!/usr/bin/env bash
-# Auto-fix the executable bit on staged files that must carry +x: *.sh, the
-# gradlew wrappers, and the .githooks/ scripts. Files authored on Windows
-# land in git as mode 0644, which breaks direct execution on Linux (CI bats
-# / gradlew / the hook itself fail with EACCES). This re-stages any such
-# staged file with +x so the commit carries the correct mode.
+# Auto-fixes what this repo's commits need fixing: the executable bit on staged
+# files that must carry it - *.sh, the gradlew wrappers, the .githooks/ scripts
+# - and trailing whitespace in staged Markdown and Gradle scripts.
+#
+# Which fixes a commit gets, and the order they run in, live in
+# Common-Automation's .github/lib/run-pre-commit-fixes.sh (sibling checkout),
+# shared so every repo in the family fixes a commit the same way. What stays
+# here is only what this repo alone knows: where its siblings are, which paths
+# it needs +x on, and which tier it belongs to.
 #
 # Activated by running scripts/setup-hooks.sh once after cloning.
-#
-# Reuses Common-Automation's shared fix engine (sibling checkout) so the hook
-# and the manual fix-permissions runner apply an identical fix; it only
-# widens the staged set beyond *.sh to match this repo's fix-permissions.sh.
 
 set -euo pipefail
 
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "${hook_dir}/.." && pwd)"
-common_automation_root="$(cd "${repo_root}/../Common-Automation" && pwd)"
+shared_fixes="${repo_root}/../Common-Automation/.github/lib/run-pre-commit-fixes.sh"
 
-# Sourced (not executed) to get fix_sh_executable without it running over the
-# whole repo - the hook scopes the fix to just the staged paths it passes.
-# shellcheck source=/dev/null
-source "${common_automation_root}/.github/lib/fix-sh-executable.sh"
-
-# --diff-filter=AM picks up Added and Modified files. Renames keep their
-# previous mode, so a `git mv` from a +x dir does not need fixing. The set
-# mirrors fix-permissions.sh: .sh anywhere, gradlew (root or nested), and
-# anything under .githooks/.
-staged=$(git diff --cached --name-only --diff-filter=AM \
-    | grep -E '(\.sh$|(^|/)gradlew$|^\.githooks/)' || true)
-
-if [[ -z "${staged}" ]]; then
+# Skipped rather than fatal when the sibling is not checked out. These fixes
+# are conveniences: a hook that aborted here would block every commit in a repo
+# that is otherwise perfectly able to build, which is a far worse failure than
+# a commit that keeps a line of trailing whitespace.
+if [[ ! -f "${shared_fixes}" ]]; then
+    echo "pre-commit: Common-Automation is not checked out beside this repo - skipping the staged fixes"
     exit 0
 fi
 
-# Pass the staged paths as args so only what is being committed is touched.
-# fix_sh_executable checks exactly these paths for the missing-+x mode,
-# regardless of extension, so gradlew and the hooks are handled like .sh.
-readarray -t staged_arr <<< "${staged}"
-fix_sh_executable "${staged_arr[@]}"
+# shellcheck source=/dev/null
+source "${shared_fixes}"
+
+# The +x set mirrors scripts/fix-permissions.sh: .sh anywhere, gradlew (root or
+# nested), and anything under .githooks/, the last two having no extension to
+# be recognised by. The types file is the JVM tier's declaration of .gradle as
+# a text type, read from the Common-Java checkout this mod already builds
+# against; it is honoured when present and ignored when not.
+run_pre_commit_fixes \
+    '(\.sh$|(^|/)gradlew$|^\.githooks/)' \
+    "${repo_root}/../Common-Java/.github/lib/trimmed-file-types.sh"
