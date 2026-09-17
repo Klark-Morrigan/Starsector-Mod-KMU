@@ -257,8 +257,8 @@ public final class RowFurniture {
      * building freezes a row at a height worked out before it had a width - which is wrong for
      * any row whose name wraps, since how many lines that takes is not settled until there is a
      * width to wrap against. It is also what asks for font metrics during construction, and a
-     * machine with no usable fonts cannot supply those: the same call, made at build time, is
-     * what fails on a headless runner.
+     * machine whose fontconfig cannot be read cannot supply those: the same call, made at build
+     * time, is what fails on a runner with no fonts configured.
      *
      * @param layout how the row arranges what is put in it
      * @return the row, empty

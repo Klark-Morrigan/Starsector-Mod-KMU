@@ -23,9 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * under the left one's key, opened on the left one's value, or put back by the left one's reset
  * would look entirely correct on screen while being one control wearing two names.
  *
- * <p>Nothing here asks a component for its size. Doing so needs font metrics, which a runner
- * with no usable fonts cannot supply - the failure that took every one of these down the first
- * time they ran on CI.
+ * <p>These need a runner that can measure text, and avoiding size queries is not what makes them
+ * safe. No case here asks a component for its size, but putting a value in the box measures the
+ * line it holds, so the font manager is built whatever the suite declines to ask for. On a runner
+ * whose fontconfig cannot be read that surfaces as an InternalError naming neither fonts nor the
+ * machine - which is why KMU declares awtFontFamiliesRequired, so the build stops ahead of these
+ * with the environment written out.
  */
 final class SliderRowsIntegrationTest {
 
