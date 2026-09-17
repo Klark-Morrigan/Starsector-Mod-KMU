@@ -19,7 +19,7 @@ import javax.swing.JComponent;
  * says "this is open".
  *
  * <p>What one LOOKS like is not decided here. A fold and a reset are the same small square
- * button to the eye, and {@link ControlRows#buildMarkButton} is where that is stated once; what
+ * button to the eye, and {@link RowFurniture#buildMarkButton} is where that is stated once; what
  * belongs to a fold is the marks it carries, that it is chrome rather than a setting, and that
  * it stays live when the settings around it do not.
  */
@@ -47,7 +47,7 @@ public final class FoldControls {
      *         keep its label in line with the rows that have one
      */
     public static int measureFoldWidth() {
-        return ControlRows.measureMarkWidth();
+        return RowFurniture.measureMarkWidth();
     }
 
     /**
@@ -61,7 +61,7 @@ public final class FoldControls {
      */
     public static JButton buildFoldButton(boolean isUnfolded) {
 
-        var fold = ControlRows.buildMarkButton(
+        var fold = RowFurniture.buildMarkButton(
             isUnfolded ? UNFOLDED_LABEL : FOLDED_LABEL, FOLD_TOOLTIP);
 
         fold.putClientProperty(FOLD_MARKER, Boolean.TRUE);

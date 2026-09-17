@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.ui.settings;
 import kmu.desktop.ui.swing.CollapsibleSection;
 import kmu.desktop.ui.swing.ColourRows;
 import kmu.desktop.ui.swing.ControlRows;
+import kmu.desktop.ui.swing.RowFurniture;
 import kmu.desktop.ui.swing.SliderRows;
 import kmu.desktop.ui.swing.ToggleTree;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
@@ -264,7 +265,7 @@ public final class ViewerSettingsPanel {
             "Cell appearance",
             buildSectionBody(this::addCellAppearanceRows)));
 
-        controls.add(ControlRows.buildDivider());
+        controls.add(RowFurniture.buildDivider());
 
         // The void construction, foldable away under a switch of its own. It is by far the
         // longest run in the panel, and a reader working on the cells above is reading it on
@@ -287,7 +288,7 @@ public final class ViewerSettingsPanel {
                 false, on -> settings.showVoidV4 = on, refreshes::refreshVoidV4),
             buildSectionBody(this::addVoidV4Rows)));
 
-        controls.add(ControlRows.buildDivider());
+        controls.add(RowFurniture.buildDivider());
 
         addSharedKnobRows(controls);
 

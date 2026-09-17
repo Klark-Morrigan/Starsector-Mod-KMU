@@ -187,7 +187,7 @@ public final class CollapsibleSection {
 
         // Capped, for the reason a divider is: the column's layout offers a row everything
         // left over, and an uncapped heading would take the height of the window.
-        var heading = ControlRows.buildCappedRow(new BorderLayout());
+        var heading = RowFurniture.buildCappedRow(new BorderLayout());
 
         heading.add(fold, BorderLayout.WEST);
         heading.add(title, BorderLayout.CENTER);

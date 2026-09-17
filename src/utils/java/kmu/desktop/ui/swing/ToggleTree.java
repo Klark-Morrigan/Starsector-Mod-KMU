@@ -385,7 +385,7 @@ public final class ToggleTree {
         if (row instanceof PairRow pair) {
 
             var line = new JPanel(
-                new GridLayout(ControlRows.SINGLE_ROW, ControlRows.PAIRED_COLUMNS));
+                new GridLayout(RowFurniture.SINGLE_ROW, RowFurniture.PAIRED_COLUMNS));
 
             // Each half through this same method, so a half behaves exactly as it would on a
             // line of its own - which is the whole claim a pair makes.
@@ -561,7 +561,7 @@ public final class ToggleTree {
     // branch's fold does, and the levels stop reading as levels.
     private static JPanel layOutRow(Component box, int indent, JButton fold) {
 
-        var row = ControlRows.buildCappedRow(new BorderLayout());
+        var row = RowFurniture.buildCappedRow(new BorderLayout());
 
         var lead = new JPanel(new BorderLayout()) {
 

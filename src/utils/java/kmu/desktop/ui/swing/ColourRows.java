@@ -128,7 +128,7 @@ public final class ColourRows {
             onChange);
 
         var swatches = new JPanel(
-            new GridLayout(ControlRows.SINGLE_ROW, ControlRows.PAIRED_COLUMNS));
+            new GridLayout(RowFurniture.SINGLE_ROW, RowFurniture.PAIRED_COLUMNS));
 
         swatches.add(fillSwatch);
         swatches.add(edgeSwatch);
@@ -162,11 +162,11 @@ public final class ColourRows {
         var trailing = new JPanel(new BorderLayout());
 
         trailing.add(swatches, BorderLayout.CENTER);
-        trailing.add(ControlRows.buildResetButton(reset), BorderLayout.EAST);
+        trailing.add(RowFurniture.buildResetButton(reset), BorderLayout.EAST);
 
         var row = new JPanel(new BorderLayout());
 
-        row.add(ControlRows.buildWrappingLabel(title), BorderLayout.CENTER);
+        row.add(RowFurniture.buildWrappingLabel(title), BorderLayout.CENTER);
         row.add(trailing, BorderLayout.EAST);
         row.setBorder(BorderFactory.createEmptyBorder(
             SWATCH_ROW_PADDING,

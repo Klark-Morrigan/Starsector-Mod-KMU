@@ -88,13 +88,7 @@ public final class SliderRows {
      */
     public static JPanel buildSlider(SliderSpec spec) {
 
-        var parts = prepareSlider(spec);
-
-        return ControlRows.layOutLabelledRow(
-            spec.title(),
-            parts.valueBox(),
-            buildReset(parts, spec),
-            parts.slider());
+        return RowFurniture.layOutLabelledRow(describeRow(spec));
     }
 
     /**
@@ -130,15 +124,23 @@ public final class SliderRows {
      */
     public static JPanel buildSliderPair(SliderSpec left, SliderSpec right) {
 
-        return ControlRows.layOutPairedRow(layOutStacked(left), layOutStacked(right));
+        return RowFurniture.layOutPairedRow(layOutStacked(left), layOutStacked(right));
     }
 
     // One slider in the shape a paired line wants.
     private static JPanel layOutStacked(SliderSpec spec) {
 
+        return RowFurniture.layOutStackedRow(describeRow(spec));
+    }
+
+    // One knob built and named, in the shape either row takes. Shared because the two shapes
+    // differ in where the name sits and in nothing else: built apart, they were the same four
+    // parts listed twice, free to come to hold different things.
+    private static RowFurniture.RowParts describeRow(SliderSpec spec) {
+
         var parts = prepareSlider(spec);
 
-        return ControlRows.layOutStackedRow(
+        return new RowFurniture.RowParts(
             spec.title(), parts.valueBox(), buildReset(parts, spec), parts.slider());
     }
 
