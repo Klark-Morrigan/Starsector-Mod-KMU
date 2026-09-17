@@ -73,10 +73,13 @@ a mod registering after KMU's own load has returned being the ordinary case rath
 `MapLayerScreens` names the two screens,
 holds each one's picks under its own frozen keys,
 and answers which screen is up.
-`ScreenMemoryScope` is a screen's segment of a key and the one place one is composed;
-`MemoryKeyAddress`,
-with `AddressedMemoryFlag` and `AddressedMemoryString`,
-is what a preference is partitioned by and the two holders that store one slot per partition.
+`ScreenMemoryScope` is a screen's segment of a key and the one place one is composed -
+this package's answer to KMLib's `MemoryKeyAddress`,
+which is what a stored value is partitioned by,
+and which `AddressedMemoryFlag` and `AddressedMemoryString` hold one slot per point on.
+Those three are KMLib's (`kmlib.starsector.memory`),
+since a value held once per point on an axis knows nothing about a map;
+what a screen is, and that a screen is the axis here, is this package's.
 The key scheme itself is [the hub's](../../README.md#two-screens-two-picks).
 
 A screen's tab,

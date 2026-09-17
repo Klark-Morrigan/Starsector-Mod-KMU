@@ -22,35 +22,14 @@ import java.util.List;
  * KMLib's and holds no store; the three stores beside this class hold no widget; this is the one
  * place the two meet, so a calling layer names no store at all.
  *
- * <p>It builds rather than only binds because the picker's four ties resolve at one point. Three are
- * read on the way in and written on the way out - the item pick through {@link FilterSelection}, the
- * sort through {@link SortSelectionBinder}, the column count through {@link ColumnSelectionBinder} -
- * and the fourth, the row the pointer rests on, is reported into {@link FilterHoverSlot}. A layer
- * composing the picker itself would have to name all four, which is exactly the knowledge the
- * binders exist to hold.
+ * <p><b>Every address it reads or writes at is derived from the one {@link SelectionSlot} handed
+ * in</b>, never composed beside it. That is the invariant to keep when editing this class: an answer
+ * resolved at an address of its own is how a picker's picks come apart, and the failure is a
+ * preference the player sets twice.
  *
- * <p><b>Every one of those addresses is derived from the one {@link SelectionSlot} handed in</b>: the
- * column count off that slot's {@link ScreenSelectionSlot}, the hover off the {@link PickerScope} it
- * resolves to, and the other two off the slot whole. A caller resolving one of the three for itself
- * and passing the value in would be reading at an address composed beside this one rather than from
- * it, which is the one way a picker's answers can end up split across addresses - and a column count
- * read under the other screen re-wraps the list on this one.
- *
- * <p>The slot is captured at the build for the reason the board is: a report can land after the
- * player has moved to the other screen, and a pick belongs to the panel it was clicked on rather
- * than to whichever screen happens to be up when the click is handled.
- *
- * <p>The hover is the one report that neither persists nor raises: a hover is a preview over paint
- * already on the map, and only one screen is ever up to preview on, so it is also the one tie that
- * takes no screen. Its scope is resolved off the slot rather than captured beside it, so the list a
- * hover previews and the list a pick files under are one. That is why the sector arrives as its
- * whole {@link SectorMapMachinery} rather than as the board alone - the slot and the board are both
- * that sector's, and handed over side by side they would be two chances to name two sectors.
- *
- * <p>It is also where the wildcard a layer's picker travels under is captured, once for the mod
- * rather than in each layer: every picker-owning layer would otherwise write the same capture
- * helper, and the helper needs both the selection slot and the sort binder to do its job, so it
- * belongs beside them.
+ * <p>Which store holds which answer, why the slot and the sector are captured at the build, and why
+ * the hover is the one tie that takes no screen are the package's, in
+ * <a href="README.md#picker-state">picker state</a>.
  */
 public final class ListPickerBinder {
 
@@ -62,15 +41,10 @@ public final class ListPickerBinder {
      * and the stored column count read live off that slot, the columns caption resolved out of this
      * mod's strings, and every pick wired back to the store that keeps it.
      *
-     * <p>The picker arrives wildcarded because what a layer ranks is the layer's own: it hands over
-     * its list bundled with the vocabulary that reads it, and this captures the pair once so no
-     * layer writes that capture for itself. That is also why the stored sort is resolved here
-     * rather than passed in - resolving it needs the vocabulary, which only arrives inside the
-     * bundle.
-     *
-     * <p>The caption is this mod's rather than the caller's because it is the framework's own
-     * chrome: the word over a column count says what the control does, where a row's name and a sort
-     * mode's label say what the caller's list holds and stay the caller's to resolve.
+     * <p>The picker arrives wildcarded because what a layer ranks is the layer's own, and the
+     * stored sort is resolved here rather than passed in because resolving it needs the vocabulary,
+     * which only arrives inside that bundle. The caption is this mod's because it is the framework's
+     * own chrome rather than anything the caller's list holds.
      *
      * @param slot             the mod, screen and scope every one of this picker's answers is read
      *                         from and written into, so each choice is remembered against that

@@ -1,18 +1,18 @@
 package kmu.maplayers.base.sidebar;
 
-import com.fs.starfarer.api.util.Misc;
-
 import kmlib.starsector.ui.controls.ControlHoverReport;
 import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
+import kmlib.testfixtures.starsector.ui.widgets.lists.Anomaly;
+import kmlib.testfixtures.starsector.ui.widgets.lists.AnomalySortMode;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.starsector.StarsectorSettingsFake;
+import kmu.starsector.StarsectorUiColoursMock;
 import kmu.util.KmuStrings;
 
 import org.junit.jupiter.api.AfterEach;
@@ -22,8 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.awt.Color;
 import java.util.List;
+
+import static kmlib.testfixtures.starsector.ui.widgets.lists.ListPickerBlockReads.readColumnsSelector;
+import static kmlib.testfixtures.starsector.ui.widgets.lists.ListPickerBlockReads.readItemList;
+import static kmlib.testfixtures.starsector.ui.widgets.lists.ListPickerBlockReads.readSortSelector;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,10 +54,10 @@ import static org.mockito.Mockito.never;
  * resolved either when the report landed: the spotlight would repaint whichever sector was running
  * rather than the one the picker was listed for, and the preview would light that sector's map.
  *
- * <p>Run over the foreign {@link Hazard} item and {@link HazardSortMode} vocabulary, since the
- * binder is no more one layer's than the picker it binds. That is also what proves the wildcard
- * capture is shaped by no layer in particular: these types stand in for a second layer's list, so a
- * capture that only worked over the first layer's own item type would not compile here.
+ * <p>Run over KMLib's {@link Anomaly} item and {@link AnomalySortMode} vocabulary - a row type and a
+ * ranking declared outside this mod entirely - since the binder is no more one layer's than the
+ * picker it binds. That is also what proves the wildcard capture is shaped by no layer in
+ * particular: a capture that only worked over a layer's own item type would not compile here.
  */
 final class ListPickerBinderTest {
 
@@ -66,28 +69,23 @@ final class ListPickerBinderTest {
 
     private static final SelectionSlot SLOT = new SelectionSlot(
         new ScreenSelectionSlot(NAMESPACE, ScreenMemoryScopes.createStandInScreen()),
-        "hazards");
+        "anomalies");
 
     // The same list on the other panel, for the case that pins a pick landing where it was clicked.
     private static final SelectionSlot OTHER_SCREEN_SLOT = new SelectionSlot(
         new ScreenSelectionSlot(NAMESPACE, ScreenMemoryScopes.createOtherStandInScreen()),
-        "hazards");
+        "anomalies");
 
-    private static final ListSortModes<Hazard> MODES =
-        new ListSortModes<>(List.of(HazardSortMode.values()), HazardSortMode.ALPHA);
+    private static final ListSortModes<Anomaly> MODES =
+        new ListSortModes<>(List.of(AnomalySortMode.values()), AnomalySortMode.ALPHA);
 
     // The two items the picker lists, alpha-ordered as Drift then Storm, so a row index maps back to
     // a known id.
-    private static final Hazard STORM = new Hazard("storm_1", "Storm", "crest_storm", 9, 8);
-    private static final Hazard DRIFT = new Hazard("drift_1", "Drift", null, 2, 3);
+    private static final Anomaly STORM = new Anomaly("storm_1", "Storm", "crest_storm", 9, 8);
+    private static final Anomaly DRIFT = new Anomaly("drift_1", "Drift", null, 2, 3);
 
-    private static final ListPicker<Hazard> HAZARD_PICKER =
+    private static final ListPicker<Anomaly> ANOMALY_PICKER =
         new ListPicker<>(List.of(STORM, DRIFT), MODES);
-
-    // The rows the picker lays out, so a test names the widget it clicks rather than an index into
-    // the block.
-    private static final int COLUMNS_SELECTOR = 1;
-    private static final int SORT_ROW = 2;
 
     // The sector's machinery the picker is built over, which is where both of its writers come from:
     // the board an item pick repaints through and the slot a hovered row is recorded in. One per
@@ -100,42 +98,32 @@ final class ListPickerBinderTest {
     private final MapLayerRefreshBoard builtBoard = machinery.resolveRefreshBoard();
     private final FilterHoverSlot builtHoverSlot = FilterHoverSlot.resolveHoverSlotIn(machinery);
 
-    private MockedStatic<Misc> miscMock;
-
-    // Mocked for every test, since the binder now resolves the stored sort itself: left live it
-    // would read a sector memory no test JVM has. Stubbed to the alpha mode in its own direction,
-    // which is what a save that has never picked a sort reads.
+    // Mocked for every test, since the binder resolves the stored sort itself: left live it would
+    // read a sector memory no test JVM has. Stubbed to the alpha mode in its own direction, which is
+    // what a save that has never picked a sort reads.
     private MockedStatic<SortSelectionBinder> sortBinderMock;
+
+    // The engine palette the picker resolves its row tones through. Every shade it needs, installed
+    // and taken down as one, since a case here asserts no colour and only needs the reads to answer.
+    private StarsectorUiColoursMock uiColours;
 
     @BeforeEach
     void installColours() {
-        // Settings first, then the Misc statics: Misc's class initialiser reads the settings, so
-        // mocking it against an uninstalled settings proxy would fail on class load.
-        StarsectorSettingsFake.installSettings();
 
-        // Both row tones, since the picker resolves the receded one whether or not a row uses it -
-        // an unlisted stand-in fails on the read rather than on anything under test here.
-        miscMock = Mockito.mockStatic(Misc.class);
-        miscMock
-            .when(Misc::getTextColor)
-            .thenReturn(Color.LIGHT_GRAY);
-        miscMock
-            .when(Misc::getGrayColor)
-            .thenReturn(Color.DARK_GRAY);
+        uiColours = StarsectorUiColoursMock.install();
 
         sortBinderMock = Mockito.mockStatic(SortSelectionBinder.class);
         sortBinderMock
             .when(() -> SortSelectionBinder.resolveStoredSort(SLOT, MODES))
-            .thenReturn(sortOf(HazardSortMode.ALPHA));
+            .thenReturn(sortOf(AnomalySortMode.ALPHA));
     }
 
     @AfterEach
     void clearColours() {
 
         sortBinderMock.close();
-        miscMock.close();
 
-        StarsectorSettingsFake.clearSettings();
+        uiColours.close();
     }
 
     @Nested
@@ -154,7 +142,7 @@ final class ListPickerBinderTest {
                     .when(() -> FilterSelection.getSelectedIdOf(SLOT))
                     .thenReturn("storm_1");
 
-                var picker = buildPickerFor(buildPicker());
+                var picker = readItemList(buildPicker());
 
                 // Alpha-sorted, Storm is the second row.
                 assertThat(picker.selectedIndex())
@@ -172,8 +160,7 @@ final class ListPickerBinderTest {
 
                 stubLabels(stringsMock);
 
-                var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker()
-                    .get(COLUMNS_SELECTOR);
+                var columnsSelector = readColumnsSelector(buildPicker());
 
                 assertThat(columnsSelector.trailingLabel())
                     .isEqualTo("Columns");
@@ -187,7 +174,7 @@ final class ListPickerBinderTest {
 
                 stubLabels(stringsMock);
 
-                var picker = buildPickerFor(buildPicker());
+                var picker = readItemList(buildPicker());
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -206,11 +193,11 @@ final class ListPickerBinderTest {
 
                 sortBinderMock
                     .when(() -> SortSelectionBinder.resolveStoredSort(OTHER_SCREEN_SLOT, MODES))
-                    .thenReturn(sortOf(HazardSortMode.ALPHA));
+                    .thenReturn(sortOf(AnomalySortMode.ALPHA));
 
-                var picker = buildPickerFor(ListPickerBinder.buildPicker(
+                var picker = readItemList(ListPickerBinder.buildPicker(
                     OTHER_SCREEN_SLOT,
-                    HAZARD_PICKER,
+                    ANOMALY_PICKER,
                     List.of(),
                     machinery));
                 picker.action().activateCell(0);
@@ -233,7 +220,7 @@ final class ListPickerBinderTest {
                     .when(() -> FilterSelection.getSelectedIdOf(SLOT))
                     .thenReturn("drift_1");
 
-                var picker = buildPickerFor(buildPicker());
+                var picker = readItemList(buildPicker());
                 picker.action().activateCell(0);
 
                 selectionMock.verify(
@@ -251,7 +238,7 @@ final class ListPickerBinderTest {
 
                 stubLabels(stringsMock);
 
-                var picker = buildPickerFor(buildPicker());
+                var picker = readItemList(buildPicker());
                 picker.hoverReport().reportHoveredCell(0);
 
                 assertThat(builtHoverSlot.getHoveredIdOf(PickerScope.resolveScopeOf(SLOT)))
@@ -269,7 +256,7 @@ final class ListPickerBinderTest {
 
                 stubLabels(stringsMock);
 
-                var picker = buildPickerFor(buildPicker());
+                var picker = readItemList(buildPicker());
 
                 picker.hoverReport().reportHoveredCell(0);
                 picker.hoverReport().reportHoveredCell(ControlHoverReport.NO_CELL_HOVERED);
@@ -290,8 +277,7 @@ final class ListPickerBinderTest {
                 stubLabels(stringsMock);
                 stubStoredColumns(binderMock, ListColumns.ONE);
 
-                var columnsSelector = (ControlSpec.HorizontalRadio) buildPicker()
-                    .get(COLUMNS_SELECTOR);
+                var columnsSelector = readColumnsSelector(buildPicker());
 
                 columnsSelector.action().activateCell(
                     List.of(ListColumns.values()).indexOf(ListColumns.TWO));
@@ -330,7 +316,7 @@ final class ListPickerBinderTest {
                 stubLabels(stringsMock);
                 stubStoredColumns(binderMock, ListColumns.TWO);
 
-                assertThat(buildPickerFor(buildPicker()).columnCount())
+                assertThat(readItemList(buildPicker()).columnCount())
                     .isEqualTo(ListColumns.TWO.columnCount());
             }
         }
@@ -341,16 +327,13 @@ final class ListPickerBinderTest {
 
                 stubLabels(stringsMock);
 
-                var sortSelector = (ControlSpec.VerticalTable)
-                    ((ControlSpec.SideBySide) buildPicker().get(SORT_ROW))
-                        .leftColumn()
-                        .get(0);
+                var sortSelector = readSortSelector(buildPicker());
 
                 sortSelector.action().activateCell(
-                    List.of(HazardSortMode.values()).indexOf(HazardSortMode.SEVERITY));
+                    List.of(AnomalySortMode.values()).indexOf(AnomalySortMode.SEVERITY));
 
                 sortBinderMock.verify(
-                    () -> SortSelectionBinder.storeSort(SLOT, sortOf(HazardSortMode.SEVERITY)));
+                    () -> SortSelectionBinder.storeSort(SLOT, sortOf(AnomalySortMode.SEVERITY)));
             }
         }
 
@@ -395,37 +378,27 @@ final class ListPickerBinderTest {
         }
     }
 
-    // The picker list is always the block's last row, and that row is the scrolling section holding
-    // it - so a test reaches through the section and reads the vertical table inside.
-    private static ControlSpec.VerticalTable buildPickerFor(List<ControlSpec> controls) {
-        var section = (ControlSpec.ScrollingSection) controls.get(controls.size() - 1);
-        return (ControlSpec.VerticalTable) section.controls().get(0);
-    }
-
     // The one call into the binder every test goes through: the two items with their own
     // vocabulary, a single column, and nothing paired beside the sort, since none of those is what
     // this suite varies.
     private List<ControlSpec> buildPicker() {
         return ListPickerBinder.buildPicker(
             SLOT,
-            HAZARD_PICKER,
+            ANOMALY_PICKER,
             List.of(),
             machinery);
     }
 
     // A mode in its own natural direction over the foreign vocabulary - what a save that has never
     // flipped the sort reads, and what a click on that mode's row reports back.
-    private static ListSort<Hazard> sortOf(HazardSortMode mode) {
+    private static ListSort<Anomaly> sortOf(AnomalySortMode mode) {
         return new ListSort<>(mode, mode.defaultDirection(), MODES);
     }
 
-    // Stubs the text the binder resolves through this mod's strings table, so the assertions read
-    // the wiring without the live table: the sort rows' labels, which are the caller's vocabulary's
-    // own, and the columns caption, which is the framework's.
+    // Stubs the one piece of text the binder resolves through this mod's strings table - the columns
+    // caption, which is the framework's own chrome. The sort rows' labels are the caller's
+    // vocabulary's and arrive already drawn.
     private static void stubLabels(MockedStatic<KmuStrings> stringsMock) {
-
-        HazardSortMode.stubLabelsOn(stringsMock);
-
         stringsMock
             .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");

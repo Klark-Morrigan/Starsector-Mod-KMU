@@ -1,5 +1,7 @@
 package kmu.maplayers.base.layer;
 
+import kmlib.starsector.memory.MemoryKeyAddress;
+
 /**
  * One screen's segment of a sector-memory key, and the one way a per-screen preference resolves the key
  * it is saved under: {@code <preference key>_<segment>}.

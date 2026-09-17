@@ -1,6 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmu.maplayers.base.layer.AddressedMemoryString;
+import kmlib.starsector.memory.AddressedMemoryString;
 
 /**
  * The metric a sidebar picker list currently ranks its rows by and the direction that ranking runs in

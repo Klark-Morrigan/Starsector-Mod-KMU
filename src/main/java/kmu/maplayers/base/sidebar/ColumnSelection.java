@@ -1,6 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmu.maplayers.base.layer.AddressedMemoryString;
+import kmlib.starsector.memory.AddressedMemoryString;
 
 /**
  * How many columns a sidebar picker lays its list across, persisted per save, per mod and per screen.

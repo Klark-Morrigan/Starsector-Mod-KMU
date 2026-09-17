@@ -3,6 +3,8 @@ package kmu.maplayers.base.sidebar;
 import kmlib.starsector.ui.widgets.lists.ListSort;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmlib.starsector.ui.widgets.lists.SortDirection;
+import kmlib.testfixtures.starsector.ui.widgets.lists.Anomaly;
+import kmlib.testfixtures.starsector.ui.widgets.lists.AnomalySortMode;
 
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 
@@ -20,7 +22,7 @@ import static org.mockito.Mockito.mockStatic;
  * picked sort's keys back under that same slot. What the keys mean is the model's and is pinned
  * there; the store is mocked, so this reads the pass-through alone.
  *
- * <p>Run over the foreign {@link HazardSortMode} vocabulary, since the binder is no more the
+ * <p>Run over the foreign {@link AnomalySortMode} vocabulary, since the binder is no more the
  * political map's than the model it binds.
  */
 final class SortSelectionBinderTest {
@@ -31,10 +33,10 @@ final class SortSelectionBinderTest {
         new ScreenSelectionSlot(
             MapLayerStoreNamespaces.createStandInNamespace(),
             ScreenMemoryScopes.createStandInScreen()),
-        "hazards");
+        "anomalies");
 
-    private static final ListSortModes<Hazard> MODES =
-        new ListSortModes<>(List.of(HazardSortMode.values()), HazardSortMode.ALPHA);
+    private static final ListSortModes<Anomaly> MODES =
+        new ListSortModes<>(List.of(AnomalySortMode.values()), AnomalySortMode.ALPHA);
 
     @Nested
     class ResolveStoredSort {
@@ -46,13 +48,13 @@ final class SortSelectionBinderTest {
 
                 selectionMock
                     .when(() -> SortSelection.getSortModeKeyOf(SLOT))
-                    .thenReturn(HazardSortMode.SEVERITY.persistenceKey());
+                    .thenReturn(AnomalySortMode.SEVERITY.persistenceKey());
                 selectionMock
                     .when(() -> SortSelection.getSortDirectionKeyOf(SLOT))
                     .thenReturn(SortDirection.ASCENDING.persistenceKey());
 
                 assertThat(SortSelectionBinder.resolveStoredSort(SLOT, MODES))
-                    .isEqualTo(new ListSort<>(HazardSortMode.SEVERITY, SortDirection.ASCENDING, MODES));
+                    .isEqualTo(new ListSort<>(AnomalySortMode.SEVERITY, SortDirection.ASCENDING, MODES));
             }
         }
     }
@@ -69,11 +71,11 @@ final class SortSelectionBinderTest {
 
                 SortSelectionBinder.storeSort(
                     SLOT,
-                    new ListSort<>(HazardSortMode.RADIUS, SortDirection.ASCENDING, MODES));
+                    new ListSort<>(AnomalySortMode.RADIUS, SortDirection.ASCENDING, MODES));
 
                 selectionMock.verify(
                     () -> SortSelection.selectSortMode(
-                        SLOT, HazardSortMode.RADIUS.persistenceKey()));
+                        SLOT, AnomalySortMode.RADIUS.persistenceKey()));
                 selectionMock.verify(
                     () -> SortSelection.selectSortDirection(
                         SLOT, SortDirection.ASCENDING.persistenceKey()));
