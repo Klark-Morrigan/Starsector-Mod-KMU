@@ -9,6 +9,11 @@
 *.sh    text eol=lf
 gradlew text eol=lf
 
+# Git hooks carry no extension, so *.sh above does not reach them. bash
+# refuses to run a script whose shebang line ends in CR, which would break
+# every commit in a Windows checkout with autocrlf on.
+.githooks/* text eol=lf
+
 # cmd.exe requires CRLF in batch files.
 *.bat       text eol=crlf
 gradlew.bat text eol=crlf
