@@ -336,6 +336,14 @@ test {
     maxHeapSize = '2g'
 }
 
+// The geometry viewer's suites build Swing text components, and a JVM with no usable fonts
+// cannot construct a font manager: the first such component dies with an InternalError that
+// names neither fonts nor the machine, four tests into a suite about sliders. Declaring the
+// requirement makes the shared probe run ahead of this project's tests and fail with the
+// environment written out instead - see Common-Java's report-awt-environment. One family is
+// the whole bar, since measuring text needs a font rather than a particular font.
+awtFontFamiliesRequired = 1
+
 tasks.withType(JavaCompile).configureEach {
     doFirst {
         if (consoleCommandsJars.files.isEmpty()) {
