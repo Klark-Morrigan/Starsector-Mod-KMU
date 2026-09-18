@@ -16,10 +16,10 @@ package kmu.maplayers.base.geometry.ui.settings;
 public interface ViewerRefreshes {
 
     /** Builds the partition again and everything downstream of it. */
-    public void rebuildGeometry();
+    void rebuildGeometry();
 
     /** Traces the coasts again, and lays everything that stands on them. */
-    public void refreshCoastlines();
+    void refreshCoastlines();
 
     /**
      * Reads v4's void again.
@@ -29,11 +29,11 @@ public interface ViewerRefreshes {
      * construction pay for the other, and would quietly couple the two things this window
      * exists to compare.
      */
-    public void refreshVoidV4();
+    void refreshVoidV4();
 
     /** Traces the unclipped partition again. */
-    public void refreshUnboundedCells();
+    void refreshUnboundedCells();
 
     /** Draws the map again, with nothing recomputed. */
-    public void repaintMap();
+    void repaintMap();
 }
