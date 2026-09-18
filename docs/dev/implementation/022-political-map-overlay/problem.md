@@ -441,7 +441,7 @@ not territory.
   we mirror it,
   we do not second-guess it.** The gate is two independent parts:
 
-  ```
+  ```plaintext
   hasBeenEncountered = market.getSurveyLevel() != MarketAPI.SurveyLevel.NONE
   cond               = market.getSpecificCondition("decivilized")
   isRevealed         = cond != null && (!cond.requiresSurveying() || cond.isSurveyed())

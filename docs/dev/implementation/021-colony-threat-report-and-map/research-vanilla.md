@@ -5,7 +5,7 @@ Source of truth for feature #21
 All `file:line` references point into `c:\a_Games\Starsector\.sources-cache\` unless otherwise noted;
 the canonical prefix used in this document is
 
-```
+```plaintext
 .sources-cache\starsector-core\starfarer.api\com\fs\starfarer\api\impl\campaign\
 ```
 

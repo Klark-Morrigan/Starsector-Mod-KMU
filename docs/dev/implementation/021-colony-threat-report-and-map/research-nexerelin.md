@@ -85,7 +85,7 @@ Tag is added
 
 Concrete pattern in `OffensiveFleetIntel.getIntelTags` (`OffensiveFleetIntel.java:489-499`):
 
-```
+```java
 tags.add("Military");
 tags.remove("Colony threats");
 if (this.targetFaction.isPlayerFaction() || this.target.isPlayerOwned()) {
@@ -303,7 +303,7 @@ The supported patterns are:
 **Pattern A — by IntelManager class scan (preferred for KMU).** The intel manager already keeps these lists;
 just iterate and post-filter.
 
-```
+```java
 List<OffensiveFleetIntel> threats = new ArrayList<>();
 for (IntelInfoPlugin ii : Global.getSector().getIntelManager()
                                   .getIntel(OffensiveFleetIntel.class)) {
@@ -521,7 +521,7 @@ The adapter is loaded lazily so a player without Nex never triggers a `ClassNotF
 
 ### 8.4 Recommended adapter shape
 
-```
+```java
 interface KmuNexThreatAdapter {
     boolean isAvailable();                                // wraps isModEnabled
     List<NexThreat> getThreatsTargeting(MarketAPI market); // wraps Pattern A

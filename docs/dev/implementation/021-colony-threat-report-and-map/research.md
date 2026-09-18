@@ -222,7 +222,7 @@ There is no built-in `getThreatsForMarket(MarketAPI)`.
 KMU's adapter assembles one from these primitives,
 in this order:
 
-```
+```java
 List<Threat> threatsFor(MarketAPI m) =
     HAE.computeDangerData(m.getStarSystem()).factorData     // aggregated
   + getIntel(HegemonyInspectionIntel.class)  where target == m
