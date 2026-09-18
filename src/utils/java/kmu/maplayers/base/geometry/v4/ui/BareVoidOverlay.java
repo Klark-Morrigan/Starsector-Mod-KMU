@@ -69,13 +69,4 @@ public final class BareVoidOverlay {
             new FillLook(
                 settings.bareVoidColour, settings.voidFillOpacity, settings.bareVoidColour));
     }
-
-    /**
-     * How many pieces the last refresh read.
-     *
-     * @return the count, and zero while the layer is off
-     */
-    public int countPieces() {
-        return outlines.size();
-    }
 }

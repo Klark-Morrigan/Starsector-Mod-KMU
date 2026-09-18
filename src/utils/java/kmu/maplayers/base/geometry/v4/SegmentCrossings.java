@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
@@ -52,8 +53,17 @@ final class SegmentCrossings {
             cuts.add(new ArrayList<>());
         }
 
+        var boxes = measureBoxes(segments);
+
         for (var first = 0; first < segments.size(); first++) {
             for (var second = first + 1; second < segments.size(); second++) {
+
+                // The box test is not a correctness matter but a cost one: every pair is asked,
+                // and most pairs in a sector are nowhere near each other, so the cheap
+                // rejection carries nearly all of them.
+                if (!boxes.get(first).overlaps(boxes.get(second))) {
+                    continue;
+                }
 
                 var crossing = findCrossing(segments.get(first), segments.get(second));
 
@@ -73,39 +83,23 @@ final class SegmentCrossings {
         return pieces;
     }
 
-    // Where two lines meet, or null where they miss. The box test in front is not a
-    // correctness matter but a cost one: every pair is asked, and most pairs in a sector are
-    // nowhere near each other, so the cheap rejection carries nearly all of them.
+    // One box per line, measured before the pairing rather than inside it, so the cheap test
+    // costs a lookup per pair rather than a measurement.
+    private static List<Bounds> measureBoxes(List<Segment> segments) {
+
+        var boxes = new ArrayList<Bounds>(segments.size());
+
+        for (var segment : segments) {
+            boxes.add(Bounds.computeEnclosingBounds(
+                List.of(segment.readStart(), segment.readEnd())));
+        }
+        return boxes;
+    }
+
     private static double[] findCrossing(Segment first, Segment second) {
 
-        if (!overlapBoxes(first, second)) {
-            return null;
-        }
         return Segments.intersectSegments(
-            readStart(first), readEnd(first), readStart(second), readEnd(second));
-    }
-
-    // Whether the two lines' bounding boxes overlap at all. Slack of one edge length either
-    // way, so two that touch exactly are not rejected by rounding before the real test sees
-    // them.
-    private static boolean overlapBoxes(Segment first, Segment second) {
-
-        return overlapSpans(
-                first.startX(), first.endX(), second.startX(), second.endX())
-            && overlapSpans(
-                first.startY(), first.endY(), second.startY(), second.endY());
-    }
-
-    // Whether two spans on one axis overlap. Each arrives as its two ends in the line's own
-    // direction rather than sorted, so the low and high of each are taken here.
-    private static boolean overlapSpans(
-            double firstFrom, double firstTo,
-            double secondFrom, double secondTo) {
-
-        return Math.min(firstFrom, firstTo) - Limits.MIN_EDGE_LENGTH
-                <= Math.max(secondFrom, secondTo)
-            && Math.min(secondFrom, secondTo) - Limits.MIN_EDGE_LENGTH
-                <= Math.max(firstFrom, firstTo);
+            first.readStart(), first.readEnd(), second.readStart(), second.readEnd());
     }
 
     // Cuts one line at the points gathered for it and adds the pieces. The cuts arrive in
@@ -114,8 +108,8 @@ final class SegmentCrossings {
     // points that are not neighbours and would run back over its own line.
     private static void addPieces(Segment segment, List<double[]> cuts, List<Segment> pieces) {
 
-        var start = readStart(segment);
-        var end = readEnd(segment);
+        var start = segment.readStart();
+        var end = segment.readEnd();
 
         if (Points.computeDistance(start, end) < Limits.MIN_EDGE_LENGTH) {
             return;
@@ -153,13 +147,5 @@ final class SegmentCrossings {
             return;
         }
         pieces.add(new Segment(from[0], from[1], to[0], to[1]));
-    }
-
-    private static double[] readStart(Segment segment) {
-        return new double[] {segment.startX(), segment.startY()};
-    }
-
-    private static double[] readEnd(Segment segment) {
-        return new double[] {segment.endX(), segment.endY()};
     }
 }

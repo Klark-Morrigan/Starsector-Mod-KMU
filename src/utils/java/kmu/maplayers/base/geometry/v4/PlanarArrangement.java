@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segment;
+import kmlib.math.geometry.VertexWelder;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -56,7 +57,7 @@ final class PlanarArrangement {
      */
     static PlanarArrangement weldArrangement(List<Segment> segments, double weldTolerance) {
 
-        var welded = new WeldedPoints(weldTolerance);
+        var welder = new VertexWelder(weldTolerance);
 
         // Undirected, deduplicated. Two lines laid exactly along each other are one edge of the
         // division, and holding the same neighbour twice would give a vertex two entries at the
@@ -66,8 +67,8 @@ final class PlanarArrangement {
 
         for (var segment : segments) {
 
-            var from = welded.weldPoint(new double[] {segment.startX(), segment.startY()});
-            var to = welded.weldPoint(new double[] {segment.endX(), segment.endY()});
+            var from = welder.weld(segment.startX(), segment.startY());
+            var to = welder.weld(segment.endX(), segment.endY());
 
             if (from == to) {
                 continue;
@@ -75,7 +76,7 @@ final class PlanarArrangement {
             links.add(new HalfEdge(Math.min(from, to), Math.max(from, to)));
         }
 
-        var vertices = welded.collectPoints();
+        var vertices = welder.collectPoints();
         var outgoing = sortAroundVertices(vertices, links);
 
         return new PlanarArrangement(vertices, outgoing, indexSlots(outgoing));
@@ -94,21 +95,6 @@ final class PlanarArrangement {
             edges.addAll(atVertex);
         }
         return edges;
-    }
-
-    /**
-     * How many edge directions there are in all.
-     *
-     * @return the count, which is also the most corners any one face can have
-     */
-    int countHalfEdges() {
-
-        var count = 0;
-
-        for (var atVertex : outgoing) {
-            count += atVertex.size();
-        }
-        return count;
     }
 
     /**

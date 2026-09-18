@@ -161,8 +161,7 @@ class FaceWalkTest {
     // order the walk happened to close them.
     private static List<Double> measureBoundedAreas(List<Face> faces) {
 
-        return faces.stream()
-            .filter(face -> !face.isOuterFace())
+        return collectBoundedFaces(faces).stream()
             .map(Face::measureArea)
             .sorted()
             .toList();
@@ -184,12 +183,17 @@ class FaceWalkTest {
 
     private static Face findTheBoundedFace(List<Face> faces) {
 
-        var bounded = faces.stream().filter(face -> !face.isOuterFace()).toList();
+        var bounded = collectBoundedFaces(faces);
 
         assertThat(bounded)
             .as("this fixture leaves one piece")
             .hasSize(1);
 
         return bounded.get(0);
+    }
+
+    private static List<Face> collectBoundedFaces(List<Face> faces) {
+
+        return faces.stream().filter(face -> !face.isOuterFace()).toList();
     }
 }

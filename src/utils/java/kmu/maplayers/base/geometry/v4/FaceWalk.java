@@ -61,13 +61,16 @@ public final class FaceWalk {
         // Starting from all of them rather than from a chosen few is what makes the result a
         // division: no piece can be missed, because every piece has an edge and every edge is
         // started from.
-        for (var start : arrangement.collectHalfEdges()) {
+        var halfEdges = arrangement.collectHalfEdges();
+
+        for (var start : halfEdges) {
 
             if (walked.contains(start)) {
                 continue;
             }
 
-            var face = Face.encloseFace(walkFaceFrom(arrangement, start, walked));
+            var face = Face.encloseFace(
+                walkFaceFrom(arrangement, start, halfEdges.size(), walked));
 
             if (face.measureArea() > smallestFace) {
                 faces.add(face);
@@ -78,15 +81,16 @@ public final class FaceWalk {
 
     // One face, followed from an edge round to that edge again, marking off every edge taken so
     // no face is reported twice.
+    //
+    // mostCorners is the count of edge directions in the whole graph: a face cannot have more
+    // corners than that, so passing it means the order round some vertex does not lead back
+    // where it came from, and the walk would otherwise spin until the viewer was killed rather
+    // than say so.
     private static List<double[]> walkFaceFrom(
             PlanarArrangement arrangement,
             PlanarArrangement.HalfEdge start,
+            int mostCorners,
             Set<PlanarArrangement.HalfEdge> walked) {
-
-        // A face cannot have more corners than the graph has edge directions. Passing that
-        // means the order round some vertex does not lead back where it came from, and the walk
-        // would otherwise spin until the viewer was killed rather than say so.
-        var mostCorners = arrangement.countHalfEdges();
 
         var boundary = new ArrayList<double[]>();
         var edge = start;
