@@ -21,7 +21,7 @@ import kmu.conditions.ui.picker.render.KmuConditionIconGrid;
 import kmu.conditions.ui.picker.render.KmuConditionPickerContainer;
 import kmu.conditions.ui.picker.render.KmuConditionPickerRenderResult;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +98,7 @@ public final class KmuConditionPickerDialogDelegate implements CustomDialogDeleg
 
     @Override
     public String getConfirmText() {
-        return KmuStrings.get(KmuStrings.DIALOG_CLOSE);
+        return KmuStringKeys.get(KmuStringKeys.DIALOG_CLOSE);
     }
 
     @Override

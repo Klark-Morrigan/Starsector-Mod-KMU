@@ -5,9 +5,11 @@ import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segments;
 
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -217,11 +219,11 @@ class ContinentExposureIntegrationTest {
             CellGap span,
             DiscUnion union,
             List<List<double[]>> captured) {
-        var chord = DiscUnionBoundary.buildChordsFrom(List.of(span)).get(0);
+        var chord = Chord.buildChordsFrom(List.of(span)).get(0);
         var carried = 0;
 
         for (var side : DiscUnionBoundary.findChordSides(
-                union, chord, new DiscUnionBoundary.Walls(List.of(chord), PARAMETERS.borderInset()))) {
+                union, chord, new Walls(List.of(chord), PARAMETERS.borderInset()))) {
             for (var outline : captured) {
                 if (isRunningAlong(outline, findMiddleOf(side))) {
                     carried++;

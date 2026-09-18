@@ -10,7 +10,7 @@ import kmu.conditions.ui.picker.action.KmuConditionPickerAction;
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerLocationParagraphFactory;
 import kmu.conditions.ui.picker.render.paragraph.KmuConditionPickerSummaryParagraphFactory;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -69,7 +69,7 @@ public final class KmuConditionPickerContainer {
         // but if no entries are renderable, show localized UI copy and skip the grid.
         if (model.isEmpty()) {
             gridBody.addPara(
-                KmuStrings.get(KmuStrings.CONDITION_MANAGER_EMPTY),
+                KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_EMPTY),
                 StarsectorUiColour.VANILLA_GRAY.resolve(),
                 ITEM_TOP_PAD);
             return new KmuConditionPickerRenderResult(summaryLabel, summaryComponents, null);

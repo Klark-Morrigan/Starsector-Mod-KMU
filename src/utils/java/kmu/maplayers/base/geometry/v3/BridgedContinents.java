@@ -1,8 +1,10 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.WallKind;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -268,8 +270,8 @@ public final class BridgedContinents {
                     // the border up to the anchor there instead of stopping a channel short of
                     // it - the same walls the link fill is laid against, or the two would meet
                     // the cell in different places.
-                    new DiscUnionBoundary.Walls(
-                        DiscUnionBoundary.buildChordsFrom(layLinks()),
+                    new Walls(
+                        Chord.buildChordsFrom(layLinks()),
                         parameters.borderInset(),
                         CoastFrontages.collectPinchedCells(traceCoasts())));
         }
@@ -360,16 +362,16 @@ public final class BridgedContinents {
 
         if (walled == null) {
 
-            var spans = new ArrayList<DiscUnionBoundary.Chord>();
+            var spans = new ArrayList<Chord>();
 
-            spans.addAll(DiscUnionBoundary.buildChordsFrom(
-                layInletSpans(), DiscUnionBoundary.WallKind.INLET_SPAN));
-            spans.addAll(DiscUnionBoundary.buildChordsFrom(
-                layLakeSpans(), DiscUnionBoundary.WallKind.LAKE_SPAN));
-            spans.addAll(DiscUnionBoundary.buildChordsFrom(
-                claimPuddleSpans(), DiscUnionBoundary.WallKind.PUDDLE_SPAN));
-            spans.addAll(DiscUnionBoundary.buildChordsFrom(
-                layLinks(), DiscUnionBoundary.WallKind.LINK));
+            spans.addAll(Chord.buildChordsFrom(
+                layInletSpans(), WallKind.INLET_SPAN));
+            spans.addAll(Chord.buildChordsFrom(
+                layLakeSpans(), WallKind.LAKE_SPAN));
+            spans.addAll(Chord.buildChordsFrom(
+                claimPuddleSpans(), WallKind.PUDDLE_SPAN));
+            spans.addAll(Chord.buildChordsFrom(
+                layLinks(), WallKind.LINK));
 
             walled = LaidCoast.layCoast(traceCoasts(), spans, parameters);
         }

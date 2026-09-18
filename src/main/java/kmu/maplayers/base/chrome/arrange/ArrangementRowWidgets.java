@@ -7,7 +7,7 @@ import com.fs.starfarer.api.ui.TooltipMakerAPI;
 import kmlib.starsector.ui.buttons.VanillaActionIds;
 import kmlib.starsector.ui.colour.StarsectorUiColour;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.function.BiConsumer;
 
@@ -136,7 +136,7 @@ final class ArrangementRowWidgets {
             ArrangementRowAction action) {
 
         return controlsElement.addButton(
-            KmuStrings.get(labelKey),
+            KmuStringKeys.get(labelKey),
             action,
             ArrangementBoxLayout.MOVE_BUTTON_WIDTH,
             ArrangementBoxLayout.CONTROL_HEIGHT,
@@ -154,14 +154,14 @@ final class ArrangementRowWidgets {
 
         var upButton = addMoveButton(
             controlsElement,
-            KmuStrings.MAP_LAYER_ARRANGE_MOVE_UP,
+            KmuStringKeys.MAP_LAYER_ARRANGE_MOVE_UP,
             ArrangementRowAction.MOVE_UP);
         upButton.getPosition().rightOfMid(shownBox, ArrangementBoxLayout.CONTROL_GAP);
         upButton.setEnabled(editor.canMoveRowUp(row.layerId()));
 
         var downButton = addMoveButton(
             controlsElement,
-            KmuStrings.MAP_LAYER_ARRANGE_MOVE_DOWN,
+            KmuStringKeys.MAP_LAYER_ARRANGE_MOVE_DOWN,
             ArrangementRowAction.MOVE_DOWN);
         downButton.getPosition().rightOfMid(upButton, ArrangementBoxLayout.MOVE_BUTTON_GAP);
         downButton.setEnabled(editor.canMoveRowDown(row.layerId()));

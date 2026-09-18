@@ -18,7 +18,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewRegistry;
 import kmu.maplayers.politicalmap.base.UninhabitedOutlinePreference;
 import kmu.starsector.StarsectorSettingsFake;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,7 +117,7 @@ final class PoliticalMapBodyControlsTest {
             // and fails this.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<FilterSelectionHeal> healMock =
                             mockStatic(FilterSelectionHeal.class)) {
                 stubSelectorViews(registryMock, stringsMock);
@@ -136,7 +136,7 @@ final class PoliticalMapBodyControlsTest {
             // touches no view's stored selection at all - the switched-in view loads its own.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<FilterSelectionHeal> healMock =
                             mockStatic(FilterSelectionHeal.class);
                     MockedStatic<FilterSelection> selectionMock =
@@ -154,7 +154,7 @@ final class PoliticalMapBodyControlsTest {
             // A stray hit past the last view neither selects a view nor heals, so it changes nothing.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+                    MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<FilterSelectionHeal> healMock =
                             mockStatic(FilterSelectionHeal.class)) {
                 stubSelectorViews(registryMock, stringsMock);
@@ -179,7 +179,7 @@ final class PoliticalMapBodyControlsTest {
             // horizontal radio carrying a segment per registered view in registry order.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                    MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubSelectorViews(registryMock, stringsMock);
 
                 var selector = PoliticalMapBodyControls.buildViewSelector(BUILT_SCREEN);
@@ -196,7 +196,7 @@ final class PoliticalMapBodyControlsTest {
             // turns the map off, so the selector carries INERT rather than a deselecting row.
             try (MockedStatic<PoliticalMapViewRegistry> registryMock =
                             mockStatic(PoliticalMapViewRegistry.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
+                    MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
                 stubSelectorViews(registryMock, stringsMock);
 
                 var selector = (ControlSpec.HorizontalRadio) PoliticalMapBodyControls.buildViewSelector(BUILT_SCREEN);
@@ -215,7 +215,7 @@ final class PoliticalMapBodyControlsTest {
             // to light off the preference and write the opposite back through it - the wiring that
             // keeps the sidebar the single control for the outline. Both halves go through the screen
             // the body was built on, so the box reports and sets its own panel's outline.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<UninhabitedOutlinePreference> preferenceMock =
                             mockStatic(UninhabitedOutlinePreference.class)) {
                 stubControlLabels(stringsMock);
@@ -239,7 +239,7 @@ final class PoliticalMapBodyControlsTest {
             // Full is the first segment, Short the second, No the third, so the lit segment and the
             // segment a click writes must both follow that order or the radio would report and set
             // the wrong choice.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<NameFormatPreference> preferenceMock =
                             mockStatic(NameFormatPreference.class)) {
                 stubControlLabels(stringsMock);
@@ -264,7 +264,7 @@ final class PoliticalMapBodyControlsTest {
             // No is a choice on the same radio rather than a control of its own, so clicking it must
             // write NONE through the one preference - the wiring that replaced the separate names
             // toggle.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<NameFormatPreference> preferenceMock =
                             mockStatic(NameFormatPreference.class)) {
                 stubControlLabels(stringsMock);
@@ -290,7 +290,7 @@ final class PoliticalMapBodyControlsTest {
             // a writer resolving the showing screen instead would file a map-panel flip under the intel
             // screen, which is what the intel tab being posed open here would let through. Both
             // sub-options are driven, since either one resolving its own screen is the same fault.
-            try (MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class);
+            try (MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class);
                     MockedStatic<UninhabitedOutlinePreference> outlineMock =
                             mockStatic(UninhabitedOutlinePreference.class);
                     MockedStatic<NameFormatPreference> nameFormatMock =
@@ -317,8 +317,8 @@ final class PoliticalMapBodyControlsTest {
     // Stubs every control caption to one placeholder, since the shared controls' specs hold their
     // resolved strings and the radio rejects a null label. What a caption reads is the strings table's
     // concern, not this class's, so one stand-in covers them all.
-    private static void stubControlLabels(MockedStatic<KmuStrings> stringsMock) {
-        stringsMock.when(() -> KmuStrings.get(anyString())).thenReturn("caption");
+    private static void stubControlLabels(MockedStatic<KmuStringKeys> stringsMock) {
+        stringsMock.when(() -> KmuStringKeys.get(anyString())).thenReturn("caption");
     }
 
     // Fires the selector's click action for the segment at the given index, the path a click on that
@@ -333,14 +333,14 @@ final class PoliticalMapBodyControlsTest {
     // Stubs the two registered views and their radio labels, so building the selector and resolving a
     // clicked segment both read the same [Factions, Alliances] order without the live strings table.
     private void stubSelectorViews(MockedStatic<PoliticalMapViewRegistry> registryMock,
-            MockedStatic<KmuStrings> stringsMock) {
+            MockedStatic<KmuStringKeys> stringsMock) {
         when(factionsViewMock.getSegmentLabelKey()).thenReturn("factions_label");
         when(alliancesViewMock.getSegmentLabelKey()).thenReturn("alliances_label");
         registryMock.when(PoliticalMapViewRegistry::getViews)
                 .thenReturn(List.of(factionsViewMock, alliancesViewMock));
         registryMock.when(() -> PoliticalMapViewRegistry.getSelectedViewIndex(BUILT_SCREEN))
                 .thenReturn(ControlSpec.NO_SELECTION);
-        stringsMock.when(() -> KmuStrings.get("factions_label")).thenReturn("Factions");
-        stringsMock.when(() -> KmuStrings.get("alliances_label")).thenReturn("Alliances");
+        stringsMock.when(() -> KmuStringKeys.get("factions_label")).thenReturn("Factions");
+        stringsMock.when(() -> KmuStringKeys.get("alliances_label")).thenReturn("Alliances");
     }
 }

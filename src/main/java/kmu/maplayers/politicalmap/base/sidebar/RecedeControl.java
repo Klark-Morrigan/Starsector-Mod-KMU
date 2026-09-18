@@ -5,7 +5,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.politicalmap.base.RecedePreferences;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 
@@ -50,11 +50,11 @@ public final class RecedeControl {
         return List.of(
             ControlSpec.Label.createLabel(new TextSpan(captionLabel, textColour)),
             ControlSpec.Checkbox.lit(
-                new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_MUTED), textColour),
+                new TextSpan(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_MUTED), textColour),
                 preferences.isMuted(target.memoryScope()),
                 cellIndex -> toggleMuted(preferences, target)),
             ControlSpec.Checkbox.lit(
-                new TextSpan(KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_DESATURATED), textColour),
+                new TextSpan(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_DESATURATED), textColour),
                 preferences.isDesaturated(target.memoryScope()),
                 cellIndex -> toggleDesaturated(preferences, target)));
     }

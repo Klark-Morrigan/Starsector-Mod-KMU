@@ -5,7 +5,9 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segments;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -105,7 +107,7 @@ class IntercontinentalPocketsIntegrationTest {
             // foot with no sea to reach it - whereas one a sea comes that close to and stops
             // short of has been held off by a channel that should not be there.
             var walls = buildLaidWallsOf(sector);
-            var links = Set.copyOf(DiscUnionBoundary.buildChordsFrom(layLinks(sector)));
+            var links = Set.copyOf(Chord.buildChordsFrom(layLinks(sector)));
             var outlines = fillSeasOf(sector, VoidPockets.PocketShaping.AT_TRUE_EXTENT);
             var stoppedShort = new ArrayList<String>();
 
@@ -254,12 +256,12 @@ class IntercontinentalPocketsIntegrationTest {
 
     // The walls the fill is walked against, built as the construction builds them: the links
     // and the standing inlet spans, pinched on every cell whose whole frontage is one point.
-    private static DiscUnionBoundary.Walls buildLaidWallsOf(String sector) {
-        var laid = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(layLinks(sector)));
+    private static Walls buildLaidWallsOf(String sector) {
+        var laid = new ArrayList<>(Chord.buildChordsFrom(layLinks(sector)));
 
-        laid.addAll(DiscUnionBoundary.buildChordsFrom(layInletSpans(sector)));
+        laid.addAll(Chord.buildChordsFrom(layInletSpans(sector)));
 
-        return new DiscUnionBoundary.Walls(
+        return new Walls(
             laid,
             PARAMETERS.borderInset(),
             CoastFrontages.collectPinchedCells(traceContinentCoast(sector)));

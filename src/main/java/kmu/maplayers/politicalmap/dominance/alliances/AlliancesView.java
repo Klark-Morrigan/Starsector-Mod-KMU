@@ -17,7 +17,7 @@ import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
 import kmu.maplayers.politicalmap.dominance.factions.FactionsView;
 import kmu.mods.nexerelin.NexerelinAlliances;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +61,7 @@ public final class AlliancesView implements DominancePaintedView {
     @Override
     public String getSegmentLabelKey() {
         // "Alliances" - this view's segment on the view-selector radio, sibling to the faction one.
-        return KmuStrings.POLITICAL_MAP_CTL_ALLIANCES;
+        return KmuStringKeys.POLITICAL_MAP_CTL_ALLIANCES;
     }
 
     @Override

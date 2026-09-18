@@ -10,7 +10,7 @@ import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.tooltip.content.CellTooltipIndexOutcome;
 import kmu.maplayers.base.tooltip.content.CellTooltipMark;
 import kmu.maplayers.base.tooltip.detail.HoverTooltipDetailLevel;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -238,7 +238,7 @@ public final class ClaimScoreRowResolver {
         // its name, and only the points it comes to stay a finding.
         return Optional.of(CellTooltipEntry.createEntry(TermTooltipLine
             .buildTermLine(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS),
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_BONUS),
                 formatBonus(siblingMarketCount))
             .derivesValueFrom(formatSiblingWorking(siblingMarketCount))
             .readsAsAside()));
@@ -303,8 +303,8 @@ public final class ClaimScoreRowResolver {
         // colony - and a tie a blocked-out market won or lost is settled by that place alone, which no
         // other number on screen accounts for.
         return line.indexedAt(
-            KmuStrings.format(
-                KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
+            KmuStringKeys.format(
+                KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_LISTING_POSITION,
                 KmlibNumbers.formatGroupedInteger(market.listingPosition())),
             indexOutcome);
     }
@@ -405,11 +405,11 @@ public final class ClaimScoreRowResolver {
         // Always stated, even where it is the whole score: it is the term the sum starts from, and a
         // market listing no term at all would read as a number with no account behind it.
         entries.add(TermTooltipLine.buildTermEntry(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
+            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_SIZE),
             KmlibNumbers.formatGroupedInteger(market.marketSize())));
 
         market.militaryBonus().ifPresent(bonus -> entries.add(TermTooltipLine.buildTermEntry(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY),
+            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_MILITARY),
             formatBonus(bonus))));
 
         return entries;
@@ -418,8 +418,8 @@ public final class ClaimScoreRowResolver {
     // What a term added, signed so it reads as a term of a sum rather than as a quantity of its own -
     // the size above it is what the colony is, while these are what was added to it.
     private static String formatBonus(int amount) {
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS,
+        return KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_BONUS,
             KmlibNumbers.formatGroupedInteger(amount));
     }
 
@@ -432,8 +432,8 @@ public final class ClaimScoreRowResolver {
     // does not count as its own sibling. The two sides nevertheless read the same number, because the
     // mechanic pays a flat point per sibling: the count is the term.
     private static String formatSiblingWorking(int siblingMarketCount) {
-        return KmuStrings.format(
-            KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING,
+        return KmuStringKeys.format(
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_SIBLING_WORKING,
             KmlibNumbers.formatGroupedInteger(siblingMarketCount + THE_MARKET_BEING_SCORED));
     }
 

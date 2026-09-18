@@ -23,7 +23,7 @@ import kmu.maplayers.politicalmap.base.render.PoliticalMapLayerRenderer;
 import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.settings.KmuMapKeybindSettings;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
@@ -502,10 +502,10 @@ final class PoliticalMapLayerTest {
         @Test
         void resolveTabLabelTextLettersTheTabFromThePoliticalMapsOwnKey() {
 
-            try (var stringsMock = mockStatic(KmuStrings.class)) {
+            try (var stringsMock = mockStatic(KmuStringKeys.class)) {
 
                 stringsMock
-                    .when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_TAB_POLITICAL_MAP))
+                    .when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP))
                     .thenReturn("Political Map");
 
                 assertThat(PoliticalMapLayer.INSTANCE.resolveTabLabelText())

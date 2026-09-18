@@ -4,7 +4,7 @@ import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.content.CellTooltipEntryLine;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +115,7 @@ public final class ColonyQualifier {
             return qualifiedLine;
         }
         return qualifiedLine.qualifiedWith(String.join(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_SEPARATOR),
+            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_SEPARATOR),
             statedWords));
     }
 
@@ -129,7 +129,7 @@ public final class ColonyQualifier {
         var concealment = facts.concealment();
 
         if (facts.isHoldingTheClaim()) {
-            words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER));
+            words.add(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_HOLDER));
         }
         resolveKindWord(facts.kind()).ifPresent(words::add);
 
@@ -141,15 +141,15 @@ public final class ColonyQualifier {
         // keeps no comm directory wears the identical flag - so calling it out beside a pirate base
         // would say the two are the same sort of place.
         if (!concealment.isDiscoveredByPlayer()) {
-            words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED));
+            words.add(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNDISCOVERED));
         } else if (concealment.isHiddenMarket() && !concealment.isOpenlyKnownMarket()) {
-            words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN));
+            words.add(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_HIDDEN));
         }
         // The fallback, and the emptiness read here is the conditions above rather than what is left
         // once the name has taken its word - which is what lets a word gilded into the name still
         // have qualified.
         if (words.isEmpty() && !facts.isListedByEconomy()) {
-            words.add(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED));
+            words.add(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_UNLISTED));
         }
         return words;
     }
@@ -163,9 +163,9 @@ public final class ColonyQualifier {
         }
         return switch (kind) {
             case SPACE_DERELICT ->
-                Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_ABANDONED));
+                Optional.of(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_ABANDONED));
             case UNGOVERNED_COLONY ->
-                Optional.of(KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_DECIVILISED));
+                Optional.of(KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_DECIVILISED));
             case COLONY, OUTPOST -> Optional.empty();
         };
     }

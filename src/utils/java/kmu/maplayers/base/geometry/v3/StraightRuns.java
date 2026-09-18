@@ -4,8 +4,9 @@ import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Points;
 import kmlib.math.ranges.Ranges;
 
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 /**
  * Where a straight run of coast leaves one cell and lands on the next.
@@ -110,8 +111,8 @@ public final class StraightRuns {
      */
     public record StraightRun(
         DiscUnion union,
-        DiscUnionBoundary.CoastMark from,
-        DiscUnionBoundary.CoastMark to) {
+        CoastMark from,
+        CoastMark to) {
 
         double[] findDeparture(EdgeAngles edge) {
             return DiscUnionBoundary.findPointOnMark(union, from, edge.departAngle());
@@ -121,7 +122,7 @@ public final class StraightRuns {
             return DiscUnionBoundary.findPointOnMark(union, to, edge.arriveAngle());
         }
 
-        double[] findCentre(DiscUnionBoundary.CoastMark mark) {
+        double[] findCentre(CoastMark mark) {
             return union.sites().get(mark.circle());
         }
 
@@ -418,7 +419,7 @@ public final class StraightRuns {
     // An angle held to the stretch of border a cell actually offers. A run slid to clear
     // one neighbour can otherwise leave the cell's own frontage entirely, which puts the
     // coast on a piece of border that belongs to no stretch of the walk.
-    private static double clampIntoFrontage(DiscUnionBoundary.CoastMark mark, double angle) {
+    private static double clampIntoFrontage(CoastMark mark, double angle) {
 
         return Ranges.clampInto(
             Angles.placeAfter(angle, mark.fromAngle()), mark.fromAngle(), mark.toAngle());
@@ -435,7 +436,7 @@ public final class StraightRuns {
     // correcting this, because correcting it is not the improvement it looks like.
     private static double placeFacingFor(
             ReachAnchor anchor,
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             double raw) {
 
         return anchor == ReachAnchor.AT_THE_STRETCH_START
@@ -450,7 +451,7 @@ public final class StraightRuns {
     // business on the part of a cell's border that faces another cell rather than the void.
     private static double findReachableAngle(
             DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             double[] viewer,
             ReachAnchor anchor) {
 

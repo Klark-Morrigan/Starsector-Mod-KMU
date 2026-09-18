@@ -4,8 +4,8 @@ import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ final class ShutInVoidSweep {
      */
     static List<ShutInVoid> findShutInVoid(
             DiscUnion union,
-            List<DiscUnionBoundary.Chord> walls,
+            List<Chord> walls,
             double stride) {
 
         var overSites = Bounds.computeEnclosingBounds(union.sites());
@@ -148,7 +148,7 @@ final class ShutInVoidSweep {
 
         var points = new ArrayList<double[]>();
         var pending = new ArrayDeque<int[]>();
-        var blocking = new LinkedHashSet<DiscUnionBoundary.Chord>();
+        var blocking = new LinkedHashSet<Chord>();
         var escaped = false;
 
         grid.markReached(startX, startY);
@@ -192,8 +192,8 @@ final class ShutInVoidSweep {
         return escaped ? null : new ShutInVoid(points, grid.stride(), List.copyOf(blocking));
     }
 
-    private static DiscUnionBoundary.Chord findBlockingChord(
-            double[] from, double[] to, List<DiscUnionBoundary.Chord> walls) {
+    private static Chord findBlockingChord(
+            double[] from, double[] to, List<Chord> walls) {
 
         for (var wall : walls) {
             if (Segments.intersectSegments(from, to, wall.findStart(), wall.findEnd()) != null) {
@@ -214,16 +214,16 @@ final class ShutInVoidSweep {
      *
      * @param wallsBySquare the walls filed against each square they could stop a step out of
      */
-    private record WallIndex(Map<Long, List<DiscUnionBoundary.Chord>> wallsBySquare) {
+    private record WallIndex(Map<Long, List<Chord>> wallsBySquare) {
 
         // How far around a wall's own box its squares are filed. One square: a step spans
         // exactly one, so a step a wall crosses starts within a square of the crossing point,
         // and the crossing point is inside the box.
         private static final int REACHING_SQUARES = 1;
 
-        static WallIndex over(FloodGrid grid, List<DiscUnionBoundary.Chord> walls) {
+        static WallIndex over(FloodGrid grid, List<Chord> walls) {
 
-            var wallsBySquare = new HashMap<Long, List<DiscUnionBoundary.Chord>>();
+            var wallsBySquare = new HashMap<Long, List<Chord>>();
 
             for (var wall : walls) {
 
@@ -253,7 +253,7 @@ final class ShutInVoidSweep {
             return ((long) x << Integer.SIZE) | Integer.toUnsignedLong(y);
         }
 
-        List<DiscUnionBoundary.Chord> findWallsNear(int x, int y) {
+        List<Chord> findWallsNear(int x, int y) {
             return wallsBySquare.getOrDefault(keyFor(x, y), List.of());
         }
     }
@@ -351,7 +351,7 @@ final class ShutInVoidSweep {
     record ShutInVoid(
         List<double[]> points,
         double stride,
-        List<DiscUnionBoundary.Chord> walledBy) {
+        List<Chord> walledBy) {
 
         double measureArea() {
             return points.size() * stride * stride;

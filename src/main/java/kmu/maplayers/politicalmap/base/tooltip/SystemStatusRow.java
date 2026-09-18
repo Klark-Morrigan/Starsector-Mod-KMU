@@ -7,7 +7,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 import java.util.Optional;
@@ -93,15 +93,15 @@ public final class SystemStatusRow {
         // governed colonies and the collapsed one and nothing else, so with no governed colony
         // found anything still in hand is a collapse, and nothing in hand is nobody at all.
         var statusKey = inhabitingColonies.isEmpty()
-            ? KmuStrings.POLITICAL_MAP_TOOLTIP_UNPOPULATED
-            : KmuStrings.POLITICAL_MAP_TOOLTIP_DECIVILISED;
+            ? KmuStringKeys.POLITICAL_MAP_TOOLTIP_UNPOPULATED
+            : KmuStringKeys.POLITICAL_MAP_TOOLTIP_DECIVILISED;
 
         // Set across the box, crestless: the status qualifies the whole system rather than being one
         // entry of a list, so it is spoken for the box the way the decree above it is - laid in the
         // columns instead, it would read as the first row of a breakdown that has none.
         return Optional.of(CellTooltipRows.buildBannerRow(
             NO_CREST,
-            KmuStrings.get(statusKey)));
+            KmuStringKeys.get(statusKey)));
     }
 
     // Whether anybody is running a colony here. Stated as the exclusion of the one kind that

@@ -6,7 +6,7 @@ import kmlib.starsector.ui.widgets.tooltip.TooltipRow;
 import kmlib.text.KmlibStrings;
 
 import kmu.maplayers.base.tooltip.layout.CellTooltipRows;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 
@@ -56,6 +56,6 @@ public final class CoreTerritoryHeading {
         return List.of(FactionTooltipBanner
             .buildFactionBanner(sector, coreFactionId)
             .continuesWith(CellTooltipRows.buildQualifierSpan(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CORE_TERRITORY))));
     }
 }

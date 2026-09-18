@@ -5,7 +5,7 @@ import kmlib.starsector.ui.controls.ControlSpec;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerRenderer;
 import kmu.settings.KmuMapKeybindSettings;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 
@@ -37,7 +37,7 @@ public final class NoLayer implements MapLayer {
 
     @Override
     public String resolveTabLabelText() {
-        return KmuStrings.get(KmuStrings.MAP_LAYER_TAB_NO_LAYER);
+        return KmuStringKeys.get(KmuStringKeys.MAP_LAYER_TAB_NO_LAYER);
     }
 
     @Override

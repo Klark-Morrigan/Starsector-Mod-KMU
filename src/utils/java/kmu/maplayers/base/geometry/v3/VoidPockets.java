@@ -3,10 +3,11 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
+import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -183,7 +184,7 @@ public final class VoidPockets {
         var parameters = rules.parameters();
         var boundSegments = parameters.boundSegments();
 
-        var trueHoles = DiscUnionBoundary.traceHoles(
+        var trueHoles = BareVoidBoundary.traceBareHoles(
             new DiscUnion(sites, parameters.cellRadius()), boundSegments);
 
         // Traced only where an outline is going to come off them. At the true extent a pocket
@@ -192,11 +193,11 @@ public final class VoidPockets {
 
         var withChannel = isAtTrueExtent
             ? List.<VoidHole>of()
-            : DiscUnionBoundary.traceHoles(buildDrawnUnion(sites, parameters), boundSegments);
+            : BareVoidBoundary.traceBareHoles(buildDrawnUnion(sites, parameters), boundSegments);
 
         var atFills = isAtTrueExtent
             ? List.<VoidHole>of()
-            : DiscUnionBoundary.traceHoles(
+            : BareVoidBoundary.traceBareHoles(
                 new DiscUnion(sites, parameters.measureFilledReach()), boundSegments);
 
         var pockets = new ArrayList<VoidPocket>(trueHoles.size());

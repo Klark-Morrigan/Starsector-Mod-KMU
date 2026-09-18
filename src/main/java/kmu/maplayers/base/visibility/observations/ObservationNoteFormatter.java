@@ -2,7 +2,7 @@ package kmu.maplayers.base.visibility.observations;
 
 import com.fs.starfarer.api.campaign.CampaignClockAPI;
 
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 /**
  * How old the news on one axis is, put into words: how long ago it was observed, and on what date.
@@ -48,7 +48,7 @@ public final class ObservationNoteFormatter {
 
         // The clock the date is read on is built from the stamp and discarded with the remark, this
         // being the only way the game turns a moment into a date.
-        return KmuStrings.format(
+        return KmuStringKeys.format(
             leadInKey,
             formatElapsedSpan(clock.getElapsedDaysSince(observedTimestamp)),
             clock.createClock(observedTimestamp).getDateString());
@@ -59,11 +59,11 @@ public final class ObservationNoteFormatter {
     private static String formatElapsedSpan(float elapsedDays) {
 
         if (elapsedDays < A_DAY) {
-            return KmuStrings.get(KmuStrings.OBSERVATION_SPAN_TODAY);
+            return KmuStringKeys.get(KmuStringKeys.OBSERVATION_SPAN_TODAY);
         }
         if (elapsedDays < TWO_DAYS) {
-            return KmuStrings.get(KmuStrings.OBSERVATION_SPAN_A_DAY_AGO);
+            return KmuStringKeys.get(KmuStringKeys.OBSERVATION_SPAN_A_DAY_AGO);
         }
-        return KmuStrings.format(KmuStrings.OBSERVATION_SPAN_DAYS_AGO, (int) elapsedDays);
+        return KmuStringKeys.format(KmuStringKeys.OBSERVATION_SPAN_DAYS_AGO, (int) elapsedDays);
     }
 }

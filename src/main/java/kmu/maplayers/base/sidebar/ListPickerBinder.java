@@ -11,7 +11,7 @@ import kmlib.starsector.ui.widgets.lists.SelectableListItem;
 
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 
@@ -95,7 +95,7 @@ public final class ListPickerBinder {
         return ListPickerControl.buildPicker(
             picker.items(),
             activePicks,
-            KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION),
+            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION),
             trailingControls,
             // Both writers taken off the one machinery here, rather than resolved when a pick or
             // a hover lands: a build runs while the sector is live, where a report can arrive after

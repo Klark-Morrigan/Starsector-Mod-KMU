@@ -1,10 +1,14 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.walls;
 
 import kmlib.math.geometry.Angles;
-import kmlib.math.geometry.DirectedLine;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
+
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.CoastMark;
+import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.VoidHole;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,7 +18,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The boundary of a {@link DiscUnion}, as closed cycles of circular arcs.
@@ -58,6 +61,12 @@ import java.util.Set;
  * channel is taken out, and run at the reach minus it, what they become when the cells fill
  * right up to them. Every consumer that wants a pocket at some reach wants this, and there is
  * now more than one of them.
+ *
+ * <p><b>Reading the void with nothing laid across it does not come through here.</b> It is the
+ * same sweep with no walls given, but that reading is sound in a way this one is not - none of
+ * the accommodations a zero-width wall forced is reached when there are no walls - so it has a
+ * door of its own at {@link kmu.maplayers.base.geometry.BareVoidBoundary}, outside this
+ * package, and what may only have the bare void is shut off from this one.
  */
 public final class DiscUnionBoundary {
 
@@ -79,273 +88,6 @@ public final class DiscUnionBoundary {
     private static final int TO_SIDE = 1;
 
     private DiscUnionBoundary() {
-    }
-
-    /**
-     * A straight run of boundary between two circles, walling void off from the rest.
-     *
-     * <p>Two circles and the line it lies on. The circles say which arcs it joins and are what
-     * its terminals are named by; the line says where it actually runs, which for a bridge is
-     * the line joining the two sites and for a wall the coast smoothing laid down is nowhere
-     * near it.
-     *
-     * <p>The line rather than an angle on each circle, because a wall has to be found again at
-     * more than one reach - once at the reach the void is defined at and once at the reach it
-     * is drawn at - and a pair of angles only means anything at the reach it was measured at.
-     * A line is the same line at any reach, so the sweep recomputes where it meets each circle
-     * instead of being handed a stale answer.
-     *
-     * @param fromCircle one of the circles it runs between
-     * @param toCircle   the other
-     * @param line       the line it lies on, unbounded; only the stretch between the two
-     *                   circles is boundary, and the sweep works that out for itself
-     * @param kind       which sort of wall it is, which decides only whether it is still on
-     *                   the boundary - everything else here treats the two alike
-     */
-    public record Chord(
-        int fromCircle,
-        int toCircle,
-        DirectedLine line,
-        WallKind kind) {
-
-        // Where the wall begins and ends, which is the stretch of its line that is actually a
-        // wall. Asked of the wall itself because everything that draws one, measures to one or
-        // walks across one needs the same two points, and rebuilding them from the origin and
-        // the direction is four arithmetic expressions that can each be got wrong.
-        public double[] findStart() {
-            return new double[] {line.originX(), line.originY()};
-        }
-
-        public double[] findEnd() {
-            return new double[] {
-                line.originX() + line.directionX(), line.originY() + line.directionY()};
-        }
-
-        // Whichever of the two ends sits on the named circle. A wall runs between two, and
-        // which end is on which is fixed when the wall is built.
-        public double[] findEndOn(int circle) {
-            return circle == fromCircle ? findStart() : findEnd();
-        }
-    }
-
-    /**
-     * The sorts of wall, which sit on the boundary in two different ways.
-     *
-     * <p>A named kind rather than a flag, and carried by the wall rather than passed to the
-     * test, because it is a fact about how the line was arrived at: a span is the line
-     * joining two sites and a reach of coast is a tangent the smoothing drew. Nothing else in
-     * the walk asks - every kind opens a mouth, takes a stretch of circle out of the boundary,
-     * and closes a cycle.
-     *
-     * <p>The spans are told apart by which water they were laid over, which the walk never
-     * asks and everything reading a hole it closed does: a piece of void is the kind of piece
-     * its walls say it is, and a wall that had forgotten where it came from would leave that
-     * unanswerable.
-     */
-    public enum WallKind {
-
-        /**
-         * The line joining two sites, spanning the gap between their cells. It crosses its
-         * circles steeply and squarely between them, so the two edges of its mouth say
-         * whether the gap it spans is still there: buried, and the cells have closed over it.
-         *
-         * <p>The span the cell-pair search lays over the cells alone, with no shore consulted.
-         * Every span below sits on the boundary exactly as this one does.
-         */
-        BRIDGE,
-
-        /** A span across an inlet of an outer shore: water between two cells of one continent
-         * on the side that faces the open void. */
-        INLET_SPAN,
-
-        /** A span across a lake: water a continent's own cells closed around unaided. */
-        LAKE_SPAN,
-
-        /** A span across a puddle: a hole too small to have been drawn a shore. */
-        PUDDLE_SPAN,
-
-        /** A span between two continents, joining what tracing without bridges took apart. */
-        LINK,
-
-        /**
-         * A straight run the coast smoothing drew from one cell's frontage to another's. It
-         * LEAVES along a tangent and can end exactly where two circles cross, so half its
-         * mouth lies inside the neighbouring disc whatever the reach did - its own end is the
-         * only thing that says whether it is on the boundary.
-         */
-        COAST_REACH,
-
-        /**
-         * The same run, drawn on a lake's shore instead of an outer coast's.
-         *
-         * <p>Told apart from {@link #COAST_REACH} by what lies either side, not by how it is
-         * built. An outer coast has water on one side and cells on the other; a lake shore has
-         * water on BOTH - the pockets within the line, and the margin the line conceded to the
-         * cells - so a hole closing on one is lake water either way, and which side it fell is
-         * a question of where it sits rather than of what walled it.
-         */
-        LAKE_SHORE;
-
-        /**
-         * Whether this is a run of a drawn shoreline rather than a span across void.
-         *
-         * <p>The two are placed differently and so are judged differently: a shore's run leaves
-         * its cell along a tangent and may end exactly on a crossing, where a span crosses its
-         * circles squarely between the two sites. Asked as one question rather than compared
-         * against each kind in turn, so a shore added later cannot be judged as a span by a
-         * test that was never told about it.
-         *
-         * @return whether a run of drawn shoreline
-         */
-        public boolean isShoreReach() {
-            return this == COAST_REACH || this == LAKE_SHORE;
-        }
-    }
-
-    /**
-     * The bridges as the chords they become on the boundary.
-     *
-     * <p>A bridge already knows the line it lies on: its two ends are where the gap it spans
-     * meets the two cells, so the line through them is the line joining the sites. Taken from
-     * the gap rather than recomputed from the sites, so the wall lands on the run the bridge
-     * was chosen for rather than on a line that merely ought to be the same.
-     *
-     * @param bridges the bridges, as {@link VoidBridges} found them
-     * @return one chord per bridge, in the order they were offered
-     */
-    public static List<Chord> buildChordsFrom(List<CellGap> bridges) {
-        return buildChordsFrom(bridges, WallKind.BRIDGE);
-    }
-
-    /**
-     * Spans as the chords they become on the boundary, each carrying the water it was laid
-     * over.
-     *
-     * @param spans the spans
-     * @param kind  which water they cross, which is what a hole they close is later read as
-     * @return one chord per span, on the line joining its two sites
-     */
-    public static List<Chord> buildChordsFrom(List<CellGap> spans, WallKind kind) {
-
-        var chords = new ArrayList<Chord>(spans.size());
-
-        for (var span : spans) {
-
-            chords.add(new Chord(
-                span.fromSite(),
-                span.toSite(),
-                new DirectedLine(
-                    span.start()[0],
-                    span.start()[1],
-                    span.end()[0] - span.start()[0],
-                    span.end()[1] - span.start()[1]),
-                kind));
-        }
-        return chords;
-    }
-
-    /**
-     * The walls to lay across the void: which chords, the channel every one keeps, and the
-     * cells on which that channel closes to nothing.
-     *
-     * <p>One value because neither half means anything without the other. A chord list with
-     * no channel is not a harmless default - the two pockets either side of every wall then
-     * close on the same line and read as one mass, and a zero-width mouth corrupts the cover
-     * sweep's bookkeeping besides - so the pairing refuses it outright rather than trusting
-     * every caller to remember.
-     *
-     * <p><b>A pinched cell is the one place a wall is allowed no width.</b> A cell whose whole
-     * bridgeable frontage is a single point has every wall attaching at that point, and a wall
-     * of any width there buries the very place it lands on: its mouth takes the border either
-     * side of the anchor, and a coast running up to the wall stops a channel short of it. So
-     * on such a cell the mouth closes to the anchor and the wall's two sides meet there - a
-     * wedge rather than a strip - and the coast reaches the one point it was offered.
-     * Everywhere else the channel stands, because everywhere else there is border to spare.
-     *
-     * <p>Per cell rather than per wall end, since the fact is about the cell: every wall on a
-     * pinched cell lands on the same point, and one of them kept wide while the rest closed
-     * would hold the coast a channel off all of them.
-     *
-     * <p><b>The channel cannot be given up wall by wall.</b> A mouth is how a cycle is routed
-     * onto a wall, so a wall with none does not divide the void - it is touched and walked
-     * past. Measured: with the lake shores laid at no width, the pockets inside them ran up to
-     * 1291 units out past the shore and the water one fixture's lakes had painted fell by half.
-     * A pinched CELL is the exception that proves it: there only one end of a wall closes, and
-     * the wall still has a mouth at the other to be routed by.
-     *
-     * @param chords       the walls, as pairs of circles
-     * @param channel      how far each side of a wall holds back from it
-     * @param pinchedCells the cells on which a wall keeps no channel at all
-     */
-    public record Walls(
-        List<Chord> chords,
-        double channel,
-        Set<Integer> pinchedCells) {
-
-        // Nothing laid across the void, for the callers that want the cells' own boundary -
-        // whether the trace over the bare discs or a coast traced with no bridges. Named
-        // rather than built at each of them, because the pair is only legal together: the
-        // channel is zero, which the constructor refuses for any real wall and does not
-        // need here, since with no chords there is no mouth for a channel to size.
-        public static final Walls NONE = new Walls(List.of(), 0);
-
-        /**
-         * Walls that keep their channel on every cell.
-         *
-         * @param chords  the walls, as pairs of circles
-         * @param channel how far each side of a wall holds back from it
-         */
-        public Walls(List<Chord> chords, double channel) {
-            this(chords, channel, Set.of());
-        }
-
-        public Walls {
-            if (!chords.isEmpty() && channel <= 0) {
-                throw new IllegalArgumentException("walls need a channel to keep");
-            }
-            pinchedCells = Set.copyOf(pinchedCells);
-        }
-
-        /**
-         * How far a wall's sides hold back from it on one cell.
-         *
-         * @param circle the cell
-         * @return the channel, or nothing at all on a pinched cell
-         */
-        public double channelOn(int circle) {
-            return isPinchedOn(circle) ? 0 : channel;
-        }
-
-        /**
-         * Whether every wall on a cell closes to the one point it lands on.
-         *
-         * @param circle the cell
-         * @return true where the cell is pinched, so a wall's mouth there is its anchor
-         */
-        public boolean isPinchedOn(int circle) {
-            return pinchedCells.contains(circle);
-        }
-    }
-
-    /**
-     * Every hole in the union.
-     *
-     * <p>Run at the true reach it finds the pockets; run at the reach plus the channel it
-     * finds what is left of them once the channel is taken out; run at the reach minus it,
-     * what they become when the cells fill right up to them.
-     *
-     * <p>Run afresh at each reach rather than redrawing one ring's arcs at another radius. A
-     * ring is not the same ring at a different reach: a cell whose arc its neighbours have
-     * swallowed drops out of it, and a pocket can pinch in two. Redrawing in place cannot
-     * express either, and reads both as the pocket having closed.
-     *
-     * @param union         the discs to trace
-     * @param boundSegments sides of the cells' own radius bound, whose vertex angles every
-     *                      arc is flattened onto
-     * @return the holes, wound the way any other filled shape is
-     */
-    public static List<VoidHole> traceHoles(DiscUnion union, int boundSegments) {
-        return traceHolesAcrossWalls(union, Walls.NONE, boundSegments);
     }
 
     /**
@@ -1770,54 +1512,6 @@ public final class DiscUnionBoundary {
     // low bit, so the wall is what is left once it is taken off.
     private static int readChordFrom(long terminal) {
         return (int) ((-terminal - 1) / 2);
-    }
-
-    /**
-     * One stretch of border a traced cycle runs along: the arc of one cell, as the angles it
-     * spans. What a coast is made of, and equally what the edge of a hole is made of - both
-     * come off the one walk, and a stretch of border is the same thing whichever side of it
-     * the cells lie on.
-     *
-     * <p>The whole stretch rather than a single point on it, because a smoothed coast wants
-     * two different things from it: the middle, which is where the line would pass if nothing
-     * were in the way, and the two ends, which bound how far along the cell's border the line
-     * may be slid when something is.
-     *
-     * @param circle    whose cell the stretch of coast belongs to
-     * @param fromAngle the angle it begins at
-     * @param toAngle   the angle it ends at, always greater than {@code fromAngle}
-     */
-    public record CoastMark(
-        int circle,
-        double fromAngle,
-        double toAngle) {
-
-        /**
-         * The middle of the stretch - where a coast passes when nothing blocks it.
-         *
-         * @return the angle halfway along
-         */
-        public double midAngle() {
-            return (fromAngle + toAngle) / 2;
-        }
-
-        /**
-         * How much of the cell's own border this stretch is, as a share of the whole turn.
-         *
-         * <p>How far a cell sticks out into the void, in the only terms that compare across
-         * a map: a share rather than an arc length, so the answer does not move when the
-         * reach slider does, and so one number means the same thing on every cell.
-         *
-         * <p>Of the STRETCH rather than of the cell. A cell facing the void on two separate
-         * frontages - a strait, or the inside of a C - contributes one stretch per frontage,
-         * and each is a separate place the coast passes; summing them would report a cell
-         * that peeks out twice as though it presented one broad face.
-         *
-         * @return the share of the full turn, from 0 to 1
-         */
-        public double measureShareOfCircle() {
-            return (toAngle - fromAngle) / Angles.FULL_TURN;
-        }
     }
 
     /**

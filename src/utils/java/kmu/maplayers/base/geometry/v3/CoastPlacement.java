@@ -4,8 +4,10 @@ import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
 
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -74,7 +76,7 @@ final class CoastPlacement {
     record BorderRules(
         double minFrontageShare,
         int arcSegments,
-        DiscUnionBoundary.Walls walls,
+        Walls walls,
         WallPlacement wallPlacement,
         StraightRuns.ReachAnchor reachAnchor) {
     }
@@ -110,7 +112,7 @@ final class CoastPlacement {
      * @param union   the discs the stretches were read off
      */
     private record VisitedWalk(
-        List<DiscUnionBoundary.CoastMark> coast,
+        List<CoastMark> coast,
         List<Integer> visited,
         DiscUnion union) {
 
@@ -118,7 +120,7 @@ final class CoastPlacement {
             return visited.size();
         }
 
-        DiscUnionBoundary.CoastMark findMarkAt(int step) {
+        CoastMark findMarkAt(int step) {
             return coast.get(visited.get(step));
         }
 
@@ -227,13 +229,13 @@ final class CoastPlacement {
      * @return one closed run of points per run of connected cells
      */
     static PlacedCoasts buildSilhouetteBorders(
-            List<List<DiscUnionBoundary.CoastMark>> silhouettes,
+            List<List<CoastMark>> silhouettes,
             DiscUnion union,
             Set<Integer> bridged,
             BorderRules rules) {
 
         var placed = new ArrayList<List<Coastlines.CoastVertex>>();
-        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
+        var dropped = new ArrayList<CoastMark>();
 
         for (var silhouette : silhouettes) {
 
@@ -270,14 +272,14 @@ final class CoastPlacement {
      *         that could not be built comes to
      */
     static PlacedCoast buildOneBorder(
-            List<DiscUnionBoundary.CoastMark> coast,
+            List<CoastMark> coast,
             DiscUnion union,
             Set<Integer> bridged,
             BorderRules rules) {
 
         var visited = selectVisitedStretches(coast, union, bridged, rules);
         var outline = placeClearedOutline(coast, visited, union, rules);
-        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
+        var dropped = new ArrayList<CoastMark>();
 
         for (var index = 0; index < coast.size(); index++) {
 
@@ -299,7 +301,7 @@ final class CoastPlacement {
      */
     record PlacedCoast(
         List<Coastlines.CoastVertex> outline,
-        List<DiscUnionBoundary.CoastMark> dropped) {
+        List<CoastMark> dropped) {
     }
 
     /**
@@ -316,7 +318,7 @@ final class CoastPlacement {
      */
     record PlacedCoasts(
         List<List<Coastlines.CoastVertex>> coasts,
-        List<DiscUnionBoundary.CoastMark> dropped) {
+        List<CoastMark> dropped) {
     }
 
     // A cell alone in the void has no coast, so the runs that name one are not silhouettes.
@@ -331,10 +333,10 @@ final class CoastPlacement {
     // Read off the run itself: cells that touch, and cells a laid bridge joins, are walked
     // into ONE run - so a run naming a single circle is exactly the degenerate case, with no
     // separate test for touching or for bridges to fall out of step with the walk.
-    static List<List<DiscUnionBoundary.CoastMark>> keepJoinedRuns(
-            List<List<DiscUnionBoundary.CoastMark>> silhouettes) {
+    static List<List<CoastMark>> keepJoinedRuns(
+            List<List<CoastMark>> silhouettes) {
 
-        var joined = new ArrayList<List<DiscUnionBoundary.CoastMark>>(silhouettes.size());
+        var joined = new ArrayList<List<CoastMark>>(silhouettes.size());
 
         for (var silhouette : silhouettes) {
 
@@ -354,7 +356,7 @@ final class CoastPlacement {
     // An empty run names no cell and is not an island; it is a walk that found nothing, and
     // there is no cell to hand on.
     static List<Integer> collectLoneIslands(
-            List<List<DiscUnionBoundary.CoastMark>> silhouettes) {
+            List<List<CoastMark>> silhouettes) {
 
         var islands = new ArrayList<Integer>();
 
@@ -368,7 +370,7 @@ final class CoastPlacement {
     }
 
     // Whether a run of coast is one cell's own border and nothing else.
-    private static boolean isLoneIsland(List<DiscUnionBoundary.CoastMark> silhouette) {
+    private static boolean isLoneIsland(List<CoastMark> silhouette) {
 
         if (silhouette.isEmpty()) {
             return true;
@@ -388,7 +390,7 @@ final class CoastPlacement {
     // and protecting its cells would only cost selection detail for nothing.
     static Set<Integer> findBridgedCircles(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
         var bridged = new LinkedHashSet<Integer>();
 
@@ -409,7 +411,7 @@ final class CoastPlacement {
     // asked once there is a set of drops to test. So a rule of taste may propose any drop it
     // likes, and the repair passes are what stop a proposal stranding the line inside a cell.
     private static List<Integer> selectVisitedStretches(
-            List<DiscUnionBoundary.CoastMark> coast,
+            List<CoastMark> coast,
             DiscUnion union,
             Set<Integer> bridged,
             BorderRules rules) {
@@ -448,7 +450,7 @@ final class CoastPlacement {
     // itself, so the walk could start anywhere and drop the same set. Nothing accumulates
     // across the loop, which is why there is no state here to get wrong.
     private static boolean[] flagExposedStretches(
-            List<DiscUnionBoundary.CoastMark> coast,
+            List<CoastMark> coast,
             Set<Integer> bridged,
             BorderRules rules) {
 
@@ -475,7 +477,7 @@ final class CoastPlacement {
     // put straight back by the repair pass if the jump over it turns out to cross anything -
     // so the rule can only ever remove detail that was not load-bearing.
     private static boolean isBarelyFacingTheVoid(
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             Set<Integer> bridged,
             BorderRules rules) {
 
@@ -488,7 +490,7 @@ final class CoastPlacement {
     // is by definition one neither end knows about - and if that cell is one of the stretches
     // skipped over, visiting it is what stops the jump being made at all.
     private static boolean restoreBlockingStretches(
-            List<DiscUnionBoundary.CoastMark> coast,
+            List<CoastMark> coast,
             DiscUnion union,
             boolean[] isVisited,
             BorderRules rules) {
@@ -533,7 +535,7 @@ final class CoastPlacement {
     // the one long jump becomes two short ones, and two neighbouring stretches can always fall
     // back on the boundary's own join between them, which cuts nothing by construction.
     private static int findBlockedStretch(
-            List<DiscUnionBoundary.CoastMark> coast,
+            List<CoastMark> coast,
             DiscUnion union,
             boolean[] isVisited,
             int from,
@@ -577,7 +579,7 @@ final class CoastPlacement {
     // the line touches - and holding the reaches outside every cell is what that freedom is
     // spent on.
     private static List<Coastlines.CoastVertex> placeClearedOutline(
-            List<DiscUnionBoundary.CoastMark> coast,
+            List<CoastMark> coast,
             List<Integer> visited,
             DiscUnion union,
             BorderRules rules) {
@@ -707,8 +709,8 @@ final class CoastPlacement {
     // channel can be a wall, since a wall is what holds its two sides that far apart.
     private static boolean isJoinedByWall(
             DiscUnion union,
-            DiscUnionBoundary.CoastMark from,
-            DiscUnionBoundary.CoastMark to,
+            CoastMark from,
+            CoastMark to,
             BorderRules rules) {
 
         var channel = rules.walls().channel();
@@ -750,7 +752,7 @@ final class CoastPlacement {
     // along the cell's own border, each carrying the cell it belongs to so a later pass can
     // tell which stretch a point came off without matching coordinates back to a circle.
     private static List<Coastlines.CoastVertex> buildVerticesOnMark(
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             List<double[]> points) {
 
         var vertices = new ArrayList<Coastlines.CoastVertex>(points.size());
@@ -781,7 +783,7 @@ final class CoastPlacement {
     // from is then the only answer left.
     private static List<double[]> sampleFillet(
             DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             double arriveAngle,
             double departAngle,
             BorderRules rules) {

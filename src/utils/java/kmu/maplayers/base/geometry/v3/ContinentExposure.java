@@ -3,11 +3,12 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Angles;
 
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
-import kmu.maplayers.base.geometry.WallMouths;
+import kmu.maplayers.base.geometry.walls.WallMouths;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -161,7 +162,7 @@ public final class ContinentExposure {
     private static List<ExposedStretch> findExposedStretches(
             Coastlines.TracedCoasts traced,
             List<VoidHole> captured,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
         var closed = gatherClosedArcsByCell(captured, traced.union(), walls);
         var sites = traced.union().sites();
@@ -244,7 +245,7 @@ public final class ContinentExposure {
     private static Map<Integer, List<ClosedArc>> gatherClosedArcsByCell(
             List<VoidHole> captured,
             DiscUnion union,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
         var arcs = new LinkedHashMap<Integer, List<ClosedArc>>();
 
@@ -267,10 +268,10 @@ public final class ContinentExposure {
     // The stretch one wall takes out of one of its cells' border.
     private static void addMouthOf(
             Map<Integer, List<ClosedArc>> arcs,
-            DiscUnionBoundary.Chord wall,
+            Chord wall,
             int cell,
             DiscUnion union,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
         var mouth = WallMouths.measureMouth(union, wall, cell, walls.channelOn(cell));
 

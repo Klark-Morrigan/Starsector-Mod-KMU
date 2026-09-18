@@ -189,7 +189,7 @@ nothing here is set to taste,
 it is a hatch onto something otherwise correctly out of the way.
 
 Its words are the framework's own chrome rather than a layer's,
-so `KmuStrings` is read here -
+so `KmuStringKeys` is read here -
 the same distinction the settings already make,
 and why this is not the bundle leak the tab label was.
 

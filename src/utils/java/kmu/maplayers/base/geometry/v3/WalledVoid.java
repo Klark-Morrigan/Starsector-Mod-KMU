@@ -1,8 +1,10 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +56,7 @@ final class WalledVoid {
      */
     static List<VoidHole> traceVoidAcrossWalls(
             List<double[]> sites,
-            DiscUnionBoundary.Walls walls,
+            Walls walls,
             SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
@@ -83,8 +85,8 @@ final class WalledVoid {
      */
     static List<VoidHole> traceVoidWalledBy(
             List<double[]> sites,
-            DiscUnionBoundary.Walls walls,
-            List<DiscUnionBoundary.Chord> keepOn,
+            Walls walls,
+            List<Chord> keepOn,
             SectorGeometryParameters parameters,
             VoidPockets.PocketShaping shaping) {
 
@@ -111,9 +113,9 @@ final class WalledVoid {
      * @param among the walls to ask about, which are the caller's own
      * @return those of them it came to rest against, in the order the walk recorded them
      */
-    static List<DiscUnionBoundary.Chord> findClosingWalls(
+    static List<Chord> findClosingWalls(
             VoidHole hole,
-            List<DiscUnionBoundary.Chord> among) {
+            List<Chord> among) {
 
         var closing = new ArrayList<>(hole.walledBy());
 

@@ -4,15 +4,17 @@ import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
+import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.CellEdges;
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 import kmu.maplayers.base.geometry.EdgeTarget;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometry;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.WallKind;
 import kmu.maplayers.base.geometry.render.MapLook;
 import kmu.maplayers.base.geometry.v3.BridgedContinents;
 import kmu.maplayers.base.geometry.v3.CellBoundSeams;
@@ -241,7 +243,7 @@ public final class VoidRegionsDump {
     private static void reportBoundSeams(SectorFixture fixture) {
 
         var seams = CellBoundSeams.measureSeamsAgainstCells(
-            DiscUnionBoundary.traceHoles(
+            BareVoidBoundary.traceBareHoles(
                 new DiscUnion(fixture.getSites(), SHIPPED.cellRadius()),
                 SHIPPED.boundSegments()),
             fixture.getSites(),
@@ -476,22 +478,22 @@ public final class VoidRegionsDump {
         var sets = List.of(
             new SpanSet(
                 "inlet span",
-                DiscUnionBoundary.WallKind.INLET_SPAN,
+                WallKind.INLET_SPAN,
                 continents.layInletSpans(),
                 water.collectInletWater()),
             new SpanSet(
                 "lake span",
-                DiscUnionBoundary.WallKind.LAKE_SPAN,
+                WallKind.LAKE_SPAN,
                 continents.layLakeSpans(),
                 water.collectLakeWater()),
             new SpanSet(
                 "puddle span",
-                DiscUnionBoundary.WallKind.PUDDLE_SPAN,
+                WallKind.PUDDLE_SPAN,
                 continents.claimPuddleSpans(),
                 List.of()),
             new SpanSet(
                 "link",
-                DiscUnionBoundary.WallKind.LINK,
+                WallKind.LINK,
                 continents.layLinks(),
                 water.collectLinkWater()));
 
@@ -510,7 +512,7 @@ public final class VoidRegionsDump {
         // The puddles are named beside their spans whether or not any were laid: a sector with
         // puddles and no spans across them is a different fact from a sector with neither, and
         // the spans alone cannot tell the two apart.
-        if (set.kind() == DiscUnionBoundary.WallKind.PUDDLE_SPAN) {
+        if (set.kind() == WallKind.PUDDLE_SPAN) {
 
             System.out.printf(
                 Locale.ROOT,
@@ -552,7 +554,7 @@ public final class VoidRegionsDump {
 
         // A puddle is drawn as its whole water rather than as what its spans shut in, so there
         // is no water of the spans' own to count.
-        if (set.kind() == DiscUnionBoundary.WallKind.PUDDLE_SPAN) {
+        if (set.kind() == WallKind.PUDDLE_SPAN) {
             return;
         }
 
@@ -574,7 +576,7 @@ public final class VoidRegionsDump {
             LaidCoast laid,
             List<double[]> sites) {
 
-        var chords = new ArrayList<DiscUnionBoundary.Chord>();
+        var chords = new ArrayList<Chord>();
 
         for (var chord : laid.walls().chords()) {
 
@@ -636,7 +638,7 @@ public final class VoidRegionsDump {
      */
     private record SpanSet(
         String name,
-        DiscUnionBoundary.WallKind kind,
+        WallKind kind,
         List<CellGap> spans,
         List<List<double[]>> shutIn) {
     }

@@ -3,7 +3,7 @@ package kmu.maplayers.base.visibility.observations;
 import com.fs.starfarer.api.campaign.CampaignClockAPI;
 
 import kmu.starsector.StarsectorSettingsFake;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -140,10 +140,10 @@ final class ObservationNoteFormatterTest {
 
         return Stream.of(
             Arguments.of(
-                KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
+                KmuStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
                 "last seen 34 days ago (c206.05.12)"),
             Arguments.of(
-                KmuStrings.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
+                KmuStringKeys.POLITICAL_MAP_TOOLTIP_FACTOR_JOINED,
                 "34 days ago c206.05.12"));
     }
 
@@ -159,7 +159,7 @@ final class ObservationNoteFormatterTest {
 
         return ObservationNoteFormatter.formatObservationNote(
             clockMock,
-            KmuStrings.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
+            KmuStringKeys.POLITICAL_MAP_TOOLTIP_LAST_SEEN,
             OBSERVED_AT);
     }
 }

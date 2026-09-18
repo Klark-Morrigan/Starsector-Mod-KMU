@@ -83,7 +83,7 @@ public record DiscUnion(
      *               borders wherever the trace is running
      * @return how far past that edge the point sits, negative when it is outside
      */
-    double measureCoverOf(double[] point, int site, double toEdge) {
+    public double measureCoverOf(double[] point, int site, double toEdge) {
         return toEdge - Points.computeDistance(point, sites.get(site));
     }
 

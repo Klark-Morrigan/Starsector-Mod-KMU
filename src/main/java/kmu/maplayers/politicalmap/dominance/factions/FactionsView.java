@@ -13,7 +13,7 @@ import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.render.ContentInputs;
 import kmu.maplayers.politicalmap.base.tooltip.SystemDominationTooltip;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -45,7 +45,7 @@ public final class FactionsView implements DominancePaintedView {
     public String getSegmentLabelKey() {
         // "Factions" - the same label the pre-radio faction toggle carried, now this view's
         // segment on the view-selector radio.
-        return KmuStrings.POLITICAL_MAP_CTL_FACTIONS;
+        return KmuStringKeys.POLITICAL_MAP_CTL_FACTIONS;
     }
 
     @Override

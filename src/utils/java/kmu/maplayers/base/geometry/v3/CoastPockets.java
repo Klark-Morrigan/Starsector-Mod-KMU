@@ -3,7 +3,10 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.DirectedLine;
 import kmlib.math.geometry.Limits;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.WallKind;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -158,15 +161,15 @@ public final class CoastPockets {
      * @param channel how far each wall holds its two sides off its own line
      * @return the two sets laid together, at the coast's channel
      */
-    static DiscUnionBoundary.Walls layCoastWalls(
+    static Walls layCoastWalls(
             Coastlines.TracedCoasts traced,
-            List<DiscUnionBoundary.Chord> reaches,
+            List<Chord> reaches,
             double channel) {
 
         var laid = new ArrayList<>(traced.walls().chords());
         laid.addAll(reaches);
 
-        return new DiscUnionBoundary.Walls(laid, channel);
+        return new Walls(laid, channel);
     }
 
     /**
@@ -212,12 +215,12 @@ public final class CoastPockets {
      * @param traced the coast
      * @return one wall per reach, in walk order
      */
-    static List<DiscUnionBoundary.Chord> buildCoastWalls(
+    static List<Chord> buildCoastWalls(
             Coastlines.TracedCoasts traced) {
 
         return buildReachWalls(
             Coastlines.collectStraightReaches(traced),
-            DiscUnionBoundary.WallKind.COAST_REACH);
+            WallKind.COAST_REACH);
     }
 
     /**
@@ -236,7 +239,7 @@ public final class CoastPockets {
      *                a reach
      * @return one wall per reach over every lake, in walk order
      */
-    static List<DiscUnionBoundary.Chord> buildLakeShoreWalls(
+    static List<Chord> buildLakeShoreWalls(
             Coastlines.TracedCoasts traced,
             double channel) {
 
@@ -247,17 +250,17 @@ public final class CoastPockets {
         }
         return buildReachWalls(
             Coastlines.collectStraightReaches(shores, channel),
-            DiscUnionBoundary.WallKind.LAKE_SHORE);
+            WallKind.LAKE_SHORE);
     }
 
     // One wall per reach, on the reach's own line. Shared by both kinds of shore because a
     // reach is placed the same way whichever side the water is on; what the kind carries is
     // which side that is.
-    private static List<DiscUnionBoundary.Chord> buildReachWalls(
+    private static List<Chord> buildReachWalls(
             List<Coastlines.CoastReach> reaches,
-            DiscUnionBoundary.WallKind kind) {
+            WallKind kind) {
 
-        var walls = new ArrayList<DiscUnionBoundary.Chord>();
+        var walls = new ArrayList<Chord>();
 
         for (var reach : reaches) {
 
@@ -279,7 +282,7 @@ public final class CoastPockets {
             //
             // Leaving it out also makes the wall line the COAST line, so anything asking how
             // far a pocket sits off its reach is asking how far it sits off the coast.
-            walls.add(new DiscUnionBoundary.Chord(
+            walls.add(new Chord(
                 from.circle(),
                 to.circle(),
                 new DirectedLine(from.point()[0], from.point()[1], alongX, alongY),

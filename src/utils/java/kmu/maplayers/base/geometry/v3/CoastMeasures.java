@@ -1,7 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -108,10 +108,10 @@ public final class CoastMeasures {
 
     // The stretch each cell offers most border on. The most rather than any, because a cell
     // facing the void on two stretches is only badly served if BOTH are slivers.
-    private static java.util.Map<Integer, DiscUnionBoundary.CoastMark> mapMarksByCircle(
+    private static java.util.Map<Integer, CoastMark> mapMarksByCircle(
             Coastlines.TracedCoasts traced) {
 
-        var marks = new HashMap<Integer, DiscUnionBoundary.CoastMark>();
+        var marks = new HashMap<Integer, CoastMark>();
 
         for (var silhouette : traced.silhouettes()) {
             for (var mark : silhouette) {
@@ -159,7 +159,7 @@ public final class CoastMeasures {
     // How much border one stretch of coast offers, as the length of the arc it spans. What a
     // crossing is judged against: the same depth into a cell means one thing on a stretch
     // barely facing the void and another on one facing it for half a turn.
-    private static double measureFrontage(DiscUnion union, DiscUnionBoundary.CoastMark mark) {
+    private static double measureFrontage(DiscUnion union, CoastMark mark) {
         return mark == null ? 0 : (mark.toAngle() - mark.fromAngle()) * union.reach();
     }
 

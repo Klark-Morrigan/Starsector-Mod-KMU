@@ -18,7 +18,7 @@ import kmu.maplayers.politicalmap.base.sidebar.PoliticalMapBodyControls;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
 import kmu.maplayers.politicalmap.base.sidebar.SelectableBlocCache;
 import kmu.settings.KmuMapKeybindSettings;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ public final class PoliticalMapLayer implements MapLayer {
 
     @Override
     public String resolveTabLabelText() {
-        return KmuStrings.get(KmuStrings.POLITICAL_MAP_TAB_POLITICAL_MAP);
+        return KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TAB_POLITICAL_MAP);
     }
 
     @Override
@@ -172,7 +172,7 @@ public final class PoliticalMapLayer implements MapLayer {
             blocCache.resolveBlocPickerRead(selectedView).picker(),
             RecedeControl.buildControls(
                 RecedePreferences.FILTER,
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_FILTER_RECEDE_CAPTION),
                 target),
             machinery);
     }

@@ -12,7 +12,7 @@ import kmlib.testfixtures.starsector.ui.widgets.lists.AnomalySortMode;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.starsector.StarsectorUiColoursMock;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +85,7 @@ final class ListPickerBinderIntegrationTest {
 
     private SectorMemoryFake sectorMemoryFake;
 
-    private MockedStatic<KmuStrings> stringsMock;
+    private MockedStatic<KmuStringKeys> stringsMock;
 
     // The engine palette the picker resolves its row tones through, installed and taken down as one.
     private StarsectorUiColoursMock uiColours;
@@ -99,9 +99,9 @@ final class ListPickerBinderIntegrationTest {
         // The one thing here that stays mocked beside the palette: the columns caption is the
         // framework's own chrome, read from a strings table no test JVM can open. The consumer's
         // sort labels are its own and arrive already drawn.
-        stringsMock = Mockito.mockStatic(KmuStrings.class);
+        stringsMock = Mockito.mockStatic(KmuStringKeys.class);
         stringsMock
-            .when(() -> KmuStrings.get(KmuStrings.MAP_LAYER_CTL_COLUMNS_CAPTION))
+            .when(() -> KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_COLUMNS_CAPTION))
             .thenReturn("Columns");
     }
 

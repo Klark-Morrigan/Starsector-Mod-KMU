@@ -7,7 +7,7 @@ import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;
 import kmu.maplayers.politicalmap.base.sidebar.RecedeControl;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,8 +44,8 @@ final class AllianceBodyControlsTest {
         @Test
         void buildControlsHandsTheNonAlliedSetCaptionAndPanelToTheSharedRecedeControl() {
             try (MockedStatic<RecedeControl> controlMock = mockStatic(RecedeControl.class);
-                    MockedStatic<KmuStrings> stringsMock = mockStatic(KmuStrings.class)) {
-                stringsMock.when(() -> KmuStrings.get(KmuStrings.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
+                    MockedStatic<KmuStringKeys> stringsMock = mockStatic(KmuStringKeys.class)) {
+                stringsMock.when(() -> KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NON_ALLIED_CAPTION))
                         .thenReturn("Non-allied factions are");
                 controlMock.when(() -> RecedeControl.buildControls(
                         RecedePreferences.ALLIANCE_NON_ALLIED,

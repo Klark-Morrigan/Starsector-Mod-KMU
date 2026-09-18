@@ -5,7 +5,7 @@ import kmlib.starsector.ui.highlight.Highlight;
 import kmlib.starsector.ui.highlight.HighlightedParagraph;
 
 import kmu.conditions.ui.picker.model.KmuConditionPickerModel;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -71,12 +71,12 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         var lightBlue = StarsectorUiColour.LIGHT_BLUE.resolve();
         var grey = StarsectorUiColour.VANILLA_GRAY.resolve();
 
-        var visibleToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
-        var suppressedToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
-        var presentToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_PRESENT, present);
-        var hiddenToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden);
-        var availableToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
-        var totalToken = KmuStrings.format(KmuStrings.CONDITION_MANAGER_SUMMARY_TOTAL, total);
+        var visibleToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_VISIBLE, visible);
+        var suppressedToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_SUPPRESSED, suppressed);
+        var presentToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_PRESENT, present);
+        var hiddenToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_HIDDEN, hidden);
+        var availableToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_AVAILABLE, available);
+        var totalToken = KmuStringKeys.format(KmuStringKeys.CONDITION_MANAGER_SUMMARY_TOTAL, total);
 
         var ctx = new AppendContext();
 
@@ -94,7 +94,7 @@ public final class KmuConditionPickerSummaryParagraphFactory {
         appendToken(ctx, new TokenSpec(", ", totalToken, grey, true));
 
         var headerParagraph = new HighlightedParagraph(
-            KmuStrings.get(KmuStrings.CONDITION_MANAGER_SUMMARY),
+            KmuStringKeys.get(KmuStringKeys.CONDITION_MANAGER_SUMMARY),
             StarsectorUiColour.VANILLA_GRAY.resolve());
 
         var countsParagraph = new HighlightedParagraph(

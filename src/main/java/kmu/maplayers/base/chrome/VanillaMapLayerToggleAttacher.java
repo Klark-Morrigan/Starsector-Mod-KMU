@@ -6,7 +6,7 @@ import kmlib.starsector.ui.map.controls.MapFilterToggle;
 import kmu.maplayers.base.layer.MapLayerVisibility;
 import kmu.mods.nexerelin.NexerelinAlliances;
 import kmu.settings.KmuMapKeybindSettings;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.function.IntSupplier;
 
@@ -64,7 +64,7 @@ public final class VanillaMapLayerToggleAttacher implements MapLayerToggleAttach
 
         var toggle = MapFilterToggle.appendToRow(
             row,
-            KmuStrings.get(KmuStrings.MAP_LAYER_CTL_FILTER_ROW_TOGGLE),
+            KmuStringKeys.get(KmuStringKeys.MAP_LAYER_CTL_FILTER_ROW_TOGGLE),
             () -> layerVisibility.showLayers(attachedToggle[0].isChecked()));
 
         // No box, for whichever of the row's own reasons - already said where it happened, and the

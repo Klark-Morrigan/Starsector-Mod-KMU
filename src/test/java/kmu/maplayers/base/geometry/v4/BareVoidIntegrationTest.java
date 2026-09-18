@@ -3,8 +3,8 @@ package kmu.maplayers.base.geometry.v4;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonRegions;
 
+import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 
@@ -55,7 +55,7 @@ class BareVoidIntegrationTest {
             var fixture = SectorFixture.loadSector(sector);
 
             var read = BareVoid.readBareVoid(fixture.getSites(), KNOBS);
-            var swept = DiscUnionBoundary.traceHoles(
+            var swept = BareVoidBoundary.traceBareHoles(
                 new DiscUnion(fixture.getSites(), KNOBS.cellRadius()),
                 KNOBS.boundSegments());
 

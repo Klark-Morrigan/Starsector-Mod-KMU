@@ -20,7 +20,7 @@ import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingSource;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -150,7 +150,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // block whose contents turn on what the banner answered, and every other is placed by how a
         // faction stands to the claimant this one names.
         body.appendSection(
-            KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
+            KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_SECTION_CLAIM),
             buildClaimEntries(reading, statusRow.isPresent()));
 
         appendStandingSections(body, reading);
@@ -265,7 +265,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         for (var block : ClaimContestBlock.values()) {
             body.appendSection(
-                KmuStrings.get(block.resolveHeadingKey(contestWording)),
+                KmuStringKeys.get(block.resolveHeadingKey(contestWording)),
                 buildListedEntries(
                     reading,
                     block.selectStandings(reading.contest()),
@@ -323,7 +323,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         if (!KmlibStrings.hasText(claimantFactionId)) {
             return CellTooltipEntry.createEntry(CellTooltipEntryLine.createLine(
                 CellTooltipMark.NO_MARK,
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CLAIM_NONE),
                 CellTooltipEntryLine.NO_SCORE));
         }
         // The claimant's own standing, or none at all when it holds nothing the box may list. Two
@@ -349,7 +349,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
         // a decreed hold does not erase the faction's presence.
         if (isCoreClaim(breakdown)) {
             claimantLine = claimantLine.qualifiedWith(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_CORE_MARKER));
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_CORE_MARKER));
         }
         return CellTooltipEntry
             .createEntry(claimantLine)
@@ -441,7 +441,7 @@ public abstract class SystemClaimContestTooltip extends PoliticalMapCellTooltip 
 
         if (isStatingEligibilityOnLine && !standing.isTerritorial()) {
             return standingLine.qualifiedWith(
-                KmuStrings.get(KmuStrings.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
+                KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_TOOLTIP_QUALIFIER_NON_TERRITORIAL));
         }
         return standingLine;
     }

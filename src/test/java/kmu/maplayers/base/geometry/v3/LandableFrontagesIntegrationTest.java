@@ -3,8 +3,8 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Points;
 
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,7 +52,7 @@ class LandableFrontagesIntegrationTest {
     private static final int RAYS_FROM_CENTRE = 72;
     private static final int RAY_STEPS_PER_REACH = 8;
 
-    private static final Map<String, List<DiscUnionBoundary.CoastMark>> LANDABLE =
+    private static final Map<String, List<CoastMark>> LANDABLE =
         new ConcurrentHashMap<>();
 
     @Nested
@@ -215,8 +215,8 @@ class LandableFrontagesIntegrationTest {
 
     // Whether a stretch runs entirely within one of the stretches offered on its own cell.
     private static boolean isWithinAny(
-            DiscUnionBoundary.CoastMark stretch,
-            List<DiscUnionBoundary.CoastMark> offered) {
+            CoastMark stretch,
+            List<CoastMark> offered) {
         if (offered == null) {
             return false;
         }
@@ -233,10 +233,10 @@ class LandableFrontagesIntegrationTest {
     // Every stretch of border the walk found, by the cell it sits on. The islands go in whole,
     // as the construction takes them: a lone cell is on no silhouette and faces the void the
     // entire way round.
-    private static Map<Integer, List<DiscUnionBoundary.CoastMark>> collectExposedByCell(
+    private static Map<Integer, List<CoastMark>> collectExposedByCell(
             String sector) {
         var traced = traceContinentCoast(sector);
-        var byCell = new LinkedHashMap<Integer, List<DiscUnionBoundary.CoastMark>>();
+        var byCell = new LinkedHashMap<Integer, List<CoastMark>>();
 
         for (var silhouette : traced.silhouettes()) {
             for (var mark : silhouette) {
@@ -246,7 +246,7 @@ class LandableFrontagesIntegrationTest {
         for (var island : traced.islands()) {
             byCell
                 .computeIfAbsent(island, whichever -> new ArrayList<>())
-                .add(new DiscUnionBoundary.CoastMark(island, 0, Angles.FULL_TURN));
+                .add(new CoastMark(island, 0, Angles.FULL_TURN));
         }
         return byCell;
     }
@@ -287,7 +287,7 @@ class LandableFrontagesIntegrationTest {
             traceContinentCoast(sector), PARAMETERS.measureArcSegments());
     }
 
-    private static List<DiscUnionBoundary.CoastMark> landableOf(String sector) {
+    private static List<CoastMark> landableOf(String sector) {
         return LANDABLE.computeIfAbsent(sector, named ->
             LandableFrontages.collectLandableFrontages(
                 traceContinentCoast(named), PARAMETERS.measureArcSegments()));

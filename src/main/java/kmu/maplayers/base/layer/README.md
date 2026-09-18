@@ -46,7 +46,7 @@ and the file its rebinding is stored in,
 and the bar carries whatever is registered.
 Both are asked per frame,
 so a rename or a rebind shows on the next one.
-KMU's own two layers answer out of `KmuStrings` and the `Map - Keybinds` settings tab themselves.
+KMU's own two layers answer out of `KmuStringKeys` and the `Map - Keybinds` settings tab themselves.
 
 ## The roster
 

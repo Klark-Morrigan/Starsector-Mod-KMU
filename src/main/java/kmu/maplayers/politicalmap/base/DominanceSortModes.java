@@ -4,7 +4,7 @@ import kmlib.starsector.ui.widgets.lists.ListSortMode;
 import kmlib.starsector.ui.widgets.lists.ListSortModes;
 
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -52,28 +52,28 @@ public final class DominanceSortModes {
     public static final ListSortMode<RankedBloc<DominanceStats>> NAME =
         new BlocMetricSortMode<>(
             "name",
-            KmuStrings.POLITICAL_MAP_CTL_SORT_NAME,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
             null,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedBloc<DominanceStats>> DOMINATION =
         new BlocMetricSortMode<>(
             "domination",
-            KmuStrings.POLITICAL_MAP_CTL_SORT_DOMINATION,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_DOMINATION,
             DOMINATION_METRIC,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedBloc<DominanceStats>> PRESENCE =
         new BlocMetricSortMode<>(
             "presence",
-            KmuStrings.POLITICAL_MAP_CTL_SORT_PRESENCE,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_PRESENCE,
             PRESENCE_METRIC,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedBloc<DominanceStats>> SCORE =
         new BlocMetricSortMode<>(
             "score",
-            KmuStrings.POLITICAL_MAP_CTL_SORT_SCORE,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_SCORE,
             SCORE_METRIC,
             CANONICAL_METRIC_CHAIN);
 

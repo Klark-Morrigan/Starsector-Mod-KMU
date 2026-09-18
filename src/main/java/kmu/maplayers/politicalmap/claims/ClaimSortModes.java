@@ -10,7 +10,7 @@ import kmu.maplayers.politicalmap.base.RankedBloc;
 import kmu.maplayers.politicalmap.base.SharedBlocSortModes;
 import kmu.maplayers.politicalmap.base.SizedBlocMetrics;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
-import kmu.util.KmuStrings;
+import kmu.util.KmuStringKeys;
 
 import java.util.List;
 import java.util.function.ToIntFunction;
@@ -61,14 +61,14 @@ public final class ClaimSortModes {
     public static final ListSortMode<RankedBloc<ClaimStats>> NAME =
         new BlocMetricSortMode<>(
             "name",
-            KmuStrings.POLITICAL_MAP_CTL_SORT_NAME,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_NAME,
             null,
             CANONICAL_METRIC_CHAIN);
 
     public static final ListSortMode<RankedBloc<ClaimStats>> CLAIMS =
         new BlocMetricSortMode<>(
             "claims",
-            KmuStrings.POLITICAL_MAP_CTL_SORT_CLAIMS,
+            KmuStringKeys.POLITICAL_MAP_CTL_SORT_CLAIMS,
             CLAIMS_METRIC,
             CANONICAL_METRIC_CHAIN);
 
