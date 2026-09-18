@@ -1,9 +1,11 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -175,12 +177,12 @@ public final class VoidBridgePockets {
      * @param parameters the knobs the cells are built under
      * @return the walls, at the channel a pocket keeps against them
      */
-    public static DiscUnionBoundary.Walls buildBridgeWalls(
+    public static Walls buildBridgeWalls(
             List<CellGap> bridges,
             SectorGeometryParameters parameters) {
 
-        return new DiscUnionBoundary.Walls(
-            DiscUnionBoundary.buildChordsFrom(bridges), parameters.borderInset());
+        return new Walls(
+            Chord.buildChordsFrom(bridges), parameters.borderInset());
     }
 
 }

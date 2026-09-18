@@ -1,7 +1,8 @@
 package kmu.maplayers.base.geometry.v3;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,10 +78,10 @@ public final class IntercontinentalPockets {
 
         // The same chord instances the walk is handed, so a hole's walls are asked about by the
         // walls themselves rather than by a set built afterwards to look like them.
-        var linkWalls = DiscUnionBoundary.buildChordsFrom(links);
+        var linkWalls = Chord.buildChordsFrom(links);
         var laid = new ArrayList<>(linkWalls);
 
-        laid.addAll(DiscUnionBoundary.buildChordsFrom(standing));
+        laid.addAll(Chord.buildChordsFrom(standing));
 
         var outlines = new ArrayList<List<double[]>>();
 
@@ -88,7 +89,7 @@ public final class IntercontinentalPockets {
         // cell at the same point.
         for (var hole : WalledVoid.traceVoidWalledBy(
                 traced.union().sites(),
-                new DiscUnionBoundary.Walls(
+                new Walls(
                     laid,
                     rules.parameters().borderInset(),
                     CoastFrontages.collectPinchedCells(traced)),

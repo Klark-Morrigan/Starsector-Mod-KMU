@@ -4,10 +4,13 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segments;
 
+import kmu.maplayers.base.geometry.BareVoidBoundary;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -97,8 +100,8 @@ public final class PickedPointCheck {
         var walls = laid.walls();
         var segments = laid.parameters().boundSegments();
 
-        var holes = DiscUnionBoundary.traceHoles(laid.atCells(), segments);
-        var drawnHoles = DiscUnionBoundary.traceHoles(laid.atDrawnReach(), segments);
+        var holes = BareVoidBoundary.traceBareHoles(laid.atCells(), segments);
+        var drawnHoles = BareVoidBoundary.traceBareHoles(laid.atDrawnReach(), segments);
 
         // The void as the walk sees it with EVERY wall down - spans and coast reaches
         // together. No layer asks this question on its own: each keeps only the holes its own
@@ -245,7 +248,7 @@ public final class PickedPointCheck {
     // something is wrong.
     private static String describeNearestBrokenLink(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls,
+            Walls walls,
             double[] pick) {
 
         var broken = DiscUnionBoundary.findBrokenLinks(union, walls);
@@ -290,7 +293,7 @@ public final class PickedPointCheck {
     // pocket exists and nothing is drawn for it.
     private static String describeEscape(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls,
+            Walls walls,
             double[] pick) {
 
         // A pick inside the cells has no void to follow at all, which is a different answer from
@@ -409,7 +412,7 @@ public final class PickedPointCheck {
     private static boolean crossesAnyWall(
             double[] from,
             double[] to,
-            List<DiscUnionBoundary.Chord> laid) {
+            List<Chord> laid) {
 
         for (var chord : laid) {
 
@@ -497,8 +500,8 @@ public final class PickedPointCheck {
     // rather than rebuilt here - the walk answers about the wall it was handed, so a fresh
     // build of the same line is a wall no verdict can be about. Null where the step was never
     // offered as a reach at all.
-    private static DiscUnionBoundary.Chord findWallFor(
-            List<DiscUnionBoundary.Chord> offered,
+    private static Chord findWallFor(
+            List<Chord> offered,
             CoastStep step) {
 
         for (var chord : offered) {

@@ -4,7 +4,9 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.CellGap;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.WallKind;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,15 +80,15 @@ public final class LakePockets {
         var parameters = rules.parameters();
         var edges = collectWaterEdges(traced);
 
-        var chords = new ArrayList<>(DiscUnionBoundary.buildChordsFrom(
-            spans, DiscUnionBoundary.WallKind.LAKE_SPAN));
+        var chords = new ArrayList<>(Chord.buildChordsFrom(
+            spans, WallKind.LAKE_SPAN));
 
         chords.addAll(CoastPockets.buildLakeShoreWalls(traced, parameters.borderInset()));
 
         // The shores keep the channel every other wall keeps. Laying them at no width was
         // tried, to close the gutter the stroke sits in: a wall with no mouth is not a wall to
         // the walk, and the pockets then ran out past the shore they were meant to stop at.
-        var walls = new DiscUnionBoundary.Walls(chords, parameters.borderInset());
+        var walls = new Walls(chords, parameters.borderInset());
 
         var pockets = new ArrayList<List<double[]>>();
         var bands = new ArrayList<List<double[]>>();

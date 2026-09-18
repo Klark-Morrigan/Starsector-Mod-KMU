@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Three discs rather than a sector, because the question is about one cycle and a fixture
  * with one hole in it is a fixture whose answer a reader can hold in their head.
  */
-class DiscUnionBoundaryTest {
+class BareVoidBoundaryTest {
 
     // How far each disc reaches. A round number with no meaning beyond being the unit the
     // spacing below is chosen against.
@@ -63,7 +63,7 @@ class DiscUnionBoundaryTest {
         REACH);
 
     @Nested
-    class TraceHoles {
+    class TraceBareHoles {
 
         @Test
         void aHoleNamesOneStretchOfBorderPerCellItRunsAlong() {
@@ -74,7 +74,7 @@ class DiscUnionBoundaryTest {
             var hole = traceTheOnlyHole();
 
             assertThat(hole.marks())
-                .extracting(DiscUnionBoundary.CoastMark::circle)
+                .extracting(CoastMark::circle)
                 .containsExactlyInAnyOrder(0, 1, 2);
 
             assertThat(hole.ringing())
@@ -128,7 +128,7 @@ class DiscUnionBoundaryTest {
     // run that found two of them is a different fixture from the one every assertion is about.
     private static VoidHole traceTheOnlyHole() {
 
-        var holes = DiscUnionBoundary.traceHoles(UNION, BOUND_SEGMENTS);
+        var holes = BareVoidBoundary.traceBareHoles(UNION, BOUND_SEGMENTS);
 
         assertThat(holes)
             .as("three discs at this spacing ring exactly one hole")
@@ -151,7 +151,7 @@ class DiscUnionBoundaryTest {
         return null;
     }
 
-    private static double[] findProbeAlong(DiscUnionBoundary.CoastMark mark, double share) {
+    private static double[] findProbeAlong(CoastMark mark, double share) {
 
         var angle = mark.fromAngle() + share * (mark.toAngle() - mark.fromAngle());
         var site = UNION.sites().get(mark.circle());

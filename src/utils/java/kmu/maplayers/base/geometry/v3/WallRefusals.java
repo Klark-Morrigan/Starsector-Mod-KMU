@@ -1,7 +1,9 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.List;
 import java.util.Locale;
@@ -41,8 +43,8 @@ public final class WallRefusals {
      */
     public static String summariseRefusals(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls,
-            List<DiscUnionBoundary.Chord> offered) {
+            Walls walls,
+            List<Chord> offered) {
 
         var laid = 0;
         var offBoundary = 0;
@@ -89,8 +91,8 @@ public final class WallRefusals {
      */
     public static void reportEachRefusal(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls,
-            List<DiscUnionBoundary.Chord> offered,
+            Walls walls,
+            List<Chord> offered,
             String kind) {
 
         for (var chord : offered) {

@@ -1,7 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.VoidHole;
+import kmu.maplayers.base.geometry.WallKind;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -125,27 +125,27 @@ public record VoidSection(
     // again, so a second floor cannot come to disagree with the first.
     private static SectionKind readKind(VoidHole hole, Set<Set<Integer>> puddleRings) {
 
-        var kinds = EnumSet.noneOf(DiscUnionBoundary.WallKind.class);
+        var kinds = EnumSet.noneOf(WallKind.class);
 
         for (var wall : hole.walledBy()) {
             kinds.add(wall.kind());
         }
 
-        if (kinds.contains(DiscUnionBoundary.WallKind.LINK)) {
+        if (kinds.contains(WallKind.LINK)) {
             return SectionKind.INTERCONTINENTAL;
         }
-        if (kinds.contains(DiscUnionBoundary.WallKind.INLET_SPAN)) {
+        if (kinds.contains(WallKind.INLET_SPAN)) {
             return SectionKind.INLET;
         }
-        if (kinds.contains(DiscUnionBoundary.WallKind.COAST_REACH)) {
+        if (kinds.contains(WallKind.COAST_REACH)) {
             return SectionKind.COASTAL;
         }
-        if (kinds.contains(DiscUnionBoundary.WallKind.LAKE_SPAN)
-                || kinds.contains(DiscUnionBoundary.WallKind.LAKE_SHORE)
-                || kinds.contains(DiscUnionBoundary.WallKind.BRIDGE)) {
+        if (kinds.contains(WallKind.LAKE_SPAN)
+                || kinds.contains(WallKind.LAKE_SHORE)
+                || kinds.contains(WallKind.BRIDGE)) {
             return SectionKind.LAKE_POCKET;
         }
-        if (kinds.contains(DiscUnionBoundary.WallKind.PUDDLE_SPAN)) {
+        if (kinds.contains(WallKind.PUDDLE_SPAN)) {
             return SectionKind.PUDDLE;
         }
         return puddleRings.contains(Set.copyOf(hole.ringing()))

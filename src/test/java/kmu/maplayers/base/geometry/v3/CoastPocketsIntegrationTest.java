@@ -3,7 +3,7 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;

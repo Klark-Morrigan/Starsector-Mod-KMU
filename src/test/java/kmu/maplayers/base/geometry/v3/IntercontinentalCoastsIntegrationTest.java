@@ -3,8 +3,10 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -296,9 +298,9 @@ class IntercontinentalCoastsIntegrationTest {
                 buildLinkWallsOf(named)));
     }
 
-    private static DiscUnionBoundary.Walls buildLinkWallsOf(String sector) {
-        return new DiscUnionBoundary.Walls(
-            DiscUnionBoundary.buildChordsFrom(layLinks(sector)),
+    private static Walls buildLinkWallsOf(String sector) {
+        return new Walls(
+            Chord.buildChordsFrom(layLinks(sector)),
             PARAMETERS.borderInset(),
             CoastFrontages.collectPinchedCells(traceContinentCoast(sector)));
     }

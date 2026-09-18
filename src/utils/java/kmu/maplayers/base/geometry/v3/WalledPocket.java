@@ -1,6 +1,6 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
 
 import java.util.List;
 
@@ -20,5 +20,5 @@ import java.util.List;
  */
 public record WalledPocket(
     VoidPockets.VoidPocket pocket,
-    List<DiscUnionBoundary.Chord> reaches) {
+    List<Chord> reaches) {
 }

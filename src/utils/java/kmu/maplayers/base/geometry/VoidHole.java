@@ -47,10 +47,10 @@ import java.util.List;
 public record VoidHole(
     List<double[]> boundary,
     List<double[]> corners,
-    List<DiscUnionBoundary.CoastMark> marks,
+    List<CoastMark> marks,
     List<Integer> ringing,
     double reach,
-    List<DiscUnionBoundary.Chord> walledBy) {
+    List<Chord> walledBy) {
 
     /**
      * How far it reaches across, as the distance between its two most distant corners.

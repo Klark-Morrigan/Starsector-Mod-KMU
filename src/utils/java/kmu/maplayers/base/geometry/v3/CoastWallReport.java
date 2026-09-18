@@ -3,9 +3,12 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.Segments;
 
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.WallKind;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -63,7 +66,7 @@ public final class CoastWallReport {
     private static void reportWallCrossings(
             DiscUnion atCells,
             DiscUnion atDrawn,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
         System.out.printf(
             Locale.ROOT,
@@ -86,7 +89,7 @@ public final class CoastWallReport {
     // kind of wall.
     private static void reportWallSideStray(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls,
+            Walls walls,
             SectorGeometryParameters parameters) {
 
         var worst = 0.0;
@@ -94,7 +97,7 @@ public final class CoastWallReport {
 
         for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
 
-            if (chord.kind() != DiscUnionBoundary.WallKind.COAST_REACH) {
+            if (chord.kind() != WallKind.COAST_REACH) {
                 continue;
             }
             for (var side : DiscUnionBoundary.findChordSides(union, chord, walls)) {
@@ -130,13 +133,13 @@ public final class CoastWallReport {
     // than that is a cell the coast barely touches, kept as a corner it then has to cut.
     private static void reportCoastTurns(
             DiscUnion union,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
-        var laid = new ArrayList<DiscUnionBoundary.Chord>();
+        var laid = new ArrayList<Chord>();
 
         for (var chord : DiscUnionBoundary.findAttachableChords(union, walls)) {
 
-            if (chord.kind() == DiscUnionBoundary.WallKind.COAST_REACH) {
+            if (chord.kind() == WallKind.COAST_REACH) {
                 laid.add(chord);
             }
         }
@@ -184,8 +187,8 @@ public final class CoastWallReport {
     // The cell two walls share, or none. Two reaches of one coast meet on the cell the coast
     // turned on, which is the only pair worth measuring.
     private static int findSharedCell(
-            DiscUnionBoundary.Chord one,
-            DiscUnionBoundary.Chord other) {
+            Chord one,
+            Chord other) {
 
         if (one.fromCircle() == other.fromCircle() || one.fromCircle() == other.toCircle()) {
             return one.fromCircle();

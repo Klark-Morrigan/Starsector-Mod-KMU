@@ -1,8 +1,9 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmu.maplayers.base.geometry.Chord;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +31,8 @@ import java.util.List;
 public record LaidCoast(
     Coastlines.TracedCoasts traced,
     SectorGeometryParameters parameters,
-    List<DiscUnionBoundary.Chord> offered,
-    DiscUnionBoundary.Walls walls) {
+    List<Chord> offered,
+    Walls walls) {
 
     /**
      * Lays every wall across a traced coast.
@@ -50,7 +51,7 @@ public record LaidCoast(
      */
     public static LaidCoast layCoast(
             Coastlines.TracedCoasts traced,
-            List<DiscUnionBoundary.Chord> spans,
+            List<Chord> spans,
             SectorGeometryParameters parameters) {
 
         var offered = CoastPockets.buildCoastWalls(traced);

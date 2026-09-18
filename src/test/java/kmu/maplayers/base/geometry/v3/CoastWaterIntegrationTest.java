@@ -4,7 +4,8 @@ import kmlib.math.geometry.Bounds;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -275,7 +276,7 @@ class CoastWaterIntegrationTest {
 
         for (var run : DiscUnionBoundary.traceCoastRuns(
                 traced.union(),
-                DiscUnionBoundary.Walls.NONE,
+                Walls.NONE,
                 PARAMETERS.boundSegments()).lakes()) {
 
             var cells = new LinkedHashSet<Integer>();

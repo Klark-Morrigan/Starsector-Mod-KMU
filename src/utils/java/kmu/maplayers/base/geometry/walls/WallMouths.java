@@ -1,8 +1,11 @@
-package kmu.maplayers.base.geometry;
+package kmu.maplayers.base.geometry.walls;
 
 import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.Points;
+
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.DiscUnion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +57,7 @@ public final class WallMouths {
      */
     public static double[] measureMouth(
             DiscUnion union,
-            DiscUnionBoundary.Chord chord,
+            Chord chord,
             int circle,
             double channel) {
 
@@ -89,7 +92,7 @@ public final class WallMouths {
     // since each is built about its own axis and only the merge puts them in one turn.
     private static List<double[]> collectMouthPieces(
             DiscUnion union,
-            DiscUnionBoundary.Chord chord,
+            Chord chord,
             int circle,
             double channel) {
 
@@ -288,7 +291,7 @@ public final class WallMouths {
      * @return the angle
      */
     private static double measureAngleToWallEnd(
-            DiscUnionBoundary.Chord chord,
+            Chord chord,
             int circle,
             double[] centre) {
 

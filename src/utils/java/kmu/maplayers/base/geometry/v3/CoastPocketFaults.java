@@ -4,7 +4,7 @@ import kmlib.math.geometry.HalfPlane;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.Chord;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -70,7 +70,7 @@ public final class CoastPocketFaults {
      */
     static double measureLandwardOffset(
             double[] point,
-            DiscUnionBoundary.Chord reach,
+            Chord reach,
             List<double[]> sites) {
 
         var landward = buildLandwardNormal(reach, sites);
@@ -255,7 +255,7 @@ public final class CoastPocketFaults {
     // it stops: a pocket walled by this reach at one end and a bridge at the other runs on out
     // there legitimately, and measuring its distance from this reach's LINE out there would
     // report the gap against a piece of coast that is not beside it.
-    private static boolean isBesideReach(double[] point, DiscUnionBoundary.Chord reach) {
+    private static boolean isBesideReach(double[] point, Chord reach) {
 
         var unit = reach.line().toUnitLine();
 
@@ -277,7 +277,7 @@ public final class CoastPocketFaults {
     // side is which - taken from the reach's own cell rather than assumed, so a reach running
     // the other way round the coast is judged like any other.
     private static double[] buildLandwardNormal(
-            DiscUnionBoundary.Chord reach,
+            Chord reach,
             List<double[]> sites) {
 
         var line = reach.line().toUnitLine();

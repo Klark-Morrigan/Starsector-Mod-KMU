@@ -1,7 +1,7 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmu.maplayers.base.geometry.BareVoidBoundary;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
 
@@ -50,7 +50,7 @@ public final class BareVoid {
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        return new BareVoid(DiscUnionBoundary.traceHoles(
+        return new BareVoid(BareVoidBoundary.traceBareHoles(
             new DiscUnion(sites, parameters.cellRadius()), parameters.boundSegments()));
     }
 

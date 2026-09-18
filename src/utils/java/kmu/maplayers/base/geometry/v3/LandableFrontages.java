@@ -3,8 +3,9 @@ package kmu.maplayers.base.geometry.v3;
 import kmlib.math.geometry.Angles;
 import kmlib.math.geometry.Points;
 
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -71,7 +72,7 @@ public final class LandableFrontages {
      * Every stretch of exposed border a straight line could arrive at, over a whole sector.
      *
      * <p>Sub-stretches of the walk's own, so one exposed stretch may come back as several, as
-     * one narrower than itself, or not at all. Carried as {@link DiscUnionBoundary.CoastMark}
+     * one narrower than itself, or not at all. Carried as {@link CoastMark}
      * because that is what they are - a run of one cell's border between two angles - and a
      * second type saying the same thing is a second thing to keep in step.
      *
@@ -83,11 +84,11 @@ public final class LandableFrontages {
      *         at is absent, and one reachable at a single sampled angle comes back as a mark of
      *         no width, which is what that stretch honestly offers
      */
-    public static List<DiscUnionBoundary.CoastMark> collectLandableFrontages(
+    public static List<CoastMark> collectLandableFrontages(
             Coastlines.TracedCoasts traced,
             int arcSegments) {
 
-        var landable = new ArrayList<DiscUnionBoundary.CoastMark>();
+        var landable = new ArrayList<CoastMark>();
 
         for (var mark : gatherOuterMarks(traced)) {
             addLandableStretches(landable, traced.union(), mark, arcSegments);
@@ -124,16 +125,16 @@ public final class LandableFrontages {
     // is on no silhouette, having no coast, and the whole of its border nonetheless faces the
     // void. Leaving them out here would report the shapes a link most needs to reach as offering
     // nowhere to reach.
-    private static List<DiscUnionBoundary.CoastMark> gatherOuterMarks(
+    private static List<CoastMark> gatherOuterMarks(
             Coastlines.TracedCoasts traced) {
 
-        var marks = new ArrayList<DiscUnionBoundary.CoastMark>();
+        var marks = new ArrayList<CoastMark>();
 
         for (var silhouette : traced.silhouettes()) {
             marks.addAll(silhouette);
         }
         for (var island : traced.islands()) {
-            marks.add(new DiscUnionBoundary.CoastMark(island, 0, Angles.FULL_TURN));
+            marks.add(new CoastMark(island, 0, Angles.FULL_TURN));
         }
         return marks;
     }
@@ -143,9 +144,9 @@ public final class LandableFrontages {
     // question with a closed form along the arc - so the arc is asked at the density everything
     // else on this map is drawn at.
     private static void addLandableStretches(
-            List<DiscUnionBoundary.CoastMark> landable,
+            List<CoastMark> landable,
             DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             int arcSegments) {
 
         var sweep = mark.toAngle() - mark.fromAngle();
@@ -173,8 +174,8 @@ public final class LandableFrontages {
 
     // One run of consecutive reachable samples as the stretch of border it covers.
     private static void addStretch(
-            List<DiscUnionBoundary.CoastMark> landable,
-            DiscUnionBoundary.CoastMark mark,
+            List<CoastMark> landable,
+            CoastMark mark,
             double sweep,
             int steps,
             int openedAt,
@@ -184,7 +185,7 @@ public final class LandableFrontages {
             return;
         }
 
-        landable.add(new DiscUnionBoundary.CoastMark(
+        landable.add(new CoastMark(
             mark.circle(),
             mark.fromAngle() + sweep * openedAt / steps,
             mark.fromAngle() + sweep * closedAt / steps));
@@ -193,7 +194,7 @@ public final class LandableFrontages {
     // Whether any direction out of one point on a cell's border survives every disc on the map.
     private static boolean isLandableAt(
             DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             double angle) {
 
         var from = DiscUnionBoundary.findPointOnMark(union, mark, angle);

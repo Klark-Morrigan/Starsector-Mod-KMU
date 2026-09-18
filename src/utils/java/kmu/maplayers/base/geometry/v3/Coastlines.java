@@ -6,9 +6,12 @@ import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
 
 import kmu.maplayers.base.geometry.CellGap;
+import kmu.maplayers.base.geometry.Chord;
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
+import kmu.maplayers.base.geometry.walls.Walls;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -268,11 +271,11 @@ public final class Coastlines {
      */
     public record TracedCoasts(
         List<Coast> coasts,
-        List<List<DiscUnionBoundary.CoastMark>> silhouettes,
+        List<List<CoastMark>> silhouettes,
         List<Integer> islands,
-        List<DiscUnionBoundary.CoastMark> dropped,
+        List<CoastMark> dropped,
         DiscUnion union,
-        DiscUnionBoundary.Walls walls,
+        Walls walls,
         List<Lake> lakes,
         List<Puddle> puddles,
         List<Coast> walledShores) {
@@ -489,7 +492,7 @@ public final class Coastlines {
     // the same stretch land on the same points.
     static List<double[]> sampleMarkArc(
             DiscUnion union,
-            DiscUnionBoundary.CoastMark mark,
+            CoastMark mark,
             int arcSegments) {
 
         var sweep = mark.toAngle() - mark.fromAngle();
@@ -547,7 +550,7 @@ public final class Coastlines {
             sites,
             parameters,
             rules,
-            DiscUnionBoundary.Walls.NONE);
+            Walls.NONE);
     }
 
     /**
@@ -584,9 +587,9 @@ public final class Coastlines {
             parameters,
             rules,
             spans.isEmpty()
-                ? DiscUnionBoundary.Walls.NONE
-                : new DiscUnionBoundary.Walls(
-                    DiscUnionBoundary.buildChordsFrom(spans), parameters.borderInset()));
+                ? Walls.NONE
+                : new Walls(
+                    Chord.buildChordsFrom(spans), parameters.borderInset()));
     }
 
     /**
@@ -607,7 +610,7 @@ public final class Coastlines {
             List<double[]> sites,
             SectorGeometryParameters parameters,
             CoastRules rules,
-            DiscUnionBoundary.Walls walls) {
+            Walls walls) {
 
         // ONE reach, for the walk and for the line alike.
         //
@@ -682,7 +685,7 @@ public final class Coastlines {
     // list draw the outer coasts and the lake shores, not these. Put there, the marks would be
     // read against a line nobody drew.
     private static List<Coast> buildWalledShores(
-            List<List<DiscUnionBoundary.CoastMark>> walledRuns,
+            List<List<CoastMark>> walledRuns,
             DiscUnion union,
             Set<Integer> bridged,
             CoastPlacement.BorderRules borderRules,
@@ -717,11 +720,11 @@ public final class Coastlines {
     // The stretches both kinds of coast left out, as the one list the diagnostic draws. A
     // stretch a rule threw away is the same kind of fact on a lake shore as on the outer
     // shore, and the drawing tells them apart by the line each sits beside.
-    private static List<DiscUnionBoundary.CoastMark> concatenateDropped(
-            List<DiscUnionBoundary.CoastMark> fromCoasts,
-            List<DiscUnionBoundary.CoastMark> fromLakes) {
+    private static List<CoastMark> concatenateDropped(
+            List<CoastMark> fromCoasts,
+            List<CoastMark> fromLakes) {
 
-        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>(
+        var dropped = new ArrayList<CoastMark>(
             fromCoasts.size() + fromLakes.size());
 
         dropped.addAll(fromCoasts);
@@ -741,7 +744,7 @@ public final class Coastlines {
     // drop leaves behind is still recorded: the stretches go on the shared dropped list, where
     // the diagnostic draws them beside whichever line replaced them.
     private static TracedLakes buildLakes(
-            List<List<DiscUnionBoundary.CoastMark>> lakeRuns,
+            List<List<CoastMark>> lakeRuns,
             DiscUnion union,
             Set<Integer> bridged,
             CoastPlacement.BorderRules borderRules,
@@ -749,7 +752,7 @@ public final class Coastlines {
 
         var lakes = new ArrayList<Lake>(lakeRuns.size());
         var puddles = new ArrayList<Puddle>();
-        var dropped = new ArrayList<DiscUnionBoundary.CoastMark>();
+        var dropped = new ArrayList<CoastMark>();
         var leastWater = measureLeastWater(union, rules);
 
         for (var run : lakeRuns) {
@@ -799,7 +802,7 @@ public final class Coastlines {
     // The cells a run of marks passes over. A set rather than a run, because the walk offers
     // a mark per STRETCH and a cell facing the water twice contributes two of them - so the
     // duplicates have to go, and once they have there is no order left worth keeping.
-    private static Set<Integer> collectRingCells(List<DiscUnionBoundary.CoastMark> run) {
+    private static Set<Integer> collectRingCells(List<CoastMark> run) {
 
         var cells = new LinkedHashSet<Integer>();
 
@@ -824,14 +827,14 @@ public final class Coastlines {
     private record TracedLakes(
         List<Lake> lakes,
         List<Puddle> puddles,
-        List<DiscUnionBoundary.CoastMark> dropped) {
+        List<CoastMark> dropped) {
     }
 
     // The water's true edge: every mark of the lake's ring sampled along its own arc, joined
     // in walk order into one closed outline.
     private static List<double[]> sampleWaterEdge(
             DiscUnion union,
-            List<DiscUnionBoundary.CoastMark> run,
+            List<CoastMark> run,
             int arcSegments) {
 
         var edge = new ArrayList<double[]>();

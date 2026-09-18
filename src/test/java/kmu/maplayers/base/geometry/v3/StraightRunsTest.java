@@ -1,7 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmu.maplayers.base.geometry.CoastMark;
 import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,10 +51,10 @@ class StraightRunsTest {
     private static final double NEAR_ANCHOR = -Math.PI / 6;
     private static final double FAR_ANCHOR = Math.PI;
 
-    private static final DiscUnionBoundary.CoastMark NEAR_MARK =
-        new DiscUnionBoundary.CoastMark(NEAR, -Math.PI / 2, NEAR_ANCHOR);
-    private static final DiscUnionBoundary.CoastMark FAR_MARK =
-        new DiscUnionBoundary.CoastMark(FAR, FAR_ANCHOR, 3 * Math.PI / 2);
+    private static final CoastMark NEAR_MARK =
+        new CoastMark(NEAR, -Math.PI / 2, NEAR_ANCHOR);
+    private static final CoastMark FAR_MARK =
+        new CoastMark(FAR, FAR_ANCHOR, 3 * Math.PI / 2);
 
     // Seen from the near anchor, about 2.19 reaches from the far centre, the far disc shows
     // just under 63 degrees of arc either side of the point facing the anchor - a window from
@@ -69,10 +69,10 @@ class StraightRunsTest {
     private static final double NEAR_TOP_ANCHOR = Math.PI / 6;
     private static final double FAR_TOP_ANCHOR = Math.PI;
 
-    private static final DiscUnionBoundary.CoastMark FAR_TOP_MARK =
-        new DiscUnionBoundary.CoastMark(FAR, Math.PI / 2, FAR_TOP_ANCHOR);
-    private static final DiscUnionBoundary.CoastMark NEAR_TOP_MARK =
-        new DiscUnionBoundary.CoastMark(NEAR, NEAR_TOP_ANCHOR, Math.PI / 2);
+    private static final CoastMark FAR_TOP_MARK =
+        new CoastMark(FAR, Math.PI / 2, FAR_TOP_ANCHOR);
+    private static final CoastMark NEAR_TOP_MARK =
+        new CoastMark(NEAR, NEAR_TOP_ANCHOR, Math.PI / 2);
 
     // Seen from the near anchor above the line, the far disc's window runs from about 104 to
     // 230 degrees, and the far stretch's middle at 135 lies inside it.

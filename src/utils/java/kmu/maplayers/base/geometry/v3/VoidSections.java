@@ -1,7 +1,7 @@
 package kmu.maplayers.base.geometry.v3;
 
-import kmu.maplayers.base.geometry.DiscUnionBoundary;
 import kmu.maplayers.base.geometry.NamedRegion;
+import kmu.maplayers.base.geometry.walls.DiscUnionBoundary;
 
 import java.util.ArrayList;
 import java.util.HashSet;
