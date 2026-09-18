@@ -5,7 +5,6 @@ import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -63,17 +62,16 @@ public final class BareVoid {
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        var holes = BareVoidBoundary.traceBareHoles(
-            new DiscUnion(sites, parameters.cellRadius()), parameters.boundSegments());
+        var rings = BareVoidBoundary
+            .traceBareHoles(
+                DiscUnion.buildAtCellReach(sites, parameters), parameters.boundSegments())
+            .stream()
+            .map(VoidHole::boundary)
+            .toList();
 
-        var pieces = new ArrayList<Face>(holes.size());
-
-        for (var face : FaceWalk.walkFaces(collectRings(holes), List.of(), SAME_CORNER)) {
-            if (!face.isOuterFace()) {
-                pieces.add(face);
-            }
-        }
-        return new BareVoid(List.copyOf(pieces));
+        return new BareVoid(FaceWalk.walkFaces(rings, List.of(), SAME_CORNER).stream()
+            .filter(face -> !face.isOuterFace())
+            .toList());
     }
 
     /**
@@ -82,13 +80,7 @@ public final class BareVoid {
      * @return one ring per piece, wound to fill, in the order the walk closed them
      */
     public List<List<double[]>> collectOutlines() {
-
-        var outlines = new ArrayList<List<double[]>>(pieces.size());
-
-        for (var piece : pieces) {
-            outlines.add(piece.boundary());
-        }
-        return List.copyOf(outlines);
+        return pieces.stream().map(Face::boundary).toList();
     }
 
     /**
@@ -98,15 +90,5 @@ public final class BareVoid {
      */
     public int countPieces() {
         return pieces.size();
-    }
-
-    private static List<List<double[]>> collectRings(List<VoidHole> holes) {
-
-        var rings = new ArrayList<List<double[]>>(holes.size());
-
-        for (var hole : holes) {
-            rings.add(hole.boundary());
-        }
-        return rings;
     }
 }

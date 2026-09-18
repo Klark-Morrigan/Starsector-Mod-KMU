@@ -70,10 +70,8 @@ class BareVoidIntegrationTest {
         @MethodSource(SECTORS)
         void readBareVoidFindsTheSamePiecesTheSweepDoes(String sector) {
 
-            var fixture = SectorFixture.loadSector(sector);
-
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS).countPieces())
-                .isEqualTo(traceSweep(fixture).size());
+            assertThat(readBare(sector).countPieces())
+                .isEqualTo(traceSweep(sector).size());
         }
 
         @ParameterizedTest
@@ -82,10 +80,9 @@ class BareVoidIntegrationTest {
             // Exactly one, not at least one: the same hole walked twice is the fault a
             // half-edge started from both directions would produce, and it passes every count
             // of pieces against holes that happens to lose another piece elsewhere.
-            var fixture = SectorFixture.loadSector(sector);
-            var outlines = BareVoid.readBareVoid(fixture.getSites(), KNOBS).collectOutlines();
+            var outlines = readBare(sector).collectOutlines();
 
-            for (var hole : traceSweep(fixture)) {
+            for (var hole : traceSweep(sector)) {
 
                 assertThat(outlines)
                     .filteredOn(outline -> isTheSameRing(outline, hole.boundary()))
@@ -98,17 +95,15 @@ class BareVoidIntegrationTest {
         @MethodSource(SECTORS)
         void thePiecesCoverTheSweepsVoidOnceOver(String sector) {
 
-            var fixture = SectorFixture.loadSector(sector);
             var covered = 0.0;
 
-            for (var outline : BareVoid.readBareVoid(fixture.getSites(), KNOBS)
-                    .collectOutlines()) {
+            for (var outline : readBare(sector).collectOutlines()) {
                 covered += PolygonRegions.computeSignedArea(outline);
             }
 
             var swept = 0.0;
 
-            for (var hole : traceSweep(fixture)) {
+            for (var hole : traceSweep(sector)) {
                 swept += Math.abs(PolygonRegions.computeSignedArea(hole.boundary()));
             }
 
@@ -120,9 +115,7 @@ class BareVoidIntegrationTest {
         @MethodSource(SECTORS)
         void readBareVoidFindsSomeVoidInEverySector(String sector) {
 
-            var fixture = SectorFixture.loadSector(sector);
-
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS).countPieces())
+            assertThat(readBare(sector).countPieces())
                 .isPositive();
         }
     }
@@ -134,8 +127,7 @@ class BareVoidIntegrationTest {
         @MethodSource(SECTORS)
         void collectOutlinesGivesOneRingPerPiece(String sector) {
 
-            var fixture = SectorFixture.loadSector(sector);
-            var bare = BareVoid.readBareVoid(fixture.getSites(), KNOBS);
+            var bare = readBare(sector);
 
             assertThat(bare.collectOutlines())
                 .hasSize(bare.countPieces());
@@ -145,10 +137,7 @@ class BareVoidIntegrationTest {
         @MethodSource(SECTORS)
         void collectOutlinesGivesEveryRingEnoughVerticesToEncloseArea(String sector) {
 
-            var fixture = SectorFixture.loadSector(sector);
-
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS)
-                    .collectOutlines())
+            assertThat(readBare(sector).collectOutlines())
                 .allSatisfy(ring ->
                     assertThat(ring.size())
                         .isGreaterThanOrEqualTo(Limits.MIN_VERTICES_TO_ENCLOSE_AREA));
@@ -160,19 +149,20 @@ class BareVoidIntegrationTest {
         @MethodSource(SECTORS)
         void collectOutlinesGivesEveryRingTheFillWinding(String sector) {
 
-            var fixture = SectorFixture.loadSector(sector);
-
-            assertThat(BareVoid.readBareVoid(fixture.getSites(), KNOBS)
-                    .collectOutlines())
+            assertThat(readBare(sector).collectOutlines())
                 .allSatisfy(ring ->
                     assertThat(PolygonRegions.computeSignedArea(ring)).isPositive());
         }
     }
 
-    private static List<VoidHole> traceSweep(SectorFixture fixture) {
+    private static BareVoid readBare(String sector) {
+        return BareVoid.readBareVoid(SectorFixture.loadSector(sector).getSites(), KNOBS);
+    }
+
+    private static List<VoidHole> traceSweep(String sector) {
 
         return BareVoidBoundary.traceBareHoles(
-            new DiscUnion(fixture.getSites(), KNOBS.cellRadius()),
+            DiscUnion.buildAtCellReach(SectorFixture.loadSector(sector).getSites(), KNOBS),
             KNOBS.boundSegments());
     }
 

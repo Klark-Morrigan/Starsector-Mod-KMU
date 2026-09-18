@@ -47,6 +47,26 @@ public record DiscUnion(
     public static final double TOUCHING_TOLERANCE = 1;
 
     /**
+     * The discs at the cells' own reach.
+     *
+     * <p>The pairing every reading of the map's own void starts from, made here so that no
+     * caller marries a site list to a reach by hand. That is the mistake this record exists to
+     * keep from compiling, and spelling {@code parameters.cellRadius()} out at every call site
+     * quietly lets it back in - with four lengths among the knobs, the wrong one reads exactly
+     * like the right one.
+     *
+     * @param sites      where each disc is centred
+     * @param parameters the knobs the cells are built under, for the reach they stand at
+     * @return the union at that reach
+     */
+    public static DiscUnion buildAtCellReach(
+            List<double[]> sites,
+            SectorGeometryParameters parameters) {
+
+        return new DiscUnion(sites, parameters.cellRadius());
+    }
+
+    /**
      * Whether a point lies inside the union rather than in the void.
      *
      * <p>The definition of void, asked directly: a point is void when its nearest site is
