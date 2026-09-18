@@ -10,11 +10,13 @@ import javax.swing.JPanel;
 /**
  * Everything a cell is drawn WITH, as against what it is shaped like.
  *
- * <p>The fills and their opacities, then the marks laid over them. Two runs under one heading
- * because a reader adjusting how the map looks is working across both, and the split between a
- * cell's own colour and a mark drawn on top of it is not one they are ever making.
+ * <p>The fills and their opacities, then the marks laid over them, then the one opacity that
+ * governs the void's fills rather than a cell's. Under one heading because a reader adjusting
+ * how the map looks is working across all three, and the splits between them - a cell's own
+ * colour, a mark drawn on top of it, a fill belonging to neither - are not ones they are ever
+ * making.
  */
-final class CellAppearanceSection {
+final class CellAppearanceSection extends PanelSection {
 
     // How far brightness may wander either side of the chosen colour when jitter is on, as a
     // percentage of the full range. The default is wide enough to tell two neighbours apart
@@ -24,22 +26,11 @@ final class CellAppearanceSection {
 
     private static final double JITTER_MAXIMUM = 100;
 
-    private final ViewerSettings settings;
-
-    private final ViewerRefreshes refreshes;
-
-    private final SettingRows rows;
-
     CellAppearanceSection(ViewerSettings settings, ViewerRefreshes refreshes) {
-
-        this.settings = settings;
-        this.refreshes = refreshes;
-        this.rows = new SettingRows(refreshes);
+        super(settings, refreshes);
     }
 
-    /**
-     * @return the section, ready to put in the column
-     */
+    @Override
     JPanel buildSection() {
 
         return CollapsibleSection.buildFoldingSection(
@@ -48,10 +39,6 @@ final class CellAppearanceSection {
             SettingRows.buildSectionBody(this::addRows));
     }
 
-    // Everything a cell is drawn WITH, as against what it is shaped like: the fills and their
-    // opacities, then the marks laid over them. Two runs under one heading because a reader
-    // adjusting how the map looks is working across both, and the split between a cell's own
-    // colour and a mark drawn on top of it is not one they are ever making.
     private void addRows(JPanel controls) {
 
         addCellPaintRows(controls);

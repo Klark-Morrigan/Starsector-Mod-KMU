@@ -15,7 +15,7 @@ import javax.swing.JPanel;
  * again, which wants two switches at one level rather than one pick that can only ever show
  * one of them.
  */
-final class VoidV4Section {
+final class VoidV4Section extends PanelSection {
 
     // v4's layers. One key so far: the void before anything divides it.
     private static final String BARE_VOID = "showBareVoid";
@@ -26,22 +26,11 @@ final class VoidV4Section {
     private static final CollapsibleSection.SectionKeys VOID_V4_KEYS =
         CollapsibleSection.SectionKeys.forSection("voidV4");
 
-    private final ViewerSettings settings;
-
-    private final ViewerRefreshes refreshes;
-
-    private final SettingRows rows;
-
     VoidV4Section(ViewerSettings settings, ViewerRefreshes refreshes) {
-
-        this.settings = settings;
-        this.refreshes = refreshes;
-        this.rows = new SettingRows(refreshes);
+        super(settings, refreshes);
     }
 
-    /**
-     * @return the section, ready to put in the column
-     */
+    @Override
     JPanel buildSection() {
 
         return CollapsibleSection.buildSection(
@@ -52,13 +41,6 @@ final class VoidV4Section {
             SettingRows.buildSectionBody(this::addRows));
     }
 
-    // Everything about the void, behind its own divider because the rest of the panel is about
-    // CELLS, and a reader hunting for a void knob was otherwise reading forty identical rows
-    // to find it.
-    //
-    // In the order the construction builds in, which is the order a reader follows it: what
-    // there is to see, then the coasts everything else is laid against, then the spans across
-    // the inlets those coasts leave, then the links between one continent and the next.
     // v4's layers, in the same shape v3's are: a tree with a roll-up at its root and the layers
     // under it. One layer so far, and the tree is here rather than deferred until there are
     // several because the shape is what a later layer is added TO - grown from a bare switch, the

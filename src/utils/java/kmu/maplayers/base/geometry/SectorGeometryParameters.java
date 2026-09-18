@@ -56,6 +56,59 @@ public record SectorGeometryParameters(
     }
 
     /**
+     * The same parameters with one knob moved.
+     *
+     * <p>One method per knob rather than leaving every caller to rebuild the record. Five
+     * components of which four are doubles means a caller changing one spells out the other
+     * four in order, and a transposition there compiles cleanly and quietly builds the sector
+     * at someone else's setting - which is exactly what a viewer full of sliders does on every
+     * drag.
+     *
+     * @param cellRadius the new reach
+     * @return the parameters, otherwise unchanged
+     */
+    public SectorGeometryParameters withCellRadius(double cellRadius) {
+        return new SectorGeometryParameters(
+                cellRadius, boundSegments, borderInset, weldTolerance, miterSpikeLimit);
+    }
+
+    /**
+     * @param boundSegments the new count of sides round the radius bound
+     * @return the parameters, otherwise unchanged
+     */
+    public SectorGeometryParameters withBoundSegments(int boundSegments) {
+        return new SectorGeometryParameters(
+                cellRadius, boundSegments, borderInset, weldTolerance, miterSpikeLimit);
+    }
+
+    /**
+     * @param borderInset the new channel depth
+     * @return the parameters, otherwise unchanged
+     */
+    public SectorGeometryParameters withBorderInset(double borderInset) {
+        return new SectorGeometryParameters(
+                cellRadius, boundSegments, borderInset, weldTolerance, miterSpikeLimit);
+    }
+
+    /**
+     * @param weldTolerance the new largest gap still welded into one corner
+     * @return the parameters, otherwise unchanged
+     */
+    public SectorGeometryParameters withWeldTolerance(double weldTolerance) {
+        return new SectorGeometryParameters(
+                cellRadius, boundSegments, borderInset, weldTolerance, miterSpikeLimit);
+    }
+
+    /**
+     * @param miterSpikeLimit the new multiple of the inset past which a corner bevels
+     * @return the parameters, otherwise unchanged
+     */
+    public SectorGeometryParameters withMiterSpikeLimit(double miterSpikeLimit) {
+        return new SectorGeometryParameters(
+                cellRadius, boundSegments, borderInset, weldTolerance, miterSpikeLimit);
+    }
+
+    /**
      * How far a cell reaches once the channel is taken off the void's side.
      *
      * <p>The reach a void shape is DRAWN at. A pocket traced here stops one channel short of

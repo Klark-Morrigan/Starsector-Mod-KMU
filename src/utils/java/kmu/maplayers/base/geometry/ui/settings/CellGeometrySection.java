@@ -4,7 +4,6 @@ import kmu.desktop.ui.swing.CollapsibleSection;
 import kmu.desktop.ui.swing.ControlRows;
 import kmu.desktop.ui.swing.SliderRows;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
 import java.util.List;
@@ -18,7 +17,7 @@ import javax.swing.JPanel;
  * paint - and what separates this from the appearance beside it. Always answered, so the
  * section folds but does not switch: there is no state in which the map has no cells.
  */
-final class CellGeometrySection {
+final class CellGeometrySection extends PanelSection {
 
     // Slider ranges: wide enough either side of the shipped defaults to see a knob's effect
     // break down, not just vary. The reach floor sits below any real system spacing and the
@@ -44,22 +43,11 @@ final class CellGeometrySection {
 
     private static final double SEGMENTS_MAXIMUM = 96;
 
-    private final ViewerSettings settings;
-
-    private final ViewerRefreshes refreshes;
-
-    private final SettingRows rows;
-
     CellGeometrySection(ViewerSettings settings, ViewerRefreshes refreshes) {
-
-        this.settings = settings;
-        this.refreshes = refreshes;
-        this.rows = new SettingRows(refreshes);
+        super(settings, refreshes);
     }
 
-    /**
-     * @return the section, ready to put in the column
-     */
+    @Override
     JPanel buildSection() {
 
         return CollapsibleSection.buildFoldingSection(
@@ -68,8 +56,6 @@ final class CellGeometrySection {
             SettingRows.buildSectionBody(this::addRows));
     }
 
-    // The five knobs that decide what shape the cells are. Every one of them rebuilds the
-    // partition, which is what makes them geometry rather than paint.
     private void addRows(JPanel controls) {
 
         // How far a cell reaches, and how deep the channel cut into its border is. Paired
@@ -82,24 +68,15 @@ final class CellGeometrySection {
                 REACH_MINIMUM,
                 REACH_MAXIMUM,
                 settings.parameters.cellRadius(),
-                value -> settings.parameters = new SectorGeometryParameters(
-                    value,
-                    settings.parameters.boundSegments(),
-                    settings.parameters.borderInset(),
-                    settings.parameters.weldTolerance(),
-                    settings.parameters.miterSpikeLimit())),
+                value -> settings.parameters = settings.parameters.withCellRadius(value)),
             rows.buildSliderSpec(
                 "borderInset",
                 "Border channel (inset)",
                 INSET_MINIMUM,
                 INSET_MAXIMUM,
                 settings.parameters.borderInset(),
-                value -> settings.parameters = new SectorGeometryParameters(
-                    settings.parameters.cellRadius(),
-                    settings.parameters.boundSegments(),
-                    value,
-                    settings.parameters.weldTolerance(),
-                    settings.parameters.miterSpikeLimit()))));
+                value -> settings.parameters =
+                    settings.parameters.withBorderInset(value))));
 
         // Which edges the channel above is actually cut into. Directly under the row carrying
         // the depth because the two are one statement between them - how deep, and where - and
@@ -127,24 +104,16 @@ final class CellGeometrySection {
                 WELD_MINIMUM,
                 WELD_MAXIMUM,
                 settings.parameters.weldTolerance(),
-                value -> settings.parameters = new SectorGeometryParameters(
-                    settings.parameters.cellRadius(),
-                    settings.parameters.boundSegments(),
-                    settings.parameters.borderInset(),
-                    value,
-                    settings.parameters.miterSpikeLimit())),
+                value -> settings.parameters =
+                    settings.parameters.withWeldTolerance(value)),
             rows.buildSliderSpec(
                 "miterSpikeLimit",
                 "Miter spike limit",
                 MITER_MINIMUM,
                 MITER_MAXIMUM,
                 settings.parameters.miterSpikeLimit(),
-                value -> settings.parameters = new SectorGeometryParameters(
-                    settings.parameters.cellRadius(),
-                    settings.parameters.boundSegments(),
-                    settings.parameters.borderInset(),
-                    settings.parameters.weldTolerance(),
-                    value))));
+                value -> settings.parameters =
+                    settings.parameters.withMiterSpikeLimit(value))));
 
         controls.add(rows.buildSlider(
             "cellBoundSegments",
@@ -152,11 +121,7 @@ final class CellGeometrySection {
             SEGMENTS_MINIMUM,
             SEGMENTS_MAXIMUM,
             settings.parameters.boundSegments(),
-            value -> settings.parameters = new SectorGeometryParameters(
-                settings.parameters.cellRadius(),
-                (int) Math.round(value),
-                settings.parameters.borderInset(),
-                settings.parameters.weldTolerance(),
-                settings.parameters.miterSpikeLimit())));
+            value -> settings.parameters =
+                settings.parameters.withBoundSegments((int) Math.round(value))));
     }
 }

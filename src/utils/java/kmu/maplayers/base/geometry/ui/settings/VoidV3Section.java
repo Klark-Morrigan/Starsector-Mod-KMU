@@ -20,7 +20,7 @@ import javax.swing.JPanel;
  * one whose contents are scheduled to go: when v4 wins, this is what gets deleted, and a
  * section that is one file is deleted by deleting one file.
  */
-final class VoidV3Section {
+final class VoidV3Section extends PanelSection {
 
     // What each void switch is remembered under. Named here rather than written at the two
     // places each of them appears - once as the switch, once in whichever roll-ups cover it -
@@ -106,22 +106,11 @@ final class VoidV3Section {
 
     private static final double ANCHOR_SEPARATION_MAXIMUM = 2000;
 
-    private final ViewerSettings settings;
-
-    private final ViewerRefreshes refreshes;
-
-    private final SettingRows rows;
-
     VoidV3Section(ViewerSettings settings, ViewerRefreshes refreshes) {
-
-        this.settings = settings;
-        this.refreshes = refreshes;
-        this.rows = new SettingRows(refreshes);
+        super(settings, refreshes);
     }
 
-    /**
-     * @return the section, ready to put in the column
-     */
+    @Override
     JPanel buildSection() {
 
         return CollapsibleSection.buildSection(
@@ -132,6 +121,10 @@ final class VoidV3Section {
             SettingRows.buildSectionBody(this::addRows));
     }
 
+    // In the order the construction builds in, which is the order a reader follows it: what
+    // there is to see, then the coasts everything else is laid against, then the spans across
+    // the inlets those coasts leave, then the links between one continent and the next - and
+    // last what the whole of it did not draw.
     private void addRows(JPanel controls) {
 
         controls.add(buildContinentVoidToggles());
@@ -413,11 +406,10 @@ final class VoidV3Section {
             multiple -> settings.continentBridgeReachMultiple = multiple,
             refreshes::refreshCoastlines));
 
-        // In map units, so the slider needs no scaling; what the slack means is documented at
-        // the field it writes.
         // The two knobs that place a span once it has been offered, on one line: how far off a
         // wall it may run and still count as running along it, and how close two feet may stand
-        // before one of them moves. Both in map units, so neither slider needs scaling.
+        // before one of them moves. Both in map units, so neither slider needs scaling, and
+        // what each means is documented at the field it writes.
         //
         // Read beside the thinning below, because the three answer one crowded anchor between
         // them: the thinning drops the spans buying nothing, and these two decide what the ones

@@ -15,7 +15,7 @@ import javax.swing.JPanel;
  * kept inside a section is unreachable exactly when that section is folded away, and drawn as
  * disabled while still deciding what the rest of the map looks like.
  */
-final class GlobalGeometrySection {
+final class GlobalGeometrySection extends PanelSection {
 
     // How little of its own border a cell may face the void with and still be walked through,
     // as a percentage of the whole turn. Zero is the bottom because it asks nothing, which is
@@ -88,22 +88,11 @@ final class GlobalGeometrySection {
 
     private static final double SPIKE_BELOW_MAXIMUM = 90;
 
-    private final ViewerSettings settings;
-
-    private final ViewerRefreshes refreshes;
-
-    private final SettingRows rows;
-
     GlobalGeometrySection(ViewerSettings settings, ViewerRefreshes refreshes) {
-
-        this.settings = settings;
-        this.refreshes = refreshes;
-        this.rows = new SettingRows(refreshes);
+        super(settings, refreshes);
     }
 
-    /**
-     * @return the section, ready to put in the column
-     */
+    @Override
     JPanel buildSection() {
 
         return CollapsibleSection.buildFoldingSection(
@@ -112,13 +101,6 @@ final class GlobalGeometrySection {
             SettingRows.buildSectionBody(this::addRows));
     }
 
-    // What every line on the map is drawn by, whichever construction drew it.
-    //
-    // Three runs under one heading because they are one subject between them: what a line is
-    // smoothed to, where a run is allowed to land, and how much water has to be there before a
-    // shore is drawn round it at all. None of them belongs to a construction - v3 and v4 are
-    // judged against each other only if both are built under the same rules - and none belongs
-    // to the cells, which are shaped before any of this is asked.
     private void addRows(JPanel controls) {
 
         addLineSmoothingRows(controls);
