@@ -28,7 +28,6 @@ and which are dead ends despite suggestive naming.
 5. [Mods checked with nothing relevant](#5-mods-checked-with-nothing-relevant)
 6. [KMU implications](#6-kmu-implications)
 
-
 ## 1. Executive summary
 
 Only two installed mods plug into vanilla's `HostileActivityEventIntel` threat-factor pipeline:
@@ -82,7 +81,6 @@ Anything not on that list
 and runtime-filtering by base class.
 See section 3.
 
-
 ## 2. Cross-mod base-class matrix
 
 | Mod (installed)               | `HostileActivityFactor` impl                   | `GenericRaidFGI` subclass            | `RaidIntel` subclass                                                    | Other threat intel             |
@@ -107,7 +105,6 @@ See section 3.
 "Other threat intel" is the catch-all for things that don't sit on a threat base class
 but still might surface in a colony-threat view
 (Tahlan Legio is the only entry that arguably belongs there in addition to its `RaidIntel` row).
-
 
 ## 3. Common patterns and enumeration seams
 
@@ -189,7 +186,6 @@ hold the desired class as a `Class<?>` and use `Class#isInstance`.
 KMU should do the same with classes resolved via `Class.forName(..., false, classLoader)`
 so that a missing mod degrades to "this filter matches nothing" instead of a hard `NoClassDefFoundError`.
 
-
 ## 4. Per-mod sections
 
 ### 4.1 Tahlan Shipworks
@@ -233,6 +229,7 @@ shortened by 30 days per cycle past 206.
 `getInstance()` exposed via `$tahlan_LegioRaidBaseManager` memory key (`LegioSiegeManager.java:23,:36-:39`).
 
 **Soft-dep risk**:
+
 - Class is `public`,
   package `org.niatahl.tahlan.campaign.siege.LegioSiegeMissionIntel`.
 - Field stability:
@@ -279,6 +276,7 @@ Decompiles cleanly.
      otherwise the threat looks like a random Independent.
 
 **Lifecycle / progress getters** worth using:
+
 - `GenericRaidFGI.getCurrentAction()` / `getActions()`
   (`<core>\intel\group\FleetGroupIntel.java:540-:558`, `:641`) for stage.
 - `GenericRaidFGI.getTargetSystem()`
@@ -310,6 +308,7 @@ Decompiles cleanly.
 **Threat surface**:
 `SotfDustkeeperHAFactor`
 (`.sources-cache\mods\secretsofthefrontier\jars\secretsofthefrontier\data\scripts\campaign\plugins\dustkeepers\SotfDustkeeperHAFactor.java:20-:90`).
+
 - `extends BaseHostileActivityFactor`.
   Adds itself to the listener manager in its constructor (`:24`).
 - `getNameForThreatList(...)` returns `"Dustkeeper Contingency"` (`:39-:41`).
@@ -349,6 +348,7 @@ Decompiles cleanly.
 **Threat surface**:
 `PrivateerBaseRaidIntel`
 (`.sources-cache\mods\IndEvo\jars\IndEvo\indevo\industries\privateer\intel\PrivateerBaseRaidIntel.java:20-:60`).
+
 - `extends RaidIntel`.
 - Spawned by `PrivateerBase.startRaid(target, baseRaidFP)`
   (`.sources-cache\mods\IndEvo\jars\IndEvo\indevo\industries\privateer\industry\PrivateerBase.java:470-:499`).
@@ -363,6 +363,7 @@ not colony-threat.
 Excluded.
 
 **Soft-dep risk**:
+
 - `PrivateerBaseRaidIntel` is `public`;
   safe to `isInstance`.
 - Constructor signature `(StarSystemAPI, FactionAPI, RaidIntel.RaidDelegate)` is unusual
@@ -440,12 +441,12 @@ Captain's Log creates *its own* intel items for ruins (`RuinsIntel`),
 comm relays (`CommRelayIntel`),
 salvageable ships (`SalvageableShipIntel`),
 megastructures (`MegastructureIntel`) etc.
+
 - `.sources-cache\mods\Captain's Log-0.2.0\CaptainsLog\CaptainsLog\campaign\intel\automated\*.java`.
 
 The closest thing to "aggregator" behaviour is in `CaptainsLogEveryFrame.removeFleetLogEntries(...)`
 (`.sources-cache\mods\Captain's Log-0.2.0\CaptainsLog\CaptainsLog\scripts\CaptainsLogEveryFrame.java:49-:81`) which walks `intelManager.getIntel(BreadcrumbIntel.class)` to cull completed entries.
 It is not a model for "consolidated colony threats".
-
 
 ## 5. Mods checked with nothing relevant
 
@@ -520,7 +521,6 @@ Brief justification for each so the next sweep doesn't re-check them:
 
 These should all be left off the KMU report's "checked sources" list with a one-line note ("checked, nothing relevant");
 duplicating the rationale here is enough.
-
 
 ## 6. KMU implications
 

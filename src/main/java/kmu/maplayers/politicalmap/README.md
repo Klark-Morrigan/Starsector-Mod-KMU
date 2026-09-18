@@ -433,6 +433,7 @@ those switch the map's answer to the *cursor* -
 so its style tier is where it is turned down.
 The two highlights cannot collide:
 the sidebar parks the map hover while the pointer is over it.
+
 ### Hover tooltips (`base/tooltip`)
 
 What this layer says about the hovered system,
