@@ -70,7 +70,7 @@ so those colonies behave like normal ones.
   so the route looks alive.
 - Surface the contribution to accessibility in the market tooltip
   so the player can see *why* a cut-off colony now has non-zero accessibility
-  ("Gate route to <system>: +X", "Deep hyperspace route: +Y").
+  ("Gate route to `<system>`: +X", "Deep hyperspace route: +Y").
 - Trade fleets injected by this feature must respect normal destruction,
   interdiction,
   and faction-hostility rules.

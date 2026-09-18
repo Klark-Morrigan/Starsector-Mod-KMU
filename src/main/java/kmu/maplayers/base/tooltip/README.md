@@ -24,8 +24,8 @@ and the divisions are gated
 a line,
 its mark,
 its status,
-its place in an ordering
-- and imports none of the rest,
+its place in an ordering -
+and imports none of the rest,
   so what a line says can be stated without knowing which tier it lands at,
   what colour that tier speaks in,
   or whether the box has room for it;
@@ -236,8 +236,8 @@ Asked for on the shared box rather than on the one layer that first listed anyth
 since two layers demoting a line by different amounts is a difference a reader has no way to account for.
 And the detail cut:
 the level admits a line by its demotion alone (`CellTooltipEntryLevel.isAdmittedBy`),
-so an alliance's member factions survive the shallowest level
-- being the very content that level exists to show -
+so an alliance's member factions survive the shallowest level -
+being the very content that level exists to show -
   while the markets beneath either of them do not.
   Cut on the indent instead,
   a listing would lose exactly what it was asked for.
@@ -286,14 +286,14 @@ a mark of what the finding names,
 and a word closing it with what kind of thing that is.
 One value rather than parts layered on separately,
 since applied apart they leave a line free to end on a connective introducing nothing or on a picture of something it never names.
-Only the finding is gold
-- the words either side are the box's own,
+Only the finding is gold -
+the words either side are the box's own,
   and the closing one is a category rather than a name -
   so the plain status nearly every line carries (`qualifiedWith`) stays the single gold run it has always been.
 
 A finding may also sit inside the line's own name (`callsOutInLabel`),
-as a `CellTooltipLabelFinding`
-- the stretch of the label that says it,
+as a `CellTooltipLabelFinding` -
+the stretch of the label that says it,
   held as character positions since the name is the only copy of the name.
   It is drawn in the qualifier's gold where it stands,
   so a thing named after what it is states that finding

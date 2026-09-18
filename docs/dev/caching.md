@@ -396,8 +396,8 @@ A bake in the same frame as the build before it takes that build's reading,
 the sector being unable to move between the two;
 a bake on its own cadence -
 a name may have moved,
-long after some rebuild began
-- opens a fresh one rather than report a sector as it stood some flips ago.
+long after some rebuild began -
+opens a fresh one rather than report a sector as it stood some flips ago.
   The shared condition is the grouping:
   a pass folded by another would plan bands against blocs the fills never drew.
 
@@ -477,8 +477,8 @@ A bake runs whenever a cluster name may have moved,
 while a cell's ring changes only when the cell is cut again,
 so without it a cell re-baked because a re-fitted name landed on it would re-walk the outline it just discarded.
 The cells the flip re-shaped walk again either way -
-their paths went with their shapes
-- so what the cache saves is every other cell in the bake.
+their paths went with their shapes -
+so what the cache saves is every other cell in the bake.
   It is dropped by the same two writes as the band,
   which is what lets it carry no key of its own:
   a cache living inside the object whose lifetime it must match is correct by construction,

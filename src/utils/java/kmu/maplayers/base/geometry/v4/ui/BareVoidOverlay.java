@@ -16,10 +16,10 @@ import java.util.List;
  * constructions either side of the switch have to be comparable from the first frame, and a
  * layer that draws an unfinished division would be compared against a finished one.
  *
- * <p>This is also the picture the face walk is judged by. The outlines drawn here come from the
- * disc sweep with nothing laid across it, which is the one reading of the bare void with no
- * construction's opinion in it - so when v4 divides the void for itself, these are the pieces it
- * has to still agree with.
+ * <p>What is drawn is the walk's own reading - the faces the bare rings close into - and not
+ * the sweep's holes, although at this tier the two are the same shapes. Drawing the faces is
+ * what puts the walk on screen at all: a line laid into it later shows up as the piece it
+ * divides, in this same picture, rather than as a second layer traced separately.
  *
  * <p>The void is read on each refresh rather than held from startup, for the reason every other
  * overlay reads its own: the reach and the flattening are knobs, and a copy taken when the
@@ -68,14 +68,5 @@ public final class BareVoidOverlay {
             outlines,
             new FillLook(
                 settings.bareVoidColour, settings.voidFillOpacity, settings.bareVoidColour));
-    }
-
-    /**
-     * How many pieces the last refresh read.
-     *
-     * @return the count, and zero while the layer is off
-     */
-    public int countPieces() {
-        return outlines.size();
     }
 }

@@ -222,7 +222,7 @@ There is no built-in `getThreatsForMarket(MarketAPI)`.
 KMU's adapter assembles one from these primitives,
 in this order:
 
-```
+```java
 List<Threat> threatsFor(MarketAPI m) =
     HAE.computeDangerData(m.getStarSystem()).factorData     // aggregated
   + getIntel(HegemonyInspectionIntel.class)  where target == m
@@ -474,41 +474,40 @@ These need a design decision before `plan.md` is locked:
 
 ---
 
-[19]:
-../019-political-map-layer/research.md [rv]:
-research-vanilla.md [rn]:
-research-nexerelin.md [ro]:
-research-other-mods.md [rv-cat]:
-research-vanilla.md#1-threat-class-catalog [rv-hae]:
-research-vanilla.md#11-hostileactivityeventintel-colony-crises [rv-hi]:
-research-vanilla.md#12-hegemonyinspectionintel-ai-core-inspection [rv-punex]:
-research-vanilla.md#13-punitiveexpeditionintel-faction-punitive-expedition [rv-pirate]:
-research-vanilla.md#14-piratebaseintel--pirateactivityintel [rv-path]:
-research-vanilla.md#15-luddic-path-cells--sabotage [rv-hostility]:
-research-vanilla.md#16-factionhostilityintel [rv-hae-api]:
-research-vanilla.md#21-hostileactivityeventintel [rv-punex-api]:
-research-vanilla.md#23-punitiveexpeditionintel [rv-cond]:
-research-vanilla.md#42-current-condition-penalties-retrospective [rv-bei]:
-research-vanilla.md#51-baseeventintel-haes-parent [rv-raid]:
-research-vanilla.md#52-raidintel-inspections--punitive-expeditions [rv-tags]:
-research-vanilla.md#6-intel-sidebar-tags-vanilla-uses [rv-gap-cond]:
-research-vanilla.md#7-open-questions--known-gaps [rn-tag]:
-research-nexerelin.md#2-the-colony-threats-intel-tag [rn-cat]:
-research-nexerelin.md#3-catalog-of-nex-threat-intels [rn-of]:
-research-nexerelin.md#31-offensivefleetintel-hierarchy [rn-blockade]:
-research-nexerelin.md#36-blockadewrapperintel--nexblockadefgi [rn-colexp]:
-research-nexerelin.md#38-colonyexpeditionintel [rn-gb]:
-research-nexerelin.md#39-groundbattleintel [rn-reb]:
-research-nexerelin.md#310-rebellionintel [rn-veng]:
-research-nexerelin.md#311-vengeancefleetintel-player-fleet-not-colony [rn-dip]:
-research-nexerelin.md#5-diplomacy--hostility-context [rn-reb-deep]:
-research-nexerelin.md#6-rebellion--unrest-deep-dive [rn-reb-eta]:
-research-nexerelin.md#9-gaps-and-open-questions [rn-ui]:
-research-nexerelin.md#71-intelinfoplugin-large-description-pattern [rn-adapter]:
-research-nexerelin.md#84-recommended-adapter-shape [ro-permod]:
-research-other-mods.md#4-per-mod-sections [ro-tahlan]:
-research-other-mods.md#41-tahlan-shipworks [ro-indevo]:
-research-other-mods.md#44-industrialevolution [ro-magic]:
-research-other-mods.md#45-magiclib [ro-stelnet]:
-research-other-mods.md#46-stelnet [ro-deadends]:
-research-other-mods.md#5-mods-checked-with-nothing-relevant
+[19]: ../019-political-map-layer/research.md
+[rv]: research-vanilla.md
+[rn]: research-nexerelin.md
+[ro]: research-other-mods.md
+[rv-cat]: research-vanilla.md#1-threat-class-catalog
+[rv-hae]: research-vanilla.md#11-hostileactivityeventintel-colony-crises
+[rv-hi]: research-vanilla.md#12-hegemonyinspectionintel-ai-core-inspection
+[rv-punex]: research-vanilla.md#13-punitiveexpeditionintel-faction-punitive-expedition
+[rv-pirate]: research-vanilla.md#14-piratebaseintel--pirateactivityintel
+[rv-path]: research-vanilla.md#15-luddic-path-cells--sabotage
+[rv-hostility]: research-vanilla.md#16-factionhostilityintel
+[rv-hae-api]: research-vanilla.md#21-hostileactivityeventintel
+[rv-punex-api]: research-vanilla.md#23-punitiveexpeditionintel
+[rv-cond]: research-vanilla.md#42-current-condition-penalties-retrospective
+[rv-bei]: research-vanilla.md#51-baseeventintel-haes-parent
+[rv-raid]: research-vanilla.md#52-raidintel-inspections--punitive-expeditions
+[rv-tags]: research-vanilla.md#6-intel-sidebar-tags-vanilla-uses
+[rv-gap-cond]: research-vanilla.md#7-open-questions--known-gaps
+[rn-tag]: research-nexerelin.md#2-the-colony-threats-intel-tag
+[rn-cat]: research-nexerelin.md#3-catalog-of-nex-threat-intels
+[rn-of]: research-nexerelin.md#31-offensivefleetintel-hierarchy
+[rn-blockade]: research-nexerelin.md#36-blockadewrapperintel--nexblockadefgi
+[rn-colexp]: research-nexerelin.md#38-colonyexpeditionintel
+[rn-gb]: research-nexerelin.md#39-groundbattleintel
+[rn-reb]: research-nexerelin.md#310-rebellionintel
+[rn-veng]: research-nexerelin.md#311-vengeancefleetintel-player-fleet-not-colony
+[rn-dip]: research-nexerelin.md#5-diplomacy--hostility-context
+[rn-reb-deep]: research-nexerelin.md#6-rebellion--unrest-deep-dive
+[rn-reb-eta]: research-nexerelin.md#9-gaps-and-open-questions
+[rn-ui]: research-nexerelin.md#71-intelinfoplugin-large-description-pattern
+[rn-adapter]: research-nexerelin.md#84-recommended-adapter-shape
+[ro-permod]: research-other-mods.md#4-per-mod-sections
+[ro-tahlan]: research-other-mods.md#41-tahlan-shipworks
+[ro-indevo]: research-other-mods.md#44-industrialevolution
+[ro-magic]: research-other-mods.md#45-magiclib
+[ro-stelnet]: research-other-mods.md#46-stelnet
+[ro-deadends]: research-other-mods.md#5-mods-checked-with-nothing-relevant

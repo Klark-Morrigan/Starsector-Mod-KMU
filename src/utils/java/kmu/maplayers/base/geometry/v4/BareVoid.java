@@ -5,37 +5,49 @@ import kmu.maplayers.base.geometry.DiscUnion;
 import kmu.maplayers.base.geometry.SectorGeometryParameters;
 import kmu.maplayers.base.geometry.VoidHole;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The void the cells close around unaided, with no line laid across it.
+ * The void the cells close around unaided, with no line laid across it: v4's base partition.
  *
  * <p>The base every later layer divides. Nothing here knows what a coast is or what a span is:
  * this is the sector's void as the cells alone leave it, which is the one reading no
  * construction can disagree with because no construction has contributed to it yet.
  *
- * <p><b>Traced through the disc sweep rather than through the face walk that replaces it.</b>
- * The sweep's model is covers - a thing takes a stretch out of a circle, and the boundary is
- * the gaps between them - and a wall of no width takes out nothing, which is a contradiction it
- * carries five separate accommodations for. Handed NO walls, not one of them is reached:
- * nothing asks for a mouth, no terminal belongs to a chord, and a disc cover of no width would
- * need two sites at one point, which the sweep already refuses. So with no walls the sweep is
- * exact, and it is the soundest reading of the bare void available.
+ * <p><b>Read as faces of the one walk, over rings the disc sweep traced.</b> The sweep's model
+ * is covers - a thing takes a stretch out of a circle, and the boundary is the gaps between
+ * them - and a wall of no width takes out nothing, which is a contradiction it carries five
+ * separate accommodations for. Handed NO walls, not one of them is reached, so the sweep is
+ * exact here and its rings are the cells' own boundary. The walk closes those rings into faces
+ * with nothing laid across them, so at this tier a face is a hole and nothing more. What the
+ * walk adds is that every later line is laid into the SAME faces, rather than traced by a
+ * second construction that then has to be reconciled with the first.
  *
- * <p>Which makes it the reference the face walk is measured against rather than something to
- * be replaced by it: a walk that hands back a different set of holes from this, over the same
- * sites at the same reach, is wrong, and there is nowhere else to learn that from.
+ * <p>Which is also what makes the sweep the reference rather than the thing replaced: a walk
+ * that hands back a different set of pieces from the sweep's holes, over the same sites at the
+ * same reach, is wrong, and there is nowhere else to learn that from.
+ *
+ * <p>Only the bounded faces are kept. Every ring stands alone, so the walk closes an outside
+ * for each of them, and none of those is the open sea: the sea is what the cells do not
+ * enclose, and no ring bounds it.
  *
  * <p>At the cells' OWN reach, always. The reach a shape is drawn at is a presentation choice
  * made per layer; what void there is, is not.
  */
 public final class BareVoid {
 
-    private final List<VoidHole> holes;
+    // How far two reports of one corner may stand apart and still be welded into one. NOT the
+    // cells' weld tolerance: that one is sized to the sagitta between two neighbouring arcs, a
+    // hundred units at the shipped knobs, and the sweep's rings carry corners a few units apart
+    // where two arcs cross at a shallow angle - so welding at it swallows whole pieces. Every
+    // corner here comes out of one trace, so the only gap to absorb is rounding, and this is
+    // rounding with room to spare.
+    private static final double SAME_CORNER = 1e-3;
 
-    private BareVoid(List<VoidHole> holes) {
-        this.holes = holes;
+    private final List<Face> pieces;
+
+    private BareVoid(List<Face> pieces) {
+        this.pieces = pieces;
     }
 
     /**
@@ -50,23 +62,25 @@ public final class BareVoid {
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        return new BareVoid(BareVoidBoundary.traceBareHoles(
-            new DiscUnion(sites, parameters.cellRadius()), parameters.boundSegments()));
+        var rings = BareVoidBoundary
+            .traceBareHoles(
+                DiscUnion.buildAtCellReach(sites, parameters), parameters.boundSegments())
+            .stream()
+            .map(VoidHole::boundary)
+            .toList();
+
+        return new BareVoid(FaceWalk.walkFaces(rings, List.of(), SAME_CORNER).stream()
+            .filter(face -> !face.isOuterFace())
+            .toList());
     }
 
     /**
      * Every piece of void, as the closed outline of each.
      *
-     * @return one ring per piece, in the order the trace found them
+     * @return one ring per piece, wound to fill, in the order the walk closed them
      */
     public List<List<double[]>> collectOutlines() {
-
-        var outlines = new ArrayList<List<double[]>>(holes.size());
-
-        for (var hole : holes) {
-            outlines.add(hole.boundary());
-        }
-        return List.copyOf(outlines);
+        return pieces.stream().map(Face::boundary).toList();
     }
 
     /**
@@ -75,6 +89,6 @@ public final class BareVoid {
      * @return the count
      */
     public int countPieces() {
-        return holes.size();
+        return pieces.size();
     }
 }

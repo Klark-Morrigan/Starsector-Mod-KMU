@@ -244,7 +244,7 @@ public final class VoidRegionsDump {
 
         var seams = CellBoundSeams.measureSeamsAgainstCells(
             BareVoidBoundary.traceBareHoles(
-                new DiscUnion(fixture.getSites(), SHIPPED.cellRadius()),
+                DiscUnion.buildAtCellReach(fixture.getSites(), SHIPPED),
                 SHIPPED.boundSegments()),
             fixture.getSites(),
             SHIPPED);
@@ -585,7 +585,7 @@ public final class VoidRegionsDump {
             }
         }
 
-        var atCells = new DiscUnion(sites, SHIPPED.cellRadius());
+        var atCells = DiscUnion.buildAtCellReach(sites, SHIPPED);
         var atDrawn = VoidPockets.buildDrawnUnion(sites, SHIPPED);
 
         System.out.printf(

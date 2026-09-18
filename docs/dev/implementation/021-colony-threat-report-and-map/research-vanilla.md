@@ -5,7 +5,7 @@ Source of truth for feature #21
 All `file:line` references point into `c:\a_Games\Starsector\.sources-cache\` unless otherwise noted;
 the canonical prefix used in this document is
 
-```
+```plaintext
 .sources-cache\starsector-core\starfarer.api\com\fs\starfarer\api\impl\campaign\
 ```
 
@@ -24,7 +24,6 @@ no bytecode fallback was needed.
 5. [Stage / progress model (`BaseEventIntel`, `HostileActivityEventIntel`)](#5-stage--progress-model)
 6. [Intel sidebar tags vanilla uses](#6-intel-sidebar-tags-vanilla-uses)
 7. [Open questions / known gaps](#7-open-questions--known-gaps)
-
 
 ## 1. Threat-class catalog
 
@@ -237,7 +236,6 @@ so we don't add them to the consolidated item:
   bounties on player fleets,
   not colony threats.
 
-
 ## 2. Per-threat field / API map
 
 For each threat the consolidated intel item will need to read:
@@ -434,7 +432,6 @@ The table below captures the load-bearing bits.
   only standard `BaseIntelPlugin`.
   Manager polls every `CHECK_INTERVAL = 60` days and rolls `END_PROB = 0.25` to end hostilities (`advanceImpl(...)` `:60-:69`).
 
-
 ## 3. Per-colony threat surface
 
 There is no single vanilla method "given a `MarketAPI`,
@@ -491,7 +488,6 @@ data class MarketThreatSnapshot(
 Construction reads from the APIs above;
 no encapsulation breaches required.
 
-
 ## 4. Conditions vs. events
 
 The threat surface has two distinct axes that the consolidated intel item needs to keep separate:
@@ -542,7 +538,6 @@ For the consolidated intel item:
 render events with their ETAs and progress bars;
 render condition penalties as a current-state list with the condition's icon and tooltip
 (vanilla colony screen already does this - we can reuse the condition's plugin description via `MarketCondition.getPlugin().createTooltip(...)`).
-
 
 ## 5. Stage / progress model
 
@@ -633,7 +628,6 @@ stage order is fixed,
 so a five-segment progress bar with the current segment filled by `elapsed/maxDays` works well.
 `getETA()` is the user-facing "arrives in N days" number.
 
-
 ## 6. Intel sidebar tags vanilla uses
 
 Tag constants live at `<core>\ids\Tags.java`,
@@ -669,7 +663,6 @@ Observed usage on the threat classes:
 (matches vanilla; lets the player find it under the existing tab) and optionally `"Important"` (`Tags.INTEL_IMPORTANT`) so it floats to the top.
 Do not invent a new tag -
 the existing `"Colony threats"` filter already acts as a "threats" tab in the sidebar.
-
 
 ## 7. Open questions / known gaps
 

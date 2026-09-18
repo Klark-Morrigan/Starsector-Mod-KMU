@@ -553,7 +553,7 @@ all under one `PoliticalHistory` POJO held in `Sector.getPersistentData()`:
 
 ### Encoding: per-event politics bytes
 
-```
+```plaintext
 [dominantFactionIndex: 1 byte]
 [presenceCount: 1 byte]   // 0 means "presence = [dominant only]"
 [for i in 1..presenceCount:
@@ -601,7 +601,7 @@ Diff-mode months with no changes contribute zero events.
 
 ### Seek (rendering a past month)
 
-```
+```plaintext
 baseMonth = largest entry in snapshotMonths where entry <= targetMonth
 state = empty Map<SystemId, SystemPolitics>
 for event in events starting from the first with monthIndex == baseMonth:

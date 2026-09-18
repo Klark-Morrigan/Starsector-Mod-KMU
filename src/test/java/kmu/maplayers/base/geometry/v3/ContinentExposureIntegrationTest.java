@@ -184,7 +184,7 @@ class ContinentExposureIntegrationTest {
             // what closed them.
             var sites = loadFixture(sector).getSites();
             var captured = collectCapturedOutlines(sector);
-            var union = new DiscUnion(sites, PARAMETERS.cellRadius());
+            var union = DiscUnion.buildAtCellReach(sites, PARAMETERS);
             var miscounted = new ArrayList<String>();
 
             for (var continent : findExposureOf(sector)) {

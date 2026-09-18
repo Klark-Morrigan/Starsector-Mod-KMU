@@ -1,0 +1,11 @@
+// The family's shared Markdown ruleset, which lives in Common-Automation
+// so one file states the bar for every repo. The rules and the reasoning
+// are there; this file only points at them.
+//
+// The path assumes Common-Automation is checked out beside this repo, as
+// the Gradle build and the pre-commit hook already do. Without that
+// checkout the editor reports a missing config rather than linting
+// against the wrong rules, which is the failure worth having.
+{
+    "extends": "../Common-Automation/.markdownlint.jsonc"
+}

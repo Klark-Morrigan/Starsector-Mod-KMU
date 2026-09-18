@@ -85,7 +85,7 @@ Tag is added
 
 Concrete pattern in `OffensiveFleetIntel.getIntelTags` (`OffensiveFleetIntel.java:489-499`):
 
-```
+```java
 tags.add("Military");
 tags.remove("Colony threats");
 if (this.targetFaction.isPlayerFaction() || this.target.isPlayerOwned()) {
@@ -303,7 +303,7 @@ The supported patterns are:
 **Pattern A — by IntelManager class scan (preferred for KMU).** The intel manager already keeps these lists;
 just iterate and post-filter.
 
-```
+```java
 List<OffensiveFleetIntel> threats = new ArrayList<>();
 for (IntelInfoPlugin ii : Global.getSector().getIntelManager()
                                   .getIntel(OffensiveFleetIntel.class)) {
@@ -316,6 +316,7 @@ for (IntelInfoPlugin ii : Global.getSector().getIntelManager()
 ```
 
 Used in canon form at:
+
 - `CovertOpsManager.java:512-531` (filter offences by target faction)
 - `DiplomacyBrain.java:470-488`
   (gather every live offensive to check ceasefire safety)
@@ -329,6 +330,7 @@ Internal field `protected final List<OffensiveFleetIntel> activeIntel` (`Invasio
 `MANAGER_MAP_KEY` is `"exerelin_invasionFleetManager"` (`:85`).
 
 **Pattern C — per-class static accessors (cleanest where they exist).**
+
 - `RebellionIntel.getOngoingEvent(MarketAPI)` (`RebellionIntel.java:1565-1572`)
 - `RebellionIntel.isOngoing(MarketAPI)` (`:1574-1576`)
 - `GroundBattleIntel.getOngoing(MarketAPI)` (`:2222-2229`)
@@ -428,6 +430,7 @@ Creator/scheduler:
 ### Pre-rebellion signal
 
 KMU's UI should distinguish:
+
 - **No risk:** `getRebellionPoints == 0` AND `getRebellionIncrement(market) <= 0`.
 - **Building:** `0 < getRebellionPoints < 100`.
   Surface the absolute value and the per-day rate so the player can see ETA.
@@ -521,7 +524,7 @@ The adapter is loaded lazily so a player without Nex never triggers a `ClassNotF
 
 ### 8.4 Recommended adapter shape
 
-```
+```java
 interface KmuNexThreatAdapter {
     boolean isAvailable();                                // wraps isModEnabled
     List<NexThreat> getThreatsTargeting(MarketAPI market); // wraps Pattern A
