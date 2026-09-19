@@ -1,5 +1,7 @@
 {
   "kmu": {
+    "compatibility_lost_map_cursor": "Sector map widgets won't respond to the cursor this session - no cell highlight, no hover tooltip.",
+
     "condition_manager_location": "Location:",
     "condition_manager_location_unknown": "Unknown",
 
