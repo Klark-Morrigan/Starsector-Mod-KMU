@@ -1,77 +1,90 @@
 package kmu.maplayers.base.geometry.v4;
 
-import kmu.maplayers.base.geometry.BareVoidBoundary;
-import kmu.maplayers.base.geometry.DiscUnion;
-import kmu.maplayers.base.geometry.SectorGeometryParameters;
-import kmu.maplayers.base.geometry.VoidHole;
+import kmlib.math.geometry.Bounds;
+import kmlib.math.geometry.Segment;
 
+import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.DiscUnion;
+import kmu.maplayers.base.geometry.EdgeTarget;
+import kmu.maplayers.base.geometry.SectorGeometryParameters;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
- * The void the cells close around unaided, with no line laid across it: v4's base partition.
+ * The void the cells leave: everywhere no cell reaches, divided into its pieces.
  *
  * <p>The base every later layer divides. Nothing here knows what a coast is or what a span is:
  * this is the sector's void as the cells alone leave it, which is the one reading no
  * construction can disagree with because no construction has contributed to it yet.
  *
- * <p><b>Read as faces of the one walk, over rings the disc sweep traced.</b> The sweep's model
- * is covers - a thing takes a stretch out of a circle, and the boundary is the gaps between
- * them - and a wall of no width takes out nothing, which is a contradiction it carries five
- * separate accommodations for. Handed NO walls, not one of them is reached, so the sweep is
- * exact here and its rings are the cells' own boundary. The walk closes those rings into faces
- * with nothing laid across them, so at this tier a face is a hole and nothing more. What the
- * walk adds is that every later line is laid into the SAME faces, rather than traced by a
- * second construction that then has to be reconciled with the first.
+ * <p><b>Read off the cells, which already know where it is.</b> Every cell edge says what lies
+ * across it, and {@link EdgeTarget#REACH_BOUND} says nothing does - the cell stopped at its own
+ * reach rather than meeting a neighbour. Those edges and no others are the line between cell and
+ * void, so they are the whole input, and no second construction has to rediscover them. A
+ * neighbouring pair meets exactly where its two bounds cross, so the frontier closes into rings
+ * at rounding rather than at a tolerance.
  *
- * <p>Which is also what makes the sweep the reference rather than the thing replaced: a walk
- * that hands back a different set of pieces from the sweep's holes, over the same sites at the
- * same reach, is wrong, and there is nowhere else to learn that from.
+ * <p><b>The open sea is a piece like any other.</b> It is the largest part of the void by far -
+ * everything beyond the cells' reach - and it is bounded on the inside by the silhouettes the
+ * frontier draws round each group of cells. A frame round the sector closes it on the outside,
+ * so it comes back as a face rather than as the thing left over when the faces were counted.
+ * Without it the pieces do not partition the void, which is the property the whole construction
+ * rests on.
  *
- * <p>Only the bounded faces are kept. Every ring stands alone, so the walk closes an outside
- * for each of them, and none of those is the open sea: the sea is what the cells do not
- * enclose, and no ring bounds it.
+ * <p>So what separates a piece of void from a cell is which side of the frontier it lies on, and
+ * the walk answers that by winding: a cell is walked with its own edges, a piece of void against
+ * them. Every face that is not a cell is void.
  *
  * <p>At the cells' OWN reach, always. The reach a shape is drawn at is a presentation choice
  * made per layer; what void there is, is not.
  */
 public final class BareVoid {
 
-    // How far two reports of one corner may stand apart and still be welded into one. NOT the
-    // cells' weld tolerance: that one is sized to the sagitta between two neighbouring arcs, a
-    // hundred units at the shipped knobs, and the sweep's rings carry corners a few units apart
-    // where two arcs cross at a shallow angle - so welding at it swallows whole pieces. Every
-    // corner here comes out of one trace, so the only gap to absorb is rounding, and this is
-    // rounding with room to spare.
-    private static final double SAME_CORNER = 1e-3;
+    // What the frame is labelled with. Not a cell, and no cell index is negative, so nothing
+    // reading a piece's edges can mistake the edge of the sector for somebody's border.
+    public static final int THE_FRAME = -1;
+
+    // How far outside the cells the frame stands, as a share of the sector's own span. Far
+    // enough that the sea has room to read as a piece rather than as a rim, and near enough
+    // that the piece is about this sector rather than about the number chosen here.
+    private static final double FRAME_MARGIN_SHARE = 0.05;
+
+    private final DiscUnion union;
 
     private final List<Face> pieces;
 
-    private BareVoid(List<Face> pieces) {
+    private BareVoid(DiscUnion union, List<Face> pieces) {
+        this.union = union;
         this.pieces = pieces;
     }
 
     /**
-     * Reads the void a sector's cells close around.
+     * Reads the void a sector's cells leave.
      *
+     * @param cellEdges  every cell, as its adjacency-tagged edges
      * @param sites      the cells' own positions
-     * @param parameters the knobs the cells are built under, for the reach they stand at and
-     *                   the bound every arc is flattened onto
+     * @param parameters the knobs the cells were built under
      * @return the bare void
      */
     public static BareVoid readBareVoid(
+            Map<?, List<CellEdge>> cellEdges,
             List<double[]> sites,
             SectorGeometryParameters parameters) {
 
-        var rings = BareVoidBoundary
-            .traceBareHoles(
-                DiscUnion.buildAtCellReach(sites, parameters), parameters.boundSegments())
-            .stream()
-            .map(VoidHole::boundary)
-            .toList();
+        var frontier = collectFrontier(cellEdges);
+        var pieces = new ArrayList<Face>();
 
-        return new BareVoid(FaceWalk.walkFaces(rings, List.of(), SAME_CORNER).stream()
-            .filter(face -> !face.isOuterFace())
-            .toList());
+        for (var face : FaceWalk.walkFaces(
+                List.of(), frameTheSector(frontier, sites, parameters),
+                measureBoundGap(parameters))) {
+
+            if (!face.isOuterFace() && !isLand(face, sites)) {
+                pieces.add(face);
+            }
+        }
+        return new BareVoid(DiscUnion.buildAtCellReach(sites, parameters), List.copyOf(pieces));
     }
 
     /**
@@ -84,11 +97,128 @@ public final class BareVoid {
     }
 
     /**
+     * Every piece of void, with what each edge of it lies on.
+     *
+     * @return the pieces, in the order the walk closed them
+     */
+    public List<Face> collectPieces() {
+        return pieces;
+    }
+
+    /**
      * How many pieces the cells leave.
      *
      * @return the count
      */
     public int countPieces() {
         return pieces.size();
+    }
+
+    /**
+     * The discs the pieces were read between.
+     *
+     * @return the cells at their own reach
+     */
+    public DiscUnion union() {
+        return union;
+    }
+
+    // Whether a piece is cells rather than void.
+    //
+    // The frontier is one line with a cell on one side and void on the other, so both are
+    // faces of this walk and something has to tell them apart. Which side a piece lies on is
+    // read off the direction its edges are walked in: a cell reports its own boundary with
+    // itself on the left, and a bounded piece is walked with itself on the left, so the cell's
+    // site is on the LEFT of a frontier edge exactly when the piece is that cell's side of it.
+    //
+    // Read off the winding rather than by probing a point inside the piece, because a piece
+    // can be long and thin and bent round a hole, and a probe has to be placed somewhere
+    // inside it before it can ask anything. The direction is already there.
+    private static boolean isLand(Face face, List<double[]> sites) {
+
+        var boundary = face.boundary();
+        var labels = face.edgeLabels();
+
+        for (var edge = 0; edge < boundary.size(); edge++) {
+
+            if (labels[edge] == THE_FRAME) {
+                continue;
+            }
+
+            var from = boundary.get(edge);
+            var to = boundary.get((edge + 1) % boundary.size());
+            var site = sites.get(labels[edge]);
+
+            return (to[0] - from[0]) * (site[1] - from[1])
+                - (to[1] - from[1]) * (site[0] - from[0]) > 0;
+        }
+
+        // Nothing but frame: the piece inside the frame with no cell on its outline at all,
+        // which is the open sea in a sector whose cells are all islands within it.
+        return false;
+    }
+
+    // Every edge a cell faces the void across, labelled with the cell it belongs to.
+    private static List<LabelledWall> collectFrontier(Map<?, List<CellEdge>> cellEdges) {
+
+        var frontier = new ArrayList<LabelledWall>();
+        var cell = 0;
+
+        for (var edges : cellEdges.values()) {
+
+            for (var edge : edges) {
+                if (edge.target() == EdgeTarget.REACH_BOUND) {
+                    frontier.add(new LabelledWall(
+                        new Segment(edge.x1(), edge.y1(), edge.x2(), edge.y2()), cell));
+                }
+            }
+            cell++;
+        }
+        return frontier;
+    }
+
+    // The frontier with a box round the whole sector, which is what turns the open sea from
+    // the space outside every face into a face of its own.
+    private static List<LabelledWall> frameTheSector(
+            List<LabelledWall> frontier,
+            List<double[]> sites,
+            SectorGeometryParameters parameters) {
+
+        var lines = new ArrayList<>(frontier);
+
+        if (sites.isEmpty()) {
+            return lines;
+        }
+
+        var around = Bounds.computeEnclosingBounds(sites);
+        var margin = parameters.cellRadius()
+            + FRAME_MARGIN_SHARE * Math.max(
+                around.maxX() - around.minX(), around.maxY() - around.minY());
+
+        var minX = around.minX() - margin;
+        var minY = around.minY() - margin;
+        var maxX = around.maxX() + margin;
+        var maxY = around.maxY() + margin;
+
+        lines.add(new LabelledWall(new Segment(minX, minY, maxX, minY), THE_FRAME));
+        lines.add(new LabelledWall(new Segment(maxX, minY, maxX, maxY), THE_FRAME));
+        lines.add(new LabelledWall(new Segment(maxX, maxY, minX, maxY), THE_FRAME));
+        lines.add(new LabelledWall(new Segment(minX, maxY, minX, minY), THE_FRAME));
+
+        return lines;
+    }
+
+    // How far two reports of one frontier corner may stand apart and still be welded.
+    //
+    // The bound is drawn as a polygon inscribed in the circle, so a frontier edge lies up to
+    // the chord's sagitta inside the true bound. Where a corner has to be left on the chord -
+    // the near-tangent case, where placing it on the bound would hand the cell a wedge nearer
+    // a third site - two neighbours put it within that sagitta of each other rather than at
+    // one point. So the sagitta is exactly the gap the welding has to cover, and it is derived
+    // from the knobs the cells were drawn at rather than chosen.
+    private static double measureBoundGap(SectorGeometryParameters parameters) {
+
+        return parameters.cellRadius()
+            * (1 - Math.cos(Math.PI / parameters.boundSegments()));
     }
 }

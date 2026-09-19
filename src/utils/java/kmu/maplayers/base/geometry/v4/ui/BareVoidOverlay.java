@@ -1,16 +1,21 @@
 package kmu.maplayers.base.geometry.v4.ui;
 
+import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v4.BareVoid;
+import kmu.maplayers.base.geometry.v4.LandableFrontage;
 
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
- * What v4 has to show: the void the cells close around, before any line divides it.
+ * What v4 has to show: the void the cells close around, before any line divides it, and the
+ * shore of it a straight line could arrive at.
  *
  * <p>v4's whole surface on screen for now, and deliberately the least it can be. The
  * constructions either side of the switch have to be comparable from the first frame, and a
@@ -20,6 +25,10 @@ import java.util.List;
  * the sweep's holes, although at this tier the two are the same shapes. Drawing the faces is
  * what puts the walk on screen at all: a line laid into it later shows up as the piece it
  * divides, in this same picture, rather than as a second layer traced separately.
+ *
+ * <p>The frontage is drawn beside the pieces rather than under them, because it is a
+ * diagnostic of them: nothing is laid from it yet, and it is on screen so that what a span may
+ * be anchored on can be looked at before any span is made to obey it.
  *
  * <p>The void is read on each refresh rather than held from startup, for the reason every other
  * overlay reads its own: the reach and the flattening are knobs, and a copy taken when the
@@ -31,25 +40,37 @@ public final class BareVoidOverlay {
 
     // What the last refresh read, kept so a frame paints the void the rest of the frame was
     // drawn from rather than a reading taken while painting.
-    private List<List<double[]>> outlines = List.of();
+    private List<MapPainting.Hollowed> shapes = List.of();
+
+    private List<List<double[]>> landable = List.of();
 
     public BareVoidOverlay(ViewerSettings settings) {
         this.settings = settings;
     }
 
     /**
-     * Reads the bare void again.
+     * Reads the bare void again, and the frontage over it.
      *
-     * @param fixture the sector to read, for the sites the void lies between
+     * @param cellEdges each cell as its adjacency-tagged edges, which is where the line between
+     *                  cell and void already stands; handed in rather than built again, since
+     *                  the rebuild that calls this has just built them
+     * @param fixture   the sector to read, for the sites the pieces are placed against
      */
-    public void refresh(SectorFixture fixture) {
+    public void refresh(Map<?, List<CellEdge>> cellEdges, SectorFixture fixture) {
 
-        // Nothing else reads this, so with the layer off the trace would be paid for on every
+        // Nothing else reads this, so with both layers off the walk would be paid for on every
         // rebuild to answer no one.
-        outlines = settings.isBareVoidShown()
-            ? BareVoid
-                .readBareVoid(fixture.getSites(), settings.parameters)
-                .collectOutlines()
+        if (!settings.isBareVoidShown() && !settings.isLandableFrontageV4Shown()) {
+            shapes = List.of();
+            landable = List.of();
+            return;
+        }
+
+        var bare = BareVoid.readBareVoid(cellEdges, fixture.getSites(), settings.parameters);
+
+        shapes = collectShapes(bare);
+        landable = settings.isLandableFrontageV4Shown()
+            ? collectLandableRuns(bare)
             : List.of();
     }
 
@@ -63,10 +84,56 @@ public final class BareVoidOverlay {
         if (!settings.isBareVoidShown()) {
             return;
         }
-        MapPainting.paintRingFills(
+        MapPainting.paintHollowedFills(
             g2,
-            outlines,
+            shapes,
             new FillLook(
                 settings.bareVoidColour, settings.voidFillOpacity, settings.bareVoidColour));
+    }
+
+    /**
+     * Draws the runs of shore a straight line from elsewhere on the same piece can arrive at.
+     *
+     * @param g2 where to draw, in world space
+     */
+    public void paintLandableFrontage(Graphics2D g2) {
+
+        if (!settings.isLandableFrontageV4Shown()) {
+            return;
+        }
+        MapPainting.paintLineRuns(g2, landable, settings.landableFrontageV4Colour);
+    }
+
+    // Each piece as the painting takes it: the ring round it and the rings of what it runs
+    // around. The sea runs around every group of cells, so filled from its outline alone it
+    // would cover the whole sector - which is what the outline on its own cannot say.
+    private static List<MapPainting.Hollowed> collectShapes(BareVoid bare) {
+
+        var shapes = new ArrayList<MapPainting.Hollowed>();
+
+        for (var piece : bare.collectPieces()) {
+
+            var holes = new ArrayList<List<double[]>>();
+
+            for (var hole : piece.holes()) {
+                holes.add(hole.vertices());
+            }
+            shapes.add(new MapPainting.Hollowed(piece.boundary(), List.copyOf(holes)));
+        }
+        return List.copyOf(shapes);
+    }
+
+    // Every piece's landable runs as the point runs the painting takes, which cell each is on
+    // being a fact for a reader of the map and not for the stroke.
+    private static List<List<double[]>> collectLandableRuns(BareVoid bare) {
+
+        var runs = new ArrayList<List<double[]>>();
+
+        for (var piece : bare.collectPieces()) {
+            for (var run : LandableFrontage.collectLandableRuns(piece)) {
+                runs.add(run.points());
+            }
+        }
+        return List.copyOf(runs);
     }
 }

@@ -2,15 +2,29 @@ package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.PolygonRegions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * One piece of the plane a walk closed, as the ring that bounds it.
+ * One piece of the plane a walk closed: the ring around it, what each edge of that ring lies
+ * on, and the rings of anything cut out of it.
  *
  * <p>The unit the whole construction is built out of. A face is not a shape somebody drew: it
  * is what is left over once every line has been laid, so its boundary is made of the lines
  * themselves and two faces either side of a line share that line exactly. That is the property
  * a division has and a set of separately traced outlines does not.
+ *
+ * <p><b>Every edge says which line it lies on.</b> The corners alone say where a face is; the
+ * labels say what it is - which cell each stretch of shore belongs to, which wall closed it -
+ * and everything that reads a face for meaning rather than for drawing reads those. Entry
+ * {@code i} names the edge leaving corner {@code i}, the last wrapping to the first.
+ *
+ * <p><b>A face may have holes, and the largest ones always do.</b> The sea is everything beyond
+ * the cells, which is one piece with a hole in it per group of cells; a group with a lake in it
+ * is one piece with that lake cut out. A face without holes could not state either, and a
+ * reader handed the outline alone would fill over the very things the piece runs around. Each
+ * hole carries its own labels, because a hole's boundary is as much a part of what bounds the
+ * piece as the outline is - the sea's shore IS its holes.
  *
  * <p><b>Bounded or outer, told by the winding.</b> A walk hands back both, and they are the
  * same kind of thing walked in opposite directions: go round a bounded piece with the piece on
@@ -24,37 +38,79 @@ import java.util.List;
  */
 public final class Face {
 
-    private final List<double[]> boundary;
+    private final LabelledRing outline;
+
+    private final List<LabelledRing> holes;
 
     private final double signedArea;
 
-    private Face(List<double[]> boundary, double signedArea) {
-        this.boundary = boundary;
+    private Face(LabelledRing outline, List<LabelledRing> holes, double signedArea) {
+        this.outline = outline;
+        this.holes = holes;
         this.signedArea = signedArea;
     }
 
     /**
-     * The face a closed ring bounds.
+     * The face a closed ring bounds, with nothing cut out of it.
      *
      * <p>The winding is measured here, once, rather than taken on the caller's word - which is
      * what makes a face that says it is the outer one and winds like a bounded one impossible
      * to build.
      *
-     * @param boundary the ring, in walk order and without repeating its first point
+     * @param outline the ring, in walk order and without repeating its first point
      * @return the face
      */
-    public static Face encloseFace(List<double[]> boundary) {
+    public static Face encloseFace(LabelledRing outline) {
 
-        return new Face(List.copyOf(boundary), PolygonRegions.computeSignedArea(boundary));
+        return new Face(
+            outline, List.of(), PolygonRegions.computeSignedArea(outline.vertices()));
+    }
+
+    /**
+     * The same face with something cut out of it.
+     *
+     * @param hole the ring of what is cut out, labelled as its own boundary
+     * @return a face the size of this one less that hole
+     */
+    public Face cutOut(LabelledRing hole) {
+
+        var cut = new ArrayList<>(holes);
+
+        cut.add(hole);
+
+        // Taken off rather than recomputed: a hole is wound against its piece, so its own
+        // signed area already carries the sign that removes it.
+        return new Face(
+            outline,
+            List.copyOf(cut),
+            signedArea + PolygonRegions.computeSignedArea(hole.vertices()));
     }
 
     /**
      * The ring this face is bounded by.
      *
-     * @return the vertices in walk order, without a repeated closing point
+     * @return the corners in walk order, without a repeated closing point
      */
     public List<double[]> boundary() {
-        return boundary;
+        return outline.vertices();
+    }
+
+    /**
+     * Which line each edge of that ring lies on.
+     *
+     * @return one label per edge, entry {@code i} naming the edge leaving corner {@code i}
+     */
+    public int[] edgeLabels() {
+        return outline.edgeLabels();
+    }
+
+    /**
+     * The rings of everything cut out of this face.
+     *
+     * @return one ring per hole, each labelled as its own boundary; empty for a solid piece
+     */
+    public List<LabelledRing> holes() {
+        return holes;
     }
 
     /**
@@ -67,7 +123,7 @@ public final class Face {
     }
 
     /**
-     * How much plane this face covers.
+     * How much plane this face covers, holes taken off.
      *
      * @return the area, unsigned; the outer face reports the area of what it wraps rather than
      *         an endless one, since a walk can only measure the ring it was given

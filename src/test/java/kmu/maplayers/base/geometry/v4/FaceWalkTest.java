@@ -6,6 +6,7 @@ import kmlib.math.geometry.Segment;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,17 +21,28 @@ import static org.assertj.core.api.Assertions.within;
  * assertions are counts and areas, which are what a missed junction moves and a moved corner
  * barely touches.
  *
+ * <p>The labels are the other subject. A piece is read by what bounds it, and the walk is the
+ * only place that can be got wrong silently: a label dropped at the cutting or swapped at the
+ * welding leaves a piece with the right shape that says the wrong thing about itself.
+ *
  * <p>One square with things laid across it throughout, so every expected area is a half, a
  * quarter or the whole of one number a reader already has in front of them.
  */
 class FaceWalkTest {
 
-    // A square 100 across from the origin, wound counter-clockwise, enclosing 10000.
-    private static final List<double[]> SQUARE = List.of(
-        new double[] {0, 0},
-        new double[] {100, 0},
-        new double[] {100, 100},
-        new double[] {0, 100});
+    // A square 100 across from the origin, wound counter-clockwise, enclosing 10000. Its four
+    // sides labelled 0 to 3 in walk order: bottom, right, top, left.
+    private static final LabelledRing SQUARE = new LabelledRing(
+        List.of(
+            new double[] {0, 0},
+            new double[] {100, 0},
+            new double[] {100, 100},
+            new double[] {0, 100}),
+        new int[] {0, 1, 2, 3});
+
+    // What every wall laid across the square is labelled. Well clear of the sides' labels, so
+    // a wall's label turning up where a side's should be is a fault and not a coincidence.
+    private static final int WALL = 9;
 
     // How far two reports of one corner may stand apart and still be welded into one. Far below
     // anything these fixtures contain: every shared corner here is reported from the same
@@ -75,7 +87,7 @@ class FaceWalkTest {
             // the one thing asked.
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
-                List.of(new Segment(0, 50, 100, 50)),
+                List.of(new LabelledWall(new Segment(0, 50, 100, 50), WALL)),
                 WELD_TOLERANCE);
 
             assertThat(measureBoundedAreas(faces))
@@ -92,8 +104,8 @@ class FaceWalkTest {
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
                 List.of(
-                    new Segment(0, 50, 100, 50),
-                    new Segment(50, 0, 50, 100)),
+                    new LabelledWall(new Segment(0, 50, 100, 50), WALL),
+                    new LabelledWall(new Segment(50, 0, 50, 100), WALL)),
                 WELD_TOLERANCE);
 
             assertThat(measureBoundedAreas(faces))
@@ -110,8 +122,8 @@ class FaceWalkTest {
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
                 List.of(
-                    new Segment(0, 50, 50, 50),
-                    new Segment(50, 50, 50, 0)),
+                    new LabelledWall(new Segment(0, 50, 50, 50), WALL),
+                    new LabelledWall(new Segment(50, 50, 50, 0), WALL)),
                 WELD_TOLERANCE);
 
             var areas = measureBoundedAreas(faces);
@@ -129,7 +141,7 @@ class FaceWalkTest {
             // were, and what differs is only what the rest of the lines do.
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
-                List.of(new Segment(0, 50, 40, 50)),
+                List.of(new LabelledWall(new Segment(0, 50, 40, 50), WALL)),
                 WELD_TOLERANCE);
 
             var areas = measureBoundedAreas(faces);
@@ -146,13 +158,62 @@ class FaceWalkTest {
             // and back, so a later line laid onto that end has something to join.
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
-                List.of(new Segment(0, 50, 40, 50)),
+                List.of(new LabelledWall(new Segment(0, 50, 40, 50), WALL)),
                 WELD_TOLERANCE);
 
             assertThat(findTheBoundedFace(faces).boundary())
                 .anySatisfy(corner -> assertThat(
                         Points.computeDistance(corner, new double[] {40, 50}))
                     .isLessThan(SAME_POINT));
+        }
+
+        @Test
+        void everyEdgeOfAPieceSaysWhichLineItLiesOn() {
+            // The chord fixture read for its labels. The lower piece runs along the bottom,
+            // the lower halves of the right and left sides, and the chord; the upper piece
+            // along the upper halves, the top, and the chord. A label lost at the cut or
+            // swapped at the weld shows here as a side's label missing or the wall's doubled.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(new LabelledWall(new Segment(0, 50, 100, 50), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(collectBoundedFaces(faces))
+                .extracting(FaceWalkTest::sortLabels)
+                .containsExactlyInAnyOrder(
+                    new int[] {0, 1, 3, 9},
+                    new int[] {1, 2, 3, 9});
+        }
+
+        @Test
+        void aSlitCarriesItsWallsLabelBothWays() {
+            // Out along the wall and back down its other side are two edges of the one piece,
+            // and both lie on the wall. The label is a fact about the line, not about which
+            // side of it the walk was on.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(new LabelledWall(new Segment(0, 50, 40, 50), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(Arrays.stream(findTheBoundedFace(faces).edgeLabels())
+                    .filter(label -> label == WALL)
+                    .count())
+                .isEqualTo(2);
+        }
+
+        @Test
+        void labelsRunParallelToTheBoundary() {
+
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(
+                    new LabelledWall(new Segment(0, 50, 100, 50), WALL),
+                    new LabelledWall(new Segment(50, 0, 50, 100), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(faces)
+                .allSatisfy(face ->
+                    assertThat(face.edgeLabels()).hasSize(face.boundary().size()));
         }
     }
 
@@ -195,5 +256,15 @@ class FaceWalkTest {
     private static List<Face> collectBoundedFaces(List<Face> faces) {
 
         return faces.stream().filter(face -> !face.isOuterFace()).toList();
+    }
+
+    // A face's labels in order of value, since which edge the walk started from decides where
+    // the ring begins and the assertion is about which lines bound the piece, not where.
+    private static int[] sortLabels(Face face) {
+
+        var labels = face.edgeLabels();
+
+        Arrays.sort(labels);
+        return labels;
     }
 }

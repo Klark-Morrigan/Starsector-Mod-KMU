@@ -1,13 +1,14 @@
 package kmu.maplayers.base.geometry.v4;
 
 import kmlib.math.geometry.Points;
-import kmlib.math.geometry.Segment;
 import kmlib.math.geometry.VertexWelder;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +25,8 @@ import java.util.Map;
  * <p><b>Each edge is held once, in both directions.</b> A face lies on one side of an edge and
  * another face on the other, so the two sides are walked separately - as the two directions the
  * edge can be taken in. An edge taken both ways belongs to two faces, or twice to one face
- * where it divides nothing.
+ * where it divides nothing. Its label is the same whichever way it is taken: which line an
+ * edge lies on does not depend on which side it is seen from.
  *
  * <p>The input must already be cut at its crossings: two lines crossing in the middle are two
  * edges that share no vertex here, and a walk would pass straight through the crossing without
@@ -32,54 +34,63 @@ import java.util.Map;
  */
 final class PlanarArrangement {
 
+    // A vertex no group has claimed yet, while the groups are being worked out.
+    private static final int UNVISITED = -1;
+
     private final List<double[]> vertices;
 
     private final List<List<HalfEdge>> outgoing;
 
     private final Map<HalfEdge, Integer> slots;
 
+    private final Map<HalfEdge, Integer> labels;
+
     private PlanarArrangement(
             List<double[]> vertices,
             List<List<HalfEdge>> outgoing,
-            Map<HalfEdge, Integer> slots) {
+            Map<HalfEdge, Integer> slots,
+            Map<HalfEdge, Integer> labels) {
 
         this.vertices = vertices;
         this.outgoing = outgoing;
         this.slots = slots;
+        this.labels = labels;
     }
 
     /**
      * Builds the graph, welding the ends of the lines into shared vertices as it goes.
      *
-     * @param segments      lines that meet only at their ends
+     * @param lines         lines that meet only at their ends
      * @param weldTolerance how far two reports of one corner may stand apart and still be one
      * @return the arrangement
      */
-    static PlanarArrangement weldArrangement(List<Segment> segments, double weldTolerance) {
+    static PlanarArrangement weldArrangement(List<LabelledWall> lines, double weldTolerance) {
 
         var welder = new VertexWelder(weldTolerance);
 
-        // Undirected, deduplicated. Two lines laid exactly along each other are one edge of the
-        // division, and holding the same neighbour twice would give a vertex two entries at the
-        // same angle - which leaves the order round it undecided and the walk following one of
-        // them by chance.
-        var links = new LinkedHashSet<HalfEdge>();
+        // Undirected, deduplicated, each with the label of the first line that laid it. Two
+        // lines laid exactly along each other are one edge of the division, and holding the
+        // same neighbour twice would give a vertex two entries at the same angle - which leaves
+        // the order round it undecided and the walk following one of them by chance.
+        var links = new LinkedHashMap<HalfEdge, Integer>();
 
-        for (var segment : segments) {
+        for (var line : lines) {
 
+            var segment = line.segment();
             var from = welder.weld(segment.startX(), segment.startY());
             var to = welder.weld(segment.endX(), segment.endY());
 
             if (from == to) {
                 continue;
             }
-            links.add(new HalfEdge(Math.min(from, to), Math.max(from, to)));
+            links.putIfAbsent(new HalfEdge(Math.min(from, to), Math.max(from, to)), line.label());
         }
 
         var vertices = welder.collectPoints();
-        var outgoing = sortAroundVertices(vertices, links);
+        var outgoing = sortAroundVertices(vertices, links.keySet());
 
-        return new PlanarArrangement(vertices, outgoing, indexSlots(outgoing));
+        return new PlanarArrangement(
+            vertices, outgoing, indexSlots(outgoing), labelBothWays(links));
     }
 
     /**
@@ -98,6 +109,34 @@ final class PlanarArrangement {
     }
 
     /**
+     * Which group of touching lines each vertex belongs to.
+     *
+     * <p>What tells a ring enclosed by another group from a ring of the same group. Rings of
+     * ONE group share their corners - a piece and the outside of that piece run along the same
+     * edges - so asking whether one lies inside another by testing a shared corner has no
+     * answer. Across groups there are no shared corners and the question is the ordinary one.
+     *
+     * @return a group number per vertex, equal exactly for vertices some chain of edges joins
+     */
+    int[] labelComponents() {
+
+        var components = new int[vertices.size()];
+
+        Arrays.fill(components, UNVISITED);
+
+        var next = 0;
+
+        for (var vertex = 0; vertex < vertices.size(); vertex++) {
+
+            if (components[vertex] != UNVISITED) {
+                continue;
+            }
+            spreadComponentFrom(vertex, next++, components);
+        }
+        return components;
+    }
+
+    /**
      * Where a vertex stands.
      *
      * @param vertex the vertex's index
@@ -105,6 +144,16 @@ final class PlanarArrangement {
      */
     double[] findPointAt(int vertex) {
         return vertices.get(vertex);
+    }
+
+    /**
+     * Which line an edge lies on.
+     *
+     * @param edge the edge, taken either way
+     * @return its label
+     */
+    int readLabelOf(HalfEdge edge) {
+        return labels.get(edge);
     }
 
     /**
@@ -130,6 +179,27 @@ final class PlanarArrangement {
         var slot = slots.get(back);
 
         return atVertex.get((slot - 1 + atVertex.size()) % atVertex.size());
+    }
+
+    // Claims every vertex some chain of edges reaches from this one for the given group.
+    // Walked with a stack rather than by recursion, a group being as long as the sector is wide.
+    private void spreadComponentFrom(int vertex, int component, int[] components) {
+
+        var pending = new ArrayDeque<Integer>();
+
+        pending.push(vertex);
+        components[vertex] = component;
+
+        while (!pending.isEmpty()) {
+            for (var edge : outgoing.get(pending.pop())) {
+
+                if (components[edge.to()] == UNVISITED) {
+
+                    components[edge.to()] = component;
+                    pending.push(edge.to());
+                }
+            }
+        }
     }
 
     // Both directions of every edge, gathered under the vertex each leaves from and put into
@@ -167,6 +237,19 @@ final class PlanarArrangement {
             }
         }
         return slots;
+    }
+
+    // Each link's label under both of its directions, so the walk reads a label off whichever
+    // way it took the edge.
+    private static Map<HalfEdge, Integer> labelBothWays(Map<HalfEdge, Integer> links) {
+
+        var labels = new HashMap<HalfEdge, Integer>();
+
+        for (var link : links.entrySet()) {
+            labels.put(link.getKey(), link.getValue());
+            labels.put(link.getKey().reverse(), link.getValue());
+        }
+        return labels;
     }
 
     // Which way an edge leaves its vertex, counter-clockwise from due east. Only ever compared

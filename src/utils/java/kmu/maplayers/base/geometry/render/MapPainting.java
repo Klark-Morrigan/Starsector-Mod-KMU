@@ -108,6 +108,41 @@ public final class MapPainting {
         }
     }
 
+    /**
+     * Fills shapes that may have things cut out of them.
+     *
+     * <p>The sibling of {@link #paintRingFills} for pieces of a division rather than for traced
+     * outlines. A piece read off a partition can run around another piece - the sea around its
+     * continents - and drawn from its outline alone it covers them.
+     *
+     * @param g2     what to draw with
+     * @param shapes each shape as its outline and the rings cut out of it
+     * @param look   how to paint each of them
+     */
+    public static void paintHollowedFills(
+            Graphics2D g2,
+            List<Hollowed> shapes,
+            FillLook look) {
+
+        g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
+
+        for (var shape : shapes) {
+            paintFilledShape(g2, buildHollowedPath(shape.outline(), shape.holes()), look);
+        }
+    }
+
+    /**
+     * One shape of a division: the ring around it, and the rings of anything cut out of it.
+     *
+     * <p>Its own value rather than two lists travelling side by side, because a shape drawn
+     * from one piece's outline and another's holes is a shape nobody has.
+     *
+     * @param outline the ring around it
+     * @param holes   the rings cut out of it; empty for a solid shape
+     */
+    public record Hollowed(List<double[]> outline, List<List<double[]>> holes) {
+    }
+
     // The one way a coast is drawn here: closed rings stroked at span weight in one opaque
     // colour, filled with nothing. Shared by every ring the map strokes - outer shores, lake
     // shores, the coastline the links added - because those are one kind of line, and two
@@ -194,6 +229,32 @@ public final class MapPainting {
         var path = buildOpenPath(ring);
 
         path.closePath();
+        return path;
+    }
+
+    /**
+     * The path of a shape with things cut out of it: an outline and the rings of its holes.
+     *
+     * <p>Under the even-odd rule, so a ring inside another ring is a hole in it whichever way
+     * round either is wound. A piece that runs around something - the open sea around its
+     * continents, a group of cells around its lakes - is drawn from the same outline as a solid
+     * one, and taking the holes on the caller's word rather than off the winding is what lets
+     * that piece be filled at all. Filled from the outline alone it paints over the very things
+     * it runs around.
+     *
+     * @param outline the ring around the shape
+     * @param holes   the rings of what is cut out of it; empty for a solid shape
+     * @return the path
+     */
+    public static Path2D buildHollowedPath(List<double[]> outline, List<List<double[]>> holes) {
+
+        var path = buildPath(outline);
+
+        path.setWindingRule(Path2D.WIND_EVEN_ODD);
+
+        for (var hole : holes) {
+            path.append(buildPath(hole), false);
+        }
         return path;
     }
 

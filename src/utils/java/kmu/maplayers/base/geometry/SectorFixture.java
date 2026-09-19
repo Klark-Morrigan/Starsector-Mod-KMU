@@ -216,7 +216,8 @@ public final class SectorFixture {
      * @param boundSegments sides of the polygon approximating each cell's radius bound
      * @return each system's cell edges, tagged with the neighbour across them
      */
-    Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(double cellRadius, int boundSegments) {
+    public Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(
+            double cellRadius, int boundSegments) {
 
         var edgesBySystemKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 

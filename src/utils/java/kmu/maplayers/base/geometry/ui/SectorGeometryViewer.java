@@ -392,7 +392,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     @Override
     public void refreshVoidV4() {
 
-        bareVoid.refresh(fixture);
+        // The cells' own edges, which is where the line between cell and void already stands.
+        // Read off the geometry the rebuild just built rather than built again: the two would
+        // be the same partition computed twice, and v4 drawing against its own copy is how the
+        // two constructions come to disagree about where a cell ends.
+        bareVoid.refresh(geometry.cellEdgesByCellKey(), fixture);
         repaintMap();
     }
 
@@ -730,6 +734,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // Topmost of the lines, so a coast reads unbroken against the cells it was traced
             // from - which is the one thing looking at it is for.
             continentCoasts.paintCoasts(g2);
+
+            // v4's frontage in the same pass as v3's, for the same reason: a run of border is
+            // read against the cells it runs along, so it goes over everything filled.
+            bareVoid.paintLandableFrontage(g2);
             cells.paintSites(g2, fixture.getSites());
         }
 
