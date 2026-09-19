@@ -18,6 +18,7 @@ import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.overlays.CellsOverlay;
 import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
 import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
+import kmu.maplayers.base.geometry.ui.settings.SavedViewerSettings;
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
 import kmu.maplayers.base.geometry.v3.BridgedContinents;
@@ -135,12 +136,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
-    // Under the user's home rather than in the checkout, so a knob survives a clean, a branch
-    // switch and a fresh clone - which is what it did when the JDK kept it, and losing that
-    // would be trading one silent forgetting for another.
-    private static final Path SAVED_VALUES_FILE = Path.of(
-        System.getProperty("user.home"), ".kmu", "sector-geometry-viewer.json");
-
     private static final String WINDOW_TITLE = "KMU political map";
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
@@ -221,7 +216,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // Where the knobs are remembered, said once here because it is this application's
         // decision and not the rows' - and said before any row is built, since a row reads
         // its remembered value as it is built.
-        SavedValues.rememberIn(SAVED_VALUES_FILE);
+        SavedValues.rememberIn(SavedViewerSettings.savedValuesFile());
 
         SwingUtilities.invokeLater(() -> new SectorGeometryViewer().showWindow());
     }
