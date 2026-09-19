@@ -1,6 +1,6 @@
 package kmu.maplayers.base.layer;
 
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.machinery.SectorMapMachinery;
 import kmu.maplayers.base.render.MapLayerRenderer;

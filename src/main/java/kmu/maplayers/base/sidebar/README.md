@@ -74,7 +74,7 @@ a strip snapped wholly to the tab face would stand the same body at a different 
 The pair is built through `StripTextMeasurers.loadFaceMeasurers`,
 whose two parameters are differently typed so the faces cannot arrive the wrong way round.
 
-The layer selector is a single `ControlSpec.Tabs`
+The layer selector is a single `TabsSpec`
 whose action selects the layer at the clicked index,
 so the switch rides on the control and no tab callback is threaded through the input pass.
 The draw also clamps the controller's stored scroll offset to the freshly laid-out overflow,

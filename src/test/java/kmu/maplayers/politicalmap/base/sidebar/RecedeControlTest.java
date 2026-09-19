@@ -2,7 +2,10 @@ package kmu.maplayers.politicalmap.base.sidebar;
 
 import com.fs.starfarer.api.util.Misc;
 
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.CheckboxSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
+import kmlib.starsector.ui.controls.specs.InteractiveSpec;
+import kmlib.starsector.ui.controls.specs.LabelSpec;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
 import kmu.maplayers.base.layer.ScreenMemoryScopes;
@@ -99,7 +102,7 @@ final class RecedeControlTest {
 
                 // A caption is a text-only Label - drawn but never clicked, so it is not Interactive and
                 // carries no lit cell at all.
-                assertThat(caption).isInstanceOf(ControlSpec.Label.class);
+                assertThat(caption).isInstanceOf(LabelSpec.class);
                 assertThat(caption.labels()).containsExactly(CAPTION_LABEL);
             }
         }
@@ -114,9 +117,9 @@ final class RecedeControlTest {
 
                 var controls = RecedeControl.buildControls(preferencesMock, CAPTION_LABEL, BUILT_TARGET);
 
-                assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
+                assertThat(controls.get(MUTE_CHECKBOX)).isInstanceOf(CheckboxSpec.class);
                 assertThat(controls.get(MUTE_CHECKBOX).labels()).containsExactly("Muted");
-                assertThat(controls.get(DESATURATE_CHECKBOX)).isInstanceOf(ControlSpec.Checkbox.class);
+                assertThat(controls.get(DESATURATE_CHECKBOX)).isInstanceOf(CheckboxSpec.class);
                 assertThat(controls.get(DESATURATE_CHECKBOX).labels()).containsExactly("Desaturated");
             }
         }
@@ -228,8 +231,8 @@ final class RecedeControlTest {
     // The control at index, built over the given set and read as the Interactive control it is - a
     // caption is chrome and not Interactive, so only the checkboxes below it expose the lit cell and
     // click action a test drives. Rebuilt fresh each call, so a test reads the state its stubs set.
-    private static ControlSpec.Interactive buildInteractiveAt(RecedePreferences preferences, int index) {
-        return (ControlSpec.Interactive) RecedeControl
+    private static InteractiveSpec buildInteractiveAt(RecedePreferences preferences, int index) {
+        return (InteractiveSpec) RecedeControl
                 .buildControls(preferences, CAPTION_LABEL, BUILT_TARGET)
                 .get(index);
     }

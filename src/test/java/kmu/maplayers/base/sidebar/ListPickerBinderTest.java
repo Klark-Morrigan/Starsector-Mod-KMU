@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlHoverReport;
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlHoverReport;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 import kmlib.starsector.ui.widgets.lists.ListSort;

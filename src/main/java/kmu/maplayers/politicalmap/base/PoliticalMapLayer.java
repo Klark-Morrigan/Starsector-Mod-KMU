@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.base;
 
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.KmuMod;
 import kmu.maplayers.base.layer.MapLayer;
