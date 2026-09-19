@@ -62,7 +62,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
  * nothing beyond it, the unfinished feature ships off so that nothing the mod does not yet stand
  * behind runs unasked, the escape hatch over the vanilla filter row ships on so that the control it
- * gates is there before anyone needs it, and
+ * gates is there before anyone needs it, the decivilised-territory switch ships on so that the
+ * reading the map already drew is the one a player keeps by doing nothing, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
  * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
  * that one table's business; that the two spellings of it agree is every Boolean row's, so the
@@ -135,6 +136,14 @@ final class LunaSettingsCsvIntegrationTest {
     // two spellings of a value agreeing, which the walk over every switch already holds.
     private static final String FILTER_ROW_TOGGLE_FIELD_ID =
         "kmu_map_dev_ui_controls_mapLayersToggle_isEnabled";
+
+    // The switch deciding whether a decivilised system is territory to paint, held to shipping on
+    // for the same kind of reason and with its own check for the same one. Both readings of such a
+    // system are defensible, so which one ships is a decision rather than a value: on is what the
+    // map drew before the switch existed, and a player who prefers the other reading is the one who
+    // should have to say so.
+    private static final String DECIVILISED_TERRITORY_FIELD_ID =
+        "kmu_map_politics_visuals_decivilised_shouldDrawTerritory";
 
     // The three Keycode rows. They are held here rather than in the numeric walk because there is
     // nothing to walk them against: no Java fallback mirrors a keycode, deliberately, so this column is
@@ -398,6 +407,24 @@ final class LunaSettingsCsvIntegrationTest {
                         + " the feature draws with no way to put it away, which reads as the"
                         + " attachment having broken rather than as a switch nobody has turned on",
                     FILTER_ROW_TOGGLE_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo(BOOLEAN_ON_VALUE);
+        }
+    }
+
+    @Nested
+    class DecivilisedTerritoryDefaults {
+
+        @Test
+        void theDecivilisedTerritoryRowShipsSwitchedOn() {
+
+            assertThat(LunaSettingsTable.readDefaultValue(DECIVILISED_TERRITORY_FIELD_ID, BOOLEAN_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: a decivilised system holds a settled place nobody speaks"
+                        + " for, and the map has always read that as somewhere people live - so the"
+                        + " switch ships at the reading already on screen, and the player who wants"
+                        + " the other one is the one who says so",
+                    DECIVILISED_TERRITORY_FIELD_ID,
                     SETTINGS_CSV)
                 .isEqualTo(BOOLEAN_ON_VALUE);
         }

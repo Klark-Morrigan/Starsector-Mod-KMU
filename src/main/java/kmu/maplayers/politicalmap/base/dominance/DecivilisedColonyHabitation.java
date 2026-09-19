@@ -1,6 +1,7 @@
 package kmu.maplayers.politicalmap.base.dominance;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKind;
+import kmu.settings.KmuPoliticalMapTerritorySettings;
 
 /**
  * Whether a decivilised world amounts to somebody living in its system, for the habitation
@@ -32,6 +33,27 @@ public enum DecivilisedColonyHabitation {
 
     DecivilisedColonyHabitation(boolean isCountedAsPopulated) {
         this.isCountedAsPopulated = isCountedAsPopulated;
+    }
+
+    /**
+     * The position the player's settings currently take.
+     *
+     * <p>Called where a rebuild opens its pass and nowhere below it, so one rebuild resolves the
+     * whole sector under the setting that was in force when it began. A read taken per system
+     * could be answered one way for half the sector and the other way for the rest, leaving a map
+     * nothing on screen explains.
+     *
+     * <p>No refresh work rides on it: every KMU settings change advances the revision the political
+     * map's rebuild decider folds into its content and holding revisions, so a flip already forces
+     * the rebuild that re-reads this.
+     *
+     * @return the rule the player's live settings ask for
+     */
+    public static DecivilisedColonyHabitation readFromLunaSettings() {
+
+        return KmuPoliticalMapTerritorySettings.shouldDecivilisedSystemsDrawTerritory()
+            ? COUNTS_AS_POPULATED
+            : COUNTS_AS_UNPOPULATED;
     }
 
     /**

@@ -300,7 +300,7 @@ public interface PoliticalMapView {
             sector,
             new ColonyReadRules(
                 MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
-                DecivilisedColonyHabitation.COUNTS_AS_POPULATED));
+                DecivilisedColonyHabitation.readFromLunaSettings()));
     }
 
     /**

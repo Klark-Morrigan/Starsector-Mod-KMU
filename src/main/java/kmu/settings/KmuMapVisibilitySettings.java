@@ -10,7 +10,8 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
  *
  * <p>Apart from every other knob here because these are the only ones that can spoil a campaign,
  * and the only ones whose fallbacks are chosen for that reason rather than for taste - a map that
- * gave a sector away while LunaLib had no stored value could not take it back. *
+ * gave a sector away while LunaLib had no stored value could not take it back.
+ *
  * <p>What each knob does for the player is stated once, in the description column of
  * data/config/LunaSettings.csv, which is the text the settings screen actually shows. The prose
  * here answers only what that column cannot: why a default is the number it is, and what a caller

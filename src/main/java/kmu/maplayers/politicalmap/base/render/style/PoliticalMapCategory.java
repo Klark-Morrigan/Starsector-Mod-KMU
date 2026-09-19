@@ -18,6 +18,13 @@ import kmu.maplayers.base.theme.MapStyleCategory;
  * <p>{@link #DECIVILISED} is named for the case that first needed it rather than for the whole
  * of what it now covers, its bundle being the one the player configures under that name.
  *
+ * <p>Which cells that bundle covers is not fixed either. A player who has said decivilised worlds
+ * draw no territory takes them out of the habitation projection the classification reads, so a
+ * system holding nothing else falls to {@link #UNINHABITED} - one knob moving the membership of
+ * two categories rather than the style of either. Everything else the bundle covers stays, which
+ * is why the knob is not the same thing as zeroing this bundle's opacities: those reach all three
+ * views at once, and this reaches one shape of colony.
+ *
  * <p>Declared beside the layer that paints them rather than in the framework's theme: how the
  * a map divides into is the vocabulary of whoever is painting it, and the theme keys on the open
  * {@link MapStyleCategory} so a layer dividing the sector some other way brings its own set

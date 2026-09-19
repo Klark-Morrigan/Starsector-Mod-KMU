@@ -318,11 +318,16 @@ final class PoliticalMapCache {
 
         } else {
 
+            // The two halves of the rule come from different places on purpose. The visibility half
+            // is the cut's, because it is what decided which systems got cells - reading it live
+            // here would resolve holding for a sector the standing geometry was not cut for. The
+            // habitation half reseeds nothing, so it is read where the pass opens, once for the
+            // rebuild.
             var pass = new HolderPass(
                 sectorIndex,
                 new ColonyReadRules(
                     staleHalves.cellCut().visibilityRules().colonyVisibility(),
-                    DecivilisedColonyHabitation.COUNTS_AS_POPULATED),
+                    DecivilisedColonyHabitation.readFromLunaSettings()),
                 view.resolveGrouping());
 
             wasHoldingReused = decider.canReuseStandingHolding(
