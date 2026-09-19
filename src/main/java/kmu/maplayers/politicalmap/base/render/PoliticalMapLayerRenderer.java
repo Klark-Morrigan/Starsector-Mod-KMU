@@ -9,6 +9,7 @@ import kmlib.starsector.ui.map.probes.MapTabWidgetTrace;
 import kmlib.starsector.ui.map.transform.ModelviewMatrixReaders;
 import kmlib.starsector.ui.sound.VanillaUiSoundPlayer;
 
+import kmu.KmuMod;
 import kmu.maplayers.base.hover.MapHoverCues;
 import kmu.maplayers.base.hover.MapHoverPermission;
 import kmu.maplayers.base.hover.MapHoverPublisher;
@@ -76,10 +77,17 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
 
     private static final Logger LOG = Global.getLogger(PoliticalMapLayerRenderer.class);
 
-    // The identity KMU's one renderer binding is recorded under when it stops holding. Spelled once
-    // and stable for the session: it is what keeps a failure of this binding reported once however
-    // many times it is taken, and reported apart from another mod's over the same renderer.
-    private static final String MAP_CURSOR_CONSUMER_KEY = "kmu-map-cursor";
+    // The identity KMU's one renderer binding is recorded under when it stops holding. Stable for
+    // the session: it is what keeps a failure of this binding reported once however many times it
+    // is taken, and reported apart from another mod's over the same renderer.
+    //
+    // Led by the mod ID rather than by a literal that merely resembles it, because a key two mods
+    // spell alike is a collision nothing can see: the record reads a pair it already holds and
+    // ignores it, which is exactly what it does for the same mod recording twice, so the second
+    // mod's players would be told what the first mod lost and nothing would say so. Mod IDs are
+    // unique across an install - the game will not load two claiming one - which makes a key led by
+    // ours unique for free.
+    private static final String MAP_CURSOR_CONSUMER_KEY = KmuMod.MOD_ID + "-map-cursor";
 
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
     // a renderer belongs to one sector's installed machinery and never enters a save, so neither
