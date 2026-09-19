@@ -8,12 +8,11 @@ import kmlib.starsector.systems.claims.VanillaClaimBreakdownReader;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
-import kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation;
+import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
@@ -183,17 +182,18 @@ public final class ClaimsView implements PoliticalMapView {
      * lives in are spared the recede, so the pick still shows where the faction is while showing
      * that it claims none of it. Re-picking the lit row clears it as any other pick does.
      *
-     * @param sector           the sector whose systems and colonies the claim stats are read from;
-     *                         null yields an empty read
-     * @param colonyVisibility what the player may be shown of a colony, so a bloc's market size
-     *                         counts the very colonies the map paints it for
+     * @param sector          the sector whose systems and colonies the claim stats are read from;
+     *                        null yields an empty read
+     * @param colonyReadRules what the player may be shown of a colony and what a decivilised world
+     *                        counts as, so a bloc's market size counts the very colonies the map
+     *                        paints it for
      * @return this view's picker, its blocs in the order the sector walk surfaces them, beside the
      *         systems that walk found each bloc claiming
      */
     @Override
     public BlocPickerRead<RankedBloc<ClaimStats>> resolveBlocPickerRead(
             SectorAPI sector,
-            ColonyVisibility colonyVisibility) {
+            ColonyReadRules colonyReadRules) {
 
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and the
         // name all read against one snapshot rather than three live samples.
@@ -201,11 +201,7 @@ public final class ClaimsView implements PoliticalMapView {
 
         // The layer-generic pass: this layer is painted by claims, and a claim count and a colony
         // size are read without weighing anything.
-        var pass = HolderPass.over(
-            sector,
-            colonyVisibility,
-            DecivilisedColonyHabitation.COUNTS_AS_POPULATED,
-            grouping);
+        var pass = HolderPass.over(sector, colonyReadRules, grouping);
 
         // The claim half reads through the pass's own colony walk, so the two metrics cost one
         // traversal of each system between them rather than one apiece - and are answered off the

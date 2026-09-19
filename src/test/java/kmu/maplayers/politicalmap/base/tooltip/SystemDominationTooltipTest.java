@@ -65,8 +65,8 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.TOLERANCE;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readSectionOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readTableRow;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.FULL_STABILITY;
 import static kmu.maplayers.politicalmap.base.tooltip.SectorFactionsFake.stubDispositionToward;
@@ -169,12 +169,12 @@ final class SystemDominationTooltipTest {
     // Opened over no sector, so every pass here answers the empty colony set: what these cases are
     // about is which set the box hands on and under which knobs, not what a walk would have found.
     private static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, BASE_FOG, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
 
     // The same pass with the dev reveal on, so a case can tell a read that carries the pass's own
     // reveal from one that hardcodes the ordinary answer - which every other case would agree with.
     private static final DominancePass REVEALED_PASS =
-        DominancePass.over(null, ANY_RULES, UNDER_THE_REVEAL, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, UNDER_THE_DEV_REVEAL, VIEW_GROUPING);
 
     // A pass over a sector that has actually observed something, so its register is a real read of
     // that sector's memory rather than the empty one. The distinction is the whole of what the case
@@ -799,7 +799,7 @@ final class SystemDominationTooltipTest {
             sector,
             SectorPoliticsFixtures.buildOnlySystem(sector));
 
-        return DominancePass.over(sector, ANY_RULES, BASE_FOG, VIEW_GROUPING);
+        return DominancePass.over(sector, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
     }
 
     // One colony worth the given size points on its base size alone, so a case states a colony by the

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
@@ -340,7 +340,7 @@ class SectorPoliticsIntegrationTest {
                     new DominantHolder("hegemony", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping)))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
                 .containsEntry(
                     buildCellKey("rama"),
                     new DominantHolder(
@@ -403,7 +403,7 @@ class SectorPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(SectorPolitics.resolveDominantHolderBySystemKey(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping)))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping)))
                 .containsEntry(
                     buildCellKey("contested-system"),
                     new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT)));

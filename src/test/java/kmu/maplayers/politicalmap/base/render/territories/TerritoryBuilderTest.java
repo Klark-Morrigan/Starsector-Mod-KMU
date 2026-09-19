@@ -8,7 +8,6 @@ import kmlib.testfixtures.profiling.RecordedCapture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
 import kmu.maplayers.politicalmap.base.PoliticalMapViewFake;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
@@ -34,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createInertCategoryStyle;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory;
 
@@ -318,7 +317,7 @@ final class TerritoryBuilderTest {
             var viewFake = new PoliticalMapViewFake(
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
-            var pass = HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, COUNTS_AS_POPULATED, grouping);
+            var pass = HolderPass.over(mock(SectorAPI.class), UNDER_THE_FOG, grouping);
 
             var territories = TerritoryBuilder.buildTerritories(
                 new CellGeometryCache(),
@@ -352,8 +351,7 @@ final class TerritoryBuilderTest {
     private static HolderPass buildPassOverAnEmptySector() {
         return HolderPass.over(
             mock(SectorAPI.class),
-            ColonyVisibility.BASE_FOG,
-            COUNTS_AS_POPULATED,
+            UNDER_THE_FOG,
             HolderGrouping.identity());
     }
 }

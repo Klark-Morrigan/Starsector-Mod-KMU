@@ -19,8 +19,8 @@ import java.util.Map;
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
@@ -151,7 +151,7 @@ class DominanceStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(DominanceStatsAggregator.aggregateDominanceStats(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping))
+                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping))
                 .statsByBlocId())
                 .containsExactly(entry("alliance-1", new DominanceStats(2, 2, 5000, 5)));
         }
@@ -431,8 +431,7 @@ class DominanceStatsAggregatorIntegrationTest {
         var pass = DominancePass.over(
             HolderPass.over(
                 sector,
-                MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
-                COUNTS_AS_POPULATED,
+                buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),
                 HolderGrouping.identity()),
             STABILITY_WEIGHTED);
 

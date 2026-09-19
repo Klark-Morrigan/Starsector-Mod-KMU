@@ -2,7 +2,7 @@ package kmu.maplayers.politicalmap.base;
 
 import com.fs.starfarer.api.campaign.SectorAPI;
 
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
+import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
 import kmu.maplayers.politicalmap.base.dominance.DominancePass;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
@@ -55,18 +55,19 @@ public interface DominancePaintedView extends PoliticalMapView {
      * what the shared seam resolves to for every such view, the rule being the one input the seam
      * itself does not carry.
      *
-     * @param sector           the sector whose colonies decide who is listed; null yields an empty
-     *                         read
-     * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
-     *                         the strength of the very colonies the map paints it for
+     * @param sector          the sector whose colonies decide who is listed; null yields an empty
+     *                        read
+     * @param colonyReadRules what the player may be shown of a colony and what a decivilised
+     *                        world counts as, so a bloc is offered on the strength of the very
+     *                        colonies the map paints it for
      * @return this view's picker and presence under the live weighting rule
      */
     @Override
     default BlocPickerRead<RankedBloc<DominanceStats>> resolveBlocPickerRead(
             SectorAPI sector,
-            ColonyVisibility colonyVisibility) {
+            ColonyReadRules colonyReadRules) {
 
-        return resolveBlocPickerRead(sector, DominanceRules.readFromLunaSettings(), colonyVisibility);
+        return resolveBlocPickerRead(sector, DominanceRules.readFromLunaSettings(), colonyReadRules);
     }
 
     /**
@@ -84,26 +85,27 @@ public interface DominancePaintedView extends PoliticalMapView {
      * is why the rule is named here and not on the shared seam - it is this mechanic's, so only
      * the views it paints have an entry taking it.
      *
-     * @param sector           the sector whose colonies decide who is listed; null yields an empty
-     *                         read
-     * @param rules            the dominance-weighting rules for this read, so a listed bloc's
-     *                         score and dominations are the numbers the map paints by; who is
-     *                         listed at all is decided by the colonies, not by this
-     * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
-     *                         the strength of the very colonies the map paints it for
+     * @param sector          the sector whose colonies decide who is listed; null yields an empty
+     *                        read
+     * @param rules           the dominance-weighting rules for this read, so a listed bloc's
+     *                        score and dominations are the numbers the map paints by; who is
+     *                        listed at all is decided by the colonies, not by this
+     * @param colonyReadRules what the player may be shown of a colony and what a decivilised
+     *                        world counts as, so a bloc is offered on the strength of the very
+     *                        colonies the map paints it for
      * @return this view's picker, its blocs in the order the sector walk surfaces them, beside the
      *         systems that walk found each bloc living in
      */
     default BlocPickerRead<RankedBloc<DominanceStats>> resolveBlocPickerRead(
             SectorAPI sector,
             DominanceRules rules,
-            ColonyVisibility colonyVisibility) {
+            ColonyReadRules colonyReadRules) {
 
         // The grouping is resolved once and handed to both halves, so the numbers, the crest, and
         // the gate all read against the one snapshot rather than three live samples of a set that
         // moves (the alliances view samples Nexerelin).
         var grouping = resolveGrouping();
-        var pass = DominancePass.over(sector, rules, colonyVisibility, grouping);
+        var pass = DominancePass.over(sector, rules, colonyReadRules, grouping);
 
         // The aggregation is handed over whole rather than opened here: the rows come off its totals
         // and the presence off the very entries counted into them, so both halves of the picker read

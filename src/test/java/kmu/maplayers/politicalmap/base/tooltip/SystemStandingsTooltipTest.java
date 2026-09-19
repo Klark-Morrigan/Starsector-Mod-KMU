@@ -42,7 +42,7 @@ import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelRun
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readRowOpeningWords;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readTableRow;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
 import static kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture.buildAllianceOf;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_PASS;
 import static kmu.maplayers.politicalmap.base.tooltip.StandingsTooltipSeamsFake.ANY_RULES;
@@ -497,10 +497,9 @@ final class SystemStandingsTooltipTest {
             StandingsTooltipSeamsFake.stubPass(new DominancePass(
                 ANY_RULES,
                 new HolderPass(
-                    HolderGrouping.identity(),
-                    UNDER_THE_REVEAL,
-                    COUNTS_AS_POPULATED,
-                    new SectorPassIndex(null))));
+                    new SectorPassIndex(null),
+                    UNDER_THE_DEV_REVEAL,
+                    HolderGrouping.identity())));
 
             tooltip.composeBody(sectorMock, systemMock, PATROL_DETAILS).blocks().readSections();
 

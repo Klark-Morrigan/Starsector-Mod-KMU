@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.BlocSortFixtures.ROW_COLOUR;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -352,7 +352,7 @@ final class PoliticalMapViewTest {
             // test is the seam's default and not that view's choice to keep it.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), BASE_FOG).picker().items())
+            assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), UNDER_THE_FOG).picker().items())
                 .isEmpty();
         }
 
@@ -363,7 +363,7 @@ final class PoliticalMapViewTest {
             // an empty set rather than leave a null for the lookup to fall over on.
             var viewFake = new PoliticalMapViewFake(Map.of());
 
-            assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), BASE_FOG)
+            assertThat(viewFake.resolveBlocPickerRead(mock(SectorAPI.class), UNDER_THE_FOG)
                     .presenceIndex()
                     .readPresentSystemKeys("hegemony"))
                 .isEmpty();

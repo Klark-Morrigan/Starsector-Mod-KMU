@@ -17,8 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_DARK;
@@ -176,7 +175,7 @@ final class HeldSystemRibbonPlannerIntegrationTest {
     // built apart, the weights could be read off one walk of a system and its colonies off another.
     private static HeldSystemRibbonPlanner buildPlanner(SectorAPI sector) {
 
-        var holding = HolderPass.over(sector, BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity());
+        var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
 
         return new HeldSystemRibbonPlanner(
             DominancePass.over(holding, SectorPoliticsFixtures.buildStabilityWeightedRules()),

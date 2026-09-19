@@ -18,8 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY;
 import static kmu.maplayers.politicalmap.base.ribbon.RibbonPlanFixtures.HEGEMONY_BRIGHT;
@@ -196,7 +195,7 @@ final class ClaimedSystemRibbonPlannerTest {
         return new ClaimedSystemRibbonPlanner(
                 readerFake,
                 buildInputsFor(
-                    HolderPass.over(sector, BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity()),
+                    HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity()),
                     rules))
             .planSystemRibbon(buildOnlySystem(sector));
     }

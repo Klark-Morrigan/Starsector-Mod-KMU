@@ -48,9 +48,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.as;
@@ -140,8 +140,7 @@ final class ClaimsViewTest {
                     HolderPass.over(
                         mock(SectorAPI.class),
                         // Undiscovered colonies do not count, as on the live map.
-                        BASE_FOG,
-                        COUNTS_AS_POPULATED,
+                        UNDER_THE_FOG,
                         HolderGrouping.identity()),
                     blocId -> null,
                     // Nothing stands together, which is what the claims layer's own binding hands
@@ -352,7 +351,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_CLAIMANT_STATS)));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
@@ -378,7 +377,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of("luddic_path", new ClaimStats(1, 0))));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
@@ -404,7 +403,7 @@ final class ClaimsViewTest {
                         "hegemony", new ClaimStats(1, 0),
                         "tritachyon", new ClaimStats(0, 40))));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
@@ -432,7 +431,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(statsByBlocId));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
@@ -465,7 +464,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(statsByBlocId));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId)
@@ -485,7 +484,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .isEmpty();
@@ -519,7 +518,7 @@ final class ClaimsViewTest {
                         return buildReadOf(Map.of());
                     });
 
-                view.resolveBlocPickerRead(sectorMock, GATED_VISIBILITY);
+                view.resolveBlocPickerRead(sectorMock, buildRulesUnder(GATED_VISIBILITY));
 
                 // The port is the pass's own knowledge, so what it was opened under is read back
                 // off the rule that knowledge carries - stated against the literal the view was
@@ -551,7 +550,7 @@ final class ClaimsViewTest {
                 aggregatorMock.when(() -> ClaimStatsAggregator.aggregateClaimStats(any(), any()))
                     .thenReturn(buildReadOf(Map.of()));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .picker()
                         .sortModes()
                         .modes())
@@ -603,7 +602,7 @@ final class ClaimsViewTest {
                         Map.of("hegemony", ANY_CLAIMANT_STATS),
                         buildIndexOf("hegemony", "corvus")));
 
-                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, BASE_FOG)
+                assertThat(ClaimsView.INSTANCE.resolveBlocPickerRead(sectorMock, UNDER_THE_FOG)
                         .presenceIndex()
                         .readPresentSystemKeys("hegemony"))
                     .containsExactlyElementsOf(buildCellKeys("corvus"));

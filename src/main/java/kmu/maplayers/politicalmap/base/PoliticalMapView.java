@@ -12,8 +12,9 @@ import kmlib.starsector.ui.widgets.lists.ListSortModes;
 import kmu.maplayers.base.refresh.MapLayerRefreshBoard;
 import kmu.maplayers.base.theme.ElementStyleAdjustment;
 import kmu.maplayers.base.tooltip.MapHoverTooltip;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
+import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
+import kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.politics.BlocStatsRead;
 import kmu.maplayers.politicalmap.base.politics.DominanceStats;
@@ -265,17 +266,18 @@ public interface PoliticalMapView {
      * spotlight inherits one rather than overriding with two arguments it would ignore. A view
      * opts into the spotlight by overriding this, the same way it opts into its own body controls.
      *
-     * @param sector           the sector whose colonies decide who is listed; null yields an empty
-     *                         read
-     * @param colonyVisibility what the player may be shown of a colony, so a bloc is offered on
-     *                         the strength of the very colonies the map paints it for
+     * @param sector          the sector whose colonies decide who is listed; null yields an empty
+     *                        read
+     * @param colonyReadRules what the player may be shown of a colony and what a decivilised world
+     *                        counts as, so a bloc is offered on the strength of the very colonies
+     *                        the map paints it for
      * @return this view's picker - its blocs in the order the source walk surfaces them, and the
      *         vocabulary ranking them - beside where that walk found each bloc; empty when no bloc
      *         qualifies, and empty by default for a view with no spotlight
      */
     default BlocPickerRead<?> resolveBlocPickerRead(
             SectorAPI sector,
-            ColonyVisibility colonyVisibility) {
+            ColonyReadRules colonyReadRules) {
         return BlocPickerRead.empty();
     }
 
@@ -284,6 +286,11 @@ public interface PoliticalMapView {
      * sidebar and the stale-selection heal call, so neither has to read the toggles a running pass
      * would already hold.
      *
+     * <p>The one place the picker path samples those settings, so no view below decides a rule of
+     * its own: a view handed one rule and left to assume the other would settle out of sight
+     * whether a decivilised world offers its bloc, while the map beside it settled the same
+     * question from the player's answer.
+     *
      * @param sector the sector whose colonies decide who is listed; null yields an empty read
      * @return this view's picker and presence under the player's live settings; empty when no bloc
      *         qualifies
@@ -291,7 +298,9 @@ public interface PoliticalMapView {
     default BlocPickerRead<?> resolveBlocPickerRead(SectorAPI sector) {
         return resolveBlocPickerRead(
             sector,
-            MapVisibilityRules.readFromLunaSettings().colonyVisibility());
+            new ColonyReadRules(
+                MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
+                DecivilisedColonyHabitation.COUNTS_AS_POPULATED));
     }
 
     /**

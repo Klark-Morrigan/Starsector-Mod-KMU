@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -406,7 +406,7 @@ final class AlliancesViewTest {
                         Map.of("rebel_pact", ANY_STATS, "hegemony", DominanceStats.EMPTY),
                         BlocPresenceIndex.EMPTY));
 
-                assertThat(view.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG).picker().items())
+                assertThat(view.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG).picker().items())
                     .containsExactly(new RankedBloc<>(
                         new SelectableBloc(
                             "rebel_pact",
@@ -435,7 +435,7 @@ final class AlliancesViewTest {
                     .when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 
-                assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, BASE_FOG)
+                assertThat(view.resolveBlocPickerRead(mock(SectorAPI.class), ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .sortModes()
                         .modes())
@@ -471,7 +471,7 @@ final class AlliancesViewTest {
                             "rebel_pact", List.of("corvus"),
                             "hegemony", List.of("askonia")))));
 
-                var read = view.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG);
+                var read = view.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG);
 
                 assertThat(read.picker().items())
                     .extracting(RankedBloc::itemId)

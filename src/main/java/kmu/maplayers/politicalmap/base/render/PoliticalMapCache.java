@@ -22,6 +22,7 @@ import kmu.maplayers.base.refresh.RefreshSignalTracker;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
 import kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
@@ -318,10 +319,11 @@ final class PoliticalMapCache {
         } else {
 
             var pass = new HolderPass(
-                view.resolveGrouping(),
-                staleHalves.cellCut().visibilityRules().colonyVisibility(),
-                DecivilisedColonyHabitation.COUNTS_AS_POPULATED,
-                sectorIndex);
+                sectorIndex,
+                new ColonyReadRules(
+                    staleHalves.cellCut().visibilityRules().colonyVisibility(),
+                    DecivilisedColonyHabitation.COUNTS_AS_POPULATED),
+                view.resolveGrouping());
 
             wasHoldingReused = decider.canReuseStandingHolding(
                 staleHalves,

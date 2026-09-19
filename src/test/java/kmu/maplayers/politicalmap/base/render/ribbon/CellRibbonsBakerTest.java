@@ -9,7 +9,6 @@ import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.profiling.MapBuildCounters;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.DominantHolder;
@@ -35,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
@@ -357,8 +356,7 @@ final class CellRibbonsBakerTest {
             buildGeometryPlacing(drawnCellKeys),
             HolderPass.over(
                 buildSectorOf(drawnCellKeys),
-                ColonyVisibility.BASE_FOG,
-                COUNTS_AS_POPULATED,
+                UNDER_THE_FOG,
                 HolderGrouping.identity()),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.

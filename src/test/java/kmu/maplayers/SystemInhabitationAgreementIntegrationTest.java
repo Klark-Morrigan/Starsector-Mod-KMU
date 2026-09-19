@@ -31,7 +31,7 @@ import java.util.Optional;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -201,7 +201,7 @@ final class SystemInhabitationAgreementIntegrationTest {
             ColonyVisibility colonyVisibility) {
 
         return PoliticalMapInhabitation.isSystemInhabited(
-            HolderPass.over(sector, colonyVisibility, COUNTS_AS_POPULATED, HolderGrouping.identity()),
+            HolderPass.over(sector, buildRulesUnder(colonyVisibility), HolderGrouping.identity()),
             system);
     }
 

@@ -22,7 +22,7 @@ import java.util.List;
 
 import static kmu.maplayers.SectorScenarioFixtures.CONCEALED_HOLDER_ID;
 import static kmu.maplayers.SectorScenarioFixtures.buildUnvisitedSectorHoldingGatedPair;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
@@ -240,8 +240,7 @@ final class SpoilerGateIntegrationTest {
 
         var pass = HolderPass.over(
             sector,
-            MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
-            COUNTS_AS_POPULATED,
+            buildRulesUnder(MapVisibilityRules.readFromLunaSettings().colonyVisibility()),
             HolderGrouping.identity());
 
         return pass

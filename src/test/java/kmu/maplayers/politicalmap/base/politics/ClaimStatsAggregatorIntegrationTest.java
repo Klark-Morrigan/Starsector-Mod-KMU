@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.TRITACHYON_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
@@ -150,7 +149,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                        HolderPass.over(sectorMock, BASE_FOG, COUNTS_AS_POPULATED, grouping),
+                        HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
                     .statsByBlocId())
                 .containsExactly(entry("alliance-1", new ClaimStats(1, 3)));
@@ -359,7 +358,7 @@ final class ClaimStatsAggregatorIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             assertThat(ClaimStatsAggregator.aggregateClaimStats(
-                        HolderPass.over(sectorMock, BASE_FOG, COUNTS_AS_POPULATED, grouping),
+                        HolderPass.over(sectorMock, UNDER_THE_FOG, grouping),
                         claimReaderFake)
                     .presenceIndex()
                     .readPresentSystemKeys("alliance-1"))

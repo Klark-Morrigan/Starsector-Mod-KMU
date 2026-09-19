@@ -43,9 +43,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
-import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,12 +108,11 @@ final class FactionsViewTest {
             // class the test JVM cannot load - so the pass it would build is handed over already
             // resolved. What the case reads is which planner the view assembles, not where its
             // knobs came from.
+            // Undiscovered colonies do not count, as on the live map.
             var holding = new HolderPass(
-                HolderGrouping.identity(),
-                // Undiscovered colonies do not count, as on the live map.
-                BASE_FOG,
-                COUNTS_AS_POPULATED,
-                new SectorPassIndex(null));
+                new SectorPassIndex(null),
+                UNDER_THE_FOG,
+                HolderGrouping.identity());
 
             try (var passMock = mockStatic(DominancePass.class)) {
                 passMock
@@ -323,7 +321,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(buildReadOf(Map.of("hegemony", ANY_STATS)));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
@@ -349,7 +347,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(buildReadOf(Map.of("luddic_path", ANY_STATS)));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .containsExactly(new RankedBloc<>(
@@ -378,7 +376,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(buildReadOf(statsByBlocId));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .extracting(RankedBloc::itemId, RankedBloc::isDimmed)
@@ -399,7 +397,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .items())
                     .isEmpty();
@@ -419,7 +417,7 @@ final class FactionsViewTest {
                 aggregatorMock.when(() -> DominanceStatsAggregator.aggregateDominanceStats(any()))
                     .thenReturn(DominanceStatsRead.EMPTY);
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .picker()
                         .sortModes()
                         .modes())
@@ -445,7 +443,7 @@ final class FactionsViewTest {
                         Map.of("hegemony", ANY_STATS),
                         buildIndexOf("hegemony", "corvus", "askonia")));
 
-                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, BASE_FOG)
+                assertThat(FactionsView.INSTANCE.resolveBlocPickerRead(sectorMock, ANY_RULES, UNDER_THE_FOG)
                         .presenceIndex()
                         .readPresentSystemKeys("hegemony"))
                     .containsExactlyElementsOf(buildCellKeys("corvus", "askonia"));
