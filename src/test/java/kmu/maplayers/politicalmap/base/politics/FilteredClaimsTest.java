@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -58,7 +59,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, BASE_FOG, COUNTS_AS_POPULATED, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
@@ -87,7 +88,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, BASE_FOG, COUNTS_AS_POPULATED, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -125,7 +126,7 @@ final class FilteredClaimsTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, BASE_FOG, COUNTS_AS_POPULATED, grouping);
             var claims = buildTwoClaimantSector();
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class);
@@ -158,7 +159,7 @@ final class FilteredClaimsTest {
         void resolveFilteredClaimsPassesThePlainClaimResolveThroughWithNoSector() {
 
             var claimReaderMock = mock(ClaimReader.class);
-            var pass = HolderPass.over(null, BASE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.over(null, BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity());
 
             try (var sectorClaimsMock = mockStatic(SectorClaims.class)) {
 

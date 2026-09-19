@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createInertCategoryStyle;
 import static kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritoryFixtures.createRenderStyleForEveryCategory;
 
@@ -317,7 +318,7 @@ final class TerritoryBuilderTest {
             var viewFake = new PoliticalMapViewFake(
                 Map.of(),
                 (pass, selectedBlocId) -> new HolderResolution(Map.of(), Set.of(), Set.of()));
-            var pass = HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, grouping);
+            var pass = HolderPass.over(mock(SectorAPI.class), ColonyVisibility.BASE_FOG, COUNTS_AS_POPULATED, grouping);
 
             var territories = TerritoryBuilder.buildTerritories(
                 new CellGeometryCache(),
@@ -352,6 +353,7 @@ final class TerritoryBuilderTest {
         return HolderPass.over(
             mock(SectorAPI.class),
             ColonyVisibility.BASE_FOG,
+            COUNTS_AS_POPULATED,
             HolderGrouping.identity());
     }
 }

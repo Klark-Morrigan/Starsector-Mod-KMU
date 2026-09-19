@@ -14,6 +14,7 @@ import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.tooltip.ContestWordingFixtures.CONTESTED_WORDING;
 
 /**
@@ -101,7 +102,7 @@ final class PoliticalMapBoxReads {
      */
     static VanillaClaimBreakdownReader buildClaimBreakdownReaderOver(SectorAPI sector) {
 
-        var pass = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+        var pass = HolderPass.over(sector, BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity());
 
         return new VanillaClaimBreakdownReader(pass.colonyKnowledge(), pass.sectorIndex());
     }

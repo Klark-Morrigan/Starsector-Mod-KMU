@@ -50,6 +50,7 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.as;
@@ -140,6 +141,7 @@ final class ClaimsViewTest {
                         mock(SectorAPI.class),
                         // Undiscovered colonies do not count, as on the live map.
                         BASE_FOG,
+                        COUNTS_AS_POPULATED,
                         HolderGrouping.identity()),
                     blocId -> null,
                     // Nothing stands together, which is what the claims layer's own binding hands

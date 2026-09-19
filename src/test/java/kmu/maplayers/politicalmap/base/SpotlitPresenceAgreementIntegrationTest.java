@@ -18,6 +18,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -118,6 +119,6 @@ final class SpotlitPresenceAgreementIntegrationTest {
     }
 
     private static HolderPass buildPassOver(SectorAPI sector) {
-        return HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+        return HolderPass.over(sector, BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity());
     }
 }

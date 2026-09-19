@@ -82,7 +82,11 @@ public record DominancePass(
             HolderGrouping grouping) {
 
         return over(
-            HolderPass.over(sector, colonyVisibility, grouping),
+            HolderPass.over(
+                sector,
+                colonyVisibility,
+                DecivilisedColonyHabitation.COUNTS_AS_POPULATED,
+                grouping),
             rules);
     }
 

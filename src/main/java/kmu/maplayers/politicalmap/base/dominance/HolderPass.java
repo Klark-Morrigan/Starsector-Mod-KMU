@@ -10,10 +10,12 @@ import kmlib.starsector.systems.SystemKeyedMemo;
 import kmlib.starsector.systems.claims.ClaimReader;
 import kmlib.starsector.systems.claims.ClaimReaderSource;
 
+import kmu.maplayers.base.visibility.colonies.ColonyKind;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.base.visibility.systems.MapVisibilityRules;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,8 +25,15 @@ import java.util.Set;
 
 /**
  * One rebuild's reading of a sector, as any owner-painted map layer needs it: which sector, how
- * factions fold into blocs, what the player may be shown of a colony, and the one walk of each
- * system all three are answered from.
+ * factions fold into blocs, what the player may be shown of a colony, what a decivilised world
+ * counts as, and the one walk of each system all of them are answered from.
+ *
+ * <p>The two colony rules are carried apart rather than bundled, being different questions.
+ * {@link ColonyVisibility} answers what may be <em>shown</em>, and it is shared with the pass that
+ * decides whether a system appears on the map at all; {@link DecivilisedColonyHabitation} answers
+ * what counts as <em>populated</em>, and only this pass's habitation projection reads it. Folding
+ * the second into the first would put a rule in a bundle one reader honours and the other ignores,
+ * which is worse than a fourth argument.
  *
  * <p>What every layer that paints somebody's territory has in common, and no more than that.
  * The mechanic deciding <em>who</em> paints - dominance weights, a claim, a diplomatic relation -
@@ -69,30 +78,41 @@ public final class HolderPass {
     private final SystemKeyedMemo<SystemHabitation> habitationBySystem = new SystemKeyedMemo<>();
 
     private final ColonyKnowledge colonyKnowledge;
+    private final DecivilisedColonyHabitation decivilisedColonyHabitation;
     private final HolderGrouping grouping;
     private final SectorPassIndex sectorIndex;
 
     /**
      * Opens a pass over an already-built reading of the sector.
      *
-     * <p>The rule is required on the same terms the grouping and the walk are: a pass is opened
-     * where a rebuild begins, from a value the opener already holds, so a null is a fault at that
+     * <p>Both rules are required on the same terms the grouping and the walk are: a pass is opened
+     * where a rebuild begins, from values the opener already holds, so a null is a fault at that
      * one place rather than a caller with no rule to state. Standing the fog in for it would turn
      * that fault into a map that quietly draws less, which nothing on screen would report.
      *
-     * @param grouping         the grouping that folds factions into blocs before any mechanic
-     *                         compares them; the identity grouping resolves the plain faction view
-     * @param colonyVisibility the rule every read through this pass shows colonies under - the dev
-     *                         reveal, and the gates holding back what a bare fog would leak
-     * @param sectorIndex      the pass's one reading of the sector, shared by every read made
-     *                         through it
+     * @param grouping                    the grouping that folds factions into blocs before any
+     *                                    mechanic compares them; the identity grouping resolves the
+     *                                    plain faction view
+     * @param colonyVisibility            the rule every read through this pass shows colonies under
+     *                                    - the dev reveal, and the gates holding back what a bare
+     *                                    fog would leak
+     * @param decivilisedColonyHabitation whether a decivilised world counts as somebody living in
+     *                                    its system, which every habitation read through this pass
+     *                                    is taken under
+     * @param sectorIndex                 the pass's one reading of the sector, shared by every read
+     *                                    made through it
      */
     public HolderPass(
             HolderGrouping grouping,
             ColonyVisibility colonyVisibility,
+            DecivilisedColonyHabitation decivilisedColonyHabitation,
             SectorPassIndex sectorIndex) {
 
         Objects.requireNonNull(colonyVisibility, "colonyVisibility");
+
+        this.decivilisedColonyHabitation = Objects.requireNonNull(
+            decivilisedColonyHabitation,
+            "decivilisedColonyHabitation");
 
         this.grouping = Objects.requireNonNull(grouping, "grouping");
         this.sectorIndex = Objects.requireNonNull(sectorIndex, "sectorIndex");
@@ -104,24 +124,28 @@ public final class HolderPass {
     }
 
     /**
-     * A pass over one sector under an explicit colony rule, opening the colony index its
+     * A pass over one sector under explicit colony rules, opening the colony index its
      * reads share.
      *
-     * @param sector           the sector this pass reads; null yields a pass answering an empty
-     *                         colony set for every system, matching how the reads treat an
-     *                         unreachable sector
-     * @param colonyVisibility the rule this pass shows colonies under
-     * @param grouping         the grouping this pass folds factions into blocs under
+     * @param sector                      the sector this pass reads; null yields a pass answering
+     *                                    an empty colony set for every system, matching how the
+     *                                    reads treat an unreachable sector
+     * @param colonyVisibility            the rule this pass shows colonies under
+     * @param decivilisedColonyHabitation whether a decivilised world counts as somebody living in
+     *                                    its system
+     * @param grouping                    the grouping this pass folds factions into blocs under
      * @return a pass over that sector carrying those knobs
      */
     public static HolderPass over(
             SectorAPI sector,
             ColonyVisibility colonyVisibility,
+            DecivilisedColonyHabitation decivilisedColonyHabitation,
             HolderGrouping grouping) {
 
         return new HolderPass(
             grouping,
             colonyVisibility,
+            decivilisedColonyHabitation,
             new SectorPassIndex(sector));
     }
 
@@ -141,6 +165,7 @@ public final class HolderPass {
         return over(
             sector,
             MapVisibilityRules.readFromLunaSettings().colonyVisibility(),
+            DecivilisedColonyHabitation.COUNTS_AS_POPULATED,
             grouping);
     }
 
@@ -271,11 +296,23 @@ public final class HolderPass {
      * nothing in the second. Offering both off the pass means neither reader has to know which
      * shapes of colony the difference turns on.
      *
+     * <p>Where this pass's {@link DecivilisedColonyHabitation} takes effect, and the one place it
+     * does. The ribbon reads this list directly rather than through {@link #readHabitationIn}, so
+     * a rule applied at the habitation fold alone would go on banding worlds the fill beneath had
+     * stopped drawing.
+     *
      * @param system the system to read; null yields an empty list
-     * @return the system's known colonies somebody lives on, in the set's own order
+     * @return the system's known colonies somebody lives on under this pass's habitation rule, in
+     *         the set's own order
      */
     public List<Colony> readInhabitingColoniesIn(StarSystemAPI system) {
-        return colonyKnowledge.readInhabitingColonies(readColoniesIn(system));
+
+        var inhabitingColonies = colonyKnowledge.readInhabitingColonies(readColoniesIn(system));
+
+        if (decivilisedColonyHabitation.isCountedAsPopulated()) {
+            return inhabitingColonies;
+        }
+        return collectColoniesOtherThanDecivilised(inhabitingColonies);
     }
 
     /**
@@ -321,6 +358,26 @@ public final class HolderPass {
             return resolveHabitationIn(null);
         }
         return habitationBySystem.readValueFor(system, this::resolveHabitationIn);
+    }
+
+    // The habitation projection with the decivilised worlds taken back out of it - what
+    // COUNTS_AS_UNPOPULATED leaves, so a system holding nothing else reads as empty space.
+    //
+    // Named against the one kind rather than asked of the kind itself, as the projections in
+    // ColonyKnowledge are. The rule is about that kind and no other: a fifth kind arriving later
+    // is somebody living somewhere until it says otherwise, and sweeping it in here would decide
+    // that on its behalf from a player toggle that never mentioned it.
+    private List<Colony> collectColoniesOtherThanDecivilised(List<Colony> colonies) {
+
+        var populatedColonies = new ArrayList<Colony>();
+
+        for (var colony : colonies) {
+
+            if (colonyKnowledge.readKindOf(colony) != ColonyKind.UNGOVERNED_COLONY) {
+                populatedColonies.add(colony);
+            }
+        }
+        return List.copyOf(populatedColonies);
     }
 
     // One system's habitation worked out, for the memo above to remember: the habitation

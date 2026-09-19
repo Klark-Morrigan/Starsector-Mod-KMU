@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
@@ -47,7 +48,7 @@ class DominancePassTest {
             assertThatThrownBy(() ->
                     new DominancePass(
                         null,
-                        HolderPass.over(null, BASE_FOG, HolderGrouping.identity())))
+                        HolderPass.over(null, BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity())))
                 .isInstanceOf(NullPointerException.class);
         }
 

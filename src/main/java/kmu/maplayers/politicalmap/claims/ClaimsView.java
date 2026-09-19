@@ -13,6 +13,7 @@ import kmu.maplayers.politicalmap.base.BlocPickerRead;
 import kmu.maplayers.politicalmap.base.FactionNameFormatChoice;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.RankedBloc;
+import kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.ClaimStats;
@@ -200,7 +201,11 @@ public final class ClaimsView implements PoliticalMapView {
 
         // The layer-generic pass: this layer is painted by claims, and a claim count and a colony
         // size are read without weighing anything.
-        var pass = HolderPass.over(sector, colonyVisibility, grouping);
+        var pass = HolderPass.over(
+            sector,
+            colonyVisibility,
+            DecivilisedColonyHabitation.COUNTS_AS_POPULATED,
+            grouping);
 
         // The claim half reads through the pass's own colony walk, so the two metrics cost one
         // traversal of each system between them rather than one apiece - and are answered off the

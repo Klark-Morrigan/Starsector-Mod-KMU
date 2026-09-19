@@ -45,6 +45,7 @@ import java.util.Map;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKeys;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.politicalmap.base.SelectableBlocFixtures.stubNamedFaction;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.politics.BlocPresenceIndexFixtures.buildIndexOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -112,6 +113,7 @@ final class FactionsViewTest {
                 HolderGrouping.identity(),
                 // Undiscovered colonies do not count, as on the live map.
                 BASE_FOG,
+                COUNTS_AS_POPULATED,
                 new SectorPassIndex(null));
 
             try (var passMock = mockStatic(DominancePass.class)) {

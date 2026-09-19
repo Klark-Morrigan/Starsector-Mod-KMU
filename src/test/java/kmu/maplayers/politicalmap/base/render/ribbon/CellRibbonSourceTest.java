@@ -39,6 +39,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -583,7 +584,7 @@ final class CellRibbonSourceTest {
         when(sectorMock.getStarSystems())
             .thenReturn(systems);
 
-        return HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+        return HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, COUNTS_AS_POPULATED, HolderGrouping.identity());
     }
 
     private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {

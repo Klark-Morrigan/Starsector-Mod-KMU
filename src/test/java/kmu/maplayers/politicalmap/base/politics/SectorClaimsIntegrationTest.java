@@ -13,6 +13,7 @@ import java.util.Map;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildDarkTheme;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
@@ -86,7 +87,7 @@ final class SectorClaimsIntegrationTest {
             claimReaderFake.setClaim("claimed", "hegemony");
 
             assertThat(SectorClaims.resolveClaimingHolderBySystemKey(
-                    HolderPass.over(sectorMock, BASE_FOG, grouping), claimReaderFake))
+                    HolderPass.over(sectorMock, BASE_FOG, COUNTS_AS_POPULATED, grouping), claimReaderFake))
                     .containsExactly(Map.entry(buildCellKey("claimed"),
                             new DominantHolder("alliance-1", HEGEMONY_BRIGHT, buildDarkTheme(HEGEMONY_BRIGHT))));
         }

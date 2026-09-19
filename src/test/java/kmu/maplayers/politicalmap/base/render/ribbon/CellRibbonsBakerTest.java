@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL_SITE;
 
@@ -357,6 +358,7 @@ final class CellRibbonsBakerTest {
             HolderPass.over(
                 buildSectorOf(drawnCellKeys),
                 ColonyVisibility.BASE_FOG,
+                COUNTS_AS_POPULATED,
                 HolderGrouping.identity()),
             // No names placed, since where a name falls is pinned by the builder that lays a band
             // inside one cell rather than by which cells a pass reaches.

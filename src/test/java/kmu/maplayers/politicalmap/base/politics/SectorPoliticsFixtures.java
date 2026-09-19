@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_POPULATED;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -111,6 +112,7 @@ public final class SectorPoliticsFixtures {
         return HolderPass.over(
             sector,
             BASE_FOG, // Undiscovered markets are not included.
+            COUNTS_AS_POPULATED, // A decivilised world inhabits its system, as on the live map.
             HolderGrouping.identity());
     }
 
