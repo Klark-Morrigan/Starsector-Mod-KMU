@@ -5,10 +5,8 @@ import java.util.Map;
 /**
  * Which factions stand together, as the alliance each allied faction belongs to.
  *
- * <p>Read by the revelation rule, which credits a place's inhabitants with speaking about whatever
- * else stands there. An alliance is a standing arrangement to act as one, and a member handing a
- * partner's concealed base to a third party is doing the one thing the arrangement forbids - so an
- * ally is no more a witness against its partner than the partner is against itself.
+ * <p>Read by {@link PlaceWitnesses}, which is where what an alliance buys the revelation rule is
+ * argued. Nothing of that rule is stated here: this says who stands with whom, and no more.
  *
  * <p>Plain data, and deliberately not a live handle back into whatever mod maintains the
  * arrangement: the rule over it is exercised on hand-built input, with no game around it.

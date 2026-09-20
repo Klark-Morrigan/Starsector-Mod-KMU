@@ -180,12 +180,12 @@ final class SpoilerGateIntegrationTest {
         }
 
         @Test
-        void namesAnUnsurveyedDecivilisedWorldItsNeighboursCanSee() {
-            // The knob's other half, driven through the same live read. At the shipped bar a ruin
-            // nobody has surveyed is named on the word of the colony sharing its system - the
-            // asymmetry the route closes, since that colony is drawn in a system the player has
-            // never entered. Asking for more than a sighting is worth takes the ruin back off the
-            // map and leaves its neighbour exactly where it was.
+        void namesAnUnsurveyedDecivilisedWorldItsNeighboursCanSeeAtEveryBar() {
+            // The knob's other half, driven through the same live read. A collapsed world nobody
+            // has surveyed is named on the word of the colony sharing its system - the asymmetry
+            // the route closes, since that colony is drawn in a system the player has never
+            // entered. Raising the bar asks more of the player's own instruments and says nothing
+            // about what the people living there can see, so both markets stay named.
             var sector = buildSectorHoldingAnUnsurveyedDecivilisedWorldBesideAColony();
 
             assertThat(readKnownOwnerIds(sector))
@@ -196,7 +196,7 @@ final class SpoilerGateIntegrationTest {
                 .thenReturn(SurveyLevel.PRELIMINARY);
 
             assertThat(readKnownOwnerIds(sector))
-                .containsExactly(OPEN_HOLDER);
+                .containsExactlyInAnyOrder(OPEN_HOLDER, Factions.NEUTRAL);
         }
     }
 

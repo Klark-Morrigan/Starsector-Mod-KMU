@@ -142,8 +142,9 @@ That one excuses a word a hover box would otherwise say and reaches no gate:
 a landmark is concealed to every rule here,
 exactly as the base beside it is.
 
-Who would speak about what stands beside them is owner-aware and then some:
-`FactionAlliances` says which factions stand together,
+Who would speak about what stands beside them is owner-aware and then some.
+`PlaceWitnesses` folds a place's settling owners and answers it,
+over the `FactionAlliances` that say which factions stand together -
 read through the `FactionAllianceSource` port a composition root registers with `FactionAllianceRegistry`,
 so a partner keeps a concealed base quiet exactly as its own faction does.
 It is a world fact rather than a rule,

@@ -14,8 +14,6 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -292,9 +290,8 @@ public final class ColonyKnowledge implements KnownColonyReader {
      * somebody living beside a derelict, a concealed base or a collapsed world has observed, whether
      * or not the player ever comes.
      *
-     * <p>Owner-aware through the same test the rule uses: the people keeping a secret are exactly
-     * the ones a faction-blind reading would credit with telling it. So a faction's open colony
-     * observes a rival's concealed base beside it, and never its own or an ally's.
+     * <p>Owner-aware through the same {@link PlaceWitnesses} the rule reads, so a faction's open
+     * colony observes a rival's concealed base beside it and never its own or an ally's.
      *
      * <p>Read under the fog alone, whatever rule this knowledge carries. A reveal changes what may
      * be shown and never what was seen, so letting one reach here would write down observations
@@ -307,12 +304,12 @@ public final class ColonyKnowledge implements KnownColonyReader {
      */
     public List<Colony> readColoniesObservedByInhabitants(Colonies colonies) {
 
-        var settlingOwnerIds = readSettlingOwnerIds(colonies, ColonyVisibility.BASE_FOG);
+        var witnesses = foldWitnessesIn(colonies, ColonyVisibility.BASE_FOG);
 
         return collectColonies(
             colonies,
             colony -> isWorthRecording(colony)
-                && isObservedByInhabitants(colony, settlingOwnerIds));
+                && witnesses.wouldSpeakAbout(colony.readOwnerId()));
     }
 
     // What one projection admits, as a single test over a colony: the rule resolved, the place's
@@ -326,10 +323,10 @@ public final class ColonyKnowledge implements KnownColonyReader {
             Colonies colonies,
             Predicate<ColonyKind> isWantedKind) {
 
-        var settlingOwnerIds = readSettlingOwnerIds(colonies, rule);
+        var witnesses = foldWitnessesIn(colonies, rule);
 
         return colony -> isWantedKind.test(readKindOf(colony))
-            && isKnownColony(colony, settlingOwnerIds);
+            && isKnownColony(colony, witnesses);
     }
 
     // Materialises one projection.
@@ -338,6 +335,15 @@ public final class ColonyKnowledge implements KnownColonyReader {
             Predicate<ColonyKind> isWantedKind) {
 
         return collectColonies(colonies, buildProjectionFilter(colonies, isWantedKind));
+    }
+
+    // The emptiness of one projection, stopped at the first colony that passes.
+    //
+    // Built through the same filter as the read above and handed to the walk beside it, so the
+    // two cannot answer under different rules - which is the very drift naming the projection
+    // here exists to prevent.
+    private boolean hasColonyPassing(Colonies colonies, Predicate<ColonyKind> isWantedKind) {
+        return hasAnyColony(colonies, buildProjectionFilter(colonies, isWantedKind));
     }
 
     // Materialises whatever a test admits, the test having been assembled by the caller. Named
@@ -364,18 +370,17 @@ public final class ColonyKnowledge implements KnownColonyReader {
         return List.copyOf(passingColonies);
     }
 
-    // The emptiness of one projection, stopped at the first colony that passes.
+    // The emptiness of the same test, stopped at the first colony that passes - the pair to the
+    // walk above, over the very filter that walk would have taken.
     //
     // Its own walk rather than the listing's isEmpty, because the cell that paints a place and
     // the scan that decides whether to draw it at all ask this per system and per frame, and
     // never want the contents.
-    private boolean hasColonyPassing(Colonies colonies, Predicate<ColonyKind> isWantedKind) {
+    private static boolean hasAnyColony(Colonies colonies, Predicate<Colony> isPassingColony) {
 
         if (colonies == null) {
             return false;
         }
-        var isPassingColony = buildProjectionFilter(colonies, isWantedKind);
-
         for (var colony : colonies.colonies()) {
 
             if (isPassingColony.test(colony)) {
@@ -393,15 +398,15 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // colony is itself undiscovered has no grapevine the player is party to, and letting it
     // reveal anything would have the map act on a fact the player has no means of holding.
     //
-    // Their owners rather than a bare "somebody is here", because whose colony it is decides
-    // whom it can speak for. Folded once for the whole set: a place holds a handful of owners at
-    // most, and every gated colony asks the same fold.
-    private Set<String> readSettlingOwnerIds(Colonies colonies, ColonyVisibility fogRule) {
+    // Their owners rather than a bare "somebody is here", because whose colony it is decides whom
+    // it can speak for - which is {@link PlaceWitnesses}' question, and why the alliances travel
+    // with them. Folded once for the whole set, every gated colony asking the same fold.
+    private PlaceWitnesses foldWitnessesIn(Colonies colonies, ColonyVisibility fogRule) {
 
         var settlingOwnerIds = new HashSet<String>();
 
         if (colonies == null) {
-            return settlingOwnerIds;
+            return PlaceWitnesses.NONE;
         }
         for (var colony : colonies.colonies()) {
 
@@ -409,7 +414,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
                 settlingOwnerIds.add(colony.readOwnerId());
             }
         }
-        return settlingOwnerIds;
+        return new PlaceWitnesses(settlingOwnerIds, alliances);
     }
 
     // A colony that makes its place settled: somewhere people are, held in the open, and shown
@@ -431,11 +436,11 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // projection and the emptiness question about it cannot answer under different filters -
     // which is the very drift naming the projection here exists to prevent.
     //
-    // Written over the kind, the two gates and the place's settling owners rather than as a
-    // branch per surface, so a fourth kind or a third gate has one place to be added.
-    private boolean isKnownColony(Colony colony, Set<String> settlingOwnerIds) {
+    // Written over the kind, the two gates and the place's witnesses rather than as a branch per
+    // surface, so a fourth kind or a third gate has one place to be added.
+    private boolean isKnownColony(Colony colony, PlaceWitnesses witnesses) {
 
-        if (!isFoundColony(colony, settlingOwnerIds)) {
+        if (!isFoundColony(colony, witnesses)) {
             return false;
         }
         // A reveal reaches the fog and stops there. It says a colony may be shown though nobody
@@ -443,7 +448,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         // and a reveal that quietly cleared a gate beside it would show a player a second thing
         // they never asked for, with nothing on screen to say why it appeared.
         return !isGatedOnRevelation(colony)
-            || isObserved(colony, settlingOwnerIds);
+            || isObserved(colony, witnesses);
     }
 
     // Whether the colony has been found at all, on three routes: the fog, a report from the
@@ -480,7 +485,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // here and once at the gate below. Deliberate: both ask literally whether somebody saw it
     // standing there, and a second class of observation invented to keep them apart would be two
     // names for one fact.
-    private boolean isFoundColony(Colony colony, Set<String> settlingOwnerIds) {
+    private boolean isFoundColony(Colony colony, PlaceWitnesses witnesses) {
 
         if (isAdmittedByFog(colony, rule)) {
             return true;
@@ -488,7 +493,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
         if (!readKindOf(colony).isFoundByReport()) {
             return false;
         }
-        return isObservedByInhabitants(colony, settlingOwnerIds)
+        return witnesses.wouldSpeakAbout(colony.readOwnerId())
             || (DecivilisedMarkets.isMetBySighting(rule.ungovernedColonySurveyLevel())
                 && isSighted(colony));
     }
@@ -574,45 +579,13 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // The live term is kept beside the recorded one so a colony arriving among witnesses is shown
     // at once rather than at whatever cadence the recorder happens to run on, and so the rule goes
     // on answering in a sector where nothing has recorded anything at all.
-    private boolean isObserved(Colony colony, Set<String> settlingOwnerIds) {
-        return isObservedByInhabitants(colony, settlingOwnerIds)
+    //
+    // Spent whole by the gate, which asks only whether somebody saw the colony and has no survey
+    // bar in it. The found routes take the two terms apart instead, the bar reaching one of them -
+    // which is isFoundColony's business and stated there.
+    private boolean isObserved(Colony colony, PlaceWitnesses witnesses) {
+        return witnesses.wouldSpeakAbout(colony.readOwnerId())
             || isSighted(colony);
-    }
-
-    // Whether somebody living in this place would speak about this colony: a shown, open colony
-    // stands here whose owner is on the other side from its own.
-    //
-    // Owner-aware rather than a bare "anybody lives here", because the people keeping a secret
-    // are exactly the ones a faction-blind test credits with telling it. A pirate base in a
-    // system the pirates openly hold would otherwise be announced to the player by the pirates,
-    // which is the one case the route was never arguing for - a rival's colony in the same place
-    // does talk, and that is what the route is for.
-    //
-    // The exception is read at the size the world keeps it, an ally being no likelier to hand
-    // over a partner's concealed base than the partner is: an alliance is a standing arrangement
-    // to act as one, and selling out a partner is the thing it forbids. So a member of the same
-    // alliance is passed over exactly as the owner itself is, and the base falls back to the only
-    // witness the route should ever have credited it to - the player's own sighting.
-    //
-    // A derelict is held by nobody in particular, and one other shape falls to that same nobody:
-    // a station no faction holds that the economy lists anyway, which is read as kept and so
-    // settles its place. That pair is the only arrangement in which this comparison reaches a
-    // derelict, and it withholds - a hulk on the books is no witness to the hulk beside it.
-    // Nobody joins no alliance, so the widened test leaves a derelict answering exactly as the
-    // bare owner comparison did.
-    private boolean isObservedByInhabitants(Colony colony, Set<String> settlingOwnerIds) {
-
-        var ownerId = colony.readOwnerId();
-
-        for (var settlingOwnerId : settlingOwnerIds) {
-
-            if (!Objects.equals(settlingOwnerId, ownerId)
-                    && !alliances.areFactionsAllied(settlingOwnerId, ownerId)) {
-
-                return true;
-            }
-        }
-        return false;
     }
 
     // Whether this colony has been observed where it now stands - the recorded half of what makes
