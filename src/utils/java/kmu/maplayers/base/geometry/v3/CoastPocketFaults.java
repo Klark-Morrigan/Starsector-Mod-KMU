@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry.v3;
 
+import kmlib.math.geometry.Disk;
 import kmlib.math.geometry.HalfPlane;
 import kmlib.math.geometry.Points;
 import kmlib.math.geometry.PolygonRegions;
@@ -192,11 +193,14 @@ public final class CoastPocketFaults {
     // with no one having to remember that it wanted narrowing.
     private static double measureFlatteningSag(VoidPockets.PocketRules rules) {
 
+        // At the reach these pockets were DRAWN at, which is not always the cells' own - so
+        // the knobs' own reading of the gap, which assumes the cells' reach, is not the one
+        // this wants.
         var reach = rules.shaping().isAtTrueExtent()
             ? rules.parameters().cellRadius()
             : rules.parameters().measureDrawnReach();
 
-        return rules.parameters().measureBoundSagitta();
+        return Disk.measureSagitta(reach, rules.parameters().boundSegments());
     }
 
     // Every maximal stretch of one outline lying outside the drawn coast, with how far out the
