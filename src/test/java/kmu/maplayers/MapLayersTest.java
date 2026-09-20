@@ -4,6 +4,7 @@ import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.ModManagerAPI;
 import com.fs.starfarer.api.SettingsAPI;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.testfixtures.starsector.StubbedGlobalLogger;
 
 import kmu.maplayers.base.layer.MapLayerArrangements;
@@ -12,7 +13,6 @@ import kmu.maplayers.base.layer.MapLayerRosters;
 import kmu.maplayers.base.layer.NoLayer;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceFixture;
 import kmu.maplayers.base.visibility.colonies.FactionAllianceRegistry;
-import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyRegistry;
 import kmu.maplayers.politicalmap.base.PoliticalMapLayer;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;

@@ -1,116 +1,79 @@
 package kmu.mods.nexerelin;
 
-import kmlib.mods.nexerelin.NexerelinPresence;
+import kmlib.mods.nexerelin.NexerelinAllianceSource;
+import kmlib.starsector.factions.alliances.FactionAlliances;
 
-import kmu.maplayers.base.visibility.colonies.FactionAlliances;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.mods.nexerelin.alliances.AllianceFingerprint;
 import kmu.mods.nexerelin.alliances.AllianceGroupingFactory;
-import kmu.mods.nexerelin.alliances.AllianceSource;
-import kmu.mods.nexerelin.alliances.FactionAllianceFactory;
 
 /**
- * The soft-dependency gate for the live alliance set: it answers whether Nexerelin is
- * present and, when it is, folds that set into whichever shape a reader asks for - an
- * {@link HolderGrouping} for the political map, or {@link FactionAlliances} for the
- * rule that decides who would keep a partner's secret. The sole reference to the Nex-coupled
- * {@link NexAllianceSource} lives in the nested {@link Holder}, which the classloader
- * does not resolve until the mod-enabled gate has passed, so a Nex-free install never
- * seeks an {@code exerelin.*} class - the same isolation
- * {@code NexerelinInvasionListenerInstaller} uses. Reflection is banned in KMU, so
- * this deferred-reference holder is the mechanism.
+ * KMU's readings of the live alliance set: an {@link HolderGrouping} for the political map, a
+ * {@link FactionAlliances} for the rule that decides who would keep a partner's secret, and a
+ * fingerprint for the watcher that notices either changing.
+ *
+ * <p>Three folds over one source and nothing else. Whether the mod that maintains alliances is
+ * installed, and what its alliances are, is the library's to answer - so nothing here names that
+ * mod's types, defers a class reference or knows an install without it is possible. Each fold
+ * reads the source afresh, alliances forming and dissolving while a campaign runs.
  */
 public final class NexerelinAlliances {
 
-    // The fingerprint reported when Nexerelin is absent: a fixed value the watcher polls
-    // steadily, so a Nex-free install never sees a change and never bumps the alliance
-    // revision. Any constant works; it is only ever compared for equality against itself.
-    private static final int NO_NEXERELIN_FINGERPRINT = 0;
-
     private NexerelinAlliances() {
+        // utility class, no instances.
     }
 
     /**
-     * Whether Nexerelin is enabled, and so whether the alliances view can be offered
-     * at all. Stable for a session (mod set does not change in play), so a caller may
-     * compute it once.
+     * Whether the alliances view can be offered at all.
      *
-     * <p>Asked through the library's own gate rather than through a mod ID and a hop of
-     * this class's own: the ID is the mod's, not KMU's, and the gate answers "not present"
-     * before the game has stood its settings up instead of throwing there.
+     * <p>Stable for a session, a mod set not changing in play, so a caller may compute it once.
      *
-     * @return true when Nexerelin is present
+     * @return true when the mod that maintains alliances is present
      */
     public static boolean isAvailable() {
-        return NexerelinPresence.isModEnabled();
+        return NexerelinAllianceSource.isModEnabled();
     }
 
     /**
-     * The grouping for the live alliance set, or {@link HolderGrouping#identity()}
-     * when Nexerelin is absent.
+     * A membership token for the live alliance set, which the sector watcher polls to notice
+     * alliances forming, dissolving or changing members between passes.
      *
-     * @return the alliance grouping when Nex is present, else the faction grouping
-     */
-    public static HolderGrouping resolveGrouping() {
-        // Gated before Holder is named, so a Nex-free install never seeks exerelin.*.
-        if (!isAvailable()) {
-            return HolderGrouping.identity();
-        }
-        return Holder.resolveGrouping();
-    }
-
-    /**
-     * The alliance memberships for the live alliance set, or {@link FactionAlliances#NONE}
-     * when Nexerelin is absent.
+     * <p>No alliances fingerprint to a fixed value of their own, so an install without the mod
+     * polls a steady token and never bumps the alliance revision - which needs no case of its own
+     * here, the empty fold being that value.
      *
-     * <p>Read afresh wherever a pass opens rather than snapshotted once: alliances form and
-     * dissolve in play, and a visibility rule reading a stale set goes on crediting a
-     * partnership that ended cycles ago.
-     *
-     * @return the memberships when Nex is present, else nobody standing with anybody
-     */
-    public static FactionAlliances resolveFactionAlliances() {
-        // Gated before Holder is named, so a Nex-free install never seeks exerelin.*.
-        if (!isAvailable()) {
-            return FactionAlliances.NONE;
-        }
-        return Holder.resolveFactionAlliances();
-    }
-
-    /**
-     * A membership token for the live alliance set, used by the sector watcher to detect
-     * when alliances form, dissolve, or change members between polls. Returns a fixed
-     * value when Nexerelin is absent, so a Nex-free install polls a steady token and never
-     * bumps the alliance revision.
-     *
-     * @return the alliance membership fingerprint when Nex is present, else a fixed value
+     * @return the fingerprint of the alliances standing
      */
     public static int computeAllianceFingerprint() {
-        // Gated before Holder is named, so a Nex-free install never seeks exerelin.*.
-        if (!isAvailable()) {
-            return NO_NEXERELIN_FINGERPRINT;
-        }
-        return Holder.computeFingerprint();
+        return AllianceFingerprint.compute(NexerelinAllianceSource.readAllianceRecords());
     }
 
-    // Isolates the only reference to the Nex-coupled source. The classloader resolves
-    // this holder on first call, which the gate at the head of every read above defers
-    // until Nex is known present, so NexAllianceSource - and through it exerelin.* - is
-    // never sought otherwise.
-    private static final class Holder {
+    /**
+     * The memberships the visibility rule reads.
+     *
+     * @return which factions stand together, or nobody standing with anybody where there are no
+     *         alliances
+     */
+    public static FactionAlliances resolveFactionAlliances() {
+        return FactionAlliances.buildFrom(NexerelinAllianceSource.readAllianceRecords());
+    }
 
-        private static final AllianceSource SOURCE = new NexAllianceSource();
+    /**
+     * The grouping the political map paints blocs by.
+     *
+     * <p>No alliances yield {@link HolderGrouping#identity()} itself rather than a fold that
+     * would equal it. The fold allocates three maps and this answer is resolved per rebuild on
+     * every install without the mod, where it is the only answer there ever is - so the shared
+     * grouping is handed back rather than rebuilt to look like it.
+     *
+     * @return the alliance grouping, or the faction grouping where there are no alliances
+     */
+    public static HolderGrouping resolveGrouping() {
 
-        private static HolderGrouping resolveGrouping() {
-            return AllianceGroupingFactory.buildFrom(SOURCE.readAlliances());
-        }
+        var allianceRecords = NexerelinAllianceSource.readAllianceRecords();
 
-        private static FactionAlliances resolveFactionAlliances() {
-            return FactionAllianceFactory.buildFrom(SOURCE.readAlliances());
-        }
-
-        private static int computeFingerprint() {
-            return AllianceFingerprint.compute(SOURCE.readAlliances());
-        }
+        return allianceRecords.isEmpty()
+            ? HolderGrouping.identity()
+            : AllianceGroupingFactory.buildFrom(allianceRecords);
     }
 }

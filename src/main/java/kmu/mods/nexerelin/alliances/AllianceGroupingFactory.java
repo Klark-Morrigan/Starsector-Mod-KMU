@@ -1,5 +1,7 @@
 package kmu.mods.nexerelin.alliances;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import java.util.HashMap;
@@ -11,8 +13,7 @@ import java.util.Map;
  * dominance pipeline reads: every member faction maps to its alliance's bloc ID, each
  * bloc colours off its dominant member, and each bloc carries the alliance name. Pure
  * over plain data - no Nexerelin or Starsector type - so it is exercised directly on
- * hand-built records, and {@link NexerelinAlliances} is left as the only Nex-touching
- * seam.
+ * hand-built records, whatever mod the live ones were read out of.
  */
 public final class AllianceGroupingFactory {
 

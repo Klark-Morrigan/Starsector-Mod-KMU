@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 /**
  * Where the live alliance set is read from - the one seam between the revelation rule and whatever
  * maintains the arrangement it reads.

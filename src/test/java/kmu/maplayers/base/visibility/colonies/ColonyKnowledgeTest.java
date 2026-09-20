@@ -5,6 +5,7 @@ import com.fs.starfarer.api.campaign.econ.MarketAPI;
 import com.fs.starfarer.api.campaign.econ.MarketAPI.SurveyLevel;
 import com.fs.starfarer.api.impl.campaign.ids.Factions;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
@@ -100,10 +102,11 @@ final class ColonyKnowledgeTest {
         SurveyLevel.FULL,
         Set.of());
 
-    // One notch above what a sighting is worth, which is the boundary the report route turns on
-    // rather than a bar picked for being high: at this level the player has asked for readings off
-    // the world itself, and somebody standing nearby produces none. Every gate is left in force so
-    // that a case pairing this with the shipped rule moves the bar and nothing beside it.
+    // One notch above what a sighting is worth, which is the boundary the player's own route into
+    // a collapsed world turns on rather than a bar picked for being high: at this level the player
+    // has asked for readings off the world itself, and a fly-past produces none. Every gate is
+    // left in force so that a case pairing this with the shipped rule moves the bar and nothing
+    // beside it.
     private static final ColonyVisibility ASKING_A_PRELIMINARY_SURVEY = new ColonyVisibility(
         NOTHING_REVEALED,
         SurveyLevel.PRELIMINARY,
@@ -751,10 +754,12 @@ final class ColonyKnowledgeTest {
 
         }
 
-        // The route that stands in for the fog rather than qualifying it: a collapsed colony the
-        // player has not surveyed, found on the word of whoever else is in the system. Every case
-        // here poses a world the fog refuses outright, so nothing in the group could have passed
-        // by any other arm.
+        // The two routes that stand in for the fog rather than qualifying it, for the one kind
+        // that has them: a collapsed colony the player has not surveyed, found on the word of
+        // whoever else is in the system, or on the player having laid eyes on it. Every case here
+        // poses a world the fog refuses outright, so nothing in the group could have passed by any
+        // other arm - and the two part company at the survey bar, which reaches the player's own
+        // route alone.
         @Nested
         class ReportRoute {
 
@@ -773,18 +778,22 @@ final class ColonyKnowledgeTest {
                     .containsExactly(buildUngovernedColony(decivilisedWorld), buildColony(neighbour));
             }
 
-            @Test
-            void withholdsAnUnsurveyedDeadWorldWhereMoreThanASightingIsAskedFor() {
-                // The bar the route is held to, one notch up: the player has asked for survey data,
-                // and a neighbour's word that the world is standing there is not survey data.
+            @ParameterizedTest
+            @EnumSource(value = SurveyLevel.class, names = {"SEEN", "PRELIMINARY", "FULL"})
+            void keepsAnUnsurveyedDeadWorldARivalColonyCanSeeAtEveryBar(SurveyLevel bar) {
+                // The claim the split is for: the bar is what the player asks of their own
+                // instruments, and a neighbour's word is not a reading anybody's instruments took -
+                // so raising it may not silence the people living in the system.
+                // NONE is left out because the fog admits the world outright there, which would
+                // pose nothing about this route at all.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
                 var neighbour = fixture.buildVisibleColony("hegemony");
 
                 fixture.placeColoniesInSystem(decivilisedWorld, neighbour);
 
-                assertThat(knowing(fixture, ASKING_A_PRELIMINARY_SURVEY).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
-                    .containsExactly(buildColony(neighbour));
+                assertThat(knowing(fixture, askingForASurveyOf(bar)).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildColony(neighbour))))
+                    .containsExactly(buildUngovernedColony(decivilisedWorld), buildColony(neighbour));
             }
 
             @Test
@@ -800,20 +809,44 @@ final class ColonyKnowledgeTest {
                     .isEmpty();
             }
 
-            @Test
-            void withholdsAnUnsurveyedDeadWorldVouchedForOnlyByAnUnheldStation() {
-                // Owner-awareness reaching the route without a line of its own. A collapsed colony
-                // falls to neutral as it dies, and so does a station no faction holds that the
-                // economy lists anyway - so the only settler here shares the world's own owner and
-                // is passed over, exactly as a faction's own colony is beside its concealed base.
+            @ParameterizedTest
+            @EnumSource(value = SurveyLevel.class, names = {"SEEN", "PRELIMINARY", "FULL"})
+            void withholdsAnUnsurveyedDeadWorldVouchedForOnlyByAnUnheldStation(SurveyLevel bar) {
+                // Owner-awareness reaching the route without a line of its own, and what ungating
+                // it must not have cost. A collapsed colony falls to neutral as it dies, and so
+                // does a station no faction holds that the economy lists anyway - so the only
+                // settler here shares the world's own owner and is passed over, exactly as a
+                // faction's own colony is beside its concealed base. Posed at every bar, a route
+                // that no longer reads one having no bar left to be narrowed by instead.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
                 var listedStation = fixture.buildOutpost(Factions.NEUTRAL);
 
                 fixture.placeColoniesInSystem(decivilisedWorld, listedStation);
 
-                assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildOutpost(listedStation))))
+                assertThat(knowing(fixture, askingForASurveyOf(bar)).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld), buildOutpost(listedStation))))
                     .containsExactly(buildOutpost(listedStation));
+            }
+
+            @Test
+            void withholdsAnUnsurveyedDeadWorldOnlyAnAlliedSettlerCouldVouchFor() {
+                // The alliance rule reaching this route too, posed at a bar the player's own
+                // sighting could not clear so the neighbour is the only thing being asked. A
+                // partner of the world's own owner is passed over exactly as the owner is, which
+                // is the widened comparison and not a second rule written for this route.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+                var partnerColony = fixture.buildVisibleColony("hegemony");
+
+                fixture.placeColoniesInSystem(decivilisedWorld, partnerColony);
+
+                assertThat(knowing(
+                        fixture,
+                        ASKING_A_PRELIMINARY_SURVEY,
+                        buildAllianceOf(Factions.NEUTRAL, "hegemony"))
+                        .readKnownColonies(buildColoniesOf(
+                            buildUngovernedColony(decivilisedWorld), buildColony(partnerColony))))
+                    .containsExactly(buildColony(partnerColony));
             }
 
             @Test
@@ -829,6 +862,25 @@ final class ColonyKnowledgeTest {
 
                 assertThat(knowing(fixture, BOTH_GATES_ON).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
                     .containsExactly(buildUngovernedColony(decivilisedWorld));
+            }
+
+            @ParameterizedTest
+            @EnumSource(value = SurveyLevel.class, names = {"PRELIMINARY", "FULL"})
+            void withholdsADeadWorldSeenFromAFlyPastWhereMoreThanASightingIsAskedFor(
+                    SurveyLevel bar) {
+
+                // The half the bar does decide, and the pair to the case above: the same world,
+                // seen and nothing more, is withheld the moment the player asks for readings off
+                // it. Nobody is in the system, so the neighbour route has nothing to say and the
+                // player's own sighting is the whole of what is on offer.
+                var fixture = new ColonyKnowledgeFixture("kumari_kandam");
+                var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
+
+                fixture.placeColoniesInSystem(decivilisedWorld);
+                fixture.markColoniesAsSighted(decivilisedWorld);
+
+                assertThat(knowing(fixture, askingForASurveyOf(bar)).readKnownColonies(buildColoniesOf(buildUngovernedColony(decivilisedWorld))))
+                    .isEmpty();
             }
 
             @Test
@@ -1631,6 +1683,13 @@ final class ColonyKnowledgeTest {
             ONLY_STATIONS_GATED,
             ONLY_HIDDEN_GATED,
             ColonyVisibility.BASE_FOG);
+    }
+
+    // The shipped rule with the survey bar moved and nothing else, for a case claiming which of
+    // the routes into a collapsed world the bar reaches. Both gates stay in force so that a bar
+    // the case did not mean to pose cannot arrive with a gate lifted beside it.
+    private static ColonyVisibility askingForASurveyOf(SurveyLevel bar) {
+        return new ColonyVisibility(NOTHING_REVEALED, bar, EVERY_GATE);
     }
 
     // A colony set built straight from colonies, for a case about the projection rather than

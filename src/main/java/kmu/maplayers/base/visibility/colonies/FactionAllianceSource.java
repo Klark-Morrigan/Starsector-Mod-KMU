@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 /**
  * A supplier of the alliances in force right now.
  *
