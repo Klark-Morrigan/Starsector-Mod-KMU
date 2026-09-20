@@ -1,6 +1,8 @@
 package kmu.settings;
 
 import kmlib.settings.LabeledChoice;
+import kmlib.testfixtures.starsector.settings.LunaSettingsSourceText;
+import kmlib.testfixtures.starsector.settings.LunaSettingsTable;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,13 +18,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static kmu.settings.LunaSettingsTable.BOOLEAN_FIELD_TYPE;
-import static kmu.settings.LunaSettingsTable.DOUBLE_FIELD_TYPE;
-import static kmu.settings.LunaSettingsTable.INT_FIELD_TYPE;
-import static kmu.settings.LunaSettingsTable.KEYCODE_FIELD_TYPE;
-import static kmu.settings.LunaSettingsTable.RADIO_FIELD_TYPE;
-import static kmu.settings.LunaSettingsTable.SETTINGS_CSV;
-import static kmu.settings.SettingsSourceText.MAIN_SOURCE_ROOT;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsSourceText.MAIN_SOURCE_ROOT;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.BOOLEAN_FIELD_TYPE;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.DOUBLE_FIELD_TYPE;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.INT_FIELD_TYPE;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.KEYCODE_FIELD_TYPE;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.RADIO_FIELD_TYPE;
+import static kmlib.testfixtures.starsector.settings.LunaSettingsTable.SETTINGS_CSV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,10 +36,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * only in a doc comment - so this reads the real data file rather than a fixture.
  *
  * <p>Every check here is one of the two readings held against the other, or against a table stated
- * below: {@link LunaSettingsTable} is the shipped file as rows and cells, {@link SettingsSourceText}
- * the shipped Java as the constants a row is reached through. Neither judges anything, which is what
- * this file is for - what each reading ought to say is the whole of what is written here, and the
- * tables that say it are the only thing a pass over the settings screen has to keep current.
+ * below: {@link LunaSettingsTable} is the shipped file as rows and cells, {@link
+ * LunaSettingsSourceText} the shipped Java as the constants a row is reached through. Both are
+ * KMLib's, the shapes they read being LunaLib's rather than this mod's. Neither judges anything,
+ * which is what this file is for - what each reading ought to say is the whole of what is written
+ * here, and the tables that say it are the only thing a pass over the settings screen has to keep
+ * current.
  *
  * <p>An option label is therefore a stored key wearing the costume of a caption, and is frozen for the
  * same reason a field ID is: tidying the wording of one resets that setting for every player who had
@@ -62,7 +66,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * visibility overrides ship off so that a fresh player is shown what the ordinary rules admit and
  * nothing beyond it, the unfinished feature ships off so that nothing the mod does not yet stand
  * behind runs unasked, the escape hatch over the vanilla filter row ships on so that the control it
- * gates is there before anyone needs it, and
+ * gates is there before anyone needs it, the decivilised-territory switch ships on so that the
+ * reading the map already drew is the one a player keeps by doing nothing, and
  * the Java fallback beside each getter cannot stand in for that - it answers only while LunaLib has
  * no stored value, so it is this column a fresh player is actually given. Which way a switch ships is
  * that one table's business; that the two spellings of it agree is every Boolean row's, so the
@@ -92,6 +97,21 @@ final class LunaSettingsCsvIntegrationTest {
 
     private static final String BOOLEAN_ON_VALUE = "TRUE";
     private static final String BOOLEAN_OFF_VALUE = "FALSE";
+
+    // What every KMU field ID starts with, which is what tells one of the mod's rows from the
+    // spacing rows and the file's own column-header line, and one of its ID literals from every
+    // other string the sources hold. The prefix alone does not mark a string as a setting - the
+    // second field-id walk below names its exceptions for that reason.
+    private static final String FIELD_ID_PREFIX = "kmu_";
+
+    // The two readings, opened over this mod's shipped file and sources. The readings themselves
+    // are KMLib's: the file's shape is LunaLib's rather than KMU's, so a second mod on these
+    // conventions holds its table to the same reading rather than to a copy of it.
+    private static final LunaSettingsTable SETTINGS_TABLE =
+        new LunaSettingsTable(SETTINGS_CSV, FIELD_ID_PREFIX);
+
+    private static final LunaSettingsSourceText SETTINGS_SOURCES =
+        new LunaSettingsSourceText(MAIN_SOURCE_ROOT, FIELD_ID_PREFIX);
 
     // The five rows hovering is switched at - the master, the pair that answers for every map layer,
     // and the political map's own pair - which are held to shipping on. The Java fallback beside each
@@ -135,6 +155,14 @@ final class LunaSettingsCsvIntegrationTest {
     // two spellings of a value agreeing, which the walk over every switch already holds.
     private static final String FILTER_ROW_TOGGLE_FIELD_ID =
         "kmu_map_dev_ui_controls_mapLayersToggle_isEnabled";
+
+    // The switch deciding whether a decivilised world is territory to paint, held to shipping on
+    // for the same kind of reason and with its own check for the same one. Both readings of such a
+    // world are defensible, so which one ships is a decision rather than a value: on is what the
+    // map drew before the switch existed, and a player who prefers the other reading is the one who
+    // should have to say so.
+    private static final String DECIVILISED_TERRITORY_FIELD_ID =
+        "kmu_map_politics_visuals_decivilised_shouldDrawTerritory";
 
     // The three Keycode rows. They are held here rather than in the numeric walk because there is
     // nothing to walk them against: no Java fallback mirrors a keycode, deliberately, so this column is
@@ -281,7 +309,7 @@ final class LunaSettingsCsvIntegrationTest {
 
             // A subset is legitimate - a field may offer only some of its enum's options - but an
             // option the enum cannot name is dead: picking it reads back as the fallback.
-            assertThat(LunaSettingsTable.readOptions(fieldId))
+            assertThat(SETTINGS_TABLE.readOptions(fieldId))
                 .isSubsetOf(expectedLabels);
         }
 
@@ -291,8 +319,8 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(ChoiceBackedRadioFieldIdsProvider.class)
         void radioOptionLabelsIncludeTheRowsOwnDefault(String fieldId) {
 
-            assertThat(LunaSettingsTable.readOptions(fieldId))
-                .contains(LunaSettingsTable.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
+            assertThat(SETTINGS_TABLE.readOptions(fieldId))
+                .contains(SETTINGS_TABLE.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
         }
     }
 
@@ -306,7 +334,7 @@ final class LunaSettingsCsvIntegrationTest {
                 String defaultConstant,
                 LabeledChoice[] choices) {
 
-            assertThat(SettingsSourceText.readFallbackLabel(defaultConstant, choices))
+            assertThat(SETTINGS_SOURCES.readFallbackLabel(defaultConstant, choices))
                 .as(
                     "%s in the settings sources against the default of %s in %s: the row's default"
                         + " is what a fresh player is given and the constant is what answers while"
@@ -315,7 +343,7 @@ final class LunaSettingsCsvIntegrationTest {
                     defaultConstant,
                     fieldId,
                     SETTINGS_CSV)
-                .isEqualTo(LunaSettingsTable.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
+                .isEqualTo(SETTINGS_TABLE.readDefaultValue(fieldId, RADIO_FIELD_TYPE));
         }
     }
 
@@ -325,7 +353,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyRadioFieldInTheFileIsClassifiedBySuite() {
 
-            assertThat(LunaSettingsTable.readRadioFieldIds())
+            assertThat(SETTINGS_TABLE.readRadioFieldIds())
                 .as(
                     "Radio rows in %s not listed as choice-backed or as non-choice-backed,"
                         + " so nothing holds their option labels frozen",
@@ -341,7 +369,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(HoverTierFieldIdsProvider.class)
         void hoverTierRowsAllShipSwitchedOn(String fieldId) {
 
-            assertThat(LunaSettingsTable.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: every hover tier ships on, so the tiering is invisible"
                         + " to a player who has switched none of them",
@@ -358,7 +386,7 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(VisibilityOverrideFieldIdsProvider.class)
         void visibilityOverrideRowsAllShipSwitchedOff(String fieldId) {
 
-            assertThat(LunaSettingsTable.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: a visibility override ships off, so what a fresh player"
                         + " is shown of the sector is what the ordinary rules admit and nothing"
@@ -375,7 +403,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theUnfinishedFeatureRowShipsSwitchedOff() {
 
-            assertThat(LunaSettingsTable.readDefaultValue(UNFINISHED_FEATURE_FIELD_ID, BOOLEAN_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(UNFINISHED_FEATURE_FIELD_ID, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: the feature is unfinished and changes campaign state, so"
                         + " it ships off and a player runs it only by asking for it",
@@ -391,7 +419,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theFilterRowToggleShipsSwitchedOn() {
 
-            assertThat(LunaSettingsTable.readDefaultValue(FILTER_ROW_TOGGLE_FIELD_ID, BOOLEAN_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(FILTER_ROW_TOGGLE_FIELD_ID, BOOLEAN_FIELD_TYPE))
                 .as(
                     "default of %s in %s: shipped off, neither map screen gets the control that shows"
                         + " and hides the layers, and a screen with no control never hides them - so"
@@ -404,12 +432,30 @@ final class LunaSettingsCsvIntegrationTest {
     }
 
     @Nested
+    class DecivilisedTerritoryDefaults {
+
+        @Test
+        void theDecivilisedTerritoryRowShipsSwitchedOn() {
+
+            assertThat(SETTINGS_TABLE.readDefaultValue(DECIVILISED_TERRITORY_FIELD_ID, BOOLEAN_FIELD_TYPE))
+                .as(
+                    "default of %s in %s: a decivilised world is a settled place nobody speaks"
+                        + " for, and the map has always read that as somewhere people live - so the"
+                        + " switch ships at the reading already on screen, and the player who wants"
+                        + " the other one is the one who says so",
+                    DECIVILISED_TERRITORY_FIELD_ID,
+                    SETTINGS_CSV)
+                .isEqualTo(BOOLEAN_ON_VALUE);
+        }
+    }
+
+    @Nested
     class KeycodeDefaults {
 
         @Test
         void theNoLayerTabShipsOnTheNKey() {
 
-            assertThat(LunaSettingsTable.readDefaultValue(NO_LAYER_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(NO_LAYER_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
                 .as(
                     "default of %s in %s: 49 is LWJGL's KEY_N, the letter of the tab it jumps to, and"
                         + " free on both the map and intel screens the bar draws on",
@@ -421,7 +467,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void thePoliticalMapTabShipsOnThePKey() {
 
-            assertThat(LunaSettingsTable.readDefaultValue(POLITICAL_MAP_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(POLITICAL_MAP_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
                 .as(
                     "default of %s in %s: 25 is LWJGL's KEY_P, and clear of the intel screen's own"
                         + " bindings - its item actions take T, U and G, its tag filter Q and Ctrl+S",
@@ -433,7 +479,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void theFilterRowToggleShipsOnTheMKey() {
 
-            assertThat(LunaSettingsTable.readDefaultValue(FILTER_ROW_TOGGLE_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
+            assertThat(SETTINGS_TABLE.readDefaultValue(FILTER_ROW_TOGGLE_KEY_FIELD_ID, KEYCODE_FIELD_TYPE))
                 .as(
                     "default of %s in %s: 50 is LWJGL's KEY_M, for map. Deliberately not a digit - the"
                         + " vanilla filter row this box is appended to keys its own six buttons to"
@@ -452,9 +498,9 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(NumericFieldDefaultsProvider.class)
         void numericFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId, String fieldType) {
 
-            var defaultConstant = SettingsSourceText.findNumericFallbackConstant(fieldId);
+            var defaultConstant = SETTINGS_SOURCES.findNumericFallbackConstant(fieldId);
 
-            assertThat(SettingsSourceText.readDeclaredNumber(defaultConstant))
+            assertThat(SETTINGS_SOURCES.readDeclaredNumber(defaultConstant))
                 .as(
                     "%s in the settings sources against the default of %s in %s: the row's default"
                         + " is the number a fresh player is given and the constant is what answers"
@@ -464,7 +510,7 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    LunaSettingsTable.readDefaultValue(fieldId, fieldType)));
+                    SETTINGS_TABLE.readDefaultValue(fieldId, fieldType)));
         }
     }
 
@@ -479,7 +525,7 @@ final class LunaSettingsCsvIntegrationTest {
                 String minimumConstant,
                 String maximumConstant) {
 
-            assertThat(SettingsSourceText.readDeclaredNumber(minimumConstant))
+            assertThat(SETTINGS_SOURCES.readDeclaredNumber(minimumConstant))
                 .as(
                     "%s in the settings sources against the low end of %s in %s: the slider's end is"
                         + " as far as a player can drag the row, and the clamp is how far the value"
@@ -489,16 +535,16 @@ final class LunaSettingsCsvIntegrationTest {
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    LunaSettingsTable.readMinValue(fieldId, fieldType)));
+                    SETTINGS_TABLE.readMinValue(fieldId, fieldType)));
 
-            assertThat(SettingsSourceText.readDeclaredNumber(maximumConstant))
+            assertThat(SETTINGS_SOURCES.readDeclaredNumber(maximumConstant))
                 .as(
                     "%s in the settings sources against the high end of %s in %s",
                     maximumConstant,
                     fieldId,
                     SETTINGS_CSV)
                 .isEqualTo(Double.parseDouble(
-                    LunaSettingsTable.readMaxValue(fieldId, fieldType)));
+                    SETTINGS_TABLE.readMaxValue(fieldId, fieldType)));
         }
     }
 
@@ -509,9 +555,9 @@ final class LunaSettingsCsvIntegrationTest {
         @ArgumentsSource(BooleanFieldIdsProvider.class)
         void booleanFallbackDefaultsMatchTheirRowsOwnDefault(String fieldId) {
 
-            var defaultConstant = SettingsSourceText.findBooleanFallbackConstant(fieldId);
+            var defaultConstant = SETTINGS_SOURCES.findBooleanFallbackConstant(fieldId);
 
-            assertThat(SettingsSourceText.readDeclaredFlag(defaultConstant))
+            assertThat(SETTINGS_SOURCES.readDeclaredFlag(defaultConstant))
                 .as(
                     "%s in the settings sources against the default of %s in %s: the row's default"
                         + " is the state a fresh player is given and the constant is what answers"
@@ -520,7 +566,7 @@ final class LunaSettingsCsvIntegrationTest {
                     defaultConstant,
                     fieldId,
                     SETTINGS_CSV)
-                .isEqualTo(LunaSettingsTable.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE)
+                .isEqualTo(SETTINGS_TABLE.readDefaultValue(fieldId, BOOLEAN_FIELD_TYPE)
                     .equalsIgnoreCase(BOOLEAN_ON_VALUE));
         }
     }
@@ -531,9 +577,9 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyValueFieldIdIsNamedBySomeSource() {
 
-            var namedFieldIds = SettingsSourceText.readFieldIdLiteralsInMainSources();
+            var namedFieldIds = SETTINGS_SOURCES.readFieldIdLiteralsInMainSources();
 
-            assertThat(LunaSettingsTable.readValueFieldIds())
+            assertThat(SETTINGS_TABLE.readValueFieldIds())
                 .as(
                     "field ids declared in %s that no source under %s names, so either the row or"
                         + " the constant behind it was renamed and the player's stored value is"
@@ -548,11 +594,11 @@ final class LunaSettingsCsvIntegrationTest {
 
             var declaredFieldIds = Stream
                 .concat(
-                    LunaSettingsTable.readDeclaredFieldIds().stream(),
+                    SETTINGS_TABLE.readDeclaredFieldIds().stream(),
                     NON_SETTINGS_PREFIXED_IDS.stream())
                 .toList();
 
-            assertThat(SettingsSourceText.readFieldIdLiteralsInMainSources())
+            assertThat(SETTINGS_SOURCES.readFieldIdLiteralsInMainSources())
                 .as(
                     "prefixed ids named under %s that %s declares no row for, so a getter reads a"
                         + " key the shipped file never writes and silently answers its fallback"
@@ -569,7 +615,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyRowIsPlacedOnAKnownTab() {
 
-            assertThat(LunaSettingsTable.readDeclaredTabs())
+            assertThat(SETTINGS_TABLE.readDeclaredTabs())
                 .as(
                     "tab names declared in %s that the settings screen's layout does not know,"
                         + " so a mistyped one strands its field on a tab of its own",
@@ -583,7 +629,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyKnownTabHoldsAtLeastOneRow() {
 
-            assertThat(LunaSettingsTable.readDeclaredTabs())
+            assertThat(SETTINGS_TABLE.readDeclaredTabs())
                 .as("tabs the layout names that %s places no row on", SETTINGS_CSV)
                 .containsAll(KNOWN_TABS);
         }
@@ -591,7 +637,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyValueRowSitsOnItsSectionTab() {
 
-            assertThat(LunaSettingsTable.findRowsStrandedFromTheirSection())
+            assertThat(SETTINGS_TABLE.findRowsStrandedFromTheirSection())
                 .as(
                     "value rows in %s on a different tab from the section caption above them, so"
                         + " the section's heading and its knobs draw on different tabs",
@@ -606,7 +652,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyTabsRowsSitInOneUnbrokenRun() {
 
-            assertThat(LunaSettingsTable.findTabsDeclaredInMoreThanOneRun())
+            assertThat(SETTINGS_TABLE.findTabsDeclaredInMoreThanOneRun())
                 .as(
                     "tabs in %s whose rows are interrupted by another tab's, so the file no longer"
                         + " reads as one block per tab",
@@ -621,7 +667,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyHeaderRowDrawsTheCaptionItNames() {
 
-            assertThat(LunaSettingsTable.findHeaderRowsWhoseCaptionColumnsDisagree())
+            assertThat(SETTINGS_TABLE.findHeaderRowsWhoseCaptionColumnsDisagree())
                 .as(
                     "section captions in %s whose name and drawn columns differ: LunaLib draws a"
                         + " Header from its default-value column, so the other one is inert and an"
@@ -637,7 +683,7 @@ final class LunaSettingsCsvIntegrationTest {
         @Test
         void everyTextRowCarriesItsWordsInTheDrawnColumn() {
 
-            assertThat(LunaSettingsTable.findTextRowsWhoseWordsAreNotDrawn())
+            assertThat(SETTINGS_TABLE.findTextRowsWhoseWordsAreNotDrawn())
                 .as(
                     "prose rows in %s whose words are not where LunaLib reads them: a Text row is"
                         + " drawn from its default-value column alone and shows no name column, so"
@@ -731,7 +777,7 @@ final class LunaSettingsCsvIntegrationTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            return LunaSettingsTable.readFieldIdsAndTypes()
+            return SETTINGS_TABLE.readFieldIdsAndTypes()
                 .stream()
                 .filter(row -> NUMERIC_FIELD_TYPES.contains(row.fieldType()))
                 .map(row -> Arguments.of(row.fieldId(), row.fieldType()));
@@ -791,7 +837,7 @@ final class LunaSettingsCsvIntegrationTest {
                 ParameterDeclarations parameters,
                 ExtensionContext context) {
 
-            return LunaSettingsTable.readFieldIdsAndTypes()
+            return SETTINGS_TABLE.readFieldIdsAndTypes()
                 .stream()
                 .filter(row -> BOOLEAN_FIELD_TYPE.equals(row.fieldType()))
                 .map(row -> Arguments.of(row.fieldId()));

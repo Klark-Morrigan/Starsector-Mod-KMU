@@ -21,6 +21,7 @@ import java.util.Set;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -196,7 +197,7 @@ final class PoliticalMapInhabitationIntegrationTest {
     // A plain identity pass under the given rule: what is varied across these cases is the rule and
     // the fixture, never the grouping, inhabitation folding no blocs of its own.
     private static HolderPass buildPassOver(SectorAPI sector, ColonyVisibility colonyVisibility) {
-        return HolderPass.over(sector, colonyVisibility, HolderGrouping.identity());
+        return HolderPass.over(sector, buildRulesUnder(colonyVisibility), HolderGrouping.identity());
     }
 
     // An ordinary colony on a found entity: the plain "somebody lives here" case.

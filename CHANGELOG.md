@@ -12,6 +12,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- *Map - Politics - Visuals* setting **Decivilised systems - Should draw territory**, on by default. Switched off, a revealed decivilised world stops counting as somebody living in its system: that system is drawn as uninhabited rather than as territory, its owner is no longer offered in the layer's picker, and it takes no presence band and no colony size in the stats. The world itself is still found, still listed, and still named in the star system tooltip.
+
 ### Changed
 
 - **Fast Rendering** version mismatches are now reported in-game. Where the map's cursor reading can no longer be taken from Fast Rendering, a notice names it and both versions once per session, and the sector map keeps drawing without responding to the cursor - no cell highlight, no star system tooltip. Previously the mismatch ended the map's render pass and named KM code in the error.

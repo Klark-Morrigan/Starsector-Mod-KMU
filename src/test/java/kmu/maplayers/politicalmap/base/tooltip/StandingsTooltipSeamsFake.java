@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.same;
@@ -82,7 +84,7 @@ public final class StandingsTooltipSeamsFake {
      * <p>A suite turning on the rule or the dev reveal builds its own and installs it instead.
      */
     public static final DominancePass ANY_PASS =
-        DominancePass.over(null, ANY_RULES, ColonyVisibility.BASE_FOG, VIEW_GROUPING);
+        DominancePass.over(null, ANY_RULES, UNDER_THE_FOG, VIEW_GROUPING);
 
     // What a standing carries when a case is about how groups are laid out rather than about what any
     // of them is made of. Never asserted on - a case that cares states its own standing. The bloc is

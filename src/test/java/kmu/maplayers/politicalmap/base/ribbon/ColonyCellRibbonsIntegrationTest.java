@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildOnlySystem;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
@@ -90,7 +90,7 @@ final class ColonyCellRibbonsIntegrationTest {
             // depend on which layer they are looking at.
             var sector = buildContestedSector();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+            var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var inputs = buildInputsFor(holding);
 
             var heldPlan = new HeldSystemRibbonPlanner(
@@ -127,7 +127,7 @@ final class ColonyCellRibbonsIntegrationTest {
             // the suite exists - each was self-consistent while disagreeing with the other.
             var sector = buildSectorWhereTritachyonIsUnregistered();
             var system = buildOnlySystem(sector);
-            var holding = HolderPass.over(sector, BASE_FOG, HolderGrouping.identity());
+            var holding = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
             var pass = DominancePass.over(
                 holding,
                 SectorPoliticsFixtures.buildStabilityWeightedRules());

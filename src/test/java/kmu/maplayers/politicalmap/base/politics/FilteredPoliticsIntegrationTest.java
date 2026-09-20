@@ -18,8 +18,8 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_DEV_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.HEGEMONY_BRIGHT;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.NEUTRAL_BASE;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.PERSEAN_BRIGHT;
@@ -203,7 +203,7 @@ class FilteredPoliticsIntegrationTest {
                 Map.of("alliance-1", "Allied Powers"));
 
             var holder = FilteredPolitics.resolveFilteredHolder(
-                    DominancePass.over(sector, STABILITY_WEIGHTED, BASE_FOG, grouping),
+                    DominancePass.over(sector, STABILITY_WEIGHTED, UNDER_THE_FOG, grouping),
                     "alliance-1")
                 .ownerBySystemKey()
                 .get(buildCellKey("contested-system"));
@@ -538,7 +538,7 @@ class FilteredPoliticsIntegrationTest {
             DominancePass.over(
                 sector,
                 STABILITY_WEIGHTED,
-                UNDER_THE_REVEAL,
+                UNDER_THE_DEV_REVEAL,
                 HolderGrouping.identity()),
             selectedBlocId);
     }

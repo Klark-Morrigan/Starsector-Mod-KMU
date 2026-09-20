@@ -9,6 +9,13 @@ package kmu.settings;
  * bundle is read as a whole, and setting one kind's fill against another's is the only way to
  * judge either. The recede and spare strengths join them for the same reason: they move the
  * shades these knobs authored.
+ *
+ * <p>The decivilised kind carries one knob that is not paint: whether such a system is territory
+ * to paint at all. It is here because it is read against the shades below it - a player reaching
+ * for the decivilised fill because those systems say more than they should is reaching for this
+ * switch - and because there is no shade that stands in for it. Zeroing the fill and the border
+ * blanks the kind on every view at once, this bundle serving all three, and leaves the picker,
+ * the ribbon and the stats counting what nothing on screen draws.
  */
 public final class KmuPoliticalMapTerritorySettings {
 
@@ -46,6 +53,11 @@ public final class KmuPoliticalMapTerritorySettings {
         "kmu_map_politics_visuals_independent_fill_opacity";
     private static final String INDEPENDENT_NAME_OPACITY_FIELD =
         "kmu_map_politics_visuals_independent_name_opacity";
+
+    // Ahead of the decivilised shades because it decides whether there is anything for them to
+    // paint: switched off, such a system is not of this category at all and draws as uninhabited.
+    private static final String DECIVILISED_SHOULD_DRAW_TERRITORY_FIELD =
+        "kmu_map_politics_visuals_decivilised_shouldDrawTerritory";
 
     // A factionless category carries no colour field: it has no faction palette to pick from, so
     // it always paints in the shared neutral colour and the opacity knobs alone decide what shows.
@@ -94,6 +106,12 @@ public final class KmuPoliticalMapTerritorySettings {
         FactionPaletteChoice.PRIMARY;
     private static final double DEFAULT_INDEPENDENT_FILL_OPACITY = 0.2;
     private static final double DEFAULT_INDEPENDENT_NAME_OPACITY = 1.0;
+    // On, so the shipped map draws what it drew before the switch existed. A decivilised world is
+    // a settled place nobody speaks for, and a map of polities can honestly follow either half of
+    // that - which is the player's call rather than the mod's, and the half already on screen is
+    // the one a switch should have to be thrown to leave.
+    private static final boolean DEFAULT_DECIVILISED_SHOULD_DRAW_TERRITORY = true;
+
     private static final double DEFAULT_DECIVILISED_BORDER_OPACITY = 0.45;
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
 
@@ -271,6 +289,21 @@ public final class KmuPoliticalMapTerritorySettings {
         return KmuLunaSettings.readDouble(
             INDEPENDENT_NAME_OPACITY_FIELD,
             DEFAULT_INDEPENDENT_NAME_OPACITY);
+    }
+
+    /**
+     * @return whether a decivilised world counts as somebody living in its system, so the layer
+     *         draws that system as territory, offers its owner in the bloc picker, bands it in the
+     *         presence ribbon and folds its size into the stats; on by default. Off moves only that
+     *         projection - the world is still found, still listed, and still named in the box over
+     *         its cell - and the system falls to the uninhabited kind. It keeps a cell, but that
+     *         kind carries no fill and its outline is the sidebar's uninhabited-systems checkbox
+     *         rather than a knob here, so with that box unticked the cell draws nothing at all
+     */
+    public static boolean shouldDecivilisedSystemsDrawTerritory() {
+        return KmuLunaSettings.readBoolean(
+            DECIVILISED_SHOULD_DRAW_TERRITORY_FIELD,
+            DEFAULT_DECIVILISED_SHOULD_DRAW_TERRITORY);
     }
 
     /**

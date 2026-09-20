@@ -15,6 +15,7 @@ import kmu.maplayers.base.tooltip.CellTooltipPaletteFake;
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
 import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapInhabitation;
+import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures;
@@ -31,6 +32,8 @@ import java.util.Optional;
 import static kmu.maplayers.base.tooltip.layout.CellTooltipRowReads.readLabelTextRun;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
 import static kmu.maplayers.base.visibility.colonies.ColonyVisibilityFixtures.UNDER_THE_REVEAL;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
+import static kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation.COUNTS_AS_UNPOPULATED;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildAbandonedStationMarket;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +57,18 @@ import static org.mockito.Mockito.when;
  * status is what names it Decivilised, and its cell is settled because a known ruin is somebody
  * having lived there. Agreement is therefore "a settled system is never called unpopulated", not
  * "a settled system is silent".
+ *
+ * <p>That same world is where the agreement stops being symmetrical, and deliberately. A player
+ * may say such a world draws no territory, and the two surfaces then read different projections:
+ * the cell classifies through the pass's habitation, which drops the world under that rule, while
+ * the box reads the shared projection, which never does. The cell empties and the status goes on
+ * naming it.
+ *
+ * <p>So what is pinned runs one way. The box must never print "Unpopulated" over a system the map
+ * has painted as settled, which is the failure a player cannot explain. The reverse - a cell left
+ * empty under a box that still speaks - is the thing the player asked for, and the case below
+ * states it so that the day it stops happening is a failure here rather than a silent change on
+ * screen.
  */
 final class SystemInhabitationAgreementIntegrationTest {
 
@@ -177,6 +192,25 @@ final class SystemInhabitationAgreementIntegrationTest {
         }
 
         @Test
+        void aRevealedDecivilisedWorldEmptiesTheCellAndStillNamesItselfWhereItIsUnpopulated() {
+            // The asymmetry the habitation rule introduces, stated rather than left to be noticed.
+            // The cell reads habitation through the pass and drops the world; the box reads the
+            // shared projection, which the rule never touches, so it goes on naming it. The
+            // direction this suite guards is the other one, and it still holds - nothing here
+            // prints "Unpopulated" over a painted cell.
+            var system = buildSystemWithRevealedRuin();
+            var sector = buildSectorListing(system);
+
+            assertThat(isInhabitedUnder(
+                    sector,
+                    system,
+                    new ColonyReadRules(BASE_FOG, COUNTS_AS_UNPOPULATED)))
+                .isFalse();
+            assertThat(readStatus(sector, system, BASE_FOG))
+                .isEqualTo("Decivilised");
+        }
+
+        @Test
         void aSystemHoldingNobodyLeavesTheCellEmptyAndTheStatusSpoken() {
 
             var system = buildSystem();
@@ -189,18 +223,32 @@ final class SystemInhabitationAgreementIntegrationTest {
         }
     }
 
-    // What the cell is classified on, under the rule the box is asked with - the pairing being the
-    // whole point, a case handing the two different rules would prove nothing.
+    // What the cell is classified on, under the visibility the box is asked with - the pairing
+    // being the whole point, a case handing the two different visibilities would prove nothing.
     //
-    // Reached through the map's own inhabitation read rather than through the framework rule
-    // beneath it, so what a case pins is the classification the rebuild actually makes.
+    // Counts a decivilised world as populated, which is what the map ships doing. The one case
+    // asking the other position states it for itself, through the overload below.
     private static boolean isInhabited(
             SectorAPI sector,
             StarSystemAPI system,
             ColonyVisibility colonyVisibility) {
 
+        return isInhabitedUnder(sector, system, buildRulesUnder(colonyVisibility));
+    }
+
+    // The same classification under rules a case states in full, for the one axis the box has no
+    // counterpart for: the habitation position is the pass's alone, so a case varying it is asking
+    // the two surfaces different questions on purpose rather than by drift.
+    //
+    // Reached through the map's own inhabitation read rather than through the framework rule
+    // beneath it, so what a case pins is the classification the rebuild actually makes.
+    private static boolean isInhabitedUnder(
+            SectorAPI sector,
+            StarSystemAPI system,
+            ColonyReadRules colonyReadRules) {
+
         return PoliticalMapInhabitation.isSystemInhabited(
-            HolderPass.over(sector, colonyVisibility, HolderGrouping.identity()),
+            HolderPass.over(sector, colonyReadRules, HolderGrouping.identity()),
             system);
     }
 

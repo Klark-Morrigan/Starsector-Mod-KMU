@@ -17,6 +17,8 @@ import java.awt.Color;
 import java.util.Map;
 import java.util.Optional;
 
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildFaction;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildSectorWith;
 import static kmu.maplayers.politicalmap.base.politics.SectorPoliticsFixtures.buildVisibleMarket;
@@ -182,7 +184,7 @@ public final class RibbonPlanFixtures {
             ColonyVisibility colonyVisibility) {
 
         return buildInputsFor(
-            HolderPass.over(sector, colonyVisibility, grouping));
+            HolderPass.over(sector, buildRulesUnder(colonyVisibility), grouping));
     }
 
     /**
@@ -224,7 +226,7 @@ public final class RibbonPlanFixtures {
     public static RibbonPlanInputs buildAlliedInputsOver(SectorAPI sector) {
 
         return buildInputsFor(
-            HolderPass.over(sector, ColonyVisibility.BASE_FOG, HolderGrouping.identity()),
+            HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity()),
             ALLIED_HEGEMONY_AND_TRITACHYON,
             SHORTENED_UNCONTESTED_RULES);
     }

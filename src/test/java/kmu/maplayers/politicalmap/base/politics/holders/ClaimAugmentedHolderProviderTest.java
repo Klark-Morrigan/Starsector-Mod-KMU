@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.buildRulesUnder;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +64,7 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
             var heldHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var claimedHolder = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
 
@@ -106,7 +107,7 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
             var heldHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
             var claimOverHeld = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
 
@@ -144,7 +145,7 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var plainClaimHolder = new DominantHolder("hegemony", PRIMARY, SECONDARY);
 
@@ -198,7 +199,7 @@ final class ClaimAugmentedHolderProviderTest {
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
             var grouping = HolderGrouping.identity();
-            var pass = HolderPass.over(sectorMock, BASE_FOG, grouping);
+            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, grouping);
             var spotlightHolder = new DominantHolder("$spotlit", PRIMARY, SECONDARY);
             var rivalClaimHolder = new DominantHolder("tritachyon", PRIMARY, SECONDARY);
 
@@ -239,7 +240,7 @@ final class ClaimAugmentedHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
-            var pass = HolderPass.over(sectorMock, BASE_FOG, HolderGrouping.identity());
+            var pass = HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
             var openedOver = new ArrayList<SectorPassIndex>();
 
             when(baseProviderMock.resolveHolder(pass, null))
@@ -273,7 +274,7 @@ final class ClaimAugmentedHolderProviderTest {
             var sectorMock = mock(SectorAPI.class);
             var claimReaderMock = mock(ClaimReader.class);
             var baseProviderMock = mock(HolderProvider.class);
-            var pass = HolderPass.over(sectorMock, GATED_VISIBILITY, HolderGrouping.identity());
+            var pass = HolderPass.over(sectorMock, buildRulesUnder(GATED_VISIBILITY), HolderGrouping.identity());
             var openedUnder = new ArrayList<KnownColonyReader>();
 
             when(baseProviderMock.resolveHolder(pass, null))

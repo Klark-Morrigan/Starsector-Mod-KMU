@@ -291,10 +291,17 @@ which is the same reading of a system the cells are painted from and the bands c
 not who the layer's mechanic weighed.
 So a faction whose only colony the economy never registered is offered,
 and so is **Neutral**,
-which is what a revealed dead world is owned by.
+which is what a revealed decivilised world is owned by.
 A bloc whose only holding is a derelict nobody lives on is not:
 a spotlight lights territory,
 and there is none to light.
+
+A player who has switched *Decivilised systems - should draw territory* off has made such a world derelict-shaped for this purpose,
+so the rule just stated carries Neutral out of the picker wherever those worlds were its only presence.
+That is the rule applying rather than a loss to make up for:
+switching it off is the statement that such a world is nobody's presence,
+and there is then none to light.
+Neutral stays listed wherever it holds something else - an economy-listed station among them.
 
 A listed bloc that paints nothing on the layer greys,
 and stays pickable:

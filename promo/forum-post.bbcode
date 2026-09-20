@@ -101,7 +101,13 @@ The main control interface of map layers is the collapsible [b]sidebar[/b] that 
 [spoiler=Available map layers]
 [spoiler=Political Map (P)]
 [list]
-[li]Focuses on [b]populated colonies[/b] and their affiliation.
+[li]Focuses on [b]populated colonies[/b] (markets) and their affiliation.
+[list]
+[li]Only they paint the map.[/li]
+[li][b]Decivilised markets[/b] are treated as populated [i][color=lightgrey](can be disabled in settings)[/color][/i] and aligned with [b]Neutral[/b] faction (politically disorganised as contrasted by the [b]Independent[/b] faction). Systems only with decivilised markets are painted in their own style [i][color=lightgrey](adjustable in settings)[/color][/i].[/li]
+[li]Markets with [b]Abandoned Station[/b] condition are treated as unpopulated and produce no map paint.[/li]
+[li]All non-market entities produce no map paint.[/li]
+[/list]
 
 [spoiler=Examples]
 [center]
@@ -109,6 +115,7 @@ The main control interface of map layers is the collapsible [b]sidebar[/b] that 
 [color=red]Unclaimed[/color] [b]unpopulated systems[/b] are drawn very faintly just to show where systems touch.
 Those outlines of unpopulated systems can be toggled on and off independently from [b]populated systems[/b],
 which are always drawn even when there's no organised faction in the system (e.g. all colonies in a system are [b]decivilised[/b]).
+[i][color=lightgrey]You can also adjust their visual style independently from faction and decivilised systems.[/color][/i]
 [/center]
 [/spoiler]
 [/li]
@@ -133,7 +140,11 @@ Tooltips list markets producing no domination score.
 [/center]
 [/spoiler]
 [/li]
-[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. In domination views ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color]) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems. On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.
+[li]Factions holding any population centers are listed in a [b]sortable filter[/b]. Selecting any of them spotlights their presence across the sector. [b]Neutral[/b] is listed there alongside organised factions, so selecting it spotlights every system holding [b]decivilised[/b] colonies.
+[list]
+[li]In domination views ([color=maroon][b]Factions[/b][/color] and [color=maroon][b]Alliances[/b][/color]) [b]solid fill[/b] represents domination, [b]hatched fill[/b] represents presence in a system dominated by somebody else, [b]no fill[/b] represents claims on unpopulated systems.[/li]
+[li]On the [color=maroon][b]Claims[/b][/color] view all systems are painted with solid fill.[/li]
+[/list]
 
 [spoiler=Examples]
 [center]
@@ -148,7 +159,7 @@ Factions view filtered by [b]Pirates[/b].
 
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/domination-factions-unpopulated-claimed.png[/img]
 [b]Unpopulated systems[/b] get no paint in domination views.
-[b]Tia[/b] star system is shown as [b]Hegemony[/b]-owned because [b]Hegemony[/b] [color=red]holds a claim[/color] for it.
+[b]Tia[/b] star system is shown as [b]Hegemony[/b]-owned because [b]Hegemony[/b] [color=red]holds an unconditional claim[/color] for it.
 [/center]
 [/spoiler]
 [/li]
@@ -161,7 +172,7 @@ The [color=maroon][b]Political Map[/b][/color] comes with 3 views:
 [spoiler=Examples]
 [center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/domination-factions-penelope_star.png[/img]
-[b]Luddic Church[/b] claims [b]Penelope's Star[/b] but isn't present there,
+[b]Luddic Church[/b] [color=red]unconditionally claims[/color] [b]Penelope's Star[/b] but [color=red]isn't present[/color] there,
 and per domination rules actually present faction ([b]Independent[/b]) reads as the holder.
 The claim is still listed in the tooltip.
 [/li]
@@ -172,17 +183,17 @@ The claim is still listed in the tooltip.
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/domination-alliances-tooltip.png[/img]
 Tooltips in the [color=maroon][b]Alliances[/b][/color] view combine domination score of present alliance members.
 [/li]
-[li][color=maroon][b]Claims[/b][/color] - paints faction territory based on the vanilla [b]system claim[/b] mechanic - dynamic or unconditional. [b]Unconditional claims[/b] are set via sector memory and are the highest authority. [b]Unless a claim is unconditional, system claim is resolved dynamically[/b] - the single biggest market (that participates in the economy) wins, boosted by the presence of same-faction markets (of any kind) and any military industry constructed. [color=red]The player faction and non-territorial factions cannot lay claims dynamically.[/color] If you filter by a non-territorial faction, unclaimed systems with their presence will be spotlit.
+[li][color=maroon][b]Claims[/b][/color] - paints faction territory based on the vanilla [b]system claim[/b] mechanic - dynamic or unconditional. [b]Unconditional claims[/b] are set via sector memory and are the highest authority. [b]Unless a claim is unconditional, system claim is resolved dynamically[/b] - the single biggest market (that participates in the economy) wins, boosted by the presence of same-faction markets (of any kind) and any military industry constructed. [color=red]The player faction and [b]non-territorial[/b] factions cannot lay claims dynamically.[/color] If you filter by a [b]non-territorial[/b] faction, unclaimed systems with their presence will be spotlit.
 
 [spoiler=Examples]
 [center]
 [img height=250]https://raw.githubusercontent.com/Klark-Morrigan/Starsector-Mod-KMU/refs/heads/master/promo/claims-cored-but-somebody-else-is-present.png[/img]
-[b]Luddic Church[/b] isn't present in [b]Penelope's Star[/b] system, holds a claim on it,
-and there's a non-territorial faction ([b]Independent[/b]) present.
+[b]Luddic Church[/b] isn't present in [b]Penelope's Star[/b] system, [color=red]holds an unconditional claim[/color] on it,
+and there's a [color=red]non-territorial[/color] faction ([b]Independent[/b]) present.
 [/li]
 [/list][/spoiler][/spoiler]
 [spoiler=Spoiler protection]
-To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] system:
+To avoid spoilers, map layers operate on a vanilla-derived [b]visibility[/b] system [i][color=lightgrey](each component is available in settings)[/color][/i]:
 [list]
 [li][b]Hidden systems[/b] (with no hyperspace anchor generated off of a star, nebula, or a black hole) are not revealed unless there's a visible population center present or it holds an active gate.[/li]
 [li]Entities marked as [b]discoverable[/b] (hidden on the system map until in range of player fleet sensors) are not revealed. They are also listed on [color=maroon][b]Claims[/b][/color] tooltips because vanilla uses them in claim calculations, but are redacted.[/li]
@@ -276,5 +287,5 @@ To the [b]Fractal Softworks[/b] team for bringing us Starsector and continuously
 To the [b]modding community[/b] for producing awesome and inspiring mods that bring me back to Starsector every time.
 To developers and maintainers of [b]LazyLib[/b], [b]LunaLib[/b], [b]Console Commands[/b] for providing features this mod relies on.
 To developers and maintainers of [b]Nexerelin[/b] for bringing the politics of the sector to life.
-To awesome folks over at [b]r/Starsector[/b] and in [b]Discord[/b] communities for feedback and support.
+To awesome folks over at [b]Fractal Softworks forums[/b], at [b]r/Starsector[/b], and in [b]Discord[/b] communities for feedback and support.
 [/center]

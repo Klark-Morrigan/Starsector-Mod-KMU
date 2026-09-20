@@ -22,6 +22,8 @@ import kmu.maplayers.base.refresh.RefreshSignalTracker;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageOverlay;
 import kmu.maplayers.base.visibility.systems.MapVisibilityPass;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
+import kmu.maplayers.politicalmap.base.dominance.ColonyReadRules;
+import kmu.maplayers.politicalmap.base.dominance.DecivilisedColonyHabitation;
 import kmu.maplayers.politicalmap.base.dominance.HolderPass;
 import kmu.maplayers.politicalmap.base.render.territories.PoliticalMapTerritories;
 import kmu.maplayers.politicalmap.base.render.territories.ResolvedHolding;
@@ -316,10 +318,17 @@ final class PoliticalMapCache {
 
         } else {
 
+            // The two halves of the rule come from different places on purpose. The visibility half
+            // is the cut's, because it is what decided which systems got cells - reading it live
+            // here would resolve holding for a sector the standing geometry was not cut for. The
+            // habitation half reseeds nothing, so it is read where the pass opens, once for the
+            // rebuild.
             var pass = new HolderPass(
-                view.resolveGrouping(),
-                staleHalves.cellCut().visibilityRules().colonyVisibility(),
-                sectorIndex);
+                sectorIndex,
+                new ColonyReadRules(
+                    staleHalves.cellCut().visibilityRules().colonyVisibility(),
+                    DecivilisedColonyHabitation.readFromLunaSettings()),
+                view.resolveGrouping());
 
             wasHoldingReused = decider.canReuseStandingHolding(
                 staleHalves,

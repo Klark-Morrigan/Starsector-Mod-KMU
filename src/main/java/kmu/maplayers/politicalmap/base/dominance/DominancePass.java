@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.StarSystemAPI;
 import kmlib.starsector.markets.colonies.Colonies;
 
 import kmu.maplayers.base.visibility.colonies.ColonyKnowledge;
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.dominance.weighting.DominanceRules;
 
 import java.util.List;
@@ -67,22 +66,22 @@ public record DominancePass(
      * A pass over one sector under explicit knobs, opening the colony index the reads below
      * share - the entry a caller that resolves the knobs itself builds a pass through.
      *
-     * @param sector           the sector this pass reads; null yields a pass answering an empty
-     *                         colony set for every system, matching how the reads treat an
-     *                         unreachable sector
-     * @param rules            the weighting rule scoring each market's worth
-     * @param colonyVisibility the rule this pass shows colonies under
-     * @param grouping         the grouping this pass folds factions into blocs under
+     * @param sector          the sector this pass reads; null yields a pass answering an empty
+     *                        colony set for every system, matching how the reads treat an
+     *                        unreachable sector
+     * @param rules           the weighting rule scoring each market's worth
+     * @param colonyReadRules the rules this pass reads colonies under
+     * @param grouping        the grouping this pass folds factions into blocs under
      * @return a pass over that sector carrying those knobs
      */
     public static DominancePass over(
             SectorAPI sector,
             DominanceRules rules,
-            ColonyVisibility colonyVisibility,
+            ColonyReadRules colonyReadRules,
             HolderGrouping grouping) {
 
         return over(
-            HolderPass.over(sector, colonyVisibility, grouping),
+            HolderPass.over(sector, colonyReadRules, grouping),
             rules);
     }
 

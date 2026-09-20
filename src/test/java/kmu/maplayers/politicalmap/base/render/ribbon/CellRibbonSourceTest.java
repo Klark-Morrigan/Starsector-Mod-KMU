@@ -9,7 +9,6 @@ import kmlib.profiling.SilentProfiler;
 import kmlib.starsector.systems.SystemKey;
 import kmlib.testfixtures.starsector.systems.StarSystemFixture;
 
-import kmu.maplayers.base.visibility.colonies.ColonyVisibility;
 import kmu.maplayers.politicalmap.base.PoliticalMapView;
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 import kmu.maplayers.politicalmap.base.dominance.HolderGroupingFixture;
@@ -39,6 +38,7 @@ import java.util.Set;
 
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildCellKey;
 import static kmu.maplayers.base.geometry.CellKeyFixture.buildKeyedValues;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 import static kmu.maplayers.politicalmap.base.render.ribbon.RibbonCellFixtures.SQUARE_CELL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -583,7 +583,7 @@ final class CellRibbonSourceTest {
         when(sectorMock.getStarSystems())
             .thenReturn(systems);
 
-        return HolderPass.over(sectorMock, ColonyVisibility.BASE_FOG, HolderGrouping.identity());
+        return HolderPass.over(sectorMock, UNDER_THE_FOG, HolderGrouping.identity());
     }
 
     private static RibbonBakeSurface buildSurfaceKeeping(CellRingPathCache ringPathCache) {

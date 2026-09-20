@@ -69,7 +69,8 @@ the drawing code passes two inputs:
   carrying which sector is being drawn,
   the grouping
   (whether factions stand alone or merge into alliances),
-  the colony rule saying what the player may be shown of a colony,
+  the colony rules saying what the player may be shown of a colony
+  and whether a decivilised world counts as somebody living in its system,
   and the one walk of each system every reader shares,
 - which faction or alliance,
   if any,

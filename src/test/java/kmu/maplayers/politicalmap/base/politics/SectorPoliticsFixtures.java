@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static kmu.maplayers.base.visibility.colonies.ColonyVisibility.BASE_FOG;
+import static kmu.maplayers.politicalmap.base.dominance.ColonyReadRulesFixtures.UNDER_THE_FOG;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -108,10 +108,8 @@ public final class SectorPoliticsFixtures {
      * @return a pass over that sector
      */
     public static HolderPass buildHolderPassOver(SectorAPI sector) {
-        return HolderPass.over(
-            sector,
-            BASE_FOG, // Undiscovered markets are not included.
-            HolderGrouping.identity());
+        // Undiscovered markets are not included, and a decivilised world inhabits its system.
+        return HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());
     }
 
     /**
