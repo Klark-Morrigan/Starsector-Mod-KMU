@@ -19,6 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - A **decivilised world** is now revealed by another faction's colony in the same system at every setting of *Map - Visibility* **Show decivilised worlds surveyed at least to**. That setting now governs your own survey alone: at *Seen* a visit to the system is enough, and at *Preliminary* or *Full* you must survey the world itself. Previously the two upper levels also refused a neighbouring colony's word, so a world plainly visible to everyone living beside it stayed off the map.
+- **Show decivilised worlds surveyed at least to** now ships at *Full* rather than *Seen*. Unless you have set the field yourself, in which case your value is kept, a decivilised world is named only once you have surveyed it or somebody is already living in its system. Flying past no longer puts one on the map. With a neighbour's word travelling at every level the common case is still covered, and surveying a world standing alone is now worth doing.
 - **Fast Rendering** version mismatches are now reported in-game. Where the map's cursor reading can no longer be taken from Fast Rendering, a notice names it and both versions once per session, and the sector map keeps drawing without responding to the cursor - no cell highlight, no star system tooltip. Previously the mismatch ended the map's render pass and named KM code in the error.
 
 ## [0.1.2] - 2026-09-16

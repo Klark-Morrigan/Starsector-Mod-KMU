@@ -28,7 +28,7 @@ public final class KmuMapVisibilitySettings {
     // that were never discoverable, so the fog admits them from the first day of a campaign. The
     // last three reseed the geometry, so moving one forces a geometry rebuild rather than the
     // restyle a styling knob triggers. Two of those widen outright; the survey level runs both
-    // ways, since it also decides whether a collapsed colony may be found on a neighbour's word.
+    // ways, since it can be set below or above the bar the game itself shows a condition from.
     private static final String SHOW_UNSEEN_ABANDONED_STATIONS_FIELD =
         "kmu_map_visibility_overrides_shouldShowUnseenAbandonedStations";
 
@@ -55,11 +55,16 @@ public final class KmuMapVisibilitySettings {
 
     private static final boolean DEFAULT_SHOW_HIDDEN_SYSTEMS = false;
 
-    // Not an "off" the way its neighbours are - a survey level always applies - and this one is the
-    // level vanilla itself shows a condition from, so the shipped state says exactly what the game
-    // does and no more.
+    // Not an "off" the way its neighbours are - a survey level always applies - so the shipped
+    // level is the most demanding one rather than the safe way round. A decivilised world standing
+    // in otherwise empty space confuses more than it tells, so the map asserts one only on a
+    // registered act: the survey vanilla stamps, or a neighbour already visible in the system.
+    // The neighbour route is live at every level, which covers the common case without the map
+    // naming a world the player has merely flown past, and leaves surveying a lone one worth
+    // doing. SEEN, the level vanilla shows a condition from, is a lower bar than the map's own
+    // claim is worth.
     private static final SurveyLevelChoice DEFAULT_DECIVILISED_WORLD_SURVEY_LEVEL =
-        SurveyLevelChoice.SEEN;
+        SurveyLevelChoice.FULL;
 
     private KmuMapVisibilitySettings() {
     }
@@ -101,8 +106,9 @@ public final class KmuMapVisibilitySettings {
 
     /**
      * @return how far a decivilised world must have been surveyed before the map will say its
-     *         colony has collapsed; SEEN by default, which is what vanilla itself asks before
-     *         showing a condition. A separate axis from discovery: a planet flown past is
+     *         colony has collapsed; FULL by default, so an untouched install asserts such a
+     *         world only once the player has surveyed it or a neighbour vouches for it. A
+     *         separate axis from discovery: a planet flown past is
      *         discovered whatever its survey level says. The bar governs the player's own
      *         instruments and nothing beyond them: NONE admits every such world outright, SEEN is
      *         where having flown past is survey enough, and PRELIMINARY or FULL asks for readings
