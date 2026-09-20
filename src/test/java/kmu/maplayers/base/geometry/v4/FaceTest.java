@@ -28,6 +28,16 @@ class FaceTest {
             new double[] {0, 100}),
         new int[] {0, 1, 2, 3});
 
+    // The same four corners walked the other way round, which is how the outside of
+    // everything comes back from a walk.
+    private static final LabelledRing SQUARE_WOUND_BACKWARDS = new LabelledRing(
+        List.of(
+            new double[] {0, 100},
+            new double[] {100, 100},
+            new double[] {100, 0},
+            new double[] {0, 0}),
+        new int[] {0, 1, 2, 3});
+
     // A square 20 across inside it, wound clockwise as a hole is, enclosing 400.
     private static final LabelledRing HOLE = new LabelledRing(
         List.of(
@@ -58,11 +68,9 @@ class FaceTest {
 
         @Test
         void aRingWoundTheOtherWayIsTheOutsideOfEverything() {
-            // The same four corners walked backwards. Which of the two a face is, is read off
-            // its own ring rather than carried beside it, so no caller can label it one way
-            // and wind it the other.
-            assertThat(Face.encloseFace(new LabelledRing(
-                    SQUARE.vertices().reversed(), SQUARE.edgeLabels())).isOuterFace())
+            // Which of the two a face is, is read off its own ring rather than carried beside
+            // it, so no caller can label it one way and wind it the other.
+            assertThat(Face.encloseFace(SQUARE_WOUND_BACKWARDS).isOuterFace())
                 .isTrue();
         }
 
