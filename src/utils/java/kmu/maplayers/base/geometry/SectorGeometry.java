@@ -63,9 +63,7 @@ public record SectorGeometry(
             EdgeInsetRule insetRule,
             SectorGeometryParameters parameters) {
 
-        var cellEdges = fixture.buildCellEdgesBySystemKey(
-            parameters.cellRadius(),
-            parameters.boundSegments());
+        var cellEdges = fixture.buildCellEdgesBySystemKey(parameters);
 
         // The one place the effective keys are decided. The frontier's redistribution pass
         // belongs here, between the partition and the shaping, replacing both the cell set
