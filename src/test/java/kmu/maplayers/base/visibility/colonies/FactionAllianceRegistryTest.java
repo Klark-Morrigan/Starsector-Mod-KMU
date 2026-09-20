@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

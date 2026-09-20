@@ -1,5 +1,7 @@
 package kmu.mods.nexerelin.alliances;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

@@ -1,5 +1,7 @@
 package kmu.maplayers.base.visibility.colonies;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
+
 import java.util.HashMap;
 
 /**

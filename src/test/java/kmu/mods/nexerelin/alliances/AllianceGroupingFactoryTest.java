@@ -1,5 +1,7 @@
 package kmu.mods.nexerelin.alliances;
 
+import kmlib.starsector.factions.alliances.AllianceRecord;
+
 import kmu.maplayers.politicalmap.base.dominance.HolderGrouping;
 
 import org.junit.jupiter.api.Nested;

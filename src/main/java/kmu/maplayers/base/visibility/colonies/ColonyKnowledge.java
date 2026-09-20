@@ -3,13 +3,13 @@ package kmu.maplayers.base.visibility.colonies;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.StarSystemAPI;
 
+import kmlib.starsector.factions.alliances.FactionAlliances;
 import kmlib.starsector.markets.DecivilisedMarkets;
 import kmlib.starsector.markets.MarketVisibility;
 import kmlib.starsector.markets.colonies.Colonies;
 import kmlib.starsector.markets.colonies.Colony;
 import kmlib.starsector.markets.colonies.KnownColonyReader;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -350,44 +350,24 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // apart from the projection read above rather than overloading it, the two differing in what
     // their argument means - a kind to want, against the whole of the filter.
     //
-    // Walked in the set's own order rather than gated colonies after ungated ones, since a
-    // caller mirroring vanilla's tie rules reads that order and would resolve differently.
+    // The walk itself is the set's, which is what keeps the order the set's own rather than this
+    // class's: a caller mirroring vanilla's tie rules reads that order and would resolve
+    // differently under one imposed here. What is added is the absent set, which the map reads as
+    // a place holding nothing and the library has no call to answer for.
     private static List<Colony> collectColonies(
             Colonies colonies,
             Predicate<Colony> isPassingColony) {
 
-        if (colonies == null) {
-            return List.of();
-        }
-        var passingColonies = new ArrayList<Colony>();
-
-        for (var colony : colonies.colonies()) {
-
-            if (isPassingColony.test(colony)) {
-                passingColonies.add(colony);
-            }
-        }
-        return List.copyOf(passingColonies);
+        return colonies == null
+            ? List.of()
+            : colonies.selectColonies(isPassingColony);
     }
 
     // The emptiness of the same test, stopped at the first colony that passes - the pair to the
     // walk above, over the very filter that walk would have taken.
-    //
-    // Its own walk rather than the listing's isEmpty, because the cell that paints a place and
-    // the scan that decides whether to draw it at all ask this per system and per frame, and
-    // never want the contents.
     private static boolean hasAnyColony(Colonies colonies, Predicate<Colony> isPassingColony) {
-
-        if (colonies == null) {
-            return false;
-        }
-        for (var colony : colonies.colonies()) {
-
-            if (isPassingColony.test(colony)) {
-                return true;
-            }
-        }
-        return false;
+        return colonies != null
+            && colonies.hasAnyColony(isPassingColony);
     }
 
     // The first pass: who is here whose word about whatever else stands in this place would
