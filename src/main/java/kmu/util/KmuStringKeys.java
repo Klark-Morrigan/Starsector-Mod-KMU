@@ -19,7 +19,7 @@ public final class KmuStringKeys {
 
     /**
      * What a session loses where the renderer binding the map's cursor read stands on stops
-     * holding, for the consequence slot of KMLib's compatibility notice. "Will not respond to the
+     * holding, for the consequence slot of KMLib's compatibility notice. "Won't respond to the
      * cursor" rather than the highlight alone, which understates it - the hover box is keyed to the
      * same resolved cell and goes with it - and rather than "overlays will not work", which
      * overstates it: the overlays still draw, and the sidebar previews are keyed off a row the

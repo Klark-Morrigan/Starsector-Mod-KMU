@@ -12,6 +12,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Fast Rendering** version mismatches are now reported in-game. Where the map's cursor reading can no longer be taken from Fast Rendering, a notice names it and both versions once per session, and the sector map keeps drawing without responding to the cursor - no cell highlight, no star system tooltip. Previously the mismatch ended the map's render pass and named KM code in the error.
+
 ## [0.1.2] - 2026-09-16
 
 ### Added
