@@ -17,6 +17,16 @@ public final class KmuStringKeys {
     /** strings.json category namespacing every KMU-owned string. */
     public static final String CATEGORY = "kmu";
 
+    /**
+     * What a session loses where the renderer binding the map's cursor read stands on stops
+     * holding, for the consequence slot of KMLib's compatibility notice. "Won't respond to the
+     * cursor" rather than the highlight alone, which understates it - the hover box is keyed to the
+     * same resolved cell and goes with it - and rather than "overlays will not work", which
+     * overstates it: the overlays still draw, and the sidebar previews are keyed off a row the
+     * pointer is over rather than off the cursor's place on the map.
+     */
+    public static final String COMPATIBILITY_LOST_MAP_CURSOR = "compatibility_lost_map_cursor";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";

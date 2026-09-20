@@ -2,7 +2,8 @@ package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.BoxEdge;
 import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
+import kmlib.starsector.ui.controls.specs.TabsSpec;
 import kmlib.starsector.ui.font.StripTextMeasurers;
 import kmlib.starsector.ui.layout.Padding;
 import kmlib.starsector.ui.layout.TabPanelLayout;
@@ -50,7 +51,7 @@ import java.util.Set;
  * screens' bands would hold half of each host's look with the other half elsewhere. Taking it as an
  * argument is also what leaves this class with no map-versus-intel branch beyond the anchor.
  *
- * <p>The layer selector is one {@link ControlSpec.Tabs} control whose action selects the layer at
+ * <p>The layer selector is one {@link TabsSpec} control whose action selects the layer at
  * the clicked index, so the layer switch rides on the control itself and the input listener needs no tab
  * callback. Layout snaps every row to its measured label, so the placement needs a width measurer per face
  * the panel letters in: the tab face, which travels inside the same {@link TabStyle} the renderer paints
@@ -151,12 +152,12 @@ public final class LiveSidebarPlacement {
     // per offered layer in that order, since the control pairs a label to its hint by index - which is why
     // neither half drops a layer that answers nothing, and why the lit index is a position in that same
     // row rather than a search of it.
-    static ControlSpec.Tabs buildTabsSpec(
+    static TabsSpec buildTabsSpec(
             List<MapLayer> layers,
             MapLayer activeLayer,
             ActiveLayerSelection selection) {
 
-        return new ControlSpec.Tabs(
+        return new TabsSpec(
             resolveTabLabels(layers),
             resolveTabShortcuts(layers),
             resolveLitTabIndex(layers, activeLayer),

@@ -1,6 +1,6 @@
 package kmu.maplayers.base.sidebar;
 
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.widgets.lists.ActivePicks;
 import kmlib.starsector.ui.widgets.lists.ListColumns;
 import kmlib.starsector.ui.widgets.lists.ListPicker;

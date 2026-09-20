@@ -164,10 +164,10 @@ enforceRestrictedCalls {
         toTypes: ['PersistedActiveLayerSelection']
 }
 
-// On-demand Java formatting (`gradlew spotlessApply`). Applied after the source
-// sets above because the shared script formats
-// whichever ones exist when it runs; utils is KMU's own code, so it is styled
-// like main and test rather than exempted.
+// On-demand source cleanup (`gradlew formatJava`). Mechanical fixes only - it
+// never re-lays code. Applied after the source sets above because the shared
+// script reads whichever ones exist when it runs; utils is KMU's own code, so it
+// is cleaned like main and test rather than exempted.
 apply from: "${rootDir}/../Common-Java/gradle/spotless-java.gradle"
 
 // The shared conventions expose the resolved install root so KMU can locate

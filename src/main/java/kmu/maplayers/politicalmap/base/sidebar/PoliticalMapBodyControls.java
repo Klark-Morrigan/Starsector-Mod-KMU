@@ -1,7 +1,9 @@
 package kmu.maplayers.politicalmap.base.sidebar;
 
 import kmlib.starsector.ui.colour.StarsectorUiColour;
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.CheckboxSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
+import kmlib.starsector.ui.controls.specs.HorizontalRadioSpec;
 import kmlib.starsector.ui.text.TextSpan;
 
 import kmu.maplayers.base.layer.ScreenMemoryScope;
@@ -56,14 +58,14 @@ public final class PoliticalMapBodyControls {
     public static List<ControlSpec> buildSharedControls(BodyControlTarget target) {
 
         return List.of(
-            ControlSpec.Checkbox.lit(
+            CheckboxSpec.lit(
                 // The plain text tone: the box states an option rather than calling anything out.
                 new TextSpan(
                     KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_UNINHABITED),
                     StarsectorUiColour.VANILLA_TEXT.resolve()),
                 UninhabitedOutlinePreference.isOutlineDrawn(target.memoryScope()),
                 cellIndex -> toggleUninhabitedSystems(target)),
-            ControlSpec.HorizontalRadio
+            HorizontalRadioSpec
                 .of(
                     List.of(
                         KmuStringKeys.get(KmuStringKeys.POLITICAL_MAP_CTL_NAME_FULL),
@@ -93,7 +95,7 @@ public final class PoliticalMapBodyControls {
         }
         // No caption: the segment labels already name the views, so a trailing word would only repeat
         // what the row reads as.
-        return ControlSpec.HorizontalRadio.of(
+        return HorizontalRadioSpec.of(
             labels,
             PoliticalMapViewRegistry.getSelectedViewIndex(memoryScope),
             segmentIndex -> selectViewSegment(segmentIndex, memoryScope));

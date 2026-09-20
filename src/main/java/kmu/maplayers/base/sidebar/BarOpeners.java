@@ -1,7 +1,8 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.starsector.graphics.StarsectorSprites;
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
+import kmlib.starsector.ui.controls.specs.TabsSpec;
 import kmlib.starsector.ui.text.ImageSpan;
 import kmlib.starsector.ui.widgets.tabs.BandButtonSpec;
 import kmlib.starsector.ui.widgets.tabs.style.TabStyle;
@@ -57,7 +58,7 @@ public final class BarOpeners {
      */
     public static BandButtonSpec buildOpenerSpec(TabStyle hostStyle) {
         return new BandButtonSpec(
-            new ControlSpec.Tabs(
+            new TabsSpec(
                 List.of(NO_LABEL),
                 List.of(),
                 ControlSpec.NO_SELECTION,

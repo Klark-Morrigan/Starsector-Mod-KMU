@@ -1,6 +1,6 @@
 package kmu.maplayers.politicalmap.dominance.alliances;
 
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.politicalmap.base.RecedePreferences;
 import kmu.maplayers.politicalmap.base.sidebar.BodyControlTarget;

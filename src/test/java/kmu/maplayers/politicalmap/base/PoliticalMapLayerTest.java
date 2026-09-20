@@ -5,7 +5,10 @@ import com.fs.starfarer.api.SettingsAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.campaign.rules.MemoryAPI;
 
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.CheckboxSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
+import kmlib.starsector.ui.controls.specs.LabelSpec;
+import kmlib.starsector.ui.controls.specs.SideBySideSpec;
 import kmlib.starsector.ui.text.TextSpan;
 import kmlib.starsector.ui.widgets.lists.ListPicker;
 
@@ -355,11 +358,11 @@ final class PoliticalMapLayerTest {
 
                 // The right half is the recede: its caption, then the two toggles.
                 assertThat(sortRow.rightColumn().get(0))
-                    .isInstanceOf(ControlSpec.Label.class);
+                    .isInstanceOf(LabelSpec.class);
                 assertThat(sortRow.rightColumn().get(1))
-                    .isInstanceOf(ControlSpec.Checkbox.class);
+                    .isInstanceOf(CheckboxSpec.class);
                 assertThat(sortRow.rightColumn().get(2))
-                    .isInstanceOf(ControlSpec.Checkbox.class);
+                    .isInstanceOf(CheckboxSpec.class);
             }
         }
 
@@ -666,7 +669,7 @@ final class PoliticalMapLayerTest {
     // One sentinel control, named so an assertion can tell the composed pieces apart. A caption is the
     // simplest control there is, which is why it stands in for whatever the layer really contributes.
     private static ControlSpec buildMarker(String markerText) {
-        return ControlSpec.Label.createLabel(new TextSpan(markerText, MARKER_COLOUR));
+        return LabelSpec.createLabel(new TextSpan(markerText, MARKER_COLOUR));
     }
 
     // A settings proxy that answers every colour lookup with one tone. Which tone a row draws in is
@@ -682,11 +685,11 @@ final class PoliticalMapLayerTest {
 
     // The picker's paired sort row, found by type rather than by index so the assertion does not
     // re-state the framework picker's own row order, which is pinned where the picker lives.
-    private static ControlSpec.SideBySide findSortRow(List<ControlSpec> body) {
+    private static SideBySideSpec findSortRow(List<ControlSpec> body) {
         return body
             .stream()
-            .filter(ControlSpec.SideBySide.class::isInstance)
-            .map(ControlSpec.SideBySide.class::cast)
+            .filter(SideBySideSpec.class::isInstance)
+            .map(SideBySideSpec.class::cast)
             .findFirst()
             .orElseThrow();
     }

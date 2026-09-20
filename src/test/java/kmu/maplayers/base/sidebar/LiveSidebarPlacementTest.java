@@ -1,7 +1,7 @@
 package kmu.maplayers.base.sidebar;
 
 import kmlib.math.geometry.Rectangle;
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 import kmlib.starsector.ui.font.LazyFontCache;
 import kmlib.starsector.ui.font.TextFace;
 import kmlib.starsector.ui.input.TabPanelController;

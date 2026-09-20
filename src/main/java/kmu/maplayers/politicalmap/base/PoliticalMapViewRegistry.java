@@ -1,7 +1,7 @@
 package kmu.maplayers.politicalmap.base;
 
 import kmlib.starsector.memory.AddressedMemoryString;
-import kmlib.starsector.ui.controls.ControlSpec;
+import kmlib.starsector.ui.controls.specs.ControlSpec;
 
 import kmu.maplayers.base.layer.MapLayer;
 import kmu.maplayers.base.layer.MapLayerRegistry;
