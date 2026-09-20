@@ -5,9 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Index
 
+- [Unreleased](#unreleased)
 - [0.1.2](#012---2026-09-16)
 - [0.1.1](#011---2026-09-15)
 - [0.1.0](#010---2026-09-14)
+
+## [Unreleased]
 
 ## [0.1.2] - 2026-09-16
 
