@@ -18,6 +18,7 @@ import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.ui.overlays.CellsOverlay;
 import kmu.maplayers.base.geometry.ui.overlays.NamedRegions;
 import kmu.maplayers.base.geometry.ui.overlays.VoidSectionsOverlay;
+import kmu.maplayers.base.geometry.ui.settings.SavedViewerSettings;
 import kmu.maplayers.base.geometry.ui.settings.ViewerRefreshes;
 import kmu.maplayers.base.geometry.ui.settings.ViewerSettingsPanel;
 import kmu.maplayers.base.geometry.v3.BridgedContinents;
@@ -135,12 +136,6 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
 
     private static final Path SVG_DIRECTORY = Path.of("build", "reports", "political-map");
 
-    // Under the user's home rather than in the checkout, so a knob survives a clean, a branch
-    // switch and a fresh clone - which is what it did when the JDK kept it, and losing that
-    // would be trading one silent forgetting for another.
-    private static final Path SAVED_VALUES_FILE = Path.of(
-        System.getProperty("user.home"), ".kmu", "sector-geometry-viewer.json");
-
     private static final String WINDOW_TITLE = "KMU political map";
     private static final String CSV_EXTENSION = ".csv";
     private static final String SVG_EXTENSION = ".svg";
@@ -221,7 +216,7 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
         // Where the knobs are remembered, said once here because it is this application's
         // decision and not the rows' - and said before any row is built, since a row reads
         // its remembered value as it is built.
-        SavedValues.rememberIn(SAVED_VALUES_FILE);
+        SavedValues.rememberIn(SavedViewerSettings.savedValuesFile());
 
         SwingUtilities.invokeLater(() -> new SectorGeometryViewer().showWindow());
     }
@@ -392,7 +387,11 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
     @Override
     public void refreshVoidV4() {
 
-        bareVoid.refresh(fixture);
+        // The cells' own edges, which is where the line between cell and void already stands.
+        // Read off the geometry the rebuild just built rather than built again: the two would
+        // be the same partition computed twice, and v4 drawing against its own copy is how the
+        // two constructions come to disagree about where a cell ends.
+        bareVoid.refresh(geometry.cellEdgesByCellKey(), fixture);
         repaintMap();
     }
 
@@ -730,6 +729,10 @@ public final class SectorGeometryViewer implements ViewerRefreshes {
             // Topmost of the lines, so a coast reads unbroken against the cells it was traced
             // from - which is the one thing looking at it is for.
             continentCoasts.paintCoasts(g2);
+
+            // v4's frontage in the same pass as v3's, for the same reason: a run of border is
+            // read against the cells it runs along, so it goes over everything filled.
+            bareVoid.paintLandableFrontage(g2);
             cells.paintSites(g2, fixture.getSites());
         }
 

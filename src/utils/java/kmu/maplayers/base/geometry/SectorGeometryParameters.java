@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry;
 
+import kmlib.math.geometry.Disk;
 import kmlib.math.geometry.VoronoiCellBuilder;
 
 /**
@@ -139,6 +140,22 @@ public record SectorGeometryParameters(
      */
     public int measureArcSegments() {
         return boundSegments() / HALF_TURNS_PER_CIRCLE;
+    }
+
+    /**
+     * How coarsely the cells are actually drawn: how far the polygon each bound is flattened
+     * onto falls inside that bound at its worst.
+     *
+     * <p>The resolution the whole map is at, and so the figure anything comparing two readings
+     * of it needs - what counts as one corner reported twice, and what is too narrow to be a
+     * feature rather than an artefact of the flattening. It moves with
+     * {@link #boundSegments}, which is what makes restating the formula a way for one pass to
+     * go on judging at a setting the map is no longer drawn at.
+     *
+     * @return the widest gap between a chord of a cell's bound and the arc it stands for
+     */
+    public double measureBoundSagitta() {
+        return Disk.measureSagitta(cellRadius, boundSegments);
     }
 
     /**

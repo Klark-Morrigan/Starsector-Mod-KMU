@@ -6,6 +6,7 @@ import kmlib.math.geometry.Segment;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,17 +21,41 @@ import static org.assertj.core.api.Assertions.within;
  * assertions are counts and areas, which are what a missed junction moves and a moved corner
  * barely touches.
  *
+ * <p>The labels are the other subject. A piece is read by what bounds it, and the walk is the
+ * only place that can be got wrong silently: a label dropped at the cutting or swapped at the
+ * welding leaves a piece with the right shape that says the wrong thing about itself.
+ *
  * <p>One square with things laid across it throughout, so every expected area is a half, a
  * quarter or the whole of one number a reader already has in front of them.
  */
 class FaceWalkTest {
 
-    // A square 100 across from the origin, wound counter-clockwise, enclosing 10000.
-    private static final List<double[]> SQUARE = List.of(
-        new double[] {0, 0},
-        new double[] {100, 0},
-        new double[] {100, 100},
-        new double[] {0, 100});
+    // A square 100 across from the origin, wound counter-clockwise, enclosing 10000. Its four
+    // sides labelled 0 to 3 in walk order: bottom, right, top, left.
+    private static final LabelledRing SQUARE = new LabelledRing(
+        List.of(
+            new double[] {0, 0},
+            new double[] {100, 0},
+            new double[] {100, 100},
+            new double[] {0, 100}),
+        new int[] {0, 1, 2, 3});
+
+    // What every wall laid across the square is labelled. Well clear of the sides' labels, so
+    // a wall's label turning up where a side's should be is a fault and not a coincidence.
+    private static final int WALL = 9;
+
+    // A square 20 across in the middle of the first, touching nothing - so the two are
+    // separate groups of lines, and whether one is cut out of the other is a real question
+    // rather than one about a shared corner.
+    private static final int INNER = 5;
+
+    private static final LabelledRing INNER_SQUARE = new LabelledRing(
+        List.of(
+            new double[] {40, 40},
+            new double[] {60, 40},
+            new double[] {60, 60},
+            new double[] {40, 60}),
+        new int[] {INNER, INNER, INNER, INNER});
 
     // How far two reports of one corner may stand apart and still be welded into one. Far below
     // anything these fixtures contain: every shared corner here is reported from the same
@@ -75,7 +100,7 @@ class FaceWalkTest {
             // the one thing asked.
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
-                List.of(new Segment(0, 50, 100, 50)),
+                List.of(new LabelledWall(new Segment(0, 50, 100, 50), WALL)),
                 WELD_TOLERANCE);
 
             assertThat(measureBoundedAreas(faces))
@@ -92,8 +117,8 @@ class FaceWalkTest {
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
                 List.of(
-                    new Segment(0, 50, 100, 50),
-                    new Segment(50, 0, 50, 100)),
+                    new LabelledWall(new Segment(0, 50, 100, 50), WALL),
+                    new LabelledWall(new Segment(50, 0, 50, 100), WALL)),
                 WELD_TOLERANCE);
 
             assertThat(measureBoundedAreas(faces))
@@ -110,8 +135,8 @@ class FaceWalkTest {
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
                 List.of(
-                    new Segment(0, 50, 50, 50),
-                    new Segment(50, 50, 50, 0)),
+                    new LabelledWall(new Segment(0, 50, 50, 50), WALL),
+                    new LabelledWall(new Segment(50, 50, 50, 0), WALL)),
                 WELD_TOLERANCE);
 
             var areas = measureBoundedAreas(faces);
@@ -129,7 +154,7 @@ class FaceWalkTest {
             // were, and what differs is only what the rest of the lines do.
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
-                List.of(new Segment(0, 50, 40, 50)),
+                List.of(new LabelledWall(new Segment(0, 50, 40, 50), WALL)),
                 WELD_TOLERANCE);
 
             var areas = measureBoundedAreas(faces);
@@ -146,7 +171,7 @@ class FaceWalkTest {
             // and back, so a later line laid onto that end has something to join.
             var faces = FaceWalk.walkFaces(
                 List.of(SQUARE),
-                List.of(new Segment(0, 50, 40, 50)),
+                List.of(new LabelledWall(new Segment(0, 50, 40, 50), WALL)),
                 WELD_TOLERANCE);
 
             assertThat(findTheBoundedFace(faces).boundary())
@@ -154,9 +179,118 @@ class FaceWalkTest {
                         Points.computeDistance(corner, new double[] {40, 50}))
                     .isLessThan(SAME_POINT));
         }
+
+        @Test
+        void everyEdgeOfAPieceSaysWhichLineItLiesOn() {
+            // The chord fixture read for its labels. The lower piece runs along the bottom,
+            // the lower halves of the right and left sides, and the chord; the upper piece
+            // along the upper halves, the top, and the chord. A label lost at the cut or
+            // swapped at the weld shows here as a side's label missing or the wall's doubled.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(new LabelledWall(new Segment(0, 50, 100, 50), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(collectBoundedFaces(faces))
+                .extracting(FaceWalkTest::sortLabels)
+                .containsExactlyInAnyOrder(
+                    new int[] {0, 1, 3, 9},
+                    new int[] {1, 2, 3, 9});
+        }
+
+        @Test
+        void aSlitCarriesItsWallsLabelBothWays() {
+            // Out along the wall and back down its other side are two edges of the one piece,
+            // and both lie on the wall. The label is a fact about the line, not about which
+            // side of it the walk was on.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(new LabelledWall(new Segment(0, 50, 40, 50), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(Arrays.stream(findTheBoundedFace(faces).edgeLabels())
+                    .filter(label -> label == WALL)
+                    .count())
+                .isEqualTo(2);
+        }
+
+        @Test
+        void aRingInsideAnotherIsCutOutOfIt() {
+            // Two rings that never touch are two groups, each closing an outside of its own.
+            // The inner group's outside sits within the outer group's piece, so it is what
+            // that piece runs around rather than a piece in its own right - and the piece
+            // loses its area. Left as a piece, the two would overlap and everything that adds
+            // up areas over a division would count the middle twice.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+
+            var outer = findPieceOfArea(faces, 9600.0);
+
+            assertThat(outer.holes()).hasSize(1);
+
+            assertThat(outer.holes().get(0).edgeLabels())
+                .containsOnly(INNER);
+        }
+
+        @Test
+        void aRingInsideAnotherIsStillAPieceOfItsOwn() {
+            // Being cut out of the piece around it does not stop it being one. What the walk
+            // hands back is every piece, and the inner ring bounds one.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+
+            assertThat(measureBoundedAreas(faces))
+                .hasSize(2);
+
+            assertThat(findPieceOfArea(faces, 400.0).holes())
+                .isEmpty();
+        }
+
+        @Test
+        void onlyTheOutsideOfEverythingSurvivesAsAnOuterFace() {
+            // The inner group's outside became a hole, so the one left is the outside of the
+            // whole division - which is what makes a frame worth laying, since framed there is
+            // no such face and every piece is bounded.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+
+            assertThat(faces)
+                .filteredOn(Face::isOuterFace)
+                .hasSize(1);
+        }
+
+        @Test
+        void aPieceIsNotCutOutOfOneItSharesEdgesWith() {
+            // The chord's two pieces run along the very same edges, so asking whether one
+            // sits inside the other is asking about a corner on both their boundaries - which
+            // has no answer. Only groups that share nothing are weighed against each other;
+            // asking anyway cut each piece out of the one beside it.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(new LabelledWall(new Segment(0, 50, 100, 50), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(collectBoundedFaces(faces))
+                .allSatisfy(piece -> assertThat(piece.holes()).isEmpty());
+        }
+
+        @Test
+        void labelsRunParallelToTheBoundary() {
+
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(
+                    new LabelledWall(new Segment(0, 50, 100, 50), WALL),
+                    new LabelledWall(new Segment(50, 0, 50, 100), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(faces)
+                .allSatisfy(face ->
+                    assertThat(face.edgeLabels()).hasSize(face.boundary().size()));
+        }
     }
 
-    // Every piece that is not the outside, by area, smallest first. Sorted so a fixture whose
+    // Every piece that is not the outside, by area, smallest first. (helpers below) Sorted so a fixture whose
     // pieces differ can name them in an order a reader can follow rather than in whichever
     // order the walk happened to close them.
     private static List<Double> measureBoundedAreas(List<Face> faces) {
@@ -192,8 +326,33 @@ class FaceWalkTest {
         return bounded.get(0);
     }
 
+    // The one piece of a given size, insisted on rather than picked out: two pieces of the
+    // same area would make whichever came first stand for both.
+    private static Face findPieceOfArea(List<Face> faces, double area) {
+
+        var matching = collectBoundedFaces(faces).stream()
+            .filter(piece -> Math.abs(piece.measureArea() - area) < AREA_SLACK)
+            .toList();
+
+        assertThat(matching)
+            .as("one piece covering %.0f", area)
+            .hasSize(1);
+
+        return matching.get(0);
+    }
+
     private static List<Face> collectBoundedFaces(List<Face> faces) {
 
         return faces.stream().filter(face -> !face.isOuterFace()).toList();
+    }
+
+    // A face's labels in order of value, since which edge the walk started from decides where
+    // the ring begins and the assertion is about which lines bound the piece, not where.
+    private static int[] sortLabels(Face face) {
+
+        var labels = face.edgeLabels();
+
+        Arrays.sort(labels);
+        return labels;
     }
 }

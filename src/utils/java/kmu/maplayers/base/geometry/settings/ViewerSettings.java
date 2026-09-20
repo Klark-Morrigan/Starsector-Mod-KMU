@@ -196,6 +196,13 @@ public final class ViewerSettings {
     // layer is a division of this, so it is the first thing that layer stack has to agree with.
     public boolean showBareVoid = true;
 
+    // The shore of v4's pieces a straight line from elsewhere on the same piece can arrive at.
+    // A diagnostic of the bare void rather than a layer of it: nothing is laid from it yet, and
+    // it is drawn so that what a span may be anchored on can be looked at before any span is
+    // made to obey it. Off, like v3's, since it is read for a reason rather than looked at
+    // every time.
+    public boolean showLandableFrontageV4;
+
     // The cells' own names, whose system IDs the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
     public boolean showCellNames;
@@ -400,6 +407,7 @@ public final class ViewerSettings {
     public Color continentCoastalVoidEdge = CONTINENT_COASTAL_VOID_DEFAULT;
 
     public Color bareVoidColour = BARE_VOID_DEFAULT;
+    public Color landableFrontageV4Colour = LANDABLE_FRONTAGE_DEFAULT;
 
     public Color droppedStretchColour = DROPPED_STRETCH_DEFAULT;
     public Color landableFrontageColour = LANDABLE_FRONTAGE_DEFAULT;
@@ -545,6 +553,16 @@ public final class ViewerSettings {
      */
     public boolean isBareVoidShown() {
         return showVoidV4 && showBareVoid;
+    }
+
+    /**
+     * Whether v4's landable frontage is drawn, which is its construction's master and its own
+     * switch, for the reason {@link #isBareVoidShown} gives.
+     *
+     * @return true where both are on
+     */
+    public boolean isLandableFrontageV4Shown() {
+        return showVoidV4 && showLandableFrontageV4;
     }
 
     /**

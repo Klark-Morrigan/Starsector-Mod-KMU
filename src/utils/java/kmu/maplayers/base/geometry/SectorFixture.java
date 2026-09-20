@@ -216,7 +216,26 @@ public final class SectorFixture {
      * @param boundSegments sides of the polygon approximating each cell's radius bound
      * @return each system's cell edges, tagged with the neighbour across them
      */
-    Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(double cellRadius, int boundSegments) {
+    public Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(
+            SectorGeometryParameters parameters) {
+
+        return buildCellEdgesBySystemKey(
+            parameters.cellRadius(), parameters.boundSegments());
+    }
+
+    /**
+     * As above, with the two knobs named separately.
+     *
+     * <p>For a caller varying one of them on purpose - a sweep over the bound, say. Anything
+     * building the cells a sector is actually drawn at takes the parameters, so the reach and
+     * the flattening cannot come from two different settings.
+     *
+     * @param cellRadius    how far a cell may reach from its site
+     * @param boundSegments sides of the polygon approximating each cell's radius bound
+     * @return each system's cell edges, tagged with the neighbour across them
+     */
+    public Map<SystemKey, List<CellEdge>> buildCellEdgesBySystemKey(
+            double cellRadius, int boundSegments) {
 
         var edgesBySystemKey = new LinkedHashMap<SystemKey, List<CellEdge>>();
 
