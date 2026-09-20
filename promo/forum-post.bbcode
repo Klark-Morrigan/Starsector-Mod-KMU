@@ -101,7 +101,13 @@ The main control interface of map layers is the collapsible [b]sidebar[/b] that 
 [spoiler=Available map layers]
 [spoiler=Political Map (P)]
 [list]
-[li]Focuses on [b]populated colonies[/b] and their affiliation.
+[li]Focuses on [b]populated colonies[/b] (markets) and their affiliation.
+[list]
+[li]Only they paint the map.[/li]
+[li][b]Decivilised markets[/b] are treated as populated (can be disabled in settings) and aligned with [b]Neutral[/b] faction (politicaly disorganised as contrasted by the [b]Independent[/b] faction). Systems only with decivilised markets are painted in their own style (adjustable in settings).[/li]
+[li]Markets with [b]Abandoned Station[/b] condition are treated as unpopulated and produce no map paint.[/li]
+[li]All non-market entities produce no map paint.[/li]
+[/list]
 
 [spoiler=Examples]
 [center]
@@ -109,6 +115,7 @@ The main control interface of map layers is the collapsible [b]sidebar[/b] that 
 [color=red]Unclaimed[/color] [b]unpopulated systems[/b] are drawn very faintly just to show where systems touch.
 Those outlines of unpopulated systems can be toggled on and off independently from [b]populated systems[/b],
 which are always drawn even when there's no organised faction in the system (e.g. all colonies in a system are [b]decivilised[/b]).
+You can also adjust their visual style independently from faction and decivilised systems.
 [/center]
 [/spoiler]
 [/li]
