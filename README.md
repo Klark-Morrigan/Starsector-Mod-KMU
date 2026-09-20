@@ -12,6 +12,7 @@
   - [Console commands](#console-commands)
   - [Compatibility](#compatibility)
   - [Diagnostics](#diagnostics)
+- [Creative applications](#creative-applications)
 - [For developers](#for-developers)
   - [Versioning](#versioning)
   - [Build And Release](#build-and-release)
@@ -183,6 +184,10 @@ the mod has been made specifically compatible with:
   To trace issues interacting with vanilla UI.
 - **Profiling** toggle and level in **KMU** map dev settings combined with usage of **kmu_profiling** console command.
   To trace where performance drops occur.
+
+## Creative applications
+
+- [Manipulating territorial visualisaion into a video player](https://www.reddit.com/r/starsector/comments/1wl36nq/finally_bad_apple_thanks_kmu/).
 
 ## For developers
 
