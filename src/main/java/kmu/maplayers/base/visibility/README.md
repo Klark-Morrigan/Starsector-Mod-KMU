@@ -127,9 +127,11 @@ The fog answers the first for nearly everything;
 a collapsed colony,
 which vanilla admits on a survey level it writes for player acts only,
 may instead be found on the word of whoever else lives in the same system,
-so the ruin in orbit is drawn beside the colony that can see it.
-`ColonyKind` says which kinds that reaches,
-and only while the survey asked for is no more than a sighting is worth.
+so the collapsed world in orbit is drawn beside the colony that can see it.
+`ColonyKind` says which kinds that reaches.
+The survey level asked for is put to the player's own sighting of such a world and to nothing beside it:
+a neighbour's word is no reading anybody's instruments took,
+so it travels at every bar.
 
 `ColonyKindLookup` folds those kinds by colony ID for a reader that meets a colony as a row rather than as a colony,
 and `ColonyDiscoveryLookup` folds the entity's own found-or-not flag the same way for the same reader.
@@ -155,7 +157,8 @@ and by the substrate's own poll (`base/refresh`) for what a place's own inhabita
 `ColonySightingInstaller` stands the travelling half up on load.
 The player's arrival writes the gated shapes alone;
 the inhabitants' sweep also writes the collapsed worlds their word is the only thing showing,
-so one outlives the last neighbour that could report it.
+so one outlives the last neighbour that could report it -
+up to the survey bar, that written record being read under it as the player's own sightings are.
 Its entries sit in the shared `ObservationStore` under a key of its own,
 each spelt by `ColonyObservationCodec` -
 the moment,

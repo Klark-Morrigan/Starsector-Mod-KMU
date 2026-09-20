@@ -31,10 +31,12 @@ import java.util.function.Predicate;
  * been found, and the kinds a bare fog would leak must additionally have been observed. So a
  * widened gate can never show what has not been found.
  *
- * <p>Being found is itself two routes. The fog is the ordinary one; the other is somebody living
- * in the same place having reported the colony standing there, which reaches only the kinds that
- * say so and only while the player has asked for no more than a sighting is worth. A report widens
- * where a gate narrows, which is why it sits inside the first fact rather than beside the second.
+ * <p>Being found is itself three routes. The fog is the ordinary one; beside it stand a report
+ * from somebody living in the same place, and the player having laid eyes on the colony - both
+ * reaching only the kinds that say a report can find them. The report travels whatever survey the
+ * player has asked for, a neighbour's word being no reading of anybody's instruments; the player's
+ * own sighting is the one the survey bar is put to. A report widens where a gate narrows, which is
+ * why these sit inside the first fact rather than beside the second.
  *
  * <p>The rule and the register travel together because every projection spends both, and one
  * without the other answers nothing: a gate with no observations behind it holds back everything it
@@ -444,18 +446,30 @@ public final class ColonyKnowledge implements KnownColonyReader {
             || isObserved(colony, settlingOwnerIds);
     }
 
-    // Whether the colony has been found at all: the fog, or a report from the place's own
-    // inhabitants standing in for it.
+    // Whether the colony has been found at all, on three routes: the fog, a report from the
+    // place's own inhabitants, and the player's own sighting held to the survey bar.
     //
     // A collapsed colony is admitted by vanilla's survey level alone, and vanilla writes that
     // level for player acts only - so the world stays off the map while the faction's colony
-    // orbiting beside it is drawn, though anybody living there can plainly see the ruin.
+    // orbiting beside it is drawn, though anybody living there can plainly see what became of it.
     //
-    // Somebody's word is worth a sighting and no survey, which leaves one bar this really decides.
-    // At the lowest the fog asks for no survey at all and admits the world outright, so this arm
-    // is never reached; at the two above it the player has asked for readings nobody's presence
-    // produces, and it is refused. The route earns its keep at the bar in between, which is the
-    // one the map ships on.
+    // The bar governs the player's own instruments and nothing beyond them. A neighbour settled in
+    // the same place can see the world standing there, which is knowledge the player holds however
+    // much they have asked of their own readings - so throttling that route by the bar would have
+    // the map refuse to state a fact it was never the bar's business to judge. The player's own
+    // sighting is the half the bar really decides: at the level a sighting is worth, having flown
+    // past is survey enough, and above it the player has asked for readings off the world itself,
+    // which a fly-past does not produce.
+    //
+    // The register a sighting reads is written by the inhabitants' sweep as well, so at a raised
+    // bar a world kept only by a recorded report drops off once the last neighbour is gone. That
+    // follows from what the bar means rather than defeating the route: while somebody is standing
+    // there the map says so, and once nobody is, what is left is a second-hand note from a player
+    // who asked for readings instead.
+    //
+    // Split at the call rather than inside isObserved, which the gate below spends whole: a gated
+    // colony is withheld until somebody saw it, whichever of the two saw it, and that question has
+    // no survey bar in it at all.
     //
     // Which kinds a report can reach is the kind's own answer, and no kind that says yes settles
     // its place - so nothing found this way ever joins the owners folded for the first pass, and
@@ -468,10 +482,15 @@ public final class ColonyKnowledge implements KnownColonyReader {
     // names for one fact.
     private boolean isFoundColony(Colony colony, Set<String> settlingOwnerIds) {
 
-        return isAdmittedByFog(colony, rule)
-            || (readKindOf(colony).isFoundByReport()
-                && DecivilisedMarkets.isMetBySighting(rule.ungovernedColonySurveyLevel())
-                && isObserved(colony, settlingOwnerIds));
+        if (isAdmittedByFog(colony, rule)) {
+            return true;
+        }
+        if (!readKindOf(colony).isFoundByReport()) {
+            return false;
+        }
+        return isObservedByInhabitants(colony, settlingOwnerIds)
+            || (DecivilisedMarkets.isMetBySighting(rule.ungovernedColonySurveyLevel())
+                && isSighted(colony));
     }
 
     // Whether a colony amounts to people living where it stands - the one thing that separates

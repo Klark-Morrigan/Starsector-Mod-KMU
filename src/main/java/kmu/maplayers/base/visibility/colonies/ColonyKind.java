@@ -131,9 +131,10 @@ public enum ColonyKind {
      * level - state written for player acts only. Without this it is the one thing in a system that
      * somebody living there can see and the map cannot say.
      *
-     * <p>What a report is worth is not settled here: somebody's word that a world is standing there
-     * is a sighting and never a survey, and {@link DecivilisedMarkets#SIGHTING_SURVEY_LEVEL} is the
-     * bar it is held to.
+     * <p>What a report is worth is not settled here, and no survey bar is put to it: somebody
+     * living in the place can see the world standing there whatever readings the player has asked
+     * for. A bar belongs to the other route into the same kinds - the player having laid eyes on
+     * one - and {@link DecivilisedMarkets#SIGHTING_SURVEY_LEVEL} is what that sighting is worth.
      *
      * <p>Asked of the kind rather than tested against a constant at the rule that uses it, for the
      * reason {@link #isSettlingLocation} is.

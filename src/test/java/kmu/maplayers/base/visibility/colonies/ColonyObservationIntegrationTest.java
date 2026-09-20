@@ -40,6 +40,14 @@ final class ColonyObservationIntegrationTest {
         DecivilisedMarkets.DEFAULT_SURVEY_LEVEL,
         Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
+    // The same rule with the survey bar raised as far as it goes - what a player asking for
+    // readings off the world itself has set, and the one thing that tells the two routes into a
+    // collapsed world apart.
+    private static final ColonyVisibility ASKING_A_FULL_SURVEY = new ColonyVisibility(
+        false,
+        MarketAPI.SurveyLevel.FULL,
+        Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
+
     private static final String DEAD_WORLD_ID = "tibicena";
     private static final String DERELICT_ID = "sentinel_gantries";
     private static final String MOVER_ID = "rat_exoship";
@@ -84,6 +92,29 @@ final class ColonyObservationIntegrationTest {
 
             assertThat(readKnownColoniesIn(fixture))
                 .containsExactly(new Colony(deadWorld, false));
+        }
+
+        @Test
+        void withholdsADeadWorldOnARecordedReportAloneWhereAFullSurveyIsAskedFor() {
+            // What the raised bar costs, stated where it happens rather than left to be
+            // discovered. A recorded report is written into the same register the player's own
+            // sightings are, and that register is what the bar is put to - so once the last
+            // neighbour is gone, all that is left of the world is a second-hand note from a player
+            // who asked for readings instead. While somebody is standing there the map still says
+            // so, which is the case below.
+            var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
+
+            placeDeadWorldIn(fixture);
+
+            var neighbour = listNeighbourIn(fixture);
+
+            fixture.openSectorMemory();
+
+            recordWhatTheSystemsInhabitantsSee(fixture);
+            decivilise(neighbour);
+
+            assertThat(readKnownColoniesIn(fixture, fixture.getSystem(), ASKING_A_FULL_SURVEY))
+                .isEmpty();
         }
 
         @Test
@@ -147,6 +178,21 @@ final class ColonyObservationIntegrationTest {
 
             assertThat(readKnownColoniesIn(fixture))
                 .contains(new Colony(derelict, false));
+        }
+
+        @Test
+        void showsADeadWorldItsNeighboursCanSeeWhereAFullSurveyIsAskedFor() {
+            // The route the bar does not reach, through the production walk rather than a staged
+            // set: the neighbour is standing in the system, so the world is on the map however
+            // much the player has asked of their own instruments. The sector's memory is left
+            // shut, which is what makes the live neighbour the only thing answering.
+            var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
+            var deadWorld = placeDeadWorldIn(fixture);
+
+            listNeighbourIn(fixture);
+
+            assertThat(readKnownColoniesIn(fixture, fixture.getSystem(), ASKING_A_FULL_SURVEY))
+                .contains(new Colony(deadWorld, false));
         }
     }
 
@@ -267,8 +313,19 @@ final class ColonyObservationIntegrationTest {
             ColonyKnowledgeFixture fixture,
             StarSystemAPI system) {
 
+        return readKnownColoniesIn(fixture, system, BOTH_GATES_ON);
+    }
+
+    // The rule stated by the case rather than defaulted, for the cases about which route into a
+    // collapsed world the survey bar reaches - the register being read the same way whichever bar
+    // is posed, which is the seam those cases are about.
+    private static List<Colony> readKnownColoniesIn(
+            ColonyKnowledgeFixture fixture,
+            StarSystemAPI system,
+            ColonyVisibility rule) {
+
         return new ColonyKnowledge(
-                BOTH_GATES_ON,
+                rule,
                 SectorColonySightings.readSightings(fixture.getSector()))
             .readKnownColonies(SystemColonies.readColoniesIn(fixture.getSector(), system));
     }
