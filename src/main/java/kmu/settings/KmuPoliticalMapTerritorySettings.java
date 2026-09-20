@@ -296,7 +296,9 @@ public final class KmuPoliticalMapTerritorySettings {
      *         draws that system as territory, offers its owner in the bloc picker, bands it in the
      *         presence ribbon and folds its size into the stats; on by default. Off moves only that
      *         projection - the world is still found, still listed, and still named in the box over
-     *         its cell - and the system keeps its cell and falls to the uninhabited kind
+     *         its cell - and the system falls to the uninhabited kind. It keeps a cell, but that
+     *         kind carries no fill and its outline is the sidebar's uninhabited-systems checkbox
+     *         rather than a knob here, so with that box unticked the cell draws nothing at all
      */
     public static boolean shouldDecivilisedSystemsDrawTerritory() {
         return KmuLunaSettings.readBoolean(

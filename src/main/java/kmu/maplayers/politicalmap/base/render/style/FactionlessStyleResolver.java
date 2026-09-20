@@ -40,14 +40,22 @@ public final class FactionlessStyleResolver {
      * space and hide it behind the uninhabited-systems checkbox - a populated system erased
      * from the map by a toggle that names the opposite of what it holds.
      *
+     * <p>That is a rule about where the answer is read from, not a promise that every populated
+     * system lands in {@link PoliticalMapCategory#DECIVILISED}. The set handed in is the pass's
+     * habitation, and a player may have said a decivilised world is not somebody living in its
+     * system; a system holding nothing else is then absent from the set and falls to
+     * {@link PoliticalMapCategory#UNINHABITED} on the player's own word. What is ruled out above
+     * is the map deciding that for itself off a holder map the player never saw.
+     *
      * <p>A live colony and a dead one therefore share the one bundle. The distinction the two
      * factionless styles draw is presence against absence - is anything here, or is this the
      * backdrop - and on that question a pirate haven and a revealed ruin answer alike. Which
      * kind of settlement it is would be a third bundle's worth of theme and settings to say,
      * and the map says it in the hover box instead.
      *
-     * @param inhabitedSystemKeys the systems something stands in this pass, live colony or
-     *                            known ruin
+     * @param inhabitedSystemKeys the systems something stands in this pass, live colony or - where
+     *                            the player has left such a world counting as habitation - a
+     *                            revealed decivilised one
      * @param systemKey           the system the cell draws as, or null for a cell with no star
      *                            of its own - a shard of leftover space, which names nothing to
      *                            look up and so is never inhabited. The null key never reaches

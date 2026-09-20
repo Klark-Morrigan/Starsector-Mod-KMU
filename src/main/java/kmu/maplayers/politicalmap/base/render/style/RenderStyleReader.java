@@ -162,32 +162,38 @@ public final class RenderStyleReader {
 
     // Reads each owned category's eight style settings into one bundle, so the build
     // loop applies them per cluster without eight lookups each.
+    //
+    // The two owned categories are the same eight knobs read twice over, and stay two methods
+    // rather than one parameterised by group. The field IDs cannot be composed from a group name:
+    // the suite that pins the shipped table against these sources follows each ID from a constant
+    // holding it as a literal, so an ID built from parts would leave the row unpinned and free to
+    // drift. What the two share is the crossing below, which is named once for that reason.
     static CategoryStyle readFactionStyle() {
         return new CategoryStyle(
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionFillColour()),
+            resolvePaintedElement(
+                KmuPoliticalMapTerritorySettings.getFactionFillColour(),
                 KmuPoliticalMapTerritorySettings.getFactionFillOpacity()),
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionOuterBorderColour()),
+            resolvePaintedElement(
+                KmuPoliticalMapTerritorySettings.getFactionOuterBorderColour(),
                 KmuPoliticalMapTerritorySettings.getFactionOuterBorderOpacity()),
             KmuPoliticalMapTerritorySettings.getFactionOuterBorderWidth(),
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getFactionInnerBorderColour()),
+            resolvePaintedElement(
+                KmuPoliticalMapTerritorySettings.getFactionInnerBorderColour(),
                 KmuPoliticalMapTerritorySettings.getFactionInnerBorderOpacity()),
             KmuPoliticalMapTerritorySettings.getFactionInnerBorderWidth());
     }
 
     static CategoryStyle readIndependentStyle() {
         return new CategoryStyle(
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentFillColour()),
+            resolvePaintedElement(
+                KmuPoliticalMapTerritorySettings.getIndependentFillColour(),
                 KmuPoliticalMapTerritorySettings.getIndependentFillOpacity()),
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentOuterBorderColour()),
+            resolvePaintedElement(
+                KmuPoliticalMapTerritorySettings.getIndependentOuterBorderColour(),
                 KmuPoliticalMapTerritorySettings.getIndependentOuterBorderOpacity()),
             KmuPoliticalMapTerritorySettings.getIndependentOuterBorderWidth(),
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(KmuPoliticalMapTerritorySettings.getIndependentInnerBorderColour()),
+            resolvePaintedElement(
+                KmuPoliticalMapTerritorySettings.getIndependentInnerBorderColour(),
                 KmuPoliticalMapTerritorySettings.getIndependentInnerBorderOpacity()),
             KmuPoliticalMapTerritorySettings.getIndependentInnerBorderWidth());
     }
@@ -197,9 +203,9 @@ public final class RenderStyleReader {
     // element has a colour choice - a factionless cell has no palette to pick from - so the
     // outline is unconditionally drawn and each opacity is its element's own on/off.
     static CategoryStyle readDecivilisedStyle() {
-        return neutralStyle(
-            new ElementStyle(
-                FactionPaletteSlot.resolvePaintSelectionOf(FactionPaletteChoice.PRIMARY),
+        return buildNeutralStyle(
+            resolvePaintedElement(
+                FactionPaletteChoice.PRIMARY,
                 KmuPoliticalMapTerritorySettings.getDecivilisedFillOpacity()),
             true, // Outline is drawn.
             KmuPoliticalMapTerritorySettings.getDecivilisedBorderOpacity(),
@@ -212,11 +218,21 @@ public final class RenderStyleReader {
     // uninhabited-systems checkbox, a per-save preference the rebuild samples and hands over -
     // while the opacity and width it strokes at stay settings-screen knobs read here.
     static CategoryStyle readUninhabitedStyle(boolean isUninhabitedOutlineDrawn) {
-        return neutralStyle(
+        return buildNeutralStyle(
             ElementStyle.NOT_DRAWN,
             isUninhabitedOutlineDrawn,
             KmuPoliticalMapTerritorySettings.getUninhabitedBorderOpacity(),
             KmuPoliticalMapTerritorySettings.getUninhabitedBorderWidth());
+    }
+
+    // One element's paint as the player authored it: a palette choice crossed into the selection
+    // the draw pass resolves, paired with the opacity it paints at.
+    //
+    // Named because the crossing is the same step for all seven elements read here, and an inline
+    // copy of it is what lets one element end up pointed at a slot its opacity was never chosen
+    // against - a drift no test of either half would catch, both halves being right.
+    private static ElementStyle resolvePaintedElement(FactionPaletteChoice colour, double opacity) {
+        return new ElementStyle(FactionPaletteSlot.resolvePaintSelectionOf(colour), opacity);
     }
 
     // Turns the player's smoothing switch into the quality the hatch pass strokes at. Named here
@@ -235,7 +251,7 @@ public final class RenderStyleReader {
     // The hidden arm is no selection rather than a no-colour one: this style is assembled here
     // rather than read from a player choice, so it can state the off case the way a style holds
     // it directly instead of routing a settings value through the crossing.
-    private static CategoryStyle neutralStyle(
+    private static CategoryStyle buildNeutralStyle(
             ElementStyle fill,
             boolean isOutlineDrawn,
             double outlineOpacity,
