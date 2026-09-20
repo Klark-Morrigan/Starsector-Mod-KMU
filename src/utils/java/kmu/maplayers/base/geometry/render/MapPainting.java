@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.render;
 
+import kmlib.math.geometry.RingRegion;
+
 import kmu.maplayers.base.geometry.CellGap;
 
 import java.awt.BasicStroke;
@@ -115,32 +117,21 @@ public final class MapPainting {
      * outlines. A piece read off a partition can run around another piece - the sea around its
      * continents - and drawn from its outline alone it covers them.
      *
-     * @param g2     what to draw with
-     * @param shapes each shape as its outline and the rings cut out of it
-     * @param look   how to paint each of them
+     * @param g2      what to draw with
+     * @param regions each shape as its outer ring and the rings cut out of it
+     * @param look    how to paint each of them
      */
-    public static void paintHollowedFills(
+    public static void paintRegionFills(
             Graphics2D g2,
-            List<Hollowed> shapes,
+            List<RingRegion> regions,
             FillLook look) {
 
         g2.setStroke(new BasicStroke(MapLook.FILL_EDGE_STROKE));
 
-        for (var shape : shapes) {
-            paintFilledShape(g2, buildHollowedPath(shape.outline(), shape.holes()), look);
+        for (var region : regions) {
+            paintFilledShape(
+                g2, buildHollowedPath(region.outerRing(), region.holeRings()), look);
         }
-    }
-
-    /**
-     * One shape of a division: the ring around it, and the rings of anything cut out of it.
-     *
-     * <p>Its own value rather than two lists travelling side by side, because a shape drawn
-     * from one piece's outline and another's holes is a shape nobody has.
-     *
-     * @param outline the ring around it
-     * @param holes   the rings cut out of it; empty for a solid shape
-     */
-    public record Hollowed(List<double[]> outline, List<List<double[]>> holes) {
     }
 
     // The one way a coast is drawn here: closed rings stroked at span weight in one opaque

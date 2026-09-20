@@ -42,9 +42,15 @@ import java.util.Map;
  */
 public final class BareVoid {
 
-    // What the frame is labelled with. Not a cell, and no cell index is negative, so nothing
-    // reading a piece's edges can mistake the edge of the sector for somebody's border.
-    public static final int THE_FRAME = -1;
+    // What the frame is labelled with.
+    //
+    // Negative, so it can be no cell's index - and deliberately NOT the negative KMLib's
+    // VoronoiCellBuilder.BOUND_EDGE uses, which is what a cell's own edges carry where nothing
+    // lies across them. Both of those reach a piece's labels, and they say opposite things:
+    // one means a cell stopped at its reach and void begins, the other means the sector did.
+    // Sharing a number would let a reader take the edge of the map for somebody's shore, and
+    // nothing would say otherwise.
+    public static final int THE_FRAME = -2;
 
     // How far outside the cells the frame stands, as a share of the sector's own span. Far
     // enough that the sea has room to read as a piece rather than as a rim, and near enough
@@ -217,8 +223,6 @@ public final class BareVoid {
     // one point. So the sagitta is exactly the gap the welding has to cover, and it is derived
     // from the knobs the cells were drawn at rather than chosen.
     private static double measureBoundGap(SectorGeometryParameters parameters) {
-
-        return parameters.cellRadius()
-            * (1 - Math.cos(Math.PI / parameters.boundSegments()));
+        return parameters.measureBoundSagitta();
     }
 }

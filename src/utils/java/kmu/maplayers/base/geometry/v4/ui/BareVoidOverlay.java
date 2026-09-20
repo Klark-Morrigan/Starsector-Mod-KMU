@@ -1,5 +1,7 @@
 package kmu.maplayers.base.geometry.v4.ui;
 
+import kmlib.math.geometry.RingRegion;
+
 import kmu.maplayers.base.geometry.CellEdge;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillLook;
@@ -40,7 +42,7 @@ public final class BareVoidOverlay {
 
     // What the last refresh read, kept so a frame paints the void the rest of the frame was
     // drawn from rather than a reading taken while painting.
-    private List<MapPainting.Hollowed> shapes = List.of();
+    private List<RingRegion> regions = List.of();
 
     private List<List<double[]>> landable = List.of();
 
@@ -61,14 +63,14 @@ public final class BareVoidOverlay {
         // Nothing else reads this, so with both layers off the walk would be paid for on every
         // rebuild to answer no one.
         if (!settings.isBareVoidShown() && !settings.isLandableFrontageV4Shown()) {
-            shapes = List.of();
+            regions = List.of();
             landable = List.of();
             return;
         }
 
         var bare = BareVoid.readBareVoid(cellEdges, fixture.getSites(), settings.parameters);
 
-        shapes = collectShapes(bare);
+        regions = collectRegions(bare);
         landable = settings.isLandableFrontageV4Shown()
             ? collectLandableRuns(bare)
             : List.of();
@@ -84,9 +86,9 @@ public final class BareVoidOverlay {
         if (!settings.isBareVoidShown()) {
             return;
         }
-        MapPainting.paintHollowedFills(
+        MapPainting.paintRegionFills(
             g2,
-            shapes,
+            regions,
             new FillLook(
                 settings.bareVoidColour, settings.voidFillOpacity, settings.bareVoidColour));
     }
@@ -107,9 +109,9 @@ public final class BareVoidOverlay {
     // Each piece as the painting takes it: the ring round it and the rings of what it runs
     // around. The sea runs around every group of cells, so filled from its outline alone it
     // would cover the whole sector - which is what the outline on its own cannot say.
-    private static List<MapPainting.Hollowed> collectShapes(BareVoid bare) {
+    private static List<RingRegion> collectRegions(BareVoid bare) {
 
-        var shapes = new ArrayList<MapPainting.Hollowed>();
+        var regions = new ArrayList<RingRegion>();
 
         for (var piece : bare.collectPieces()) {
 
@@ -118,9 +120,9 @@ public final class BareVoidOverlay {
             for (var hole : piece.holes()) {
                 holes.add(hole.vertices());
             }
-            shapes.add(new MapPainting.Hollowed(piece.boundary(), List.copyOf(holes)));
+            regions.add(new RingRegion(piece.boundary(), List.copyOf(holes)));
         }
-        return List.copyOf(shapes);
+        return List.copyOf(regions);
     }
 
     // Every piece's landable runs as the point runs the painting takes, which cell each is on

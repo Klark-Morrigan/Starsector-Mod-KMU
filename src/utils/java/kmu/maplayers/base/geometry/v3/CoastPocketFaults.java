@@ -196,7 +196,7 @@ public final class CoastPocketFaults {
             ? rules.parameters().cellRadius()
             : rules.parameters().measureDrawnReach();
 
-        return reach * (1 - Math.cos(Math.PI / rules.parameters().boundSegments()));
+        return rules.parameters().measureBoundSagitta();
     }
 
     // Every maximal stretch of one outline lying outside the drawn coast, with how far out the

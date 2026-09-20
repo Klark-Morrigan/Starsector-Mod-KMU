@@ -135,7 +135,7 @@ class LandableFrontageIntegrationTest {
             // A run's corners stand on its cell's frontier: on the polygon inscribed in the
             // bound, welded to a neighbour's within the same distance either way.
             var bare = readBare(sector, readCellEdges(sector));
-            var slack = 2 * measureSagitta();
+            var slack = 2 * KNOBS.measureBoundSagitta();
 
             for (var piece : bare.collectPieces()) {
                 for (var run : LandableFrontage.collectLandableRuns(piece)) {
@@ -163,7 +163,7 @@ class LandableFrontageIntegrationTest {
     private static Map<?, List<CellEdge>> readCellEdges(String sector) {
 
         return SectorFixture.loadSector(sector)
-            .buildCellEdgesBySystemKey(KNOBS.cellRadius(), KNOBS.boundSegments());
+            .buildCellEdgesBySystemKey(KNOBS);
     }
 
     private static int countCellEdges(int[] labels) {
@@ -176,10 +176,5 @@ class LandableFrontageIntegrationTest {
             }
         }
         return onCells;
-    }
-
-    private static double measureSagitta() {
-
-        return KNOBS.cellRadius() * (1 - Math.cos(Math.PI / KNOBS.boundSegments()));
     }
 }

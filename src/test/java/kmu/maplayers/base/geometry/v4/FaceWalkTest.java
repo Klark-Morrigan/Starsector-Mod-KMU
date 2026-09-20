@@ -44,6 +44,19 @@ class FaceWalkTest {
     // a wall's label turning up where a side's should be is a fault and not a coincidence.
     private static final int WALL = 9;
 
+    // A square 20 across in the middle of the first, touching nothing - so the two are
+    // separate groups of lines, and whether one is cut out of the other is a real question
+    // rather than one about a shared corner.
+    private static final int INNER = 5;
+
+    private static final LabelledRing INNER_SQUARE = new LabelledRing(
+        List.of(
+            new double[] {40, 40},
+            new double[] {60, 40},
+            new double[] {60, 60},
+            new double[] {40, 60}),
+        new int[] {INNER, INNER, INNER, INNER});
+
     // How far two reports of one corner may stand apart and still be welded into one. Far below
     // anything these fixtures contain: every shared corner here is reported from the same
     // literal, so the welding joins what genuinely coincides and reaches nothing else.
@@ -202,6 +215,66 @@ class FaceWalkTest {
         }
 
         @Test
+        void aRingInsideAnotherIsCutOutOfIt() {
+            // Two rings that never touch are two groups, each closing an outside of its own.
+            // The inner group's outside sits within the outer group's piece, so it is what
+            // that piece runs around rather than a piece in its own right - and the piece
+            // loses its area. Left as a piece, the two would overlap and everything that adds
+            // up areas over a division would count the middle twice.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+
+            var outer = findPieceOfArea(faces, 9600.0);
+
+            assertThat(outer.holes()).hasSize(1);
+
+            assertThat(outer.holes().get(0).edgeLabels())
+                .containsOnly(INNER);
+        }
+
+        @Test
+        void aRingInsideAnotherIsStillAPieceOfItsOwn() {
+            // Being cut out of the piece around it does not stop it being one. What the walk
+            // hands back is every piece, and the inner ring bounds one.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+
+            assertThat(measureBoundedAreas(faces))
+                .hasSize(2);
+
+            assertThat(findPieceOfArea(faces, 400.0).holes())
+                .isEmpty();
+        }
+
+        @Test
+        void onlyTheOutsideOfEverythingSurvivesAsAnOuterFace() {
+            // The inner group's outside became a hole, so the one left is the outside of the
+            // whole division - which is what makes a frame worth laying, since framed there is
+            // no such face and every piece is bounded.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE, INNER_SQUARE), List.of(), WELD_TOLERANCE);
+
+            assertThat(faces)
+                .filteredOn(Face::isOuterFace)
+                .hasSize(1);
+        }
+
+        @Test
+        void aPieceIsNotCutOutOfOneItSharesEdgesWith() {
+            // The chord's two pieces run along the very same edges, so asking whether one
+            // sits inside the other is asking about a corner on both their boundaries - which
+            // has no answer. Only groups that share nothing are weighed against each other;
+            // asking anyway cut each piece out of the one beside it.
+            var faces = FaceWalk.walkFaces(
+                List.of(SQUARE),
+                List.of(new LabelledWall(new Segment(0, 50, 100, 50), WALL)),
+                WELD_TOLERANCE);
+
+            assertThat(collectBoundedFaces(faces))
+                .allSatisfy(piece -> assertThat(piece.holes()).isEmpty());
+        }
+
+        @Test
         void labelsRunParallelToTheBoundary() {
 
             var faces = FaceWalk.walkFaces(
@@ -217,7 +290,7 @@ class FaceWalkTest {
         }
     }
 
-    // Every piece that is not the outside, by area, smallest first. Sorted so a fixture whose
+    // Every piece that is not the outside, by area, smallest first. (helpers below) Sorted so a fixture whose
     // pieces differ can name them in an order a reader can follow rather than in whichever
     // order the walk happened to close them.
     private static List<Double> measureBoundedAreas(List<Face> faces) {
@@ -251,6 +324,21 @@ class FaceWalkTest {
             .hasSize(1);
 
         return bounded.get(0);
+    }
+
+    // The one piece of a given size, insisted on rather than picked out: two pieces of the
+    // same area would make whichever came first stand for both.
+    private static Face findPieceOfArea(List<Face> faces, double area) {
+
+        var matching = collectBoundedFaces(faces).stream()
+            .filter(piece -> Math.abs(piece.measureArea() - area) < AREA_SLACK)
+            .toList();
+
+        assertThat(matching)
+            .as("one piece covering %.0f", area)
+            .hasSize(1);
+
+        return matching.get(0);
     }
 
     private static List<Face> collectBoundedFaces(List<Face> faces) {

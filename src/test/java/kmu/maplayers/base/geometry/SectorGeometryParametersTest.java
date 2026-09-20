@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins that moving one knob moves exactly that knob.
@@ -45,6 +46,34 @@ class SectorGeometryParametersTest {
 
             assertThat(PARAMETERS.cellRadius())
                 .isEqualTo(4000);
+        }
+    }
+
+    @Nested
+    class MeasureBoundSagitta {
+
+        @Test
+        void theGapFollowsTheReachAndTheBound() {
+            // How coarsely the cells are drawn, which is what every reading of the map is
+            // welded and filtered at. Four thousand of reach flattened onto forty-eight sides
+            // leaves the middle of each side eight and a half units inside the true bound.
+            assertThat(PARAMETERS.measureBoundSagitta())
+                .isCloseTo(8.5643, within(0.0001));
+        }
+
+        @Test
+        void aFinerBoundLeavesASmallerGap() {
+            // The reason it is read rather than carried: a pass holding a number that was
+            // right at one setting goes on judging at a resolution the map no longer has.
+            assertThat(PARAMETERS.withBoundSegments(96).measureBoundSagitta())
+                .isCloseTo(2.1417, within(0.0001));
+        }
+
+        @Test
+        void aShorterReachLeavesASmallerGap() {
+
+            assertThat(PARAMETERS.withCellRadius(2000).measureBoundSagitta())
+                .isCloseTo(4.2822, within(0.0001));
         }
     }
 

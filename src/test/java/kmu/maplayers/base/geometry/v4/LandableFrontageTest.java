@@ -10,9 +10,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit coverage for what the frontage of a piece is, on one square.
  *
- * <p>The rule has no arithmetic in it, so what is pinned is the bookkeeping: every corner on a
- * cell is frontage exactly once, corners run together by cell and not across cells, the frame
- * is nobody's, and a piece's holes are shore as much as its outline is.
+ * <p>The rule has no arithmetic in it, so what is pinned is the bookkeeping: every EDGE on a
+ * cell is covered by exactly one run, a run carries both ends of every edge it covers and so
+ * meets the next where one cell gives way to it, the frame is nobody's, and a piece's holes
+ * are shore as much as its outline is.
  */
 class LandableFrontageTest {
 

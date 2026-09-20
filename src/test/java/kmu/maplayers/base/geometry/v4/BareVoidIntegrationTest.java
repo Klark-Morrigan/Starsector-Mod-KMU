@@ -148,7 +148,7 @@ class BareVoidIntegrationTest {
             // its cell's frontier to within that, either way, and a label naming a cell
             // somewhere else entirely is a different order of wrong.
             var bare = readBare(sector);
-            var slack = 2 * measureSagitta();
+            var slack = 2 * KNOBS.measureBoundSagitta();
             var nearest = bare.union().reach() - slack;
             var furthest = bare.union().reach() + slack;
 
@@ -201,7 +201,7 @@ class BareVoidIntegrationTest {
     private static java.util.Map<?, List<CellEdge>> readCellEdges(String sector) {
 
         return SectorFixture.loadSector(sector)
-            .buildCellEdgesBySystemKey(KNOBS.cellRadius(), KNOBS.boundSegments());
+            .buildCellEdgesBySystemKey(KNOBS);
     }
 
     // The whole framed area, taken as the sea's own outline: everything inside the frame,
@@ -219,11 +219,6 @@ class BareVoidIntegrationTest {
 
     // How far a chord of the cells' bound falls inside the bound at its middle, which is the
     // whole of the difference between a pocket read off the cells and one read off the arcs.
-    private static double measureSagitta() {
-
-        return KNOBS.cellRadius() * (1 - Math.cos(Math.PI / KNOBS.boundSegments()));
-    }
-
     private static List<LabelledRing> collectEveryRing(Face piece) {
 
         var rings = new java.util.ArrayList<LabelledRing>();

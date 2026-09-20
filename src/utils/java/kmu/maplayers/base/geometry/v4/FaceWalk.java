@@ -198,8 +198,7 @@ public final class FaceWalk {
             }
         } while (!edge.equals(start));
 
-        return new LabelledRing(
-            boundary, labels.stream().mapToInt(Integer::intValue).toArray());
+        return LabelledRing.ofGatheredLabels(boundary, labels);
     }
 
     // Every line the division is cut along: each ring's edges under their own labels, plus the
