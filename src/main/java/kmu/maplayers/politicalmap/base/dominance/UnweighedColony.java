@@ -18,9 +18,9 @@ import kmu.maplayers.base.visibility.colonies.ColonyKind;
  * box saying more about a colony than the account did - how current the player's knowledge of it
  * is, say - matches this against something read elsewhere, and a display name is not an identity.
  *
- * <p>The kind travels with it because this is the shape a collapsed colony and a hulk both arrive
- * in - each unowned, off-economy and listed at nought - and the account has no other way to say
- * that one is a place people still live and the other a wreck nobody ever lived on.
+ * <p>The kind travels with it because this is the shape a collapsed colony and a derelict both
+ * arrive in - each unowned, off-economy and listed at nought - and the account has no other way to
+ * say that one is a place people still live and the other a wreck nobody ever lived on.
  *
  * <p>Concealment travels for the same reason it does on a weighed colony: it is a finding the line
  * calls out, and the two boxes name the same colonies of one system - so a colony the claims box

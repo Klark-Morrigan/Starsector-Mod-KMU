@@ -250,7 +250,8 @@ final class DebugBorderTracingBuilderTest {
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
                 listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
-            // The dead world's cell resolves to the decivilised bundle and draws; the uninhabited
+            // The collapsed world's cell resolves to the decivilised bundle and draws; the
+            // uninhabited
             // one resolves to the bundle the player switched off and is skipped, which is what
             // keeps the overlay off every empty corner of the sector.
             assertThat(drawables.baseLoops()).hasSize(1);

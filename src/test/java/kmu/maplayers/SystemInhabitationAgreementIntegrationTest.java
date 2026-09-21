@@ -53,8 +53,8 @@ import static org.mockito.Mockito.when;
  * underneath both - stub it and the wiring this exists to catch is what gets asserted. Only the
  * strings and colours the row is built from are stood in; the sector is read for real.
  *
- * <p>A revealed dead world is the one system both call inhabited while the box still speaks: the
- * status is what names it Decivilised, and its cell is settled because a known ruin is somebody
+ * <p>A revealed decivilised world is the one system both call inhabited while the box still speaks:
+ * the status is what names it Decivilised, and its cell is settled because a known one is somebody
  * having lived there. Agreement is therefore "a settled system is never called unpopulated", not
  * "a settled system is silent".
  *
@@ -75,7 +75,7 @@ final class SystemInhabitationAgreementIntegrationTest {
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
 
-    // The size the staged hulk carries. Neither surface here weighs a colony, so a case varying
+    // The size the staged derelict carries. Neither surface here weighs a colony, so a case varying
     // this would vary nothing either can see - it is stated because the shared builder takes one.
     private static final int DERELICT_SIZE = 4;
 
@@ -125,8 +125,9 @@ final class SystemInhabitationAgreementIntegrationTest {
         @Test
         void aDerelictLeavesTheCellEmptyAndTheStatusSpokenThoughTheBoxMayNameIt() {
             // The one shape the two surfaces answer alike about while the listing beside them says
-            // something else. The hulk passes the fog outright, so a cell or a status wired to the
-            // listing would call a system of wrecks settled - and the pair only agrees here because
+            // something else. The derelict passes the fog outright, so a cell or a status wired to
+            // the listing would call a system of wrecks settled - and the pair only agrees here
+            // because
             // both read habitation.
             var system = buildSystem();
             var sector = buildSectorHoldingUnlistedMarket(
@@ -179,10 +180,10 @@ final class SystemInhabitationAgreementIntegrationTest {
         }
 
         @Test
-        void aRevealedDeadWorldSettlesTheCellAndNamesItselfDecivilised() {
-            // The deliberate exception: settled and still spoken for. A known ruin is somebody
-            // having lived there, and the line is what says which of the two the system is.
-            var system = buildSystemWithRevealedRuin();
+        void aRevealedDecivilisedWorldSettlesTheCellAndNamesItselfDecivilised() {
+            // The deliberate exception: settled and still spoken for. A known decivilised world is
+            // somebody having lived there, and the line is what says which of the two the system is.
+            var system = buildSystemWithRevealedDecivilisedWorld();
             var sector = buildSectorListing(system);
 
             assertThat(isInhabited(sector, system, BASE_FOG))
@@ -198,7 +199,7 @@ final class SystemInhabitationAgreementIntegrationTest {
             // shared projection, which the rule never touches, so it goes on naming it. The
             // direction this suite guards is the other one, and it still holds - nothing here
             // prints "Unpopulated" over a painted cell.
-            var system = buildSystemWithRevealedRuin();
+            var system = buildSystemWithRevealedDecivilisedWorld();
             var sector = buildSectorListing(system);
 
             assertThat(isInhabitedUnder(
@@ -319,7 +320,7 @@ final class SystemInhabitationAgreementIntegrationTest {
         return mock(StarSystemAPI.class);
     }
 
-    private static StarSystemAPI buildSystemWithRevealedRuin() {
+    private static StarSystemAPI buildSystemWithRevealedDecivilisedWorld() {
 
         var systemMock = buildSystem();
 

@@ -24,7 +24,7 @@ class MapVisibilityFingerprintTest {
     // colony the player has been told of. Named because the flag is what the whole salt exists
     // for, and a bare true at a call site says nothing about which of the two a case poses.
     private static final boolean DRAWN_LIVE = false;
-    private static final boolean DRAWN_AS_A_REVEALED_RUIN = true;
+    private static final boolean DRAWN_AS_A_REVEALED_DECIVILISED_WORLD = true;
 
     // The key of a system the sector states nothing about - no ID, no centre, no anchor. Every arm
     // hashes to zero and the avalanche's one fixed point is zero, so this is the key whose whole
@@ -91,7 +91,7 @@ class MapVisibilityFingerprintTest {
 
             assertThat(MapVisibilityFingerprint.computeSystemContribution(
                     system,
-                    DRAWN_AS_A_REVEALED_RUIN))
+                    DRAWN_AS_A_REVEALED_DECIVILISED_WORLD))
                 .isNotEqualTo(computeContributionOf(system));
         }
 
@@ -125,7 +125,7 @@ class MapVisibilityFingerprintTest {
             // identically live and dead.
             assertThat(MapVisibilityFingerprint.computeSystemContribution(
                     KEY_STATING_NOTHING,
-                    DRAWN_AS_A_REVEALED_RUIN))
+                    DRAWN_AS_A_REVEALED_DECIVILISED_WORLD))
                 .isNotEqualTo(computeContributionOf(KEY_STATING_NOTHING));
         }
     }

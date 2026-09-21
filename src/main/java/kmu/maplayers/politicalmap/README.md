@@ -791,16 +791,16 @@ since what it lacks is a polity and not people,
 and the status row keeps its capitalised **Decivilised** for the banner it is.
 
 Both boxes then say what they have found out about the place on the line naming it
-(`ColonyQualifier`, gold, one read for the two families so neither can call a world dead the other lists as living).
+(`ColonyQualifier`, gold, one read for the two families so neither can call a world decivilised the other lists as living).
 Five words,
 in a fixed order:
 `claim holder`,
 then the kind -
-`abandoned` for a hulk,
+`abandoned` for a derelict,
 `decivilised` for a collapse -
 then `undiscovered`,
 `hidden` and `unlisted`.
-A collapse and a hulk reach a listing identically,
+A collapse and a derelict reach a listing identically,
 unowned and off-economy and at nought,
 and nothing else on either line would tell them apart;
 the last three are the three separate ways a colony can be out of plain view,
@@ -810,7 +810,7 @@ Two of the five never join what stands above them.
 `undiscovered` displaces `hidden` -
 an undiscovered colony is concealed from the player by that alone -
 and `unlisted` speaks only where nothing above it held,
-or it would repeat itself on every derelict and every dead world,
+or it would repeat itself on every derelict and every decivilised world,
 both being off-economy by construction.
 The suppression is by the condition holding rather than by where a word ends up being stated,
 which is what lets a station already called *Abandoned Station* say its word inside its own name

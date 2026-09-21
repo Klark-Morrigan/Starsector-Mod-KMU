@@ -116,7 +116,7 @@ public final class ClaimStatsAggregator {
     // aggregation counts its presences from, so every bloc living in the sector reaches a row on
     // either picker and neither can list a faction the other cannot see.
     //
-    // Habitation and not the wider listing, which is the difference between a colony and a hulk
+    // Habitation and not the wider listing, which is the difference between a colony and a derelict
     // somebody has seen. A picker answers "what can I spotlight", and a spotlight lights territory,
     // so a bloc whose only holding is a derelict is offered nothing to light and is left out.
     private void accumulateSystemHabitation(StarSystemAPI system) {

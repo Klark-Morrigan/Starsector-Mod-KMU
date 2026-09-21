@@ -246,7 +246,7 @@ final class ColonyKnowledgeTest {
 
             @Test
             void withholdsAGatedColonyUnderTheRevealWhereNobodyHasSeenIt() {
-                // The same rule from the derelict's side: the reveal says the hulk may be shown
+                // The same rule from the derelict's side: the reveal says it may be shown
                 // though nobody found it, which is no answer at all to whether anybody has seen it
                 // standing here.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -259,8 +259,8 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void admitsASurveyedDeadWorld() {
-                // A ruin the player has read: found by the survey arm, gated by nothing, and
+            void admitsASurveyedDecivilisedWorld() {
+                // A collapse the player has read: found by the survey arm, gated by nothing, and
                 // condition-only - which is what every other colony read refuses it for.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var decivilisedWorld = fixture.buildDecivilisedWorld();
@@ -272,8 +272,9 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholdsADeadWorldNobodyHasSurveyed() {
-                // The ruins are there and the player has no way of knowing it, so the map may not
+            void withholdsADecivilisedWorldNobodyHasSurveyed() {
+                // The collapse has happened and the player has no way of knowing it, so the map may
+                // not
                 // say so - and the planet being found is beside the point, the two arms being
                 // independent.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -463,7 +464,8 @@ final class ColonyKnowledgeTest {
 
             @Test
             void keepsADerelictOnceAColonyIsFoundedBesideIt() {
-                // The second route to revelation: a hulk in orbit over an inhabited world is common
+                // The second route to revelation: a derelict in orbit over an inhabited world is
+                // common
                 // knowledge there, whether or not the player has ever been.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var derelict = fixture.buildDerelictStation();
@@ -493,7 +495,7 @@ final class ColonyKnowledgeTest {
             @Test
             void excludesADerelictVouchedForOnlyByAnotherDerelict() {
                 // A derelict cannot settle anything, having never had anybody aboard, so a place
-                // holding nothing but hulks reveals none of them.
+                // holding nothing but derelicts reveals none of them.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var first = fixture.buildDerelictStation();
                 var second = fixture.buildDerelictStation();
@@ -705,7 +707,7 @@ final class ColonyKnowledgeTest {
 
             @Test
             void keepsADerelictWhicheverAllianceSettlesTheSystemAroundIt() {
-                // Nobody holds a hulk and nobody joins an alliance, so the widened comparison
+                // Nobody holds a derelict and nobody joins an alliance, so the widened comparison
                 // reaches a derelict exactly as the bare owner one did - it is vouched for by
                 // whoever is there, allied or not.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -722,8 +724,8 @@ final class ColonyKnowledgeTest {
 
             @Test
             void keepsADerelictWhicheverFactionSettlesTheSystemAroundIt() {
-                // A hulk is held by nobody, and nobody never settles a place - so the owner comparison
-                // can never find the derelict's own owner among the settling ones, and the route
+                // A derelict is held by nobody, and nobody never settles a place - so the owner
+                // comparison can never find its own owner among the settling ones, and the route
                 // answers for a derelict exactly as it did before it read owners at all.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var derelict = fixture.buildDerelictStation();
@@ -739,9 +741,9 @@ final class ColonyKnowledgeTest {
             void excludesADerelictVouchedForOnlyByAnUnheldStation() {
                 // The one arrangement in which the owner comparison reaches a derelict: a station no
                 // faction holds that the economy lists anyway is read as kept, so it settles its
-                // place - while falling to the same nobody the hulk beside it does. It vouches for
-                // everything else here and not for that hulk, which is a hulk on the books being no
-                // witness to the one drifting next to it.
+                // place - while falling to the same nobody the wreck beside it does. It vouches for
+                // everything else here and not for that wreck, which is a derelict on the books
+                // being no witness to the one drifting next to it.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var derelict = fixture.buildDerelictStation();
                 var listedStation = fixture.buildOutpost(Factions.NEUTRAL);
@@ -764,9 +766,10 @@ final class ColonyKnowledgeTest {
         class ReportRoute {
 
             @Test
-            void keepsAnUnsurveyedDeadWorldARivalColonyCanSee() {
+            void keepsAnUnsurveyedDecivilisedWorldARivalColonyCanSee() {
                 // The asymmetry the route exists to close: the Hegemony's colony is drawn in a
-                // system the player has never entered, and the ruin in the next orbit - which
+                // system the player has never entered, and the collapsed world in the next orbit -
+                // which
                 // everyone living there can see - was not.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
@@ -780,7 +783,7 @@ final class ColonyKnowledgeTest {
 
             @ParameterizedTest
             @EnumSource(value = SurveyLevel.class, names = {"SEEN", "PRELIMINARY", "FULL"})
-            void keepsAnUnsurveyedDeadWorldARivalColonyCanSeeAtEveryBar(SurveyLevel bar) {
+            void keepsAnUnsurveyedDecivilisedWorldARivalColonyCanSeeAtEveryBar(SurveyLevel bar) {
                 // The claim the split is for: the bar is what the player asks of their own
                 // instruments, and a neighbour's word is not a reading anybody's instruments took -
                 // so raising it may not silence the people living in the system.
@@ -797,7 +800,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholdsAnUnsurveyedDeadWorldAloneInItsSystem() {
+            void withholdsAnUnsurveyedDecivilisedWorldAloneInItsSystem() {
                 // Nobody is there to have seen it, so the route has nothing to report and the world
                 // falls back to the survey the player has not made.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -811,7 +814,7 @@ final class ColonyKnowledgeTest {
 
             @ParameterizedTest
             @EnumSource(value = SurveyLevel.class, names = {"SEEN", "PRELIMINARY", "FULL"})
-            void withholdsAnUnsurveyedDeadWorldVouchedForOnlyByAnUnheldStation(SurveyLevel bar) {
+            void withholdsAnUnsurveyedDecivilisedWorldVouchedForOnlyByAnUnheldStation(SurveyLevel bar) {
                 // Owner-awareness reaching the route without a line of its own, and what ungating
                 // it must not have cost. A collapsed colony falls to neutral as it dies, and so
                 // does a station no faction holds that the economy lists anyway - so the only
@@ -829,7 +832,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void withholdsAnUnsurveyedDeadWorldOnlyAnAlliedSettlerCouldVouchFor() {
+            void withholdsAnUnsurveyedDecivilisedWorldOnlyAnAlliedSettlerCouldVouchFor() {
                 // The alliance rule reaching this route too, posed at a bar the player's own
                 // sighting could not clear so the neighbour is the only thing being asked. A
                 // partner of the world's own owner is passed over exactly as the owner is, which
@@ -850,7 +853,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keepsAnUnsurveyedDeadWorldSeenWhereItStands() {
+            void keepsAnUnsurveyedDecivilisedWorldSeenWhereItStands() {
                 // The recorded half of the same route, and what keeps the world on the map after
                 // the neighbour that reported it has itself collapsed: an observation naming this
                 // system finds the world with nobody left in it.
@@ -866,7 +869,7 @@ final class ColonyKnowledgeTest {
 
             @ParameterizedTest
             @EnumSource(value = SurveyLevel.class, names = {"PRELIMINARY", "FULL"})
-            void withholdsADeadWorldSeenFromAFlyPastWhereMoreThanASightingIsAskedFor(
+            void withholdsADecivilisedWorldSeenFromAFlyPastWhereMoreThanASightingIsAskedFor(
                     SurveyLevel bar) {
 
                 // The half the bar does decide, and the pair to the case above: the same world,
@@ -884,7 +887,7 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void keepsASurveyedDeadWorldWhereMoreThanASightingIsAskedFor() {
+            void keepsASurveyedDecivilisedWorldWhereMoreThanASightingIsAskedFor() {
                 // The fog arm is untouched by any of this: a world the player has actually surveyed
                 // that far is admitted at a bar no report could ever reach.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -897,10 +900,10 @@ final class ColonyKnowledgeTest {
             }
 
             @Test
-            void letsADeadWorldThisRouteFoundSettleNothing() {
+            void letsADecivilisedWorldThisRouteFoundSettleNothing() {
                 // The route finds a world and grants it no voice, which is what keeps the two
                 // passes an ordering rather than a cycle: the collapsed colony is on the map and
-                // the hulk drifting beside it stays held back, having nobody there to report it.
+                // the derelict drifting beside it stays held back, having nobody there to report it.
                 var fixture = new ColonyKnowledgeFixture("kumari_kandam");
                 var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
                 var derelict = fixture.buildDerelictStation();
@@ -1066,7 +1069,7 @@ final class ColonyKnowledgeTest {
         @Test
         void agreesWithTheProjectionOverADerelictAnOutpostVouchesFor() {
             // A kept station has people on it, so it settles its place exactly as a colony does -
-            // and what it vouches for is the hulk drifting beside it, which no gate would
+            // and what it vouches for is the derelict drifting beside it, which no gate would
             // otherwise admit here.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
@@ -1107,7 +1110,7 @@ final class ColonyKnowledgeTest {
         @Test
         void keepsAStationAFactionKeeps() {
             // A kept station wears the derelict condition and is somebody's, so it is read as a
-            // colony throughout: habitation counts it, where the hulk beside it in the case above
+            // colony throughout: habitation counts it, where the derelict beside it in the case above
             // is counted by neither projection.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var outpost = fixture.buildOutpost("hegemony");
@@ -1122,7 +1125,7 @@ final class ColonyKnowledgeTest {
 
         @Test
         void excludesADerelictThePlayerHasSeen() {
-            // The whole of the projection's reason for existing: the listing may name a hulk the
+            // The whole of the projection's reason for existing: the listing may name a derelict the
             // player has been past, and the place it orbits is still nobody's home.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
@@ -1159,7 +1162,7 @@ final class ColonyKnowledgeTest {
 
         @Test
         void keepsEveryKnownColonyWhereNoDerelictIsPresent() {
-            // Nothing is removed where nothing was ever a hulk, so a system of ordinary colonies
+            // Nothing is removed where nothing was ever a derelict, so a system of ordinary colonies
             // reads alike under either projection - in the set's own order.
             var fixture = new ColonyKnowledgeFixture("galatia");
             var ancyra = fixture.buildVisibleColony("hegemony");
@@ -1172,11 +1175,11 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void keepsADeadWorldAndLetsItSettleNothing() {
-            // The ruin inhabits its place - somewhere people were is not empty space - while
+        void keepsADecivilisedWorldAndLetsItSettleNothing() {
+            // The world inhabits its place - somewhere people were is not empty space - while
             // vouching for nothing else standing there, nobody being left to speak. So the derelict
             // beside it stays unmentioned: a place is settled by the living, and the listing shows
-            // exactly the ruin and not the hulk.
+            // exactly the collapsed world and not the wreck.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var decivilisedWorld = fixture.buildDecivilisedWorld();
             var derelict = fixture.buildDerelictStation();
@@ -1192,8 +1195,8 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void keepsADeadWorldANeighbourReported() {
-            // Habitation reads the same found-test the listing does, so a ruin admitted on the
+        void keepsADecivilisedWorldANeighbourReported() {
+            // Habitation reads the same found-test the listing does, so a world admitted on the
             // Hegemony's word counts as people living there exactly as a surveyed one does. Which
             // it should: the survivors on it are no less present for the player not having looked.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
@@ -1209,7 +1212,7 @@ final class ColonyKnowledgeTest {
         @Test
         void excludesADerelictItsOwnGateHasLetThrough() {
             // Kind and gate answer separate questions. Turning the station gate off says the
-            // player may be told about a hulk they have found; it does not put anybody aboard it.
+            // player may be told about a derelict they have found; it does not put anybody aboard it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
 
@@ -1226,7 +1229,7 @@ final class ColonyKnowledgeTest {
         @Test
         void excludesADerelictTheRevealHasLetThrough() {
             // The reveal is about the fog, not about who is aboard. Posed on an entity the player
-            // has not found, so it is the reveal alone putting the hulk in the listing - and
+            // has not found, so it is the reveal alone putting the derelict in the listing - and
             // habitation still declines it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildUndiscoveredDerelictStation();
@@ -1294,7 +1297,7 @@ final class ColonyKnowledgeTest {
         @Test
         void answersFalseForASystemHoldingOnlyADerelictThePlayerHasSeen() {
             // The reading the map turns on: a system the listing has something to say about, and
-            // which is still empty space with a hulk in it.
+            // which is still empty space with a derelict in it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
 
@@ -1324,9 +1327,9 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void answersTrueForARememberedRuinWhoseNeighboursAreGone() {
+        void answersTrueForARememberedDecivilisedWorldWhoseNeighboursAreGone() {
             // What the register buys this reading: a system whose colonies have all since
-            // collapsed still reads as somewhere people are, on an observation of the ruin made
+            // collapsed still reads as somewhere people are, on an observation of that world made
             // while somebody was there to make it. The world is unsurveyed throughout, so the fog
             // is not what answers - and raising the bar past a sighting takes the answer away
             // again, the survey level reaching habitation exactly as it reaches the listing.
@@ -1346,7 +1349,7 @@ final class ColonyKnowledgeTest {
 
         @Test
         void answersFalseForADerelictTheRevealHasLetThrough() {
-            // The emptiness question asked of the same case: the reveal admits the hulk to the
+            // The emptiness question asked of the same case: the reveal admits the derelict to the
             // listing without making its place anybody's home.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildUndiscoveredDerelictStation();
@@ -1465,7 +1468,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void passesOverADeadWorldTheInhabitantsRouteWouldRecord() {
+        void passesOverADecivilisedWorldTheInhabitantsRouteWouldRecord() {
             // The deliberate gap between the two observation reads. Arriving here is the very act
             // vanilla stamps a permanent survey level for, so an entry would restate what the fog
             // already answers - at the cost of one per collapsed world in every system entered.
@@ -1484,7 +1487,7 @@ final class ColonyKnowledgeTest {
 
         @Test
         void yieldsADerelictStandingBesideAnotherFactionsColony() {
-            // The route's own case: a hulk in orbit over an inhabited world is common knowledge
+            // The route's own case: a derelict in orbit over an inhabited world is common knowledge
             // there, whether or not the player has ever been near it.
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var derelict = fixture.buildDerelictStation();
@@ -1587,7 +1590,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yieldsADeadWorldARivalColonyCanSee() {
+        void yieldsADecivilisedWorldARivalColonyCanSee() {
             // The report route's own entry, and the reason this read is not the gated one. No gate
             // is about a collapsed world; what the neighbours can see of it is nonetheless the whole
             // of why the map shows it, so the observation has to be written down.
@@ -1603,7 +1606,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yieldsNothingForADeadWorldAloneInItsSystem() {
+        void yieldsNothingForADecivilisedWorldAloneInItsSystem() {
 
             var fixture = new ColonyKnowledgeFixture("kumari_kandam");
             var decivilisedWorld = fixture.buildUnsurveyedDecivilisedWorld();
@@ -1616,7 +1619,7 @@ final class ColonyKnowledgeTest {
         }
 
         @Test
-        void yieldsADeadWorldThoughTheRuleAsksForMoreThanASighting() {
+        void yieldsADecivilisedWorldThoughTheRuleAsksForMoreThanASighting() {
             // What is written down is keyed on the kind and never on the knob. A player who ran at
             // a stricter bar for a hundred cycles must not come back down to a hole in the register
             // for those years - a setting says what may be shown and never what was seen.
@@ -1749,13 +1752,13 @@ final class ColonyKnowledgeTest {
     }
 
     // A derelict nobody has ever lived on: unlisted, as the routine that builds one leaves it -
-    // which is half of what the kind read parts a hulk from a station somebody keeps on.
+    // which is half of what the kind read parts a derelict from a station somebody keeps on.
     private static Colony buildDerelict(MarketAPI market) {
         return new Colony(market, false);
     }
 
-    // A world people left. Unlisted, the economy dropping a colony as it dies - which is what a
-    // ruin always reaches a reader as.
+    // A world whose government has collapsed. Unlisted, the economy dropping a colony as it falls -
+    // which is what such a world always reaches a reader as.
     private static Colony buildUngovernedColony(MarketAPI market) {
         return new Colony(market, false);
     }

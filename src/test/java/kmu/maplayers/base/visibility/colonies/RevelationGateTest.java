@@ -77,7 +77,7 @@ final class RevelationGateTest {
         @Test
         void spaceDerelictsPassesOverAStationAFactionKeeps() {
             // A kept station wears the derelict condition and is somebody's, so the kind read
-            // parts it from the hulk and this gate is not about it - it answers to concealment
+            // parts it from the derelict and this gate is not about it - it answers to concealment
             // alone, exactly as an ordinary colony does.
             assertThat(RevelationGate.SPACE_DERELICTS.coversColony(
                     buildColony(ColonyMarketFixture.buildOutpost("hegemony")),
@@ -163,7 +163,8 @@ final class RevelationGateTest {
 
         @Test
         void reportsAnOpenStationAFactionKeepsAsUngated() {
-            // Neither gate is about it: its owner parts it from the hulk, and nothing conceals it.
+            // Neither gate is about it: its owner parts it from the derelict, and nothing conceals
+            // it.
             assertThat(RevelationGate.isGatedColony(
                     buildColony(ColonyMarketFixture.buildOutpost("hegemony")),
                     ColonyKind.OUTPOST))

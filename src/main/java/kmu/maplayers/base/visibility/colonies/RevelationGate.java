@@ -25,7 +25,7 @@ public enum RevelationGate {
 
     /**
      * A derelict nobody ever lived on. The fog admits one the moment its entity is found, and a
-     * great many modded stations are never discoverable at all - so ungated, every hulk in the
+     * great many modded stations are never discoverable at all - so ungated, every derelict in the
      * sector is on the map from the first frame of a campaign.
      *
      * <p>A station a faction keeps is not one of these and is not held back here. It wears the same

@@ -32,8 +32,9 @@ import static org.mockito.Mockito.when;
  * asks would go on giving every one of those cases the right answer, and would quietly walk every
  * planet in the sector again on each of the reads a poll makes.
  *
- * <p>Two counts are taken, one per thing the pass remembers. The ruin walk is the first: the colony
- * half is memoised in the index beneath, so it was never what repeated, and the ruin walk had no
+ * <p>Two counts are taken, one per thing the pass remembers. The decivilised walk is the first:
+ * the colony half is memoised in the index beneath, so it was never what repeated, and that walk had
+ * no
  * memo of its own until the pass gave it one. The drawn answer is the second, and it repeats for a
  * different reason - the access half of the rule reads the sector directly, the system's gates
  * among it, where no index stands between.
@@ -169,7 +170,7 @@ class MapVisibilityPassTest {
         void givesAnInhabitedSystemAPlaceOfItsOwn() {
             // Somebody living there is a place on the map the override has nothing to do with, so
             // the same forcing pass has to tell this system from the one above.
-            var system = buildSystem("ruined");
+            var system = buildSystem("decivilised");
 
             DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(system);
 
@@ -184,9 +185,9 @@ class MapVisibilityPassTest {
     class IsRevealedDecivilised {
 
         @Test
-        void readsOneSystemsColoniesOnceHoweverOftenTheRuinIsAsked() {
+        void readsOneSystemsColoniesOnceHoweverOftenTheDecivilisedWorldIsAsked() {
             // Every public read reaches the pass's one walk of the system, so the count covers a
-            // poll's whole use of it: the salt asks the ruin outright, and membership asks it
+            // poll's whole use of it: the salt asks the world outright, and membership asks it
             // through inhabitation.
             var system = buildSystem("a");
             var pass = MapVisibilityPass.over(buildUnroutedSectorOf(system), MapVisibilityRules.BASE);
@@ -200,19 +201,19 @@ class MapVisibilityPassTest {
 
         @Test
         void answersOffTheColonySetRatherThanOffTheSystemsPlanets() {
-            // A ruin is a kind of colony, so the pass reads it where it reads everything else -
-            // which is what keeps the salt, the cell and the box over it from ever parting on
-            // whether a system is drawn as ruins.
-            var ruinedSystem = buildSystem("ruined");
+            // A decivilised world is a kind of colony, so the pass reads it where it reads everything
+            // else - which is what keeps the salt, the cell and the box over it from ever parting
+            // on whether a system is drawn as decivilised.
+            var decivilisedSystem = buildSystem("decivilised");
             var emptySystem = buildSystem("empty");
 
-            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(ruinedSystem);
+            DecivilisedPlanetFixtures.placeRevealedDecivilisedPlanetIn(decivilisedSystem);
 
             var pass = MapVisibilityPass.over(
-                buildUnroutedSectorOf(ruinedSystem, emptySystem),
+                buildUnroutedSectorOf(decivilisedSystem, emptySystem),
                 MapVisibilityRules.BASE);
 
-            assertThat(pass.isRevealedDecivilised(ruinedSystem))
+            assertThat(pass.isRevealedDecivilised(decivilisedSystem))
                 .isTrue();
             assertThat(pass.isRevealedDecivilised(emptySystem))
                 .isFalse();
@@ -220,7 +221,7 @@ class MapVisibilityPassTest {
     }
 
     // A system holding nothing at all, which each case then furnishes. Its planets are stubbed
-    // empty rather than left to the mock default, so the ruin walk really runs and the count
+    // empty rather than left to the mock default, so the decivilised walk really runs and the count
     // above is of a read that happened.
     private static StarSystemAPI buildSystem(String id) {
 

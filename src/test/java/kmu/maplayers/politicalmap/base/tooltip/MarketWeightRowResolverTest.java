@@ -641,11 +641,11 @@ final class MarketWeightRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsTellsADeadWorldAndAHulkApartBesideTheirNoughts() {
-            // The pair is what makes the words necessary: a ruin and a hulk arrive identically -
-            // unowned, off-economy, at nought - so without them the reader cannot tell a world
-            // people left from a wreck nobody ever lived on.
-            // Listed by name, so the hulk leads and the ruin follows it.
+        void resolveMarketRowsTellsADecivilisedWorldAndADerelictApartBesideTheirNoughts() {
+            // The pair is what makes the words necessary: a decivilised world and a derelict arrive
+            // identically - unowned, off-economy, at nought - so without them the reader cannot
+            // tell a world people left from a wreck nobody ever lived on.
+            // Listed by name, so the derelict leads and the decivilised world follows it.
             var rows = resolveUnremarkedRows(
                 List.of(),
                 List.of(
@@ -829,13 +829,14 @@ final class MarketWeightRowResolverTest {
     }
 
     // A colony the economy does not list, under the name a case needs and marked with nothing. A
-    // hulk, that being the shape the economy leaves off in the ordinary sector.
+    // derelict, that being the shape the economy leaves off in the ordinary sector.
     private static UnweighedColony buildUnweighedColony(String marketName) {
         return buildUnweighedColonyOfKind(marketName, ColonyKind.SPACE_DERELICT);
     }
 
     // The same as the world people left, for the cases about what a kind states on the line naming
-    // it. Posed against the hulk above, which reaches the list identically and says something else.
+    // it. Posed against the derelict above, which reaches the list identically and says something
+    // else.
     private static UnweighedColony buildUnweighedUngovernedColony(String marketName) {
         return buildUnweighedColonyOfKind(marketName, ColonyKind.UNGOVERNED_COLONY);
     }

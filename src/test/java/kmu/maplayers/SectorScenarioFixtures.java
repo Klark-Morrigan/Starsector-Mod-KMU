@@ -66,7 +66,7 @@ public final class SectorScenarioFixtures {
      * system meant to hold a derelict beside another entity-hung market wants one call staging
      * both, not two calls.
      *
-     * @param system the system the derelict stands in; its entities are replaced by the one hulk
+     * @param system the system the derelict stands in; its entities are replaced by that one
      * @return the derelict's market, for a case that has something to say about it
      */
     public static MarketAPI placeDerelictIn(StarSystemAPI system) {

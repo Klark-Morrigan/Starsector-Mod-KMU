@@ -29,7 +29,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Integration coverage for the political map's inhabitation read: the whole-sector scan a rebuild
  * takes and the per-system read a refresh takes, each composed over a real pass, a real colony walk
- * and the real ruin read.
+ * and the real decivilised-world read.
  *
  * <p>Integration rather than unit because the value is the composition. The scan and the read are
  * two scopes of one question, taken minutes apart - the scan where a rebuild began, the read when a
@@ -38,10 +38,10 @@ import static org.mockito.Mockito.mock;
  * one cell drawn as backdrop in a settled system, and nothing rebuilds it, since a colony event
  * marks a system once. Stub the pass and the wiring this exists to catch is what gets asserted.
  *
- * <p>The derelict is the case the pair is read against throughout. A hulk passes the fog and nobody
+ * <p>The derelict is the case the pair is read against throughout. One passes the fog and nobody
  * lives on it, so a read wired to the listing rather than to habitation would report every derelict
  * in the sector as a settled system - and would answer identically on every case that stages no
- * hulk, which is nearly all of them.
+ * derelict, which is nearly all of them.
  */
 final class PoliticalMapInhabitationIntegrationTest {
 
@@ -71,7 +71,7 @@ final class PoliticalMapInhabitationIntegrationTest {
 
         @Test
         void leavesOutASystemHoldingOnlyADerelict() {
-            // The hulk passes the fog - un-hidden, on a found entity - so this is the habitation
+            // The derelict passes the fog - un-hidden, on a found entity - so this is the habitation
             // read's own case rather than a fog case wearing a derelict's clothes. A system with
             // one wreck in it and nothing else is empty space, and the cell has to draw as such.
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);
@@ -83,8 +83,8 @@ final class PoliticalMapInhabitationIntegrationTest {
         }
 
         @Test
-        void namesASystemHoldingARevealedRuin() {
-            // The arm no colony read answers - nobody owns a dead world - so a scan that had
+        void namesASystemHoldingARevealedDecivilisedWorld() {
+            // The arm no colony read answers - nobody owns a decivilised world - so a scan that had
             // dropped it would take every decivilised system off the map at once.
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);
 
@@ -160,7 +160,7 @@ final class PoliticalMapInhabitationIntegrationTest {
         }
 
         @Test
-        void readsTheRuinArmBesideTheColonyOne() {
+        void readsTheDecivilisedArmBesideTheColonyOne() {
             // Both arms in the one read, so a refresh cannot take a decivilised system off the map
             // by answering on colonies alone.
             var sector = SectorPoliticsFixtures.buildSectorWith(EMPTY_SYSTEM);

@@ -23,7 +23,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>Two shapes cover what a case wants of the routes onto the map. An <em>unrouted</em> sector
  * holds no star anchor, so no system is drawn by access and each case decides admission through
- * what it stages on a system - a colony, a ruin, the force override. A <em>star-anchored</em>
+ * what it stages on a system - a colony, a decivilised world, the force override. A
+ * <em>star-anchored</em>
  * sector holds a visible anchor into each system, so a system with a jump point is drawn by
  * access as the sector's core is. A case wanting hyperspace of its own hands one over.
  *

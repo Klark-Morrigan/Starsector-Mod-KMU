@@ -333,7 +333,7 @@ public final class HolderPass {
      * value rather than a read apiece.
      *
      * <p>Habitation rather than the wider listing {@link #readKnownColonyFactionIds} answers, and
-     * the difference is the derelict: a hulk somebody has seen is named in a box and settles
+     * the difference is the derelict: one somebody has seen is named in a box and settles
      * nothing, so no bloc is living in a system holding one alone and none is spared the recede
      * there.
      *

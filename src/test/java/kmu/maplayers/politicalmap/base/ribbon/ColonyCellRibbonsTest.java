@@ -160,13 +160,13 @@ final class ColonyCellRibbonsTest {
 
         @Test
         void drawsNoBandForASystemHoldingOnlyAnAbandonedStation() {
-            // A derelict raises no run, so a system holding one hulk and nothing else bands not at
+            // A derelict raises no run, so a system holding one and nothing else bands not at
             // all - the same reading that leaves its cell drawn as empty backdrop. The hover box
-            // over that cell still names the hulk, which is the one place the band and the box are
+            // over that cell still names it, which is the one place the band and the box are
             // meant to differ.
             //
             // Hung on a system entity rather than listed, because the economy listing is one of
-            // the two things that make a station somebody's: a listed hulk is an outpost, and an
+            // the two things that make a station somebody's: a listed derelict is an outpost, and an
             // outpost counts.
             var sector = buildSectorWith(SYSTEM_ID);
 
@@ -186,7 +186,7 @@ final class ColonyCellRibbonsTest {
 
         @Test
         void countsTheColonyBesideAnAbandonedStationAndNotTheStation() {
-            // The same hulk once somebody settles the system. One run for the colony, none for the
+            // The same derelict once somebody settles the system. One run for the colony, none for the
             // derelict - so the band reports the one holding there is rather than a system split
             // between a faction and a wreck.
             var sector = buildSectorWith(

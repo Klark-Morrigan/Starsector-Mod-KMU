@@ -54,8 +54,8 @@ final class SystemColonyReadingTest {
     private static final ColonyQualifierFacts NOTHING_WAS_FOUND = null;
 
     // The derelict in plain sight the pairing case is posed over: found, open, and off the
-    // economy's listing, which is how a hulk reaches a box. Named for the reason the suite's other
-    // absences are - the facts read as a row of unexplained booleans otherwise.
+    // economy's listing, which is how a derelict reaches a box. Named for the reason the suite's
+    // other absences are - the facts read as a row of unexplained booleans otherwise.
     private static final boolean HOLDS_NO_CLAIM = false;
     private static final boolean IS_FOUND = true;
     private static final boolean IS_OPEN = false;

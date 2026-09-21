@@ -58,7 +58,7 @@ import java.util.List;
  *
  * <p>Every colony's line says whatever the box has found out about the place that its weight does
  * not ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. A
- * collapsed colony and a derelict hulk reach the foot of this list identically, both unowned and
+ * collapsed colony and a derelict reach the foot of this list identically, both unowned and
  * both at nought, and nothing else on either line would tell them apart; a concealed colony is
  * called out on the line naming it rather than on the size term its concealment moved, that being
  * a fact about the place and not about one factor of the sum.

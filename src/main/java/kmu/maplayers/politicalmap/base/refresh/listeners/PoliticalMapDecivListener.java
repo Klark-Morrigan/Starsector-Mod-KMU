@@ -23,12 +23,13 @@ import kmu.maplayers.politicalmap.base.refresh.PoliticalMapStalenessSource;
  *
  * <p>Decivilisation can also change whether the system stays on the map at all,
  * a visibility-set change owned by {@link PoliticalMapStalenessSource} rather than
- * this listener. A deciv that leaves a revealed ruin on a planet keeps the system
- * on the map as a neutral dead colony; one that leaves none drops a system nothing
- * else keeps on the map. A partial deciv (fullyDestroyed false) leaves that ruin,
- * a full destroy does not, and a station never leaves one (the revealed-ruin rule
- * scans planets only) - so a full destroy, or any station deciv, can drop a hidden
- * single-colony system. The watcher is the single authority on map membership: its
+ * this listener. A deciv that leaves a revealed decivilised world on a planet keeps
+ * the system on the map as a neutral one; one that leaves none drops a system
+ * nothing else keeps on the map. A partial deciv (fullyDestroyed false) leaves that
+ * world, a full destroy does not, and a station never leaves one (the
+ * revealed-decivilised rule scans planets only) - so a full destroy, or any station
+ * deciv, can drop a hidden single-colony system.
+ * The watcher is the single authority on map membership: its
  * fingerprint moves on both a draw-class flip and a set-membership change, so it
  * reconciles the geometry on its next poll. This listener stays on the holding
  * axis alone, mirroring {@link PoliticalMapDiscoveryListener}.

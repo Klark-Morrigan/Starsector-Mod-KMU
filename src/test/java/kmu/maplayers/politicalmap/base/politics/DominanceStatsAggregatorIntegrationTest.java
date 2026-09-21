@@ -57,7 +57,7 @@ import static org.mockito.Mockito.mockStatic;
  *
  * <p>The middle cases ask what makes an entry at all, which is the sector's habitation rather than
  * its economy: a bloc living somewhere is listed whether or not the economy lists what it lives on,
- * a bloc whose only holding is a hulk nobody lives on is not, and neither answer may move a
+ * a bloc whose only holding is a derelict nobody lives on is not, and neither answer may move a
  * domination count - the contest still settles a system from the colonies it weighed alone.
  *
  * <p>The last cases below ask the other half of the same question: not what a bloc's totals come to
@@ -345,7 +345,7 @@ class DominanceStatsAggregatorIntegrationTest {
 
         @Test
         void aggregateDominanceStatsLeavesOutABlocHoldingOnlyADerelict() {
-            // The line habitation draws that the listing does not. A hulk's owner is named in a box
+            // The line habitation draws that the listing does not. A derelict's owner is named in a box
             // and lives nowhere, and a spotlight lights territory - so offering the row would offer
             // a pick that lights nothing anywhere, which is not what a greyed row means.
             var sector = buildSectorWithSystems(

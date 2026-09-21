@@ -116,7 +116,7 @@ public final class KmuPoliticalMapTerritorySettings {
     private static final double DEFAULT_DECIVILISED_BORDER_WIDTH = 3.0;
 
     // Set against the two fills it has to stay behind: a living faction's 0.4 and independent
-    // space's 0.2, a dead colony having really been settled but held by nobody.
+    // space's 0.2, a decivilised colony having really been settled but held by nobody.
     private static final double DEFAULT_DECIVILISED_FILL_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_OPACITY = 0.15;
     private static final double DEFAULT_UNINHABITED_BORDER_WIDTH = 3.0;

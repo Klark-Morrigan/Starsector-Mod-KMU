@@ -26,7 +26,7 @@ import kmlib.starsector.systems.StarSystems;
  * second reading of who is present, free to disagree with the listing the box over the
  * same cell names its factions out of.
  *
- * <p>Inhabited means somebody lives there or did, which a derelict hulk is exactly the
+ * <p>Inhabited means somebody lives there or did, which a derelict is exactly the
  * case against: a system drawn as settled because an abandoned station orbits its star
  * says something false about that system, quite apart from whether the player has been
  * near it. So the rule below takes the habitation projection rather than the wider

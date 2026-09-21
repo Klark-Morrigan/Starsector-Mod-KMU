@@ -40,7 +40,7 @@ public final class SystemOccupancy {
     // nobody living there, and reading it as such is what the inhabited set below exists to stop.
     private final Map<SystemKey, DominantHolder> holderBySystemKey;
 
-    // Every system something stands in, live colony or known ruin.
+    // Every system something stands in, live colony or known decivilised world.
     private final Set<SystemKey> inhabitedSystemKeys;
 
     // The settled systems the spotlit bloc lives in that no holder was resolved for. Empty off

@@ -48,7 +48,7 @@ final class ColonyObservationIntegrationTest {
         MarketAPI.SurveyLevel.FULL,
         Set.of(RevelationGate.SPACE_DERELICTS, RevelationGate.HIDDEN_COLONIES));
 
-    private static final String DEAD_WORLD_ID = "tibicena";
+    private static final String DECIVILISED_WORLD_ID = "tibicena";
     private static final String DERELICT_ID = "sentinel_gantries";
     private static final String MOVER_ID = "rat_exoship";
     private static final String NEIGHBOUR_ID = "jangala";
@@ -60,7 +60,7 @@ final class ColonyObservationIntegrationTest {
 
         @Test
         void keepsADerelictShownOnceTheColonyThatObservedItHasDecivilised() {
-            // The whole of why the place's route is written down instead of read live. The hulk
+            // The whole of why the place's route is written down instead of read live. The derelict
             // has been on the map for cycles on its neighbours' account, and their dying is no
             // reason for it to blink out of a sector the player learnt long ago.
             var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
@@ -77,12 +77,12 @@ final class ColonyObservationIntegrationTest {
         }
 
         @Test
-        void keepsADeadWorldShownOnceTheColonyThatReportedItHasDecivilised() {
+        void keepsADecivilisedWorldShownOnceTheColonyThatReportedItHasDecivilised() {
             // The same claim for the report route, and the failure that makes the widened write
             // worth its entries: the world is on the map on the neighbours' word alone, so without
             // a record of what they saw it would vanish with the last of them.
             var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
-            var deadWorld = placeDeadWorldIn(fixture);
+            var decivilisedWorld = placeDecivilisedWorldIn(fixture);
             var neighbour = listNeighbourIn(fixture);
 
             fixture.openSectorMemory();
@@ -91,11 +91,11 @@ final class ColonyObservationIntegrationTest {
             decivilise(neighbour);
 
             assertThat(readKnownColoniesIn(fixture))
-                .containsExactly(new Colony(deadWorld, false));
+                .containsExactly(new Colony(decivilisedWorld, false));
         }
 
         @Test
-        void withholdsADeadWorldOnARecordedReportAloneWhereAFullSurveyIsAskedFor() {
+        void withholdsADecivilisedWorldOnARecordedReportAloneWhereAFullSurveyIsAskedFor() {
             // What the raised bar costs, stated where it happens rather than left to be
             // discovered. A recorded report is written into the same register the player's own
             // sightings are, and that register is what the bar is put to - so once the last
@@ -104,7 +104,7 @@ final class ColonyObservationIntegrationTest {
             // so, which is the case below.
             var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
 
-            placeDeadWorldIn(fixture);
+            placeDecivilisedWorldIn(fixture);
 
             var neighbour = listNeighbourIn(fixture);
 
@@ -181,18 +181,18 @@ final class ColonyObservationIntegrationTest {
         }
 
         @Test
-        void showsADeadWorldItsNeighboursCanSeeWhereAFullSurveyIsAskedFor() {
+        void showsADecivilisedWorldItsNeighboursCanSeeWhereAFullSurveyIsAskedFor() {
             // The route the bar does not reach, through the production walk rather than a staged
             // set: the neighbour is standing in the system, so the world is on the map however
             // much the player has asked of their own instruments. The sector's memory is left
             // shut, which is what makes the live neighbour the only thing answering.
             var fixture = new ColonyKnowledgeFixture(SYSTEM_ID);
-            var deadWorld = placeDeadWorldIn(fixture);
+            var decivilisedWorld = placeDecivilisedWorldIn(fixture);
 
             listNeighbourIn(fixture);
 
             assertThat(readKnownColoniesIn(fixture, fixture.getSystem(), ASKING_A_FULL_SURVEY))
-                .contains(new Colony(deadWorld, false));
+                .contains(new Colony(decivilisedWorld, false));
         }
     }
 
@@ -250,13 +250,13 @@ final class ColonyObservationIntegrationTest {
     // A world whose government has collapsed, standing where the derelict does. Unsurveyed, so the
     // fog refuses it outright and the neighbours' report is the only thing that can put it on the
     // map - which is what makes the record of that report the whole of the case.
-    private static MarketAPI placeDeadWorldIn(ColonyKnowledgeFixture fixture) {
+    private static MarketAPI placeDecivilisedWorldIn(ColonyKnowledgeFixture fixture) {
 
-        var deadWorld = nameColony(fixture.buildUnsurveyedDecivilisedWorld(), DEAD_WORLD_ID);
+        var decivilisedWorld = nameColony(fixture.buildUnsurveyedDecivilisedWorld(), DECIVILISED_WORLD_ID);
 
-        fixture.placeColoniesInSystem(deadWorld);
+        fixture.placeColoniesInSystem(decivilisedWorld);
 
-        return deadWorld;
+        return decivilisedWorld;
     }
 
     // A concealed colony that wanders, standing where the derelict does - the shape that makes a

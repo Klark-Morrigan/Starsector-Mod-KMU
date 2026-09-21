@@ -39,7 +39,8 @@ import static org.mockito.Mockito.when;
  * Pins what a derelict does to a hover box, which is the one place the two projections beneath the
  * map visibly disagree about one system.
  *
- * <p>A hulk is named in the listing - somebody has seen it, and the box's business is everything the
+ * <p>A derelict is named in the listing - somebody has seen it, and the box's business is everything
+ * the
  * player may be told about - and nobody has ever lived aboard it, so the status line above that
  * listing goes on saying the system is unpopulated. Read apart, either surface looks like a bug: a
  * banner calling a system empty over a box that names somebody in it is exactly the pairing every
@@ -62,12 +63,14 @@ final class DerelictReadoutIntegrationTest {
     // point here: what each case reads back is which factions the box named at all.
     private static final String NO_CREST = null;
 
-    // The colony's size. Only a listed colony is ever weighed - a hulk is unregistered, so no term
+    // The colony's size. Only a listed colony is ever weighed - a derelict is unregistered, so no
+    // term
     // of the arithmetic can read one - which is why the derelict's size is the scenario fixture's
     // business and not stated here.
     private static final int COLONY = 6;
 
-    // What the hulk is called on the one case that reads a box drawing its line. Named for a place
+    // What the derelict is called on the one case that reads a box drawing its line. Named for a
+    // place
     // rather than for what it is, so the word the boxes call out cannot have come from the name.
     private static final String DERELICT_NAME = "Sentinel Gantries";
 
@@ -86,7 +89,7 @@ final class DerelictReadoutIntegrationTest {
 
         @Test
         void namesADerelictOverASystemItCallsUnpopulated() {
-            // The parting itself. The hulk is the system's only market, so the listing names its
+            // The parting itself. The derelict is the system's only market, so the listing names its
             // owner and the line above it says nobody lives here - which is what a system of wrecks
             // is, rather than the contradiction the two lines look like side by side.
             var sector = buildSectorHoldingADerelict();
@@ -100,7 +103,7 @@ final class DerelictReadoutIntegrationTest {
             // The whole reason the word is resolved once for the two boxes. They name the same
             // colonies of one system off carriers neither shares with the other - a claim admission
             // against a dominance weight - so a word resolved at each could have one box call a
-            // place a hulk and the other say nothing about it, over one hovered cell.
+            // place a derelict and the other say nothing about it, over one hovered cell.
             //
             // Asserted through the boxes that open a faction up, since the ordinary pair hangs
             // nothing beneath one and so never draws a colony's line at all.
@@ -116,7 +119,7 @@ final class DerelictReadoutIntegrationTest {
 
         @Test
         void namesBothADerelictAndTheColonyBesideItOverAPopulatedSystem() {
-            // The same system once somebody settles it. The hulk is staged unchanged, so what
+            // The same system once somebody settles it. The derelict is staged unchanged, so what
             // silenced the status line is the colony rather than anything the derelict stopped
             // being - and the listing still names them both.
             var sector = buildSectorHoldingADerelict(buildColony());
@@ -134,7 +137,7 @@ final class DerelictReadoutIntegrationTest {
         void offersTheAccountOverASystemTheBoxCallsUnpopulated() {
             // The other half of the same disagreement, and the half a stubbed suite cannot pin: the
             // status line and the standings answer different questions of one walk, so the key hint
-            // has to follow the listing rather than the banner. The hulk is the system's only
+            // has to follow the listing rather than the banner. The derelict is the system's only
             // market, so the box says "Unpopulated" and still ranks its owner - and that owner's
             // colony is the whole of what the counterpart has to open up.
             var sector = buildSectorHoldingADerelict();
@@ -161,7 +164,7 @@ final class DerelictReadoutIntegrationTest {
         @Test
         void resolvesTheSameClaimantAndScoresWhetherOrNotADerelictStandsThere() {
             // The boundary the whole work is bound by: what the map shows is widened, what the
-            // mechanic scores is not. The hulk reaches the listing above, and the contest behind
+            // mechanic scores is not. The derelict reaches the listing above, and the contest behind
             // the claim resolves exactly as it does over the colony alone.
             var withDerelict = readClaimBreakdown(buildSectorHoldingADerelict(buildColony()));
             var withoutDerelict = readClaimBreakdown(
@@ -234,7 +237,8 @@ final class DerelictReadoutIntegrationTest {
         return buildVisibleMarket(buildFaction("hegemony"), COLONY);
     }
 
-    // The same system the cases above pose, with the hulk named. Only the boxes that open a faction
+    // The same system the cases above pose, with the derelict named. Only the boxes that open a
+    // faction
     // up draw a colony's own line, and a line is drawn by its name - so the one case reading those
     // boxes needs a derelict the account can call something.
     private static SectorAPI buildSectorHoldingANamedDerelict() {
@@ -242,7 +246,7 @@ final class DerelictReadoutIntegrationTest {
         var colony = buildColony();
 
         // Both lines are drawn by name, and a market mock answers none until it is told to: the
-        // colony is named so its own line can be built at all, and the hulk so the case has
+        // colony is named so its own line can be built at all, and the derelict so the case has
         // something to read the word beside.
         when(colony.getName())
             .thenReturn("Ancyra");

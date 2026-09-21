@@ -38,7 +38,7 @@ import java.util.Set;
  *
  * <p>Habitation rather than the wider listing of what may be named, which is the one place a band
  * and a hover box over the same cell say different things. A run stands for somebody holding
- * something in the system, and nobody has ever been aboard a derelict, so a seen hulk is named in
+ * something in the system, and nobody has ever been aboard a derelict, so a seen one is named in
  * the box and raises no run - the same reading that keeps the cell beneath from painting as settled.
  *
  * <p>Past the projection, nothing at all is asked: a colony the economy never listed and one it

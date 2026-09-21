@@ -281,7 +281,7 @@ class FilteredPoliticsIntegrationTest {
 
         @Test
         void withholdsABlocWhoseOnlyMarketHereIsADerelict() {
-            // Nobody lives aboard a hulk, so the bloc that owns it is absent and the system - which
+            // Nobody lives aboard a derelict, so the bloc that owns it is absent and the system - which
             // nothing weighed - takes no holder at all. The listing over the cell still names the
             // wreck; what it may not do is put a fill under it.
             var sector = buildSectorWith("haven", List.of(buildFaction(Factions.NEUTRAL)));
@@ -420,7 +420,7 @@ class FilteredPoliticsIntegrationTest {
 
         @Test
         void omitsACandidateWhoseOnlyMarketOfTheSelectedBlocIsADerelict() {
-            // Presence is habitation, so a hulk's owner is not living here however plainly the box
+            // Presence is habitation, so a derelict's owner is not living here however plainly the box
             // over the cell may name it. Sparing this cell would keep a bloc's fill over a system
             // the same pass classified as empty backdrop - which is the one disagreement the two
             // reads coming off one value exist to rule out.
