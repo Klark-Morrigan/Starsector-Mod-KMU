@@ -81,13 +81,12 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
     // the session: it is what keeps a failure of this binding reported once however many times it
     // is taken, and reported apart from another mod's over the same renderer.
     //
-    // Led by the mod ID rather than by a literal that merely resembles it, because a key two mods
-    // spell alike is a collision nothing can see: the record reads a pair it already holds and
-    // ignores it, which is exactly what it does for the same mod recording twice, so the second
-    // mod's players would be told what the first mod lost and nothing would say so. Mod IDs are
-    // unique across an install - the game will not load two claiming one - which makes a key led by
-    // ours unique for free.
-    private static final String MAP_CURSOR_CONSUMER_KEY = KmuMod.MOD_ID + "-map-cursor";
+    // The feature alone, not the whole key: the library composes that from our mod ID and this, so
+    // a key two mods spell alike cannot happen. Such a collision is one nothing can see - the record
+    // reads a pair it already holds and ignores it, exactly as it does for the same mod recording
+    // twice - so the second mod's players would be told what the first mod lost and nothing would
+    // say so. What is spelled here names which of this mod's bindings broke, not which mod broke.
+    private static final String MAP_CURSOR_FEATURE_KEY = "map-cursor";
 
     // The freshness cache and the overlay compositor this renderer delegates to. Plain final fields:
     // a renderer belongs to one sector's installed machinery and never enters a save, so neither
@@ -360,8 +359,10 @@ public final class PoliticalMapLayerRenderer implements MapLayerRenderer {
             // stopped holding and which member moved, and nothing about the overlay drawn over the
             // reading, so what a failed binding costs is said here and once.
             ModelviewMatrixReaders.selectForActiveRenderer(new CompatibilityConsumer(
-                MAP_CURSOR_CONSUMER_KEY,
-                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_LOST_MAP_CURSOR))),
+                KmuMod.MOD_ID,
+                MAP_CURSOR_FEATURE_KEY,
+                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_LOST_MAP_CURSOR),
+                KmuStringKeys.get(KmuStringKeys.COMPATIBILITY_UNAFFECTED_MAP_CURSOR))),
             () -> soundPlayer.playCueIfPresent(MapHoverCues.composeCellArrivalCue()),
             // Taken from the shared permission rather than composed here, so this pass and the box
             // that reports what it finds answer from one reading: a hover resolved on a frame no box
