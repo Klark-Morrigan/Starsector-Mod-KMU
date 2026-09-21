@@ -2,6 +2,7 @@ package kmu.maplayers.base.geometry.ui.settings;
 
 import kmu.desktop.ui.swing.CollapsibleSection;
 import kmu.desktop.ui.swing.ColourRows;
+import kmu.desktop.ui.swing.ControlRows;
 import kmu.desktop.ui.swing.ToggleTree;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 
@@ -22,6 +23,11 @@ final class VoidV4Section extends PanelSection {
     private static final String BARE_VOID = "showBareVoid";
 
     private static final String LANDABLE_FRONTAGE = "showLandableFrontageV4";
+
+    // Not a layer, so not in the roll-up above it: it changes how the bare void is drawn rather
+    // than whether it is, and a roll-up that turned it on with the layers would claim to have
+    // switched on something there is no separate thing to see.
+    private static final String BARE_VOID_INSET = "showBareVoidInset";
 
     // v4's own, beside it rather than inside it. The two constructions answer the same question
     // differently, so neither is a branch of the other - and a reader comparing them wants each
@@ -66,6 +72,16 @@ final class VoidV4Section extends PanelSection {
                 "Landable frontage",
                 false,
                 on -> settings.showLandableFrontageV4 = on))));
+
+        // Under the bare void it acts on, rather than with the colours: it is the same layer
+        // drawn another way, and a reader comparing true against inset reaches for it while
+        // reading that layer.
+        controls.add(ControlRows.buildToggle(
+            BARE_VOID_INSET,
+            "Inset the pieces",
+            false,
+            on -> settings.showBareVoidInset = on,
+            refreshes::refreshVoidV4));
 
         controls.add(ColourRows.buildColour(
             "bareVoidColour",

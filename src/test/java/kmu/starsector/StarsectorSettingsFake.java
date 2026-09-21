@@ -35,7 +35,10 @@ public final class StarsectorSettingsFake {
      * @param colourSource the shades the named engine colour keys answer with
      */
     public static void installSettings(SettingsColourSource colourSource) {
-        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS, colourSource);
+        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.buildSettings()
+            .answerStrings(KMU_STRINGS)
+            .answerColours(colourSource)
+            .installSettings();
     }
 
     /**
@@ -46,7 +49,10 @@ public final class StarsectorSettingsFake {
      * @param uiElementSource the element every panel this settings makes hands back
      */
     public static void installSettingsWithUiElements(UiElementSource uiElementSource) {
-        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.installSettings(KMU_STRINGS, uiElementSource);
+        kmlib.testfixtures.starsector.settings.StarsectorSettingsFake.buildSettings()
+            .answerStrings(KMU_STRINGS)
+            .answerUiElements(uiElementSource)
+            .installSettings();
     }
 
     public static void clearSettings() {

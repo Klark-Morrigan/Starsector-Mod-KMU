@@ -203,6 +203,14 @@ public final class ViewerSettings {
     // every time.
     public boolean showLandableFrontageV4;
 
+    // Whether v4's pieces stand off from what they face by the border channel, or are drawn on
+    // their true lines. A mode of the layer above rather than a layer of its own: it is one
+    // division painted two ways, and the pieces do not change when it moves.
+    //
+    // Off, so what is drawn is the partition itself. The true geometry is the thing being
+    // judged here, and a window opening on the inset would show it already dressed.
+    public boolean showBareVoidInset;
+
     // The cells' own names, whose system IDs the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
     public boolean showCellNames;
@@ -563,6 +571,19 @@ public final class ViewerSettings {
      */
     public boolean isLandableFrontageV4Shown() {
         return showVoidV4 && showLandableFrontageV4;
+    }
+
+    /**
+     * Which edges of v4's pieces take the border channel.
+     *
+     * <p>A rule rather than a flag, because the rule is what the shaping takes and answering
+     * with one keeps the two readings of a piece as one statement with a setting in it. Off is
+     * {@link EdgeInsetRule#NOWHERE}, under which the shape drawn is the partition itself.
+     *
+     * @return the rule the pieces are shaped by
+     */
+    public EdgeInsetRule resolveVoidInsetRule() {
+        return showBareVoidInset ? EdgeInsetRule.AT_EVERY_BORDER : EdgeInsetRule.NOWHERE;
     }
 
     /**
