@@ -196,20 +196,23 @@ public final class ViewerSettings {
     // layer is a division of this, so it is the first thing that layer stack has to agree with.
     public boolean showBareVoid = true;
 
-    // The shore of v4's pieces a straight line from elsewhere on the same piece can arrive at.
-    // A diagnostic of the bare void rather than a layer of it: nothing is laid from it yet, and
-    // it is drawn so that what a span may be anchored on can be looked at before any span is
-    // made to obey it. Off, like v3's, since it is read for a reason rather than looked at
-    // every time.
+    // Every stretch of v4's cell border facing void nothing has captured. A diagnostic of the
+    // bare void rather than a layer of it: nothing is laid from it yet, and it is drawn so that
+    // what a span may be anchored on can be looked at before any span is made to obey it. Off,
+    // like v3's, since it is read for a reason rather than looked at every time.
     public boolean showLandableFrontageV4;
 
-    // Whether v4's pieces stand off from what they face by the border channel, or are drawn on
-    // their true lines. A mode of the layer above rather than a layer of its own: it is one
-    // division painted two ways, and the pieces do not change when it moves.
+    // Which edges of v4's pieces take the border channel. A mode of the layer above rather than
+    // a layer of its own: it is one division painted several ways, and the pieces do not change
+    // when it moves.
     //
-    // Off, so what is drawn is the partition itself. The true geometry is the thing being
-    // judged here, and a window opening on the inset would show it already dressed.
-    public boolean showBareVoidInset;
+    // The same three answers the cells are offered, so the two constructions can be set alike
+    // and compared like for like - a boolean here would have made the void's two readings a
+    // different question from the cells' three.
+    //
+    // NOWHERE to open on, so what is drawn is the partition itself. The true geometry is the
+    // thing being judged, and a window opening on the inset would show it already dressed.
+    public EdgeInsetRule voidInsetRule = EdgeInsetRule.NOWHERE;
 
     // The cells' own names, whose system IDs the void's names are built out of. Not part of the
     // void group: a cell is there whatever the void is doing.
@@ -571,19 +574,6 @@ public final class ViewerSettings {
      */
     public boolean isLandableFrontageV4Shown() {
         return showVoidV4 && showLandableFrontageV4;
-    }
-
-    /**
-     * Which edges of v4's pieces take the border channel.
-     *
-     * <p>A rule rather than a flag, because the rule is what the shaping takes and answering
-     * with one keeps the two readings of a piece as one statement with a setting in it. Off is
-     * {@link EdgeInsetRule#NOWHERE}, under which the shape drawn is the partition itself.
-     *
-     * @return the rule the pieces are shaped by
-     */
-    public EdgeInsetRule resolveVoidInsetRule() {
-        return showBareVoidInset ? EdgeInsetRule.AT_EVERY_BORDER : EdgeInsetRule.NOWHERE;
     }
 
     /**

@@ -40,7 +40,7 @@ public final class LandableFrontage {
 
         var runs = new ArrayList<Run>();
 
-        addRunsAlong(runs, new LabelledRing(piece.boundary(), piece.edgeLabels()));
+        addRunsAlong(runs, piece.outline());
 
         for (var hole : piece.holes()) {
             addRunsAlong(runs, hole);

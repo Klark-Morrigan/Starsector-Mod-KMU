@@ -25,9 +25,9 @@ import java.util.Map;
  * clustering serves any layer.
  *
  * <p>What an edge faces is decided here; how much that earns it is not. The depth and the
- * choice of which edges take it arrive as arguments - an {@link EdgeInsetRule} and a distance -
- * so the true cell partition and the cosmetic channel over it stay two separate statements
- * rather than one baked shape.
+ * choice of which edges take it arrive together as an {@link EdgeInset}, so the true cell
+ * partition and the cosmetic channel over it stay two separate statements rather than one baked
+ * shape - and so no caller can pair one map's rule with another's depth.
  */
 public final class CellShaper {
     /**
@@ -57,15 +57,13 @@ public final class CellShaper {
      * @param grouping       which system each cell draws as and each system's owner -
      *                       a cell with no system, or whose system is unowned, shapes as
      *                       unowned
-     * @param insetRule      which edges take the inset
-     * @param borderInset    inward inset applied to every edge the rule pulls in
+     * @param edgeInset      which edges take the channel and how deep it is
      * @return one shaped cell per input cell, keyed by cell key, in iteration order
      */
     public static Map<SystemKey, ShapedCell> shapeCells(
             Map<SystemKey, List<CellEdge>> edgesByCellKey,
             CellGrouping grouping,
-            EdgeInsetRule insetRule,
-            double borderInset) {
+            EdgeInset edgeInset) {
 
         var shaped = new LinkedHashMap<SystemKey, ShapedCell>();
         for (var entry : edgesByCellKey.entrySet()) {
@@ -75,8 +73,7 @@ public final class CellShaper {
                     entry.getValue(),
                     grouping.resolveOwnerOf(entry.getKey()),
                     grouping.ownerBySystemKey(),
-                    insetRule,
-                    borderInset));
+                    edgeInset));
         }
         return shaped;
     }
@@ -91,24 +88,21 @@ public final class CellShaper {
      * @param cellOwner        the owner of this cell, or null if unowned
      * @param ownerBySystemKey the owner per system, to classify each edge
      *                         as a same-owner seam or a border
-     * @param insetRule        which edges take the inset
-     * @param borderInset      inward inset applied to every edge the rule pulls in
+     * @param edgeInset        which edges take the channel and how deep it is
      * @return the shaped cell: its inset fill polygon and per-edge boundary flags
      */
     public static ShapedCell shapeCell(
             List<CellEdge> edges,
             String cellOwner,
             Map<SystemKey, String> ownerBySystemKey,
-            EdgeInsetRule insetRule,
-            double borderInset) {
+            EdgeInset edgeInset) {
 
         var vertices = new ArrayList<double[]>(edges.size());
         var edgeInsets = new double[edges.size()];
         for (var i = 0; i < edges.size(); i++) {
             var edge = edges.get(i);
             vertices.add(new double[] {edge.x1(), edge.y1()});
-            edgeInsets[i] = computeEdgeInset(
-                edge, cellOwner, ownerBySystemKey, insetRule, borderInset);
+            edgeInsets[i] = computeEdgeInset(edge, cellOwner, ownerBySystemKey, edgeInset);
         }
         var inset = PolygonOffsets.insetSelectedEdges(vertices, edgeInsets);
         return new ShapedCell(inset.vertices(), inset.edgeIsInset());
@@ -122,10 +116,9 @@ public final class CellShaper {
             CellEdge edge,
             String cellOwner,
             Map<SystemKey, String> ownerBySystemKey,
-            EdgeInsetRule insetRule,
-            double borderInset) {
+            EdgeInset edgeInset) {
 
         var edgeClass = EdgeClassifier.classifyAcross(edge, cellOwner, ownerBySystemKey);
-        return insetRule.resolveInsetOf(edgeClass.isBoundary(), borderInset);
+        return edgeInset.resolveInsetOf(edgeClass.isBoundary());
     }
 }

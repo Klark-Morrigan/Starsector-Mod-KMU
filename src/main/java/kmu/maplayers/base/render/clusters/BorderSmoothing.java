@@ -13,8 +13,9 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 
 /**
- * The two cluster-border smoothing passes, held apart from any one build so every pass over
- * the same loops sands and rounds them identically.
+ * What stands between an inset ring and a drawable one: the two smoothing passes, and the
+ * envelope resolve either side of them. Held apart from any one build so every pass over the
+ * same loops cleans, sands and rounds them identically.
  *
  * <p>Each pass takes its own half of the smoothing profile as data rather than reading the live
  * settings where it runs. That is what makes "a lone cell's outline rounds exactly like the

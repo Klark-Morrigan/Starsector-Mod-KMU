@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.v4;
 import kmlib.math.geometry.PolygonOffsets;
 import kmlib.math.geometry.RingRegion;
 
+import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 
 import java.util.ArrayList;
@@ -63,8 +64,7 @@ public final class PieceShaper {
      * Shapes one piece into the rings to fill.
      *
      * @param piece           the piece, its edges labelled with what they lie on
-     * @param insetRule       which of those edges take the channel
-     * @param borderInset     how deep the channel is
+     * @param edgeInset       which of those edges take the channel and how deep it is
      * @param miterSpikeLimit multiple of the inset past which a sharp corner bevels rather than
      *                        spiking, a piece being as sharp as the cells that left it
      * @return the outline and the holes, each shaped; a piece the inset folded over comes back
@@ -72,15 +72,10 @@ public final class PieceShaper {
      */
     public static RingRegion shapePiece(
             Face piece,
-            EdgeInsetRule insetRule,
-            double borderInset,
+            EdgeInset edgeInset,
             double miterSpikeLimit) {
 
-        var outline = shapeRing(
-            new LabelledRing(piece.boundary(), piece.edgeLabels()),
-            insetRule,
-            borderInset,
-            miterSpikeLimit);
+        var outline = shapeRing(piece.outline(), edgeInset, miterSpikeLimit);
 
         // Holes and all. A hole handed on beside a folded outline would be taken for the
         // fill by whatever resolves the rings next, so the whole piece goes, not the outline.
@@ -90,7 +85,7 @@ public final class PieceShaper {
         var holes = new ArrayList<List<double[]>>(piece.holes().size());
 
         for (var hole : piece.holes()) {
-            holes.add(shapeRing(hole, insetRule, borderInset, miterSpikeLimit));
+            holes.add(shapeRing(hole, edgeInset, miterSpikeLimit));
         }
         return new RingRegion(outline, List.copyOf(holes));
     }
@@ -99,15 +94,14 @@ public final class PieceShaper {
     // only ever removes area and wants a convex polygon, and a piece of void is neither.
     private static List<double[]> shapeRing(
             LabelledRing ring,
-            EdgeInsetRule insetRule,
-            double borderInset,
+            EdgeInset edgeInset,
             double miterSpikeLimit) {
 
         var labels = ring.edgeLabels();
         var depths = new double[labels.length];
 
         for (var edge = 0; edge < labels.length; edge++) {
-            depths[edge] = insetRule.resolveInsetOf(isAgainstSomething(labels[edge]), borderInset);
+            depths[edge] = edgeInset.resolveInsetOf(isAgainstSomething(labels[edge]));
         }
         return PolygonOffsets.insetPolygonByMiter(ring.vertices(), depths, miterSpikeLimit);
     }

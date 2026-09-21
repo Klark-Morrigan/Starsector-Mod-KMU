@@ -96,6 +96,19 @@ public final class Face {
     }
 
     /**
+     * That same ring with its labels, in the form the holes already come in.
+     *
+     * <p>So a pass over every ring of a face can walk one kind of thing. Asked for the corners
+     * and the labels separately, each such pass had to pair them back up itself, which is a
+     * line written the same way in three places and only ever wrong in one.
+     *
+     * @return the boundary as a labelled ring
+     */
+    public LabelledRing outline() {
+        return outline;
+    }
+
+    /**
      * Which line each edge of that ring lies on.
      *
      * @return one label per edge, entry {@code i} naming the edge leaving corner {@code i}

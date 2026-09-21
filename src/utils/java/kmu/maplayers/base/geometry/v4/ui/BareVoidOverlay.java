@@ -1,17 +1,15 @@
 package kmu.maplayers.base.geometry.v4.ui;
 
-import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.RingRegion;
 
 import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
 import kmu.maplayers.base.geometry.settings.ViewerSettings;
 import kmu.maplayers.base.geometry.v4.BareVoid;
 import kmu.maplayers.base.geometry.v4.LandableFrontage;
-import kmu.maplayers.base.geometry.v4.PieceShaper;
-import kmu.maplayers.base.render.clusters.BorderSmoothing;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -20,7 +18,7 @@ import java.util.Map;
 
 /**
  * What v4 has to show: the void the cells close around, before any line divides it, and the
- * shore of it a straight line could arrive at.
+ * stretches of cell border facing it.
  *
  * <p>v4's whole surface on screen for now, and deliberately the least it can be. The
  * constructions either side of the switch have to be comparable from the first frame, and a
@@ -97,7 +95,7 @@ public final class BareVoidOverlay {
     }
 
     /**
-     * Draws the runs of shore a straight line from elsewhere on the same piece can arrive at.
+     * Draws the runs of cell border facing void nothing has captured.
      *
      * @param g2 where to draw, in world space
      */
@@ -109,43 +107,16 @@ public final class BareVoidOverlay {
         MapPainting.paintLineRuns(g2, landable, settings.landableFrontageV4Colour);
     }
 
-    // Each piece as the painting takes it: the ring round it and the rings of what it runs
-    // around. The sea runs around every group of cells, so filled from its outline alone it
-    // would cover the whole sector - which is what the outline on its own cannot say.
-    //
-    // Shaped on the way out rather than held shaped, since the rule is a knob: under NOWHERE
-    // this hands back the pieces themselves, so the switch costs a reshape of the same
-    // partition rather than a walk of it.
-    //
-    // Then taken through exactly what a cluster border is taken through after ITS inset - the
-    // envelope resolve, the smoothing, the resolve again - and for the same reason: a miter
-    // inset of anything that pinches to a neck crosses itself there, and a piece of void is
-    // all necks. Drawn raw, each crossing is a stroke through the interior. One profile over
-    // the cells and the void beside them is also what makes the two sides of a channel round
-    // alike; and a piece the resolve splits at a neck comes back as the two pieces it is, which
-    // is why the loops are grouped again rather than trusted to be one region each.
+    // Shaped and cleaned on the way out rather than held that way, since both the rule and the
+    // smoothing are knobs: under NOWHERE what is shaped is the partition itself, so the switch
+    // costs a reshape of the same walk rather than a walk of it.
     private static List<RingRegion> collectRegions(BareVoid bare, ViewerSettings settings) {
 
-        var regions = new ArrayList<RingRegion>();
-        var smoothing = settings.resolveBorderSmoothing();
-
-        for (var piece : bare.collectPieces()) {
-
-            var shaped = PieceShaper.shapePiece(
-                piece,
-                settings.resolveVoidInsetRule(),
-                settings.parameters.borderInset(),
-                settings.parameters.miterSpikeLimit());
-
-            // Folded over by the inset, so nothing is handed to the resolve: it would read
-            // whatever rings were left as fills.
-            if (shaped.outerRing().isEmpty()) {
-                continue;
-            }
-            regions.addAll(PolygonRegions.groupRingsIntoRegions(
-                BorderSmoothing.resolveSmoothedBorderLoops(shaped.toRings(), smoothing)));
-        }
-        return List.copyOf(regions);
+        return PieceRegions.collectDrawableRegions(
+            bare.collectPieces(),
+            new EdgeInset(settings.voidInsetRule, settings.parameters.borderInset()),
+            settings.parameters.miterSpikeLimit(),
+            settings.resolveBorderSmoothing());
     }
 
     // Every piece's landable runs as the point runs the painting takes, which cell each is on

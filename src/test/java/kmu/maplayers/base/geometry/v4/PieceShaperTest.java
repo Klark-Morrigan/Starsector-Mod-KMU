@@ -1,5 +1,6 @@
 package kmu.maplayers.base.geometry.v4;
 
+import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.EdgeInsetRule;
 
 import org.junit.jupiter.api.Nested;
@@ -75,7 +76,9 @@ class PieceShaperTest {
     private static List<double[]> shapeSquare(int[] labels, EdgeInsetRule rule) {
 
         return PieceShaper.shapePiece(
-            Face.encloseFace(new LabelledRing(SQUARE, labels)), rule, INSET, MITER_SPIKE_LIMIT)
+            Face.encloseFace(new LabelledRing(SQUARE, labels)),
+            new EdgeInset(rule, INSET),
+            MITER_SPIKE_LIMIT)
             .outerRing();
     }
 
@@ -158,7 +161,7 @@ class PieceShaperTest {
                 .cutOut(new LabelledRing(HOLE, ALL_AGAINST_CELLS));
 
             var shaped = PieceShaper.shapePiece(
-                piece, EdgeInsetRule.AT_EVERY_BORDER, INSET, MITER_SPIKE_LIMIT);
+                piece, new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, INSET), MITER_SPIKE_LIMIT);
 
             assertThat(shaped.holeRings()).hasSize(1);
             assertThat(shaped.holeRings().get(0))
@@ -178,8 +181,7 @@ class PieceShaperTest {
 
             assertThat(PieceShaper.shapePiece(
                 Face.encloseFace(new LabelledRing(SQUARE, ALL_AGAINST_CELLS)),
-                EdgeInsetRule.AT_EVERY_BORDER,
-                INSET,
+                new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, INSET),
                 MITER_SPIKE_LIMIT)
                 .holeRings())
                 .isEmpty();
@@ -194,7 +196,9 @@ class PieceShaperTest {
                 .cutOut(new LabelledRing(STRAIT_HOLE, ALL_AGAINST_CELLS));
 
             var shaped = PieceShaper.shapePiece(
-                piece, EdgeInsetRule.AT_EVERY_BORDER, DEEPER_THAN_HALF_THE_STRAIT, MITER_SPIKE_LIMIT);
+                piece,
+                new EdgeInset(EdgeInsetRule.AT_EVERY_BORDER, DEEPER_THAN_HALF_THE_STRAIT),
+                MITER_SPIKE_LIMIT);
 
             assertThat(shaped.outerRing()).isEmpty();
             assertThat(shaped.holeRings()).isEmpty();
