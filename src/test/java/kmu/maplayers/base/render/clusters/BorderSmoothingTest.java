@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pins what the smoothing passes contribute over the geometry library they call: that a pass
@@ -175,6 +176,103 @@ class BorderSmoothingTest {
 
             assertThat(flattenLoops(smoothed))
                 .isEqualTo(flattenLoops(sandedThenRounded));
+        }
+    }
+
+    @Nested
+    class ResolveSmoothedBorderLoops {
+
+        // A figure of eight: the square's corners visited so that its two diagonals cross at the
+        // centre. The half wound counter-clockwise is a body; the half wound the other way is
+        // what a neck inset folds over into, and is exactly what the resolve exists to drop.
+        private static final List<double[]> BOW_TIE = List.of(
+            new double[] {0, 0},
+            new double[] {100, 100},
+            new double[] {100, 0},
+            new double[] {0, 100});
+
+        // The same square wound clockwise, as a ring the inset folded right over arrives.
+        private static final List<double[]> FOLDED_OVER = List.of(
+            new double[] {0, 0},
+            new double[] {0, 100},
+            new double[] {100, 100},
+            new double[] {100, 0});
+
+        private static final double SAME_POINT = 1e-6;
+
+        @Test
+        void resolveSmoothedBorderLoopsDropsTheReversedHalfOfACrossing() {
+            var loops = BorderSmoothing.resolveSmoothedBorderLoops(
+                List.of(BOW_TIE), BOTH_GATES_OFF);
+
+            // One clean triangle: the counter-clockwise half, closed at the crossing, with
+            // nothing of the other half left as a stray loop or a notch.
+            assertThat(loops).hasSize(1);
+            assertThat(loops.get(0)).hasSize(3);
+            assertLoopHasPoints(
+                loops.get(0),
+                new double[] {0, 0},
+                new double[] {0, 100},
+                new double[] {50, 50});
+        }
+
+        @Test
+        void resolveSmoothedBorderLoopsWindsALoneRingToFillWhicheverWayItArrived() {
+            var loops = BorderSmoothing.resolveSmoothedBorderLoops(
+                List.of(FOLDED_OVER), BOTH_GATES_OFF);
+
+            // Not dropped, and not a hole: a lone ring's own winding is taken for the plane's,
+            // so the resolve hands a folded ring back as a body. Pinned because it is the reason
+            // a fold has to be caught by whoever still holds the raw ring, before this runs.
+            assertThat(loops).hasSize(1);
+            assertLoopHasPoints(
+                loops.get(0),
+                new double[] {0, 0},
+                new double[] {100, 0},
+                new double[] {100, 100},
+                new double[] {0, 100});
+        }
+
+        @Test
+        void resolveSmoothedBorderLoopsLeavesACleanLoopWithItsOwnCorners() {
+            var loops = BorderSmoothing.resolveSmoothedBorderLoops(
+                List.of(SQUARE), BOTH_GATES_OFF);
+
+            assertThat(loops).hasSize(1);
+            assertLoopHasPoints(
+                loops.get(0),
+                new double[] {0, 0},
+                new double[] {100, 0},
+                new double[] {100, 100},
+                new double[] {0, 100});
+        }
+
+        @Test
+        void resolveSmoothedBorderLoopsSmoothsBetweenTheTwoResolves() {
+            var loops = BorderSmoothing.resolveSmoothedBorderLoops(
+                List.of(SQUARE), ROUNDING_ONLY);
+
+            // Rounded, so the ring grew and no corner survives - the same test the rounding pass
+            // is held to, met here through the composition rather than the pass alone.
+            assertThat(loops).hasSize(1);
+            assertThat(loops.get(0)).hasSizeGreaterThan(SQUARE.size());
+            assertThat(loops.get(0)).noneMatch(vertex -> vertex[0] == 0 && vertex[1] == 0);
+        }
+
+        // Each expected point found once, in any order and within rounding, since the resolve
+        // is free to start the loop anywhere and to place a crossing by its own arithmetic.
+        private void assertLoopHasPoints(List<double[]> loop, double[]... expected) {
+
+            assertThat(loop).hasSize(expected.length);
+
+            for (var point : expected) {
+                assertThat(loop)
+                    .as("a corner at %.0f,%.0f", point[0], point[1])
+                    .anySatisfy(vertex -> {
+                        assertThat(vertex[0]).isCloseTo(point[0], within(SAME_POINT));
+                        assertThat(vertex[1]).isCloseTo(point[1], within(SAME_POINT));
+                    });
+            }
         }
     }
 

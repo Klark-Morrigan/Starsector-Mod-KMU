@@ -2,6 +2,7 @@ package kmu.maplayers.base.render.clusters;
 
 import kmlib.math.geometry.CornerRounding;
 import kmlib.math.geometry.PolygonSmoothing;
+import kmlib.opengl.PolygonTessellator;
 
 import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.base.theme.CornerRoundingStyle;
@@ -53,6 +54,36 @@ public final class BorderSmoothing {
             smoothed = roundBorderCorners(smoothed, style.cornerRounding());
         }
         return smoothed;
+    }
+
+    /**
+     * Takes inset rings all the way to the loops a border strokes: resolved to their clean
+     * outer envelope, smoothed, and resolved again.
+     *
+     * <p>The whole of what stands between a miter inset and something drawable, in one place,
+     * because every body shaped by a per-edge inset needs all of it and needs it in this order.
+     * A miter inset of anything that pinches to a neck crosses itself there, and a ring narrower
+     * than twice its channel folds right over; the positive-winding resolve drops the reversed
+     * sub-loop of the first and the whole of the second. Smoothing has to come after that, since
+     * an arc rounded onto a crossing is clipped back to a sharp point by it.
+     *
+     * <p>Resolved a second time after smoothing, because rounding a corner can push one arc
+     * through another and open a crossing the first resolve could not have seen. That also
+     * leaves every loop in the winding convention a grouping reads - outer counter-clockwise,
+     * hole clockwise - which a smoothed-but-unresolved loop is not guaranteed to be.
+     *
+     * @param insetRings the rings as the inset left them, crossings and all
+     * @param style      the sector-wide smoothing profile, both halves' gates included
+     * @return the finished loops, wound outer counter-clockwise and hole clockwise
+     */
+    public static List<List<double[]>> resolveSmoothedBorderLoops(
+            List<List<double[]>> insetRings,
+            BorderSmoothingStyle style) {
+
+        return PolygonTessellator.tessellateToBoundaryLoops(
+            smoothBorderLoops(
+                PolygonTessellator.tessellateToBoundaryLoops(insetRings),
+                style));
     }
 
     /**

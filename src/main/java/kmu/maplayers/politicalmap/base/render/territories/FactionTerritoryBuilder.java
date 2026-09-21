@@ -3,7 +3,6 @@ package kmu.maplayers.politicalmap.base.render.territories;
 import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.RingRegion;
 import kmlib.opengl.GlVertexRuns;
-import kmlib.opengl.PolygonTessellator;
 import kmlib.starsector.systems.SystemKey;
 
 import kmu.maplayers.base.geometry.CellGeometryCache;
@@ -15,7 +14,6 @@ import kmu.maplayers.base.render.clusters.SplitFillBuilder;
 import kmu.maplayers.base.render.clusters.StyledCluster;
 import kmu.maplayers.base.render.clusters.StyledClusterGroup;
 import kmu.maplayers.base.render.clusters.TracedFill;
-import kmu.maplayers.base.theme.BorderSmoothingStyle;
 import kmu.maplayers.politicalmap.base.politics.FilteredPolitics;
 
 import java.awt.Color;
@@ -109,7 +107,7 @@ public final class FactionTerritoryBuilder {
         if (insetRings.isEmpty()) {
             return null;
         }
-        var borderLoops = resolveSmoothedBorderLoops(
+        var borderLoops = BorderSmoothing.resolveSmoothedBorderLoops(
             insetRings,
             globalStyle.borderSmoothing());
 
@@ -175,25 +173,6 @@ public final class FactionTerritoryBuilder {
                 territories.getStyledClusterGroupByOwnerId().put(bloc.getKey(), territory);
             }
         }
-    }
-
-    // Resolves the traced rings to their clean outer envelope first (positive winding drops any
-    // neck self-crossing), then hands them to the shared smoothing passes. Smoothing before the
-    // resolve would have any arc clipped off at the crossing and left a sharp corner; which
-    // passes run, and in which order, is the profile's own answer rather than restated here.
-    private static List<List<double[]>> resolveSmoothedBorderLoops(
-            List<List<double[]>> insetRings,
-            BorderSmoothingStyle borderSmoothing) {
-
-        // Resolved a second time after smoothing, because rounding a corner can push one arc
-        // through another and open a crossing the first resolve could not have seen. That also
-        // leaves every loop in the winding convention the grouping reads - outer
-        // counter-clockwise, enclave clockwise - which a smoothed-but-unresolved loop is not
-        // guaranteed to be.
-        return PolygonTessellator.tessellateToBoundaryLoops(
-            BorderSmoothing.smoothBorderLoops(
-                PolygonTessellator.tessellateToBoundaryLoops(insetRings),
-                borderSmoothing));
     }
 
     // Cuts each body's fill and flattens its loops into the GL runs the stroke walks. The fill is
