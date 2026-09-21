@@ -86,6 +86,19 @@ enforcePackageVocabulary {
     allowWord word: 'ground',
             inFile: 'src/main/java/kmu/maplayers/README.md'
 
+    // Two shapes of colony the tree kept inventing words for. *Hulk* is fluff on
+    // top of *derelict*, which already names the thing and is what every type
+    // here is called. *Dead colony* and *dead world* are worse than fluff: the
+    // kind they stood for is still populated - survivors, bandits and looters -
+    // so the phrase asserts the opposite of what the map draws, and the word for
+    // it is *decivilised*. Plurals are separate entries because the gate parts
+    // words one at a time, so a phrase list closing the singular leaves the
+    // plural open.
+    forbidWords under: 'kmu',
+                words: ['hulk', 'hulks',
+                        'dead colony', 'dead colonies',
+                        'dead world', 'dead worlds']
+
     // The four files that may say it, each for a reason no rewording reaches.
     // Three name the sector-memory keys the picker's selection is stored under:
     // those are save-serialised identities, frozen for the reason the terrain
