@@ -87,7 +87,7 @@ final class DebugBorderTracingBuilderTest {
     // other two share no edge with anything, each enclosed by the reach bound alone.
     private static final String HELD_SYSTEM = "held";
     private static final String NEIGHBOUR_SYSTEM = "neighbour";
-    private static final String DEAD_SYSTEM = "dead";
+    private static final String DECIVILISED_SYSTEM = "decivilised";
     private static final String EMPTY_SYSTEM = "empty";
 
     // A 100-unit cell, well under twice the 150-unit border channel, so insetting it leaves
@@ -125,7 +125,7 @@ final class DebugBorderTracingBuilderTest {
             buildEdgeFacing(4000, 0, 4000, 2000, null),
             buildEdgeFacing(4000, 2000, 2000, 2000, null),
             buildEdgeFacing(2000, 2000, 2000, 0, HELD_SYSTEM)),
-        DEAD_SYSTEM, List.of(
+        DECIVILISED_SYSTEM, List.of(
             buildEdgeFacing(10000, 0, 12000, 0, null),
             buildEdgeFacing(12000, 0, 12000, 2000, null),
             buildEdgeFacing(12000, 2000, 10000, 2000, null),
@@ -244,24 +244,24 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesOutlinesOnlyTheFactionlessCategoryWhoseOutlineIsSwitchedOn() {
-            stubInhabitedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
-            // The dead world's cell resolves to the decivilised bundle and draws; the uninhabited
-            // one resolves to the bundle the player switched off and is skipped, which is what
-            // keeps the overlay off every empty corner of the sector.
+            // The decivilised world's cell resolves to the decivilised bundle and draws; the
+            // uninhabited one resolves to the bundle the player switched off and is skipped,
+            // which is what keeps the overlay off every empty corner of the sector.
             assertThat(drawables.baseLoops()).hasSize(1);
         }
 
         @Test
         void buildDebugDrawablesOutlinesNoFactionlessCellWhenNeitherCategoryDraws() {
-            stubInhabitedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DECIVILISED_SYSTEM);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
+                listCellsFor(DECIVILISED_SYSTEM, EMPTY_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             assertThat(drawables.isEmpty()).isTrue();
         }
@@ -317,11 +317,11 @@ final class DebugBorderTracingBuilderTest {
             // categories into has to be read under the same outline answer the fills were - read
             // here off the preference instead, a flip between the two would have the diagnostic
             // showing uninhabited cells the map is not drawing, or hiding ones it is.
-            stubInhabitedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildNoSmoothing(), DRAWN_OUTLINE, DRAWN_OUTLINE);
 
             DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM),
+                listCellsFor(DECIVILISED_SYSTEM),
                 sectorMock,
                 ContentInputsFixtures.createInputsOutlining(false));
 
@@ -330,11 +330,11 @@ final class DebugBorderTracingBuilderTest {
 
         @Test
         void buildDebugDrawablesGivesAFactionlessOutlineNoDespikedStageEvenWithSandingOn() {
-            stubInhabitedSystems(DEAD_SYSTEM);
+            stubInhabitedSystems(DECIVILISED_SYSTEM);
             stubTheme(buildBothGatesOn(), DRAWN_OUTLINE, ElementStyle.NOT_DRAWN);
 
             var drawables = DebugBorderTracingBuilder.buildDebugDrawables(
-                listCellsFor(DEAD_SYSTEM), sectorMock, OUTLINE_DRAWN);
+                listCellsFor(DECIVILISED_SYSTEM), sectorMock, OUTLINE_DRAWN);
 
             // A lone convex cell has no needle protrusions to sand, so its two stages are the raw
             // inset and its rounded corners - the sanding gate being on does not invent a third.

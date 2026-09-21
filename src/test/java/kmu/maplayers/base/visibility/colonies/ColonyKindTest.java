@@ -46,7 +46,7 @@ final class ColonyKindTest {
         @Test
         void readsADerelictConditionedMarketAFactionHoldsAsAnOutpost() {
             // The condition is not vanilla's alone - a mod may hang it on a station it means to be
-            // manned - so the owner is one of the two things that part a kept station from a hulk.
+            // manned - so the owner is one of the two things that part a kept station from a wreck.
             // Posed against the case above, which differs in the owner and in nothing else.
             var outpost = ColonyMarketFixture.buildOutpost("hegemony");
 
@@ -57,7 +57,7 @@ final class ColonyKindTest {
         @Test
         void readsAnUnownedDerelictTheEconomyListsAsAnOutpost() {
             // The other of the two, and the case that says either alone is enough. The routine
-            // that builds a derelict pointedly does not register one, so a hulk trading anyway was
+            // that builds a derelict pointedly does not register one, so one trading anyway was
             // made economically real on purpose - and reading the owner alone left it taking a
             // dominance weight while counting toward nobody living there.
             var derelict = ColonyMarketFixture.buildDerelictStation();
@@ -86,7 +86,7 @@ final class ColonyKindTest {
         }
 
         @Test
-        void readsADecivilisedWorldAsADeadColony() {
+        void readsADecivilisedWorldAsAnUngovernedColony() {
 
             var decivilisedWorld = ColonyMarketFixture.buildDecivilisedWorld();
 
@@ -95,9 +95,10 @@ final class ColonyKindTest {
         }
 
         @Test
-        void readsADeadWorldThePlayerHasNotSurveyedAsADeadColony() {
+        void readsADecivilisedWorldThePlayerHasNotSurveyedAsAnUngovernedColony() {
             // What the world is and whether the player may be told are different questions asked at
-            // different layers, so an unread ruin is classified as the ruin it is and withheld by
+            // different layers, so an unread world is classified as the collapse it is and withheld
+            // by
             // the fog above rather than by being misfiled here.
             var decivilisedWorld = ColonyMarketFixture.buildUnsurveyedDecivilisedWorld();
 
@@ -108,7 +109,8 @@ final class ColonyKindTest {
         @Test
         void readsABarePlanetsPlaceholderAsAColony() {
             // The condition-only market every uninhabited world carries, and the case that says the
-            // ruin arm turns on the decivilised condition rather than on being condition-only. Such
+            // collapse arm turns on the decivilised condition rather than on being condition-only.
+            // Such
             // a market never reaches a colony set in the first place, ownership refusing it.
             var placeholder = ColonyMarketFixture.buildConditionOnlyMarket();
 
@@ -119,7 +121,7 @@ final class ColonyKindTest {
         @Test
         void readsANullMarketAsAColony() {
             // The default arm, posed at its extreme: nothing at all to read still yields the kind
-            // that keeps a place on the map, because misfiling a settlement as a hulk erases it.
+            // that keeps a place on the map, because misfiling a settlement as a wreck erases it.
             assertThat(ColonyKind.resolveKind(null, UNLISTED_BY_ECONOMY))
                 .isEqualTo(ColonyKind.COLONY);
         }
@@ -129,9 +131,9 @@ final class ColonyKindTest {
     class IsFoundByReport {
 
         @Test
-        void answersTrueForADeadColony() {
+        void answersTrueForADecivilisedColony() {
             // The one kind the fog withholds on survey level rather than on the entity flag, which
-            // is what leaves a ruin invisible in a system its neighbours have been living in.
+            // is what leaves such a world invisible in a system its neighbours have been living in.
             assertThat(ColonyKind.UNGOVERNED_COLONY.isFoundByReport())
                 .isTrue();
         }
@@ -162,8 +164,9 @@ final class ColonyKindTest {
         }
 
         @Test
-        void answersFalseForADeadColony() {
-            // Somewhere people were is not somewhere people are: a ruin inhabits its place and has
+        void answersFalseForADecivilisedColony() {
+            // Somewhere people were is not somewhere people are: such a world inhabits its place and
+            // has
             // nobody left to say what else is standing in it.
             assertThat(ColonyKind.UNGOVERNED_COLONY.isSettlingLocation())
                 .isFalse();

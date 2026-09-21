@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * <p>The unmet ID is the case worth pinning rather than the plain one. A claim row carries the ID
  * of the market it was scored from and nothing of the place behind it, so an account listing a row
  * the fold never met has to go on reading rather than fail - and it must read as the kind that
- * says nothing, not as one that calls a living colony a ruin.
+ * says nothing, not as one that calls a living colony a wreck.
  */
 final class ColonyKindLookupTest {
 
@@ -107,7 +107,7 @@ final class ColonyKindLookupTest {
         @Test
         void readsAnIdTheFoldNeverMetAsAnOrdinaryColony() {
             // The direction a classification errs in everywhere else: overstating a place by one
-            // settlement rather than calling a living colony a ruin.
+            // settlement rather than calling a living colony a wreck.
             assertThat(ColonyKindLookup.NONE.readKindOf(DERELICT_ID))
                 .isEqualTo(ColonyKind.COLONY);
         }

@@ -84,9 +84,9 @@ public record PoliticalMapSectorSnapshot(
      * the arrangement this signature makes unstateable.
      *
      * <p>Reaches past the pass's own membership answer for two things it alone needs: the
-     * colonies each system holds, which the dominance fold weighs, and the ruin flag, which
-     * salts a drawn system's fingerprint. Both come off the pass rather than beside it, so
-     * what this walk weighs is what the same walk drew.
+     * colonies each system holds, which the dominance fold weighs, and the revealed-decivilised
+     * flag, which salts a drawn system's fingerprint. Both come off the pass rather than beside
+     * it, so what this walk weighs is what the same walk drew.
      *
      * @param pass  the poll's reading of the sector: which systems are drawn, what may be shown
      *              of a colony, and the one walk of each system every reader shares; a pass
@@ -125,9 +125,10 @@ public record PoliticalMapSectorSnapshot(
                 continue;
             }
 
-            // Taken off the pass rather than read again: membership folds the ruin in and cannot
-            // report it, but the fingerprint needs it on its own to salt a drawn system's
-            // contribution, so a live-to-dead flip moves the hash without the drawn set changing.
+            // Taken off the pass rather than read again: membership folds the decivilised world in
+            // and cannot report it, but the fingerprint needs it on its own to salt a drawn
+            // system's contribution, so a live-to-decivilised flip moves the hash without the
+            // drawn set changing.
             var hasRevealedDecivilised = pass.isRevealedDecivilised(system);
 
             // The system's key, which this walk holds the system to read, and which both outputs

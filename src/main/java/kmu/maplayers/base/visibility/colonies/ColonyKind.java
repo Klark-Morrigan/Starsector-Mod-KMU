@@ -13,7 +13,7 @@ import kmlib.starsector.markets.Markets;
  * <p>A classification drawn for the map rather than a shape the sector holds. Vanilla has one
  * derelict shape - a market carrying the abandoned-station condition - and the split into
  * {@link #OUTPOST} and {@link #SPACE_DERELICT} is made here because a cell must not paint as
- * settled for a hulk. {@link #isSettlingLocation} is the same story stated outright: nothing in
+ * settled for a derelict. {@link #isSettlingLocation} is the same story stated outright: nothing in
  * the game answers it, and it exists so a place can be judged settled for the purpose of revealing
  * whatever else is standing there. Which is why the kind lives with the layer that spends it,
  * over a colony set the library states without it.
@@ -21,7 +21,7 @@ import kmlib.starsector.markets.Markets;
  * <p>The sector holds the first three under one market shape. A market carrying the derelict
  * condition is owned by some faction, is not condition-only, and is registered like any other, so
  * every ownership read admits it as a colony - while nobody is aboard the abandoned ones, they
- * support nothing, and a place holding only those is empty space with hulks in it. A reader that
+ * support nothing, and a place holding only those is empty space with derelicts in it. A reader that
  * cannot tell them apart says something false about the sector rather than merely drawing it oddly.
  *
  * <p>The fourth wears the opposite disguise. A colony that decivilises is stripped of its owner,
@@ -91,7 +91,7 @@ public enum ColonyKind {
      * deliberate act: the routine that builds a derelict pointedly does not register one, so a
      * market wearing the condition and trading anyway was made economically real on purpose.
      * Either alone is enough, since they are two ways of saying the same thing rather than two
-     * requirements - and reading only the first left a registered hulk taking a dominance weight
+     * requirements - and reading only the first left a registered derelict taking a dominance weight
      * while counting toward nobody living there.
      *
      * <p>The listing arrives as an argument rather than being read off the market, because which
@@ -100,7 +100,7 @@ public enum ColonyKind {
      * to disagree with the one the colony carries.
      *
      * <p>The colony default is the safe direction rather than the tidy one. Misfiling a derelict
-     * as a colony overstates a place by one hulk; misfiling a colony as a derelict erases a
+     * as a colony overstates a place by one wreck; misfiling a colony as a derelict erases a
      * settlement that is really there, taking its people with it.
      *
      * @param market            the market to classify; null yields {@link #COLONY}

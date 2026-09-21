@@ -198,7 +198,7 @@ then the holder ID to the end of the entry.
 ## Installations (`installations`)
 
 Market-less station entities:
-the hulks,
+the derelicts,
 habitats and defensive platforms that carry no market and so reach none of the colony machinery.
 `InstallationKind` is what one counts as -
 a `DERELICT` that counts for nobody,
@@ -273,7 +273,7 @@ Every fallback here points the same way:
 understate what is known,
 never invent it.
 An unclassified colony reads as an ordinary colony,
-because misfiling a derelict overstates a place by one hulk
+because misfiling a derelict overstates a place by one wreck
 while misfiling a colony erases the people on it.
 An installation nothing classifies is `DERELICT` at nought weight,
 because inventing a holder for an unresearched entity type hands somebody a system inside a number the player cannot check.

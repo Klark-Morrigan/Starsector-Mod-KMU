@@ -5,7 +5,7 @@ import java.util.Optional;
 import static kmu.util.KmuValues.normaliseText;
 
 /**
- * What kind of place a market-less installation is, as a map layer has to tell them apart: a hulk
+ * What kind of place a market-less installation is, as a map layer has to tell them apart: one
  * nobody keeps, one a faction owns outright, or one a garrison holds for whoever posted it.
  *
  * <p>A classification drawn for the map rather than a shape the sector holds. Nothing in the game
@@ -17,7 +17,7 @@ import static kmu.util.KmuValues.normaliseText;
  * at all. A {@link #DERELICT} counts for nobody and weighs nothing. A {@link #HELD} counts for the
  * faction that owns the entity. A {@link #GARRISONED} counts for whoever posted what is standing
  * there, which is frequently not the faction the entity itself names - a remnant picket sits on a
- * neutral-owned station, and reading the owner would file every one of them as a hulk.
+ * neutral-owned station, and reading the owner would file every one of them as a derelict.
  *
  * <p>Resolved from facts, and stated by a row of the override table where the facts are not enough:
  * research into what a modded entity type actually is arrives one type at a time, and has to be
@@ -31,7 +31,7 @@ import static kmu.util.KmuValues.normaliseText;
 public enum InstallationKind {
 
     /**
-     * A hulk nobody keeps: no garrison met, and no real faction owning it.
+     * An installation nobody keeps: no garrison met, and no real faction owning it.
      *
      * <p>The default the classification errs towards, and deliberately the timid one. Understating
      * a place as unheld costs nought weight in a ranking; inventing a holder for an unresearched

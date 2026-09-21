@@ -382,17 +382,17 @@ final class CellGeometryCacheTest {
 
         @Test
         void updateSeedsAnUnreachableSystemHoldingARevealedDecivilisedPlanet() {
-            // No jump point, so the access rule rejects it, but the revealed ruin
+            // No jump point, so the access rule rejects it, but the revealed world
             // makes it inhabited - it must still seed a cell.
             var cache = new CellGeometryCache();
 
             updateAtDefaultResolution(
                 cache,
                 buildAccessibleSystem("a", 0, 0),
-                buildDecivilisedUnreachableSystem("ruin", 4000, 0));
+                buildDecivilisedUnreachableSystem("decivilised", 4000, 0));
 
             assertThat(cache.getCellEdgesByCellKey())
-                .containsOnlyKeys(buildCellKey("a"), buildCellKey("ruin"));
+                .containsOnlyKeys(buildCellKey("a"), buildCellKey("decivilised"));
         }
 
         @Test
@@ -564,7 +564,7 @@ final class CellGeometryCacheTest {
 
         // No jump point (Mockito defaults the list empty) and not cut off, so the
         // access rule rejects it; the revealed decivilised planet is its only
-        // route onto the map. The ruin is placed among the system's entities as
+        // route onto the map. The world is placed among the system's entities as
         // well as its planets, that walk being how a colony set reaches it.
         var systemMock = StarSystemFixture.buildSystemAt(id, x, y);
 

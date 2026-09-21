@@ -14,16 +14,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * The dead world every map surface reads as a system somebody once lived in: a planet whose market
- * carries vanilla's decivilised condition, surveyed far enough that the player can see it does.
+ * The decivilised world every map surface reads as a system somebody once lived in: a planet whose
+ * market carries vanilla's decivilised condition, surveyed far enough that the player can see it
+ * does.
  *
  * <p>Shared because six suites across three layers stage this same shape, and it is the one fixture
- * none of them can express through their own market vocabulary. A ruin is the condition-only shell a
- * colony leaves behind - stripped of its owner, its industries and its economy listing - so it is
- * not a variant of the colony builders each suite keeps, and every suite that wanted one wrote the
- * same stubs out again. Written out per suite they drift: two of the six stated the survey rule and
- * four left it to a mock default, so each copy went on agreeing with itself while the suites
- * disagreed about what a revealed ruin is.
+ * none of them can express through their own market vocabulary. Such a world is the condition-only
+ * shell a colony leaves behind - stripped of its owner, its industries and its economy listing - so
+ * it is not a variant of the colony builders each suite keeps, and every suite that wanted one wrote
+ * the same stubs out again. Written out per suite they drift: two of the six stated the survey rule
+ * and four left it to a mock default, so each copy went on agreeing with itself while the suites
+ * disagreed about what a revealed decivilised world is.
  *
  * <p>It sits at {@code kmu.maplayers} rather than beside any layer's fixtures because the framework
  * suites need it too, and {@code maplayers.base} may not reach into the political map - see the
@@ -31,12 +32,12 @@ import static org.mockito.Mockito.when;
  *
  * <p>Revealed rather than merely present, which is the whole of what makes it visible. Vanilla
  * gates a condition on the survey level of the market carrying it, so a world nobody has surveyed
- * reads as no ruin at all; the pair of stubs below is what lifts that gate.
+ * reads as an ordinary one; the pair of stubs below is what lifts that gate.
  *
- * <p>The planet is wired as the market's own entity, and the market back onto it, because a ruin
- * reaches a map surface through the colony walk of its system's entities. Wired one way only, the
- * walk finds nothing and a case posing a ruined system would really be posing an empty one - and
- * would pass whichever answer the surface gave.
+ * <p>The planet is wired as the market's own entity, and the market back onto it, because such a
+ * world reaches a map surface through the colony walk of its system's entities. Wired one way only,
+ * the walk finds nothing and a case posing a decivilised system would really be posing an empty
+ * one - and would pass whichever answer the surface gave.
  */
 public final class DecivilisedPlanetFixtures {
 
@@ -44,8 +45,8 @@ public final class DecivilisedPlanetFixtures {
     }
 
     /**
-     * A surveyed planet carrying a revealed decivilised condition - the ruin of a colony the player
-     * has already seen die.
+     * A surveyed planet carrying a revealed decivilised condition - what a colony the player has
+     * already watched collapse leaves behind.
      *
      * <p>Its market is the condition-only shell vanilla leaves behind, handed to the neutral
      * faction, which the decivilised condition is what parts from every bare rock's placeholder.
@@ -57,7 +58,7 @@ public final class DecivilisedPlanetFixtures {
     }
 
     /**
-     * The same ruin on a world nobody has looked at closely enough to read: the condition is there
+     * The same shell on a world nobody has looked at closely enough to read: the condition is there
      * and the player has no way of knowing it.
      *
      * <p>Its planet is found all the same. Discovery and survey are independent axes, and this is
@@ -70,30 +71,30 @@ public final class DecivilisedPlanetFixtures {
     }
 
     /**
-     * Hangs a revealed ruin on a system already built, for a suite whose system came from a sector
-     * fixture rather than from a builder of its own.
+     * Hangs a revealed decivilised world on a system already built, for a suite whose system came
+     * from a sector fixture rather than from a builder of its own.
      *
-     * <p>The ruin is placed among the system's entities as well as its planets, that walk being how
+     * <p>The world is placed among the system's entities as well as its planets, that walk being how
      * a colony set reaches an unlisted market at all.
      *
-     * @param system the system the ruin stands in; its planets and entities are replaced by the one
-     *               ruin
+     * @param system the system the world stands in; its planets and entities are replaced by that
+     *               one world
      */
     public static void placeRevealedDecivilisedPlanetIn(StarSystemAPI system) {
         placePlanetIn(system, buildRevealedDecivilisedPlanet());
     }
 
     /**
-     * Hangs a ruin nobody has surveyed on a system already built, for a case about the survey
-     * reveal.
+     * Hangs a decivilised world nobody has surveyed on a system already built, for a case about the
+     * survey reveal.
      *
-     * @param system the system the ruin stands in; its planets and entities are replaced by it
+     * @param system the system the world stands in; its planets and entities are replaced by it
      */
     public static void placeUnsurveyedDecivilisedPlanetIn(StarSystemAPI system) {
         placePlanetIn(system, buildUnsurveyedDecivilisedPlanet());
     }
 
-    // The ruin at a stated survey level, which is the one axis the two builders above differ on.
+    // The world at a stated survey level, which is the one axis the two builders above differ on.
     private static PlanetAPI buildDecivilisedPlanet(MarketAPI.SurveyLevel surveyLevel) {
 
         // The condition, the faction and the planet finish their own stubbing before the market's
@@ -133,14 +134,14 @@ public final class DecivilisedPlanetFixtures {
         return planetMock;
     }
 
-    // Stands one ruin in a system, on both walks that could reach it. The entity walk is how a
+    // Stands one such world in a system, on both walks that could reach it. The entity walk is how a
     // colony set finds an unlisted market at all; the planet walk is what a suite reading the
     // system's worlds sees.
     //
     // The market is pointed back at the system as well, because a reader asking whether anybody
     // has seen this colony reads the place it stands in and compares it against the observation.
-    // Left unstubbed the ruin stands in no system at all - hyperspace, where such a reader has
-    // nothing to compare and so answers seen - and a case posing a ruin nobody has found would
+    // Left unstubbed the world stands in no system at all - hyperspace, where such a reader has
+    // nothing to compare and so answers seen - and a case posing a world nobody has found would
     // really be posing one everybody has.
     private static void placePlanetIn(StarSystemAPI system, PlanetAPI planet) {
 

@@ -198,7 +198,7 @@ public final class RenderStyleReader {
             KmuPoliticalMapTerritorySettings.getIndependentInnerBorderWidth());
     }
 
-    // Dead colonies keep both a neutral fill and a neutral outline: the system was settled
+    // Decivilised colonies keep both a neutral fill and a neutral outline: the system was settled
     // once, so it reads as occupied space rather than a bare ring around nothing. Neither
     // element has a colour choice - a factionless cell has no palette to pick from - so the
     // outline is unconditionally drawn and each opacity is its element's own on/off.
@@ -213,7 +213,7 @@ public final class RenderStyleReader {
     }
 
     // Never-settled space stays outline-only: filling it would wash the whole sector, since
-    // uninhabited cells cover everything no faction and no dead colony holds. Its outline's
+    // uninhabited cells cover everything no faction and no decivilised colony holds. Its outline's
     // on/off is the one style input that is not a LunaLib field - the sidebar's
     // uninhabited-systems checkbox, a per-save preference the rebuild samples and hands over -
     // while the opacity and width it strokes at stay settings-screen knobs read here.

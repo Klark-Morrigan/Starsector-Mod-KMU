@@ -97,7 +97,7 @@ final class ColonyObservationNotesTest {
 
         @Test
         void remarksNothingOnAColonyItsNeighboursCanSee() {
-            // The other live route. A hulk in orbit over an inhabited world is common knowledge
+            // The other live route. A derelict in orbit over an inhabited world is common knowledge
             // there, so the box's news of it is as current as the system it stands in.
             var notes = readNotesOver(buildSettledDerelictSet(), observedDaysAgo(34.0f));
 
@@ -221,7 +221,7 @@ final class ColonyObservationNotesTest {
             new Colony(buildMarket(NEIGHBOUR_ID, "hegemony"), true)));
     }
 
-    // A hulk nobody was ever aboard: neutral's, and carrying vanilla's abandoned-station condition,
+    // A wreck nobody was ever aboard: neutral's, and carrying vanilla's abandoned-station condition,
     // which is what the kind read parts a derelict from a station somebody keeps on. Posed as the
     // real shape rather than declared, the kind being resolved off the market now.
     private static MarketAPI buildDerelictMarket(String marketId) {

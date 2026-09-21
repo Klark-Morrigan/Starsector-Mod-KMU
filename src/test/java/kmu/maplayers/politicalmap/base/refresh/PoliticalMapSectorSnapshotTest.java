@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  */
 class PoliticalMapSectorSnapshotTest {
 
-    // The size vanilla builds a derelict at: a hulk nobody lives on is created at nought, whatever
+    // The size vanilla builds a derelict at: one nobody lives on is created at nought, whatever
     // the station it hangs on.
     private static final int NO_POPULATION = 0;
 
@@ -212,7 +212,7 @@ class PoliticalMapSectorSnapshotTest {
 
         @Test
         void visibilityFingerprintLeavesOutASystemHoldingOnlyAnAbandonedStation() {
-            // Nobody has ever been aboard a derelict, so the hulk's system is not on the drawn set
+            // Nobody has ever been aboard a derelict, so its system is not on the drawn set
             // and contributes nothing to hash. Asked of the scan rather than of the rule it calls,
             // because this walk computes inhabitation itself and hands it in as a flag: a scan
             // reading the wider listing would hash a system the geometry never draws, and the
@@ -220,7 +220,7 @@ class PoliticalMapSectorSnapshotTest {
             //
             // Hung on a system entity rather than listed, as vanilla builds one: the economy
             // listing is itself one of the two things that make a station somebody's, so a listed
-            // hulk is an outpost and would be counted.
+            // derelict is an outpost and would be counted.
             var snapshot = scanUnderStabilityWeighting(
                 buildSectorWithUnlistedColony(buildSystem("a"), buildAbandonedStation()));
 
@@ -232,7 +232,7 @@ class PoliticalMapSectorSnapshotTest {
 
         @Test
         void ownerMapOmitsADecivilisedShellThatStillCountsForVisibility() {
-            // A revealed dead colony is drawn (visibility) but confers no holder, so
+            // A revealed decivilised colony is drawn (visibility) but confers no holder, so
             // it is absent from the holder map - the mirror image of an owned system.
             var snapshot = scanUnderStabilityWeighting(buildSectorWith(buildDecivilisedSystem("a")));
 
@@ -306,7 +306,7 @@ class PoliticalMapSectorSnapshotTest {
     }
 
     // An unreachable system holding a revealed decivilised planet: on the map as a
-    // dead colony, yet unowned, so it drives visibility without an holder.
+    // decivilised colony, yet unowned, so it drives visibility without an holder.
     private static StarSystemAPI buildDecivilisedSystem(String id) {
 
         var systemMock = buildSystem(id);
@@ -316,7 +316,7 @@ class PoliticalMapSectorSnapshotTest {
         return systemMock;
     }
 
-    // A derelict hulk's market: the neutral owner and nought size vanilla builds one at, marked
+    // A derelict's market: the neutral owner and nought size vanilla builds one at, marked
     // out from a colony only by the condition it hangs on it. Built off the plain colony below so
     // the condition is the single axis this differs on.
     private static MarketAPI buildAbandonedStation() {
@@ -343,7 +343,7 @@ class PoliticalMapSectorSnapshotTest {
         when(factionMock.getId())
             .thenReturn(factionId);
         // Whether this is the neutral faction is answered off the faction, as the engine answers
-        // it: the colony kind read parts an unowned hulk from a station somebody keeps on exactly
+        // it: the colony kind read parts an unowned derelict from a station somebody keeps on exactly
         // this question, so leaving it false would pose the derelict above as a manned outpost.
         when(factionMock.isNeutralFaction())
             .thenReturn(Factions.NEUTRAL.equals(factionId));

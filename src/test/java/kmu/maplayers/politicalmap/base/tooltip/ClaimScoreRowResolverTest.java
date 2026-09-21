@@ -143,7 +143,7 @@ final class ClaimScoreRowResolverTest {
     private static final SystemColonyReading NOTHING_BEYOND_THE_SCORE = SystemColonyReading.NONE;
 
     // The world people left, as the box's own walk of the system classified it.
-    private static final SystemColonyReading TIBICENA_IS_A_DEAD_WORLD = new SystemColonyReading(
+    private static final SystemColonyReading TIBICENA_IS_A_DECIVILISED_WORLD = new SystemColonyReading(
         new ColonyKindLookup(Map.of("tibicena", ColonyKind.UNGOVERNED_COLONY)),
         ColonyDiscoveryLookup.NONE,
         OpenlyKnownColonyLookup.NONE,
@@ -862,10 +862,10 @@ final class ClaimScoreRowResolverTest {
         }
 
         @Test
-        void resolveMarketRowsCallsADeadWorldOutBesideItsNought() {
+        void resolveMarketRowsCallsADecivilisedWorldOutBesideItsNought() {
             // The one thing this box says about a colony the mechanic passed over, and the pair is
-            // what makes it necessary: a ruin and a concealed base both arrive at nought, and only
-            // the ruin is a fact about the world rather than about the contest.
+            // what makes it necessary: a decivilised world and a concealed base both arrive at
+            // nought, and only the world is a fact about the sector rather than about the contest.
             var rows = resolveContestedRows(
                 buildStanding(
                     buildStrongestMarket(NO_SIBLING_MARKETS),
@@ -873,7 +873,7 @@ final class ClaimScoreRowResolverTest {
                         "Tibicena",
                         STRONGEST_MARKET_SIZE,
                         SECOND_LISTED))),
-                TIBICENA_IS_A_DEAD_WORLD);
+                TIBICENA_IS_A_DECIVILISED_WORLD);
 
             assertThat(rows.get(1).line().qualifier())
                 .isEqualTo(CellTooltipQualifier.stateFinding("decivilised"));

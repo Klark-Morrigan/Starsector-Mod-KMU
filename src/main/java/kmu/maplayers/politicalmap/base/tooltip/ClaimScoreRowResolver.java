@@ -31,7 +31,7 @@ import java.util.Optional;
  * <p>What a market line says beyond its number is what the box has found out about the place
  * ({@link ColonyQualifier}) - what sort of place it is, and how it is out of plain view. Those are
  * facts about the world rather than about the contest, which is why they are stated on the same
- * terms whatever the mechanic made of the market: a collapsed colony and a derelict hulk both reach
+ * terms whatever the mechanic made of the market: a collapsed colony and a derelict both reach
  * the list unowned, off-economy and at nought, and without the words the account could not tell a
  * place people still live from a wreck nobody ever did.
  *

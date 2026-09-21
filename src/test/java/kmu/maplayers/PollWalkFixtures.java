@@ -36,7 +36,7 @@ public final class PollWalkFixtures {
     // varying this would vary nothing the count can see.
     public static final int COLONY_SIZE = 5;
 
-    // The size vanilla builds a derelict at: a hulk nobody lives on is created at nought.
+    // The size vanilla builds a derelict at: one nobody lives on is created at nought.
     private static final int DERELICT_SIZE = 0;
 
     // Nothing a poll-walk suite claims is a duration, so one reading answers every clock read the
@@ -78,7 +78,7 @@ public final class PollWalkFixtures {
     }
 
     /**
-     * The one market hung on a system entity rather than listed - the derelict, since a listed hulk
+     * The one market hung on a system entity rather than listed - the derelict, since a listed one
      * is an outpost rather than a wreck. Read back off the fixture so a case names the register's
      * key without a second builder stating what was staged.
      *

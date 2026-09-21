@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
  * shape is pinned too - a banner set across the box, carrying its words and nothing else - since that
  * is what lets it read as a statement about the whole system rather than as an entry of a list.
  *
- * <p>The derelict pair is what pins <em>which</em> question the line answers. A hulk passes the fog
+ * <p>The derelict pair is what pins <em>which</em> question the line answers. One passes the fog
  * outright, so a row wired to the listing beneath it would call a system of wrecks populated - and
  * would answer identically on every other case here, none of which stages one.
  */
@@ -60,7 +60,8 @@ final class SystemStatusRowTest {
     // The status line is one plain run, so its label is read at the first of them.
     private static final int STATUS_RUN = 0;
 
-    // The size the staged hulk carries. Nothing the status line reads weighs a colony, so a case
+    // The size the staged derelict carries. Nothing the status line reads weighs a colony, so a
+    // case
     // varying this would vary nothing the line can see - it is here because the shared builder
     // states a size for the weighing suites that share it.
     private static final int DERELICT_SIZE = 4;
@@ -109,9 +110,9 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowNamesASystemWithARevealedRuinDecivilised() {
+        void resolveStatusRowNamesASystemHoldingARevealedDecivilisedWorld() {
 
-            // The ruin is a colony the set holds and nobody is living on, so it reaches this line
+            // The world is a colony the set holds and nobody is living on, so it reaches this line
             // through habitation like any other - and what it changes is which status the player is
             // told, the system holding nobody either way.
             var system = buildSystemWithPlanets();
@@ -125,8 +126,9 @@ final class SystemStatusRowTest {
         }
 
         @Test
-        void resolveStatusRowIsEmptyForALivingColonyBesideARuin() {
-            // A ruin never heads a system somebody still lives in. Habitation admits both, so the
+        void resolveStatusRowIsEmptyForALivingColonyBesideADecivilisedWorld() {
+            // A collapsed world never heads a system somebody still lives in. Habitation admits
+            // both, so the
             // line has to part them by kind rather than by the projection's emptiness - and the box
             // beneath goes on naming the collapsed colony along with the governed one.
             var system = buildSystemWithPlanets();
@@ -193,14 +195,16 @@ final class SystemStatusRowTest {
 
         @Test
         void resolveStatusRowCallsASystemHoldingOnlyADerelictUnpopulated() {
-            // The line asks about habitation, not about what may be named. The hulk passes the fog
+            // The line asks about habitation, not about what may be named. The derelict passes the
+            // fog
             // outright - un-hidden, on a found entity - so the listing beneath this row goes on
             // naming it, and the row still says nobody lives here, which is the true reading of a
             // system with one wreck in it.
             var system = buildSystemWithPlanets();
             var sector = buildSectorHoldingMarkets(system);
 
-            // Through the entity side, as a vanilla hulk arrives: the economy never registers one,
+            // Through the entity side, as a vanilla derelict arrives: the economy never registers
+            // one,
             // so listing it would pose a market the sector does not hold.
             hangMarketsOnSystemEntities(system, buildAbandonedStationMarket(DERELICT_SIZE));
 
@@ -213,7 +217,7 @@ final class SystemStatusRowTest {
 
         @Test
         void resolveStatusRowIsEmptyForAColonyStandingBesideADerelict() {
-            // The same hulk with somebody settled beside it. The row reads populated on the
+            // The same derelict with somebody settled beside it. The row reads populated on the
             // colony's account while the box beneath names both, so the derelict is neither
             // counted as habitation nor withheld from the listing.
             var system = buildSystemWithPlanets();

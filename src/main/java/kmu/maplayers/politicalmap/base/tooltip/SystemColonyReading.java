@@ -19,9 +19,9 @@ import kmu.maplayers.base.visibility.colonies.OpenlyKnownColonyLookup;
  *
  * <p>For an account whose rows arrive as scores rather than as colonies. A claim row carries the ID
  * of the market it was weighed from and nothing of the place behind it, so the things a line says
- * that no arithmetic can supply - that a colony is a collapse rather than a hulk, that nobody has
- * found it, that nobody has looked at it in four cycles - have to be read from the system itself
- * and matched back by id.
+ * that no arithmetic can supply - that a colony is a collapse rather than a derelict, that nobody
+ * has found it, that nobody has looked at it in four cycles - have to be read from the system
+ * itself and matched back by id.
  *
  * <p>The four travel as one value because they are one reading. All are folded from the single
  * walk of the system the box already makes, and a line asks them together - so passed apart, a

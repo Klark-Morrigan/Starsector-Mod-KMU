@@ -32,8 +32,8 @@ import java.util.Optional;
  * its kind, then the three ways it may be out of sight. Two of those never join what stands above
  * them. {@code undiscovered} displaces {@code hidden}, an undiscovered colony being
  * concealed from them by that fact alone; {@code unlisted} is a fallback and speaks only where
- * nothing above it held, or it would repeat itself on every derelict and every dead world, both
- * being off-economy by construction.
+ * nothing above it held, or it would repeat itself on every derelict and every decivilised world,
+ * both being off-economy by construction.
  *
  * <p>{@code hidden} is withheld from a colony whose concealment is public knowledge, that being a
  * fact the market itself does not carry. Such a colony falls through to whatever stands below,

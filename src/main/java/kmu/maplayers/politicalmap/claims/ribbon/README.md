@@ -40,7 +40,7 @@ so the contest and the count beneath it read one reading of the system rather th
 
 Vanilla leaves a settled system unclaimed for several reasons -
 a pirate haven,
-a player colony and a dead world all resolve no claimant.
+a player colony and a decivilised world all resolve no claimant.
 Which reasons,
 and the mistake that is easy to make about them,
 are [`politics.holders`](../../base/politics/holders/README.md)'s to state.

@@ -181,7 +181,7 @@ final class HolderPassTest {
             var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID, colony);
             var system = SectorPoliticsFixtures.buildOnlySystem(sector);
 
-            // The derelict reaches the walk through the entity side, as a vanilla hulk does: the
+            // The derelict reaches the walk through the entity side, as a vanilla one does: the
             // economy never lists one, so posing it in the economy would pose a market the sector
             // does not hold.
             SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, colony, derelict);
@@ -451,7 +451,7 @@ final class HolderPassTest {
 
         @Test
         void namesNoBlocForASystemHoldingOnlyADerelict() {
-            // The case the whole value exists for. The listing names the hulk's owner, and nobody
+            // The case the whole value exists for. The listing names the derelict's owner, and nobody
             // lives on it - so the blocs come back empty beside a habitation that has nothing in
             // it, which is what keeps the spotlight from sparing a cell the map draws as empty
             // space.
@@ -459,7 +459,7 @@ final class HolderPassTest {
             var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);
             var system = SectorPoliticsFixtures.buildOnlySystem(sector);
 
-            // Through the entity side, as a vanilla hulk arrives: the economy never lists one.
+            // Through the entity side, as a vanilla derelict arrives: the economy never lists one.
             SectorPoliticsFixtures.placeMarketsOnSystemEntities(system, derelict);
 
             var pass = HolderPass.over(sector, UNDER_THE_FOG, HolderGrouping.identity());

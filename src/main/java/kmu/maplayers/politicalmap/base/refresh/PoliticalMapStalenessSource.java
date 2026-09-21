@@ -17,7 +17,7 @@ import java.util.Map;
 
 /**
  * What the political map counts as a change the engine never announced - a gate activating,
- * a system being cut off, a dead colony surveyed, or an AI faction founding or capturing a
+ * a system being cut off, a decivilised colony surveyed, or an AI faction founding or capturing a
  * colony in a system already on the map - and which refresh each one earns.
  *
  * <p>Takes a cheap snapshot of the on-map systems ({@link PoliticalMapSectorSnapshot}) and

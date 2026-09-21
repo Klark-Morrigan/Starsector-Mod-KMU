@@ -24,7 +24,7 @@ import java.util.Objects;
  *                                     scores, folded once for the box - a claim row carries the ID
  *                                     of the market it was scored from and nothing of the place
  *                                     behind it, so this is what parts an unowned collapse from an
- *                                     unowned hulk, says the player has yet to find either, and
+ *                                     unowned derelict, says the player has yet to find either, and
  *                                     dates them
  * @param isListingUndiscoveredMarkets whether a market on an undiscovered entity may be listed
  *                                     though the contest never weighed it. False is the ordinary

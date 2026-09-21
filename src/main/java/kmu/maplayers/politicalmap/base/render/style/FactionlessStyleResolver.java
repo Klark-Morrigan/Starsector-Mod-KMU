@@ -47,11 +47,11 @@ public final class FactionlessStyleResolver {
      * {@link PoliticalMapCategory#UNINHABITED} on the player's own word. What is ruled out above
      * is the map deciding that for itself off a holder map the player never saw.
      *
-     * <p>A live colony and a dead one therefore share the one bundle. The distinction the two
-     * factionless styles draw is presence against absence - is anything here, or is this the
-     * backdrop - and on that question a pirate haven and a revealed ruin answer alike. Which
-     * kind of settlement it is would be a third bundle's worth of theme and settings to say,
-     * and the map says it in the hover box instead.
+     * <p>A live colony and a decivilised one therefore share the one bundle. The distinction the
+     * two factionless styles draw is presence against absence - is anything here, or is this the
+     * backdrop - and on that question a pirate haven and a revealed decivilised world answer
+     * alike. Which kind of settlement it is would be a third bundle's worth of theme and settings
+     * to say, and the map says it in the hover box instead.
      *
      * @param inhabitedSystemKeys the systems something stands in this pass, live colony or - where
      *                            the player has left such a world counting as habitation - a

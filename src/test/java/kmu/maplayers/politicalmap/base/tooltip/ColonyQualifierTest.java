@@ -256,7 +256,7 @@ final class ColonyQualifierTest {
         @Test
         void qualifyColonySuppressesUnlistedBehindAKind() {
             // Both kinds that speak are off-economy by construction, so the fallback would repeat
-            // itself on every derelict and every dead world.
+            // itself on every derelict and every decivilised world.
             assertThat(qualify("Sentinel Gantries", buildUnlistedFacts(ColonyKind.SPACE_DERELICT)))
                 .isEqualTo("abandoned");
         }

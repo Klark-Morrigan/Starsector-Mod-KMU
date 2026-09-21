@@ -27,6 +27,9 @@ public final class KmuStringKeys {
      */
     public static final String COMPATIBILITY_LOST_MAP_CURSOR = "compatibility_lost_map_cursor";
 
+    /** What a Fast Rendering mismatch does not cost, for the notice's optional "No effect" row. */
+    public static final String COMPATIBILITY_UNAFFECTED_MAP_CURSOR = "compatibility_unaffected_map_cursor";
+
     public static final String CONDITION_MANAGER_LOCATION = "condition_manager_location";
     public static final String CONDITION_MANAGER_LOCATION_UNKNOWN = "condition_manager_location_unknown";
     public static final String CONDITION_MANAGER_SUMMARY = "condition_manager_summary";

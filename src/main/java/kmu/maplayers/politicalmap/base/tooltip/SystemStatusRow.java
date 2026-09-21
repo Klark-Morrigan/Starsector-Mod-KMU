@@ -48,9 +48,9 @@ public final class SystemStatusRow {
      * statement about the system and not a heading for the breakdown: it says whether people live
      * here, while the breakdown names everything the player may be told about. The two part over
      * the derelict, and the parting is the true reading rather than the disagreement it looks
-     * like - a system holding one hulk and nothing else is unpopulated space, and the box beneath
-     * still names the hulk. The same holds the other way with a colony beside the hulk: the line
-     * reads populated on the colony's account and the box names both.
+     * like - a system holding one derelict and nothing else is unpopulated space, and the box
+     * beneath still names it. The same holds the other way with a colony beside the derelict: the
+     * line reads populated on the colony's account and the box names both.
      *
      * <p>The rule arrives from the caller rather than being read here, which is what keeps this in
      * step with the body below it: a status resolved under a rule of its own would eventually

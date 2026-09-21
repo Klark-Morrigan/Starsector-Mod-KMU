@@ -267,7 +267,7 @@ public final class SectorPoliticsFixtures {
 
     /**
      * A derelict station's market: un-hidden, on a found entity, held by nobody, and carrying
-     * vanilla's abandoned-station condition - the shape Sentinel Gantries and every other hulk
+     * vanilla's abandoned-station condition - the shape Sentinel Gantries and every other derelict
      * wears.
      *
      * <p>The condition is what parts it from a colony, and it is the only thing that does: nobody
@@ -286,7 +286,7 @@ public final class SectorPoliticsFixtures {
 
     /**
      * A station a faction keeps: the same derelict condition on a market a real faction holds.
-     * Nothing but the owner parts it from the hulk above, which is why the pair is worth posing
+     * Nothing but the owner parts it from the derelict above, which is why the pair is worth posing
      * together - a read splitting them on anything else is reading the wrong thing.
      *
      * @param faction the faction keeping the station
@@ -777,7 +777,7 @@ public final class SectorPoliticsFixtures {
      *
      * <p>The arrangement every observation case needs: a derelict alone is seen by nobody, so a
      * write posed over one records nothing and a working recorder cannot be told from a broken
-     * one. The colony is another faction's, which is what lets it vouch for the hulk at all.
+     * one. The colony is another faction's, which is what lets it vouch for the derelict at all.
      *
      * @param systemId    the system's ID, which a recorded sighting names
      * @param colonySize  the open colony's size

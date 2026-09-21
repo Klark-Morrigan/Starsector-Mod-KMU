@@ -1,6 +1,7 @@
 {
   "kmu": {
-    "compatibility_lost_map_cursor": "Sector map widgets won't respond to the cursor this session - no cell highlight, no hover tooltip.",
+    "compatibility_lost_map_cursor": "Sector map widgets won't respond directly to the cursor this session - no star system highlight and tooltip. Map Layers sidebar will still react to the cursor.",
+    "compatibility_unaffected_map_cursor": "On everything else, including your save.",
 
     "condition_manager_location": "Location:",
     "condition_manager_location_unknown": "Unknown",

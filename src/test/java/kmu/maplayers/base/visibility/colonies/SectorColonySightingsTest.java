@@ -179,10 +179,10 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void recordsNothingForADeadWorldThePlayerIsStandingIn() {
+        void recordsNothingForADecivilisedWorldThePlayerIsStandingIn() {
             // The narrower half of the pair the two routes make: vanilla's own survey level already
             // remembers the player's arrival, so the register owes this shape nothing here.
-            placeColoniesOnSystemEntities(buildDeadWorld("tibicena"));
+            placeColoniesOnSystemEntities(buildDecivilisedWorld("tibicena"));
             openStoredSightings();
 
             SectorColonySightings.recordSightingsIn(sectorMock, systemMock);
@@ -252,8 +252,9 @@ final class SectorColonySightingsTest {
 
         @Test
         void recordsADerelictStandingBesideAnotherFactionsColony() {
-            // The route's own case, and the reason it is written down at all: a hulk in orbit over
-            // an inhabited world is common knowledge there, and stays known once that world dies.
+            // The route's own case, and the reason it is written down at all: a derelict in orbit
+            // over an inhabited world is common knowledge there, and stays known once that world
+            // has collapsed.
             var derelict = buildDerelict("sentinel_gantries");
 
             listColoniesInSystem(buildOpenColony("jangala", "hegemony"));
@@ -269,12 +270,13 @@ final class SectorColonySightingsTest {
         }
 
         @Test
-        void recordsADeadWorldStandingBesideAnotherFactionsColony() {
-            // The wider half of the pair. No gate is about a dead world, and the neighbours' word
+        void recordsADecivilisedWorldStandingBesideAnotherFactionsColony() {
+            // The wider half of the pair. No gate is about a decivilised world, and the neighbours'
+            // word
             // is nonetheless the whole of why the map shows one - so the entry is what keeps it
             // there after the colony that reported it has itself collapsed.
             listColoniesInSystem(buildOpenColony("jangala", "hegemony"));
-            placeColoniesOnSystemEntities(buildDeadWorld("tibicena"));
+            placeColoniesOnSystemEntities(buildDecivilisedWorld("tibicena"));
             openStoredSightings();
 
             recordWhatTheSystemsInhabitantsSee();
@@ -288,7 +290,7 @@ final class SectorColonySightingsTest {
         @Test
         void recordsNothingForADerelictAloneInItsSystem() {
             // Nobody is here to have seen it, so nothing is written and no empty register is put
-            // into the save on the strength of a system holding a hulk.
+            // into the save on the strength of a system holding a derelict.
             placeColoniesOnSystemEntities(buildDerelict("sentinel_gantries"));
 
             recordWhatTheSystemsInhabitantsSee();
@@ -461,7 +463,7 @@ final class SectorColonySightingsTest {
 
     // A world whose government has collapsed: no gate is about it, and only the inhabitants' route
     // records one. Unsurveyed, which is what makes the neighbours' word the only thing showing it.
-    private static MarketAPI buildDeadWorld(String colonyId) {
+    private static MarketAPI buildDecivilisedWorld(String colonyId) {
         return nameColony(ColonyMarketFixture.buildUnsurveyedDecivilisedWorld(), colonyId);
     }
 

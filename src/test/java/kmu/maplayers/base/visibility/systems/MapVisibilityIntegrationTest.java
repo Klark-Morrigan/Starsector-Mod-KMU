@@ -55,7 +55,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>The derelict cases are the composition's own, and pass through the whole of it: the
  * fog admits an abandoned station, habitation does not, and membership follows habitation
- * - so a stub anywhere in that chain would let a hulk go on dragging its system onto the
+ * - so a stub anywhere in that chain would let a derelict go on dragging its system onto the
  * map while every read in isolation looked right.
  */
 class MapVisibilityIntegrationTest {
@@ -152,7 +152,7 @@ class MapVisibilityIntegrationTest {
         void isDrawnIsFalseForAStarHiddenSystemHoldingOnlyAnAbandonedStation() {
             // Membership is where reading habitation is visible rather than merely tidy. The
             // vanilla map draws no star for this system, so inhabitation was its only route on,
-            // and a hulk is not inhabitation - a system hidden by its own design stops being
+            // and a derelict is not inhabitation - a system hidden by its own design stops being
             // dragged onto the map by a derelict the player has never been near.
             var system = buildReachableSystem("a");
             var sector = buildSectorWithHiddenStar(system);
@@ -278,7 +278,7 @@ class MapVisibilityIntegrationTest {
         }
 
         @Test
-        void isSystemInhabitedIsFalseWhenNeitherColonyNorRuinExists() {
+        void isSystemInhabitedIsFalseWhenNeitherColonyNorDecivilisedWorldExists() {
 
             var system = buildUnreachableSystem("a");
 
@@ -311,8 +311,8 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void isSystemInhabitedIsFalseForASystemHoldingOnlyAnAbandonedStation() {
-            // Nobody has ever been aboard a derelict, so a system with one hulk in it and nothing
-            // else is empty space with a wreck in it. The fog admits the hulk - it is un-hidden and
+            // Nobody has ever been aboard a derelict, so a system with one in it and nothing
+            // else is empty space with a wreck in it. The fog admits it - it is un-hidden and
             // its entity is found - which is what makes this the habitation read's own case rather
             // than a fog case wearing a derelict's clothes.
             var system = buildUnreachableSystem("a");
@@ -326,7 +326,7 @@ class MapVisibilityIntegrationTest {
 
         @Test
         void isSystemInhabitedIsTrueOnceAColonyStandsBesideTheAbandonedStation() {
-            // The same system after somebody settles it. The hulk is staged unchanged, so what
+            // The same system after somebody settles it. The derelict is staged unchanged, so what
             // turned the answer is the colony rather than anything the derelict stopped being.
             var system = buildUnreachableSystem("a");
             var sector = buildSectorWith(system, buildOwnedMarket());
@@ -528,9 +528,10 @@ class MapVisibilityIntegrationTest {
             .thenReturn(entities);
     }
 
-    // A system whose one market is the ruin of a colony. Placed among the system's entities as
-    // well as its planets, that walk being how a colony set reaches an unlisted market at all -
-    // wired to the planets alone, this would pose an empty system while reading as a ruined one.
+    // A system whose one market is what a collapsed colony left behind. Placed among the system's
+    // entities as well as its planets, that walk being how a colony set reaches an unlisted market
+    // at all - wired to the planets alone, this would pose an empty system while reading as a
+    // decivilised one.
     private static StarSystemAPI buildUnreachableSystemWithDecivilisedPlanet(String id) {
 
         var systemMock = buildUnreachableSystem(id);
@@ -547,7 +548,7 @@ class MapVisibilityIntegrationTest {
         return buildColonyOnEntity(OWNING_FACTION, false, false);
     }
 
-    // A derelict hulk's market: an ordinary open market on a found entity, marked out by the
+    // A derelict's market: an ordinary open market on a found entity, marked out by the
     // condition vanilla hangs on an abandoned station and held by nobody.
     //
     // Its owner and its absence from the economy are both part of the shape rather than details of
@@ -605,7 +606,7 @@ class MapVisibilityIntegrationTest {
 
     // The faction holding one of these markets. Whether it is the neutral one is answered off the
     // faction, as the engine answers it, rather than left false: the colony kind read parts an
-    // unowned hulk from a station somebody keeps on exactly this question, so a fixture that had
+    // unowned derelict from a station somebody keeps on exactly this question, so a fixture that had
     // neutral deny being neutral would pose every derelict here as a manned outpost.
     private static FactionAPI buildFaction(String factionId) {
 

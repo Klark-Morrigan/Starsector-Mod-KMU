@@ -21,7 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class FactionlessStyleResolverTest {
 
     // An immutable, null-hostile set: Set.of throws on a null probe, so a clean answer for a null
-    // system key proves the rule never reached the set with it. Both a dead colony and a living one
+    // system key proves the rule never reached the set with it. Both a collapsed colony and a living
+    // one
     // the pass found no holder for, since the rule must not tell the two apart.
     private static final Set<SystemKey> INHABITED_SYSTEM_KEYS = Set.of(
         buildCellKey("some-decivilised-system"),
@@ -31,7 +32,7 @@ final class FactionlessStyleResolverTest {
     class ResolveCategoryOf {
 
         @Test
-        void resolveCategoryOfReturnsDecivilisedForASystemHoldingARevealedDeadColony() {
+        void resolveCategoryOfReturnsDecivilisedForASystemHoldingARevealedDecivilisedColony() {
 
             assertThat(FactionlessStyleResolver.resolveCategoryOf(
                     INHABITED_SYSTEM_KEYS,

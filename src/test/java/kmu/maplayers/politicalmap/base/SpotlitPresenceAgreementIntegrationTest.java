@@ -35,9 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * underneath both. Stub either read and the wiring this exists to catch is what gets asserted; the
  * sector, the entity walk and the colony rule are all read for real.
  *
- * <p>The derelict is what the pair is read against. A hulk passes the fog, so a presence read wired
+ * <p>The derelict is what the pair is read against. One passes the fog, so a presence read wired
  * to the listing would spare its cell while the classification called the system empty - and would
- * answer identically on every case staging no hulk, which is nearly every system in a sector.
+ * answer identically on every case staging no derelict, which is nearly every system in a sector.
  */
 final class SpotlitPresenceAgreementIntegrationTest {
 
@@ -68,7 +68,7 @@ final class SpotlitPresenceAgreementIntegrationTest {
         @Test
         void aDerelictSparesNobodyAndLeavesTheSystemUninhabited() {
             // Presence is a partition of the very set the classification asks the emptiness of, so
-            // the hulk's owner is absent exactly where the system is empty space. A listing-fed
+            // the derelict's owner is absent exactly where the system is empty space. A listing-fed
             // presence read would spare this cell and the map would draw a bloc over a system it
             // had just classified as backdrop.
             var sector = SectorPoliticsFixtures.buildSectorWith(SYSTEM_ID);

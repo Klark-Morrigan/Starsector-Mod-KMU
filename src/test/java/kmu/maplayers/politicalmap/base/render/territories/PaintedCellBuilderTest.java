@@ -79,9 +79,10 @@ final class PaintedCellBuilderTest {
 
         private static final String SYSTEM_ID = "hegemony-system";
 
-        // Two of the systems in the factionless fixture's inhabited set - one settled by a dead
-        // colony, one by a live colony no holder was resolved for - so a test can address either
-        // factionless category by which ID it builds the cell as, and can tell the two reasons a
+        // Two of the systems in the factionless fixture's inhabited set - one settled by a
+        // decivilised colony, one by a live colony no holder was resolved for - so a test can
+        // address either factionless category by which ID it builds the cell as, and can tell the
+        // two reasons a
         // cell counts as settled apart.
         private static final String DECIVILISED_SYSTEM_ID = "some-decivilised-system";
         private static final String UNHELD_INHABITED_SYSTEM_ID = "some-pirate-haven";
@@ -270,7 +271,8 @@ final class PaintedCellBuilderTest {
 
         @Test
         void buildPaintedCellForSystemFillsADecivilisedCellInTheNeutralColour() {
-            // Dead colonies carry a fill of their own - a factionless cell fills on its own, since
+            // Decivilised colonies carry a fill of their own - a factionless cell fills on its own,
+            // since
             // it never fuses into a cluster with a tessellated cluster to fill from - so both the
             // paint and the baked triangles have to come back off the cell itself.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
@@ -286,7 +288,8 @@ final class PaintedCellBuilderTest {
 
         @Test
         void buildPaintedCellForSystemRecedesADecivilisedCellUnderTheFiltersRecede() {
-            // A dead colony is part of the "rest of the sector" a spotlight recedes, so its own
+            // A decivilised colony is part of the "rest of the sector" a spotlight recedes, so its
+            // own
             // fill dims and recolours to the pass's desaturation palette exactly as a non-spotlit
             // bloc's does - otherwise it out-reads the bloc the spotlight is meant to isolate. Its
             // outline recedes with it: the two are the whole of what the cell puts on the map, so
@@ -355,7 +358,8 @@ final class PaintedCellBuilderTest {
         @Test
         void buildPaintedCellForSystemDimsADecivilisedCellWithoutRecolouringItWhenOnlyMuteIsSet() {
             // Mute and Desaturate are independent toggles, and Mute alone is the commoner setting:
-            // the dead colony sinks in weight while staying the neutral colour it reads as when
+            // the decivilised colony sinks in weight while staying the neutral colour it reads as
+            // when
             // nothing is spotlighted.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFilteringFactionlessDrawablesWith(
@@ -425,7 +429,8 @@ final class PaintedCellBuilderTest {
 
         @Test
         void buildPaintedCellForSystemKeepsADecivilisedCellAtFullStrengthWithNoRecedeInThePass() {
-            // Off filter the pass's recede is the identity, so a dead colony draws in the neutral
+            // Off filter the pass's recede is the identity, so a decivilised colony draws in the
+            // neutral
             // colour at its style opacity - an unfiltered map is unchanged by the recede path.
             var painted = PaintedCellBuilder.buildPaintedCellForSystem(
                 buildFactionlessDrawablesWith(buildFilledOutlineStyle(), buildDrawnOutlineStyle()),

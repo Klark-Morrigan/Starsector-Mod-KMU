@@ -86,7 +86,8 @@ final class SpoilerGateIntegrationTest {
         @Test
         void withholdsADerelictAndAConcealedBaseFromAnUnvisitedEmptySystem() {
             // The shipped state, both gates in force. Nobody has been here and nobody lives here,
-            // so neither the hulk nor the base has been seen by anyone the player could have heard
+            // so neither the derelict nor the base has been seen by anyone the player could have
+            // heard
             // it from - and the fog alone would have shown both, neither entity being discoverable.
             var sector = buildUnvisitedSectorHoldingGatedPair(SYSTEM_ID);
 
@@ -96,7 +97,7 @@ final class SpoilerGateIntegrationTest {
 
         @Test
         void namesBothOnceAnOpenColonyIsFoundedBesideThem() {
-            // The settled route, with the toggles untouched. The hulk and the base are staged
+            // The settled route, with the toggles untouched. The derelict and the base are staged
             // unchanged, so what reveals them is the colony's inhabitants rather than anything
             // either stopped being - word of a wreck in orbit travels as far as the people who can
             // see it.
@@ -119,7 +120,7 @@ final class SpoilerGateIntegrationTest {
 
         @Test
         void namesTheDerelictAloneOnceItsOwnGateIsTurnedOff() {
-            // One toggle, one shape. A player asking to see unseen derelicts gets the hulk and not
+            // One toggle, one shape. A player asking to see unseen derelicts gets that one and not
             // the base beside it, which is what makes these two settings rather than one spoiler
             // switch - and what a transposed reading of them would fail on.
             settingsMock
@@ -213,9 +214,9 @@ final class SpoilerGateIntegrationTest {
     }
 
     // The same world with an open colony beside it, which is what gives the system inhabitants to
-    // report the ruin. Each reaches the colony walk the way the sector really holds it: the colony
-    // through the economy's listing, the ruin through the system's own entities, a collapsed colony
-    // being dropped from the economy as it falls.
+    // report that world. Each reaches the colony walk the way the sector really holds it: the
+    // colony through the economy's listing, the decivilised world through the system's own
+    // entities, a collapsed colony being dropped from the economy as it falls.
     private static SectorAPI buildSectorHoldingAnUnsurveyedDecivilisedWorldBesideAColony() {
 
         var openColony = buildOpenColony();

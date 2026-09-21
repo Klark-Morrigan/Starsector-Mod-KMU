@@ -52,14 +52,14 @@ import static org.mockito.Mockito.when;
  *
  * <p>The system holds nothing anybody lives on. That is what keeps the remark due at all - a colony
  * standing among another faction's people is observed by them as the box is drawn, and a colony in
- * plain sight needs no date beside it - so a hulk nobody was ever aboard is the whole of what stands
+ * plain sight needs no date beside it - so a wreck nobody was ever aboard is the whole of what stands
  * here.
  */
 final class ColonyObservationReadoutIntegrationTest {
 
     private static final String SYSTEM_ID = "kumari_kandam";
 
-    // What the hulk is called. Its line is found by its name, so it is named for a place rather than
+    // What the derelict is called. Its line is found by its name, so it is named for a place rather than
     // for what it is - nothing the boxes say about it can have come from the name.
     private static final String DERELICT_NAME = "Sentinel Gantries";
 
@@ -95,7 +95,7 @@ final class ColonyObservationReadoutIntegrationTest {
         @Test
         void remarksHowOldTheNewsOfAColonyIsOnTheDominanceBoxsOwnLineForIt() {
             // The whole route in one case: the visit wrote a stamp into sector memory, the pass read
-            // it back, and the line naming the hulk runs on into how old that news is - spoken last
+            // it back, and the line naming the derelict runs on into how old that news is - spoken last
             // and in the quiet shade, so a reader scanning for findings passes over it.
             var sector = buildSectorTheFleetHasLongSinceLeft();
 
@@ -135,7 +135,7 @@ final class ColonyObservationReadoutIntegrationTest {
         throw new IllegalStateException("No line in the box names " + colonyName);
     }
 
-    // One system holding a hulk and nothing else, visited once and left.
+    // One system holding a derelict and nothing else, visited once and left.
     //
     // Nobody was ever aboard it and nothing living stands beside it, so no inhabitant observes it as
     // the box is drawn. The fleet is elsewhere, an unstubbed current location already being somewhere
@@ -150,7 +150,7 @@ final class ColonyObservationReadoutIntegrationTest {
         when(derelict.getName())
             .thenReturn(DERELICT_NAME);
 
-        // Where the hulk stands, which the recorded observation names and every later read of it is
+        // Where the derelict stands, which the recorded observation names and every later read of it is
         // matched against.
         SectorPoliticsFixtures.placeMarketsInSystem(system, derelict);
 

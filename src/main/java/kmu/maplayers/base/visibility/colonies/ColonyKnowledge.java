@@ -483,7 +483,7 @@ public final class ColonyKnowledge implements KnownColonyReader {
     //
     // Stated as the exclusion of the kind nobody was ever aboard rather than as an admission of
     // the ordinary one, so a kind added later inhabits its place unless it says otherwise.
-    // Overstating a place by one hulk is the cheaper mistake; erasing a settlement that is really
+    // Overstating a place by one derelict is the cheaper mistake; erasing a settlement that is
     // there takes its people with it.
     private static boolean isInhabitingKind(ColonyKind kind) {
         return kind != ColonyKind.SPACE_DERELICT;

@@ -10,7 +10,7 @@ import kmu.maplayers.base.theme.MapStyleCategory;
  * a fill where a cell holds something): a bloc paints in {@link #FACTION} or, where it
  * recedes to independent-held space, {@link #INDEPENDENT}; a system with no holder draws in
  * {@link #DECIVILISED} when something stands there the layer's holding does not account for -
- * a revealed dead world, or a colony held by nobody this layer admits - and
+ * a revealed decivilised world, or a colony held by nobody this layer admits - and
  * {@link #UNINHABITED} when nothing stands there at all. Making the category a type (rather
  * than four hardcoded reader methods and four fields) lets the theme carry the four styles as
  * one keyed map the builders index.
