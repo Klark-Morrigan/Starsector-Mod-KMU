@@ -147,7 +147,10 @@ public final class BareVoid {
 
         for (var edge = 0; edge < boundary.size(); edge++) {
 
-            if (labels[edge] == THE_FRAME) {
+            // Only a cell's own border says which side of it the cell is on. The frame says
+            // nothing, and neither does a line a tier laid across the void - and asking for
+            // the site behind either of those reads the sites at a negative index.
+            if (!EdgeLabels.isCell(labels[edge])) {
                 continue;
             }
 
@@ -159,8 +162,8 @@ public final class BareVoid {
                 - (to[1] - from[1]) * (site[0] - from[0]) > 0;
         }
 
-        // Nothing but frame: the piece inside the frame with no cell on its outline at all,
-        // which is the open sea in a sector whose cells are all islands within it.
+        // No cell on its outline at all: the piece bounded only by the frame and whatever was
+        // laid across it, which is the open sea in a sector whose cells are all islands.
         return false;
     }
 
