@@ -223,7 +223,7 @@ class BareVoidIntegrationTest {
 
         var rings = new java.util.ArrayList<LabelledRing>();
 
-        rings.add(new LabelledRing(piece.boundary(), piece.edgeLabels()));
+        rings.add(piece.outline());
         rings.addAll(piece.holes());
 
         return rings;

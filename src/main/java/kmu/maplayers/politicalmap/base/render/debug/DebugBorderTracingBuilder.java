@@ -8,7 +8,7 @@ import kmlib.starsector.systems.SystemKey;
 import kmu.maplayers.base.geometry.CellGeometryCache;
 import kmu.maplayers.base.geometry.CellGrouping;
 import kmu.maplayers.base.geometry.CellShaper;
-import kmu.maplayers.base.geometry.EdgeInsetRule;
+import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.render.clusters.BorderSmoothing;
 import kmu.maplayers.base.render.clusters.ClusterBorderTrace;
 import kmu.maplayers.base.render.clusters.debug.ClusterBorderStageCollector;
@@ -112,9 +112,14 @@ public final class DebugBorderTracingBuilder {
                 continue;
             }
 
-            // Same pipeline as buildFactionTerritory, but keep each stage. Base first, then
-            // sand and round only when gated on, so what is captured is exactly what would
-            // have been drawn.
+            // buildFactionTerritory's pipeline with each stage kept: base first, then sand and
+            // round only when gated on, so what is captured is what each pass was handed.
+            //
+            // Short of it by the resolve that pipeline runs AFTER rounding, which is not a
+            // stage of its own to capture - it tidies the rounded loops rather than shaping
+            // them, and a crossing it closes was opened by an arc this overlay is drawn to
+            // show. So the last stage here is the rounding's own output, which is the one a
+            // reader looking at why a border bulges wants to see.
             var base = PolygonTessellator.tessellateToBoundaryLoops(insetRings);
             stageCollector.captureBaseStage(base);
             var smoothed = base;
@@ -183,8 +188,7 @@ public final class DebugBorderTracingBuilder {
                 entry.getValue(),
                 null,
                 cellGrouping.ownerBySystemKey(),
-                EdgeInsetRule.AT_EVERY_BORDER,
-                CellShaper.BORDER_INSET_DISTANCE);
+                EdgeInset.asTheMapDraws());
 
             if (shaped.fillPolygon().isEmpty()) {
                 continue;

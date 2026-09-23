@@ -81,8 +81,7 @@ public record SectorGeometry(
         var shaped = CellShaper.shapeCells(
             cellEdges,
             grouping,
-            insetRule,
-            parameters.borderInset());
+            new EdgeInset(insetRule, parameters.borderInset()));
 
         var rings = new LinkedHashMap<String, List<List<double[]>>>();
 

@@ -1,9 +1,7 @@
 package kmu.maplayers.base.geometry;
 
 import kmlib.math.geometry.EdgeRings;
-import kmlib.math.geometry.Limits;
 import kmlib.math.geometry.PolygonOffsets;
-import kmlib.math.geometry.PolygonRegions;
 import kmlib.math.geometry.Segment;
 import kmlib.starsector.systems.SystemKey;
 
@@ -42,11 +40,6 @@ import java.util.Set;
  * hands back plain rings the render layer colours and strokes.
  */
 public final class SystemClusterBorders {
-    // A degenerate inset (a cluster narrower than twice the channel) folds the ring
-    // over, flipping its signed area's sign against the raw ring's. Such a ring is
-    // dropped rather than stroked as a self-crossing tangle.
-    private static final double MIN_RING_SIGNED_AREA = 1e-6;
-
     private SystemClusterBorders() {
     }
 
@@ -110,7 +103,9 @@ public final class SystemClusterBorders {
                 ring.edgeValues(),
                 style.miterSpikeLimit());
 
-            if (!isCollapsed(ring.corners(), inset)) {
+            // A cluster narrower than twice the channel folds its ring over rather than
+            // shrinking it, and such a ring is dropped rather than stroked as a tangle.
+            if (!PolygonOffsets.hasInsetCollapsed(ring.corners(), inset)) {
                 rings.add(inset);
             }
         }
@@ -191,32 +186,6 @@ public final class SystemClusterBorders {
             array[i] = values.get(i);
         }
         return array;
-    }
-
-    // Whether the inset folded the ring over rather than cleanly offsetting it:
-    // fewer than three corners left, a vanishing or sign-flipped area, or - for an
-    // outer ring - an area that grew. A miter offset past a convex ring's own width does
-    // not invert the winding; it re-expands the corners into a larger ring of the same
-    // winding, so a grown outer ring is the tell-tale of over-inset. An outer ring
-    // (positive, counter-clockwise) must shrink under an inward inset, while a hole
-    // (negative, clockwise) legitimately grows as its border backs into the surrounding
-    // solid - so the grew-check is applied only to outer rings.
-    private static boolean isCollapsed(
-            List<double[]> rawRing,
-            List<double[]> insetRing) {
-
-        if (insetRing.size() < Limits.MIN_VERTICES_TO_ENCLOSE_AREA) {
-            return true;
-        }
-        var rawArea = PolygonRegions.computeSignedArea(rawRing);
-        var insetArea = PolygonRegions.computeSignedArea(insetRing);
-
-        if (Math.abs(insetArea) < MIN_RING_SIGNED_AREA
-                || Math.signum(rawArea) != Math.signum(insetArea)) {
-
-            return true;
-        }
-        return rawArea > 0 && insetArea > rawArea;
     }
 
     // One owner's boundary segments paired with the miter inset each receives,

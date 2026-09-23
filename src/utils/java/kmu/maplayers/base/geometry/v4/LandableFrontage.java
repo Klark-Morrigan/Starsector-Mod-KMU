@@ -20,7 +20,8 @@ import java.util.List;
  *
  * <p>Inland void or open sea, it does not matter. The sea's shore is what the sea runs around -
  * the holes cut out of it - and a pocket's shore is its outline, and both are frontage the same
- * way. What is not is the frame: the edge of the sector is not a cell's border.
+ * way. What is not is any edge naming no cell: the edge of the sector is not a cell's border,
+ * and neither is a line some tier laid across the water.
  */
 public final class LandableFrontage {
 
@@ -33,14 +34,14 @@ public final class LandableFrontage {
      * @param piece the piece, its edges labelled with the cells they lie on
      * @return the runs in walk order round the piece's outline and then round each hole, each
      *         on one cell and each carrying both ends of every edge it covers, so a run of
-     *         {@code n} points is the {@code n - 1} edges between them; the frame's own edges
-     *         are nobody's frontage and are absent
+     *         {@code n} points is the {@code n - 1} edges between them; an edge naming no cell -
+     *         the frame, or a laid line - is nobody's frontage and is absent
      */
     public static List<Run> collectLandableRuns(Face piece) {
 
         var runs = new ArrayList<Run>();
 
-        addRunsAlong(runs, new LabelledRing(piece.boundary(), piece.edgeLabels()));
+        addRunsAlong(runs, piece.outline());
 
         for (var hole : piece.holes()) {
             addRunsAlong(runs, hole);
@@ -48,8 +49,8 @@ public final class LandableFrontage {
         return List.copyOf(runs);
     }
 
-    // One ring's worth of runs: consecutive corners on the same cell, the frame's corners
-    // breaking a run and joining none.
+    // One ring's worth of runs: consecutive corners on the same cell, a corner on anything
+    // that names no cell breaking a run and joining none.
     //
     // Walked from a place the cell changes rather than from the ring's first corner, so a run
     // straddling the ring's own start comes back as the one run it is rather than as two ending
@@ -74,7 +75,7 @@ public final class LandableFrontage {
                 points = new ArrayList<>();
                 runCell = cell;
             }
-            if (cell != BareVoid.THE_FRAME) {
+            if (EdgeLabels.isCell(cell)) {
                 points.add(corners.get(corner));
             }
         }

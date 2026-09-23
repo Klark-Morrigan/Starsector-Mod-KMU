@@ -17,6 +17,7 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 - [What a piece is](#what-a-piece-is)
 - [The open sea](#the-open-sea)
 - [Frontage](#frontage)
+- [The channel](#the-channel)
 - [What the resolution decides](#what-the-resolution-decides)
 
 ## The pipeline
@@ -28,6 +29,12 @@ It runs under `gradlew viewSectorGeometry` and under the geometry suites, beside
 | weld and order | `PlanarArrangement` | those lines | a graph knowing the turn order at each vertex |
 | close the faces | `FaceWalk` | that graph | every piece, each labelled per edge |
 | read the shore | `LandableFrontage` | a piece | its runs of border, by cell |
+| cut the channel | `PieceShaper` | a piece, an `EdgeInset` | its rings pulled off what they face, crossings and all |
+| make it drawable | `PieceRegions` | those rings | bodies and holes, resolved and smoothed |
+
+The last two are drawing rather than geometry, and the partition does not change under them:
+the shaping is paint over pieces that already exist, and under `EdgeInsetRule.NOWHERE` what it hands back is the piece itself.
+They are in the table because leaving them out is what made the inset look finished when it was not - see [the channel](#the-channel).
 
 `LabelledRing` and `LabelledWall` are what goes into the walk - a ring or a loose line, each edge carrying an int naming what it lies on.
 `Face` is what comes out.
@@ -78,6 +85,25 @@ water a coastline closes off is captured, and a border facing captured water fac
 
 A run carries both ends of every edge it covers, so consecutive runs share the corner where one cell gives way to the next.
 Carrying only each edge's start leaves a notch at every junction.
+
+## The channel
+
+The pieces above are the true division, meeting along shared lines with nothing between them.
+The channel is paint over that: each edge pulled off whatever lies across it, by `EdgeInset` - which edges, and how deep.
+Only the frame is nothing, being the edge of the sector rather than the edge of anything, so a piece running up to it has nothing to stand off from.
+
+**The inset alone is not drawable**, and this is the part that looks finished and is not.
+A piece of void is all necks, and a miter of anything that pinches to a neck crosses itself there;
+on the shipped fixtures roughly a quarter of the rings come out crossed.
+A crossed ring fills to something other than its outline and strokes a line through its own interior - visible only once it is painted the way the window paints it, translucent under an opaque stroke.
+
+So a piece goes through what a cluster border goes through after its own inset, by the same passes and the same profile:
+resolve to the positive-winding envelope, smooth, resolve again.
+One profile over the cells and the void beside them is what makes the two sides of a channel round alike.
+
+**A piece narrower than two channels is gone, not thin.**
+The miter does not shrink such a piece; it folds the ring over, and the folded ring winds the wrong way.
+The resolve will not catch that - handed a lone ring it takes that ring's winding for the plane's and hands it back as a fill - so the fold is caught while the raw ring is still there to compare against, by `PolygonOffsets.hasInsetCollapsed`.
 
 ## What the resolution decides
 

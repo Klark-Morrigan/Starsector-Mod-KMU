@@ -3,6 +3,7 @@ package kmu.maplayers.base.geometry.v4.ui;
 import kmlib.math.geometry.RingRegion;
 
 import kmu.maplayers.base.geometry.CellEdge;
+import kmu.maplayers.base.geometry.EdgeInset;
 import kmu.maplayers.base.geometry.SectorFixture;
 import kmu.maplayers.base.geometry.render.FillLook;
 import kmu.maplayers.base.geometry.render.MapPainting;
@@ -17,7 +18,7 @@ import java.util.Map;
 
 /**
  * What v4 has to show: the void the cells close around, before any line divides it, and the
- * shore of it a straight line could arrive at.
+ * stretches of cell border facing it.
  *
  * <p>v4's whole surface on screen for now, and deliberately the least it can be. The
  * constructions either side of the switch have to be comparable from the first frame, and a
@@ -70,7 +71,7 @@ public final class BareVoidOverlay {
 
         var bare = BareVoid.readBareVoid(cellEdges, fixture.getSites(), settings.parameters);
 
-        regions = collectRegions(bare);
+        regions = collectRegions(bare, settings);
         landable = settings.isLandableFrontageV4Shown()
             ? collectLandableRuns(bare)
             : List.of();
@@ -94,7 +95,7 @@ public final class BareVoidOverlay {
     }
 
     /**
-     * Draws the runs of shore a straight line from elsewhere on the same piece can arrive at.
+     * Draws the runs of cell border facing void nothing has captured.
      *
      * @param g2 where to draw, in world space
      */
@@ -106,23 +107,16 @@ public final class BareVoidOverlay {
         MapPainting.paintLineRuns(g2, landable, settings.landableFrontageV4Colour);
     }
 
-    // Each piece as the painting takes it: the ring round it and the rings of what it runs
-    // around. The sea runs around every group of cells, so filled from its outline alone it
-    // would cover the whole sector - which is what the outline on its own cannot say.
-    private static List<RingRegion> collectRegions(BareVoid bare) {
+    // Shaped and cleaned on the way out rather than held that way, since both the rule and the
+    // smoothing are knobs: under NOWHERE what is shaped is the partition itself, so the switch
+    // costs a reshape of the same walk rather than a walk of it.
+    private static List<RingRegion> collectRegions(BareVoid bare, ViewerSettings settings) {
 
-        var regions = new ArrayList<RingRegion>();
-
-        for (var piece : bare.collectPieces()) {
-
-            var holes = new ArrayList<List<double[]>>();
-
-            for (var hole : piece.holes()) {
-                holes.add(hole.vertices());
-            }
-            regions.add(new RingRegion(piece.boundary(), List.copyOf(holes)));
-        }
-        return List.copyOf(regions);
+        return PieceRegions.collectDrawableRegions(
+            bare.collectPieces(),
+            new EdgeInset(settings.voidInsetRule, settings.parameters.borderInset()),
+            settings.parameters.miterSpikeLimit(),
+            settings.resolveBorderSmoothing());
     }
 
     // Every piece's landable runs as the point runs the painting takes, which cell each is on

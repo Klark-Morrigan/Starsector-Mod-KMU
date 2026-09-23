@@ -261,8 +261,7 @@ final class CellShaperTest {
         var shapedByCellKey = CellShaper.shapeCells(
             cellEdgesByCellKey,
             buildIdentityGrouping(cellEdgesByCellKey.keySet(), owners),
-            insetRule,
-            inset);
+            new EdgeInset(insetRule, inset));
 
         var shapedBySystemId = new LinkedHashMap<String, ShapedCell>();
 
